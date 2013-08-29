@@ -168,7 +168,7 @@ bool MainWindow::saveAs()
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("About NebulaX"),
-        tr("<h1>About NebulaX</h1> <b>NebulaX</b> is a program that takes a list of raw data files, specified in the script editor, and reduces, interpolates, and voxelizes the data.<br> <a href=\"www.github.org/\">Github</a>"));
+        tr("<h1>About NebulaX</h1> <b>NebulaX</b> is primarily a program to reduce, visualize, and analyze diffuse X-ray scattering. <br> <a href=\"www.github.org/\">github.org</a> <h1>Lisencing (LGPL)</h1> This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details. \n You should have received a copy of the GNU Lesser General Public License along with this program.  If not, see <a href=\"http:\/\/www.gnu.org\/licenses/\">http:\/\/www.gnu.org\/licenses/</a> "));
 }
 
 void MainWindow::aboutOpenCL()
@@ -968,7 +968,7 @@ void MainWindow::createInteractives()
         
         QLabel * hklEditLabel = new QLabel(trUtf8( "<i>hkl: <i>"));
         hklEdit = new QLineEdit;
-        hklEdit->setFixedWidth(100);
+        //~ hklEdit->setFixedWidth(100);
         hklEdit->setValidator( new QRegExpValidator(QRegExp("(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)")) );
         
         QGridLayout * unitcellLayout = new QGridLayout;

@@ -2276,6 +2276,100 @@
        id="linearGradient3823-3"
        xlink:href="#linearGradient4621-0-2-5-0-7-8"
        inkscape:collect="always" />
+    <linearGradient
+       y2="296.80164"
+       x2="-491.98984"
+       y1="232.78593"
+       x1="-425.85175"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient4866-7"
+       xlink:href="#linearGradient4621-0-2-5-0-7-7"
+       inkscape:collect="always"
+       gradientTransform="translate(-2.179052,0.88410041)" />
+    <linearGradient
+       id="linearGradient4621-0-2-5-0-7-7">
+      <stop
+         style="stop-color:#61ff00;stop-opacity:1;"
+         offset="0"
+         id="stop4623-9-7-3-1-3-5" />
+      <stop
+         style="stop-color:#0f4d00;stop-opacity:1;"
+         offset="1"
+         id="stop4627-87-3-7-6-5-59" />
+    </linearGradient>
+    <linearGradient
+       y2="296.80164"
+       x2="-491.98984"
+       y1="232.78593"
+       x1="-425.85175"
+       gradientTransform="translate(-2.179052,0.88410041)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3823-3-6"
+       xlink:href="#linearGradient4621-0-2-5-0-7-8-7"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient4621-0-2-5-0-7-8-7">
+      <stop
+         style="stop-color:#61ff00;stop-opacity:1;"
+         offset="0"
+         id="stop4623-9-7-3-1-3-8-2" />
+      <stop
+         style="stop-color:#0f4d00;stop-opacity:1;"
+         offset="1"
+         id="stop4627-87-3-7-6-5-1-2" />
+    </linearGradient>
+    <linearGradient
+       y2="296.80164"
+       x2="-491.98984"
+       y1="232.78593"
+       x1="-425.85175"
+       gradientTransform="translate(-2.179052,0.88410041)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3823-1-4"
+       xlink:href="#linearGradient4621-0-2-5-0-7-9-2"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient4621-0-2-5-0-7-9-2">
+      <stop
+         style="stop-color:#61ff00;stop-opacity:1;"
+         offset="0"
+         id="stop4623-9-7-3-1-3-1-6" />
+      <stop
+         style="stop-color:#0f4d00;stop-opacity:1;"
+         offset="1"
+         id="stop4627-87-3-7-6-5-8-9" />
+    </linearGradient>
+    <linearGradient
+       y2="296.80164"
+       x2="-491.98984"
+       y1="232.78593"
+       x1="-425.85175"
+       gradientTransform="translate(-2.179052,0.88410041)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3823-2"
+       xlink:href="#linearGradient4621-0-2-5-0-7-6-1"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient4621-0-2-5-0-7-6-1">
+      <stop
+         style="stop-color:#61ff00;stop-opacity:1;"
+         offset="0"
+         id="stop4623-9-7-3-1-3-9-8" />
+      <stop
+         style="stop-color:#0f4d00;stop-opacity:1;"
+         offset="1"
+         id="stop4627-87-3-7-6-5-5-5" />
+    </linearGradient>
+    <linearGradient
+       y2="296.80164"
+       x2="-491.98984"
+       y1="232.78593"
+       x1="-425.85175"
+       gradientTransform="translate(-2.179052,0.88410041)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient4920"
+       xlink:href="#linearGradient4621-0-2-5-0-7-6-1"
+       inkscape:collect="always" />
   </defs>
   <sodipodi:namedview
      pagecolor="#ffffff"
@@ -2291,8 +2385,8 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="0.64"
-     inkscape:cx="-209.59045"
-     inkscape:cy="-671.33009"
+     inkscape:cx="394.49521"
+     inkscape:cy="-558.55405"
      inkscape:window-x="0"
      inkscape:window-y="36"
      inkscape:window-maximized="0"
@@ -2302,7 +2396,9 @@
      inkscape:snap-bbox-midpoints="true"
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
-     inkscape:bbox-paths="true">
+     inkscape:bbox-paths="true"
+     inkscape:snap-nodes="false"
+     inkscape:snap-global="true">
     <inkscape:grid
        type="xygrid"
        id="grid2987"
@@ -2316,8 +2412,8 @@
      id="rect5099"
      width="592.1875"
      height="1151.5625"
-     x="-287.52707"
-     y="194.68637"
+     x="-324.97092"
+     y="190.01204"
      ry="13.28125" />
   <rect
      style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:3.80834555999999980;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
@@ -5789,7 +5885,7 @@
        d="m -208.22639,188.88929 0,-93.210917 85.03815,-28.205484 0,60.215021 z" />
   </g>
   <rect
-     style="fill:none;stroke:#ffffff;stroke-width:8.31177901999999946;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     style="fill:none;stroke:#ffffff;stroke-width:8.31177901999999946;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
      id="rect4710"
      width="176.59341"
      height="119.66209"
@@ -5997,4 +6093,172 @@
      inkscape:export-filename="/home/natt/coding/riv/art/datastructure.png"
      inkscape:export-xdpi="48.943176"
      inkscape:export-ydpi="48.943176" />
+  <path
+     style="fill:#1e1e1e;stroke:#ffffff;stroke-width:9;stroke-linecap:butt;stroke-linejoin:bevel;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none;fill-opacity:1"
+     d="m 105,252 0,150 120,0 0,-110 -35,-40 z"
+     id="path3889"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/new.png"
+     inkscape:export-xdpi="32.102894"
+     inkscape:export-ydpi="32.102894" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:9;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+     d="m 190,252 0,40 35,0"
+     id="path4659"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/new.png"
+     inkscape:export-xdpi="32.102894"
+     inkscape:export-ydpi="32.102894" />
+  <path
+     style="fill:#1e1e1e;fill-opacity:1;stroke:#ffffff;stroke-width:8.42000008;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 102.99125,481.31938 0,130.65812 120.58,0 0,-95.81596 -35.16917,-34.84216 z"
+     id="path3889-5"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <rect
+     style="fill:#1e1e1e;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:6;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4682"
+     width="85.626213"
+     height="44.194176"
+     x="120.46814"
+     y="551.14844"
+     ry="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 135,482 0,35 50,0 0,-35"
+     id="path4687"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cccc"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#ffffff;stroke:#ffffff;stroke-width:1.15269278999999991px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+     d="m 160.07635,480.07635 0,26.8473 14.8473,0 0,-26.8473"
+     id="path4689"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 135,517 -20,0 0,-35"
+     id="path4691"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+     d="m 130,562 50,0"
+     id="path4693"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+     d="m 130,572 35,0"
+     id="path4695"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+     d="m 130,582 60,0"
+     id="path4697"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;fill-opacity:1;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 208.98834,241.5 4.14854,-12.1534"
+     id="path4693-6"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc"
+     inkscape:export-filename="/home/natt/coding/riv/art/new.png"
+     inkscape:export-xdpi="32.102894"
+     inkscape:export-ydpi="32.102894" />
+  <path
+     style="fill:#0096ff;fill-opacity:1;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 231.5,270 14.64466,-1.10486"
+     id="path4693-6-5"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc"
+     inkscape:export-filename="/home/natt/coding/riv/art/new.png"
+     inkscape:export-xdpi="32.102894"
+     inkscape:export-ydpi="32.102894" />
+  <path
+     style="fill:#0096ff;fill-opacity:1;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="M 220.24417,255.51019 238.75582,239.4898"
+     id="path4693-6-8"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc"
+     inkscape:export-filename="/home/natt/coding/riv/art/new.png"
+     inkscape:export-xdpi="32.102894"
+     inkscape:export-ydpi="32.102894" />
+  <path
+     style="fill:#1e1e1e;fill-opacity:1;stroke:#ffffff;stroke-width:10.05816269;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 105,867 0,5 140,0 0,-105 -85,0 -15,-25 -40,0 0,59.80727"
+     id="path3889-9"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/open.png"
+     inkscape:export-xdpi="40.907673"
+     inkscape:export-ydpi="40.907673"
+     sodipodi:nodetypes="cccccccc" />
+  <path
+     style="fill:#1e1e1e;fill-opacity:1;stroke:#ffffff;stroke-width:7.4000001;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="M 103.34272,870.55243 100.89087,865.43022 73,805 l 145,0 25,65"
+     id="path4853"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccccc"
+     inkscape:export-filename="/home/natt/coding/riv/art/open.png"
+     inkscape:export-xdpi="40.907673"
+     inkscape:export-ydpi="40.907673" />
+  <g
+     id="g4535-7-8-7-1-3-0-9"
+     transform="matrix(0,-2.4928903,2.5755399,0,-406.27121,-391.53134)"
+     inkscape:export-filename="/home/natt/coding/riv/art/open.png"
+     inkscape:export-xdpi="40.907673"
+     inkscape:export-ydpi="40.907673">
+    <path
+       sodipodi:nodetypes="sccsss"
+       inkscape:connector-curvature="0"
+       id="path3745-8-2-8-2-6-8-8"
+       d="m -477.68732,212.30043 c -2.15164,0.031 -2.09869,0.0621 -2.09869,0.0621 -0.053,10.63824 -0.053,10.63824 -0.053,21.30752 2.2046,0 0,0 2.15164,-0.031 2.06608,-0.0298 10.50822,-8.7549 10.50822,-10.7549 0,-2 -8.44214,-10.61348 -10.50822,-10.58367 z"
+       style="fill:url(#linearGradient4920);fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+  </g>
+  <g
+     id="g4535-7-8-7-1-3-9-5"
+     transform="matrix(0,-2.4928903,2.5755399,0,-406.27121,-361.77514)"
+     inkscape:export-filename="/home/natt/coding/riv/art/open.png"
+     inkscape:export-xdpi="40.907673"
+     inkscape:export-ydpi="40.907673">
+    <path
+       sodipodi:nodetypes="sccsss"
+       inkscape:connector-curvature="0"
+       id="path3745-8-2-8-2-6-7-9"
+       d="m -477.68732,212.30043 c -2.15164,0.031 -2.09869,0.0621 -2.09869,0.0621 -0.053,10.63824 -0.053,10.63824 -0.053,21.30752 2.2046,0 0,0 2.15164,-0.031 2.06608,-0.0298 10.50822,-8.7549 10.50822,-10.7549 0,-2 -8.44214,-10.61348 -10.50822,-10.58367 z"
+       style="fill:url(#linearGradient3823-1-4);fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+  </g>
+  <g
+     id="g4535-7-8-7-1-3-4-7"
+     transform="matrix(0,-2.4928903,2.5755399,0,-406.27121,-334.18554)"
+     inkscape:export-filename="/home/natt/coding/riv/art/open.png"
+     inkscape:export-xdpi="40.907673"
+     inkscape:export-ydpi="40.907673">
+    <path
+       sodipodi:nodetypes="sccsss"
+       inkscape:connector-curvature="0"
+       id="path3745-8-2-8-2-6-2-2"
+       d="m -477.68732,212.30043 c -2.15164,0.031 -2.09869,0.0621 -2.09869,0.0621 -0.053,10.63824 -0.053,10.63824 -0.053,21.30752 2.2046,0 0,0 2.15164,-0.031 2.06608,-0.0298 10.50822,-8.7549 10.50822,-10.7549 0,-2 -8.44214,-10.61348 -10.50822,-10.58367 z"
+       style="fill:url(#linearGradient3823-3-6);fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+  </g>
 </svg>
