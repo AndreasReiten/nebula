@@ -1,0 +1,54 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>src/shaders/msaa_hdr.v.glsl</file>
+    <file>src/shaders/msaa_hdr.f.glsl</file>
+    <file>src/shaders/msaa.v.glsl</file>
+    <file>src/shaders/msaa.f.glsl</file>
+    <file>src/shaders/text.v.glsl</file>
+    <file>src/shaders/text.f.glsl</file>
+    <file>src/shaders/blend.v.glsl</file>
+    <file>src/shaders/blend.f.glsl</file>
+    <file>src/shaders/pp_glow.v.glsl</file>
+    <file>src/shaders/pp_glow.f.glsl</file>
+    <file>src/shaders/std_2d_tex.v.glsl</file>
+    <file>src/shaders/std_2d_tex.f.glsl</file>
+    <file>src/shaders/std_2d_color.v.glsl</file>
+    <file>src/shaders/std_2d_color.f.glsl</file>
+    <file>src/shaders/std_3d_tex.v.glsl</file>
+    <file>src/shaders/std_3d_tex.f.glsl</file>
+    <file>src/shaders/std_3d_color.v.glsl</file>
+    <file>src/shaders/std_3d_color.f.glsl</file>
+    <file>src/kernels/reduce.cl</file>
+    <file>src/kernels/render.cl</file>
+    <file>src/kernels/frameFilter.cl</file>
+    <file>src/kernels/frameToImage.cl</file>
+    <file>src/stylesheets/gosutheme.qss</file>
+    <file>art/placeholder.png</file>
+    <file>art/new.png</file>
+    <file>art/save.png</file>
+    <file>art/open.png</file>
+    <file>art/error.png</file>
+    <file>art/apply.png</file>
+    <file>art/checkbox.png</file>
+    <file>art/up_arrow.png</file>
+    <file>art/down_arrow.png</file>
+    <file>art/renew.png</file>
+    <file>art/OK.png</file>
+    <file>art/system.png</file>
+    <file>art/yes.png</file>
+    <file>art/options.png</file>
+    <file>art/handle.png</file>
+    <file>art/sync.png</file>
+    <file>art/fast_forward.png</file>
+    <file>art/fast_back.png</file>
+    <file>art/back.png</file>
+    <file>art/forward.png</file>
+    <file>art/proceed.png</file>
+    <file>art/fast_proceed.png</file>
+    <file>art/screenshot.png</file>
+    <file>art/background.png</file>
+    <file>art/datastructure.png</file>
+    <file>art/log.png</file>
+    <file>art/projection.png</file>
+</qresource>
+</RCC>
