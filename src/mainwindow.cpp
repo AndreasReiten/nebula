@@ -890,6 +890,8 @@ void MainWindow::createInteractives()
         tsfComboBox->addItem(trUtf8("Binary"));
         tsfComboBox->addItem(trUtf8("Yranib"));
         tsfComboBox->addItem(trUtf8("Galaxy"));
+        tsfComboBox->addItem(trUtf8("White"));
+        tsfComboBox->addItem(trUtf8("Black"));
 
         tsfAlphaComboBox = new QComboBox;
         tsfAlphaComboBox->addItem(trUtf8("Uniform"));

@@ -241,7 +241,7 @@ __kernel void SVO_RAYTRACE(
             float step_length = native_divide((data_extent[1] - data_extent[0]),(float)((1 << misc_int[0])*(misc_int[1]-1)))*0.25; 
             float3 ray_box_add = direction * step_length;
             
-            
+            int color_fetch_counter = 0;
             while ( fast_length(ray_box_xyz - ray_box_origin) < fast_length(ray_box_delta) )
             {
                 if (color.w > 0.995) break;
@@ -282,9 +282,11 @@ __kernel void SVO_RAYTRACE(
                             sample = (float4)(1.0,1.0,1.0, 0.08);
                     
                             f = (1.0f - color.w)*sample.w;
-                            p = native_powr(f,0.5);
+                            //~ p = native_powr(f,0.5);
+                            if (color_fetch_counter == 0) color = sample;
+                            else color.xyz = mix(color.xyz, sample.xyz, (float3)(f));
+                            color_fetch_counter++;
                             
-                            color.xyz = mix(color.xyz, sample.xyz, (float3)(p)); 
                             color.w += f;
                         }
                         
@@ -346,9 +348,12 @@ __kernel void SVO_RAYTRACE(
                             sample = (float4)(0.2,0.3,1.0, 1.00);
                     
                             float f = (1.0f - color.w)*sample.w;
-                            float p = native_powr(f,0.5);
+                            //~ float p = native_powr(f,0.5);
                             
-                            color.xyz = mix(color.xyz, sample.xyz, (float3)(p)); 
+                            if (color_fetch_counter == 0) color = sample;
+                            else color.xyz = mix(color.xyz, sample.xyz, (float3)(f));
+                            color_fetch_counter++;
+                            
                             color.w += f;
                         }
                         
@@ -369,21 +374,27 @@ __kernel void SVO_RAYTRACE(
                         float rest_step = fmod(steps, 1.0);
                         int cycles = (int) steps;
                         
-                        
+                        // The first color should be that of the first sample
                         for (int k = 0; k < cycles; k++)
                         {
                             f = (1.0f - color.w)*sample.w;
-                            p = native_powr(f,0.5);
+                            //~ p = native_powr(f,0.5);
                             
-                            color.xyz = mix(color.xyz, sample.xyz, (float3)(p)); 
+                            if (color_fetch_counter == 0) color = sample;
+                            else color.xyz = mix(color.xyz, sample.xyz, (float3)(f));
+                            color_fetch_counter++;
+                            
                             color.w += f;
                         }
                         if (rest_step > 0)
                         {
                             f = (1.0f - color.w)*sample.w*rest_step;
-                            p = native_powr(f,0.5);
+                            //~ p = native_powr(f,0.5);
                             
-                            color.xyz = mix(color.xyz, sample.xyz, (float3)(p)); 
+                            if (color_fetch_counter == 0) color = sample;
+                            else color.xyz = mix(color.xyz, sample.xyz, (float3)(f));
+                            color_fetch_counter++;
+                            
                             color.w += f;
                         }
                     

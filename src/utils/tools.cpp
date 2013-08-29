@@ -320,6 +320,28 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         1.0f, 0.0f, 1.0f, 1.0f,
         0.5f, 0.0f, 1.0f, 1.0f,
         };
+
+    float buf_white[32] = {
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        };
+
+    float buf_black[32] = {
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        };
         
     switch (color_style)
     {
@@ -348,6 +370,12 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
             buf->setDeep(32, buf_galaxy);
             break;
         case 8:
+            buf->setDeep(32, buf_white);
+            break;
+        case 9:
+            buf->setDeep(32, buf_black);
+            break;
+        case 42:
             buf->setDeep(32, buf_white_contrast);
             break;
         default:
