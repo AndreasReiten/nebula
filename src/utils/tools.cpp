@@ -387,7 +387,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
     {
         case 0:
             // Uniform alpha except for the first vertex
-            (*buf)[0+3] = 0.0;
+            (*buf)[3] = 0.0;
             for (int i = 4; i < 32; i+=4)
             {
                 (*buf)[i+3] = 1.0;
@@ -402,7 +402,8 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
             break;
         case 2:
             // Exponentially increasing data
-            for (int i = 0; i < 32; i+=4)
+            (*buf)[3] = 0.0;
+            for (int i = 4; i < 32; i+=4)
             {
                 (*buf)[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
             }

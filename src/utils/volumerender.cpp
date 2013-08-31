@@ -691,7 +691,7 @@ void VolumeRenderGLWidget::setEmit()
     emit changedDataMinValue(1.0);
     emit changedDataMaxValue(10.0);
     emit changedAlphaValue(0.5);
-    emit changedBrightnessValue(1.8);
+    emit changedBrightnessValue(2.5);
     emit changedFuncParamA(13.5);
     emit changedFuncParamB(10.5);
     emit changedFuncParamC(10.0);
