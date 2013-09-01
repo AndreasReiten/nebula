@@ -473,7 +473,7 @@ void MainWindow::openSVO()
         vrWidget->setBRICKS(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
         vrWidget->setMeta(&(this->HIST_NORM), &(this->HIST_LOG), &(this->HIST_MINMAX), &(this->SVO_COMMENT));
         alphaSpinBox->setValue(0.1);
-        brightnessSpinBox->setValue(1.0);
+        brightnessSpinBox->setValue(2.0);
         dataMinSpinBox->setValue(this->HIST_MINMAX[0]);
         dataMaxSpinBox->setValue(this->HIST_MINMAX[1]);
         

@@ -688,14 +688,14 @@ void VolumeRenderGLWidget::initializeGL()
 }
 void VolumeRenderGLWidget::setEmit()
 {
-    emit changedDataMinValue(1.0);
-    emit changedDataMaxValue(10.0);
+    emit changedDataMinValue(10.0);
+    emit changedDataMaxValue(1000.0);
     emit changedAlphaValue(0.5);
-    emit changedBrightnessValue(2.5);
+    emit changedBrightnessValue(1.5);
     emit changedFuncParamA(13.5);
     emit changedFuncParamB(10.5);
     emit changedFuncParamC(10.0);
-    emit changedFuncParamD(0.01);
+    emit changedFuncParamD(0.001);
 }
 
 
@@ -2995,14 +2995,14 @@ int VolumeRenderGLWidget::init_cl()
     }
     
     // Entry points
-    K_SVO_RAYTRACE = clCreateKernel(program, "SVO_RAYTRACE", &err);
+    K_SVO_RAYTRACE = clCreateKernel(program, "svoRayTrace", &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Could not create kernel object: " << cl_error_cstring(err) << std::endl;
         return 0;
     }
     
-    K_FUNCTION_RAYTRACE = clCreateKernel(program, "FUNCTION_RAYTRACE", &err);
+    K_FUNCTION_RAYTRACE = clCreateKernel(program, "modelRayTrace", &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Could not create kernel object: " << cl_error_cstring(err) << std::endl;
