@@ -392,14 +392,14 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
             tmp[3] = 0.0;
             for (int i = 4; i < 32; i+=4)
             {
-                tmp[i+3] = 1.0;
+                tmp[i+3] = 0.0001*1.0;
             }
             break;
         case 1:
             // Linearly increasing alpha
             for (int i = 0; i < 32; i+=4)
             {
-                tmp[i+3] = 0.01*((float)i/4)/7.0;
+                tmp[i+3] = 0.0001*((float)i/4)/7.0;
             }
             break;
         case 2:
@@ -407,7 +407,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
             tmp[3] = 0.0;
             for (int i = 4; i < 32; i+=4)
             {
-                tmp[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
+                tmp[i+3] = 0.0001*std::exp(-(1.0 - (float)i/4/7.0)*3.0);
             }
             break;
         default:

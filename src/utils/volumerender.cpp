@@ -2862,7 +2862,7 @@ void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
     glBindTexture(GL_TEXTURE_2D, 0);
     
     // Buffer for tsf_tex_cl
-    tsf->getPreIntegrated().getColMajor().toFloat().print(2, "preIntegrated");
+    //~ tsf->getPreIntegrated().getColMajor().toFloat().print(2, "preIntegrated");
     
     cl_image_format tsf_format;
     tsf_format.image_channel_order = CL_RGBA;

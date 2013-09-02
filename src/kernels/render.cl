@@ -493,7 +493,7 @@ __kernel void modelRayTrace(
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float3 rayBoxAdd = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-
             data_view_extent[0], 400.0);
-            float d = length(rayBoxAdd);
+            float d = length(rayBoxAdd)*0.001;
             float intBack = 0.0, intFront = 0.0;
             float rayBoxLength = fast_length(rayBoxDelta);
 
@@ -518,16 +518,16 @@ __kernel void modelRayTrace(
                 
                 sBack = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
-                if (intBack - intFront == 0.0) rgba.w = 1.0 - exp(-d*native_divide(sBack.w, intBack ));
-                else rgba.w = 1.0 - exp(-d*native_divide(sBack.w  - sFront.w, intBack - intFront));
+                //~ if (intBack - intFront == 0.0) rgba.w = 1.0 - exp(-d*native_divide(sBack.w, intBack ));
+                rgba.w = 1.0 - exp(-d*native_divide(fabs(sBack.w  - sFront.w), fabs(intBack - intFront) + 1e-10));
 
-                if (sBack.w  - sFront.w == 0) rgba.xyz = native_divide(sBack.xyz, sBack.w)*rgba.w;
-                else rgba.xyz = native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(sBack.w  - sFront.w))*rgba.w;
+                //~ if (sBack.w  - sFront.w == 0) rgba.xyz = native_divide(sBack.xyz, sBack.w)*rgba.w;
+                rgba.xyz = native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(sBack.w  - sFront.w) + 1e-10)*rgba.w;
 
                 rgba.w *=alpha;
                 rgba = clamp(rgba, 0.0, 1.0);
 
-                color.xyz += (1 - color.w)*rgba.xyz*rgba.w;
+                color.xyz += (1 - color.w)*rgba.xyz;
                 color.w += (1 - color.w)*rgba.w;
 
                 //~ color.xyz = color.xyz +(1 - color.w)*sample.xyz*sample.w;
