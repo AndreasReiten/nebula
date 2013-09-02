@@ -2871,10 +2871,10 @@ void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
     tsf_tex_cl = clCreateImage2D ( (*context2),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &tsf_format,
-        tsf->getPreIntegrated().getN(),
+        tsf->getSpline().getN(),
         1,
         0,
-        tsf->getPreIntegrated().getColMajor().toFloat().data(),
+        tsf->getSpline().getColMajor().toFloat().data(),
         &err);
     if (err != CL_SUCCESS)
     {

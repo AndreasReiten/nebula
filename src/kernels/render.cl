@@ -360,13 +360,14 @@ __kernel void svoRayTrace(
                         // This shit needs to get analytic
                         for (int k = 0; k < cycles; k++)
                         {
-                            color.xyz = color.xyz +(1 - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1 - color.w)*sample.w;
+                            color.xyz += (1 - color.w)*sample.xyz*sample.w;
+                            color.w += (1 - color.w)*sample.w;
                         }
                         if (restStep > 0)
                         {
-                            color.xyz = color.xyz +(1 - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1 - color.w)*sample.w;
+                            sample.w *= restStep;
+                            color.xyz += (1 - color.w)*sample.xyz*sample.w;
+                            color.w += (1 - color.w)*sample.w;
                         }
                     
                         rayBoxXyz += rayBoxAdd;
@@ -481,9 +482,10 @@ __kernel void modelRayTrace(
         }
         
         float4 color = (float4)(0.0);
-        float4 sFront = (float4)(0.0);
-        float4 sBack = (float4)(0.0);
-        float4 rgba = (float4)(0.0);
+        float4 sample = (float4)(0.0);
+        //~ float4 sFront = (float4)(0.0);
+        //~ float4 sBack = (float4)(0.0);
+        //~ float4 rgba = (float4)(0.0);
         
         if(hit)
         {
@@ -493,14 +495,14 @@ __kernel void modelRayTrace(
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float3 rayBoxAdd = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-
             data_view_extent[0], 400.0);
-            float d = length(rayBoxAdd)*0.001;
-            float intBack = 0.0, intFront = 0.0;
+            //~ float d = length(rayBoxAdd);
+            //~ float intBack = 0.0, intFront = 0.0;
             float rayBoxLength = fast_length(rayBoxDelta);
 
             float3 rayBoxXyz = rayBoxOrigin;
             float val;
             
-            while ( fast_length(rayBoxXyz - rayBoxOrigin) < fast_length(rayBoxDelta) )
+            while ( fast_length(rayBoxXyz - rayBoxOrigin) < rayBoxLength )
             {
                 
                 val = model(rayBoxXyz, parameters);
@@ -512,29 +514,27 @@ __kernel void modelRayTrace(
                 }
                 
                 float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataLimits.x)/(dataLimits.y - dataLimits.x)), 0.5f);
-
-                intBack = tsfPosition.x;
-                intBack = clamp(intFront, 0.0, 1.0);
                 
-                sBack = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                //~ intBack = tsfPosition.x;
+                //~ intBack = clamp(intFront, 0.0, 1.0);
+                //~ sBack = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                //~ rgba.w = 1.0 - exp(-d*native_divide(fabs(sBack.w  - sFront.w), fabs(intBack - intFront) + 1e-10));
+                //~ rgba.xyz = native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(sBack.w  - sFront.w) + 1e-10)*rgba.w;
+                //~ rgba.xyz = d*native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(intBack - intFront) + 1e-10);
+                //~ rgba.w *=alpha;
+                //~ rgba = clamp(rgba, 0.0, 1.0);
+//~ 
+                //~ color.xyz += (1 - color.w)*rgba.xyz;
+                //~ color.w += (1 - color.w)*rgba.w;
+                sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                sample.w *= alpha;
+                clamp(sample, 0.0,1.0);
 
-                //~ if (intBack - intFront == 0.0) rgba.w = 1.0 - exp(-d*native_divide(sBack.w, intBack ));
-                rgba.w = 1.0 - exp(-d*native_divide(fabs(sBack.w  - sFront.w), fabs(intBack - intFront) + 1e-10));
+                color.xyz += (1 - color.w)*sample.xyz*sample.w;
+                color.w += (1 - color.w)*sample.w;
 
-                //~ if (sBack.w  - sFront.w == 0) rgba.xyz = native_divide(sBack.xyz, sBack.w)*rgba.w;
-                rgba.xyz = native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(sBack.w  - sFront.w) + 1e-10)*rgba.w;
-
-                rgba.w *=alpha;
-                rgba = clamp(rgba, 0.0, 1.0);
-
-                color.xyz += (1 - color.w)*rgba.xyz;
-                color.w += (1 - color.w)*rgba.w;
-
-                //~ color.xyz = color.xyz +(1 - color.w)*sample.xyz*sample.w;
-                //~ color.w = color.w +(1 - color.w)*sample.w;
-
-                sFront = sBack;
-                intFront = intBack;
+                //~ sFront = sBack;
+                //~ intFront = intBack;
                 rayBoxXyz += rayBoxAdd;
                 if (color.w > 0.999) break;
             }
