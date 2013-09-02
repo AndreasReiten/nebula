@@ -72,6 +72,6 @@ const char * gl_framebuffer_error_cstring(GLint error);
 void glGetErrorMessage(const char * context);
 void screenshot(int w, int h, const char* path);
 void setVbo(GLuint * vbo, float * buf, size_t length);
-void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf);
+void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function);
 void write_log(std::string text, std::string file, bool append);
 #endif

@@ -180,6 +180,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         if (data_extent_cl) clReleaseMemObject(data_extent_cl);
         if (bbox_extent_cl) clReleaseMemObject(bbox_extent_cl);
         if (view_matrix_inv_cl) clReleaseMemObject(view_matrix_inv_cl);
+        if (function_view_matrix_inv_cl) clReleaseMemObject(function_view_matrix_inv_cl);
         
         if (oct_index_cl) clReleaseMemObject(oct_index_cl);
         if (oct_brick_cl) clReleaseMemObject(oct_brick_cl);
@@ -443,10 +444,10 @@ void VolumeRenderGLWidget::setOCT_INDEX(MiniArray<unsigned int> * OCT_INDEX, siz
     MISC_INT[0] = (int) LEVELS;
     //~ 
     //~ 
-    std::cout << "this->OCT_INDEX.size() " << this->OCT_INDEX->size() << std::endl;
-    std::cout << "this->LEVELS " << this->LEVELS << std::endl;
-    std::cout << "this->DATA_EXTENT: " << std::endl;
-    DATA_EXTENT.print(3);
+    //~ std::cout << "this->OCT_INDEX.size() " << this->OCT_INDEX->size() << std::endl;
+    //~ std::cout << "this->LEVELS " << this->LEVELS << std::endl;
+    //~ std::cout << "this->DATA_EXTENT: " << std::endl;
+    //~ DATA_EXTENT.print(3);
     
     
     /* Load the contents into a CL texture */
@@ -678,8 +679,8 @@ void VolumeRenderGLWidget::initializeGL()
     
     /* Initialize and set the other stuff */
     this->init_freetype();
-    init_tsf(0, 0, &tsf_buf);
-    this->gen_tsf_tex(&tsf_buf);
+    init_tsf(0, 0, &transferFunction);
+    this->gen_tsf_tex(&transferFunction);
     this->data_extent_refresh();
     this->setTsfParameters();
     this->setMiscArrays();
@@ -736,15 +737,15 @@ void VolumeRenderGLWidget::setTsfParameters()
 {
     if ((*queue))
     {
-        MiniArray<float> BUF(TSF_PARAMETERS.size());
-        BUF.setDeep(BUF.size(), TSF_PARAMETERS.data());
+        //~ MiniArray<float> BUF(TSF_PARAMETERS.size());
+        //~ BUF.setDeep(BUF.size(), TSF_PARAMETERS.data());
         
         err = clEnqueueWriteBuffer ( (*queue),
             tsf_parameters_cl,
             CL_TRUE,
             0,
-            BUF.size()*sizeof(cl_float),
-            BUF.data(),
+            TSF_PARAMETERS.size()*sizeof(cl_float),
+            TSF_PARAMETERS.data(),
             0,0,0);
         if (err != CL_SUCCESS)
         {
@@ -757,16 +758,16 @@ void VolumeRenderGLWidget::setTsfParameters()
         {
             std::cout << "Error setting kernel argument 'tsf_parameters_cl': " << cl_error_cstring(err) << std::endl;
         }
-        {
-            Matrix<float> tsf_texcoords;
-            float buf2[] = {
-                TSF_PARAMETERS[0],TSF_PARAMETERS[1],TSF_PARAMETERS[1],TSF_PARAMETERS[0], 
-                0.0,0.0,1.0,1.0};
-            tsf_texcoords.setDeep(2, 4, buf2);
-            setVbo(&tex_coord_vbo[2], tsf_texcoords.getColMajor().data(), tsf_texcoords.size());
-        }
+        //~ {
+            //~ Matrix<float> tsf_texcoords;
+            //~ float buf2[] = {
+                //~ TSF_PARAMETERS[0],TSF_PARAMETERS[1],TSF_PARAMETERS[1],TSF_PARAMETERS[0], 
+                //~ 0.0,0.0,1.0,1.0};
+            //~ tsf_texcoords.setDeep(2, 4, buf2);
+            //~ setVbo(&tex_coord_vbo[2], tsf_texcoords.getColMajor().data(), tsf_texcoords.size());
+        //~ }
         
-        this->gen_tsf_tex(&tsf_buf);
+        //~ this->gen_tsf_tex(&transferFunction);
     }
 }
 
@@ -925,7 +926,7 @@ void VolumeRenderGLWidget::setMatrixB(float * buf)
     Matrix<float> B(3,3);
     B.setDeep(3,3,buf);
     
-    B.print(2);
+    //~ B.print(2);
     
     Matrix<float> a(3,1,0);
     a[0] = 1;
@@ -1079,8 +1080,8 @@ void VolumeRenderGLWidget::getUnitcellBasis(float * buf, int * hkl_offset, float
 void VolumeRenderGLWidget::setTsf(int value)
 {
     tsf_style = value;
-    init_tsf(value, tsf_alpha_style, &tsf_buf);
-    this->gen_tsf_tex(&tsf_buf);
+    init_tsf(value, tsf_alpha_style, &transferFunction);
+    this->gen_tsf_tex(&transferFunction);
     
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -1090,8 +1091,8 @@ void VolumeRenderGLWidget::setTsf(int value)
 void VolumeRenderGLWidget::setTsfAlphaStyle(int value)
 {
     tsf_alpha_style = value;
-    init_tsf(tsf_style, value, &tsf_buf);
-    this->gen_tsf_tex(&tsf_buf);
+    init_tsf(tsf_style, value, &transferFunction);
+    this->gen_tsf_tex(&transferFunction);
     
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -1131,7 +1132,7 @@ void VolumeRenderGLWidget::paintGL()
         bbox_max[2] = DATA_VIEW_EXTENT[5];
         
         // Draw the unitcell
-        if (isUnitcellValid && !isFunctionActive && isUnitcellActive) 
+        if (isUnitcellValid && isUnitcellActive) 
         {
             {
                 color.setDeep(4, clearInv.data());
@@ -1156,9 +1157,15 @@ void VolumeRenderGLWidget::paintGL()
         //~ if (color[3] > 0.4) color[3] = 0.4;
         //~ if (color[3] < 0.0) color[3] = 0.0; 
         
-        if (!isFunctionActive) std_3d_color_draw(elements, 24, color.data(), &data_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
-        
-        std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+        if (!isFunctionActive)
+        {
+            std_3d_color_draw(elements, 24, color.data(), &data_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+        }
+        else
+        {
+            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , (DATA_VIEW_MATRIX).getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+        }
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
@@ -1179,7 +1186,7 @@ void VolumeRenderGLWidget::paintGL()
         glClearColor(transparent[0], transparent[1], transparent[2], transparent[3]);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         
-        if (isUnitcellValid && !isFunctionActive) 
+        if (isUnitcellValid) 
         {
             MiniArray<float> bbox_min(3), bbox_max(3);
             bbox_min[0] = -10000;
@@ -1243,9 +1250,10 @@ void VolumeRenderGLWidget::paintGL()
         backDropTexPos(&position_vbo[8], 4);
         backDropTexPos(&position_vbo[9], 2);
 
-        if  (bricks_cl && oct_index_cl && oct_brick_cl && !isFunctionActive)
+        
         {
-            this->ray_tex_refresh(K_SVO_RAYTRACE);
+            if (bricks_cl && oct_index_cl && oct_brick_cl && !isFunctionActive) this->ray_tex_refresh(K_SVO_RAYTRACE);
+            else this->ray_tex_refresh(K_FUNCTION_RAYTRACE);
             
             std_2d_tex_draw(indices, 6, 0, ray_tex, &position_vbo[1], &tex_coord_vbo[1]);
             
@@ -1259,7 +1267,7 @@ void VolumeRenderGLWidget::paintGL()
             std_2d_tex_draw(indices, 6, 0, tsf_tex, &position_vbo[2], &tex_coord_vbo[2]);
             
             histTexPos(isLog, (float) HIST_MINMAX[0], (float) HIST_MINMAX[1], TSF_PARAMETERS[2], TSF_PARAMETERS[3]);
-            this->setTsfParameters();
+            //~ this->setTsfParameters();
             
             if (isLog) std_2d_tex_draw(indices, 6, 0, hist_tex_log, &position_vbo[3], &tex_coord_vbo[3]);
             else std_2d_tex_draw(indices, 6, 0, hist_tex_norm, &position_vbo[3], &tex_coord_vbo[3]);
@@ -1272,7 +1280,7 @@ void VolumeRenderGLWidget::paintGL()
                 size_t iter = 0;
                 bool isIterFat = false;
                 
-                for (int i = 0; i < hkl_indices.size()/6; i++)
+                for (size_t i = 0; i < hkl_indices.size()/6; i++)
                 {
                     if (
                     ((hkl_text_pos[i*3+0] > DATA_VIEW_EXTENT[0]) && (hkl_text_pos[i*3+0] < DATA_VIEW_EXTENT[1])) && 
@@ -1290,7 +1298,7 @@ void VolumeRenderGLWidget::paintGL()
                 }
                 if (!isIterFat)
                 {
-                    for (int i = 0; i < iter; i++)
+                    for (size_t i = 0; i < iter; i++)
                     {
                         
                         std::stringstream ss;
@@ -1302,25 +1310,8 @@ void VolumeRenderGLWidget::paintGL()
                 }
             }
         }
-        else if (isFunctionActive)
-        {
-            this->ray_tex_refresh(K_FUNCTION_RAYTRACE);
-            std_2d_tex_draw(indices, 6, 0, ray_tex, &position_vbo[1], &tex_coord_vbo[1]);
-            
-            glBlendFunc(GL_ONE, GL_ZERO);
-            std_2d_color_draw(indices_side_backdrop, 12, black.data(),  &position_vbo[7]);
-            std_2d_color_draw(indices_side_backdrop, 12, white.data(),  &position_vbo[8]);
-            std_2d_color_draw(indices_side_backdrop, 12, black.data(),  &position_vbo[9]);
-            std_2d_color_draw(indices, 6, white.data(),  &position_vbo[10]);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            
-            std_2d_tex_draw(indices, 6, 0, tsf_tex, &position_vbo[2], &tex_coord_vbo[2]);
-        }
-        
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
-    
-    
     
     // Set resolution seamlessly in accordance with requirements
     if (ray_res != 100) this->isRefreshRequired = true;
@@ -1341,8 +1332,6 @@ void VolumeRenderGLWidget::paintGL()
         std_2d_tex_draw(indices, 6, 0, std_2d_tex, &screen_vbo[4], &tex_coord_vbo[1]); 
         std_2d_tex_draw(indices, 6, 0, mini_uc_tex, &screen_vbo[0], &tex_coord_vbo[1]); 
     }
-    //~ std_2d_tex_draw(indices, 6, 0, tsf_tex, &position_vbo[2], &tex_coord_vbo[2]);
-    //~ std::cout << "vrWidget Alpha Channel = " << this->format().alpha() << " size = "<< this->format().alphaBufferSize()<<std::endl;
 }
 
 void VolumeRenderGLWidget::setHklFocus(const QString str)
@@ -1557,9 +1546,20 @@ void VolumeRenderGLWidget::view_matrix_refresh()
     {
         std::cout << "Error writing to CL buffer 'view_matrix_inv_cl': " << cl_error_cstring(err) << std::endl;
     }
+
+    err = clEnqueueWriteBuffer ( (*queue),
+        function_view_matrix_inv_cl,
+        CL_TRUE,
+        0,
+        DATA_VIEW_MATRIX.size()*sizeof(cl_float),
+        (DATA_VIEW_MATRIX).getInverse().data(),
+        0,0,0);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error writing to CL buffer 'view_matrix_inv_cl': " << cl_error_cstring(err) << std::endl;
+    }
     
-    
-    err = clSetKernelArg(K_FUNCTION_RAYTRACE, 3, sizeof(cl_mem), (void *) &view_matrix_inv_cl);
+    err = clSetKernelArg(K_FUNCTION_RAYTRACE, 3, sizeof(cl_mem), (void *) &function_view_matrix_inv_cl);
     err |= clSetKernelArg(K_SVO_RAYTRACE, 7, sizeof(cl_mem), (void *) &view_matrix_inv_cl);
     if (err != CL_SUCCESS)
     {
@@ -1658,10 +1658,6 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
     lastPos_y = event->y();
 }
 
-void VolumeRenderGLWidget::mousePressEvent(QMouseEvent *event)
-{
-    //~ std::cout << "Mouse press event!" << std::endl;
-}
 
 void VolumeRenderGLWidget::keyPressEvent(QKeyEvent *event)
 {
@@ -2192,7 +2188,6 @@ void VolumeRenderGLWidget::ray_tex_refresh(cl_kernel kernel)
         this->isRefreshRequired = false;
         
         err = clEnqueueAcquireGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
-        err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
         if (err != CL_SUCCESS)
         {
             std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
@@ -2230,7 +2225,6 @@ void VolumeRenderGLWidget::ray_tex_refresh(cl_kernel kernel)
         
         /* Release shared CL/GL objects */
         err = clEnqueueReleaseGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
-        err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
         clFinish((*queue));
         if (err != CL_SUCCESS)
         {
@@ -2842,14 +2836,11 @@ void VolumeRenderGLWidget::init_gl_programs()
     }
 }
 
-
-void VolumeRenderGLWidget::gen_tsf_tex(MiniArray<float> * tsf_buf)
+void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
 {
-    
     /* Generate a transfer function CL texture */
     if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
     if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
-    
     
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
@@ -2858,24 +2849,36 @@ void VolumeRenderGLWidget::gen_tsf_tex(MiniArray<float> * tsf_buf)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    
     glTexImage2D(
         GL_TEXTURE_2D,
         0,
         GL_RGBA32F,
-        tsf_buf->size()/4,
+        tsf->getSpline().getN(),
         1,
         0,
         GL_RGBA,
         GL_FLOAT,
-        tsf_buf->data());
-    glBindTexture(GL_TEXTURE_2D, 0); 
+        tsf->getSpline().getColMajor().toFloat().data());
+    glBindTexture(GL_TEXTURE_2D, 0);
     
     // Buffer for tsf_tex_cl
-    tsf_tex_cl = clCreateFromGLTexture2D((*context2), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, tsf_tex, &err);
+    tsf->getPreIntegrated().getColMajor().toFloat().print(2, "preIntegrated");
+    
+    cl_image_format tsf_format;
+    tsf_format.image_channel_order = CL_RGBA;
+    tsf_format.image_channel_data_type = CL_FLOAT;
+    
+    tsf_tex_cl = clCreateImage2D ( (*context2),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        &tsf_format,
+        tsf->getPreIntegrated().getN(),
+        1,
+        0,
+        tsf->getPreIntegrated().getColMajor().toFloat().data(),
+        &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Tsf: Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
+        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
     
     // The sampler for tsf_tex_cl
@@ -2897,7 +2900,6 @@ void VolumeRenderGLWidget::gen_tsf_tex(MiniArray<float> * tsf_buf)
 
 int VolumeRenderGLWidget::gen_ray_tex()
 {
-    //~ std::cout << "(0) gen_ray_tex()" << std::endl;
     /* Set a usable texture for thevolume rendering kernel */
     // Set dimensions
     ray_tex_dim[0] = (int)((float)WIDTH*ray_res*0.01f);
@@ -2915,7 +2917,6 @@ int VolumeRenderGLWidget::gen_ray_tex()
     MISC_INT[6] = ray_tex_dim[0];
     MISC_INT[7] = ray_tex_dim[1];
     setMiscArrays();
-    //~ std::cout << "glb_ws: "<< ray_glb_ws[0] << ", " << ray_glb_ws[1] << std::endl;  
     
     // Update GL texture
     glActiveTexture(GL_TEXTURE0);
@@ -2955,7 +2956,6 @@ int VolumeRenderGLWidget::gen_ray_tex()
         return 0;
     }
     
-    //~ std::cout << "Screen buffers set to " << ray_tex_dim[0] << " x "<< ray_tex_dim[1] << std::endl;
     return 1;
 }
 
@@ -3011,6 +3011,16 @@ int VolumeRenderGLWidget::init_cl()
     
     // Buffers
     view_matrix_inv_cl = clCreateBuffer((*context2),
+        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        16*sizeof(cl_float),
+        NULL,
+        &err);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+    }
+
+    function_view_matrix_inv_cl = clCreateBuffer((*context2),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         16*sizeof(cl_float),
         NULL,

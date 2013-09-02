@@ -96,7 +96,6 @@ protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
-    void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void wheelEvent(QWheelEvent *event);
@@ -126,7 +125,7 @@ private:
     void setMiscArrays();
     void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
     void std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * M1, float * M2, float * bbox_min, float * bbox_max );
-    void gen_tsf_tex(MiniArray<float> * tsf_buf);
+    void gen_tsf_tex(TsfMatrix<double> * tsf);
     void auto_rotate(int time, int treshold);
     void init_gl_programs();
     void setMessageString(QString str);
@@ -157,7 +156,7 @@ private:
     cl_image_format bricks_format;
     cl_sampler bricks_sampler, tsf_tex_sampler;
     cl_mem ray_tex_cl, tsf_tex_cl;
-    cl_mem view_matrix_inv_cl;
+    cl_mem view_matrix_inv_cl, function_view_matrix_inv_cl;
     cl_mem bbox_extent_cl, data_extent_cl, data_view_extent_cl, tsf_parameters_cl, misc_float_cl, misc_int_cl, misc_float_k_raytrace_cl;
     cl_mem bricks_cl, oct_index_cl, oct_brick_cl;
     cl_kernel K_SVO_RAYTRACE, K_FUNCTION_RAYTRACE;
@@ -206,13 +205,14 @@ private:
     Matrix<float> a;
     Matrix<float> b;
     Matrix<float> c;
+
+    TsfMatrix<double> transferFunction;
     
     MiniArray<GLuint> hkl_indices;
     MiniArray<float> color;
     MiniArray<float> * BRICKS;
     MiniArray<unsigned int> * OCT_INDEX;
     MiniArray<unsigned int> * OCT_BRICK;
-    MiniArray<float> tsf_buf;
     MiniArray<double> HIST_MINMAX;
     MiniArray<double> * HIST_NORM;
     MiniArray<double> * HIST_LOG;

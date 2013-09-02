@@ -70,7 +70,8 @@ private:
     QElapsedTimer * time;
     int image_w, image_h;
     int WIDTH, HEIGHT;
-    MiniArray<float> tsf_buffer;
+
+    TsfMatrix<double> transferFunction;
 
     MiniArray<float> white;
     MiniArray<float> transparent;
@@ -113,7 +114,7 @@ private:
 
     int setTarget();
     void setSource();
-    void setTsfTexture(float * tsf_buf);
+    void setTsfTexture(TsfMatrix<double> * tsf);
     
     size_t glb_ws[2];
     size_t loc_ws[2];

@@ -7,21 +7,21 @@
 #include <iomanip>
 #include <limits>
 #include <cstring>
-
 const double pi = 4.0*std::atan(1.0);
 
 template <class T>
 class Matrix {
     public:
+        Matrix();
         Matrix(size_t m, size_t n, T value);
         Matrix(size_t m, size_t n);
         Matrix(const Matrix & other);
-        //~ Matrix(Matrix && other);
-        Matrix();
+        Matrix(Matrix && other);
         ~Matrix();
         
-        const Matrix<float> getInverse() const;
-        const Matrix<T> getColMajor();
+        const Matrix<T> getInverse() const;
+        const Matrix<T> getColMajor() const;
+        Matrix<float> toFloat() const;
         
         const Matrix operator * (const Matrix&) const;
         const Matrix operator * (const T&) const;
@@ -32,14 +32,13 @@ class Matrix {
         
         T& operator[] (const size_t index);
         const T& operator[] (const size_t index) const;
-        Matrix& operator = (const Matrix &);
-        
+        Matrix& operator = (Matrix other);
+
         void setIdentity(size_t n);
         void set(size_t m, size_t n, T value);
         void setShallow(size_t m, size_t n, T * buffer);
         void setDeep(size_t m, size_t n, T * buffer);
         void reserve(size_t m, size_t n);
-        //~ void copy(size_t m, size_t n, T * buffer);
         void clear();
         
         T * data() const;
@@ -49,6 +48,7 @@ class Matrix {
         size_t getM() const;
         size_t getN() const;
         size_t size() const;
+        size_t bytes();
         
         void print(int precision = 0, const char * id = "") const;
         
@@ -57,6 +57,9 @@ class Matrix {
         size_t m;
         size_t n;
         T * buffer;
+
+        /* Swap function as per C++11 idiom */
+        void swap(Matrix& first, Matrix& second);
 };
 
 template<class T>
@@ -102,14 +105,12 @@ Matrix<T>::Matrix(const Matrix & other)
     }
 }
 
-//~ template <class T>
-//~ Matrix<T>::Matrix(Matrix && other)
-//~ {
-    //~ this->m = other.getM();
-    //~ this->n = other.getN();
-    //~ this->buffer = other.data();
-    //~ other.data() = 0;
-//~ }
+template <class T>
+Matrix<T>::Matrix(Matrix && other)
+{
+    swap(*this, other);
+}
+
 
 template <class T>
 Matrix<T>::~Matrix()
@@ -118,6 +119,27 @@ Matrix<T>::~Matrix()
     {
         delete[] this->buffer;
     }
+}
+
+template <class T>
+void Matrix<T>::swap(Matrix& first, Matrix& second)
+{
+    std::swap(first.m, second.m);
+    std::swap(first.n, second.n); 
+    std::swap(first.buffer, second.buffer);
+}
+
+template <class T>
+Matrix<float> Matrix<T>::toFloat() const
+{
+    Matrix<float> buf(this->m, this->n);
+
+    for (size_t i = 0; i < this->m*this->n; i++)
+    {
+        buf[i] = (float) this->buffer[i];
+    }
+
+    return buf;
 }
 
 template <class T>
@@ -131,7 +153,13 @@ void Matrix<T>::setIdentity(size_t n)
 }
 
 template <class T>
-const Matrix<T> Matrix<T>::getColMajor()
+size_t Matrix<T>::bytes()
+{
+    return m*n*sizeof(T);
+}
+
+template <class T>
+const Matrix<T> Matrix<T>::getColMajor()  const
 {
     Matrix<T> ColMajor;
     ColMajor.reserve(this->getN(), this->getM());
@@ -150,7 +178,7 @@ const Matrix<T> Matrix<T>::getColMajor()
 }
     
 template <class T>
-const Matrix<float> Matrix<T>::getInverse()  const
+const Matrix<T> Matrix<T>::getInverse()  const
 {
     if(m != n) std::cout << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")" << std::endl; 
     Matrix<double> L;
@@ -224,7 +252,7 @@ const Matrix<float> Matrix<T>::getInverse()  const
     } 
     
     /* Compute X in UX = Y */
-    Matrix<float> X;
+    Matrix<T> X;
     X.reserve(U.getN(), Y.getN());
     
     // For each column
@@ -335,8 +363,6 @@ template <class T>
 const Matrix<T> Matrix<T>::operator * (const T& factor) const
 {
     Matrix<T> c(*this);
-    //~ c.copy(this->m, this->n, this->data());
-    
     for (size_t i = 0; i < c.getM(); i++)
     {
         for (size_t j = 0; j < c.getN(); j++)
@@ -344,7 +370,6 @@ const Matrix<T> Matrix<T>::operator * (const T& factor) const
             c[i*c.getN() + j] = c[i*c.getN() + j] * factor;
         }
     }
-    
     return c;
 }
 
@@ -412,18 +437,10 @@ void Matrix<T>::print(int precision, const char * id) const
 
 
 template <class T>
-Matrix<T>& Matrix<T>::operator = (const Matrix& other)
+Matrix<T>& Matrix<T>::operator = (Matrix other)
 {
-    // Well this could be simplified for clarity
-    this->m = other.getM();
-    this->n = other.getN();
-    T * local_buffer = new T[m*n];
-    for (size_t i = 0; i < m*n; i++)
-    {
-        local_buffer[i] = other[i];
-    }
-    delete[] this->buffer;
-    this->buffer = local_buffer;
+    swap(*this, other);
+
     return * this; 
 }
 
@@ -542,6 +559,7 @@ size_t Matrix<T>::size() const
 template <class T>
 class CameraToClipMatrix : public Matrix<T>{
     public:
+        using Matrix<T>::Matrix;
         CameraToClipMatrix();
         ~CameraToClipMatrix();
         
@@ -661,14 +679,182 @@ void CameraToClipMatrix<T>::setProjection(bool value)
     }
 }
 
+
+/* TsfMatrix */
+template <class T>
+class TsfMatrix : public Matrix<T>{
+    public:
+        using Matrix<T>::Matrix;
+        TsfMatrix();
+        ~TsfMatrix();
+
+        TsfMatrix<T>& operator = (TsfMatrix other);
+
+        Matrix<T> getSpline();
+        Matrix<T> getPreIntegrated();
+        void setSpline(size_t resolution);
+        void setPreIntegrated(T factor);
+
+    private:
+        Matrix<T> splinedTsf;
+        Matrix<T> preIntegratedTsf;
+};
+
+template <class T>
+TsfMatrix<T>::TsfMatrix()
+{
+    this->setIdentity(4);
+}
+
+template <class T>
+TsfMatrix<T>::~TsfMatrix()
+{
+    this->clear();
+}
+
+template <class T>
+TsfMatrix<T>& TsfMatrix<T>::operator = (TsfMatrix other)
+{
+    swap(*this, other);
+
+    return * this; 
+}
+
+
+template <class T>
+Matrix<T> TsfMatrix<T>::getSpline()
+{
+    return splinedTsf;
+}
+template <class T>
+Matrix<T> TsfMatrix<T>::getPreIntegrated()
+{
+    return preIntegratedTsf;
+}
+template <class T>
+void TsfMatrix<T>::setSpline(size_t resolution)
+{
+    // Spline interpolation for each row oversampled at resolution > n''
+
+    // Calculate the second derivative for the function in all points
+    Matrix<double> secondDerivatives(this->m, this->n);
+    double stepLength = 1.0/((float) (this->n - 1));
+
+    for (size_t i = 0; i < this->m; i++)
+    {
+        Matrix<double> A(this->n, this->n, 0.0);
+        Matrix<double> X(this->n, 1, 0.0);
+        Matrix<double> B(this->n, 1, 0.0);
+
+        // Set the boundary conditions
+        A[0] = 1.0;
+        A[(this->n)*(this->n)-1] = 1.0;
+        B[0] = 0.0;
+        B[this->n-1] = 0.0;
+        for (size_t j = 1; j < this->n - 1; j++)
+        {
+            double x_prev = (j - 1) * stepLength;
+            double x = j * stepLength;
+            double x_next = (j + 1) * stepLength;
+
+            double f_prev = this->buffer[i*this->n+j-1];
+            double f = this->buffer[i*this->n+j];
+            double f_next = this->buffer[i*this->n+j+1];
+            
+            B[j] = ((f_next - f)/(x_next - x) - (f - f_prev)/(x - x_prev));
+
+            A[j*this->n+j-1] = (x - x_prev) / 6.0;
+            A[j*this->n+j] = (x_next - x_prev) / 3.0;
+            A[j*this->n+j+1] = (x_next - x) / 6.0;
+        }
+        
+        X = A.getInverse()*B;
+        
+        for (size_t j = 0; j < this->n; j++)
+        {
+            secondDerivatives[i*this->n+j] = X[j];
+        }
+
+    }
+    //~ secondDerivatives.print(2,"Second derivatives");
+
+    this->splinedTsf.reserve(this->m, resolution);
+    double interpolationStepLength = 1.0/((float) (resolution - 1));
+    
+    for (size_t i = 0; i < this->m; i++)
+    {
+        for (size_t j = 0; j < resolution; j++)
+        {
+
+            double x = j * interpolationStepLength;
+            size_t k = ((float)(this->n - 1) * (float)j / ((float)(resolution-1)));
+            if ( k >= this->n - 1) k = this->n - 2;
+            
+            double x_k = (k) * stepLength;
+            double x_k_next = (k + 1) * stepLength;
+
+            double f_k = this->buffer[i*this->n+k];
+            double f_k_next = this->buffer[i*this->n+k+1];
+
+            double f_dd_k = secondDerivatives[i*this->n+k];
+            double f_dd_k_next = secondDerivatives[i*this->n+k+1];
+
+            double a = (x_k_next - x)/(x_k_next - x_k);
+            double b = 1.0 - a;
+            double c = (a*a*a - a)*(x_k_next - x)*(x_k_next - x)/6.0;
+            double d = (b*b*b - b)*(x_k_next - x)*(x_k_next - x)/6.0;
+            splinedTsf[i*resolution+j] = a*f_k + b*f_k_next + c*f_dd_k + d*f_dd_k_next;
+
+            if (splinedTsf[i*resolution+j] < 0.0) splinedTsf[i*resolution+j] = 0.0;
+            if (splinedTsf[i*resolution+j] > 1.0) splinedTsf[i*resolution+j] = 1.0;
+        }
+    }
+}
+template <class T>
+void TsfMatrix<T>::setPreIntegrated(T factor)
+{
+    size_t resolution = splinedTsf.getN();
+    
+    preIntegratedTsf.set(splinedTsf.getM(), resolution, 0.0);
+    
+    double stepLength = 1.0/((float) (resolution - 1));
+
+    preIntegratedTsf[0*resolution] = 0;
+    preIntegratedTsf[1*resolution] = 0;
+    preIntegratedTsf[2*resolution] = 0;
+    preIntegratedTsf[3*resolution] = 0;
+    
+    for (size_t j = 1; j < resolution; j++)
+    {
+        double R = splinedTsf[0*resolution+j];
+        double G = splinedTsf[1*resolution+j];
+        double B = splinedTsf[2*resolution+j];
+        double A = splinedTsf[3*resolution+j];
+
+        double R_prev = splinedTsf[0*resolution+j-1];
+        double G_prev = splinedTsf[1*resolution+j-1];
+        double B_prev = splinedTsf[2*resolution+j-1];
+        double A_prev = splinedTsf[3*resolution+j-1];
+        
+        preIntegratedTsf[0*resolution+j] = preIntegratedTsf[0*resolution+j-1] + stepLength*0.5*(R*A + R_prev*A_prev);
+        preIntegratedTsf[1*resolution+j] = preIntegratedTsf[1*resolution+j-1] + stepLength*0.5*(G*A + G_prev*A_prev);
+        preIntegratedTsf[2*resolution+j] = preIntegratedTsf[2*resolution+j-1] + stepLength*0.5*(B*A + B_prev*A_prev);
+        preIntegratedTsf[3*resolution+j] = preIntegratedTsf[3*resolution+j-1] + stepLength*0.5*(A + A_prev);
+    }
+}
+
+
 /* RotationMatrix */
 template <class T>
 class RotationMatrix : public Matrix<T>{
     public:
+        using Matrix<T>::Matrix;
         RotationMatrix();
         ~RotationMatrix();
-        
-        RotationMatrix& operator = (const RotationMatrix &);
+
+
+        RotationMatrix<T>& operator = (RotationMatrix other);
+        //~ RotationMatrix& operator = (const RotationMatrix &);
         RotationMatrix& operator = (const Matrix<T> &);
         
         void setXRotation(double value);
@@ -695,19 +881,27 @@ RotationMatrix<T>::~RotationMatrix()
 }
 
 template <class T>
-RotationMatrix<T>& RotationMatrix<T>::operator = (const RotationMatrix & other)
+RotationMatrix<T>& RotationMatrix<T>::operator = (RotationMatrix other)
 {
-    this->m = other.getM();
-    this->n = other.getN();
-    T * local_buffer = new T[this->m*this->n];
-    for (size_t i = 0; i < this->m*this->n; i++)
-    {
-        local_buffer[i] = other[i];
-    }
-    delete[] this->buffer;
-    this->buffer = local_buffer;
+    swap(*this, other);
+
     return * this; 
 }
+
+//~ template <class T>
+//~ RotationMatrix<T>& RotationMatrix<T>::operator = (const RotationMatrix & other)
+//~ {
+    //~ this->m = other.getM();
+    //~ this->n = other.getN();
+    //~ T * local_buffer = new T[this->m*this->n];
+    //~ for (size_t i = 0; i < this->m*this->n; i++)
+    //~ {
+        //~ local_buffer[i] = other[i];
+    //~ }
+    //~ delete[] this->buffer;
+    //~ this->buffer = local_buffer;
+    //~ return * this; 
+//~ }
 
 template <class T>
 RotationMatrix<T>& RotationMatrix<T>::operator = (const Matrix<T> & other)

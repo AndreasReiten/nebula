@@ -132,7 +132,7 @@ void ImageRenderGLWidget::initializeGL()
     this->init_freetype();
     this->setTarget();
     this->setSource();
-    this->setTsfTexture(tsf_buffer.data());
+    this->setTsfTexture(&transferFunction);
     std::cout << "Done Initializing OpenGL and CL " << std::endl;
 }
 
@@ -224,12 +224,6 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
     this->WIDTH = w;
     this->HEIGHT = h;
     this->setTexturePositions();
-    //~ glActiveTexture(GL_TEXTURE0);
-    //~ glDeleteTextures(5, image_tex);
-    //~ glGenTextures(5, image_tex);
-    //~ setTarget();
-    //~ setSource();
-    //~ setTsfTexture(tsf_buffer.data());
     glViewport(0, 0, w, h);
 }
 
@@ -265,7 +259,7 @@ void ImageRenderGLWidget::setRawImage(PilatusFile * file)
         
         setTarget();
         setSource();
-        setTsfTexture(tsf_buffer.data());
+        setTsfTexture(&transferFunction);
         this->setTexturePositions();
     }
     
@@ -369,7 +363,7 @@ void ImageRenderGLWidget::setCorrectedImage(PilatusFile * file)
 
         setTarget();
         setSource();
-        setTsfTexture(tsf_buffer.data());
+        setTsfTexture(&transferFunction);
         this->setTexturePositions();
     }
     
@@ -524,7 +518,7 @@ int ImageRenderGLWidget::init_gl()
         setVbo(&screen_texpos_vbo[4], mat.getColMajor().data(), mat.size());
     }
 
-    init_tsf(42, 0, &tsf_buffer);
+    init_tsf(42, 0, &transferFunction);
     
     return 1;
 }
@@ -862,7 +856,7 @@ void ImageRenderGLWidget::setSource()
 }
 
 
-void ImageRenderGLWidget::setTsfTexture(float * tsf_buf)
+void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
 {
     /* Generate a transfer function CL texture */
     //~ if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
@@ -879,12 +873,12 @@ void ImageRenderGLWidget::setTsfTexture(float * tsf_buf)
         GL_TEXTURE_2D,
         0,
         GL_RGBA32F,
-        8,
+        tsf->getSpline().getN(),
         1,
         0,
         GL_RGBA,
         GL_FLOAT,
-        tsf_buf);
+        tsf->getSpline().getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0); 
     
     // Buffer for tsf_tex_cl

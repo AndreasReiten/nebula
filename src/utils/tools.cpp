@@ -218,11 +218,11 @@ GLuint create_shader(const char* resource, GLenum type)
     return shader;
 }
 
-void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
+void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function)
 {
-    /* Some hand crafted transfer functions */
+    /* Some hand crafted transfer functions. Only the RGB part is used. The alpha (A) is computed later */
     
-    float buf_hot[32] = {
+    double buf_hot[32] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f,
         0.7f, 0.0f, 0.0f, 1.0f,
@@ -233,7 +233,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         1.0f, 1.0f, 1.0f, 1.0f,
         };
         
-    float buf_galaxy[32] = {
+    double buf_galaxy[32] = {
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 1.0f,
         1.0f, 0.0f, 1.0f, 1.0f,
@@ -244,7 +244,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         1.0f, 1.0f, 1.0f, 1.0f,
         };
         
-    float buf_hsv[32] = {
+    double buf_hsv[32] = {
         1.f, 0.f, 0.f, 0.f,
         1.f, 0.f, 0.f, 1.f,
         1.f, 0.f, 1.f, 1.f,
@@ -255,7 +255,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         1.f, 0.f, 0.f, 1.f,
         };
     
-    float buf_binary[32] = {
+    double buf_binary[32] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         0.143f, 0.143f, 0.143f, 1.0f,
         0.286f, 0.286f, 0.286f, 1.0f,
@@ -266,7 +266,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         1.f, 1.0f, 1.0f, 1.0f,
         };
         
-    float buf_yranib[32] = {
+    double buf_yranib[32] = {
         1.f, 1.0f, 1.0f, 0.0f,
         0.857f, 0.857f, 0.857f, 1.0f,
         0.714f, 0.714f, 0.714f, 1.0f,
@@ -277,7 +277,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         0.0f, 0.0f, 0.0f, 1.0f,
         };
     
-    float buf_winter[32] = {
+    double buf_winter[32] = {
         0.0f, 1.f, 0.4f, 0.f,
         0.0f, 1.f, 0.6f, 1.f,
         0.0f, 0.8f, 0.8f, 1.f,
@@ -288,7 +288,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         0.0f, 0.0f, 1.f, 1.f,
         };
     
-    float buf_ice[32] = {
+    double buf_ice[32] = {
         1.f, 1.f, 1.f, 0.f,
         1.f, 1.0f, 1.f, 1.f,
         0.f, 0.9f, 1.f, 1.f,
@@ -299,7 +299,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         0.f, 0.3f, 1.f, 1.f,
         };
     
-    float buf_rainbow[32] = {
+    double buf_rainbow[32] = {
         1.f, 0.f, 0.f, 0.f,
         1.f, 0.f, 0.f, 1.f,
         1.f, 0.5f, 0.f, 1.f,
@@ -310,7 +310,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         0.7f, 0.f, 1.0f, 1.f,
         };
 
-    float buf_white_contrast[32] = {
+    double buf_white_contrast[32] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f,
         0.7f, 0.0f, 0.0f, 1.0f,
@@ -321,7 +321,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         0.5f, 0.0f, 1.0f, 1.0f,
         };
 
-    float buf_white[32] = {
+    double buf_white[32] = {
         1.0f, 1.0f, 1.0f, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f,
@@ -332,7 +332,7 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         1.0f, 1.0f, 1.0f, 1.0f,
         };
 
-    float buf_black[32] = {
+    double buf_black[32] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 0.0f,
@@ -342,83 +342,87 @@ void init_tsf(int color_style, int alpha_style, MiniArray<float> * buf)
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 0.0f,
         };
-        
+
+    Matrix<double> tmp;
     switch (color_style)
     {
         case 0:
-            buf->setDeep(32, buf_hot);
+            tmp.setDeep(8, 4, buf_hot);
             break;
         case 1:
-            buf->setDeep(32, buf_winter);
+            tmp.setDeep(8, 4, buf_winter);
             break;
         case 2:
-            buf->setDeep(32, buf_ice);
+            tmp.setDeep(8, 4, buf_ice);
             break;
         case 3:
-            buf->setDeep(32, buf_rainbow);
+            tmp.setDeep(8, 4, buf_rainbow);
             break;
         case 4:
-            buf->setDeep(32, buf_hsv);
+            tmp.setDeep(8, 4, buf_hsv);
             break;
         case 5:
-            buf->setDeep(32, buf_binary);
+            tmp.setDeep(8, 4, buf_binary);
             break;
         case 6:
-            buf->setDeep(32, buf_yranib);
+            tmp.setDeep(8, 4, buf_yranib);
             break;
         case 7:
-            buf->setDeep(32, buf_galaxy);
+            tmp.setDeep(8, 4, buf_galaxy);
             break;
         case 8:
-            buf->setDeep(32, buf_white);
+            tmp.setDeep(8, 4, buf_white);
             break;
         case 9:
-            buf->setDeep(32, buf_black);
+            tmp.setDeep(8, 4, buf_black);
             break;
         case 42:
-            buf->setDeep(32, buf_white_contrast);
+            tmp.setDeep(8, 4, buf_white_contrast);
             break;
         default:
-            buf->setDeep(32, buf_hot);
+            tmp.setDeep(8, 4, buf_hot);
             break;
     }
-    
+
+    // Compute the alpha
     switch (alpha_style)
     {
         case 0:
             // Uniform alpha except for the first vertex
-            (*buf)[3] = 0.0;
+            tmp[3] = 0.0;
             for (int i = 4; i < 32; i+=4)
             {
-                (*buf)[i+3] = 1.0;
+                tmp[i+3] = 1.0;
             }
             break;
         case 1:
             // Linearly increasing alpha
             for (int i = 0; i < 32; i+=4)
             {
-                (*buf)[i+3] = ((float)i/4)/7.0;
+                tmp[i+3] = ((float)i/4)/7.0;
             }
             break;
         case 2:
             // Exponentially increasing data
-            (*buf)[3] = 0.0;
+            tmp[3] = 0.0;
             for (int i = 4; i < 32; i+=4)
             {
-                (*buf)[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
+                tmp[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
             }
             break;
         default:
             for (int i = 0; i < 32; i+=4)
             {
-                (*buf)[i+3] = 1.0;
+                tmp[i+3] = 1.0;
             }
             break;
     }
-    //~ Matrix<float> tmp(8,4);
-    //~ tmp.setDeep(8,4,buf->data());
-    //~ std::cout << "Alpha style " << alpha_style << std::endl;
-    //~ std::cout << "Color style " << color_style << std::endl;
-    //~ tmp.print(2);
     
+    transfer_function->setDeep(4, 8, tmp.getColMajor().data());
+    transfer_function->setSpline(256);
+    transfer_function->setPreIntegrated(1.0);
+    
+    //~ tmp.getColMajor().print(2, "The matrix sent to be splined:");
+    //~ transfer_function->getSpline().print(2,"Splined");
+    //~ transfer_function->getPreIntegrated().print(2,"Integrated");
 }
