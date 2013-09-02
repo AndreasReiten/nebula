@@ -344,13 +344,13 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     this->treshold_reduce_low = treshold_reduce_low;
     this->treshold_reduce_high = treshold_reduce_high;
 
-    // The filter creates a 2D map of 1's and 0's. 1 means keep the value and 0 means trash it.
+    // Targets
     cl_image_format target_format;
     target_format.image_channel_order = CL_INTENSITY;
     target_format.image_channel_data_type = CL_FLOAT;
     
-    // Prepare the target
-    cl_mem target_cl = clCreateImage2D ( (*context),
+    // Prepare the target for the corrected pixels (only intensity)
+    cl_mem i_target_cl = clCreateImage2D ( (*context),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
         &target_format,
         fast_dimension,
@@ -362,6 +362,24 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
+
+    target_format.image_channel_order = CL_RGBA;
+    target_format.image_channel_data_type = CL_FLOAT;
+    
+    // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
+    cl_mem xyzi_target_cl = clCreateImage2D ( (*context),
+        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        &target_format,
+        fast_dimension,
+        slow_dimension,
+        0,
+        NULL,
+        &err);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+    }
+
     
     // Load data into a CL texture 
     cl_image_format source_format;
@@ -394,25 +412,38 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     }
     
     // The sampler 
-    cl_sampler source_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
     }
+
+    std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
     
     // SET KERNEL ARGS
-    err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &target_cl);
-    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) &background_cl);
-    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_sampler), &source_sampler);
+    err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &i_target_cl);
+    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) &xyzi_target_cl);
+    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) &background_cl);
+    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_sampler), &intensity_sampler);
     float threshold_reduce[2] = {treshold_reduce_low, treshold_reduce_high};
-    err |= clSetKernelArg(*filterKernel, 4, 2*sizeof(cl_float), threshold_reduce);
-    std::cout << "Src "<< flux  << " " << exposure_time << std::endl;
-    std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
-    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_float), &flux);
-    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_float), &exposure_time);
-    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_float), &background_flux);
-    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*filterKernel, 5, 2*sizeof(cl_float), threshold_reduce);
+    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_float), &pixel_size_x);
+    err |= clSetKernelArg(*filterKernel, 9, sizeof(cl_float), &pixel_size_y);
+    err |= clSetKernelArg(*filterKernel, 10, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*filterKernel, 11, sizeof(cl_float), &wavelength);
+    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &detector_distance);
+    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &beam_x);
+    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &beam_y);
+    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &start_angle);
+    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &angle_increment);
+    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &kappa);
+    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &phi);
+    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &omega);
+    
     if (err != CL_SUCCESS)
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
@@ -450,7 +481,7 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     region[2] = 1;
     
     clEnqueueReadImage ( 	*queue,
-        target_cl,
+        i_target_cl,
         true,
         origin,
         region,
@@ -461,10 +492,11 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
         NULL,
         NULL);
     
-    if (target_cl) clReleaseMemObject(target_cl);
+    if (i_target_cl) clReleaseMemObject(i_target_cl);
+    if (ixyz_target_cl) clReleaseMemObject(ixyz_target_cl);
     if (source_cl) clReleaseMemObject(source_cl);
     if (background_cl) clReleaseMemObject(background_cl);
-    if (source_sampler) clReleaseSampler(source_sampler);
+    if (intensity_sampler) clReleaseSampler(intensity_sampler);
 
     // Populate the intenity and index arrays by extracting nonzero values
     this->intensity.reserve(fast_dimension*slow_dimension);
