@@ -58,7 +58,7 @@ void MainWindow::init_emit()
     
     treshLimA_DSB->setValue(10);
     treshLimB_DSB->setValue(1e9);
-    treshLimC_DSB->setValue(0);
+    treshLimC_DSB->setValue(10);
     treshLimD_DSB->setValue(1e9);
     
 }
@@ -687,13 +687,13 @@ void MainWindow::createInteractives()
         readFilesButton = new QPushButton;
         readFilesButton->setIcon(QIcon(":/art/proceed.png"));
         readFilesButton->setIconSize(QSize(24,24));
-        readFilesButton->setText("Read/Correct ");
+        readFilesButton->setText("Read ");
         readFilesButton->setEnabled(false);
 
         projectFilesButton = new QPushButton;
         projectFilesButton->setIcon(QIcon(":/art/proceed.png"));
         projectFilesButton->setIconSize(QSize(24,24));
-        projectFilesButton->setText("Project ");
+        projectFilesButton->setText("Correction and Projection ");
         projectFilesButton->setEnabled(false);
 
         generateSvoButton = new QPushButton;

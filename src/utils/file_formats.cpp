@@ -91,6 +91,11 @@ float * PilatusFile::getImage()
     return data_buf.data();
 }
 
+float * PilatusFile::getCorrectedImage()
+{
+    return corrected_data_buf.data();
+}
+
 MiniArray<float> PilatusFile::getTest()
 {
     return data_buf;
@@ -339,7 +344,7 @@ void PilatusFile::clearData()
     data_buf.clear();
 }
 
-int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
+int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low, int treshold_reduce_high, int treshold_project_low, int treshold_project_high, bool isProjectionActive)
 {
     this->treshold_reduce_low = treshold_reduce_low;
     this->treshold_reduce_high = treshold_reduce_high;
@@ -385,7 +390,7 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     cl_image_format source_format;
     source_format.image_channel_order = CL_INTENSITY;
     source_format.image_channel_data_type = CL_FLOAT;
-    
+
     cl_mem source_cl = clCreateImage2D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
@@ -411,14 +416,47 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
     
-    // The sampler 
+    // A sampler 
     cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
     }
 
-    std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
+    // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
+    int active_angle = 2;
+    
+    if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
+    else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
+    else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
+
+    RotationMatrix<float> PHI;
+    RotationMatrix<float> KAPPA;
+    RotationMatrix<float> OMEGA;
+    RotationMatrix<float> sampleRotMat;
+    
+    float alpha =  0.8735582;
+    float beta =  0.000891863;
+
+    PHI.setArbRotation(-phi, beta, 0);
+    KAPPA.setArbRotation(-kappa, alpha, 0);
+    OMEGA.setZRotation(-omega);
+    
+    sampleRotMat = PHI*KAPPA*OMEGA;
+    sampleRotMat.print(5, "Sample Rotation Matrix");
+
+    cl_mem sample_rotation_matrix_cl = clCreateBuffer((*context),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        sampleRotMat.bytes(),
+        sampleRotMat.data(),
+        &err);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+    }
+    
+        
+    //~ std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
     
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &i_target_cl);
@@ -426,24 +464,24 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) &background_cl);
     err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) &source_cl);
     err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_sampler), &intensity_sampler);
-    float threshold_reduce[2] = {treshold_reduce_low, treshold_reduce_high};
-    err |= clSetKernelArg(*filterKernel, 5, 2*sizeof(cl_float), threshold_reduce);
-    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_float), &background_flux);
-    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_float), &backgroundExpTime);
-    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_float), &pixel_size_x);
-    err |= clSetKernelArg(*filterKernel, 9, sizeof(cl_float), &pixel_size_y);
-    err |= clSetKernelArg(*filterKernel, 10, sizeof(cl_float), &exposure_time);
-    err |= clSetKernelArg(*filterKernel, 11, sizeof(cl_float), &wavelength);
-    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &detector_distance);
-    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &beam_x);
-    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &beam_y);
-    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &flux);
-    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &start_angle);
-    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &angle_increment);
-    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &kappa);
-    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &phi);
-    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &omega);
-    
+    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    float threshold_reduce[2] = {(float)treshold_reduce_low, (float)treshold_reduce_high};
+    err |= clSetKernelArg(*filterKernel, 6, 2*sizeof(cl_float), threshold_reduce);
+    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*filterKernel, 9, sizeof(cl_float), &pixel_size_x);
+    err |= clSetKernelArg(*filterKernel, 10, sizeof(cl_float), &pixel_size_y);
+    err |= clSetKernelArg(*filterKernel, 11, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &wavelength);
+    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &detector_distance);
+    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &beam_x);
+    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &beam_y);
+    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &start_angle);
+    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &angle_increment);
+    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &kappa);
+    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &phi);
+    err |= clSetKernelArg(*filterKernel, 21, sizeof(cl_float), &omega);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
@@ -468,7 +506,7 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
         }
     }
     clFinish(*queue);
-    
+
     // Read the data
     size_t origin[3];
     origin[0] = 0;
@@ -479,43 +517,34 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     region[0] = fast_dimension;
     region[1] = slow_dimension;
     region[2] = 1;
+
+    corrected_data_buf.reserve(fast_dimension*slow_dimension);
+    clEnqueueReadImage ( *queue, i_target_cl, true, origin, region, 0, 0, this->corrected_data_buf.data(), 0, NULL, NULL);
     
-    clEnqueueReadImage ( 	*queue,
-        i_target_cl,
-        true,
-        origin,
-        region,
-        fast_dimension*sizeof(cl_float),
-        0,
-        this->data_buf.data(),
-        0,
-        NULL,
-        NULL);
+    MiniArray<float> projected_data_buf(fast_dimension*slow_dimension*4);
+    clEnqueueReadImage ( *queue, xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
     
     if (i_target_cl) clReleaseMemObject(i_target_cl);
-    if (ixyz_target_cl) clReleaseMemObject(ixyz_target_cl);
+    if (xyzi_target_cl) clReleaseMemObject(xyzi_target_cl);
     if (source_cl) clReleaseMemObject(source_cl);
     if (background_cl) clReleaseMemObject(background_cl);
+    if (sample_rotation_matrix_cl) clReleaseMemObject(sample_rotation_matrix_cl);
     if (intensity_sampler) clReleaseSampler(intensity_sampler);
 
-    // Populate the intenity and index arrays by extracting nonzero values
-    this->intensity.reserve(fast_dimension*slow_dimension);
-    this->index.reserve(fast_dimension*slow_dimension);
-    size_t iter = 0;
-    
-    for (int i = 0; i < (int) slow_dimension*fast_dimension; i++)
+    if (isProjectionActive)
     {
-        if (data_buf[i] > 0.0f)
+        for (size_t i = 0; i < fast_dimension*slow_dimension; i++)
         {
-            intensity[iter] = data_buf[i];
-            index[iter] = i;
-            iter++;
-        }  
+            if ((projected_data_buf[i*4+3] > treshold_project_low) && (projected_data_buf[i*4+3] < treshold_project_high))
+            {
+                outBuf[(*n)+0] = projected_data_buf[i*4+0]; 
+                outBuf[(*n)+1] = projected_data_buf[i*4+1];
+                outBuf[(*n)+2] =  projected_data_buf[i*4+2];
+                outBuf[(*n)+3] = projected_data_buf[i*4+3];
+                (*n)+=4;
+            }
+        }
     }
-    
-    this->intensity.resize(iter);
-    this->index.resize(iter);
-
     return 1;
 }
 

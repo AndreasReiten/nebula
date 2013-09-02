@@ -622,18 +622,18 @@ int VolumeDataSet::funcAllInOne()
             return 0;
         }
         // Filter file and get status
-        STATUS_OK = file.filterData(treshold_reduce[0], treshold_reduce[1]);
-        if (STATUS_OK)
-        {
-            emit changedCorrectedImage(&file);
-            emit repaintRequest();
-        }
-        else
-        {
-            setMessageString("\n[AllInOne] Error: could not filter \""+file.getPath()+"\"");
-            return 0;
-        }
-        size_reduced += file.getBytes();
+        //~ STATUS_OK = file.filterData(treshold_reduce[0], treshold_reduce[1]);
+        //~ if (STATUS_OK)
+        //~ {
+            //~ emit changedCorrectedImage(&file);
+            //~ emit repaintRequest();
+        //~ }
+        //~ else
+        //~ {
+            //~ setMessageString("\n[AllInOne] Error: could not filter \""+file.getPath()+"\"");
+            //~ return 0;
+        //~ }
+        //~ size_reduced += file.getBytes();
         // Project
         if (n > limit)
         { 
@@ -643,12 +643,23 @@ int VolumeDataSet::funcAllInOne()
         }
         else
         {
-            STATUS_OK = file.project( &n, POINTS.data(), treshold_project[0], treshold_project[1]);
-            if (!STATUS_OK)
+            STATUS_OK = file.filterData( &n, POINTS.data(), treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1], 1);
+            if (STATUS_OK)
+            {
+                emit changedCorrectedImage(&RAWFILE[i]);
+                emit repaintRequest();
+            }
+            else
             {
                 setMessageString("\n[AllInOne] Error: could not project \""+file.getPath()+"\"");
                 return 0;
             }
+            //~ STATUS_OK = file.project( &n, POINTS.data(), treshold_project[0], treshold_project[1]);
+            //~ if (!STATUS_OK)
+            //~ {
+                //~ setMessageString("\n[AllInOne] Error: could not project \""+file.getPath()+"\"");
+                //~ return 0;
+            //~ }
         }
         n_ok_files++;
         // Update the progress bar
@@ -786,7 +797,8 @@ void VolumeDataSet::setDisplayFrame(int value)
     
     // Set file and get status
     int STATUS_OK = file.set(paths[value], context, queue, &K_FRAME_FILTER);
-
+    // Set the background that will be subtracted from the data
+    file.setBackground(&testBackground, file.getFlux(), file.getExpTime());
     if (!STATUS_OK)
     {
         setMessageString("\n[Set] Warning: \""+QString(paths[value])+"\"");
@@ -805,7 +817,7 @@ void VolumeDataSet::setDisplayFrame(int value)
         return;
     }
     // Filter file and get status
-    STATUS_OK = file.filterData(treshold_reduce[0], treshold_reduce[1]);
+    STATUS_OK = file.filterData( 0, NULL, treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1], 0);
     if (STATUS_OK)
     {
         emit changedCorrectedImage(&file);
@@ -816,6 +828,7 @@ void VolumeDataSet::setDisplayFrame(int value)
         setMessageString("\nRead] Error: could not filter \""+file.getPath()+"\"");
         return;
     }
+    
 }
 
 int VolumeDataSet::funcReadFiles()
@@ -837,6 +850,7 @@ int VolumeDataSet::funcReadFiles()
         if (STATUS_OK)
         {
             emit changedRawImage(&RAWFILE[i]);
+            emit repaintRequest();
         }
         else
         {
@@ -845,21 +859,7 @@ int VolumeDataSet::funcReadFiles()
         }
         //~ std::cout << i << ": " << stopWatch.restart() << std::endl;
         // Filter file and get status
-        STATUS_OK = RAWFILE[i].filterData(treshold_reduce[0], treshold_reduce[1]);
-        //~ std::cout << i << ": " << stopWatch.restart() << std::endl;
-        if (STATUS_OK)
-        {
-            emit changedCorrectedImage(&RAWFILE[i]);
-            emit repaintRequest();
-        }
-        else
-        {
-            setMessageString("\n[Read] Error: could not filter \""+RAWFILE[i].getPath()+"\"");
-            return 0;
-        }
         
-        RAWFILE[i].clearData();
-        size_reduced += RAWFILE[i].getBytes();
         //~ std::cout << i << ": " << stopWatch.restart() << std::endl;
         // Update the progress bar
         setValueGenericProgress(100*(i+1)/RAWFILE.size());
@@ -888,15 +888,21 @@ int VolumeDataSet::funcProjectFiles()
         if (n > limit)
         { 
             // Break if there is too much data.
-            setMessageString(QString("\n[Project] Warning: Projecting too much data! Breaking off early!"));
+            setMessageString(QString("\n[Cor/Proj] Warning: Projecting too much data! Breaking off early!"));
             break;
         }
         else
         {
-            int STATUS_OK = RAWFILE[i].project( &n, POINTS.data(), treshold_project[0], treshold_project[1]);
-            if (!STATUS_OK)
+            int STATUS_OK = RAWFILE[i].filterData( &n, POINTS.data(), treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1],1);
+            if (STATUS_OK)
             {
-                setMessageString("\n[Project] Error: could not project \""+RAWFILE[i].getPath()+"\"");
+                emit changedRawImage(&RAWFILE[i]);
+                emit changedCorrectedImage(&RAWFILE[i]);
+                emit repaintRequest();
+            }
+            else
+            {
+                setMessageString("\n[Cor/Proj] Error: could not process data \""+RAWFILE[i].getPath()+"\"");
                 return 0;
             }
         }
@@ -908,8 +914,7 @@ int VolumeDataSet::funcProjectFiles()
     POINTS.resize(n);
     size_t t = timer.restart();
 
-    setMessageString("\n[Project] "+QString::number(RAWFILE.size())+" files were successfully projected and merged ("+QString::number(POINTS.bytes()/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number(t/RAWFILE.size(), 'g', 3)+" ms/file)");
-
+    setMessageString("\n[Cor/Proj] "+QString::number(RAWFILE.size())+" files were successfully projected and merged ("+QString::number(POINTS.bytes()/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number(t/RAWFILE.size(), 'g', 3)+" ms/file)");
     
     return 1;
 }

@@ -33,9 +33,10 @@ class PilatusFile{
         
         int set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel);
         int readData();
-        int filterData(int treshold_reduce_low, int treshold_reduce_high);
+        int filterData(size_t * n, float * outBuf, int treshold_reduce_low, int treshold_reduce_high, int treshold_project_low, int treshold_project_high, bool isProjectionActive = true);
         int project(size_t * n, float * outBuf, int treshold_project_low, int treshold_project_high);
         float * getImage();
+        float * getCorrectedImage();
         MiniArray<float> getTest();
         int getWidth();
         int getHeight();
@@ -50,6 +51,7 @@ class PilatusFile{
         float getExpTime();
         
     private:
+        //~ cl_raw_
         cl_command_queue * queue;
         cl_context * context;
         cl_kernel * filterKernel;
@@ -59,6 +61,7 @@ class PilatusFile{
         size_t glb_ws[2];
 
         MiniArray<float> data_buf;
+        MiniArray<float> corrected_data_buf;
         MiniArray<float> intensity;
         MiniArray<int> index;
         Matrix<float> * background;

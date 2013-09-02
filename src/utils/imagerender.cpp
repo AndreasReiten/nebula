@@ -389,7 +389,7 @@ void ImageRenderGLWidget::setCorrectedImage(PilatusFile * file)
         region,
         image_w*sizeof(cl_float),
         0,
-        file->getImage(),
+        file->getCorrectedImage(),
         0,
         NULL,
         NULL);
