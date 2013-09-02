@@ -206,6 +206,15 @@ int PilatusFile::project(size_t * n, float * outBuf, int treshold_project_low, i
     return 1;
 }
 
+float PilatusFile::getFlux()
+{
+    return flux;
+}
+float PilatusFile::getExpTime()
+{
+    return exposure_time;
+}
+
 int PilatusFile::readHeader()
 {
     const float pi = 4.0*atan(1.0);
@@ -280,7 +289,7 @@ int PilatusFile::readHeader()
     //~ detector_voffset = regExp(&, &header, 0, 1).toFloat();
     beam_x = regExp(&optExpBeamx, &header, 0, 1).toFloat();
     beam_y = regExp(&optExpBeamy, &header, 0, 1).toFloat();
-    flux = regExp(&optExpFlux, &header, 0, 1);
+    flux = regExp(&optExpFlux, &header, 0, 1).toFloat();
     //~ filter_transmission = regExp(&, &header, 0, 1).toFloat();
     start_angle = regExp(&optExpStAng, &header, 0, 1).toFloat()*pi/180.0;
     angle_increment = regExp(&optExpAngInc, &header, 0, 1).toFloat()*pi/180.0;
@@ -371,6 +380,18 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
+    cl_mem background_cl = clCreateImage2D ( (*context),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        &source_format,
+        fast_dimension,
+        slow_dimension,
+        fast_dimension*sizeof(cl_float),
+        background->data(),
+        &err);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+    }
     
     // The sampler 
     cl_sampler source_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
@@ -381,10 +402,17 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &target_cl);
-    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_sampler), &source_sampler);
-    int threshold_reduce[2] = {treshold_reduce_low, treshold_reduce_high};
-    err |= clSetKernelArg(*filterKernel, 3, 2*sizeof(cl_int), threshold_reduce);
+    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) &background_cl);
+    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_sampler), &source_sampler);
+    float threshold_reduce[2] = {treshold_reduce_low, treshold_reduce_high};
+    err |= clSetKernelArg(*filterKernel, 4, 2*sizeof(cl_float), threshold_reduce);
+    std::cout << "Src "<< flux  << " " << exposure_time << std::endl;
+    std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
+    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_float), &backgroundExpTime);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
@@ -435,6 +463,7 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     
     if (target_cl) clReleaseMemObject(target_cl);
     if (source_cl) clReleaseMemObject(source_cl);
+    if (background_cl) clReleaseMemObject(background_cl);
     if (source_sampler) clReleaseSampler(source_sampler);
 
     // Populate the intenity and index arrays by extracting nonzero values
@@ -458,6 +487,12 @@ int PilatusFile::filterData(int treshold_reduce_low, int treshold_reduce_high)
     return 1;
 }
 
+void PilatusFile::setBackground(Matrix<float>  * buffer, float flux, float exposure_time)
+{
+    this->background = buffer;
+    this->background_flux = flux;
+    this->backgroundExpTime = exposure_time;
+}
 
 int PilatusFile::readData()
 {

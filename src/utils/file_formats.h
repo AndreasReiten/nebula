@@ -45,20 +45,25 @@ class PilatusFile{
         float getQSuggestion();
         float getMaxCount();
         void clearData();
+        void setBackground(Matrix<float> * buffer, float flux, float exposure_time);
+        float getFlux();
+        float getExpTime();
         
     private:
         cl_command_queue * queue;
         cl_context * context;
         cl_kernel * filterKernel;
         cl_int err;
+
         size_t loc_ws[2];
         size_t glb_ws[2];
+
         MiniArray<float> data_buf;
         MiniArray<float> intensity;
         MiniArray<int> index;
-
-        MiniArray<double> rawHistogram;
-        MiniArray<double> postCorrectedHistogram;
+        Matrix<float> * background;
+        float background_flux;
+        float backgroundExpTime;
         
         QString path;
         size_t fast_dimension, slow_dimension;
@@ -95,7 +100,7 @@ class PilatusFile{
         float detector_distance;
         float detector_voffset;
         float beam_x, beam_y;
-        QString flux;
+        float flux;
         float filter_transmission;
         float start_angle;
         float angle_increment;

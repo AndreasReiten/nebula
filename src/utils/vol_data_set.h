@@ -91,9 +91,11 @@ class VolumeDataSet : public QObject
         size_t getN_BRICKS();
         size_t getBRICK_DIM_TOT();
         
-        MiniArray<float> final_intensity;
+        //~ MiniArray<float> final_intensity;
         MiniArray<float> POINTS;
         QList<PilatusFile> RAWFILE;
+        QList<PilatusFile> background;
+        Matrix<float> testBackground;
         
     protected:
     

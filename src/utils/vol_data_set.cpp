@@ -9,6 +9,8 @@ VolumeDataSet::VolumeDataSet(cl_device * device, cl_context * context, cl_comman
     BRICK_POOL_POWER = 7; // <= 10 (limited to 10 bits)
     MAX_BRICKS = (1 << BRICK_POOL_POWER)*(1 << BRICK_POOL_POWER)*(1 << BRICK_POOL_POWER);
     
+    testBackground.set(1679, 1475, 0.0);
+    
     this->device = device;
     this->context = context;
     this->queue = queue;
@@ -705,6 +707,9 @@ int VolumeDataSet::funcSetFiles()
 
             // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
             if (suggested_q < RAWFILE.back().getQSuggestion()) suggested_q = RAWFILE.back().getQSuggestion();
+
+            // Set the background that will be subtracted from the data
+            RAWFILE.back().setBackground(&testBackground, RAWFILE.front().getFlux(), RAWFILE.front().getExpTime());
         }
         else
         {

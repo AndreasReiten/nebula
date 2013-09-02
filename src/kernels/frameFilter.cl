@@ -5,65 +5,41 @@ float Gaussian (float x, float sigma)
 
 __kernel void FRAME_FILTER(
     __write_only image2d_t target,
+    __read_only image2d_t background,
     __read_only image2d_t source,
     sampler_t source_sampler,
-    int2 threshold
+    float2 threshold,
+    float source_flux,
+    float source_exposure_time,
+    float background_flux,
+    float background_exposure_time
     )
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
 
     int2 target_dim = get_image_dim(target);
     int2 source_dim = get_image_dim(source);
-    
+
+    /*
+     * Background subtraction and lorentz polarization correction. Scaling to a common factor. Finally a flat min/max filter
+     * */
     if ((id_glb.x < target_dim.x) && (id_glb.y < target_dim.y))
     {
-        //~ // Calculate mean and variance using Gaussian weighting
-        //~ float mean = 0;
-        //~ float variance = 0;
-        //~ float weight = 0;
-        //~ int width = 2;
-        //~ float std_var = 0.7;
-        //~ 
-        //~ for (int i = -width; i <= width; i+=1)
-        //~ {
-            //~ for (int j = -width; j <= width; j+=1)
-            //~ {
-                //~ mean += read_imagef(source, source_sampler, id_glb + (int2)(i,j)).w * Gaussian(sqrt((float)(i*i + j*j)), 3.0);
-                //~ weight += Gaussian(sqrt((float)(i*i + j*j)), std_var);
-            //~ }
-        //~ }
-//~ 
-        //~ mean = native_divide(mean, weight);
-        //~ 
-        //~ for (int i = -width; i <= width; i+=4)
-        //~ {
-            //~ for (int j = -width; j <= width; j+=4)
-            //~ {
-                //~ variance += pow((read_imagef(source, source_sampler, id_glb + (int2)(i,j)).w - mean), 2.0) * Gaussian(sqrt((float)(i*i + j*j)), std_var);
-            //~ }
-        //~ }
-//~ 
-        //~ variance = sqrt(native_divide(variance, weight));
-        
-        // Estimate background based on mean and variance
-        //~ float background = mean - variance;
-
-        // Subtract the background from the original value
-        //~ float corrected_intensity = read_imagef(source, source_sampler, id_glb).w - background;
-
-        //~ corrected_intensity = max(0.0f, corrected_intensity); 
-        
-        //~ float4 sample = (float4)(corrected_intensity);
-
-
-
-
-
         
         float intensity = read_imagef(source, source_sampler, id_glb).w;
 
-        if (((intensity > threshold.x) && (intensity < threshold.y))) ; // && (native_divide(variance, mean) > 0.15)
-        else intensity = 0.0f;
+        // Scale source to background
+        intensity *= native_divide(background_flux * background_exposure_time, source_flux * source_exposure_time);
+
+        // Subtract background
+        intensity -= read_imagef(background, source_sampler, id_glb).w;
+
+        // Scale to a common flux and exposure time
+        //~ intensity *= native_divide(common_flux * common_exposure_time, background_flux * background_exposure_time);
+        
+        // Flat min/max filter
+        if (((intensity < threshold.x) || (intensity > threshold.y))) intensity = 0.0f; 
+        
         float4 sample = (float4)(intensity);
         
         write_imagef(target, id_glb, sample);
