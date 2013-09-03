@@ -372,29 +372,11 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     imageRenderWidget->aquireSharedBuffers();
     this->treshold_reduce_low = treshold_reduce_low;
     this->treshold_reduce_high = treshold_reduce_high;
-    std::cout << "Time to go - begin" << std::endl;
-    // Targets
-    //~ cl_image_format target_format;
-    //~ target_format.image_channel_order = CL_INTENSITY;
-    //~ target_format.image_channel_data_type = CL_FLOAT;
-    
-    // Prepare the target for the corrected pixels (only intensity)
-    //~ cl_mem i_target_cl = clCreateImage2D ( (*context),
-        //~ CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        //~ &target_format,
-        //~ fast_dimension,
-        //~ slow_dimension,
-        //~ 0,
-        //~ NULL,
-        //~ &err);
-    //~ if (err != CL_SUCCESS)
-    //~ {
-        //~ std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
-    //~ }
+
     cl_image_format target_format;
     target_format.image_channel_order = CL_RGBA;
     target_format.image_channel_data_type = CL_FLOAT;
-    std::cout << "Time to go - 1" << std::endl;
+
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
     cl_mem xyzi_target_cl = clCreateImage2D ( (*context),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -450,7 +432,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
     int active_angle = 2;
-    std::cout << "Time to go - 2" << std::endl;
+
     if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
     else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
     else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
@@ -468,7 +450,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     OMEGA.setZRotation(-omega);
     
     sampleRotMat = PHI*KAPPA*OMEGA;
-    //~ sampleRotMat.print(5, "Sample Rotation Matrix");
+    //~ std::cout << omega << std::endl;
+    //~ sampleRotMat.print(2, "Sample Rotation Matrix");
 
     cl_mem sample_rotation_matrix_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -491,64 +474,60 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    //~ err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) imageRenderWidget->getRawImgCLGL());
-    //~ err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) imageRenderWidget->getCorrectedImgCLGL());
-    //~ err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) imageRenderWidget->getTsfImgCLGL());
-    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_mem), (void *) &background_cl);
-    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_sampler), &tsf_sampler);
-    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_sampler), &intensity_sampler);
-    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
-    float threshold_reduce[2] = {(float)treshold_reduce_low, (float)treshold_reduce_high};
-    err |= clSetKernelArg(*filterKernel, 9, 2*sizeof(cl_float), threshold_reduce);
-    err |= clSetKernelArg(*filterKernel, 10, sizeof(cl_float), &background_flux);
-    err |= clSetKernelArg(*filterKernel, 11, sizeof(cl_float), &backgroundExpTime);
-    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &pixel_size_x);
-    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &pixel_size_y);
-    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &exposure_time);
-    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &wavelength);
-    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &detector_distance);
-    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &beam_x);
-    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &beam_y);
-    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &flux);
-    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &start_angle);
-    err |= clSetKernelArg(*filterKernel, 21, sizeof(cl_float), &angle_increment);
-    err |= clSetKernelArg(*filterKernel, 22, sizeof(cl_float), &kappa);
-    err |= clSetKernelArg(*filterKernel, 23, sizeof(cl_float), &phi);
-    err |= clSetKernelArg(*filterKernel, 24, sizeof(cl_float), &omega);
-    err |= clSetKernelArg(*filterKernel, 25, sizeof(cl_float), &max_counts);
+    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) imageRenderWidget->getRawImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) imageRenderWidget->getCorrectedImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) imageRenderWidget->getGammaImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_mem), (void *) imageRenderWidget->getTsfImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &background_cl);
+    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_sampler), &tsf_sampler);
+    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_sampler), &intensity_sampler);
+    err |= clSetKernelArg(*filterKernel, 9, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    float threshold_one[2] = {(float)treshold_reduce_low, (float)treshold_reduce_high};
+    float threshold_two[2] = {(float)treshold_project_low, (float)treshold_project_high};
+    err |= clSetKernelArg(*filterKernel, 10, 2*sizeof(cl_float), threshold_one);
+    err |= clSetKernelArg(*filterKernel, 11, 2*sizeof(cl_float), threshold_two);
+    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &pixel_size_x);
+    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &pixel_size_y);
+    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &wavelength);
+    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &detector_distance);
+    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &beam_x);
+    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &beam_y);
+    err |= clSetKernelArg(*filterKernel, 21, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*filterKernel, 22, sizeof(cl_float), &start_angle);
+    err |= clSetKernelArg(*filterKernel, 23, sizeof(cl_float), &angle_increment);
+    err |= clSetKernelArg(*filterKernel, 24, sizeof(cl_float), &kappa);
+    err |= clSetKernelArg(*filterKernel, 25, sizeof(cl_float), &phi);
+    err |= clSetKernelArg(*filterKernel, 26, sizeof(cl_float), &omega);
+    err |= clSetKernelArg(*filterKernel, 27, sizeof(cl_float), &max_counts);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
     }
-    std::cout << "Time to go - 2a" << std::endl;
-
     
-    
-    //~ /* Launch rendering kernel */
-    imageRenderWidget->runFilterKernel(filterKernel, loc_ws, glb_ws);
-
-    //~ size_t area_per_call[2] = {128, 128};
-    //~ size_t call_offset[2] = {0,0};
-    //~ std::cout << "Time to go - 2b" << std::endl;
-    //~ for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
-    //~ {
-        //~ for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
-        //~ {
-            //~ call_offset[0] = glb_x;
-            //~ call_offset[1] = glb_y;
-            //~ 
-            //~ err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
-            //~ if (err != CL_SUCCESS)
-            //~ {
-                //~ std::cout << "[] Error launching kernel: " << cl_error_cstring(err) << std::endl;
-            //~ }
-        //~ }
-    //~ }
-    //~ clFinish((*queue));
-    std::cout << "Time to go - 2c" << std::endl;
+    /* Launch rendering kernel */
+    size_t area_per_call[2] = {128, 128};
+    size_t call_offset[2] = {0,0};
+    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
+    {
+        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
+        {
+            call_offset[0] = glb_x;
+            call_offset[1] = glb_y;
+            
+            err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            if (err != CL_SUCCESS)
+            {
+                std::cout << "[->] Error launching kernel: " << cl_error_cstring(err) << std::endl;
+            }
+        }
+    }
+    clFinish((*queue));
     imageRenderWidget->releaseSharedBuffers();
-    std::cout << "Time to go - 3" << std::endl;
+
     // Read the data
     size_t origin[3];
     origin[0] = 0;
@@ -572,12 +551,12 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     if (sample_rotation_matrix_cl) clReleaseMemObject(sample_rotation_matrix_cl);
     if (intensity_sampler) clReleaseSampler(intensity_sampler);
     if (tsf_sampler) clReleaseSampler(tsf_sampler);
-    std::cout << "Time to go - 4" << std::endl;
+
     if (isProjectionActive)
     {
         for (size_t i = 0; i < fast_dimension*slow_dimension; i++)
         {
-            if ((projected_data_buf[i*4+3] > treshold_project_low) && (projected_data_buf[i*4+3] < treshold_project_high))
+            if (projected_data_buf[i*4+3] != 0.0)
             {
                 outBuf[(*n)+0] = projected_data_buf[i*4+0]; 
                 outBuf[(*n)+1] = projected_data_buf[i*4+1];
@@ -587,7 +566,6 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
             }
         }
     }
-    std::cout << "Time to go - 5" << std::endl;
     return 1;
 }
 

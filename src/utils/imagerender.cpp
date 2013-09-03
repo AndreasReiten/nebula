@@ -62,6 +62,7 @@ void ImageRenderGLWidget::setImageSize(int w, int h)
         this->image_w = w;
         this->image_h = h;
         this->setTarget();
+        this->setTexturePositions();
     }
 }
 
@@ -152,23 +153,28 @@ void ImageRenderGLWidget::initializeGL()
 
 void ImageRenderGLWidget::paintGL()
 {
-    glClearColor(0, 0, 0, 0);
+    glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     GLuint indices[6] = {0,1,3,1,2,3};
-    std_2d_color_draw(indices, 6, white.data(),  &screen_coord_vbo[0]);
-    std_2d_color_draw(indices, 6, white.data(),  &screen_coord_vbo[1]);
+    std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[0]);
+    std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[1]);
+    std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[2]);
     std_2d_tex_draw(indices, 6, 0, image_tex[0], &screen_coord_vbo[0], &screen_texpos_vbo[0]);
     std_2d_tex_draw(indices, 6, 0, image_tex[1], &screen_coord_vbo[1], &screen_texpos_vbo[1]);
+    std_2d_tex_draw(indices, 6, 0, image_tex[2], &screen_coord_vbo[2], &screen_texpos_vbo[2]);
 
     Matrix<float> xy(2,1);
     xy[0] = -1.0;
     xy[1] = -1.0;
-    std_text_draw("Raw Data", fontMedium, black.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+    std_text_draw("Raw Data", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
 
     float IMAGE_WIDTH = 2*((float)image_w/(float)image_h)*((float)HEIGHT/(float)WIDTH); 
-    xy[0] = -1 + IMAGE_WIDTH+ 0.1;
-    std_text_draw("Corrected Data", fontMedium, black.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+    xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
+    std_text_draw("BG Subtracted, Threshold One", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+
+    xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
+    std_text_draw("LP Correction, Threshold Two", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
     
 }
 
@@ -242,26 +248,28 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
 void ImageRenderGLWidget::aquireSharedBuffers()
 {
     // Aquire shared CL/GL objects
-    //~ glFinish();
-    //~ err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    //~ err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    //~ err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    //~ if (err != CL_SUCCESS)
-    //~ {
-        //~ std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    //~ }
+    glFinish();
+    err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_target_cl, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    }
 }
 
 void ImageRenderGLWidget::releaseSharedBuffers()
 {
-    // Release shared CL/GL objects
-    //~ err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    //~ err |= clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    //~ err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    //~ if (err != CL_SUCCESS)
-    //~ {
-        //~ std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    //~ }
+    //~ // Release shared CL/GL objects
+    err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &gamma_target_cl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    }
 }
 void ImageRenderGLWidget::setMessageString(QString str)
 {
@@ -488,34 +496,42 @@ void ImageRenderGLWidget::setTexturePositions()
 {
     /* Set the positions of the textures */
 
-    Matrix<float> rawImgCoord(2,4);
-    Matrix<float> correctedImgCoord(2,4);
+    Matrix<float> imgAlphaCoord(2,4);
+    Matrix<float> imgBetaCoord(2,4);
+    Matrix<float> imgGammaCoord(2,4);
     
-    float X_HIGH, X_MID_LEFT, X_MID_RIGHT, X_LOW, Y_HIGH, Y_LOW;
-
     float IMAGE_WIDTH = 2*((float)image_w/(float)image_h)*((float)HEIGHT/(float)WIDTH); 
-    X_LOW = -1;
-    X_MID_LEFT = X_LOW + IMAGE_WIDTH;
-    X_MID_RIGHT = X_MID_LEFT + 0.1;
-    X_HIGH = X_MID_RIGHT + IMAGE_WIDTH;
+    float X0 = -1;
+    float X1 = X0 + IMAGE_WIDTH;
+    float X2 = X1 + 0.02;
+    float X3 = X2 + IMAGE_WIDTH;
+    float X4 = X3 + 0.02;
+    float X5 = X4 + IMAGE_WIDTH;
     
-    Y_LOW = -1;
-    Y_HIGH = 1;
+    float Y0 = -1;
+    float Y1 = 1;
 
     {
         float buf[8] = {
-            X_LOW, X_MID_LEFT, X_MID_LEFT, X_LOW,
-            Y_LOW, Y_LOW, Y_HIGH, Y_HIGH};
-        rawImgCoord.setDeep(2, 4, buf);
+            X0, X1, X1, X0,
+            Y0, Y0, Y1, Y1};
+        imgAlphaCoord.setDeep(2, 4, buf);
     }
     {
         float buf[8] = {
-            X_MID_RIGHT, X_HIGH, X_HIGH, X_MID_RIGHT,
-            Y_LOW, Y_LOW, Y_HIGH, Y_HIGH};
-        correctedImgCoord.setDeep(2, 4, buf);
+            X2, X3, X3, X2,
+            Y0, Y0, Y1, Y1};
+        imgBetaCoord.setDeep(2, 4, buf);
     }
-    setVbo(&screen_coord_vbo[0], rawImgCoord.getColMajor().data(), rawImgCoord.size());
-    setVbo(&screen_coord_vbo[1], correctedImgCoord.getColMajor().data(), correctedImgCoord.size());
+    {
+        float buf[8] = {
+            X4, X5, X5, X4,
+            Y0, Y0, Y1, Y1};
+        imgGammaCoord.setDeep(2, 4, buf);
+    }
+    setVbo(&screen_coord_vbo[0], imgAlphaCoord.getColMajor().data(), imgAlphaCoord.size());
+    setVbo(&screen_coord_vbo[1], imgBetaCoord.getColMajor().data(), imgBetaCoord.size());
+    setVbo(&screen_coord_vbo[2], imgGammaCoord.getColMajor().data(), imgGammaCoord.size());
 }
 
 
@@ -542,8 +558,8 @@ int ImageRenderGLWidget::init_gl()
     {
         Matrix<float> mat;
         float buf[8] = {
-            0.0,1.0,1.0,0.0,
-            1.0,1.0,0.0,0.0};
+            1.0,0.0,0.0,1.0,
+            0.0,0.0,1.0,1.0};
     
         mat.setDeep(2, 4, buf);
         setVbo(&screen_texpos_vbo[0], mat.getColMajor().data(), mat.size());
@@ -553,7 +569,7 @@ int ImageRenderGLWidget::init_gl()
         setVbo(&screen_texpos_vbo[4], mat.getColMajor().data(), mat.size());
     }
 
-    init_tsf(42, 0, &transferFunction);
+    init_tsf(3, 0, &transferFunction);
     
     return 1;
 }
@@ -942,7 +958,10 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, image_tex[2]);
+    glDeleteTextures(1, &image_tex[3]);
+    glGenTextures(1, &image_tex[3]);
+    
+    glBindTexture(GL_TEXTURE_2D, image_tex[3]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -960,7 +979,7 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     glBindTexture(GL_TEXTURE_2D, 0); 
     
     // Buffer for tsf_tex_cl
-    tsf_tex_cl = clCreateFromGLTexture2D((*context2), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
+    tsf_tex_cl = clCreateFromGLTexture2D((*context2), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
@@ -991,6 +1010,11 @@ cl_mem * ImageRenderGLWidget::getRawImgCLGL()
     return &raw_target_cl;
 }
 
+cl_mem * ImageRenderGLWidget::getGammaImgCLGL()
+{
+    return &gamma_target_cl;
+}
+
 cl_mem * ImageRenderGLWidget::getCorrectedImgCLGL()
 {
     return &corrected_target_cl;
@@ -1000,7 +1024,9 @@ cl_mem * ImageRenderGLWidget::getCorrectedImgCLGL()
 int ImageRenderGLWidget::setTarget()
 {
     // Set GL texture
-
+    glDeleteTextures(1, &image_tex[0]);
+    glGenTextures(1, &image_tex[0]);
+    
     glBindTexture(GL_TEXTURE_2D, image_tex[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1016,7 +1042,6 @@ int ImageRenderGLWidget::setTarget()
         NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
     // Convert to CL texture
-    //~ if (raw_target_cl) clReleaseMemObject(raw_target_cl);
     raw_target_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
     if (err != CL_SUCCESS)
     {
@@ -1024,6 +1049,9 @@ int ImageRenderGLWidget::setTarget()
         return 0;
     }
     // Set GL texture
+    glDeleteTextures(1, &image_tex[1]);
+    glGenTextures(1, &image_tex[1]);
+    
     glBindTexture(GL_TEXTURE_2D, image_tex[1]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1039,7 +1067,6 @@ int ImageRenderGLWidget::setTarget()
         NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
     // Convert to CL texture
-    //~ if (corrected_target_cl) clReleaseMemObject(corrected_target_cl);
     
     corrected_target_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
     if (err != CL_SUCCESS)
@@ -1048,7 +1075,33 @@ int ImageRenderGLWidget::setTarget()
         return 0;
     }
 
-    std::cout << "Targets set: " << image_w << " x " << image_h << std::endl;
+    // Set GL texture
+    glDeleteTextures(1, &image_tex[2]);
+    glGenTextures(1, &image_tex[2]);
+    
+    glBindTexture(GL_TEXTURE_2D, image_tex[2]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA32F,
+        image_w,
+        image_h,
+        0,
+        GL_RGBA,
+        GL_FLOAT,
+        NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    // Convert to CL texture
+    gamma_target_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
+        return 0;
+    }
+    
     return 1;
 }
 

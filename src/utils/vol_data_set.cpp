@@ -601,9 +601,6 @@ int VolumeDataSet::funcAllInOne()
         int STATUS_OK = file.set(paths[i], context, queue, &K_FRAME_FILTER, imageRenderWidget);
         // Set the background that will be subtracted from the data
         file.setBackground(&testBackground, file.getFlux(), file.getExpTime());
-        file.setTsfImgCLGL(imageRenderWidget->getTsfImgCLGL());
-        file.setRawImgCLGL(imageRenderWidget->getRawImgCLGL());
-        file.setCorrectedImgCLGL(imageRenderWidget->getCorrectedImgCLGL());
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -630,19 +627,6 @@ int VolumeDataSet::funcAllInOne()
             setMessageString("\n[AllInOne] Error: could not read \""+file.getPath()+"\"");
             return 0;
         }
-        // Filter file and get status
-        //~ STATUS_OK = file.filterData(treshold_reduce[0], treshold_reduce[1]);
-        //~ if (STATUS_OK)
-        //~ {
-            //~ emit changedCorrectedImage(&file);
-            //~ emit repaintRequest();
-        //~ }
-        //~ else
-        //~ {
-            //~ setMessageString("\n[AllInOne] Error: could not filter \""+file.getPath()+"\"");
-            //~ return 0;
-        //~ }
-        //~ size_reduced += file.getBytes();
         // Project
         if (n > limit)
         { 
@@ -657,7 +641,7 @@ int VolumeDataSet::funcAllInOne()
             STATUS_OK = file.filterData( &n, POINTS.data(), treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1], 1);
             if (STATUS_OK)
             {
-                emit changedCorrectedImage(&RAWFILE[i]);
+                //~ emit changedCorrectedImage(&RAWFILE[i]);
                 emit repaintRequest();
             }
             else
@@ -665,12 +649,6 @@ int VolumeDataSet::funcAllInOne()
                 setMessageString("\n[AllInOne] Error: could not project \""+file.getPath()+"\"");
                 return 0;
             }
-            //~ STATUS_OK = file.project( &n, POINTS.data(), treshold_project[0], treshold_project[1]);
-            //~ if (!STATUS_OK)
-            //~ {
-                //~ setMessageString("\n[AllInOne] Error: could not project \""+file.getPath()+"\"");
-                //~ return 0;
-            //~ }
         }
         n_ok_files++;
         // Update the progress bar
@@ -731,9 +709,6 @@ int VolumeDataSet::funcSetFiles()
 
             // Set the background that will be subtracted from the data
             RAWFILE.back().setBackground(&testBackground, RAWFILE.front().getFlux(), RAWFILE.front().getExpTime());
-            RAWFILE.back().setTsfImgCLGL(imageRenderWidget->getTsfImgCLGL());
-            RAWFILE.back().setRawImgCLGL(imageRenderWidget->getRawImgCLGL());
-            RAWFILE.back().setCorrectedImgCLGL(imageRenderWidget->getCorrectedImgCLGL());
         }
         else
         {
@@ -757,8 +732,8 @@ int VolumeDataSet::funcSetFiles()
 
     setMessageString("\n[Set] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
     setMessageString("\n[Set] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
-    setMessageString("\n[Set] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+"");
-    setMessageString("\n[Set] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+" voxels");
+    setMessageString("\n[Set] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
+    setMessageString("\n[Set] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+"");
     
     return 1;
 }
@@ -812,9 +787,6 @@ void VolumeDataSet::setDisplayFrame(int value)
     int STATUS_OK = file.set(paths[value], context, queue, &K_FRAME_FILTER, imageRenderWidget);
     // Set the background that will be subtracted from the data
     file.setBackground(&testBackground, file.getFlux(), file.getExpTime());
-    file.setTsfImgCLGL(imageRenderWidget->getTsfImgCLGL());
-    file.setRawImgCLGL(imageRenderWidget->getRawImgCLGL());
-    file.setCorrectedImgCLGL(imageRenderWidget->getCorrectedImgCLGL());
     if (!STATUS_OK)
     {
         setMessageString("\n[Set] Warning: \""+QString(paths[value])+"\"");
@@ -854,16 +826,14 @@ int VolumeDataSet::funcReadFiles()
     /* Read the intensity data in each file. For PILATUS files the data must be decompressed */
     setMessageString("\n[Read] Reading "+QString::number(RAWFILE.size())+" files...");
     setFormatGenericProgress(QString("Reading Files %p%"));
-    size_t size_reduced = 0, size_raw = 0;
+    size_t size_raw = 0;
 
     //~ QElapsedTimer stopWatch;
     timer.start();
     for (size_t i = 0; i < (size_t) RAWFILE.size(); i++)
     {
-        //~ stopWatch.start();
         // Read file and get status
         int STATUS_OK = RAWFILE[i].readData();
-        //~ std::cout << i << ": " << stopWatch.restart() << std::endl;
         size_raw += RAWFILE[i].getBytes();
         if (STATUS_OK)
         {
@@ -875,17 +845,12 @@ int VolumeDataSet::funcReadFiles()
             setMessageString("\n[Read] Error: could not read \""+RAWFILE[i].getPath()+"\"");
             return 0;
         }
-        //~ std::cout << i << ": " << stopWatch.restart() << std::endl;
-        // Filter file and get status
-        
-        //~ std::cout << i << ": " << stopWatch.restart() << std::endl;
         // Update the progress bar
         setValueGenericProgress(100*(i+1)/RAWFILE.size());
     }
     size_t t = timer.restart();
-    setMessageString("\n[Read] "+QString::number(RAWFILE.size())+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" down to "+QString::number(size_reduced/1000000.0, 'g', 3)+" MB after filtering) (time: " + QString::number(t) + " ms, "+QString::number(t/RAWFILE.size(), 'g', 3)+" ms/file)");
+    setMessageString("\n[Read] "+QString::number(RAWFILE.size())+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number(t/RAWFILE.size(), 'g', 3)+" ms/file)");
 
-    
     return 1;
 }
 
@@ -893,8 +858,8 @@ int VolumeDataSet::funcProjectFiles()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
 
-    setMessageString("\n[Project] Projecting "+QString::number(RAWFILE.size())+" files...");
-    setFormatGenericProgress(QString("Projecting Files %p%"));
+    setMessageString("\n[Cor/Proj] Correcting and Projecting "+QString::number(RAWFILE.size())+" files...");
+    setFormatGenericProgress(QString("Correcting and Projecting Files %p%"));
     
     size_t n = 0;
     size_t limit = 0.25e9;
@@ -906,7 +871,7 @@ int VolumeDataSet::funcProjectFiles()
         if (n > limit)
         { 
             // Break if there is too much data.
-            setMessageString(QString("\n[Cor/Proj] Warning: Projecting too much data! Breaking off early!"));
+            setMessageString(QString("\n[Cor/Proj] Warning: There was too much data! Breaking off early!"));
             break;
         }
         else

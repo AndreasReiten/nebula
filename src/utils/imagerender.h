@@ -50,11 +50,12 @@ public:
     QSize sizeHint() const;
     cl_mem * getTsfImgCLGL();
     cl_mem * getRawImgCLGL();
+    cl_mem * getGammaImgCLGL();
     cl_mem * getCorrectedImgCLGL();
     void setImageSize(int w, int h);
     void aquireSharedBuffers();
     void releaseSharedBuffers();
-
+    void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
     
 public slots:
     //~ void setRawImage(PilatusFile * file);
@@ -108,12 +109,12 @@ private:
     GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
     GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
 
-    void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
+    
     
     // OpenCL Related
     int init_cl();
     //~ cl_sampler source_sampler, tsf_tex_sampler;
-    cl_mem raw_target_cl, corrected_target_cl, tsf_tex_cl;
+    cl_mem raw_target_cl, corrected_target_cl, gamma_target_cl, tsf_tex_cl;
     //~ cl_kernel K_FRAME_TO_IMAGE;
     cl_device * device;
     cl_program program;

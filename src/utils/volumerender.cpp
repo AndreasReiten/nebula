@@ -2840,10 +2840,13 @@ void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
 {
     /* Generate a transfer function CL texture */
     if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
-    if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
+    //~ if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
     
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
+    glDeleteTextures(1, &tsf_tex);
+    glGenTextures(1, &tsf_tex);
+    
     glBindTexture(GL_TEXTURE_2D, tsf_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2938,7 +2941,7 @@ int VolumeRenderGLWidget::gen_ray_tex()
     glBindTexture(GL_TEXTURE_2D, 0);
     
     // Convert to CL texture
-    if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
+    //~ if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
     
     ray_tex_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex, &err);
     if (err != CL_SUCCESS)

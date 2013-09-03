@@ -898,6 +898,7 @@ void MainWindow::createInteractives()
         tsfAlphaComboBox->addItem(trUtf8("Uniform"));
         tsfAlphaComboBox->addItem(trUtf8("Linear"));
         tsfAlphaComboBox->addItem(trUtf8("Exponential"));
+        tsfAlphaComboBox->addItem(trUtf8("Opaque"));
         
         
         graphicsDockWidget = new QDockWidget(tr("View Settings"), this);

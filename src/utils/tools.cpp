@@ -410,6 +410,13 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
                 tmp[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
             }
             break;
+        case 3:
+            // Opaque
+            for (int i = 0; i < 32; i+=4)
+            {
+                tmp[i+3] = 1.0;
+            }
+            break;
         default:
             for (int i = 0; i < 32; i+=4)
             {
