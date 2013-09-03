@@ -9,34 +9,54 @@
 #include <cmath>
 #include <limits>
 
-#include <CL/opencl.h>
 
+/* GL and CL*/
+#ifdef _WIN32
+    #define GLEW_STATIC
+#endif
+#include <GL/glew.h>
+#include <CL/opencl.h>
+#include <CL/cl_gl.h>
+
+/* QT */
+#include <QMouseEvent>
+#include <QGLWidget>
 #include <QRegExp>
 #include <QString>
 #include <QDebug>
 #include <QFileInfo>
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+#ifdef __linux__
+    #include <GL/glx.h>
+#endif
+
+#include "imagerender.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
 
+
 /* This is the file to edit/append if you would like to add your own file formats */
 
-class PilatusFile{
+class PilatusFile
+{
     /* Refer to PILATUS CBF header specs for details */
     public:
         ~PilatusFile();
         PilatusFile();
-        PilatusFile(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel);
+        PilatusFile(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget);
 
         QString getPath();
         
-        int set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel);
+        int set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget);
         int readData();
         int filterData(size_t * n, float * outBuf, int treshold_reduce_low, int treshold_reduce_high, int treshold_project_low, int treshold_project_high, bool isProjectionActive = true);
         int project(size_t * n, float * outBuf, int treshold_project_low, int treshold_project_high);
-        float * getImage();
-        float * getCorrectedImage();
+        //~ float * getImage();
+        //~ float * getCorrectedImage();
         MiniArray<float> getTest();
         int getWidth();
         int getHeight();
@@ -49,9 +69,17 @@ class PilatusFile{
         void setBackground(Matrix<float> * buffer, float flux, float exposure_time);
         float getFlux();
         float getExpTime();
+        void setTsfImgCLGL(cl_mem * image);
+        void setRawImgCLGL(cl_mem * image);
+        void setCorrectedImgCLGL(cl_mem * image);
+        void setImageRenderWidget(ImageRenderGLWidget * widget);
         
     private:
-        //~ cl_raw_
+        ImageRenderGLWidget * imageRenderWidget;
+    
+        cl_mem * tsf_img_clgl;
+        cl_mem * raw_img_clgl;
+        cl_mem * corrected_img_clgl;
         cl_command_queue * queue;
         cl_context * context;
         cl_kernel * filterKernel;
@@ -61,9 +89,9 @@ class PilatusFile{
         size_t glb_ws[2];
 
         MiniArray<float> data_buf;
-        MiniArray<float> corrected_data_buf;
-        MiniArray<float> intensity;
-        MiniArray<int> index;
+        //~ MiniArray<float> corrected_data_buf;
+        //~ MiniArray<float> intensity;
+        //~ MiniArray<int> index;
         Matrix<float> * background;
         float background_flux;
         float backgroundExpTime;

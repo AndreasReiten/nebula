@@ -75,6 +75,8 @@ class VolumeDataSet : public QObject
         QString detector;
         QString format;
         float hint_wavelength;
+
+        void setImageRenderWidget(ImageRenderGLWidget * widget);
         
         int funcSetFiles();
         int funcReadFiles();
@@ -127,6 +129,8 @@ class VolumeDataSet : public QObject
         void displayFrameChanged(int value);
         
     private:
+        ImageRenderGLWidget * imageRenderWidget;
+        
         cl_device * device;
         cl_context * context;
         cl_command_queue * queue;

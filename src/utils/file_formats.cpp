@@ -11,19 +11,20 @@ PilatusFile::PilatusFile()
     max_counts = 0;
     STATUS_OK = 0;
 }
-PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel)
+PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
-    STATUS_OK = this->set(path, context, queue, kernel);
+    STATUS_OK = this->set(path, context, queue, kernel, widget);
 }
 
-int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel)
+int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget)
 {
     this->context = context;
     this->queue = queue;
     this->filterKernel = kernel;
+    this->imageRenderWidget = widget;
     
     this->path = path;
     if (!this->readHeader()) return 0;
@@ -83,18 +84,18 @@ int PilatusFile::getHeight()
 
 size_t PilatusFile::getBytes()
 {
-    return data_buf.size()*sizeof(float) + intensity.size()*sizeof(float) + index.size()*sizeof(int);
+    return data_buf.bytes();
 }
 
-float * PilatusFile::getImage()
-{
-    return data_buf.data();
-}
-
-float * PilatusFile::getCorrectedImage()
-{
-    return corrected_data_buf.data();
-}
+//~ float * PilatusFile::getImage()
+//~ {
+    //~ return data_buf.data();
+//~ }
+//~ 
+//~ float * PilatusFile::getCorrectedImage()
+//~ {
+    //~ return corrected_data_buf.data();
+//~ }
 
 MiniArray<float> PilatusFile::getTest()
 {
@@ -108,105 +109,105 @@ float PilatusFile::getMaxCount()
 
 int PilatusFile::project(size_t * n, float * outBuf, int treshold_project_low, int treshold_project_high)
 {
-    this->treshold_project_low = treshold_project_low;
-    this->treshold_project_high = treshold_project_high;
-    
-    // The frame has its axes like this, looking from the source to 
-    // the detector in the zero rotation position. We use the
-    // cartiesian coordinate system described in 
-    // doi:10.1107/S0021889899007347
-    //         y
-    //         ^
-    //         |
-    //         |
-    // z <-----x------ (fast)
-    //         |
-    //         |
-    //       (slow)
-    
-    // Set the active angle
-    int active_angle = 2;
-    
-    if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
-    else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
-    else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
-
-
+    //~ this->treshold_project_low = treshold_project_low;
+    //~ this->treshold_project_high = treshold_project_high;
+    //~ 
+    //~ // The frame has its axes like this, looking from the source to 
+    //~ // the detector in the zero rotation position. We use the
+    //~ // cartiesian coordinate system described in 
+    //~ // doi:10.1107/S0021889899007347
+    //~ //         y
+    //~ //         ^
+    //~ //         |
+    //~ //         |
+    //~ // z <-----x------ (fast)
+    //~ //         |
+    //~ //         |
+    //~ //       (slow)
+    //~ 
+    //~ // Set the active angle
+    //~ int active_angle = 2;
+    //~ 
+    //~ if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
+    //~ else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
+    //~ else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
+//~ 
+//~ 
     //~ std::cout << omega << std::endl;
-    // Process the data points
-    Matrix<float> XYZ(4,1,1);
-    
-        
-    float k = 1.0f/wavelength; // Multiply with 2pi if desired
-    
-    for(size_t i = 0; i < intensity.size(); i++)
-    {
-        size_t fast_index = fast_dimension - (index.at(i) % fast_dimension) - 1;
-        size_t slow_index = slow_dimension - (index.at(i) / fast_dimension) - 1;
-        
-        alpha =  0.8735582;
-        beta =  0.000891863;
-        
-        XYZ[0] = 0;
-        XYZ[1] = pixel_size_y * ((float) slow_index);
-        XYZ[2] = pixel_size_x * ((float) fast_index);
-        outBuf[(*n)+3] = intensity.at(i);
-        
-        // Center the detector
-        XYZ[1] -= beam_x * pixel_size_y; // Not sure if one should offset by half a pixel more/less
-        XYZ[2] -= beam_y * pixel_size_x;
-        
-        // Titlt the detector around origo assuming it correctly 
-        // coincides with the actual center of rotation ( not yet implemented)
-        
-        
-        // Project onto Ewald's sphere, moving to k-space
-        XYZ[0] = -detector_distance;
-        float len = std::sqrt(XYZ[0]*XYZ[0] + XYZ[1]*XYZ[1] + XYZ[2]*XYZ[2]);
-        XYZ[0] = XYZ[0]*k/len;
-        XYZ[1] = XYZ[1]*k/len;
-        XYZ[2] = XYZ[2]*k/len; 
-        {
-            // XYZ now has the direction of the scattered ray with respect to the incident one. This can be used to calculate the scattering angle for correction purposes. 
-            float x = XYZ[0];
-            float y = XYZ[1];
-            float z = XYZ[2];
-            
-            // lab_theta and lab_phi are not to be confused with the detector/sample angles. These are simply the circular coordinate representation of the pixel position
-            float lab_theta = std::asin(y/k);
-            float lab_phi = std::atan2(z,-x);
-            
-            /* Lorentz Polarization correction - The Lorentz part will depend on the scanning axis, and has to be applied if the frames are integrated over some time */
-            
-            // Assuming rotation around the z-axis of the lab frame:
-            float L = std::sin(lab_theta);
-            
-            // The polarization correction also needs a bit more work
-            //float P = 
-            
-            outBuf[(*n)+3] *= L;
-        }
-        
-        XYZ[0] += k; // This step must be applied _after_ any detector rotation if such is used. This translation by k gives us the scattering vector Q, which is the reciprocal coordinate of the intensity.
-        
-        // Sample rotation
-        RotationMatrix<float> PHI;
-        RotationMatrix<float> KAPPA;
-        RotationMatrix<float> OMEGA;
-
-        PHI.setArbRotation(-phi, beta, 0);
-        KAPPA.setArbRotation(-kappa, alpha, 0);
-        OMEGA.setZRotation(-omega);
-        
-        XYZ = PHI*KAPPA*OMEGA*XYZ;
-        
-        
-        // Store result
-        outBuf[(*n)+0] = XYZ[0];
-        outBuf[(*n)+1] = XYZ[1];
-        outBuf[(*n)+2] = XYZ[2];
-        (*n)+=4;
-    }
+    //~ // Process the data points
+    //~ Matrix<float> XYZ(4,1,1);
+    //~ 
+        //~ 
+    //~ float k = 1.0f/wavelength; // Multiply with 2pi if desired
+    //~ 
+    //~ for(size_t i = 0; i < intensity.size(); i++)
+    //~ {
+        //~ size_t fast_index = fast_dimension - (index.at(i) % fast_dimension) - 1;
+        //~ size_t slow_index = slow_dimension - (index.at(i) / fast_dimension) - 1;
+        //~ 
+        //~ alpha =  0.8735582;
+        //~ beta =  0.000891863;
+        //~ 
+        //~ XYZ[0] = 0;
+        //~ XYZ[1] = pixel_size_y * ((float) slow_index);
+        //~ XYZ[2] = pixel_size_x * ((float) fast_index);
+        //~ outBuf[(*n)+3] = intensity.at(i);
+        //~ 
+        //~ // Center the detector
+        //~ XYZ[1] -= beam_x * pixel_size_y; // Not sure if one should offset by half a pixel more/less
+        //~ XYZ[2] -= beam_y * pixel_size_x;
+        //~ 
+        //~ // Titlt the detector around origo assuming it correctly 
+        //~ // coincides with the actual center of rotation ( not yet implemented)
+        //~ 
+        //~ 
+        //~ // Project onto Ewald's sphere, moving to k-space
+        //~ XYZ[0] = -detector_distance;
+        //~ float len = std::sqrt(XYZ[0]*XYZ[0] + XYZ[1]*XYZ[1] + XYZ[2]*XYZ[2]);
+        //~ XYZ[0] = XYZ[0]*k/len;
+        //~ XYZ[1] = XYZ[1]*k/len;
+        //~ XYZ[2] = XYZ[2]*k/len; 
+        //~ {
+            //~ // XYZ now has the direction of the scattered ray with respect to the incident one. This can be used to calculate the scattering angle for correction purposes. 
+            //~ float x = XYZ[0];
+            //~ float y = XYZ[1];
+            //~ float z = XYZ[2];
+            //~ 
+            //~ // lab_theta and lab_phi are not to be confused with the detector/sample angles. These are simply the circular coordinate representation of the pixel position
+            //~ float lab_theta = std::asin(y/k);
+            //~ float lab_phi = std::atan2(z,-x);
+            //~ 
+            //~ /* Lorentz Polarization correction - The Lorentz part will depend on the scanning axis, and has to be applied if the frames are integrated over some time */
+            //~ 
+            //~ // Assuming rotation around the z-axis of the lab frame:
+            //~ float L = std::sin(lab_theta);
+            //~ 
+            //~ // The polarization correction also needs a bit more work
+            //~ //float P = 
+            //~ 
+            //~ outBuf[(*n)+3] *= L;
+        //~ }
+        //~ 
+        //~ XYZ[0] += k; // This step must be applied _after_ any detector rotation if such is used. This translation by k gives us the scattering vector Q, which is the reciprocal coordinate of the intensity.
+        //~ 
+        //~ // Sample rotation
+        //~ RotationMatrix<float> PHI;
+        //~ RotationMatrix<float> KAPPA;
+        //~ RotationMatrix<float> OMEGA;
+//~ 
+        //~ PHI.setArbRotation(-phi, beta, 0);
+        //~ KAPPA.setArbRotation(-kappa, alpha, 0);
+        //~ OMEGA.setZRotation(-omega);
+        //~ 
+        //~ XYZ = PHI*KAPPA*OMEGA*XYZ;
+        //~ 
+        //~ 
+        //~ // Store result
+        //~ outBuf[(*n)+0] = XYZ[0];
+        //~ outBuf[(*n)+1] = XYZ[1];
+        //~ outBuf[(*n)+2] = XYZ[2];
+        //~ (*n)+=4;
+    //~ }
 
     return 1;
 }
@@ -344,33 +345,56 @@ void PilatusFile::clearData()
     data_buf.clear();
 }
 
+
+void PilatusFile::setTsfImgCLGL(cl_mem * image)
+{
+    this->tsf_img_clgl = image;
+}
+void PilatusFile::setRawImgCLGL(cl_mem * image)
+{
+    this->raw_img_clgl = image;
+}
+void PilatusFile::setCorrectedImgCLGL(cl_mem * image)
+{
+    this->corrected_img_clgl = image;
+}
+
+
+void PilatusFile::setImageRenderWidget(ImageRenderGLWidget * widget)
+{
+    imageRenderWidget = widget;
+}
+
 int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low, int treshold_reduce_high, int treshold_project_low, int treshold_project_high, bool isProjectionActive)
 {
+    // Let all GL jobs finish
+    //~ glFinish();
+    imageRenderWidget->aquireSharedBuffers();
     this->treshold_reduce_low = treshold_reduce_low;
     this->treshold_reduce_high = treshold_reduce_high;
-
+    std::cout << "Time to go - begin" << std::endl;
     // Targets
-    cl_image_format target_format;
-    target_format.image_channel_order = CL_INTENSITY;
-    target_format.image_channel_data_type = CL_FLOAT;
+    //~ cl_image_format target_format;
+    //~ target_format.image_channel_order = CL_INTENSITY;
+    //~ target_format.image_channel_data_type = CL_FLOAT;
     
     // Prepare the target for the corrected pixels (only intensity)
-    cl_mem i_target_cl = clCreateImage2D ( (*context),
-        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        &target_format,
-        fast_dimension,
-        slow_dimension,
-        0,
-        NULL,
-        &err);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
-    }
-
+    //~ cl_mem i_target_cl = clCreateImage2D ( (*context),
+        //~ CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        //~ &target_format,
+        //~ fast_dimension,
+        //~ slow_dimension,
+        //~ 0,
+        //~ NULL,
+        //~ &err);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+    //~ }
+    cl_image_format target_format;
     target_format.image_channel_order = CL_RGBA;
     target_format.image_channel_data_type = CL_FLOAT;
-    
+    std::cout << "Time to go - 1" << std::endl;
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
     cl_mem xyzi_target_cl = clCreateImage2D ( (*context),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -403,6 +427,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
+    
     cl_mem background_cl = clCreateImage2D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
@@ -425,7 +450,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
     int active_angle = 2;
-    
+    std::cout << "Time to go - 2" << std::endl;
     if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
     else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
     else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
@@ -443,7 +468,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     OMEGA.setZRotation(-omega);
     
     sampleRotMat = PHI*KAPPA*OMEGA;
-    sampleRotMat.print(5, "Sample Rotation Matrix");
+    //~ sampleRotMat.print(5, "Sample Rotation Matrix");
 
     cl_mem sample_rotation_matrix_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -455,42 +480,55 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
     
-        
+    // The sampler for tsf_img_clgl
+    cl_sampler tsf_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
+    }
+    
     //~ std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
     
     // SET KERNEL ARGS
-    err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &i_target_cl);
-    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) &background_cl);
-    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_sampler), &intensity_sampler);
-    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
+    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) imageRenderWidget->getRawImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) imageRenderWidget->getCorrectedImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) imageRenderWidget->getTsfImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_mem), (void *) &background_cl);
+    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_sampler), &tsf_sampler);
+    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_sampler), &intensity_sampler);
+    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
     float threshold_reduce[2] = {(float)treshold_reduce_low, (float)treshold_reduce_high};
-    err |= clSetKernelArg(*filterKernel, 6, 2*sizeof(cl_float), threshold_reduce);
-    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_float), &background_flux);
-    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_float), &backgroundExpTime);
-    err |= clSetKernelArg(*filterKernel, 9, sizeof(cl_float), &pixel_size_x);
-    err |= clSetKernelArg(*filterKernel, 10, sizeof(cl_float), &pixel_size_y);
-    err |= clSetKernelArg(*filterKernel, 11, sizeof(cl_float), &exposure_time);
-    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &wavelength);
-    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &detector_distance);
-    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &beam_x);
-    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &beam_y);
-    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &flux);
-    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &start_angle);
-    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &angle_increment);
-    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &kappa);
-    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &phi);
-    err |= clSetKernelArg(*filterKernel, 21, sizeof(cl_float), &omega);
+    err |= clSetKernelArg(*filterKernel, 9, 2*sizeof(cl_float), threshold_reduce);
+    err |= clSetKernelArg(*filterKernel, 10, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*filterKernel, 11, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &pixel_size_x);
+    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &pixel_size_y);
+    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &wavelength);
+    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &detector_distance);
+    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &beam_x);
+    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &beam_y);
+    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &start_angle);
+    err |= clSetKernelArg(*filterKernel, 21, sizeof(cl_float), &angle_increment);
+    err |= clSetKernelArg(*filterKernel, 22, sizeof(cl_float), &kappa);
+    err |= clSetKernelArg(*filterKernel, 23, sizeof(cl_float), &phi);
+    err |= clSetKernelArg(*filterKernel, 24, sizeof(cl_float), &omega);
+    err |= clSetKernelArg(*filterKernel, 25, sizeof(cl_float), &max_counts);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
     }
+    std::cout << "Time to go - 2a" << std::endl;
 
+    
+    
     /* Launch rendering kernel */
     size_t area_per_call[2] = {128, 128};
     size_t call_offset[2] = {0,0};
-
+    std::cout << "Time to go - 2b" << std::endl;
     for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
     {
         for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
@@ -501,12 +539,14 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
             err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if (err != CL_SUCCESS)
             {
-                std::cout << "Error launching kernel: " << cl_error_cstring(err) << std::endl;
+                std::cout << "[] Error launching kernel: " << cl_error_cstring(err) << std::endl;
             }
         }
     }
-    clFinish(*queue);
-
+    clFinish((*queue));
+    std::cout << "Time to go - 2c" << std::endl;
+    imageRenderWidget->releaseSharedBuffers();
+    std::cout << "Time to go - 3" << std::endl;
     // Read the data
     size_t origin[3];
     origin[0] = 0;
@@ -518,19 +558,19 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     region[1] = slow_dimension;
     region[2] = 1;
 
-    corrected_data_buf.reserve(fast_dimension*slow_dimension);
-    clEnqueueReadImage ( *queue, i_target_cl, true, origin, region, 0, 0, this->corrected_data_buf.data(), 0, NULL, NULL);
+    //~ corrected_data_buf.reserve(fast_dimension*slow_dimension);
+    //~ clEnqueueReadImage ( *queue, i_target_cl, true, origin, region, 0, 0, this->corrected_data_buf.data(), 0, NULL, NULL);
     
     MiniArray<float> projected_data_buf(fast_dimension*slow_dimension*4);
     clEnqueueReadImage ( *queue, xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
     
-    if (i_target_cl) clReleaseMemObject(i_target_cl);
     if (xyzi_target_cl) clReleaseMemObject(xyzi_target_cl);
     if (source_cl) clReleaseMemObject(source_cl);
     if (background_cl) clReleaseMemObject(background_cl);
     if (sample_rotation_matrix_cl) clReleaseMemObject(sample_rotation_matrix_cl);
     if (intensity_sampler) clReleaseSampler(intensity_sampler);
-
+    if (tsf_sampler) clReleaseSampler(tsf_sampler);
+    std::cout << "Time to go - 4" << std::endl;
     if (isProjectionActive)
     {
         for (size_t i = 0; i < fast_dimension*slow_dimension; i++)
@@ -539,12 +579,13 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
             {
                 outBuf[(*n)+0] = projected_data_buf[i*4+0]; 
                 outBuf[(*n)+1] = projected_data_buf[i*4+1];
-                outBuf[(*n)+2] =  projected_data_buf[i*4+2];
+                outBuf[(*n)+2] = projected_data_buf[i*4+2];
                 outBuf[(*n)+3] = projected_data_buf[i*4+3];
                 (*n)+=4;
             }
         }
     }
+    std::cout << "Time to go - 5" << std::endl;
     return 1;
 }
 

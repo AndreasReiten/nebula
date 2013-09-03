@@ -40,7 +40,7 @@ void InitGLCLWidget::initializeGL()
     std::cout << "Initializing OpenGL and CL" << std::endl;
 
     if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
-    if (!this->init_cl_device()) std::cout << "Error initializing OpenCL Device" << std::endl;
+    if (!this->init_cl_device(1)) std::cout << "Error initializing OpenCL Device" << std::endl;
     if (!this->init_cl()) std::cout << "Error initializing OpenCL" << std::endl;
     //~ std::cout << "INITGLCL Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
     std::cout << "Done Initializing OpenGL and CL " << std::endl;
@@ -94,7 +94,7 @@ int InitGLCLWidget::init_gl()
     return 1;
 }
 
-int InitGLCLWidget::init_cl_device()
+int InitGLCLWidget::init_cl_device(int verbose)
 {
     // DEVICE & INFO
     device = new cl_device;
@@ -124,7 +124,31 @@ int InitGLCLWidget::init_cl_device()
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(device->gpu_work_item_dim)*8, &device->gpu_work_item_dim, NULL);
     clGetDeviceInfo(device->device_id, CL_DEVICE_IMAGE_SUPPORT, sizeof(device->gpu_image_support)*8, &device->gpu_image_support, NULL);
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(device->gpu_work_item_sizes)*8, device->gpu_work_item_sizes, NULL);
-    
+
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_READ_IMAGE_ARGS, sizeof(cl_uint), &device->max_read_image_args, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WRITE_IMAGE_ARGS, sizeof(cl_uint), &device->max_write_image_args, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_SAMPLERS, sizeof(cl_uint), &device->max_samplers, NULL);
+
+    if (verbose == 1)
+    {
+        std::cout << "CL_DEVICE_NAME:                       " << device->cl_device_name << std::endl;
+        std::cout << "CL_DEVICE_VERSION:                    " << device->cl_device_version << std::endl;
+        std::cout << "CL_DRIVER_VERSION:                    " << device->cl_driver_version << std::endl;
+        std::cout << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:         " << device->gpu_max_mem_alloc_size << std::endl;
+        std::cout << "CL_DEVICE_MAX_CLOCK_FREQUENCY:        " << device->gpu_clock_max << std::endl;
+        std::cout << "CL_DEVICE_GLOBAL_MEM_SIZE:            " << device->gpu_global_mem << std::endl;
+        std::cout << "CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE:  " << device->gpu_global_mem_cache_line << std::endl;
+        std::cout << "CL_DEVICE_LOCAL_MEM_SIZE:             " << device->gpu_local_mem << std::endl;
+        std::cout << "CL_DEVICE_MAX_COMPUTE_UNITS:          " << device->gpu_compute_units << std::endl;
+        std::cout << "CL_DEVICE_MAX_WORK_GROUP_SIZE:        " << device->gpu_work_group_size << std::endl;
+        std::cout << "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS:   " << device->gpu_work_item_dim << std::endl;
+        std::cout << "CL_DEVICE_IMAGE_SUPPORT:              " << device->gpu_image_support << std::endl;
+        std::cout << "CL_DEVICE_MAX_READ_IMAGE_ARGS:        " << device->max_read_image_args << std::endl;
+        std::cout << "CL_DEVICE_MAX_WRITE_IMAGE_ARGS:       " << device->max_write_image_args << std::endl;
+        std::cout << "CL_DEVICE_MAX_SAMPLERS:               " << device->max_samplers << std::endl;
+        //~ std::cout << ": " << device-> << std::endl;
+        
+    }
     return 1;
 }
 

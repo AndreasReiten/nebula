@@ -61,6 +61,9 @@ struct cl_device{
     cl_uint gpu_work_item_dim;
     cl_bool gpu_image_support;
     size_t gpu_work_item_sizes[3];
+    cl_uint max_read_image_args;
+    cl_uint max_write_image_args;
+    cl_uint max_samplers;
 };
 
 QByteArray open_resource(const char * path);

@@ -34,7 +34,7 @@
 #endif
 
 #include "tools.h"
-#include "file_formats.h"
+//~ #include "file_formats.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "atlas.h"
@@ -48,10 +48,17 @@ public:
     ~ImageRenderGLWidget();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
+    cl_mem * getTsfImgCLGL();
+    cl_mem * getRawImgCLGL();
+    cl_mem * getCorrectedImgCLGL();
+    void setImageSize(int w, int h);
+    void aquireSharedBuffers();
+    void releaseSharedBuffers();
+
     
 public slots:
-    void setRawImage(PilatusFile * file);
-    void setCorrectedImage(PilatusFile * file);
+    //~ void setRawImage(PilatusFile * file);
+    //~ void setCorrectedImage(PilatusFile * file);
     
 signals:
     void changedMessageString(QString str);
@@ -103,9 +110,9 @@ private:
     
     // OpenCL Related
     int init_cl();
-    cl_sampler source_sampler, tsf_tex_sampler;
-    cl_mem raw_target_cl, corrected_target_cl, source_cl, tsf_tex_cl;
-    cl_kernel K_FRAME_TO_IMAGE;
+    //~ cl_sampler source_sampler, tsf_tex_sampler;
+    cl_mem raw_target_cl, corrected_target_cl, tsf_tex_cl;
+    //~ cl_kernel K_FRAME_TO_IMAGE;
     cl_device * device;
     cl_program program;
     cl_context * context2;

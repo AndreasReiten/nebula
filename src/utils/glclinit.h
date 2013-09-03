@@ -54,7 +54,7 @@ private:
     bool isGLIntitialized;
 
     // OpenCL Related
-    int init_cl_device();
+    int init_cl_device(int verbose);
     int init_cl();
     cl_device * device; // Might have to declare with new
     cl_context * context2;

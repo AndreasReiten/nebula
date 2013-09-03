@@ -581,8 +581,8 @@ void MainWindow::createConnects()
     connect(dataInstance, SIGNAL(displayFrameChanged(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
     connect(this , SIGNAL(changedPaths(QStringList)), dataInstance, SLOT(setPaths(QStringList)));
     /* irWidget <-> dataInstance */
-    connect(dataInstance, SIGNAL(changedRawImage(PilatusFile *)), irWidget, SLOT(setRawImage(PilatusFile *)));
-    connect(dataInstance, SIGNAL(changedCorrectedImage(PilatusFile *)), irWidget, SLOT(setCorrectedImage(PilatusFile *)));
+    //~ connect(dataInstance, SIGNAL(changedRawImage(PilatusFile *)), irWidget, SLOT(setRawImage(PilatusFile *)));
+    //~ connect(dataInstance, SIGNAL(changedCorrectedImage(PilatusFile *)), irWidget, SLOT(setCorrectedImage(PilatusFile *)));
     connect(dataInstance, SIGNAL(repaintRequest()), irWidget, SLOT(repaint()));
     
     /* this <-> this */
@@ -792,6 +792,7 @@ void MainWindow::createInteractives()
         //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << initGLCL->format().alpha() << std::endl;
         
         irWidget = new ImageRenderGLWidget(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue(), initGLCL->format(), 0, initGLCL);
+        dataInstance->setImageRenderWidget(irWidget);
 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setSpacing(0);

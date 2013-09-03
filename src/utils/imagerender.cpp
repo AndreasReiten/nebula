@@ -9,8 +9,10 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     this->device = device;
     this->queue = queue;
     this->context2 = context2;
-     
-    
+
+    //~ this->raw_target_cl = new cl_mem;
+    //~ this->corrected_target_cl = new cl_mem;
+    //~ this->tsf_tex_cl = new cl_mem;
      
     /* colors */
     float c_white[4] = {1,1,1,1};
@@ -53,6 +55,16 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     std::cout << "Done Constructing ImageRenderGLWidget" << std::endl;
 }
 
+void ImageRenderGLWidget::setImageSize(int w, int h)
+{
+    if ((w != image_w) || (h != image_h))
+    {
+        this->image_w = w;
+        this->image_h = h;
+        this->setTarget();
+    }
+}
+
 ImageRenderGLWidget::~ImageRenderGLWidget()
 {
     if (isGLIntitialized)
@@ -70,19 +82,19 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
 
-        if (raw_target_cl) clReleaseMemObject(raw_target_cl);
-        if (corrected_target_cl) clReleaseMemObject(corrected_target_cl);
-        if (source_cl) clReleaseMemObject(source_cl);
-        if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
+        //~ if (raw_target_cl) clReleaseMemObject(raw_target_cl);
+        //~ if (corrected_target_cl) clReleaseMemObject(corrected_target_cl);
+        //~ if (source_cl) clReleaseMemObject(source_cl);
+        //~ if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
         
-        if (source_sampler) clReleaseSampler(source_sampler);
-        if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
+        //~ if (source_sampler) clReleaseSampler(source_sampler);
+        //~ if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
         
-        if (K_FRAME_TO_IMAGE) clReleaseKernel(K_FRAME_TO_IMAGE);
+        //~ if (K_FRAME_TO_IMAGE) clReleaseKernel(K_FRAME_TO_IMAGE);
         
         //~ if (queue) clReleaseCommandQueue(queue);
         //~ if (context) clReleaseContext(context);
-        if (program) clReleaseProgram(program);
+        //~ if (program) clReleaseProgram(program);
 
         std::cout << "ImageRenderGLWidget DESTRUCTION: DONE!" << std::endl;
     }
@@ -227,14 +239,37 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
     glViewport(0, 0, w, h);
 }
 
+void ImageRenderGLWidget::aquireSharedBuffers()
+{
+    // Aquire shared CL/GL objects
+    glFinish();
+    err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    }
+}
 
+void ImageRenderGLWidget::releaseSharedBuffers()
+{
+    // Release shared CL/GL objects
+    err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    }
+}
 void ImageRenderGLWidget::setMessageString(QString str)
 {
         emit changedMessageString(str);
 }
 
 
-void ImageRenderGLWidget::setRawImage(PilatusFile * file)
+/*void ImageRenderGLWidget::setRawImage(PilatusFile * file)
 {
     // Set the image
 
@@ -312,7 +347,7 @@ void ImageRenderGLWidget::setRawImage(PilatusFile * file)
         std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
     }
     
-    /* Launch rendering kernel */
+    // Launch rendering kernel 
     size_t area_per_call[2] = {128, 128};
     size_t call_offset[2] = {0,0};
     
@@ -333,7 +368,7 @@ void ImageRenderGLWidget::setRawImage(PilatusFile * file)
     // Let all CL jobs finish
     clFinish((*queue));
     
-    /* Release shared CL/GL objects */
+    // Release shared CL/GL objects 
     err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
     err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
     clFinish((*queue));
@@ -416,7 +451,7 @@ void ImageRenderGLWidget::setCorrectedImage(PilatusFile * file)
         std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
     }
     
-    /* Launch rendering kernel */
+    // Launch rendering kernel 
     size_t area_per_call[2] = {128, 128};
     size_t call_offset[2] = {0,0};
     
@@ -437,7 +472,7 @@ void ImageRenderGLWidget::setCorrectedImage(PilatusFile * file)
     // Let all CL jobs finish
     clFinish((*queue));
     
-    /* Release shared CL/GL objects */
+    // Release shared CL/GL objects 
     err = clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
     err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
     clFinish((*queue));
@@ -445,7 +480,7 @@ void ImageRenderGLWidget::setCorrectedImage(PilatusFile * file)
     {
         std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
     }
-}
+}*/
 
 
 
@@ -778,43 +813,43 @@ void ImageRenderGLWidget::init_gl_programs()
 int ImageRenderGLWidget::init_cl()
 {
     // Program
-    QByteArray qsrc = open_resource(":/src/kernels/frameToImage.cl");
-    const char * src = qsrc.data();
-    size_t src_length = strlen(src);
-
-    program = clCreateProgramWithSource((*context2), 1, (const char **)&src, &src_length, &err);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "ImageRenderGLWidget: Could not create program from source: " << cl_error_cstring(err) << std::endl;
-        return 0;
-    }
-    // Compile kernel
-    const char * options = "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math";
-    err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        // Compile log
-        std::cout << "Could not compile/link program: " << cl_error_cstring(err) << std::endl;
-        std::cout << "--- START KERNEL COMPILE LOG ---" << std::endl;
-        char* build_log;
-        size_t log_size;
-        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-        build_log = new char[log_size+1];
-        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
-        build_log[log_size] = '\0';
-        std::cout << build_log << std::endl;
-        std::cout << "---  END KERNEL COMPILE LOG  ---" << std::endl;
-        delete[] build_log;
-        return 0;
-    }
-    
-    // Entry points
-    K_FRAME_TO_IMAGE = clCreateKernel(program, "FRAME_TO_IMAGE", &err);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Could not create kernel object: " << cl_error_cstring(err) << std::endl;
-        return 0;
-    }
+    //~ QByteArray qsrc = open_resource(":/src/kernels/frameToImage.cl");
+    //~ const char * src = qsrc.data();
+    //~ size_t src_length = strlen(src);
+//~ 
+    //~ program = clCreateProgramWithSource((*context2), 1, (const char **)&src, &src_length, &err);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "ImageRenderGLWidget: Could not create program from source: " << cl_error_cstring(err) << std::endl;
+        //~ return 0;
+    //~ }
+    //~ // Compile kernel
+    //~ const char * options = "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math";
+    //~ err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ // Compile log
+        //~ std::cout << "Could not compile/link program: " << cl_error_cstring(err) << std::endl;
+        //~ std::cout << "--- START KERNEL COMPILE LOG ---" << std::endl;
+        //~ char* build_log;
+        //~ size_t log_size;
+        //~ clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+        //~ build_log = new char[log_size+1];
+        //~ clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
+        //~ build_log[log_size] = '\0';
+        //~ std::cout << build_log << std::endl;
+        //~ std::cout << "---  END KERNEL COMPILE LOG  ---" << std::endl;
+        //~ delete[] build_log;
+        //~ return 0;
+    //~ }
+    //~ 
+    //~ // Entry points
+    //~ K_FRAME_TO_IMAGE = clCreateKernel(program, "FRAME_TO_IMAGE", &err);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "Could not create kernel object: " << cl_error_cstring(err) << std::endl;
+        //~ return 0;
+    //~ }
     
     return 1;
 }
@@ -823,36 +858,36 @@ void ImageRenderGLWidget::setSource()
 {
     
     /* Load the contents into a CL texture */
-    cl_image_format source_format;
-    source_format.image_channel_order = CL_INTENSITY;
-    source_format.image_channel_data_type = CL_FLOAT;
+    //~ cl_image_format source_format;
+    //~ source_format.image_channel_order = CL_INTENSITY;
+    //~ source_format.image_channel_data_type = CL_FLOAT;
     //~ if (source_cl) clReleaseMemObject(source_cl);
-    source_cl = clCreateImage2D ( (*context2),
-        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        &source_format,
-        image_w,
-        image_h,
-        0,
-        NULL,
-        &err);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
-    }
-    // The sampler 
-    source_sampler = clCreateSampler((*context2), false, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
-    }
-    
-    // SET KERNEL ARGS
-    err = clSetKernelArg(K_FRAME_TO_IMAGE, 1, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(K_FRAME_TO_IMAGE, 4, sizeof(cl_sampler), &source_sampler);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
-    }
+    //~ source_cl = clCreateImage2D ( (*context2),
+        //~ CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        //~ &source_format,
+        //~ image_w,
+        //~ image_h,
+        //~ 0,
+        //~ NULL,
+        //~ &err);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+    //~ }
+    //~ // The sampler 
+    //~ source_sampler = clCreateSampler((*context2), false, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
+    //~ }
+    //~ 
+    //~ // SET KERNEL ARGS
+    //~ err = clSetKernelArg(K_FRAME_TO_IMAGE, 1, sizeof(cl_mem), (void *) &source_cl);
+    //~ err |= clSetKernelArg(K_FRAME_TO_IMAGE, 4, sizeof(cl_sampler), &source_sampler);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+    //~ }
 }
 
 
@@ -888,24 +923,41 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
     }
     
-    // The sampler for tsf_tex_cl
-    tsf_tex_sampler = clCreateSampler((*context2), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
-    }
-    // SET KERNEL ARGS
-    err = clSetKernelArg(K_FRAME_TO_IMAGE, 2, sizeof(cl_mem), (void *) &tsf_tex_cl);
-    err |= clSetKernelArg(K_FRAME_TO_IMAGE, 3, sizeof(cl_sampler), &tsf_tex_sampler);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
-    }
+    //~ // The sampler for tsf_tex_cl
+    //~ tsf_tex_sampler = clCreateSampler((*context2), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
+    //~ }
+    //~ // SET KERNEL ARGS
+    //~ err = clSetKernelArg(K_FRAME_TO_IMAGE, 2, sizeof(cl_mem), (void *) &tsf_tex_cl);
+    //~ err |= clSetKernelArg(K_FRAME_TO_IMAGE, 3, sizeof(cl_sampler), &tsf_tex_sampler);
+    //~ if (err != CL_SUCCESS)
+    //~ {
+        //~ std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+    //~ }
 }
 
+cl_mem * ImageRenderGLWidget::getTsfImgCLGL()
+{
+    return &tsf_tex_cl;
+}
+
+cl_mem * ImageRenderGLWidget::getRawImgCLGL()
+{
+    return &raw_target_cl;
+}
+
+cl_mem * ImageRenderGLWidget::getCorrectedImgCLGL()
+{
+    return &corrected_target_cl;
+}
+
+    
 int ImageRenderGLWidget::setTarget()
 {
     // Set GL texture
+
     glBindTexture(GL_TEXTURE_2D, image_tex[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -953,6 +1005,7 @@ int ImageRenderGLWidget::setTarget()
         return 0;
     }
 
+    std::cout << "Targets set: " << image_w << " x " << image_h << std::endl;
     return 1;
 }
 

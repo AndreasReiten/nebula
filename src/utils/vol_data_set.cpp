@@ -28,6 +28,11 @@ VolumeDataSet::~VolumeDataSet()
 {
 }
 
+void VolumeDataSet::setImageRenderWidget(ImageRenderGLWidget * widget)
+{
+    imageRenderWidget = widget;
+}
+
 int VolumeDataSet::initCL()
 {
     // Program
@@ -593,8 +598,12 @@ int VolumeDataSet::funcAllInOne()
     {
         PilatusFile file;
         // Set file and get status
-        int STATUS_OK = file.set(paths[i], context, queue, &K_FRAME_FILTER);
-
+        int STATUS_OK = file.set(paths[i], context, queue, &K_FRAME_FILTER, imageRenderWidget);
+        // Set the background that will be subtracted from the data
+        file.setBackground(&testBackground, file.getFlux(), file.getExpTime());
+        file.setTsfImgCLGL(imageRenderWidget->getTsfImgCLGL());
+        file.setRawImgCLGL(imageRenderWidget->getRawImgCLGL());
+        file.setCorrectedImgCLGL(imageRenderWidget->getCorrectedImgCLGL());
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -614,7 +623,7 @@ int VolumeDataSet::funcAllInOne()
         size_raw += file.getBytes();
         if (STATUS_OK)
         {
-            emit changedRawImage(&file);
+            //~ emit changedRawImage(&file);
         }
         else
         {
@@ -643,6 +652,8 @@ int VolumeDataSet::funcAllInOne()
         }
         else
         {
+            imageRenderWidget->setImageSize(file.getWidth(), file.getHeight());
+            
             STATUS_OK = file.filterData( &n, POINTS.data(), treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1], 1);
             if (STATUS_OK)
             {
@@ -708,8 +719,7 @@ int VolumeDataSet::funcSetFiles()
     {
         // Set file and get status
         RAWFILE.append(PilatusFile());
-        int STATUS_OK = RAWFILE.back().set(paths[i], context, queue, &K_FRAME_FILTER);
-
+        int STATUS_OK = RAWFILE.back().set(paths[i], context, queue, &K_FRAME_FILTER, imageRenderWidget);
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -721,6 +731,9 @@ int VolumeDataSet::funcSetFiles()
 
             // Set the background that will be subtracted from the data
             RAWFILE.back().setBackground(&testBackground, RAWFILE.front().getFlux(), RAWFILE.front().getExpTime());
+            RAWFILE.back().setTsfImgCLGL(imageRenderWidget->getTsfImgCLGL());
+            RAWFILE.back().setRawImgCLGL(imageRenderWidget->getRawImgCLGL());
+            RAWFILE.back().setCorrectedImgCLGL(imageRenderWidget->getCorrectedImgCLGL());
         }
         else
         {
@@ -796,9 +809,12 @@ void VolumeDataSet::setDisplayFrame(int value)
     PilatusFile file;
     
     // Set file and get status
-    int STATUS_OK = file.set(paths[value], context, queue, &K_FRAME_FILTER);
+    int STATUS_OK = file.set(paths[value], context, queue, &K_FRAME_FILTER, imageRenderWidget);
     // Set the background that will be subtracted from the data
     file.setBackground(&testBackground, file.getFlux(), file.getExpTime());
+    file.setTsfImgCLGL(imageRenderWidget->getTsfImgCLGL());
+    file.setRawImgCLGL(imageRenderWidget->getRawImgCLGL());
+    file.setCorrectedImgCLGL(imageRenderWidget->getCorrectedImgCLGL());
     if (!STATUS_OK)
     {
         setMessageString("\n[Set] Warning: \""+QString(paths[value])+"\"");
@@ -809,7 +825,7 @@ void VolumeDataSet::setDisplayFrame(int value)
     STATUS_OK = file.readData();
     if (STATUS_OK)
     {
-        emit changedRawImage(&file);
+        //~ emit changedRawImage(&file);
     }
     else
     {
@@ -817,10 +833,12 @@ void VolumeDataSet::setDisplayFrame(int value)
         return;
     }
     // Filter file and get status
+    imageRenderWidget->setImageSize(file.getWidth(), file.getHeight());
+    
     STATUS_OK = file.filterData( 0, NULL, treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1], 0);
     if (STATUS_OK)
     {
-        emit changedCorrectedImage(&file);
+        //~ emit changedCorrectedImage(&file);
         emit repaintRequest();
     }
     else
@@ -893,6 +911,8 @@ int VolumeDataSet::funcProjectFiles()
         }
         else
         {
+            imageRenderWidget->setImageSize(RAWFILE[i].getWidth(), RAWFILE[i].getHeight());
+            
             int STATUS_OK = RAWFILE[i].filterData( &n, POINTS.data(), treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1],1);
             if (STATUS_OK)
             {
