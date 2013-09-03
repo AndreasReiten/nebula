@@ -107,6 +107,8 @@ private:
     GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
     GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
     GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
+
+    void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
     
     // OpenCL Related
     int init_cl();

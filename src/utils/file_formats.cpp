@@ -491,9 +491,9 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) imageRenderWidget->getRawImgCLGL());
-    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) imageRenderWidget->getCorrectedImgCLGL());
-    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) imageRenderWidget->getTsfImgCLGL());
+    //~ err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) imageRenderWidget->getRawImgCLGL());
+    //~ err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) imageRenderWidget->getCorrectedImgCLGL());
+    //~ err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) imageRenderWidget->getTsfImgCLGL());
     err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_mem), (void *) &background_cl);
     err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &source_cl);
     err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_sampler), &tsf_sampler);
@@ -525,25 +525,27 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
 
     
     
-    /* Launch rendering kernel */
-    size_t area_per_call[2] = {128, 128};
-    size_t call_offset[2] = {0,0};
-    std::cout << "Time to go - 2b" << std::endl;
-    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
-    {
-        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
-        {
-            call_offset[0] = glb_x;
-            call_offset[1] = glb_y;
-            
-            err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
-            if (err != CL_SUCCESS)
-            {
-                std::cout << "[] Error launching kernel: " << cl_error_cstring(err) << std::endl;
-            }
-        }
-    }
-    clFinish((*queue));
+    //~ /* Launch rendering kernel */
+    imageRenderWidget->runFilterKernel(filterKernel, loc_ws, glb_ws);
+
+    //~ size_t area_per_call[2] = {128, 128};
+    //~ size_t call_offset[2] = {0,0};
+    //~ std::cout << "Time to go - 2b" << std::endl;
+    //~ for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
+    //~ {
+        //~ for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
+        //~ {
+            //~ call_offset[0] = glb_x;
+            //~ call_offset[1] = glb_y;
+            //~ 
+            //~ err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            //~ if (err != CL_SUCCESS)
+            //~ {
+                //~ std::cout << "[] Error launching kernel: " << cl_error_cstring(err) << std::endl;
+            //~ }
+        //~ }
+    //~ }
+    //~ clFinish((*queue));
     std::cout << "Time to go - 2c" << std::endl;
     imageRenderWidget->releaseSharedBuffers();
     std::cout << "Time to go - 3" << std::endl;
