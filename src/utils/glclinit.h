@@ -26,13 +26,13 @@
 #include "miniarray.h"
 #include "tools.h"
 
-class InitGLCLWidget : public QGLWidget
+class ContextGLWidget : public QGLWidget
 {
     Q_OBJECT
-    
+
 public:
-    explicit InitGLCLWidget(const QGLFormat & format, QWidget * parent = 0);
-    ~InitGLCLWidget();
+    explicit ContextGLWidget(const QGLFormat & format, QWidget * parent = 0);
+    ~ContextGLWidget();
 
     cl_command_queue * getCLCommandQueue();
     cl_device * getCLDevice();
@@ -45,7 +45,7 @@ protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
-    
+
 private:
     void setMessageString(QString str);
 

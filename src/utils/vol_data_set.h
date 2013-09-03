@@ -52,7 +52,7 @@
 class VolumeDataSet : public QObject
 {
     Q_OBJECT;
-    
+
     public:
         VolumeDataSet(cl_device * device, cl_context * context, cl_command_queue * queue);
         ~VolumeDataSet();
@@ -61,7 +61,7 @@ class VolumeDataSet : public QObject
         float suggested_q;
         float suggested_search_radius_low;
         float suggested_search_radius_high;
-        
+
         size_t size_raw;
         size_t size_svo;
         size_t dim_x, dim_y, dim_z;
@@ -70,20 +70,20 @@ class VolumeDataSet : public QObject
         float tilt_y;
         float tilt_z;
         int active_angle;
-        
+
         int detector_int;
         QString detector;
         QString format;
         float hint_wavelength;
 
         void setImageRenderWidget(ImageRenderGLWidget * widget);
-        
+
         int funcSetFiles();
         int funcReadFiles();
         int funcProjectFiles();
         int funcGenerateSvo();
         int funcAllInOne();
-        
+
         MiniArray<float> * getBRICKS();
         MiniArray<unsigned int> * getOCT_INDEX();
         MiniArray<unsigned int> * getOCT_BRICK();
@@ -92,15 +92,15 @@ class VolumeDataSet : public QObject
         size_t getLEVELS();
         size_t getN_BRICKS();
         size_t getBRICK_DIM_TOT();
-        
+
         //~ MiniArray<float> final_intensity;
         MiniArray<float> POINTS;
         QList<PilatusFile> RAWFILE;
         QList<PilatusFile> background;
         Matrix<float> testBackground;
-        
+
     protected:
-    
+
     public slots:
         void setFormatGenericProgress(QString str);
         void setMessageString(QString str);
@@ -127,10 +127,10 @@ class VolumeDataSet : public QObject
         void changedCorrectedImage(PilatusFile * file);
         void repaintRequest();
         void displayFrameChanged(int value);
-        
+
     private:
         ImageRenderGLWidget * imageRenderWidget;
-        
+
         cl_device * device;
         cl_context * context;
         cl_command_queue * queue;
@@ -138,18 +138,18 @@ class VolumeDataSet : public QObject
         cl_kernel K_FRAME_FILTER;
         cl_int err;
         int initCL();
-        
+
         int GENERATE_SVO_OCTTREE();
-        
+
         QElapsedTimer timer;
-        
+
         MiniArray<float> BRICKS;
         MiniArray<int> BRICK_INDICES;
         MiniArray<int> BRICK_INDEX_OFFSETS;
         MiniArray<int> BRICK_INDEX_LENGTHS;
         MiniArray<unsigned int> OCT_INDEX;
         MiniArray<unsigned int> OCT_BRICK;
-        
+
         size_t N_VOX_BRICK;
         size_t BRICK_POOL_POWER;
         size_t MAX_BRICKS;
@@ -163,18 +163,18 @@ class VolumeDataSet : public QObject
         size_t N_BRICKS;
         size_t BRICK_DIM_TOT;
         size_t final_resolution;
-        
+
         int rs_resolution;
         int sub_box_resolution;
         int n_sub_box;
         int genprog_value;
-        
+
         float srchrad;
         float volume_extent[8];
         float treshold_reduce[2];
         float treshold_project[2];
         float treshold_voxelize[2];
-        
+
         QStringList paths;
 };
 #endif

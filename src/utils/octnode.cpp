@@ -1,10 +1,10 @@
 #include "octnode.h"
-OctNode::OctNode()
+BrickNode::BrickNode()
 {
     this->dataFlag = 0;
 }
 
-OctNode::~OctNode()
+BrickNode::~BrickNode()
 {
     if(this->dataFlag)
     {
@@ -12,17 +12,17 @@ OctNode::~OctNode()
     }
 }
 
-void OctNode::setBrick(float * buf)
+void BrickNode::setBrick(float * buf)
 {
     brickData = buf;
 }
 
-float * OctNode::getBrick()
+float * BrickNode::getBrick()
 {
     return brickData;
 }
 
-void OctNode::print()
+void BrickNode::print()
 {
     std::cout << "-----------------"<<  std::endl;
     std::cout << "Node at L"<< level << ": "<<  std::endl;
@@ -34,110 +34,110 @@ void OctNode::print()
     std::cout << "Pool id: ["<< poolId[0] << ", "<< poolId[1] << ", "<< poolId[2] << "]" << std::endl;
 }
 
-void OctNode::calcPoolId(unsigned int poolPower, unsigned int brickNumber)
+void BrickNode::calcPoolId(unsigned int poolPower, unsigned int brickNumber)
 {
     // Bitwise operations used here:
     // X / 2^n = X >> n
     // X % 2^n = X & (2^n - 1)
     // 2^n = 1 << n
-    
+
     poolId[0] = (brickNumber & ((1 << poolPower) - 1));
     poolId[1] = (brickNumber & ((1 << poolPower*2) - 1)) >> poolPower;
     poolId[2] = brickNumber >> (poolPower*2);
-    
+
     //~ std::cout << "Calculated pool id from brick number " <<brickNumber<<": [" << poolId[0] << " "<< poolId[1] << " "<< poolId[2] << "]" << std::endl;
 }
 
 
-void OctNode::calcBrickId(unsigned int octant, OctNode * par)
+void BrickNode::calcBrickId(unsigned int octant, BrickNode * par)
 {
     // Bitwise operations used here:
     // X / 2^n = X >> n
     // X % 2^n = X & (2^n - 1)
     // 2^n = 1 << n
-    
+
     // The 3D index of the octant
     unsigned int oct_x = ((octant & 3) & 1);
     unsigned int oct_y = (octant & 3) >> 1;
     unsigned int oct_z = octant >> 2;
-    
+
     // The parents brick id
     unsigned int * parentBrickId = par->getBrickId();
-    
+
     // The brick id of this brick
     this->brickId[0] = parentBrickId[0]*2 + oct_x;
     this->brickId[1] = parentBrickId[1]*2 + oct_y;
     this->brickId[2] = parentBrickId[2]*2 + oct_z;
 }
 
-void OctNode::setDataFlag(unsigned int flag)
+void BrickNode::setDataFlag(unsigned int flag)
 {
     this->dataFlag = flag;
 }
-void OctNode::setMsdFlag(unsigned int flag)
+void BrickNode::setMsdFlag(unsigned int flag)
 {
     this->msdFlag = flag;
 }
-void OctNode::setParent(unsigned int index)
+void BrickNode::setParent(unsigned int index)
 {
     this->parent = index;
 }
-void OctNode::setChild(unsigned int index)
+void BrickNode::setChild(unsigned int index)
 {
     this->child = index;
 }
-void OctNode::setLevel(unsigned int index)
+void BrickNode::setLevel(unsigned int index)
 {
     this->level = index;
 }
-void OctNode::setBrickId(unsigned int x, unsigned int y, unsigned int z)
+void BrickNode::setBrickId(unsigned int x, unsigned int y, unsigned int z)
 {
     this->brickId[0] = x;
     this->brickId[1] = y;
     this->brickId[2] = z;
 }
-void OctNode::setPoolId(unsigned int x, unsigned int y, unsigned int z)
+void BrickNode::setPoolId(unsigned int x, unsigned int y, unsigned int z)
 {
     this->poolId[0] = x;
     this->poolId[1] = y;
     this->poolId[2] = z;
 }
 
-unsigned int OctNode::getDataFlag()
+unsigned int BrickNode::getDataFlag()
 {
     return this->dataFlag;
 }
-unsigned int OctNode::getMsdFlag()
+unsigned int BrickNode::getMsdFlag()
 {
     return this->msdFlag;
 }
 
-unsigned int OctNode::getParent()
+unsigned int BrickNode::getParent()
 {
     return this->parent;
 }
-unsigned int OctNode::getChild()
+unsigned int BrickNode::getChild()
 {
     return this->child;
 }
 
-unsigned int OctNode::getLevel()
+unsigned int BrickNode::getLevel()
 {
     return this->level;
 }
-unsigned int * OctNode::getBrickId()
+unsigned int * BrickNode::getBrickId()
 {
     return this->brickId;
 }
-unsigned int OctNode::getBrickId1D()
+unsigned int BrickNode::getBrickId1D()
 {
     // Requires the correct level to be set first
-    
+
     unsigned int brickId1D = brickId[0] + brickId[1]*(1 << level) + brickId[2]*(1 << level)*(1 << level);
-    
+
     return brickId1D;
 }
-unsigned int * OctNode::getPoolId()
+unsigned int * BrickNode::getPoolId()
 {
     return this->poolId;
 }

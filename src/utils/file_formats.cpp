@@ -2,7 +2,7 @@
 
 PilatusFile::~PilatusFile()
 {
-    
+
 }
 PilatusFile::PilatusFile()
 {
@@ -25,7 +25,7 @@ int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queu
     this->queue = queue;
     this->filterKernel = kernel;
     this->imageRenderWidget = widget;
-    
+
     this->path = path;
     if (!this->readHeader()) return 0;
     if (detector == "PILATUS 1M")
@@ -43,7 +43,7 @@ int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queu
         fast_dimension = 2463;
         slow_dimension = 2527;
     }
-    else 
+    else
     {
         std::cout << "Unknown detector: " << detector.toStdString().c_str() << std::endl;
         return 0;
@@ -54,7 +54,7 @@ int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queu
     loc_ws[1] = 16;
     glb_ws[0] = fast_dimension + loc_ws[0]%fast_dimension;
     glb_ws[1] = slow_dimension + loc_ws[1]%slow_dimension;
-    
+
     return 1;
 }
 
@@ -91,7 +91,7 @@ size_t PilatusFile::getBytes()
 //~ {
     //~ return data_buf.data();
 //~ }
-//~ 
+//~
 //~ float * PilatusFile::getCorrectedImage()
 //~ {
     //~ return corrected_data_buf.data();
@@ -107,110 +107,6 @@ float PilatusFile::getMaxCount()
     return max_counts;
 }
 
-int PilatusFile::project(size_t * n, float * outBuf, int treshold_project_low, int treshold_project_high)
-{
-    //~ this->treshold_project_low = treshold_project_low;
-    //~ this->treshold_project_high = treshold_project_high;
-    //~ 
-    //~ // The frame has its axes like this, looking from the source to 
-    //~ // the detector in the zero rotation position. We use the
-    //~ // cartiesian coordinate system described in 
-    //~ // doi:10.1107/S0021889899007347
-    //~ //         y
-    //~ //         ^
-    //~ //         |
-    //~ //         |
-    //~ // z <-----x------ (fast)
-    //~ //         |
-    //~ //         |
-    //~ //       (slow)
-    //~ 
-    //~ // Set the active angle
-    //~ int active_angle = 2;
-    //~ 
-    //~ if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
-    //~ else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
-    //~ else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
-//~ 
-//~ 
-    //~ std::cout << omega << std::endl;
-    //~ // Process the data points
-    //~ Matrix<float> XYZ(4,1,1);
-    //~ 
-        //~ 
-    //~ float k = 1.0f/wavelength; // Multiply with 2pi if desired
-    //~ 
-    //~ for(size_t i = 0; i < intensity.size(); i++)
-    //~ {
-        //~ size_t fast_index = fast_dimension - (index.at(i) % fast_dimension) - 1;
-        //~ size_t slow_index = slow_dimension - (index.at(i) / fast_dimension) - 1;
-        //~ 
-        //~ alpha =  0.8735582;
-        //~ beta =  0.000891863;
-        //~ 
-        //~ XYZ[0] = 0;
-        //~ XYZ[1] = pixel_size_y * ((float) slow_index);
-        //~ XYZ[2] = pixel_size_x * ((float) fast_index);
-        //~ outBuf[(*n)+3] = intensity.at(i);
-        //~ 
-        //~ // Center the detector
-        //~ XYZ[1] -= beam_x * pixel_size_y; // Not sure if one should offset by half a pixel more/less
-        //~ XYZ[2] -= beam_y * pixel_size_x;
-        //~ 
-        //~ // Titlt the detector around origo assuming it correctly 
-        //~ // coincides with the actual center of rotation ( not yet implemented)
-        //~ 
-        //~ 
-        //~ // Project onto Ewald's sphere, moving to k-space
-        //~ XYZ[0] = -detector_distance;
-        //~ float len = std::sqrt(XYZ[0]*XYZ[0] + XYZ[1]*XYZ[1] + XYZ[2]*XYZ[2]);
-        //~ XYZ[0] = XYZ[0]*k/len;
-        //~ XYZ[1] = XYZ[1]*k/len;
-        //~ XYZ[2] = XYZ[2]*k/len; 
-        //~ {
-            //~ // XYZ now has the direction of the scattered ray with respect to the incident one. This can be used to calculate the scattering angle for correction purposes. 
-            //~ float x = XYZ[0];
-            //~ float y = XYZ[1];
-            //~ float z = XYZ[2];
-            //~ 
-            //~ // lab_theta and lab_phi are not to be confused with the detector/sample angles. These are simply the circular coordinate representation of the pixel position
-            //~ float lab_theta = std::asin(y/k);
-            //~ float lab_phi = std::atan2(z,-x);
-            //~ 
-            //~ /* Lorentz Polarization correction - The Lorentz part will depend on the scanning axis, and has to be applied if the frames are integrated over some time */
-            //~ 
-            //~ // Assuming rotation around the z-axis of the lab frame:
-            //~ float L = std::sin(lab_theta);
-            //~ 
-            //~ // The polarization correction also needs a bit more work
-            //~ //float P = 
-            //~ 
-            //~ outBuf[(*n)+3] *= L;
-        //~ }
-        //~ 
-        //~ XYZ[0] += k; // This step must be applied _after_ any detector rotation if such is used. This translation by k gives us the scattering vector Q, which is the reciprocal coordinate of the intensity.
-        //~ 
-        //~ // Sample rotation
-        //~ RotationMatrix<float> PHI;
-        //~ RotationMatrix<float> KAPPA;
-        //~ RotationMatrix<float> OMEGA;
-//~ 
-        //~ PHI.setArbRotation(-phi, beta, 0);
-        //~ KAPPA.setArbRotation(-kappa, alpha, 0);
-        //~ OMEGA.setZRotation(-omega);
-        //~ 
-        //~ XYZ = PHI*KAPPA*OMEGA*XYZ;
-        //~ 
-        //~ 
-        //~ // Store result
-        //~ outBuf[(*n)+0] = XYZ[0];
-        //~ outBuf[(*n)+1] = XYZ[1];
-        //~ outBuf[(*n)+2] = XYZ[2];
-        //~ (*n)+=4;
-    //~ }
-
-    return 1;
-}
 
 float PilatusFile::getFlux()
 {
@@ -224,13 +120,13 @@ float PilatusFile::getExpTime()
 int PilatusFile::readHeader()
 {
     const float pi = 4.0*atan(1.0);
-    
+
     // Based on the PILATUS 1.2 header convention. Regular expressions are used to fetch header values
     QString reqExpDetector("(?:Detector:\\s+)(\\S+\\s+\\S+),");
     QString reqExpTime("(?:Exposure_time\\s+)(\\d+(?:\\.\\d+)?)");
     QString reqPixSizex("(?:Pixel_size\\s+)(\\d+e[+-]\\d+)");
     QString reqPixSizey("(?:Pixel_size\\s+)(?:\\d+e[+-]\\d+)\\sm\\sx\\s(\\d+e[+-]\\d+)");
-        
+
     QString optExpWl( "Wavelength\\s+(\\d+(?:\\.\\d+)?)" );
     QString optExpStAng( "Start_angle\\s+(\\d+(?:\\.\\d+)?)" );
     QString optExpAngInc( "Angle_increment\\s+(\\d+(?:\\.\\d+)?)" );
@@ -241,8 +137,8 @@ int PilatusFile::readHeader()
     QString optExpPhi( "Phi\\s+(-?\\d+(?:\\.\\d+)?)" );
     QString optExpKappa( "Kappa\\s+(-?\\d+(?:\\.\\d+)?)" );
     QString optExpOmega( "Omega\\s+(-?\\d+(?:\\.\\d+)?)" );
-    
-    
+
+
     // Open file
     QFileInfo file_info(path);
     if (!file_info.exists())
@@ -268,7 +164,7 @@ int PilatusFile::readHeader()
     in.read(&contents[0], 4096);
     in.close();
     QString header(contents.c_str());
-    
+
     // Fetch keywords!
     /* Non-optional keywords */
     detector = regExp(&reqExpDetector, &header, 0, 1);
@@ -286,7 +182,7 @@ int PilatusFile::readHeader()
     //~ flat_field = regExp(&, &header, 0, 1);
     //~ time_file = regExp(&, &header, 0, 1);
     //~ image_path = regExp(&, &header, 0, 1);
-    
+
     /* Optional keywords */
     wavelength = regExp(&optExpWl, &header, 0, 1).toFloat();
     //~ energy_range_low = regExp(&, &header, 0, 1).toInt();
@@ -327,9 +223,9 @@ QString PilatusFile::regExp(QString * regular_expression, QString * source, size
 {
     QRegExp tmp(*regular_expression);
     int pos = tmp.indexIn(*source, offset);
-    if (pos > -1) 
+    if (pos > -1)
     {
-        QString value = tmp.cap(i); 
+        QString value = tmp.cap(i);
         //~ qDebug() << *regular_expression << " gave: " << value;
         return value;
     }
@@ -391,8 +287,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    
-    // Load data into a CL texture 
+
+    // Load data into a CL texture
     cl_image_format source_format;
     source_format.image_channel_order = CL_INTENSITY;
     source_format.image_channel_data_type = CL_FLOAT;
@@ -409,7 +305,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
-    
+
     cl_mem background_cl = clCreateImage2D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
@@ -422,8 +318,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
-    
-    // A sampler 
+
+    // A sampler
     cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
@@ -441,14 +337,14 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     RotationMatrix<float> KAPPA;
     RotationMatrix<float> OMEGA;
     RotationMatrix<float> sampleRotMat;
-    
+
     float alpha =  0.8735582;
     float beta =  0.000891863;
 
     PHI.setArbRotation(-phi, beta, 0);
     KAPPA.setArbRotation(-kappa, alpha, 0);
     OMEGA.setZRotation(-omega);
-    
+
     sampleRotMat = PHI*KAPPA*OMEGA;
     //~ std::cout << omega << std::endl;
     //~ sampleRotMat.print(2, "Sample Rotation Matrix");
@@ -462,16 +358,16 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
-    
+
     // The sampler for tsf_img_clgl
     cl_sampler tsf_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
     }
-    
+
     //~ std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
-    
+
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
     err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) imageRenderWidget->getRawImgCLGL());
@@ -507,7 +403,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
     }
-    
+
     /* Launch rendering kernel */
     size_t area_per_call[2] = {128, 128};
     size_t call_offset[2] = {0,0};
@@ -517,7 +413,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
         {
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
-            
+
             err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if (err != CL_SUCCESS)
             {
@@ -541,10 +437,10 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
 
     //~ corrected_data_buf.reserve(fast_dimension*slow_dimension);
     //~ clEnqueueReadImage ( *queue, i_target_cl, true, origin, region, 0, 0, this->corrected_data_buf.data(), 0, NULL, NULL);
-    
+
     MiniArray<float> projected_data_buf(fast_dimension*slow_dimension*4);
     clEnqueueReadImage ( *queue, xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
-    
+
     if (xyzi_target_cl) clReleaseMemObject(xyzi_target_cl);
     if (source_cl) clReleaseMemObject(source_cl);
     if (background_cl) clReleaseMemObject(background_cl);
@@ -558,7 +454,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
         {
             if (projected_data_buf[i*4+3] != 0.0)
             {
-                outBuf[(*n)+0] = projected_data_buf[i*4+0]; 
+                outBuf[(*n)+0] = projected_data_buf[i*4+0];
                 outBuf[(*n)+1] = projected_data_buf[i*4+1];
                 outBuf[(*n)+2] = projected_data_buf[i*4+2];
                 outBuf[(*n)+3] = projected_data_buf[i*4+3];
@@ -585,7 +481,7 @@ int PilatusFile::readData()
         std::cout << "Error reading file: " << path.toStdString().c_str() << std::endl;
         return 0;
     }
-    
+
     in.seekg (0, in.end);
     int length = in.tellg();
     in.seekg (0, in.beg);
@@ -602,7 +498,7 @@ int PilatusFile::readData()
     // Find beginning of binary section
     for (int i = 0; i < header_length_max; i++)
     {
-        if ((int) buf[i] == -43) 
+        if ((int) buf[i] == -43)
         {
             offset = i + 1;
             break;
@@ -615,7 +511,7 @@ int PilatusFile::readData()
     int counts;
     int int16;
     int int32;
-   
+
     int i, j;
     //~ std::cout << "Mark r2" << std::endl;
     for (i = 0; i < (int) slow_dimension; i++)
@@ -648,14 +544,14 @@ int PilatusFile::readData()
             prev = counts;
 
             data_buf[i*fast_dimension+j] = (float) counts;
-            
+
             if (max_counts < counts) max_counts = counts;
         }
     }
     //~ std::cout << "Mark r3" << std::endl;
     delete[] buf;
 
-    
+
 //~ std::cout << "Mark r4" << std::endl;
     return 1;
 }
@@ -668,40 +564,40 @@ void PilatusFile::suggestSearchRadius()
     // For several pixel position extrema:
     float y_config[] = {(float) 0, (float) slow_dimension/2, (float) slow_dimension-1, (float) slow_dimension-1, (float) 0};
     float z_config[] = {(float) 0, (float) fast_dimension/2, (float) fast_dimension-1, (float) 0, (float) fast_dimension-1};
-    
+
     for (int i = 0; i < 5; i++)
     {
-        // Calculate the projected size of the pixel onto the Ewald sphere. In effect, we find the width along the diagonal of a rectangular pixel 
+        // Calculate the projected size of the pixel onto the Ewald sphere. In effect, we find the width along the diagonal of a rectangular pixel
         float xyz_a[3] = {
             (float)(-detector_distance),
             (float)(((y_config[i]-0.5) - beam_x) * pixel_size_x),
             (float)(((z_config[i]-0.5) - beam_y) * pixel_size_y)};
-        
+
         float len_xyz_a = sqrt(xyz_a[0]*xyz_a[0] + xyz_a[1]*xyz_a[1] + xyz_a[2]*xyz_a[2]);
-        
+
         xyz_a[0] /= len_xyz_a;
         xyz_a[1] /= len_xyz_a;
         xyz_a[2] /= len_xyz_a;
-        
+
         float xyz_b[3] = {
             (float)(-detector_distance),
             (float)(((y_config[i]+0.5) - beam_x) * pixel_size_y),
             (float)(((z_config[i]+0.5) - beam_y) * pixel_size_x)};
-        
+
         float len_xyz_b = sqrt(xyz_b[0]*xyz_b[0] + xyz_b[1]*xyz_b[1] + xyz_b[2]*xyz_b[2]);
-        
+
         xyz_b[0] /= len_xyz_b;
         xyz_b[1] /= len_xyz_b;
         xyz_b[2] /= len_xyz_b;
-        
+
         float k = 1/wavelength;
-        
+
         float k_a[3] = {k*xyz_a[0], k*xyz_a[1], k*xyz_a[2]};
         float k_b[3] = {k*xyz_b[0], k*xyz_b[1], k*xyz_b[2]};
-        
+
         float k_delta[3] = {k_b[0]-k_a[0], k_b[1]-k_a[1], k_b[2]-k_a[2]};
         float temp_search_radius = sqrt(k_delta[0]*k_delta[0] + k_delta[1]*k_delta[1] + k_delta[2]*k_delta[2]);
-        
+
         if (temp_search_radius < srchrad_sugg_low) srchrad_sugg_low = temp_search_radius;
         if (temp_search_radius > srchrad_sugg_high) srchrad_sugg_high = temp_search_radius;
     }

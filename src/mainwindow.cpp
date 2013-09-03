@@ -3,29 +3,29 @@
 MainWindow::MainWindow()
 {
     std::cout << "Constructing MainWindow" << std::endl;
-    
+
     // Stylesheet
     QFile styleFile( ":/src/stylesheets/gosutheme.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
     styleFile.close();
     this->setStyleSheet(style);
-    
+
     // Initialize
     QGLFormat glFormat(QGL::DoubleBuffer | QGL::DepthBuffer | QGL::Rgba | QGL::AlphaChannel | QGL::StencilBuffer | QGL::DirectRendering, 0);
     //~ glFormat.setSampleBuffers ( true );
     //~ glFormat.setSamples ( 8 );
-        
-    initGLCL = new InitGLCLWidget(glFormat);
+
+    initGLCL = new ContextGLWidget(glFormat);
     initGLCL->updateGL();
     initGLCL->hide();
-    
+
     dataInstance = new VolumeDataSet(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue());
-    
+
     createActions();
-    
+
     createMenus();
-    
+
     createInteractives();
     createConnects();
 	setCentralWidget(mainWidget);
@@ -41,7 +41,7 @@ MainWindow::MainWindow()
     fileDockWidget->hide();
     toolChainWidget->show();
     outputDockWidget->show();
-    
+
     std::cout << "Done Constructing MainWindow" << std::endl;
 }
 
@@ -51,26 +51,26 @@ MainWindow::~MainWindow()
 
 void MainWindow::init_emit()
 {
-    
+
     tabWidget->setCurrentIndex(0);
     //~ formatComboBox->setCurrentIndex(0);
     svoLevelSpinBox->setValue(7);
-    
+
     treshLimA_DSB->setValue(10);
     treshLimB_DSB->setValue(1e9);
     treshLimC_DSB->setValue(10);
     treshLimD_DSB->setValue(1e9);
-    
+
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (maybeSave()) 
+    if (maybeSave())
     {
         writeSettings();
         event->accept();
-    } 
-    else 
+    }
+    else
     {
         event->ignore();
     }
@@ -79,7 +79,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::newFile()
 {
-    if (maybeSave()) 
+    if (maybeSave())
     {
         textEdit->clear();
         setCurrentFile("");
@@ -88,7 +88,7 @@ void MainWindow::newFile()
 
 void MainWindow::open()
 {
-    if (maybeSave()) 
+    if (maybeSave())
     {
         QString fileName = QFileDialog::getOpenFileName(this);
         if (!fileName.isEmpty())
@@ -96,7 +96,7 @@ void MainWindow::open()
             QFileInfo fileInfo = QFileInfo(fileName);
             if (fileInfo.size() < 5000000) loadFile(fileName);
             else print("\nFile is too large!");
-            
+
         }
     }
 }
@@ -121,8 +121,8 @@ void MainWindow::createActions()
     backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle Background Color"), this);
     projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle Projection"), this);
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take Screenshot"), this);
-    
-    
+
+
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
     openAct->setStatusTip(tr("Open an existing file"));
@@ -135,7 +135,7 @@ void MainWindow::createActions()
     aboutOpenCLAct->setStatusTip(tr("About OpenCL"));
     aboutOpenGLAct->setStatusTip(tr("About OpenGL"));
     aboutHDF5Act->setStatusTip(tr("About HDF"));
-    
+
     // Shortcuts
     newAct->setShortcuts(QKeySequence::New);
     openAct->setShortcuts(QKeySequence::Open);
@@ -146,11 +146,11 @@ void MainWindow::createActions()
 
 bool MainWindow::save()
     {
-    if (curFile.isEmpty()) 
+    if (curFile.isEmpty())
     {
         return saveAs();
-    } 
-    else 
+    }
+    else
     {
         return saveFile(curFile);
     }
@@ -193,8 +193,8 @@ void MainWindow::documentWasModified()
 {
     setWindowModified(textEdit->document()->isModified());
 }
- 
- 
+
+
 void MainWindow::toggleFullScreen()
 {
     if (vrWidget->isFullScreen())
@@ -210,12 +210,12 @@ void MainWindow::toggleFullScreen()
 void MainWindow::openUnitcellFile()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".par (*.par);; All Files (*)"));
-    
-    if ((fileName != "")) 
+
+    if ((fileName != ""))
     {
         // Regular expressions to match data in .par files
         QString wavelengthRegExp("CRYSTALLOGRAPHY\\sWAVELENGTH\\D+(\\d+\\.\\d+)");
-        
+
         QStringList UBRegExp = {
         "CRYSTALLOGRAPHY\\sUB\\D+([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
         "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
@@ -226,7 +226,7 @@ void MainWindow::openUnitcellFile()
         "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
         "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
         "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+"};
-        
+
         QStringList unitcellRegExp = {
         "CELL\\sINFORMATION\\D+(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
         "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
@@ -234,36 +234,36 @@ void MainWindow::openUnitcellFile()
         "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
         "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
         "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+"};
-        
+
         // Open file
         QFile f(fileName);
         if(!f.open(QIODevice::ReadOnly)) qDebug() << "open FAILED";
         QByteArray contents(f.readAll());
-        
+
         // Find a, b, c, alpha, beta, gamma
         MiniArray<float> abc(6);
         int pos = 0;
         for(int i = 0; i < unitcellRegExp.size(); i++)
-        { 
+        {
             QRegExp tmp(unitcellRegExp.at(i));
             pos = tmp.indexIn(contents, pos);
-            if (pos > -1) 
+            if (pos > -1)
             {
                 pos += tmp.matchedLength();;
-                QString value = tmp.cap(1); 
+                QString value = tmp.cap(1);
                 abc[i] = value.toFloat();
                 //~ qDebug() << pos << " - "<< i << ": "<< value << " <->" << abc[i];
             }
         }
         float a = abc[0];
         float b = abc[1];
-        float c = abc[2]; 
-        float alpha = abc[3]*pi/180; 
-        float beta = abc[4]*pi/180; 
+        float c = abc[2];
+        float alpha = abc[3]*pi/180;
+        float beta = abc[4]*pi/180;
         float gamma = abc[5]*pi/180;
-        
+
         // Set the values in the UI
-        
+
         QString value;
         value = QString::number( a, 'g', 4 );
         this->a->setText(value);
@@ -277,7 +277,7 @@ void MainWindow::openUnitcellFile()
         this->beta->setText(value);
         value = QString::number( 180/pi*gamma, 'g', 4 );
         this->gamma->setText(value);
-        
+
         value = QString::number( 1/a, 'g', 4 );
         this->aStar->setText(value);
         value = QString::number( 1/b, 'g', 4 );
@@ -290,57 +290,57 @@ void MainWindow::openUnitcellFile()
         this->betaStar->setText(value);
         value = QString::number( 180/pi*std::acos((std::cos(alpha)*std::cos(beta) - std::cos(gamma))/(std::sin(alpha)*std::sin(beta))), 'g', 4 );
         this->gammaStar->setText(value);
-        
+
         // Find wavelength
         float wavelength;
         pos = 0;
         QRegExp tmp(wavelengthRegExp);
         pos = tmp.indexIn(contents, pos);
-        if (pos > -1) 
+        if (pos > -1)
         {
-            QString value = tmp.cap(1); 
+            QString value = tmp.cap(1);
             wavelength = value.toFloat();
             //~ qDebug() << pos << " - " << ": "<< value << " <->" << wavelength;
         }
-        
+
         // Find UB matrix
         Matrix<float> UB(3,3);
         pos = 0;
         for(int i = 0; i < UBRegExp.size(); i++)
-        { 
+        {
             QRegExp tmp(UBRegExp.at(i));
             pos = tmp.indexIn(contents, pos);
-            if (pos > -1) 
+            if (pos > -1)
             {
                 pos += tmp.matchedLength();;
-                QString value = tmp.cap(1); 
+                QString value = tmp.cap(1);
                 UB[i] = value.toFloat()/wavelength;
             }
         }
-        
+
         // Math to find U
         float sa = std::sin(alpha);
         float ca = std::cos(alpha);
         float cb = std::cos(beta);
         float cg = std::cos(gamma);
         float V = (a*b*c) * std::sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2.0*ca*cb*cg);
-        
+
         Matrix<float> B(3,3);
-        B[0] = b*c*sa/V; 
-        B[1] = a*c*(ca*cb-cg)/(V*sa); 
-        B[2] = a*b*(ca*cg-cb)/(V*sa); 
+        B[0] = b*c*sa/V;
+        B[1] = a*c*(ca*cb-cg)/(V*sa);
+        B[2] = a*b*(ca*cg-cb)/(V*sa);
         B[3] = 0;
         B[4] = 1.0/(b*sa);
         B[5] = -ca/(c*sa);
         B[6] = 0;
         B[7] = 0;
         B[8] = 1.0/c;
-        
-        
-        
+
+
+
         Matrix<float> U(3,3);
         U = UB * B.getInverse();
-        
+
         vrWidget->setMatrixU(U.data());
         vrWidget->setMatrixB(B.data());
     }
@@ -349,125 +349,125 @@ void MainWindow::openUnitcellFile()
 void MainWindow::openSVO()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".h5 (*.h5);; All Files (*)"));
-    
-    if ((fileName != "")) 
+
+    if ((fileName != ""))
     {
         /* HDF5 File structure
         * File ->
         *   /bricks -> (Data)
         *       n_bricks (Attribute)
         *       dim_brick (Attribute)
-        * 
+        *
         *   /oct_index -> (Data)
         *       n_nodes (Attribute)
         *       n_levels (Attribute)
         *       extent (Attribute)
-        * 
+        *
         *   /oct_brick -> (Data)
         *       brick_pool_power (Attribute)
         */
-        
+
         hid_t file_id;
         hid_t dset_id, atrib_id, plist_id;
         herr_t status;
         hsize_t dims[5];
-        
+
         size_t   nelmts;
         unsigned flags, filter_info;
         H5Z_filter_t filter_type;
-        
+
         /* Open file */
         file_id = H5Fopen(fileName.toStdString().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-        
-        
+
+
         /* Get misc metadata */
         dset_id = H5Dopen(file_id, "/meta", H5P_DEFAULT);
-        
+
         atrib_id = H5Aopen(dset_id, "hist_norm_len", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
         status = H5Aclose(atrib_id);
-        
+
         atrib_id = H5Aopen(dset_id, "hist_log10_len", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[1] );
         status = H5Aclose(atrib_id);
-        
+
         HIST_NORM.reserve(dims[0]);
         HIST_LOG.reserve(dims[1]);
         HIST_MINMAX.reserve(2);
         SVO_COMMENT.reserve(2000);
-        
+
         atrib_id = H5Aopen(dset_id, "histogram_normal", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_NORM.data() );
         status = H5Aclose(atrib_id);
-        
+
         atrib_id = H5Aopen(dset_id, "histogram_log10", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_LOG.data() );
         status = H5Aclose(atrib_id);
-        
+
         atrib_id = H5Aopen(dset_id, "value_min_max", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_MINMAX.data() );
         status = H5Aclose(atrib_id);
-        
+
         status = H5Dread(dset_id, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, SVO_COMMENT.data());
         status = H5Dclose(dset_id);
-        
+
         /* Get brick data */
         dset_id = H5Dopen(file_id, "/bricks", H5P_DEFAULT);
-        
+
         atrib_id = H5Aopen(dset_id, "n_bricks", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_N_BRICKS );
         status = H5Aclose(atrib_id);
-        
+
         atrib_id = H5Aopen(dset_id, "dim_brick", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_DIM_BRICKS );
         status = H5Aclose(atrib_id);
-        
+
         VIEW_BRICKS.reserve(VIEW_N_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS);
-        
+
         plist_id = H5Dget_create_plist(dset_id);
         nelmts = 0;
         filter_type = H5Pget_filter(plist_id, 0, &flags, &nelmts, NULL, 0, NULL, &filter_info);
         status = H5Dread(dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_BRICKS.data());
-        
+
         status = H5Dclose(dset_id);
         status = H5Pclose (plist_id);
-        
-        
+
+
         /* Get octtree data */
         dset_id = H5Dopen(file_id, "/oct_index", H5P_DEFAULT);
-        
+
         atrib_id = H5Aopen(dset_id, "n_nodes", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
         status = H5Aclose(atrib_id);
-        
+
         atrib_id = H5Aopen(dset_id, "n_levels", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_LEVELS );
         status = H5Aclose(atrib_id);
-        
+
         atrib_id = H5Aopen(dset_id, "extent", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_FLOAT, VIEW_EXTENT );
         status = H5Aclose(atrib_id);
-        
+
         VIEW_OCT_INDEX.reserve(dims[0]);
         VIEW_OCT_BRICK.reserve(dims[0]);
-        
+
         status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_INDEX.data());
         status = H5Dclose(dset_id);
-        
-        
+
+
         dset_id = H5Dopen(file_id, "/oct_brick", H5P_DEFAULT);
-        
+
         atrib_id = H5Aopen(dset_id, "brick_pool_power", H5P_DEFAULT);
         status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_BPP );
         status = H5Aclose(atrib_id);
 
         status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_BRICK.data());
         status = H5Dclose(dset_id);
-        
+
         /* Close the file */
         status = H5Fclose(file_id);
-        
-        
+
+
         vrWidget->setOCT_INDEX(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
         vrWidget->setOCT_BRICK(&(this->VIEW_OCT_BRICK), VIEW_BPP);
         vrWidget->setBRICKS(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
@@ -476,10 +476,10 @@ void MainWindow::openSVO()
         brightnessSpinBox->setValue(2.0);
         dataMinSpinBox->setValue(this->HIST_MINMAX[0]);
         dataMaxSpinBox->setValue(this->HIST_MINMAX[1]);
-        
-        
+
+
         print("\nLoaded file: \""+fileName+"\"");
-        
+
         tabWidget->setCurrentIndex(4);
     }
 }
@@ -496,7 +496,7 @@ void MainWindow::setTab(int tab)
             toolChainWidget->show();
             outputDockWidget->show();
             break;
-            
+
         case 1:
             graphicsDockWidget->hide();
             unitcellDockWidget->hide();
@@ -506,7 +506,7 @@ void MainWindow::setTab(int tab)
             outputDockWidget->show();
             //~ irWidget->makeCurrent();
             break;
-            
+
         case 2:
             toolChainWidget->hide();
             fileDockWidget->hide();
@@ -516,7 +516,7 @@ void MainWindow::setTab(int tab)
             functionDockWidget->show();
             //~ vrWidget->makeCurrent();
             break;
-            
+
         default:
             std::cout << "Reverting to Default Tab" << std::endl;
             break;
@@ -584,7 +584,7 @@ void MainWindow::createConnects()
     //~ connect(dataInstance, SIGNAL(changedRawImage(PilatusFile *)), irWidget, SLOT(setRawImage(PilatusFile *)));
     //~ connect(dataInstance, SIGNAL(changedCorrectedImage(PilatusFile *)), irWidget, SLOT(setCorrectedImage(PilatusFile *)));
     connect(dataInstance, SIGNAL(repaintRequest()), irWidget, SLOT(repaint()));
-    
+
     /* this <-> this */
     connect(textEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
@@ -621,13 +621,13 @@ void MainWindow::previewSVO()
         print("\nWarning: No data to preview!");
         return;
     }
-    else 
+    else
     {
         print("\nPreview enabled in 3D View tab.");
         vrWidget->setOCT_INDEX(dataInstance->getOCT_INDEX(), dataInstance->getLEVELS(), dataInstance->getExtent());
         vrWidget->setOCT_BRICK(dataInstance->getOCT_BRICK(), dataInstance->getBPP());
         vrWidget->setBRICKS(dataInstance->getBRICKS(), dataInstance->getN_BRICKS(), dataInstance->getBRICK_DIM_TOT());
-        
+
         tabWidget->setCurrentIndex(4);
     }
 }
@@ -640,20 +640,20 @@ void MainWindow::createMenus()
     scriptMenu = new QMenu(tr("&File"));
     viewMenu = new QMenu(tr("V&iew"));
     helpMenu = new QMenu(tr("&Help"));
-    
+
     scriptMenu->addAction(newAct);
     scriptMenu->addAction(openAct);
     scriptMenu->addAction(saveAct);
     scriptMenu->addAction(saveAsAct);
     scriptMenu->addSeparator();
     scriptMenu->addAction(exitAct);
-	
+
     helpMenu->addAction(aboutAct);
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutOpenCLAct);
     helpMenu->addAction(aboutOpenGLAct);
     helpMenu->addAction(aboutHDF5Act);
-    
+
     mainMenu->addMenu(scriptMenu);
     mainMenu->addMenu(viewMenu);
     mainMenu->addSeparator();
@@ -666,7 +666,7 @@ void MainWindow::createInteractives()
 {
 	mainWidget = new QWidget(this);
     mainLayout = new QGridLayout;
-    
+
     /* Top Widget */
     {
         topWidget = new QWidget(mainWidget);
@@ -677,7 +677,7 @@ void MainWindow::createInteractives()
         readScriptButton->setIconSize(QSize(32,32));
         readScriptButton->setText("Run Script ");
         readScriptButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-          
+
         setFilesButton = new QPushButton;
         setFilesButton->setIcon(QIcon(":/art/proceed.png"));
         setFilesButton->setIconSize(QSize(24,24));
@@ -725,7 +725,7 @@ void MainWindow::createInteractives()
         toolChainLayout->addWidget(generateSvoButton,0,4,2,1);
         toolChainLayout->addWidget(allInOneButton,1,1,1,3);
         toolChainWidget->setLayout(toolChainLayout);
-        
+
         // Layout
         QGridLayout * topLayout = new QGridLayout;
         topLayout->setSpacing(0);
@@ -735,62 +735,62 @@ void MainWindow::createInteractives()
         topLayout->addWidget(toolChainWidget,1,0,1,1);
         topWidget->setLayout(topLayout);
     }
-    
-    
+
+
     /*      Script Widget       */
     {
         scriptWidget = new QWidget;
         scriptWidget->setObjectName("scriptWidget");
-        
+
         // Script text edit
         textEdit = new QPlainTextEdit;
         script_highlighter = new Highlighter(textEdit->document());
         scriptHelp = "/* Add file paths using this Javascript window. \nDo this by appedning paths to the variable 'files'. */ \n\n files = ";
         textEdit->setPlainText(scriptHelp);
-        
+
         // Toolbar
         scriptToolBar = new QToolBar(tr("Script"));
         scriptToolBar->addAction(newAct);
         scriptToolBar->addAction(openAct);
         scriptToolBar->addAction(saveAct);
-                
-        // Layout 
+
+        // Layout
         QGridLayout * scriptLayout = new QGridLayout;
         scriptLayout->setSpacing(0);
         scriptLayout->setMargin(0);
         scriptLayout->setContentsMargins(0,0,0,0);
         scriptLayout->addWidget(scriptToolBar,0,0,1,2);
         scriptLayout->addWidget(textEdit,1,0,1,2);
-        
+
         scriptWidget->setLayout(scriptLayout);
     }
-    
-    
+
+
     /* Image Widget */
     {
         imageWidget = new QWidget;
         imageControlsWidget = new QWidget;
-        
+
         imageForwardButton = new QPushButton;
         imageForwardButton->setIcon(QIcon(":/art/forward.png"));
         imageForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        
+
         imageFastForwardButton = new QPushButton;
         imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
         imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        
+
         imageBackButton = new QPushButton;
         imageBackButton->setIcon(QIcon(":/art/back.png"));
         imageBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        
+
         imageFastBackButton = new QPushButton;
         imageFastBackButton->setIcon(QIcon(":/art/fast_back.png"));
         imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        
+
         imageNumberSpinBox = new QSpinBox;
 
         //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << initGLCL->format().alpha() << std::endl;
-        
+
         irWidget = new ImageRenderGLWidget(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue(), initGLCL->format(), 0, initGLCL);
         dataInstance->setImageRenderWidget(irWidget);
 
@@ -806,18 +806,18 @@ void MainWindow::createInteractives()
         imageLayout->addWidget(imageNumberSpinBox,1,3,1,1);
         imageLayout->addWidget(imageForwardButton,1,4,1,1);
         imageLayout->addWidget(imageFastForwardButton,1,5,1,1);
-        
+
         imageWidget->setLayout(imageLayout);
     }
-    
-    
+
+
     /*      3D View widget      */
     {
         //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << initGLCL->format().alpha() << std::endl;
         viewWidget = new QWidget;
         vrWidget = new VolumeRenderGLWidget(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue(), initGLCL->format(), 0, initGLCL);
         //~ vrWidget->setCursor(Qt::SizeAllCursor);
-        
+
         // Toolbar
         viewToolBar = new QToolBar(tr("3D View"));
         viewToolBar->addAction(openSVOAct);
@@ -827,8 +827,8 @@ void MainWindow::createInteractives()
         viewToolBar->addAction(logAct);
         viewToolBar->addAction(dataStructureAct);
         viewToolBar->addAction(screenshotAct);
-    
-        // Layout  
+
+        // Layout
         viewLayout = new QGridLayout;
         viewLayout->setSpacing(0);
         viewLayout->setMargin(0);
@@ -838,11 +838,11 @@ void MainWindow::createInteractives()
         viewLayout->addWidget(vrWidget,1,0,1,1);
         viewWidget->setLayout(viewLayout);
     }
-    
+
     /*
      * QDockWidgets
      * */
-    
+
     /* Graphics dock widget */
     {
         QLabel * l3= new QLabel(QString("Texture "));
@@ -850,38 +850,38 @@ void MainWindow::createInteractives()
         QLabel * l5= new QLabel(QString("Max: "));
         QLabel * l6= new QLabel(QString("Alpha: "));
         QLabel * l7= new QLabel(QString("Brightness: "));
-        
+
         //~ graphicsBackgroundButton = new QPushButton(tr("Toggle Background"));
         //~ graphicsDataStructureButton = new QPushButton(tr("Show Data Structure"));
         //~ graphicsLogarithmButton = new QPushButton(tr("Toggle Logarithmic"));
         //~ graphicsPerspectiveButton = new QPushButton(tr("Toggle Perspective"));
         //~ screenshotButton = new QPushButton(tr("Take Screenshot"));
-        
-        
+
+
         dataMinSpinBox = new QDoubleSpinBox;
         dataMinSpinBox->setDecimals(2);
         dataMinSpinBox->setRange(0, 1e9);
         dataMinSpinBox->setSingleStep(0.1);
         dataMinSpinBox->setAccelerated(1);
-        
+
         dataMaxSpinBox = new QDoubleSpinBox;
         dataMaxSpinBox->setDecimals(1);
         dataMaxSpinBox->setRange(0, 1e9);
         dataMaxSpinBox->setSingleStep(0.1);
         dataMaxSpinBox->setAccelerated(1);
-        
+
         alphaSpinBox = new QDoubleSpinBox;
         alphaSpinBox->setDecimals(3);
         alphaSpinBox->setRange(0.001, 5);
         alphaSpinBox->setSingleStep(0.01);
         alphaSpinBox->setAccelerated(1);
-        
+
         brightnessSpinBox = new QDoubleSpinBox;
         brightnessSpinBox->setDecimals(3);
         brightnessSpinBox->setRange(0.001, 5);
         brightnessSpinBox->setSingleStep(0.01);
         brightnessSpinBox->setAccelerated(1);
-        
+
         tsfComboBox = new QComboBox;
         tsfComboBox->addItem(trUtf8("Hot"));
         tsfComboBox->addItem(trUtf8("Winter"));
@@ -899,12 +899,12 @@ void MainWindow::createInteractives()
         tsfAlphaComboBox->addItem(trUtf8("Linear"));
         tsfAlphaComboBox->addItem(trUtf8("Exponential"));
         tsfAlphaComboBox->addItem(trUtf8("Opaque"));
-        
-        
+
+
         graphicsDockWidget = new QDockWidget(tr("View Settings"), this);
-        graphicsDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);    
+        graphicsDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         graphicsWidget = new QWidget;
-        
+
         QGridLayout * graphicsLayout = new QGridLayout;
         graphicsLayout->setSpacing(0);
         graphicsLayout->setMargin(0);
@@ -925,7 +925,7 @@ void MainWindow::createInteractives()
         //~ graphicsLayout->addWidget(graphicsLogarithmButton,11,0,1,8);
         //~ graphicsLayout->addWidget(graphicsDataStructureButton,12,0,1,8);
         //~ graphicsLayout->addWidget(screenshotButton,13,0,1,8);
-        
+
         graphicsWidget->setLayout(graphicsLayout);
         graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
@@ -933,13 +933,13 @@ void MainWindow::createInteractives()
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
     }
-    
+
     /* Unitcell dock widget */
     {
         unitcellDockWidget = new QDockWidget(tr("Unitcell Settings"), this);
         unitcellDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         unitcellWidget = new QWidget;
-        
+
         QLabel * aLabel = new QLabel("<i>a<i>");
         a = new QLabel(tr("-"));
         QLabel * bLabel = new QLabel("<i>b<i>");
@@ -952,8 +952,8 @@ void MainWindow::createInteractives()
         beta = new QLabel(tr("-"));
         QLabel * gammaLabel = new QLabel(trUtf8( "<i>γ<i>"));
         gamma = new QLabel(tr("-"));
-        
-        
+
+
         QLabel * aStarLabel = new QLabel("<i>a*<i>");
         aStar = new QLabel(tr("-"));
         QLabel * bStarLabel = new QLabel("<i>b*<i>");
@@ -966,15 +966,15 @@ void MainWindow::createInteractives()
         betaStar = new QLabel(tr("-"));
         QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
         gammaStar = new QLabel(tr("-"));
-        
+
         unitcellButton = new QPushButton(tr("Toggle Unitcell"));
         loadParButton = new QPushButton(tr("Load Unitcell File"));
-        
+
         QLabel * hklEditLabel = new QLabel(trUtf8( "<i>hkl: <i>"));
         hklEdit = new QLineEdit;
         //~ hklEdit->setFixedWidth(100);
         hklEdit->setValidator( new QRegExpValidator(QRegExp("(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)")) );
-        
+
         QGridLayout * unitcellLayout = new QGridLayout;
         unitcellLayout->setSpacing(0);
         unitcellLayout->setMargin(0);
@@ -995,7 +995,7 @@ void MainWindow::createInteractives()
         unitcellLayout->addWidget(c,5,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
         unitcellLayout->addWidget(gammaLabel,5,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
         unitcellLayout->addWidget(gamma,5,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        
+
         unitcellLayout->addWidget(aStarLabel,6,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
         unitcellLayout->addWidget(aStar,6,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
         unitcellLayout->addWidget(alphaStarLabel,6,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
@@ -1008,7 +1008,7 @@ void MainWindow::createInteractives()
         unitcellLayout->addWidget(cStar,8,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
         unitcellLayout->addWidget(gammaStarLabel,8,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
         unitcellLayout->addWidget(gammaStar,8,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        
+
         unitcellWidget->setLayout(unitcellLayout);
         unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
@@ -1016,22 +1016,22 @@ void MainWindow::createInteractives()
         viewMenu->addAction(unitcellDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
     }
-     
+
     /* File Controls Widget */
     {
         fileControlsWidget = new QWidget;
-        
+
         // Labels
         QLabel * labelA = new QLabel(QString("Detector File Format:"));
         QLabel * labelB = new QLabel(QString("Correction Threshold:"));
         QLabel * labelC = new QLabel(QString("Projection Threshold:"));
         QLabel * labelD = new QLabel(QString("Octtree Levels: "));
-        
+
         // Combo boxes and their labels
         formatComboBox = new QComboBox;
         formatComboBox->addItem("PILATUS CBF 1.2");
         formatComboBox->addItem("[ your file format here ]");
-        
+
         // Spin Boxes
         treshLimA_DSB = new QDoubleSpinBox;
         treshLimA_DSB->setRange(1, 1e9);
@@ -1039,7 +1039,7 @@ void MainWindow::createInteractives()
         treshLimA_DSB->setAccelerated(1);
         treshLimA_DSB->setDecimals(2);
         treshLimA_DSB->setFocusPolicy(Qt::ClickFocus);
-        
+
         treshLimB_DSB = new QDoubleSpinBox;
         treshLimB_DSB->setRange(1, 1e9);
         treshLimB_DSB->setSingleStep(1);
@@ -1053,7 +1053,7 @@ void MainWindow::createInteractives()
         treshLimC_DSB->setAccelerated(1);
         treshLimC_DSB->setDecimals(2);
         treshLimC_DSB->setFocusPolicy(Qt::ClickFocus);
-        
+
         treshLimD_DSB = new QDoubleSpinBox;
         treshLimD_DSB->setRange(0, 1e9);
         treshLimD_DSB->setSingleStep(1);
@@ -1063,12 +1063,12 @@ void MainWindow::createInteractives()
 
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(2, 15);
-        
+
         // Buttons
         saveSVOButton = new QPushButton;
         saveSVOButton->setIcon(QIcon(":/art/save.png"));
         saveSVOButton->setText("Save Octtree");
-        
+
         QGridLayout * fileLayout = new QGridLayout;
         fileLayout->setSpacing(0);
         fileLayout->setMargin(0);
@@ -1084,7 +1084,7 @@ void MainWindow::createInteractives()
         fileLayout->addWidget(labelD,3,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         fileLayout->addWidget(svoLevelSpinBox,3,4,1,4);
         fileLayout->addWidget(saveSVOButton,4,0,1,8);
-        
+
         fileControlsWidget->setLayout(fileLayout);
         fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
@@ -1101,35 +1101,35 @@ void MainWindow::createInteractives()
         QLabel * p1= new QLabel(QString("Var 2: "));
         QLabel * p2= new QLabel(QString("Var 3: "));
         QLabel * p3= new QLabel(QString("Var 4: "));
-        
+
         functionToggleButton = new QPushButton(tr("Toggle On/Off"));
         funcParamASpinBox = new QDoubleSpinBox;
         funcParamASpinBox->setDecimals(3);
         funcParamASpinBox->setRange(0, 100);
         funcParamASpinBox->setSingleStep(0.01);
         funcParamASpinBox->setAccelerated(1);
-        
+
         funcParamBSpinBox = new QDoubleSpinBox;
         funcParamBSpinBox->setDecimals(3);
         funcParamBSpinBox->setRange(0, 100);
         funcParamBSpinBox->setSingleStep(0.01);
         funcParamBSpinBox->setAccelerated(1);
-        
+
         funcParamCSpinBox = new QDoubleSpinBox;
         funcParamCSpinBox->setDecimals(3);
         funcParamCSpinBox->setRange(0, 100);
         funcParamCSpinBox->setSingleStep(0.01);
         funcParamCSpinBox->setAccelerated(1);
-        
+
         funcParamDSpinBox = new QDoubleSpinBox;
         funcParamDSpinBox->setDecimals(3);
         funcParamDSpinBox->setRange(0, 100);
         funcParamDSpinBox->setSingleStep(0.01);
         funcParamDSpinBox->setAccelerated(1);
-        
+
         functionDockWidget = new QDockWidget(tr("Function Settings"), this);
         functionWidget = new QWidget;
-        
+
         QGridLayout * functionLayout = new QGridLayout;
         functionLayout->setSpacing(0);
         functionLayout->setMargin(0);
@@ -1154,23 +1154,23 @@ void MainWindow::createInteractives()
     }
 
 
-    
+
     /* Output Widget */
     {
         outputDockWidget = new QDockWidget(tr("Output Terminal"), this);
         outputDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         botWidget = new QWidget;
-        
+
         // Progress Bar
         mainProgress = new QProgressBar;
         mainProgress->setRange( 0, 100 );
         mainProgress->hide();
-        
+
         // Text output
         errorTextEdit = new QPlainTextEdit;
         error_highlighter = new Highlighter(errorTextEdit->document());
-        errorTextEdit->setReadOnly(true); 
-        
+        errorTextEdit->setReadOnly(true);
+
         // Layout
         QGridLayout * botLayout = new QGridLayout;
         botLayout->setSpacing(0);
@@ -1178,14 +1178,14 @@ void MainWindow::createInteractives()
         botLayout->setContentsMargins(0,0,0,0);
         botLayout->addWidget(errorTextEdit, 0, 0, 1, 1);
         botLayout->addWidget(mainProgress, 1, 0, 1, 1);
-        
+
         botWidget->setLayout(botLayout);
         outputDockWidget->setWidget(botWidget);
         viewMenu->addAction(outputDockWidget->toggleViewAction());
         this->addDockWidget(Qt::BottomDockWidgetArea, outputDockWidget);
     }
 
-    
+
     /*      Tab widget      */
     tabWidget = new QTabWidget(mainWidget);
 
@@ -1193,37 +1193,37 @@ void MainWindow::createInteractives()
     tabWidget->addTab(scriptWidget, tr("Script Editor"));
     tabWidget->addTab(imageWidget, tr("Ewald's Projection"));
     tabWidget->addTab(viewWidget, tr("3D View"));
-    
+
     // Put into main layout
     mainLayout->setMargin(0);
     mainLayout->setContentsMargins(3,3,3,3);
     mainLayout->addWidget(topWidget,0,0,1,1);
     mainLayout->addWidget(tabWidget,1,0,1,1);
-	mainWidget->setLayout(mainLayout); 
+	mainWidget->setLayout(mainLayout);
 
     /* Script engine */
 	rawFilesQs = engine.newVariant(rawFiles);
-	engine.globalObject().setProperty("files", rawFilesQs);    
+	engine.globalObject().setProperty("files", rawFilesQs);
 }
 
 void MainWindow::runAllInOne()
 {
-    /*################################################################*/    
+    /*################################################################*/
 	/* STEP ONE, TWO, and THREE - All in one go to minimize intermediate
      * memory consumption between stages */
-    
+
     mainProgress->show();
     tabWidget->setCurrentIndex(1);
     allInOneButton->setEnabled(false);
     readFilesButton->setEnabled(false);
     projectFilesButton->setEnabled(false);
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::setOverrideCursor(Qt::WaitCursor);
     #endif
 
     int STATUS_OK = dataInstance->funcAllInOne();
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::restoreOverrideCursor();
     #endif
@@ -1239,12 +1239,12 @@ void MainWindow::runAllInOne()
 
 void MainWindow::runReadFiles()
 {
-    /*################################################################*/    
+    /*################################################################*/
 	/* STEP TWO - READING FILE CONTENTS */
     mainProgress->show();
     tabWidget->setCurrentIndex(1);
     readFilesButton->setEnabled(false);
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::setOverrideCursor(Qt::WaitCursor);
     #endif
@@ -1264,18 +1264,18 @@ void MainWindow::runReadFiles()
 
 void MainWindow::runSetFiles()
 {
-	/*################################################################*/    
+	/*################################################################*/
 	/* STEP ONE - HEADER RETRIEVEAL*/
     mainProgress->show();
     tabWidget->setCurrentIndex(1);
     setFilesButton->setEnabled(false);
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::setOverrideCursor(Qt::WaitCursor);
     #endif
 
     int STATUS_OK = dataInstance->funcSetFiles();
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::restoreOverrideCursor();
     #endif
@@ -1292,19 +1292,19 @@ void MainWindow::runSetFiles()
 
 void MainWindow::runProjectFiles()
 {
-    /*################################################################*/    
+    /*################################################################*/
 	/* STEP THREE - EWALD PROJECTION */
-    
+
     mainProgress->show();
     tabWidget->setCurrentIndex(1);
     projectFilesButton->setEnabled(false);
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::setOverrideCursor(Qt::WaitCursor);
     #endif
 
     int STATUS_OK = dataInstance->funcProjectFiles();
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::restoreOverrideCursor();
     #endif
@@ -1319,18 +1319,18 @@ void MainWindow::runProjectFiles()
 
 void MainWindow::runGenerateSvo()
 {
-    /*################################################################*/    
+    /*################################################################*/
 	/* STEP FOUR - GENERATING A SPARSE VOXEL OCTREE*/
     mainProgress->show();
     tabWidget->setCurrentIndex(1);
     generateSvoButton->setEnabled(false);
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::setOverrideCursor(Qt::WaitCursor);
     #endif
 
     int STATUS_OK = dataInstance->funcGenerateSvo();
-    
+
     #ifndef QT_NO_CURSOR
         QApplication::restoreOverrideCursor();
     #endif
@@ -1345,7 +1345,7 @@ void MainWindow::print(QString str)
     size_t chars_max = 65536;
     size_t removable = info.size()- chars_max;
     if (removable > 0) info.remove(0, removable);
-    
+
     errorTextEdit->setPlainText(info);
     errorTextEdit->moveCursor(QTextCursor::End) ;
     errorTextEdit->ensureCursorVisible();
@@ -1354,12 +1354,12 @@ void MainWindow::print(QString str)
 
 void MainWindow::runReadScript()
 {
-	/*################################################################*/    
+	/*################################################################*/
 	/* STEP ZERO - FINDING FILES */
-	
+
 	// Set the corresponding tab
     tabWidget->setCurrentIndex(0);
-    
+
 	// Evaluate the script input
     engine.evaluate("var files = [];");
 	engine.evaluate(textEdit->toPlainText());
@@ -1367,29 +1367,29 @@ void MainWindow::runReadScript()
 	{
 		// Exceptions
 		print( "\n[Script] Error: Uncaught exception in line " + QString::number(engine.uncaughtExceptionLineNumber()) + "\n[Script] " + engine.uncaughtException().toString());
-	}	
+	}
 	else
 	{
 		// Store evaluated file paths in a list
 		#ifndef QT_NO_CURSOR
 			QApplication::setOverrideCursor(Qt::WaitCursor);
 		#endif
-		
+
 		rawFiles = engine.globalObject().property("files").toVariant().toStringList();
         print( "\n[Script] Script ran successfully and could register "+QString::number(rawFiles.size())+" files...");
         int n = rawFiles.removeDuplicates();
         if (n > 0) print( "\n[Script] Removed "+QString::number(n)+" duplicates...");
-		
+
         size_t n_files = rawFiles.size();
-        
+
         for (int i = 0; i < rawFiles.size(); i++)
 		{
 			if(i >= rawFiles.size()) break;
-            
+
             QString fileName = rawFiles[i];
-            
+
             QFileInfo curFile(fileName);
-            
+
             if (!curFile.exists())
 			{
 				print( "\n[Script]  Warning: \"" + fileName + "\" - missing or no access!");
@@ -1399,8 +1399,8 @@ void MainWindow::runReadScript()
         }
         emit changedPaths(rawFiles);
 		print("\n[Script] "+ QString::number(rawFiles.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-rawFiles.size())+"  missing or no access)");
-        
-        if (rawFiles.size() > 0) 
+
+        if (rawFiles.size() > 0)
         {
             setFilesButton->setEnabled(true);
             allInOneButton->setEnabled(true);
@@ -1408,12 +1408,12 @@ void MainWindow::runReadScript()
             projectFilesButton->setEnabled(false);
             generateSvoButton->setEnabled(false);
         }
-        
+
 		#ifndef QT_NO_CURSOR
 			QApplication::restoreOverrideCursor();
 		#endif
 	}
-    
+
 }
 
 void MainWindow::readSettings()
@@ -1438,7 +1438,7 @@ void MainWindow::writeSettings()
 
 bool MainWindow::maybeSave()
 {
-    if (textEdit->document()->isModified()) 
+    if (textEdit->document()->isModified())
     {
         QMessageBox::StandardButton ret;
         ret = QMessageBox::warning(this, tr("NebulaX"),
@@ -1456,7 +1456,7 @@ bool MainWindow::maybeSave()
 void MainWindow::loadFile(const QString &fileName)
 {
     QFile file(fileName);
-    if (!file.open(QFile::ReadOnly | QFile::Text)) 
+    if (!file.open(QFile::ReadOnly | QFile::Text))
     {
         QMessageBox::warning(this, tr("NebulaX"),
             tr("Cannot read file %1:\n%2.")
@@ -1481,7 +1481,7 @@ void MainWindow::loadFile(const QString &fileName)
 bool MainWindow::saveFile(const QString &fileName)
 {
     QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text)) 
+    if (!file.open(QFile::WriteOnly | QFile::Text))
     {
         QMessageBox::warning(this, tr("NebulaX"),
             tr("Cannot write file %1:\n%2.")

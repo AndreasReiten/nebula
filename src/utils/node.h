@@ -6,12 +6,13 @@
 #include <cmath>
 #include "miniarray.h"
 
-class Node {
+class SearchNode {
+    /* This class represents a node in the "search octtree" data structure. It is used in order to create bricks for the GPU octtree. */
     public:
-        Node();
-        Node(Node * parent, double * extent);
-        ~Node();
-        
+        SearchNode();
+        SearchNode(SearchNode * parent, double * extent);
+        ~SearchNode();
+
         void clearChildren();
         void clearPoints();
         void insert(float * point);
@@ -19,28 +20,28 @@ class Node {
         void print();
         void weighSamples(float * sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius);
         bool isIntersected(double * sample_extent);
-        
+
         /* gets and sets */
-        void setParent(Node * parent);
-        
+        void setParent(SearchNode * parent);
+
         bool getBrick(float * dst, double * brick_extent, float p, float search_radius, unsigned int dimension);
         float getIDW(float * sample, float p, float search_radius);
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);
         double * getExtent();
     private:
-        Node * parent;
-        Node ** children;
+        SearchNode * parent;
+        SearchNode ** children;
         float * points;
         double extent[6];
-        
+
         float distance(float * a, float * b);
-        
-        
+
+
         unsigned int level;
         unsigned int n_children;
         unsigned int n_points;
-        
+
         bool isEmpty;
         bool isMsd;
 };

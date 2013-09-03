@@ -42,7 +42,7 @@
 class ImageRenderGLWidget : public QGLWidget
 {
     Q_OBJECT
-    
+
 public:
     explicit ImageRenderGLWidget(cl_device * device, cl_context * context2, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
     ~ImageRenderGLWidget();
@@ -56,23 +56,19 @@ public:
     void aquireSharedBuffers();
     void releaseSharedBuffers();
     void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
-    
-public slots:
-    //~ void setRawImage(PilatusFile * file);
-    //~ void setCorrectedImage(PilatusFile * file);
-    
+
 signals:
     void changedMessageString(QString str);
-    
+
 protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
-    
+
 private:
     void init_freetype();
     void setMessageString(QString str);
-    
+
     bool isGLIntitialized;
     QTimer * timer;
     QElapsedTimer * time;
@@ -100,7 +96,7 @@ private:
     Atlas * fontSmall;
     Atlas * fontMedium;
     Atlas * fontLarge;
-    
+
     GLuint screen_texpos_vbo[5], screen_coord_vbo[5];
     GLuint text_coord_vbo, text_texpos_vbo;
     GLuint std_2d_tex_program, std_2d_color_program, std_text_program;
@@ -109,13 +105,10 @@ private:
     GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
     GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
 
-    
-    
+
+
     // OpenCL Related
-    int init_cl();
-    //~ cl_sampler source_sampler, tsf_tex_sampler;
     cl_mem raw_target_cl, corrected_target_cl, gamma_target_cl, tsf_tex_cl;
-    //~ cl_kernel K_FRAME_TO_IMAGE;
     cl_device * device;
     cl_program program;
     cl_context * context2;
@@ -123,9 +116,8 @@ private:
     cl_int err;
 
     int setTarget();
-    void setSource();
     void setTsfTexture(TsfMatrix<double> * tsf);
-    
+
     size_t glb_ws[2];
     size_t loc_ws[2];
 };

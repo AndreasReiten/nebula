@@ -146,7 +146,7 @@ void screenshot(int w, int h, const char* path)
     // FILE:  OPEN, WRITE, CLOSE
     std::ofstream file (path, std::ios::out | std::ios::trunc | std::ios::binary);
     file.write(reinterpret_cast<char *>(&bmp_header), 54);
-    file.write(reinterpret_cast<char *>(buf), w*h*4); 
+    file.write(reinterpret_cast<char *>(buf), w*h*4);
     file.close();
 
     // CLEAN UP
@@ -166,18 +166,18 @@ QByteArray open_resource(const char * path)
     file.open( QFile::ReadOnly );
     QString qsrc(file.readAll());
     file.close();
-    
+
     QByteArray ba = qsrc.toUtf8();
-    
+
     return ba;
 }
 
 GLuint create_shader(const char* resource, GLenum type)
 {
-    
+
     QByteArray qsrc = open_resource(resource);
     const char * source = qsrc.data();
-    
+
     if (source == NULL)
     {
         std::cout <<  "Error opening: " << resource << std::endl;
@@ -194,17 +194,17 @@ GLuint create_shader(const char* resource, GLenum type)
     if (compile_ok == GL_FALSE)
     {
         std::cout << "Error building GL shader: " << resource << std::endl;
-        
+
         GLint log_length = 0;
-        
+
         if (glIsShader(shader))
         {
             glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
             char* log = new char[log_length];
-            
+
             glGetShaderInfoLog(shader, log_length, NULL, log);
             std::cout << log << std::endl;
-            
+
             delete[] log;
             glDeleteShader(shader);
         }
@@ -221,7 +221,7 @@ GLuint create_shader(const char* resource, GLenum type)
 void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function)
 {
     /* Some hand crafted transfer functions. Only the RGB part is used. The alpha (A) is computed later */
-    
+
     double buf_hot[32] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f,
@@ -232,7 +232,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
         1.0f, 1.0f, 0.5f, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f,
         };
-        
+
     double buf_galaxy[32] = {
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 1.0f,
@@ -243,7 +243,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
         1.0f, 1.0f, 0.5f, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f,
         };
-        
+
     double buf_hsv[32] = {
         1.f, 0.f, 0.f, 0.f,
         1.f, 0.f, 0.f, 1.f,
@@ -254,7 +254,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
         1.f, 1.f, 0.f, 1.f,
         1.f, 0.f, 0.f, 1.f,
         };
-    
+
     double buf_binary[32] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         0.143f, 0.143f, 0.143f, 1.0f,
@@ -265,7 +265,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
         0.857f, 0.857f, 0.857f, 1.0f,
         1.f, 1.0f, 1.0f, 1.0f,
         };
-        
+
     double buf_yranib[32] = {
         1.f, 1.0f, 1.0f, 0.0f,
         0.857f, 0.857f, 0.857f, 1.0f,
@@ -276,7 +276,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
         0.143f, 0.143f, 0.143f, 1.0f,
         0.0f, 0.0f, 0.0f, 1.0f,
         };
-    
+
     double buf_winter[32] = {
         0.0f, 1.f, 0.4f, 0.f,
         0.0f, 1.f, 0.6f, 1.f,
@@ -287,7 +287,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
         0.0f, 0.1f, 1.f, 1.f,
         0.0f, 0.0f, 1.f, 1.f,
         };
-    
+
     double buf_ice[32] = {
         1.f, 1.f, 1.f, 0.f,
         1.f, 1.0f, 1.f, 1.f,
@@ -298,7 +298,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
         0.f, 0.4f, 1.f, 1.f,
         0.f, 0.3f, 1.f, 1.f,
         };
-    
+
     double buf_rainbow[32] = {
         1.f, 0.f, 0.f, 0.f,
         1.f, 0.f, 0.f, 1.f,
@@ -424,11 +424,11 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
             }
             break;
     }
-    
+
     transfer_function->setDeep(4, 8, tmp.getColMajor().data());
     transfer_function->setSpline(256);
-    transfer_function->setPreIntegrated(1.0);
-    
+    transfer_function->setPreIntegrated();
+
     //~ tmp.getColMajor().print(2, "The matrix sent to be splined:");
     //~ transfer_function->getSpline().print(2,"Splined");
     //~ transfer_function->getPreIntegrated().print(2,"Integrated");

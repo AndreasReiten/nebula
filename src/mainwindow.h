@@ -2,11 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QApplication> 
-#include <QWidget> 
-#include <QLabel> 
-#include <QMenu> 
-#include <QMenuBar> 
+#include <QApplication>
+#include <QWidget>
+#include <QThread>
+#include <QLabel>
+#include <QMenu>
+#include <QMenuBar>
 #include <QToolBar>
 #include <QTimer>
 #include <QDockWidget>
@@ -54,6 +55,7 @@
 #include "utils/glclinit.h"
 #include "utils/volumerender.h"
 #include "utils/imagerender.h"
+#include "utils/workers.h"
 
 class MainWindow : public QMainWindow
 {
@@ -62,11 +64,11 @@ class MainWindow : public QMainWindow
 public:
     MainWindow();
     ~MainWindow();
-    
-    
+
+
 protected:
     VolumeDataSet * dataInstance;
-    
+
 private slots:
     //void setGlobalDetector(int value);
     //void setGlobalFormat(int value);
@@ -89,18 +91,18 @@ private slots:
     void runReadFiles();
     void runProjectFiles();
     void runGenerateSvo();
-    
+
     void previewSVO();
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
-    
+
 signals:
     void changedDetector(int value);
     void changedFormat(int value);
     void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
-    
+
 private:
     MiniArray<float> VIEW_BRICKS;
     MiniArray<unsigned int> VIEW_OCT_INDEX;
@@ -109,7 +111,7 @@ private:
     MiniArray<double> HIST_LOG;
     MiniArray<double> HIST_MINMAX;
     MiniArray<char> SVO_COMMENT;
-    
+
     size_t VIEW_LEVELS, VIEW_BPP, VIEW_DIM_BRICKS, VIEW_N_BRICKS;
     float VIEW_EXTENT[8];
 
@@ -119,9 +121,9 @@ private:
     cl_uint num_devices;
     cl_uint num_platforms;
     cl_int err;
-    
+
     int function_success;
-    
+
     const char * cl_error_cstring(cl_int error);
     void closeEvent(QCloseEvent *event);
     void createActions();
@@ -129,7 +131,7 @@ private:
     void createInteractives();
     void createMenus();
     //void createStatusBar();
-	
+
     void init_emit();
     int init_cl_device();
     int init_cl_base();
@@ -140,64 +142,64 @@ private:
     void loadFile(const QString &fileName);
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
-    
+
     //~ QCheckBox * fastMoveCheckBox;
     QGLFormat glFormat;
-    
+
     QString strippedName(const QString &fullFileName);
 	QString scriptHelp;
 	QString curFile;
     QString info;
-    
+
     QLineEdit * hklEdit;
-    
+
     QPushButton * loadParButton;
     QPushButton * unitcellButton;
-    
+
     QLabel * alpha;
     QLabel * beta;
     QLabel * gamma;
     QLabel * a;
     QLabel * b;
     QLabel * c;
-    
+
     QLabel * alphaStar;
     QLabel * betaStar;
     QLabel * gammaStar;
     QLabel * aStar;
     QLabel * bStar;
     QLabel * cStar;
-    
+
     QComboBox *formatComboBox;
-    
+
     QSpinBox * svoLevelSpinBox;
-    
+
     QDoubleSpinBox *treshLimA_DSB;
     QDoubleSpinBox *treshLimB_DSB;
     QDoubleSpinBox *treshLimC_DSB;
-    QDoubleSpinBox *treshLimD_DSB;    
-    
-    
+    QDoubleSpinBox *treshLimD_DSB;
+
+
     QDoubleSpinBox * funcParamASpinBox;
     QDoubleSpinBox * funcParamBSpinBox;
     QDoubleSpinBox * funcParamCSpinBox;
     QDoubleSpinBox * funcParamDSpinBox;
-    
+
     QDoubleSpinBox * dataMinSpinBox;
     QDoubleSpinBox * dataMaxSpinBox;
     QDoubleSpinBox * alphaSpinBox;
     QDoubleSpinBox * brightnessSpinBox;
-    
+
     QComboBox * tsfComboBox;
     QComboBox * tsfAlphaComboBox;
-    
-    
+
+
     QElapsedTimer timer;
     Highlighter *script_highlighter;
     Highlighter *error_highlighter;
-    
+
     QTabWidget *tabWidget;
-    
+
     QPushButton *allInOneButton;
     QPushButton *imageForwardButton;
     QPushButton *imageFastForwardButton;
@@ -218,24 +220,24 @@ private:
     QWidget *unitcellWidget;
     QWidget *scriptWidget;
     QWidget *viewWidget;
-    InitGLCLWidget * initGLCL;
+    ContextGLWidget * initGLCL;
     VolumeRenderGLWidget *vrWidget;
     ImageRenderGLWidget *irWidget;
 
-    
-    
+
+
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;
     QDockWidget *functionDockWidget;
     QDockWidget *unitcellDockWidget;
-    
+
     QString svoDir;
     QString scriptDir;
-    
+
     QPlainTextEdit *textEdit;
 	QPlainTextEdit *errorTextEdit;
     QProgressBar *mainProgress;
-    
+
     QPushButton *readScriptButton;
     QPushButton *setFilesButton;
     QPushButton *readFilesButton;
@@ -249,7 +251,7 @@ private:
     //~ QPushButton *graphicsPerspectiveButton;
     //~ QPushButton *screenshotButton;
     QPushButton *functionToggleButton;
-    
+
     QMenuBar * mainMenu;
     QMenu *reduceMenu;
     QMenu *svoMenu;
@@ -276,12 +278,12 @@ private:
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
     QAction *aboutHDF5Act;
-    
+
 	QScriptValue rawFilesValue;
 	QScriptEngine engine;
 	QScriptValue rawFilesQs;
 	QStringList rawFiles;
-    
+
     QGridLayout * mainLayout;
     QGridLayout * viewLayout;
 };

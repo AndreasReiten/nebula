@@ -1,41 +1,41 @@
 #include "glclinit.h"
 
-InitGLCLWidget::InitGLCLWidget(const QGLFormat & format, QWidget * parent) :
+ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
     QGLWidget(format, parent)
 {
-    std::cout << "Constructing InitGLCLWidget" << std::endl;
+    //~std::cout << "Constructing ContextGLWidget" << std::endl;
     isGLIntitialized = false;
-    std::cout << "Done Constructing InitGLCLWidget" << std::endl;
+    //~std::cout << "Done Constructing ContextGLWidget" << std::endl;
 }
 
-InitGLCLWidget::~InitGLCLWidget()
+ContextGLWidget::~ContextGLWidget()
 {
     if (isGLIntitialized)
     {
-        std::cout << "CL/GL: DESTRUCTION!" << std::endl;
+        //~std::cout << "CL/GL: DESTRUCTION!" << std::endl;
         if (*queue) clReleaseCommandQueue(*queue);
         if (*context2) clReleaseContext(*context2);
-        std::cout << "CL/GL: DESTROYED!" << std::endl;
+        //~std::cout << "CL/GL: DESTROYED!" << std::endl;
     }
 }
 
-cl_command_queue * InitGLCLWidget::getCLCommandQueue()
+cl_command_queue * ContextGLWidget::getCLCommandQueue()
 {
     if (isGLIntitialized) return queue;
     else return NULL;
 }
-cl_device * InitGLCLWidget::getCLDevice()
+cl_device * ContextGLWidget::getCLDevice()
 {
     if (isGLIntitialized) return device;
     else return NULL;
 }
-cl_context * InitGLCLWidget::getCLContext()
+cl_context * ContextGLWidget::getCLContext()
 {
     if (isGLIntitialized) return context2;
     else return NULL;
 }
 
-void InitGLCLWidget::initializeGL()
+void ContextGLWidget::initializeGL()
 {
     std::cout << "Initializing OpenGL and CL" << std::endl;
 
@@ -48,7 +48,7 @@ void InitGLCLWidget::initializeGL()
 
 
 
-void InitGLCLWidget::paintGL()
+void ContextGLWidget::paintGL()
 {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -58,19 +58,19 @@ void InitGLCLWidget::paintGL()
 
 
 
-void InitGLCLWidget::resizeGL(int w, int h)
+void ContextGLWidget::resizeGL(int w, int h)
 {
     glViewport(0, 0, w, h);
 }
 
 
-void InitGLCLWidget::setMessageString(QString str)
+void ContextGLWidget::setMessageString(QString str)
 {
         emit changedMessageString(str);
 }
 
 
-int InitGLCLWidget::init_gl()
+int ContextGLWidget::init_gl()
 {
     /* Initialize OpenGL */
     GLenum glew_status = glewInit();
@@ -78,27 +78,27 @@ int InitGLCLWidget::init_gl()
         std::cout << "Error: " << glewGetErrorString(glew_status) << std::endl;
         return 0;
     }
-    
+
     if (!GLEW_VERSION_4_0) {
         std::cout << "No support for OpenGL 4.0 found" << std::endl;
         return 0;
     }
 
     isGLIntitialized = true;
-    
+
     // BLEND
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
-    
+
     return 1;
 }
 
-int InitGLCLWidget::init_cl_device(int verbose)
+int ContextGLWidget::init_cl_device(int verbose)
 {
     // DEVICE & INFO
     device = new cl_device;
-    
+
     err = clGetPlatformIDs(1, &device->platform_id, &num_platforms);
     if ( err != CL_SUCCESS)
     {
@@ -147,22 +147,22 @@ int InitGLCLWidget::init_cl_device(int verbose)
         std::cout << "CL_DEVICE_MAX_WRITE_IMAGE_ARGS:       " << device->max_write_image_args << std::endl;
         std::cout << "CL_DEVICE_MAX_SAMPLERS:               " << device->max_samplers << std::endl;
         //~ std::cout << ": " << device-> << std::endl;
-        
+
     }
     return 1;
 }
 
-int InitGLCLWidget::init_cl()
+int ContextGLWidget::init_cl()
 {
     context2 = new cl_context;
     queue = new cl_command_queue;
-     
+
     if (device->gpu_image_support != CL_TRUE)
     {
         std::cout << "Device lacks CL image support!"  << std::endl;
         return 0;
     }
-     
+
     // Context with GL interopability
     #ifdef __linux__
 	cl_context_properties properties[] = {
@@ -178,15 +178,15 @@ int InitGLCLWidget::init_cl()
         CL_CONTEXT_PLATFORM, (cl_context_properties) device->platform_id,
         0};
 	#endif
-      
-     
+
+
     *context2 = clCreateContext(properties, 1, &device->device_id, NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "MainWindow: Could not establish CL context: " << cl_error_cstring(err) << std::endl;
         return 0;
     }
-      
+
     // Command queue
     *queue = clCreateCommandQueue(*context2, device->device_id, 0, &err);
     if (err != CL_SUCCESS)
