@@ -169,7 +169,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
 {
     if (isGLIntitialized)
     {
-        std::cout << "VolumeRenderGLWidget DESTRUCTION!" << std::endl;
+        //~std::cout << "VolumeRenderGLWidget DESTRUCTION!" << std::endl;
 
         if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
         if (misc_int_cl) clReleaseMemObject(misc_int_cl);
@@ -240,7 +240,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteProgram(msaa_hdr_program);
         glDeleteProgram(std_text_program);
 
-        std::cout << "VolumeRenderGLWidget DESTRUCTION: DONE!" << std::endl;
+        //~std::cout << "VolumeRenderGLWidget DESTRUCTION: DONE!" << std::endl;
     }
 
 }

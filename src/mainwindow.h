@@ -55,7 +55,7 @@
 #include "utils/glclinit.h"
 #include "utils/volumerender.h"
 #include "utils/imagerender.h"
-#include "utils/workers.h"
+#include "utils/worker.h"
 
 class MainWindow : public QMainWindow
 {
@@ -96,6 +96,8 @@ private slots:
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
+    void initializeThreads();
+    void errorString(QString str);
 
 signals:
     void changedDetector(int value);
@@ -126,10 +128,10 @@ private:
 
     const char * cl_error_cstring(cl_int error);
     void closeEvent(QCloseEvent *event);
-    void createActions();
-    void createConnects();
-    void createInteractives();
-    void createMenus();
+    void initializeActions();
+    void initializeConnects();
+    void initializeInteractives();
+    void initializeMenus();
     //void createStatusBar();
 
     void init_emit();
@@ -236,7 +238,7 @@ private:
 
     QPlainTextEdit *textEdit;
 	QPlainTextEdit *errorTextEdit;
-    QProgressBar *mainProgress;
+    QProgressBar *progressBar;
 
     QPushButton *readScriptButton;
     QPushButton *setFilesButton;
@@ -286,5 +288,17 @@ private:
 
     QGridLayout * mainLayout;
     QGridLayout * viewLayout;
+
+    QThread * setFileThread;
+    QThread * readFileThread;
+    QThread * projectFileThread;
+    QThread * voxelizeThread;
+    QThread * allInOneThread;
+
+    SetFileWorker * setFileWorker;
+    ReadFileWorker * readFileWorker;
+    ProjectFileWorker * projectFileWorker;
+    AllInOneWorker * allInOneWorker;
+    VoxelizeWorker * voxelizeWorker;
 };
 #endif

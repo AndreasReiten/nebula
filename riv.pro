@@ -7,6 +7,7 @@ else:win32 {
     INCLUDEPATH += inc_mingw32
 }
 HEADERS       = src/mainwindow.h \
+                src/utils/worker.h \
                 src/utils/miniarray.h \
                 src/utils/text_highlighter.h \
                 src/utils/vol_data_set.h \
@@ -21,6 +22,7 @@ HEADERS       = src/mainwindow.h \
                 src/utils/atlas.h
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
+                src/utils/worker.cpp \
                 src/utils/miniarray.cpp \
                 src/utils/text_highlighter.cpp \
                 src/utils/vol_data_set.cpp \
@@ -32,8 +34,8 @@ SOURCES       = src/main.cpp \
                 src/utils/octnode.cpp \
                 src/utils/node.cpp \
                 src/utils/file_formats.cpp \
-                src/utils/atlas.cpp 
-RESOURCES     = riv.qrc 
+                src/utils/atlas.cpp
+RESOURCES     = riv.qrc
 
 unix {
     QMAKE_CXXFLAGS += -std=c++0x -I/usr/include/freetype2
@@ -41,7 +43,7 @@ unix {
     CONFIG       += debug
     TARGET = riv
     QMAKE_MAKEFILE = Makefile_unix
-    
+
     DESTDIR = build/unix
     OBJECTS_DIR = build/unix/.obj
     MOC_DIR = build/unix/.moc
@@ -54,7 +56,7 @@ else:win32 {
     #CONFIG       += release
     TARGET = riv
     QMAKE_MAKEFILE = Makefile_win32
-    
+
     Release:DESTDIR = build/win32/release
     Release:OBJECTS_DIR = build/win32/release/obj
     Release:MOC_DIR = build/win32/release/moc

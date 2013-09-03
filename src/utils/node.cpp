@@ -36,7 +36,6 @@ SearchNode::SearchNode(SearchNode * parent, double * extent)
 
 SearchNode::~SearchNode()
 {
-    //~ std::cout << "L" << level << ": Destroying node!" << std::endl;
     this->clearChildren();
     this->clearPoints();
 }
@@ -45,10 +44,8 @@ void SearchNode::clearChildren()
 {
     if (n_children > 0)
     {
-        //~ std::cout << "Killing children: "<< n_children << std::endl;
         for (unsigned int i = 0; i < n_children; i++)
         {
-            //~ std::cout << "Destroying child " << i << std::endl;
             delete children[i];
         }
         delete[] children;
@@ -60,31 +57,15 @@ void SearchNode::clearPoints()
 {
     if (n_points > 0)
     {
-        //~ std::cout << "Killing " << n_points << " points at L" << level << std::endl;
-        //~
-        //~ for (unsigned int i = 0; i < n_points; i++)
-        //~ {
-            //~ for (unsigned int j = 0; j < level; j++)
-            //~ {
-                //~ std::cout << " ";
-            //~ }
-            //~
-            //~ std::cout << "[ "<< points[i*4+0] << " " << points[i*4+1] << " " << points[i*4+2] << " ]"<< std::endl;
-        //~ }
-        //~ std::cout<< "delete (before): " << points <<std::endl;
         delete[] this->points;
-        //~ std::cout<< "delete (after)" << points <<std::endl;
         n_points = 0;
-        //~ std::cout << "clearPoints: n_points: " << n_points << std::endl;
     }
 }
 
 void SearchNode::setParent(SearchNode * parent)
 {
-    //~ std::cout << "setParent" << std::endl;
     parent->print();
     this->parent = parent;
-    //~ std::cout << "setParent" << std::endl;
     if (this->parent == NULL)
     {
         this->level = 0;
@@ -93,7 +74,6 @@ void SearchNode::setParent(SearchNode * parent)
     {
         this->level = parent->getLevel() + 1;
     }
-    //~ std::cout << "setParent" << std::endl;
 }
 
 unsigned int SearchNode::getLevel()
@@ -118,37 +98,20 @@ void SearchNode::print()
             children[i]->print();
         }
     }
-    //~ else if (n_points > 0)
-    //~ {
-        //~ for (unsigned int i = 0; i < n_points; i++)
-        //~ {
-            //~ for (unsigned int j = 0; j < level+1; j++)
-            //~ {
-                //~ std::cout << " ";
-            //~ }
-            //~
-            //~ std::cout << "[ "<< points[i*4+0] << " " << points[i*4+1] << " " << points[i*4+2] << " ]"<< std::endl;
-        //~ }
-    //~ }
 }
 
 // Functions that rely on recursive action such as this one should not be declared as an object function. Rather make a function external to the node.
 void SearchNode::insert(float * point)
 {
-    //~ std::cout << "Inserting at L" << level << std::endl;
     if (!isMsd)
     {
-        //~ std::cout << "-> Insert 'go to next level'" << std::endl;
         bool isOutofBounds = false;
 
         unsigned int id = getOctant(point, &isOutofBounds);
-        //~ std::cout << "  Inserting into octant: " << id << std::endl;
         if (!isOutofBounds) this->children[id]->insert(point);
-        //~ if (isOutofBounds) std::cout << "insert marker" << std::endl;
     }
     else if ((n_points == 0) && isMsd)
     {
-        //~ std::cout << "-> Insert 'new node'" << std::endl;
         points = new float[MAX_POINTS*4];
         points[n_points*4+0]  = point[0];
         points[n_points*4+1]  = point[1];
@@ -159,7 +122,6 @@ void SearchNode::insert(float * point)
     }
     else if ((n_points >= MAX_POINTS - 1) && (level < MAX_LEVELS - 1))
     {
-        //~ std::cout << "-> Insert 'split'" << std::endl;
         points[n_points*4+0]  = point[0];
         points[n_points*4+1]  = point[1];
         points[n_points*4+2]  = point[2];
@@ -172,7 +134,6 @@ void SearchNode::insert(float * point)
     else if ((n_points > MAX_POINTS - 1))
     {
         // Expand allocated array by 1
-        //~ std::cout << "-> Insert 'appending insert'" << std::endl;
         float * tmp = new float[n_points*4];
 
         for (unsigned int i = 0; i < n_points*4; i++)
@@ -198,16 +159,12 @@ void SearchNode::insert(float * point)
     }
     else
     {
-        //~ std::cout << "-> L"<<level<<": Insert 'normal insert'" << std::endl;
-        //~ std::cout << "      point: [" << std::setprecision(2) << std::fixed << point[0] << " "<< point[1] << " "<< point[2] << "]" << std::endl;
-        //~ std::cout << "        ext: [" << std::setprecision(2) << std::fixed << extent[0] << " "<< extent[1] << " "<< extent[2] << " "<< extent[3] << " "<< extent[4] << " "<< extent[5] << "]" << std::endl;
         points[n_points*4+0]  = point[0];
         points[n_points*4+1]  = point[1];
         points[n_points*4+2]  = point[2];
         points[n_points*4+3]  = point[3];
         n_points++;
     }
-    //~ std::cout << "Done Inserting" << std::endl;
 }
 
 void SearchNode::weighSamples(float * sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)
@@ -304,38 +261,24 @@ bool SearchNode::getBrick(float * dst, double * brick_extent, float p, float sea
 
 float SearchNode::distance(float * a, float * b)
 {
-    //~ std::cout << "      Measuring between [" << a[0] << " " << a[1] << " " << a[2] << "] and [" << b[0] << " " << b[1] << " " << b[2] << "]" << std::endl;
-
     return std::sqrt((b[0]-a[0])*(b[0]-a[0]) + (b[1]-a[1])*(b[1]-a[1]) + (b[2]-a[2])*(b[2]-a[2]));
 }
 
 unsigned int SearchNode::getOctant(float * point, bool * isOutofBounds)
 {
-    //~ std::cout << "SearchNode::getOctant" << std::endl;
     // Find 3D octant id
     int oct_x =  (point[0] - extent[0])*2.0 / (extent[1] - extent[0]);
     int oct_y =  (point[1] - extent[2])*2.0 / (extent[3] - extent[2]);
     int oct_z =  (point[2] - extent[4])*2.0 / (extent[5] - extent[4]);
 
-    //~ std::cout << "oct_y = (" << points[1] <<"-"<< extent[2] <<")*2.0 / (" << extent[3] << "-" << extent[2] << ")" << std::endl;
 
     // Clamp
     if ((oct_x >= 2) || (oct_x < 0)) *isOutofBounds = true;
     if ((oct_y >= 2) || (oct_y < 0)) *isOutofBounds = true;
     if ((oct_z >= 2) || (oct_z < 0)) *isOutofBounds = true;
 
-    //~ if (*isOutofBounds && (level > 0))
-    //~ {
-        //~ std::cout << "<< L"<<level<<": Out of bounds and sub node: " << oct_x << " "<< oct_y << " "<< oct_z  << std::endl;
-        //~ std::cout << "      point: [" << std::setprecision(2) << std::fixed << point[0] << " "<< point[1] << " "<< point[2] << "]" << std::endl;
-        //~ std::cout << "        ext: [" << std::setprecision(2) << std::fixed << extent[0] << " "<< extent[1] << " "<< extent[2] << " "<< extent[3] << " "<< extent[4] << " "<< extent[5] << "]" << std::endl;
-    //~ }
     unsigned int id = oct_x + 2*oct_y + 4*oct_z;
 
-    //~ std::cout << "id: " << id << "cuz: [x,y,z] = [" << oct_x << ", "<< oct_y << ", "<< oct_z << "]"<< std::endl;
-    //~ std::cout << "ext: [x,x,y,y,z,z] = [" << extent[0] << ", "<< extent[1] << ", "<< extent[2] << ", "<< extent[3]<< ", "<< extent[4]<< ", "<< extent[5]<< "]"<< std::endl;
-    //~ std::cout << "point: [x,y,z] = [" << point[0] << ", "<< point[1] << ", "<< point[2] << "]"<< std::endl;
-    //~ std::cout << "SearchNode::getOctant (end)" << std::endl;
     // Find 1D octant id
     return id;
 
@@ -348,8 +291,6 @@ void SearchNode::split()
      * children. Then insert the nodes in the children according to
      * octant */
 
-
-    //~ std::cout << "Splitting" << std::endl;
     n_children = 8;
     children = new SearchNode*[8];
 
@@ -374,24 +315,13 @@ void SearchNode::split()
     }
 
     // For each point
-    //~ std::cout << n_points << std::endl;
     for (size_t i = 0; i < n_points; i++)
     {
         bool isOutofBounds = false;
 
         unsigned int id = getOctant(points + i*4, &isOutofBounds);
-        //~ if (isOutofBounds) std::cout << "split marker" << std::endl;
-        //~ std::cout << "inserting ( "<<id<<" ) [" << std::setprecision(2) << std::fixed << points[i*4] << " " << points[i*4+1] << " " << points[i*4+2] << "] into
-        //~ std::cout<<"["<< children[id]->getExtent()[0] << " "<< children[id]->getExtent()[1] << " "<< children[id]->getExtent()[2] << " "<< children[id]->getExtent()[3] << " "<< children[id]->getExtent()[4] << " "<< children[id]->getExtent()[5] << "]"<< std::endl;
-
-        //~ std::cout << "going in (id = "<< id<<")" << std::endl;
-        //~ double * lol = children[id]->getExtent();
-        //~ std::cout << "going out" << std::endl;
-
-        //~ std::cout << "  split inserting into octant: " << id << std::endl;
         if (!isOutofBounds)
         {
-            //~ std::cout << "L" << level<<": inserting ( "<<id<<" ) [" << std::setprecision(2) << std::fixed << points[i*4] << " " << points[i*4+1] << " " << points[i*4+2] << "] into\n\t["<< children[id]->getExtent()[0] << " "<< children[id]->getExtent()[1] << " "<< children[id]->getExtent()[2] << " "<< children[id]->getExtent()[3] << " "<< children[id]->getExtent()[4] << " "<< children[id]->getExtent()[5] << "] from\n\t["<< extent[0] << " "<< extent[1] << " "<< extent[2] << " "<< extent[3] << " "<< extent[4] << " "<< extent[5] << "]"<<std::endl;
 
             this->children[id]->insert(points + i*4);
         }
@@ -400,6 +330,5 @@ void SearchNode::split()
 
 double * SearchNode::getExtent()
 {
-    //~ std::cout << "returning extent" << std::endl;
     return this->extent;
 }

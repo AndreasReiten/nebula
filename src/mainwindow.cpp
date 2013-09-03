@@ -2,9 +2,9 @@
 
 MainWindow::MainWindow()
 {
-    std::cout << "Constructing MainWindow" << std::endl;
+    //~std::cout << "Constructing MainWindow" << std::endl;
 
-    // Stylesheet
+    // Set stylesheet
     QFile styleFile( ":/src/stylesheets/gosutheme.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
@@ -13,8 +13,6 @@ MainWindow::MainWindow()
 
     // Initialize
     QGLFormat glFormat(QGL::DoubleBuffer | QGL::DepthBuffer | QGL::Rgba | QGL::AlphaChannel | QGL::StencilBuffer | QGL::DirectRendering, 0);
-    //~ glFormat.setSampleBuffers ( true );
-    //~ glFormat.setSamples ( 8 );
 
     initGLCL = new ContextGLWidget(glFormat);
     initGLCL->updateGL();
@@ -22,13 +20,13 @@ MainWindow::MainWindow()
 
     dataInstance = new VolumeDataSet(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue());
 
-    createActions();
+    this->initializeActions();
+    this->initializeMenus();
+    this->initializeInteractives();
+    this->initializeConnects();
+    this->initializeThreads();
 
-    createMenus();
-
-    createInteractives();
-    createConnects();
-	setCentralWidget(mainWidget);
+    setCentralWidget(mainWidget);
     readSettings();
     setCurrentFile("");
     init_emit();
@@ -42,11 +40,69 @@ MainWindow::MainWindow()
     toolChainWidget->show();
     outputDockWidget->show();
 
-    std::cout << "Done Constructing MainWindow" << std::endl;
+    //~std::cout << "Done Constructing MainWindow" << std::endl;
 }
 
 MainWindow::~MainWindow()
 {
+
+}
+
+void MainWindow::initializeThreads()
+{
+    setFileThread = new QThread;
+    readFileThread = new QThread;
+    projectFileThread = new QThread;
+    voxelizeThread = new QThread;
+    allInOneThread = new QThread;
+
+    setFileWorker = new SetFileWorker();
+    setFileWorker->moveToThread(setFileThread);
+    connect(setFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
+    connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
+    connect(setFileWorker, SIGNAL(finished()), setFileWorker, SLOT(deleteLater()));
+    connect(setFileThread, SIGNAL(finished()), setFileThread, SLOT(deleteLater()));
+    connect(setFileWorker, SIGNAL(changedMessageString(QString str)), this, SLOT(print(QString)));
+    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), this->progressBar, SLOT(setValue(int)));
+    connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this->progressBar, SLOT(setFormat(QString)));
+
+    readFileWorker = new ReadFileWorker();
+    readFileWorker->moveToThread(readFileThread);
+    connect(readFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
+    connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
+    connect(readFileWorker, SIGNAL(finished()), readFileWorker, SLOT(deleteLater()));
+    connect(readFileThread, SIGNAL(finished()), readFileThread, SLOT(deleteLater()));
+
+
+    projectFileWorker = new ProjectFileWorker();
+    projectFileWorker->moveToThread(projectFileThread);
+    connect(projectFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
+    connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
+    connect(projectFileWorker, SIGNAL(finished()), projectFileWorker, SLOT(deleteLater()));
+    connect(projectFileThread, SIGNAL(finished()), projectFileThread, SLOT(deleteLater()));
+
+    allInOneWorker = new AllInOneWorker();
+    allInOneWorker->moveToThread(allInOneThread);
+    connect(allInOneWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
+    connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
+    connect(allInOneWorker, SIGNAL(finished()), allInOneWorker, SLOT(deleteLater()));
+    connect(allInOneThread, SIGNAL(finished()), allInOneThread, SLOT(deleteLater()));
+
+
+    voxelizeWorker = new VoxelizeWorker();
+    voxelizeWorker->moveToThread(voxelizeThread);
+    connect(voxelizeWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
+    connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
+    connect(voxelizeWorker, SIGNAL(finished()), voxelizeWorker, SLOT(deleteLater()));
+    connect(voxelizeThread, SIGNAL(finished()), voxelizeThread, SLOT(deleteLater()));
+
+
+    //~setFileThread->start();
 }
 
 void MainWindow::init_emit()
@@ -101,7 +157,7 @@ void MainWindow::open()
     }
 }
 
-void MainWindow::createActions()
+void MainWindow::initializeActions()
 {
     // Actions
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
@@ -526,7 +582,7 @@ void MainWindow::setTab(int tab)
     //~ std::cout << "irWidget Alpha Channel = " << irWidget->format().alpha() << " size = "<< irWidget->format().alphaBufferSize()<< "sharing = "<< irWidget->isSharing() << std::endl;
 }
 
-void MainWindow::createConnects()
+void MainWindow::initializeConnects()
 {
     /* this <-> vrWidget */
     connect(this->tsfAlphaComboBox, SIGNAL(activated(int)), vrWidget, SLOT(setTsfAlphaStyle(int)));
@@ -571,7 +627,7 @@ void MainWindow::createConnects()
     connect(treshLimB_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighTresholdReduce(double)));
     connect(treshLimC_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowTresholdProject(double)));
     connect(treshLimD_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighTresholdProject(double)));
-    connect(dataInstance, SIGNAL(changedGenericProgress(int)), mainProgress, SLOT(setValue(int)));
+    connect(dataInstance, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(dataInstance, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(this->imageForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame1()));
     connect(this->imageFastForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame5()));
@@ -611,7 +667,7 @@ void MainWindow::createConnects()
 
 void MainWindow::setGenericProgressFormat(QString str)
 {
-    mainProgress->setFormat(str);
+    progressBar->setFormat(str);
 }
 
 void MainWindow::previewSVO()
@@ -634,7 +690,7 @@ void MainWindow::previewSVO()
 
 
 
-void MainWindow::createMenus()
+void MainWindow::initializeMenus()
 {
     mainMenu = new QMenuBar;
     scriptMenu = new QMenu(tr("&File"));
@@ -662,7 +718,7 @@ void MainWindow::createMenus()
 
 
 
-void MainWindow::createInteractives()
+void MainWindow::initializeInteractives()
 {
 	mainWidget = new QWidget(this);
     mainLayout = new QGridLayout;
@@ -1162,9 +1218,9 @@ void MainWindow::createInteractives()
         botWidget = new QWidget;
 
         // Progress Bar
-        mainProgress = new QProgressBar;
-        mainProgress->setRange( 0, 100 );
-        mainProgress->hide();
+        progressBar = new QProgressBar;
+        progressBar->setRange( 0, 100 );
+        progressBar->hide();
 
         // Text output
         errorTextEdit = new QPlainTextEdit;
@@ -1177,7 +1233,7 @@ void MainWindow::createInteractives()
         botLayout->setMargin(0);
         botLayout->setContentsMargins(0,0,0,0);
         botLayout->addWidget(errorTextEdit, 0, 0, 1, 1);
-        botLayout->addWidget(mainProgress, 1, 0, 1, 1);
+        botLayout->addWidget(progressBar, 1, 0, 1, 1);
 
         botWidget->setLayout(botLayout);
         outputDockWidget->setWidget(botWidget);
@@ -1212,7 +1268,7 @@ void MainWindow::runAllInOne()
 	/* STEP ONE, TWO, and THREE - All in one go to minimize intermediate
      * memory consumption between stages */
 
-    mainProgress->show();
+    progressBar->show();
     tabWidget->setCurrentIndex(1);
     allInOneButton->setEnabled(false);
     readFilesButton->setEnabled(false);
@@ -1233,7 +1289,7 @@ void MainWindow::runAllInOne()
     {
         generateSvoButton->setEnabled(true);
     }
-    mainProgress->hide();
+    progressBar->hide();
 }
 
 
@@ -1241,7 +1297,7 @@ void MainWindow::runReadFiles()
 {
     /*################################################################*/
 	/* STEP TWO - READING FILE CONTENTS */
-    mainProgress->show();
+    progressBar->show();
     tabWidget->setCurrentIndex(1);
     readFilesButton->setEnabled(false);
 
@@ -1259,14 +1315,14 @@ void MainWindow::runReadFiles()
         projectFilesButton->setEnabled(true);
         generateSvoButton->setEnabled(false);
     }
-    mainProgress->hide();
+    progressBar->hide();
 }
 
 void MainWindow::runSetFiles()
 {
 	/*################################################################*/
 	/* STEP ONE - HEADER RETRIEVEAL*/
-    mainProgress->show();
+    progressBar->show();
     tabWidget->setCurrentIndex(1);
     setFilesButton->setEnabled(false);
 
@@ -1287,7 +1343,7 @@ void MainWindow::runSetFiles()
         projectFilesButton->setEnabled(false);
         generateSvoButton->setEnabled(false);
     }
-    mainProgress->hide();
+    progressBar->hide();
 }
 
 void MainWindow::runProjectFiles()
@@ -1295,7 +1351,7 @@ void MainWindow::runProjectFiles()
     /*################################################################*/
 	/* STEP THREE - EWALD PROJECTION */
 
-    mainProgress->show();
+    progressBar->show();
     tabWidget->setCurrentIndex(1);
     projectFilesButton->setEnabled(false);
 
@@ -1314,14 +1370,14 @@ void MainWindow::runProjectFiles()
     {
         generateSvoButton->setEnabled(true);
     }
-    mainProgress->hide();
+    progressBar->hide();
 }
 
 void MainWindow::runGenerateSvo()
 {
     /*################################################################*/
 	/* STEP FOUR - GENERATING A SPARSE VOXEL OCTREE*/
-    mainProgress->show();
+    progressBar->show();
     tabWidget->setCurrentIndex(1);
     generateSvoButton->setEnabled(false);
 
@@ -1336,7 +1392,14 @@ void MainWindow::runGenerateSvo()
     #endif
 
     generateSvoButton->setEnabled(true);
-    mainProgress->hide();
+    progressBar->hide();
+}
+
+void MainWindow::errorString(QString str)
+{
+    std::cout << str.toStdString().c_str() << std::endl;
+    write_log(str.toStdString().c_str(), "errors.log", 1);
+    print(str);
 }
 
 void MainWindow::print(QString str)

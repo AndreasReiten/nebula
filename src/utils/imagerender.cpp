@@ -70,7 +70,7 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
 {
     if (isGLIntitialized)
     {
-        std::cout << "ImageRenderGLWidget DESTRUCTION!" << std::endl;
+        //~std::cout << "ImageRenderGLWidget DESTRUCTION!" << std::endl;
 
         glDeleteTextures(5, image_tex);
 
@@ -97,7 +97,7 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
         //~ if (context) clReleaseContext(context);
         //~ if (program) clReleaseProgram(program);
 
-        std::cout << "ImageRenderGLWidget DESTRUCTION: DONE!" << std::endl;
+        //~std::cout << "ImageRenderGLWidget DESTRUCTION: DONE!" << std::endl;
     }
 }
 
