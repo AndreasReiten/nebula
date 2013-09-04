@@ -49,8 +49,8 @@ class PilatusFile
         PilatusFile();
         PilatusFile(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget);
 
-        QString getPath();
-        
+        QString getPath() const;
+
         int set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget);
         int readData();
         int filterData(size_t * n, float * outBuf, int treshold_reduce_low, int treshold_reduce_high, int treshold_project_low, int treshold_project_high, bool isProjectionActive = true);
@@ -73,10 +73,10 @@ class PilatusFile
         void setRawImgCLGL(cl_mem * image);
         void setCorrectedImgCLGL(cl_mem * image);
         void setImageRenderWidget(ImageRenderGLWidget * widget);
-        
+
     private:
         ImageRenderGLWidget * imageRenderWidget;
-    
+
         cl_mem * tsf_img_clgl;
         cl_mem * raw_img_clgl;
         cl_mem * corrected_img_clgl;
@@ -95,16 +95,16 @@ class PilatusFile
         Matrix<float> * background;
         float background_flux;
         float backgroundExpTime;
-        
+
         QString path;
         size_t fast_dimension, slow_dimension;
         float max_counts;
         int STATUS_OK;
-        
+
         int treshold_reduce_low, treshold_reduce_high;
         int treshold_project_low, treshold_project_high;
         float srchrad_sugg_low, srchrad_sugg_high;
-        
+
         void suggestSearchRadius();
         int readHeader();
         QString regExp(QString * regular_expression, QString * source, size_t offset, size_t i);
@@ -124,7 +124,7 @@ class PilatusFile
         QString flat_field;
         QString time_file;
         QString image_path;
-        
+
         /* Optional keywords */
         float wavelength;
         int energy_range_low, energy_range_high;
@@ -149,8 +149,8 @@ class PilatusFile
         int n_oscillations;
         float start_position;
         float position_increment;
-        float shutter_time; 
-        
+        float shutter_time;
+
         float beta;
 };
 

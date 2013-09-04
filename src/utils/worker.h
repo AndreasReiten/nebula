@@ -64,6 +64,7 @@ class BaseWorker : public QObject
         void enableReadFileButton(bool value);
         void enableProjectFileButton(bool value);
         void enableVoxelizeButton(bool value);
+        void enableAllInOneButton(bool value);
         void showGenericProgressBar(bool value);
         void changedTabWidget(int value);
 

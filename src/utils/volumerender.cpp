@@ -6,6 +6,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     //~std::cout << "Constructing VolumeRenderGLWidget" << std::endl;
     //~ std::cout << "Volume Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
     isGLIntitialized = false;
+    verbose = 1;
 
     ray_res = 20;
 
@@ -169,7 +170,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
 {
     if (isGLIntitialized)
     {
-        //~std::cout << "VolumeRenderGLWidget DESTRUCTION!" << std::endl;
+        if (verbose) emit appendLog( "VolumeRenderGLWidget-> Destroying..." );
 
         if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
         if (misc_int_cl) clReleaseMemObject(misc_int_cl);
@@ -240,7 +241,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteProgram(msaa_hdr_program);
         glDeleteProgram(std_text_program);
 
-        //~std::cout << "VolumeRenderGLWidget DESTRUCTION: DONE!" << std::endl;
+        if (verbose) emit appendLog( "VolumeRenderGLWidget-> Destruction done" );
     }
 
 }
@@ -672,7 +673,7 @@ QSize VolumeRenderGLWidget::sizeHint() const
 
 void VolumeRenderGLWidget::initializeGL()
 {
-    std::cout << " Initializing OpenGL and CL" << std::endl;
+    //~std::cout << " Initializing OpenGL and CL" << std::endl;
     setMouseTracking( true );
     if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
     if (!this->init_cl()) std::cout << "VolumeRenderGLWidget: OpenCL context could not be initialized!" << std::endl;
@@ -685,7 +686,9 @@ void VolumeRenderGLWidget::initializeGL()
     this->setTsfParameters();
     this->setMiscArrays();
     this->setEmit();
-    std::cout << "Done Initializing OpenGL and CL " << std::endl;
+
+    isGLIntitialized = true;
+    //~std::cout << "Done Initializing OpenGL and CL " << std::endl;
 }
 void VolumeRenderGLWidget::setEmit()
 {
@@ -1783,7 +1786,6 @@ void VolumeRenderGLWidget::wheelEvent(QWheelEvent *event)
 
 int VolumeRenderGLWidget::init_gl()
 {
-    isGLIntitialized = true;
 
     // BLEND
     glEnable(GL_BLEND);

@@ -8,6 +8,8 @@
 
 #include <QByteArray>
 #include <QFile>
+#include <QDateTime>
+#include <QString>
 
 #include <GL/glew.h>
 #include <CL/opencl.h>
@@ -47,7 +49,7 @@ struct BMPHeader {
 struct cl_device{
     cl_platform_id platform_id;
     cl_device_id device_id = NULL;
-    
+
     char cl_device_name[64];
     char cl_device_version[64];
     char cl_driver_version[64];
@@ -76,5 +78,5 @@ void glGetErrorMessage(const char * context);
 void screenshot(int w, int h, const char* path);
 void setVbo(GLuint * vbo, float * buf, size_t length);
 void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function);
-void write_log(std::string text, std::string file, bool append);
+void writeLog(QString text, QString file, bool append);
 #endif

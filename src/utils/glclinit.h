@@ -40,6 +40,7 @@ public:
 
 signals:
     void changedMessageString(QString str);
+    void appendLog(QString str);
 
 protected:
     void initializeGL();
@@ -48,6 +49,7 @@ protected:
 
 private:
     void setMessageString(QString str);
+    int verbose;
 
     // OpenGL Related
     int init_gl();

@@ -42,7 +42,7 @@
 class VolumeRenderGLWidget : public QGLWidget
 {
     Q_OBJECT
-    
+
 public:
     explicit VolumeRenderGLWidget(cl_device * device, cl_context * context2, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
     ~VolumeRenderGLWidget();
@@ -54,8 +54,8 @@ public:
     void setMeta(MiniArray<double> * HIST_NORM, MiniArray<double> * HIST_LOG, MiniArray<double> * HIST_MINMAX, MiniArray<char> * SVO_COMMENT);
     void setMatrixU(float * buf);
     void setMatrixB(float * buf);
-    
-    
+
+
 public slots:
     void takeScreenshot();
     void setResolutionf(double value);
@@ -78,7 +78,8 @@ public slots:
     void toggleUnitcellView();
     void setHklFocus(const QString str);
     void setTsfAlphaStyle(int value);
-    
+
+
 signals:
     void changedMessageString(QString str);
     void changedResolutioni(int value);
@@ -91,15 +92,17 @@ signals:
     void changedFuncParamB(double value);
     void changedFuncParamC(double value);
     void changedFuncParamD(double value);
-    
+    void appendLog(QString str);
+
 protected:
+    int verbose;
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
     void mouseMoveEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void wheelEvent(QWheelEvent *event);
-    
+
 private:
     Atlas * fontSmall;
     Atlas * fontMedium;
@@ -133,9 +136,9 @@ private:
     void ray_tex_refresh(cl_kernel kernel);
     void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
     //~ void paint_texture_2d(GLuint texture, double * coordinates, double * vertices);
-    
+
     void getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color);
-    
+
     GLint msaa_hdr_attribute_position , msaa_hdr_attribute_texpos , msaa_hdr_uniform_samples , msaa_hdr_uniform_method , msaa_hdr_uniform_exposure , msaa_hdr_uniform_texture , msaa_hdr_uniform_weight;
     GLuint hist_tex_norm, hist_tex_log;
     GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
@@ -152,7 +155,7 @@ private:
     GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
     GLuint std_2d_tex_program, std_2d_color_program, std_3d_program, pp_glow_program, blend_program, msaa_program, msaa_hdr_program, std_text_program;
     GLuint ray_tex, tsf_tex, hist_tex, static_texture[5];
-    
+
     cl_image_format bricks_format;
     cl_sampler bricks_sampler, tsf_tex_sampler;
     cl_mem ray_tex_cl, tsf_tex_cl;
@@ -165,20 +168,20 @@ private:
     cl_context * context2;
     cl_command_queue * queue;
     cl_int err;
-    
+
     int pp_samples;
     float pp_deviation;
     float pp_scale;
-    
+
     RotationMatrix<float> X_ROTATION;
     RotationMatrix<float> Y_ROTATION;
     RotationMatrix<float> Z_ROTATION;
     RotationMatrix<float> ROTATION;
     RotationMatrix<float> ROLL_ROTATION;
     RotationMatrix<float> AUTO_ROTATION;
-    
+
     CameraToClipMatrix<float> CTC_MATRIX;
-    
+
     Matrix<float> origo;
     Matrix<float> pixel_size;
     //~ Matrix<float> std_texcoords;
@@ -207,7 +210,7 @@ private:
     Matrix<float> c;
 
     TsfMatrix<double> transferFunction;
-    
+
     MiniArray<GLuint> hkl_indices;
     MiniArray<float> color;
     MiniArray<float> * BRICKS;
@@ -218,13 +221,13 @@ private:
     MiniArray<double> * HIST_LOG;
     Matrix<float> hkl_text_pos;
     Matrix<float> hkl_text_index;
-    
+
     QTimer *timer;
     QElapsedTimer *time;
     QElapsedTimer *rotationTimer;
     QElapsedTimer *timerLastAction;
     QElapsedTimer *callTimer;
-    
+
     float LINEWIDTH;
     bool isUnitcellActive;
     bool isFunctionActive;
@@ -232,11 +235,11 @@ private:
     bool isRefreshRequired;
     bool isPerspectiveRequired;
     bool isUnitcellValid;
-    
+
     int isLog;
     int callTimeMax;
     int timeLastActionMin;
-    int auto_rotation_delay; 
+    int auto_rotation_delay;
     int MSAA_SAMPLES, MSAA_METHOD;
     float MSAA_EXPOSURE;
     int WIDTH, HEIGHT, SMALL_WIDTH, SMALL_HEIGHT;
@@ -244,13 +247,13 @@ private:
     int gen_ray_tex();
     int init_gl();
     int init_cl();
-    
+
     size_t ray_glb_ws[2];
     size_t ray_loc_ws[2];
     size_t LEVELS, BPP, N_BRICKS, DIM_BRICKS;
-    
+
     float ray_res;
-    
+
     double N, F, fov;
     double zeta, eta;
     double X_rotation, Y_rotation;
@@ -259,7 +262,7 @@ private:
 
     char tsf_alpha_style;
     char tsf_style;
-    
+
     MiniArray<float> white;
     MiniArray<float> transparent;
     MiniArray<float> black;

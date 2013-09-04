@@ -59,6 +59,7 @@ public:
 
 signals:
     void changedMessageString(QString str);
+    void appendLog(QString str);
 
 protected:
     void initializeGL();
@@ -69,11 +70,11 @@ private:
     void init_freetype();
     void setMessageString(QString str);
 
-    bool isGLIntitialized;
     QTimer * timer;
     QElapsedTimer * time;
     int image_w, image_h;
     int WIDTH, HEIGHT;
+    int verbose;
 
     TsfMatrix<double> transferFunction;
 
@@ -85,6 +86,7 @@ private:
     MiniArray<float> green;
 
     // OpenGL Related
+    bool isGLIntitialized;
     int init_gl();
     void init_gl_programs();
     void screen_buffer_refresh();

@@ -5,27 +5,41 @@ MainWindow::MainWindow()
     // Set default values
     brick_inner_dimension = 7;
     brick_outer_dimension = 8;
+    verbose = 1;
+
+    // Initialize the log file
+    QDateTime dateTime = dateTime.currentDateTime();
+    QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
+    writeLog("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
+    if (verbose) appendLog("MainWindow-> Constructing...");
 
     // Set stylesheet
+    if (verbose) appendLog("MainWindow: Initializing Style Sheet");
     QFile styleFile( ":/src/stylesheets/gosutheme.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
     styleFile.close();
     this->setStyleSheet(style);
 
-    // Initialize
+
     QGLFormat glFormat(QGL::DoubleBuffer | QGL::DepthBuffer | QGL::Rgba | QGL::AlphaChannel | QGL::StencilBuffer | QGL::DirectRendering, 0);
 
-    initGLCL = new ContextGLWidget(glFormat);
-    initGLCL->updateGL();
-    initGLCL->hide();
+    if (verbose) appendLog("MainWindow: Initializing ContextGLWidget");
+    contextGLWidget = new ContextGLWidget(glFormat);
+    contextGLWidget->updateGL();
+    contextGLWidget->hide();
 
-    dataInstance = new VolumeDataSet(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue());
+    dataInstance = new VolumeDataSet(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
 
+    if (verbose) appendLog("MainWindow: Initializing Actions");
     this->initializeActions();
+    if (verbose) appendLog("MainWindow: Initializing Menus");
     this->initializeMenus();
+    if (verbose) appendLog("MainWindow: Initializing Interactives");
     this->initializeInteractives();
+    if (verbose) appendLog("MainWindow: Initializing Connects");
     this->initializeConnects();
+    if (verbose) appendLog("MainWindow: Initializing Worker Threads");
     this->initializeThreads();
 
     setCentralWidget(mainWidget);
@@ -42,6 +56,7 @@ MainWindow::MainWindow()
     toolChainWidget->show();
     outputDockWidget->show();
 
+    if (verbose) appendLog("MainWindow-> Construction done");
     //~std::cout << "Done Constructing MainWindow" << std::endl;
 }
 
@@ -65,7 +80,7 @@ void MainWindow::initializeThreads()
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
-    connect(setFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(setFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
     connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
@@ -83,17 +98,31 @@ void MainWindow::initializeThreads()
 
 
     readFileWorker = new ReadFileWorker();
+    readFileWorker->setFilePaths(&file_paths);
+    readFileWorker->setFiles(&files);
+    readFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
+
     readFileWorker->moveToThread(readFileThread);
-    connect(readFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
     connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
+    connect(readFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
+    connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
-    //~connect(readFileWorker, SIGNAL(finished()), readFileWorker, SLOT(deleteLater()));
-    //~connect(readFileThread, SIGNAL(finished()), readFileThread, SLOT(deleteLater()));
+    connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(readFileWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
+    connect(readFileWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
+    connect(readFileWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
+    connect(readFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
+    connect(readFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
+    connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(readFilesButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()));
 
 
     projectFileWorker = new ProjectFileWorker();
     projectFileWorker->moveToThread(projectFileThread);
-    connect(projectFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(projectFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
     //~connect(projectFileWorker, SIGNAL(finished()), projectFileWorker, SLOT(deleteLater()));
@@ -101,7 +130,7 @@ void MainWindow::initializeThreads()
 
     allInOneWorker = new AllInOneWorker();
     allInOneWorker->moveToThread(allInOneThread);
-    connect(allInOneWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(allInOneWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
     //~connect(allInOneWorker, SIGNAL(finished()), allInOneWorker, SLOT(deleteLater()));
@@ -110,7 +139,7 @@ void MainWindow::initializeThreads()
 
     voxelizeWorker = new VoxelizeWorker();
     voxelizeWorker->moveToThread(voxelizeThread);
-    connect(voxelizeWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(voxelizeWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
     //~connect(voxelizeWorker, SIGNAL(finished()), voxelizeWorker, SLOT(deleteLater()));
@@ -589,7 +618,7 @@ void MainWindow::setTab(int tab)
             std::cout << "Reverting to Default Tab" << std::endl;
             break;
     }
-    //~ std::cout << "initCLGL: Alpha Channel = " << initGLCL->format().alpha() << " size = "<< initGLCL->format().alphaBufferSize()<< "sharing = "<< initGLCL->isSharing() <<std::endl;
+    //~ std::cout << "initCLGL: Alpha Channel = " << contextGLWidget->format().alpha() << " size = "<< contextGLWidget->format().alphaBufferSize()<< "sharing = "<< contextGLWidget->isSharing() <<std::endl;
     //~ std::cout << "vrWidget Alpha Channel = " << vrWidget->format().alpha() << " size = "<< vrWidget->format().alphaBufferSize()<< "sharing = "<< vrWidget->isSharing() <<std::endl;
     //~ std::cout << "irWidget Alpha Channel = " << irWidget->format().alpha() << " size = "<< irWidget->format().alphaBufferSize()<< "sharing = "<< irWidget->isSharing() << std::endl;
 }
@@ -597,6 +626,7 @@ void MainWindow::setTab(int tab)
 void MainWindow::initializeConnects()
 {
     /* this <-> vrWidget */
+    //~connect( vrWidget, SIGNAL(appendLog(QString)), this, SLOT(appendLog(QString)));
     connect(this->tsfAlphaComboBox, SIGNAL(activated(int)), vrWidget, SLOT(setTsfAlphaStyle(int)));
     connect(dataStructureAct, SIGNAL(triggered()), vrWidget, SLOT(toggleDataStructure()));
     connect(backgroundAct, SIGNAL(triggered()), vrWidget, SLOT(toggleBackground()));
@@ -647,11 +677,11 @@ void MainWindow::initializeConnects()
     connect(this->imageFastBackButton, SIGNAL(clicked()), dataInstance, SLOT(decrementDisplayFrame5()));
     connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setDisplayFrame(int)));
     connect(dataInstance, SIGNAL(displayFrameChanged(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
-    connect(this , SIGNAL(changedPaths(QStringList)), dataInstance, SLOT(setPaths(QStringList)));
+    //~connect(this , SIGNAL(changedPaths(QStringList)), dataInstance, SLOT(setPaths(QStringList)));
+
     /* irWidget <-> dataInstance */
-    //~ connect(dataInstance, SIGNAL(changedRawImage(PilatusFile *)), irWidget, SLOT(setRawImage(PilatusFile *)));
-    //~ connect(dataInstance, SIGNAL(changedCorrectedImage(PilatusFile *)), irWidget, SLOT(setCorrectedImage(PilatusFile *)));
     connect(dataInstance, SIGNAL(repaintRequest()), irWidget, SLOT(repaint()));
+    connect( irWidget, SIGNAL(appendLog(QString)), this, SLOT(appendLog(QString)));
 
     /* this <-> this */
     connect(textEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
@@ -669,12 +699,13 @@ void MainWindow::initializeConnects()
     connect(aboutHDF5Act, SIGNAL(triggered()), this, SLOT(aboutHDF5()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
-    //~connect(setFilesButton, SIGNAL(clicked()), this, SLOT(runSetFiles()));
-    connect(readFilesButton, SIGNAL(clicked()), this, SLOT(runReadFiles()));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOne()));
     connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFiles()));
     connect(generateSvoButton, SIGNAL(clicked()), this, SLOT(runGenerateSvo()));
     connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
+
+    // this <-> contextGLWidget
+    //~connect( contextGLWidget, SIGNAL(appendLog(QString)), this, SLOT(appendLog(QString)));
 }
 
 void MainWindow::setGenericProgressFormat(QString str)
@@ -864,9 +895,9 @@ void MainWindow::initializeInteractives()
 
         imageNumberSpinBox = new QSpinBox;
 
-        //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << initGLCL->format().alpha() << std::endl;
+        //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << contextGLWidget->format().alpha() << std::endl;
 
-        irWidget = new ImageRenderGLWidget(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue(), initGLCL->format(), 0, initGLCL);
+        irWidget = new ImageRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
         dataInstance->setImageRenderWidget(irWidget);
 
         QGridLayout * imageLayout = new QGridLayout;
@@ -888,9 +919,9 @@ void MainWindow::initializeInteractives()
 
     /*      3D View widget      */
     {
-        //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << initGLCL->format().alpha() << std::endl;
+        //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << contextGLWidget->format().alpha() << std::endl;
         viewWidget = new QWidget;
-        vrWidget = new VolumeRenderGLWidget(initGLCL->getCLDevice(), initGLCL->getCLContext(), initGLCL->getCLCommandQueue(), initGLCL->format(), 0, initGLCL);
+        vrWidget = new VolumeRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
         //~ vrWidget->setCursor(Qt::SizeAllCursor);
 
         // Toolbar
@@ -1414,11 +1445,9 @@ void MainWindow::runGenerateSvo()
     progressBar->hide();
 }
 
-void MainWindow::errorString(QString str)
+void MainWindow::appendLog(QString str)
 {
-    std::cout << str.toStdString().c_str() << std::endl;
-    write_log(str.toStdString().c_str(), "errors.log", 1);
-    print(str);
+    writeLog(str.toStdString().c_str(), "riv.log", 1);
 }
 
 void MainWindow::print(QString str)

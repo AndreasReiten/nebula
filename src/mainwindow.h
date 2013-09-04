@@ -70,8 +70,6 @@ protected:
     VolumeDataSet * dataInstance;
 
 private slots:
-    //void setGlobalDetector(int value);
-    //void setGlobalFormat(int value);
     void setTab(int tab);
     void openSVO();
     void toggleFullScreen();
@@ -97,7 +95,7 @@ private slots:
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
     void initializeThreads();
-    void errorString(QString str);
+    void appendLog(QString str);
 
 signals:
     void changedDetector(int value);
@@ -222,7 +220,7 @@ private:
     QWidget *unitcellWidget;
     QWidget *scriptWidget;
     QWidget *viewWidget;
-    ContextGLWidget * initGLCL;
+    ContextGLWidget * contextGLWidget;
     VolumeRenderGLWidget *vrWidget;
     ImageRenderGLWidget *irWidget;
 
@@ -285,6 +283,9 @@ private:
 	QScriptValue rawFilesValue;
 	QScriptEngine engine;
 	QScriptValue rawFilesQs;
+
+    // Utility
+    int verbose;
 
     // Main resources
 	QStringList file_paths;

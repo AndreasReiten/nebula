@@ -5,6 +5,7 @@ ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
 {
     //~std::cout << "Constructing ContextGLWidget" << std::endl;
     isGLIntitialized = false;
+    verbose = 1;
     //~std::cout << "Done Constructing ContextGLWidget" << std::endl;
 }
 
@@ -12,10 +13,10 @@ ContextGLWidget::~ContextGLWidget()
 {
     if (isGLIntitialized)
     {
-        //~std::cout << "CL/GL: DESTRUCTION!" << std::endl;
+        if (verbose) appendLog( "ContextGLWidget-> Destroying" );
         if (*queue) clReleaseCommandQueue(*queue);
         if (*context2) clReleaseContext(*context2);
-        //~std::cout << "CL/GL: DESTROYED!" << std::endl;
+        if (verbose) appendLog( "ContextGLWidget-> Destruction done" );
     }
 }
 
@@ -37,13 +38,15 @@ cl_context * ContextGLWidget::getCLContext()
 
 void ContextGLWidget::initializeGL()
 {
-    std::cout << "Initializing OpenGL and CL" << std::endl;
+    //~std::cout << "Initializing OpenGL and CL" << std::endl;
 
     if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
     if (!this->init_cl_device(1)) std::cout << "Error initializing OpenCL Device" << std::endl;
     if (!this->init_cl()) std::cout << "Error initializing OpenCL" << std::endl;
+
+    isGLIntitialized = true;
     //~ std::cout << "INITGLCL Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
-    std::cout << "Done Initializing OpenGL and CL " << std::endl;
+    //~std::cout << "Done Initializing OpenGL and CL " << std::endl;
 }
 
 
@@ -83,8 +86,6 @@ int ContextGLWidget::init_gl()
         std::cout << "No support for OpenGL 4.0 found" << std::endl;
         return 0;
     }
-
-    isGLIntitialized = true;
 
     // BLEND
     glEnable(GL_BLEND);

@@ -214,7 +214,7 @@ int PilatusFile::readHeader()
     return 1;
 }
 
-QString PilatusFile::getPath()
+QString PilatusFile::getPath() const
 {
     return path;
 }

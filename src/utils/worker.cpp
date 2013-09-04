@@ -63,13 +63,17 @@ SetFileWorker::~SetFileWorker()
 
 void SetFileWorker::process()
 {
-    test_background.set(1679, 1475, 0.0);
+    //~test_background.set(1679, 1475, 0.0);
     QCoreApplication::processEvents();
+    kill_flag = false;
 
     if (file_paths->size() <= 0)
     {
-        emit error("\n[Set] Error: No paths specified!");
+        QString str("\n[Set] Error: No paths specified!");
+        emit error(str);
+        emit changedMessageString(str);
         emit abort();
+        kill_flag = true;
     }
 
     // Emit to appropriate slots
@@ -79,6 +83,7 @@ void SetFileWorker::process()
     emit enableReadFileButton(false);
     emit enableProjectFileButton(false);
     emit enableVoxelizeButton(false);
+    emit enableAllInOneButton(false);
     emit showGenericProgressBar(true);
     emit changedTabWidget(0);
 
@@ -94,15 +99,15 @@ void SetFileWorker::process()
     QElapsedTimer stopwatch;
     stopwatch.start();
 
-    kill_flag = false;
-
     for (size_t i = 0; i < (size_t) file_paths->size(); i++)
     {
         // Kill process if requested
         QCoreApplication::processEvents();
         if (kill_flag)
         {
-            emit error("\n[Set] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
+            QString str("\n[Set] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
+            emit error(str);
+            emit changedMessageString(str);
             files->clear();
             emit abort();
             break;
@@ -121,7 +126,7 @@ void SetFileWorker::process()
             if (suggested_q < files->back().getQSuggestion()) suggested_q = files->back().getQSuggestion();
 
             // Set the background that will be subtracted from the data
-            files->back().setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
+            //~files->back().setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
         }
         else
         {
@@ -135,6 +140,7 @@ void SetFileWorker::process()
     size_t t = stopwatch.restart();
 
     emit enableSetFileButton(true);
+    emit enableAllInOneButton(true);
     emit showGenericProgressBar(false);
 
     if (!kill_flag)
@@ -183,8 +189,75 @@ ReadFileWorker::~ReadFileWorker()
 
 void ReadFileWorker::process()
 {
-    // allocate resources using new here
-    qDebug("Hello World!");
+    QCoreApplication::processEvents();
+
+    if (files->size() <= 0)
+    {
+        QString str("\n[Read] Error: No files specified!");
+        emit error(str);
+        emit changedMessageString(str);
+        emit abort();
+        kill_flag = true;
+    }
+
+    // Emit to appropriate slots
+    emit changedMessageString("\n[Read] Reading "+QString::number(files->size())+" files...");
+    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit enableSetFileButton(false);
+    emit enableReadFileButton(false);
+    emit enableProjectFileButton(false);
+    emit enableVoxelizeButton(false);
+    emit enableAllInOneButton(false);
+    emit showGenericProgressBar(true);
+    emit changedTabWidget(0);
+
+
+    QElapsedTimer stopwatch;
+    stopwatch.start();
+    kill_flag = false;
+    size_t size_raw = 0;
+
+    for (size_t i = 0; i < (size_t) files->size(); i++)
+    {
+        // Kill process if requested
+        QCoreApplication::processEvents();
+        if (kill_flag)
+        {
+            QString str("\n[Read] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
+            emit error(str);
+            emit changedMessageString(str);
+            break;
+        }
+
+        // Read file and get status
+        int STATUS_OK = (*files)[i].readData();
+        size_raw += (*files)[i].getBytes();
+        if (!STATUS_OK)
+        {
+            emit changedMessageString("\n[Read] Error: could not read \""+files->at(i).getPath()+"\"");
+            emit abort();
+            kill_flag = true;
+        }
+
+        // Update the progress bar
+        emit changedGenericProgress(100*(i+1)/files->size());
+    }
+    size_t t = stopwatch.restart();
+
+    emit enableSetFileButton(true);
+    emit enableReadFileButton(true);
+    emit enableAllInOneButton(true);
+    emit showGenericProgressBar(false);
+
+    if (!kill_flag)
+    {
+        emit enableProjectFileButton(true);
+        emit enableVoxelizeButton(false);
+        emit enableAllInOneButton(true);
+
+        emit changedMessageString("\n[Read] "+QString::number(files->size())+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
+    }
+
     emit finished();
 }
 

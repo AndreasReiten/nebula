@@ -16,12 +16,15 @@ QString timeString(size_t ms)
     return time;
 }
 
-void write_log(std::string text, std::string file, bool append)
+void writeLog(QString text, QString file, bool append)
 {
-	std::ofstream myfile (file.c_str(), std::ios::out | ((append == true) ? std::ios::app : std::ios::trunc));
+    QDateTime dateTime = dateTime.currentDateTime();
+    QString dateTimeString = QString("["+dateTime.toString("hh:mm:ss")+"] ");
+
+    std::ofstream myfile (file.toStdString().c_str(), std::ios::out | ((append == true) ? std::ios::app : std::ios::trunc));
 	if (myfile.is_open())
 	{
-		myfile << text.c_str() << std::endl;
+		myfile << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
 	}
 	else std::cout << "Unable to open file" << std::endl;
 }

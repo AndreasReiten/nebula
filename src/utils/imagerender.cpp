@@ -6,6 +6,8 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     //~std::cout << "Constructing ImageRenderGLWidget" << std::endl;
     //~ std::cout << "Image Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
     isGLIntitialized = false;
+    verbose = 1;
+
     this->device = device;
     this->queue = queue;
     this->context2 = context2;
@@ -70,7 +72,7 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
 {
     if (isGLIntitialized)
     {
-        //~std::cout << "ImageRenderGLWidget DESTRUCTION!" << std::endl;
+        if (verbose) emit appendLog( "ImageRenderGLWidget-> Destroying..." );
 
         glDeleteTextures(5, image_tex);
 
@@ -83,21 +85,7 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
 
-        //~ if (raw_target_cl) clReleaseMemObject(raw_target_cl);
-        //~ if (corrected_target_cl) clReleaseMemObject(corrected_target_cl);
-        //~ if (source_cl) clReleaseMemObject(source_cl);
-        //~ if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
-
-        //~ if (source_sampler) clReleaseSampler(source_sampler);
-        //~ if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
-
-        //~ if (K_FRAME_TO_IMAGE) clReleaseKernel(K_FRAME_TO_IMAGE);
-
-        //~ if (queue) clReleaseCommandQueue(queue);
-        //~ if (context) clReleaseContext(context);
-        //~ if (program) clReleaseProgram(program);
-
-        //~std::cout << "ImageRenderGLWidget DESTRUCTION: DONE!" << std::endl;
+        if (verbose) emit appendLog( "ImageRenderGLWidget-> Destruction done" );
     }
 }
 
@@ -137,13 +125,14 @@ QSize ImageRenderGLWidget::sizeHint() const
 void ImageRenderGLWidget::initializeGL()
 {
     //~std::cout << "Initializing OpenGL" << std::endl;
-    setMouseTracking( true );
     if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
 
     /* Initialize and set the other stuff */
     this->init_freetype();
     this->setTarget();
     this->setTsfTexture(&transferFunction);
+
+    isGLIntitialized = true;
     //~std::cout << "Done Initializing OpenGL " << std::endl;
 }
 
