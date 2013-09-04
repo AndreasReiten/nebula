@@ -49,9 +49,15 @@ class BaseWorker : public QObject
         void setFilePaths(QStringList * file_paths);
         void setBrickInfo(int brick_inner_dimension, int brick_outer_dimension);
         void setFiles(QList<PilatusFile> * files);
+        void setReducedPixels(MiniArray<float> * reduced_pixels);
+        void setOpenCLContext(cl_context * context, cl_command_queue * queue);
 
     public slots:
         void killProcess();
+        void setReduceThresholdLow(float * value);
+        void setReduceThresholdHigh(float * value);
+        void setProjectThresholdLow(float * value);
+        void setProjectThresholdHigh(float * value);
 
     signals:
         void finished();
@@ -78,7 +84,6 @@ class BaseWorker : public QObject
         // Related to OpenCL
         cl_context * context;
         cl_command_queue * queue;
-        cl_kernel * projection_kernel;
 
         // Related to Voxelize
         int brick_inner_dimension;
@@ -87,16 +92,21 @@ class BaseWorker : public QObject
         float suggested_search_radius_high;
         float suggested_q;
 
-        MiniArray<float> * projected_data;
+        //~MiniArray<float> * projected_data;
 
         // Related to file treatment
+        float * treshold_reduce_low;
+        float * treshold_reduce_high;
+        float * treshold_project_low;
+        float * treshold_project_high;
         QStringList * file_paths;
         QList<PilatusFile> * files;
         QList<PilatusFile> * background_files;
+        MiniArray<float> * reduced_pixels;
         Matrix<float> test_background;
 
     private:
-        // add your variables here
+        int initCL();
 };
 
 
@@ -142,9 +152,10 @@ class ProjectFileWorker : public BaseWorker
 
     public slots:
         void process();
+        void initializeCLKernel();
 
     private:
-        // add your variables here
+        cl_kernel projection_kernel;
 };
 
 

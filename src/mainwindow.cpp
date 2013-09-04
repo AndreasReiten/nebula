@@ -121,12 +121,38 @@ void MainWindow::initializeThreads()
 
 
     projectFileWorker = new ProjectFileWorker();
+    projectFileWorker->setOpenCLContext(contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
+    projectFileWorker->setFilePaths(&file_paths);
+    projectFileWorker->setFiles(&files);
+    projectFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
+    projectFileWorker->setReducedPixels(&reduced_pixels);
+    projectFileWorker->initializeCLKernel();
+    projectFileWorker->setReduceThresholdLow(&threshold_reduce_low);
+    projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
+    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
+    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
+
     projectFileWorker->moveToThread(projectFileThread);
-    connect(projectFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
+    connect(projectFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
+    connect(projectFileWorker, SIGNAL(abort()), projectFileThread, SLOT(quit()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
-    //~connect(projectFileWorker, SIGNAL(finished()), projectFileWorker, SLOT(deleteLater()));
-    //~connect(projectFileThread, SIGNAL(finished()), projectFileThread, SLOT(deleteLater()));
+    connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(projectFileWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
+    connect(projectFileWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
+    connect(projectFileWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
+    connect(projectFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
+    connect(projectFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
+    connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(projectFilesButton, SIGNAL(clicked()), projectFileThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()));
+
+    connect(this->treshLimA_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
+    connect(this->treshLimB_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
+    connect(this->treshLimC_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
+    connect(this->treshLimD_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
 
     allInOneWorker = new AllInOneWorker();
     allInOneWorker->moveToThread(allInOneThread);
@@ -700,7 +726,7 @@ void MainWindow::initializeConnects()
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOne()));
-    connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFiles()));
+    //~connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFiles()));
     connect(generateSvoButton, SIGNAL(clicked()), this, SLOT(runGenerateSvo()));
     connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
 

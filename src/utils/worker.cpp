@@ -13,18 +13,40 @@
  */
 BaseWorker::BaseWorker()
 {
-    // you could copy data from constructor arguments to internal variables here.
+    this->isCLInitialized = false;
 }
 
 BaseWorker::~BaseWorker()
 {
-    // free resources
 }
+
+void BaseWorker::setOpenCLContext(cl_context * context, cl_command_queue * queue)
+{
+    this->context = context;
+    this->queue = queue;
+}
+
+void BaseWorker::setReduceThresholdLow(float * value)
+{
+    this->treshold_reduce_low = value;
+}
+void BaseWorker::setReduceThresholdHigh(float * value)
+{
+    this->treshold_reduce_high = value;
+}
+void BaseWorker::setProjectThresholdLow(float * value)
+{
+    this->treshold_project_low = value;
+}
+void BaseWorker::setProjectThresholdHigh(float * value)
+{
+    this->treshold_project_high = value;
+}
+
 
 void BaseWorker::killProcess()
 {
     kill_flag = true;
-    //~std::cout << "Setting kill flag: "<< kill_flag << std::endl;
 }
 
 void BaseWorker::setFilePaths(QStringList * file_paths)
@@ -40,6 +62,10 @@ void BaseWorker::setFiles(QList<PilatusFile> * files)
 {
     this->files = files;
 }
+void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
+{
+    this->reduced_pixels = reduced_pixels;
+}
 
 
 /***
@@ -53,12 +79,11 @@ void BaseWorker::setFiles(QList<PilatusFile> * files)
 
 SetFileWorker::SetFileWorker()
 {
-    // you could copy data from constructor arguments to internal variables here.
+    this->isCLInitialized = false;
 }
 
 SetFileWorker::~SetFileWorker()
 {
-    // free resources
 }
 
 void SetFileWorker::process()
@@ -72,7 +97,7 @@ void SetFileWorker::process()
         QString str("\n[Set] Error: No paths specified!");
         emit error(str);
         emit changedMessageString(str);
-        emit abort();
+        //~emit abort();
         kill_flag = true;
     }
 
@@ -109,7 +134,7 @@ void SetFileWorker::process()
             emit error(str);
             emit changedMessageString(str);
             files->clear();
-            emit abort();
+            //~emit abort();
             break;
         }
 
@@ -179,12 +204,11 @@ void SetFileWorker::process()
 
 ReadFileWorker::ReadFileWorker()
 {
-    // you could copy data from constructor arguments to internal variables here.
+    this->isCLInitialized = false;
 }
 
 ReadFileWorker::~ReadFileWorker()
 {
-    // free resources
 }
 
 void ReadFileWorker::process()
@@ -196,7 +220,7 @@ void ReadFileWorker::process()
         QString str("\n[Read] Error: No files specified!");
         emit error(str);
         emit changedMessageString(str);
-        emit abort();
+        //~emit abort();
         kill_flag = true;
     }
 
@@ -234,8 +258,10 @@ void ReadFileWorker::process()
         size_raw += (*files)[i].getBytes();
         if (!STATUS_OK)
         {
-            emit changedMessageString("\n[Read] Error: could not read \""+files->at(i).getPath()+"\"");
-            emit abort();
+            QString str("\n[Read] Error: could not read \""+files->at(i).getPath()+"\"");
+            emit error(str);
+            emit changedMessageString(str);
+            //~emit abort();
             kill_flag = true;
         }
 
@@ -273,18 +299,158 @@ void ReadFileWorker::process()
 
 ProjectFileWorker::ProjectFileWorker()
 {
-    // you could copy data from constructor arguments to internal variables here.
+    this->isCLInitialized = false;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
 {
-    // free resources
+    if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
+}
+
+void ProjectFileWorker::initializeCLKernel()
+{
+        // Program
+    QByteArray qsrc = open_resource(":/src/kernels/frameFilter.cl");
+    const char * src = qsrc.data();
+    size_t src_length = strlen(src);
+
+    program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
+    if (err != CL_SUCCESS)
+    {
+        QString str("Error in "+(*this)::staticMetaObject.className()+": Could not create program from source: "+QSting(cl_error_cstring(err)));
+        std::cout << str << std::endl;
+        emit error(str);
+        return 0;
+    }
+    // Compile kernel
+    const char * options = "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math";
+    err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        // Compile log
+
+        char* build_log;
+        size_t log_size;
+        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+        build_log = new char[log_size+1];
+        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
+        build_log[log_size] = '\0';
+
+        QString str("Error in "+(*this)::staticMetaObject.className()+
+            ": Could not compile/link program: "+
+            QString(cl_error_cstring(err))+
+            "\n--- START KERNEL COMPILE LOG ---"+
+            QString(build_log)+
+            "\n---  END KERNEL COMPILE LOG  ---");
+        std::cout << str << std::endl;
+        emit error(str);
+        delete[] build_log;
+        return 0;
+    }
+
+    // Entry point
+    projection_kernel = clCreateKernel(program, "FRAME_FILTER", &err);
+    if (err != CL_SUCCESS)
+    {
+        QString str("Error in "+(*this)::staticMetaObject.className()+": Could not create kernel object: "+QSting(cl_error_cstring(err)));
+        std::cout << str << std::endl;
+        emit error(str);
+        return 0;
+    }
+
+    return 1;
 }
 
 void ProjectFileWorker::process()
 {
-    // allocate resources using new here
-    qDebug("Hello World!");
+    /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
+
+    QCoreApplication::processEvents();
+
+    if (files->size() <= 0)
+    {
+        QString str("\n[Cor/Proj] Error: No files specified!");
+        emit error(str);
+        emit changedMessageString(str);
+        //~emit abort();
+        kill_flag = true;
+    }
+
+    // Emit to appropriate slots
+    emit changedMessageString("\n[Cor/Proj] Correcting and Projecting "+QString::number(files->size())+" files...");
+    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit enableSetFileButton(false);
+    emit enableReadFileButton(false);
+    emit enableProjectFileButton(false);
+    emit enableVoxelizeButton(false);
+    emit enableAllInOneButton(false);
+    emit showGenericProgressBar(true);
+    emit changedTabWidget(1);
+
+
+    QElapsedTimer stopwatch;
+    stopwatch.start();
+    kill_flag = false;
+    size_t size_raw = 0;
+    size_t n = 0;
+    size_t limit = 0.25e9;
+    reduced_pixels->reserve(limit);
+
+    for (size_t i = 0; i < (size_t) files->size(); i++)
+    {
+        // Kill process if requested
+        QCoreApplication::processEvents();
+        if (kill_flag)
+        {
+            QString str("\n[Cor/Proj] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
+            emit error(str);
+            emit changedMessageString(str);
+            break;
+        }
+
+        // Project and correct file and get status
+        if (n > limit)
+        {
+            // Break if there is too much data.
+            setMessageString(QString("\n[Cor/Proj] Error: There was too much data!"));
+            kill_flag = true;
+        }
+        else
+        {
+            imageRenderWidget->setImageSize(files->at(i).getWidth(), files->at(i).getHeight());
+
+            int STATUS_OK = (*files)[i]->filterData( &n, reduced_pixels->data(), treshold_reduce_low, treshold_reduce_high, treshold_project_low, treshold_project_high,1);
+            if (STATUS_OK)
+            {
+                emit repaintImageWidget();
+            }
+            else
+            {
+                setMessageString("\n[Cor/Proj] Error: could not process data \""+files->at(i).getPath()+"\"");
+                kill_flag = true;
+            }
+        }
+        // Update the progress bar
+        emit changedGenericProgress(100*(i+1)/files->size());
+    }
+    size_t t = stopwatch.restart();
+
+    reduced_pixels->resize(n);
+
+    emit enableSetFileButton(true);
+    emit enableReadFileButton(true);
+    emit enableAllInOneButton(true);
+    emit enableProjectFileButton(true);
+    emit showGenericProgressBar(false);
+
+    if (!kill_flag)
+    {
+        emit enableVoxelizeButton(true);
+        emit enableAllInOneButton(true);
+
+        emit changedMessageString("\n[Cor/Proj] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
+    }
+
     emit finished();
 }
 
@@ -329,12 +495,12 @@ void AllInOneWorker::process()
 
 VoxelizeWorker::VoxelizeWorker()
 {
-    // you could copy data from constructor arguments to internal variables here.
+    this->isCLInitialized = false;
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-    // free resources
+    if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
 }
 
 void VoxelizeWorker::process()

@@ -286,11 +286,16 @@ private:
 
     // Utility
     int verbose;
+    float treshold_reduce_low;
+    float treshold_reduce_high;
+    float treshold_project_low;
+    float treshold_project_high;
 
     // Main resources
 	QStringList file_paths;
     QList<PilatusFile> files;
     QList<PilatusFile> background_files;
+    MiniArray<float> reduced_pixels;
 
     // Related to Voxelize
     int brick_inner_dimension;
