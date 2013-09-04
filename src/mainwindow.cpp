@@ -2,7 +2,9 @@
 
 MainWindow::MainWindow()
 {
-    //~std::cout << "Constructing MainWindow" << std::endl;
+    // Set default values
+    brick_inner_dimension = 7;
+    brick_outer_dimension = 8;
 
     // Set stylesheet
     QFile styleFile( ":/src/stylesheets/gosutheme.qss" );
@@ -57,23 +59,36 @@ void MainWindow::initializeThreads()
     allInOneThread = new QThread;
 
     setFileWorker = new SetFileWorker();
+    setFileWorker->setFilePaths(&file_paths);
+    setFileWorker->setFiles(&files);
+    setFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
+
     setFileWorker->moveToThread(setFileThread);
-    connect(setFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
+    connect(setFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+    connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
-    connect(setFileWorker, SIGNAL(finished()), setFileWorker, SLOT(deleteLater()));
-    connect(setFileThread, SIGNAL(finished()), setFileThread, SLOT(deleteLater()));
-    connect(setFileWorker, SIGNAL(changedMessageString(QString str)), this, SLOT(print(QString)));
-    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), this->progressBar, SLOT(setValue(int)));
-    connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this->progressBar, SLOT(setFormat(QString)));
+    connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(setFileWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
+    connect(setFileWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
+    connect(setFileWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
+    connect(setFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
+    connect(setFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
+    connect(setFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(setFilesButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()));
+
+
 
     readFileWorker = new ReadFileWorker();
     readFileWorker->moveToThread(readFileThread);
     connect(readFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
     connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
-    connect(readFileWorker, SIGNAL(finished()), readFileWorker, SLOT(deleteLater()));
-    connect(readFileThread, SIGNAL(finished()), readFileThread, SLOT(deleteLater()));
+    //~connect(readFileWorker, SIGNAL(finished()), readFileWorker, SLOT(deleteLater()));
+    //~connect(readFileThread, SIGNAL(finished()), readFileThread, SLOT(deleteLater()));
 
 
     projectFileWorker = new ProjectFileWorker();
@@ -81,16 +96,16 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
-    connect(projectFileWorker, SIGNAL(finished()), projectFileWorker, SLOT(deleteLater()));
-    connect(projectFileThread, SIGNAL(finished()), projectFileThread, SLOT(deleteLater()));
+    //~connect(projectFileWorker, SIGNAL(finished()), projectFileWorker, SLOT(deleteLater()));
+    //~connect(projectFileThread, SIGNAL(finished()), projectFileThread, SLOT(deleteLater()));
 
     allInOneWorker = new AllInOneWorker();
     allInOneWorker->moveToThread(allInOneThread);
     connect(allInOneWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
-    connect(allInOneWorker, SIGNAL(finished()), allInOneWorker, SLOT(deleteLater()));
-    connect(allInOneThread, SIGNAL(finished()), allInOneThread, SLOT(deleteLater()));
+    //~connect(allInOneWorker, SIGNAL(finished()), allInOneWorker, SLOT(deleteLater()));
+    //~connect(allInOneThread, SIGNAL(finished()), allInOneThread, SLOT(deleteLater()));
 
 
     voxelizeWorker = new VoxelizeWorker();
@@ -98,11 +113,8 @@ void MainWindow::initializeThreads()
     connect(voxelizeWorker, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
-    connect(voxelizeWorker, SIGNAL(finished()), voxelizeWorker, SLOT(deleteLater()));
-    connect(voxelizeThread, SIGNAL(finished()), voxelizeThread, SLOT(deleteLater()));
-
-
-    //~setFileThread->start();
+    //~connect(voxelizeWorker, SIGNAL(finished()), voxelizeWorker, SLOT(deleteLater()));
+    //~connect(voxelizeThread, SIGNAL(finished()), voxelizeThread, SLOT(deleteLater()));
 }
 
 void MainWindow::init_emit()
@@ -657,7 +669,7 @@ void MainWindow::initializeConnects()
     connect(aboutHDF5Act, SIGNAL(triggered()), this, SLOT(aboutHDF5()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
-    connect(setFilesButton, SIGNAL(clicked()), this, SLOT(runSetFiles()));
+    //~connect(setFilesButton, SIGNAL(clicked()), this, SLOT(runSetFiles()));
     connect(readFilesButton, SIGNAL(clicked()), this, SLOT(runReadFiles()));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOne()));
     connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFiles()));
@@ -765,6 +777,12 @@ void MainWindow::initializeInteractives()
         allInOneButton->setIconSize(QSize(24,24));
         allInOneButton->setEnabled(false);
 
+        killButton = new QPushButton;
+        killButton->setIcon(QIcon(":/art/kill.png"));
+        killButton->setText("Kill ");
+        killButton->setIconSize(QSize(24,24));
+        killButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+
         toolChainWidget = new QWidget;
         QGridLayout * toolChainLayout = new QGridLayout;
         toolChainLayout->setSpacing(0);
@@ -779,6 +797,7 @@ void MainWindow::initializeInteractives()
         toolChainLayout->addWidget(readFilesButton,0,2,1,1);
         toolChainLayout->addWidget(projectFilesButton,0,3,1,1);
         toolChainLayout->addWidget(generateSvoButton,0,4,2,1);
+        toolChainLayout->addWidget(killButton,0,5,2,1);
         toolChainLayout->addWidget(allInOneButton,1,1,1,3);
         toolChainWidget->setLayout(toolChainLayout);
 
@@ -1258,7 +1277,7 @@ void MainWindow::initializeInteractives()
 	mainWidget->setLayout(mainLayout);
 
     /* Script engine */
-	rawFilesQs = engine.newVariant(rawFiles);
+	rawFilesQs = engine.newVariant(file_paths);
 	engine.globalObject().setProperty("files", rawFilesQs);
 }
 
@@ -1322,28 +1341,28 @@ void MainWindow::runSetFiles()
 {
 	/*################################################################*/
 	/* STEP ONE - HEADER RETRIEVEAL*/
-    progressBar->show();
-    tabWidget->setCurrentIndex(1);
-    setFilesButton->setEnabled(false);
+    //~progressBar->show();
+    //~tabWidget->setCurrentIndex(1);
+    //~setFilesButton->setEnabled(false);
 
-    #ifndef QT_NO_CURSOR
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-    #endif
+    //~#ifndef QT_NO_CURSOR
+        //~QApplication::setOverrideCursor(Qt::WaitCursor);
+    //~#endif
+    //~setFileThread->start();
+    //~int STATUS_OK = dataInstance->funcSetFiles();
 
-    int STATUS_OK = dataInstance->funcSetFiles();
+    //~#ifndef QT_NO_CURSOR
+        //~QApplication::restoreOverrideCursor();
+    //~#endif
 
-    #ifndef QT_NO_CURSOR
-        QApplication::restoreOverrideCursor();
-    #endif
-
-    setFilesButton->setEnabled(true);
-    if (STATUS_OK)
-    {
-        readFilesButton->setEnabled(true);
-        projectFilesButton->setEnabled(false);
-        generateSvoButton->setEnabled(false);
-    }
-    progressBar->hide();
+    //~setFilesButton->setEnabled(true);
+    //~if (STATUS_OK)
+    //~{
+        //~readFilesButton->setEnabled(true);
+        //~projectFilesButton->setEnabled(false);
+        //~generateSvoButton->setEnabled(false);
+    //~}
+    //~progressBar->hide();
 }
 
 void MainWindow::runProjectFiles()
@@ -1438,32 +1457,32 @@ void MainWindow::runReadScript()
 			QApplication::setOverrideCursor(Qt::WaitCursor);
 		#endif
 
-		rawFiles = engine.globalObject().property("files").toVariant().toStringList();
-        print( "\n[Script] Script ran successfully and could register "+QString::number(rawFiles.size())+" files...");
-        int n = rawFiles.removeDuplicates();
+		file_paths = engine.globalObject().property("files").toVariant().toStringList();
+        print( "\n[Script] Script ran successfully and could register "+QString::number(file_paths.size())+" files...");
+        int n = file_paths.removeDuplicates();
         if (n > 0) print( "\n[Script] Removed "+QString::number(n)+" duplicates...");
 
-        size_t n_files = rawFiles.size();
+        size_t n_files = file_paths.size();
 
-        for (int i = 0; i < rawFiles.size(); i++)
+        for (int i = 0; i < file_paths.size(); i++)
 		{
-			if(i >= rawFiles.size()) break;
+			if(i >= file_paths.size()) break;
 
-            QString fileName = rawFiles[i];
+            QString fileName = file_paths[i];
 
             QFileInfo curFile(fileName);
 
             if (!curFile.exists())
 			{
 				print( "\n[Script]  Warning: \"" + fileName + "\" - missing or no access!");
-                rawFiles.removeAt(i);
+                file_paths.removeAt(i);
                 i--;
             }
         }
-        emit changedPaths(rawFiles);
-		print("\n[Script] "+ QString::number(rawFiles.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-rawFiles.size())+"  missing or no access)");
+        emit changedPaths(file_paths);
+		print("\n[Script] "+ QString::number(file_paths.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths.size())+"  missing or no access)");
 
-        if (rawFiles.size() > 0)
+        if (file_paths.size() > 0)
         {
             setFilesButton->setEnabled(true);
             allInOneButton->setEnabled(true);

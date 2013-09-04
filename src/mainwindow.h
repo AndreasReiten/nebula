@@ -246,6 +246,7 @@ private:
     QPushButton *projectFilesButton;
     QPushButton *generateSvoButton;
     QPushButton *saveSVOButton;
+    QPushButton *killButton;
     //~ QPushButton *previewSVOButton;
     //~ QPushButton *graphicsBackgroundButton;
     //~ QPushButton *graphicsDataStructureButton;
@@ -284,7 +285,16 @@ private:
 	QScriptValue rawFilesValue;
 	QScriptEngine engine;
 	QScriptValue rawFilesQs;
-	QStringList rawFiles;
+
+    // Main resources
+	QStringList file_paths;
+    QList<PilatusFile> files;
+    QList<PilatusFile> background_files;
+
+    // Related to Voxelize
+    int brick_inner_dimension;
+    int brick_outer_dimension;
+
 
     QGridLayout * mainLayout;
     QGridLayout * viewLayout;

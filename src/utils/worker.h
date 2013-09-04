@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
+#include <limits>
 
 /* GL and CL */
 #ifdef _WIN32
@@ -18,6 +19,7 @@
 #include <CL/cl_gl.h>
 
 /* QT */
+#include <QCoreApplication>
 #include <QMouseEvent>
 #include <QGLWidget>
 #include <QTimer>
@@ -49,16 +51,26 @@ class BaseWorker : public QObject
         void setFiles(QList<PilatusFile> * files);
 
     public slots:
-        //~void killProcess();
+        void killProcess();
 
     signals:
         void finished();
+        void abort();
         void error(QString err);
         void changedMessageString(QString str);
         void changedGenericProgress(int value);
         void changedFormatGenericProgress(QString str);
+        void enableSetFileButton(bool value);
+        void enableReadFileButton(bool value);
+        void enableProjectFileButton(bool value);
+        void enableVoxelizeButton(bool value);
+        void showGenericProgressBar(bool value);
+        void changedTabWidget(int value);
 
     protected:
+        // Related to the runtime
+        bool kill_flag;
+
         // Related to the GLWidgets
         ImageRenderGLWidget * imageRenderWidget;
 

@@ -21,6 +21,12 @@ BaseWorker::~BaseWorker()
     // free resources
 }
 
+void BaseWorker::killProcess()
+{
+    kill_flag = true;
+    //~std::cout << "Setting kill flag: "<< kill_flag << std::endl;
+}
+
 void BaseWorker::setFilePaths(QStringList * file_paths)
 {
     this->file_paths = file_paths;
@@ -58,15 +64,28 @@ SetFileWorker::~SetFileWorker()
 void SetFileWorker::process()
 {
     test_background.set(1679, 1475, 0.0);
+    QCoreApplication::processEvents();
 
-    /* Initialize a list of files */
-    if (file_paths->size() == 0)
+    if (file_paths->size() <= 0)
     {
-        emit changedMessageString("\n[Set] Warning: No files specified!");
+        emit error("\n[Set] Error: No paths specified!");
+        emit abort();
     }
 
+    // Emit to appropriate slots
     emit changedMessageString("\n[Set] Setting "+QString::number(file_paths->size())+" files (headers etc.)...");
-    emit changedFormatGenericProgress(QString("Setting Files %p%"));
+    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit enableSetFileButton(false);
+    emit enableReadFileButton(false);
+    emit enableProjectFileButton(false);
+    emit enableVoxelizeButton(false);
+    emit showGenericProgressBar(true);
+    emit changedTabWidget(0);
+
+    // Reset suggested values
+    suggested_q = std::numeric_limits<float>::min();
+    suggested_search_radius_low = std::numeric_limits<float>::max();
+    suggested_search_radius_high = std::numeric_limits<float>::min();
 
     // Clear previous data
     files->clear();
@@ -74,8 +93,21 @@ void SetFileWorker::process()
 
     QElapsedTimer stopwatch;
     stopwatch.start();
+
+    kill_flag = false;
+
     for (size_t i = 0; i < (size_t) file_paths->size(); i++)
     {
+        // Kill process if requested
+        QCoreApplication::processEvents();
+        if (kill_flag)
+        {
+            emit error("\n[Set] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
+            files->clear();
+            emit abort();
+            break;
+        }
+
         // Set file and get status
         files->append(PilatusFile());
         int STATUS_OK = files->back().set(file_paths->at(i), context, queue, projection_kernel, imageRenderWidget);
@@ -94,7 +126,7 @@ void SetFileWorker::process()
         else
         {
             files->removeLast();
-            emit changedMessageString("\n[Set] Warning: \""+QString(file_paths->at(i))+"\"");
+            emit changedMessageString("\n[Set] Warning: Could not process \""+QString(file_paths->at(i))+"\"");
         }
 
         // Update the progress bar
@@ -102,20 +134,29 @@ void SetFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-    emit changedMessageString("\n[Set] "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number(t/file_paths->size(), 'g', 3)+" ms/file)");
+    emit enableSetFileButton(true);
+    emit showGenericProgressBar(false);
 
-    // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
-    float resolution_min = 2*suggested_q/suggested_search_radius_high;
-    float resolution_max = 2*suggested_q/suggested_search_radius_low;
+    if (!kill_flag)
+    {
+        emit enableReadFileButton(true);
+        emit enableProjectFileButton(false);
+        emit enableVoxelizeButton(false);
 
-    float level_min = std::log(resolution_min/(float)this->brick_inner_dimension)/std::log(2);
-    float level_max = std::log(resolution_max/(float)this->brick_inner_dimension)/std::log(2);
+        emit changedMessageString("\n[Set] "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
 
-    emit changedMessageString("\n[Set] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
-    emit changedMessageString("\n[Set] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
-    emit changedMessageString("\n[Set] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
-    emit changedMessageString("\n[Set] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+"");
+        // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
+        float resolution_min = 2*suggested_q/suggested_search_radius_high;
+        float resolution_max = 2*suggested_q/suggested_search_radius_low;
 
+        float level_min = std::log(resolution_min/(float)this->brick_inner_dimension)/std::log(2);
+        float level_max = std::log(resolution_max/(float)this->brick_inner_dimension)/std::log(2);
+
+        emit changedMessageString("\n[Set] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
+        emit changedMessageString("\n[Set] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
+        emit changedMessageString("\n[Set] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
+        emit changedMessageString("\n[Set] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+"");
+    }
 
     emit finished();
 }

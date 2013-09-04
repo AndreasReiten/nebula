@@ -2552,6 +2552,39 @@
        id="radialGradient4927-0"
        xlink:href="#linearGradient4705-7"
        inkscape:collect="always" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4830-4"
+       id="radialGradient4836-4"
+       cx="335"
+       cy="1102"
+       fx="335"
+       fy="1102"
+       r="50"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-670,0)" />
+    <linearGradient
+       id="linearGradient4830-4">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop4832-1" />
+      <stop
+         style="stop-color:#ff0000;stop-opacity:1;"
+         offset="1"
+         id="stop4834-3" />
+    </linearGradient>
+    <radialGradient
+       r="50"
+       fy="1102"
+       fx="335"
+       cy="1102"
+       cx="335"
+       gradientTransform="translate(-1290,-540)"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient3969"
+       xlink:href="#linearGradient4830-4"
+       inkscape:collect="always" />
   </defs>
   <sodipodi:namedview
      pagecolor="#ffffff"
@@ -2566,9 +2599,9 @@
      inkscape:window-height="980"
      id="namedview4"
      showgrid="true"
-     inkscape:zoom="1.8243907"
-     inkscape:cx="287.16091"
-     inkscape:cy="-1072.2104"
+     inkscape:zoom="0.64501952"
+     inkscape:cx="754.42111"
+     inkscape:cy="-692.33185"
      inkscape:window-x="0"
      inkscape:window-y="36"
      inkscape:window-maximized="0"
@@ -2594,8 +2627,8 @@
      id="rect5099"
      width="1200"
      height="1151.5625"
-     x="-430"
-     y="-259.5625"
+     x="-740"
+     y="-243.78125"
      ry="13.28125"
      inkscape:export-filename="/home/natt/coding/riv/art/handle.png"
      inkscape:export-xdpi="2.4749999"
@@ -6560,4 +6593,102 @@
      inkscape:export-filename="/home/natt/coding/riv/art/handle.png"
      inkscape:export-xdpi="36.982342"
      inkscape:export-ydpi="36.982342" />
+  <rect
+     style="fill:url(#radialGradient3969);fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4751-7"
+     width="100"
+     height="100"
+     x="-1005"
+     y="512"
+     ry="0"
+     transform="scale(-1,1)"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <path
+     style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 985,512 -30,30 -10,-10 -20,-20 z"
+     id="path4789-00"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccccc"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <path
+     style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 925,612 30,-30 10,10 20,20 z"
+     id="path4789-0-5"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccccc"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <path
+     style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 905,532 30,30 -10,10 -20,20 z"
+     id="path4789-9-0"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccccc"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <path
+     style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m 1005,592 -20,-20 -10,-10 30,-30 z"
+     id="path4789-0-4-5"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccccc"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <rect
+     style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4832"
+     width="5"
+     height="60"
+     x="900"
+     y="532"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <rect
+     style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4832-2"
+     width="5"
+     height="60"
+     x="1005"
+     y="532"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <rect
+     style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4832-3"
+     width="5"
+     height="60"
+     x="507"
+     y="-985"
+     transform="matrix(0,1,-1,0,0,0)"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <rect
+     style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4832-3-8"
+     width="5"
+     height="60"
+     x="612"
+     y="-985"
+     transform="matrix(0,1,-1,0,0,0)"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="52.304199"
+     inkscape:export-ydpi="52.304199" />
+  <path
+     style="fill:#ff0000;stroke:#ffffff;stroke-width:8;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;fill-opacity:1"
+     d="m 557.75,532 40,-40 20,20 -40,40 40,40 -20,20 -40,-40 -40,40 -20,-20 40,-40 -40,-40 20,-20 z"
+     id="path4877"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/kill.png"
+     inkscape:export-xdpi="43.864826"
+     inkscape:export-ydpi="43.864826" />
 </svg>
