@@ -35,7 +35,7 @@
 #endif
 
 #include "tools.h"
-//~ #include "file_formats.h"
+//~ #include "fileformats.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "atlas.h"
@@ -45,7 +45,7 @@ class ImageRenderGLWidget : public QGLWidget
     Q_OBJECT
 
 public:
-    explicit ImageRenderGLWidget(cl_device * device, cl_context * context2, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
+    explicit ImageRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
     ~ImageRenderGLWidget();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
@@ -60,7 +60,6 @@ public:
 
 signals:
     void changedMessageString(QString str);
-    void appendLog(QString str);
 
 public slots:
     void setImageWidth(int value);
@@ -76,8 +75,9 @@ protected:
     //~void paintEvent(QPaintEvent * event);
 
 private:
-    void init_freetype();
+    void initFreetype();
     void setMessageString(QString str);
+    void writeLog(QString str);
 
     QTimer * timer;
     QElapsedTimer * time;
@@ -97,9 +97,9 @@ private:
     // OpenGL Related
     //~bool isInMainThread;
     bool isGLIntitialized;
-    int init_gl();
-    void init_gl_programs();
-    void screen_buffer_refresh();
+    int initResourcesGL();
+    void initializeProgramsGL();
+    void setTexturesVBO();
     void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
     void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
@@ -123,7 +123,7 @@ private:
     cl_mem alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl;
     cl_device * device;
     cl_program program;
-    cl_context * context2;
+    cl_context * context;
     cl_command_queue * queue;
     cl_int err;
 

@@ -1,4 +1,4 @@
-#include "file_formats.h"
+#include "fileformat.h"
 
 PilatusFile::~PilatusFile()
 {
@@ -11,7 +11,7 @@ PilatusFile::PilatusFile()
     max_counts = 0;
     STATUS_OK = 0;
 }
-PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * queue)//, cl_kernel * kernel, ImageRenderGLWidget * widget)
+PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * queue)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
@@ -19,12 +19,10 @@ PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * 
     STATUS_OK = this->set(path, context, queue);//, kernel, widget);
 }
 
-int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue)//, cl_kernel * kernel, ImageRenderGLWidget * widget)
+int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue)
 {
     this->context = context;
     this->queue = queue;
-    //~this->filterKernel = kernel;
-    //~this->imageRenderWidget = widget;
 
     this->path = path;
     if (!this->readHeader()) return 0;
@@ -86,16 +84,6 @@ size_t PilatusFile::getBytes() const
 {
     return data_buf.bytes();
 }
-
-//~ float * PilatusFile::getImage()
-//~ {
-    //~ return data_buf.data();
-//~ }
-//~
-//~ float * PilatusFile::getCorrectedImage()
-//~ {
-    //~ return corrected_data_buf.data();
-//~ }
 
 MiniArray<float> PilatusFile::getTest()
 {
@@ -226,12 +214,10 @@ QString PilatusFile::regExp(QString * regular_expression, QString * source, size
     if (pos > -1)
     {
         QString value = tmp.cap(i);
-        //~ qDebug() << *regular_expression << " gave: " << value;
         return value;
     }
     else
     {
-        //~ qDebug() << "Warning! Regexp '" << *regular_expression << "' gave no matches!" ;
         return QString("");
     }
 }
@@ -241,25 +227,6 @@ void PilatusFile::clearData()
     data_buf.clear();
 }
 
-
-//~void PilatusFile::setTsfImgCLGL(cl_mem * image)
-//~{
-    //~this->tsf_img_clgl = image;
-//~}
-//~void PilatusFile::setRawImgCLGL(cl_mem * image)
-//~{
-    //~this->raw_img_clgl = image;
-//~}
-//~void PilatusFile::setCorrectedImgCLGL(cl_mem * image)
-//~{
-    //~this->corrected_img_clgl = image;
-//~}
-
-
-//~void PilatusFile::setImageRenderWidget(ImageRenderGLWidget * widget)
-//~{
-    //~imageRenderWidget = widget;
-//~}
 
 void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
 {
@@ -273,18 +240,13 @@ void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_cl
 
 int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive)
 {
-    // Let all GL jobs finish
-    //~ glFinish();
-    std::cout << "Begin filtering file" << std::endl;
-    //~imageRenderWidget->makeCurrent();
-
     this->threshold_reduce_low = threshold_reduce_low;
     this->threshold_reduce_high = threshold_reduce_high;
 
     cl_image_format target_format;
     target_format.image_channel_order = CL_RGBA;
     target_format.image_channel_data_type = CL_FLOAT;
-    std::cout << "Mark1" << std::endl;
+
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
     cl_mem xyzi_target_cl = clCreateImage2D ( (*context),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -299,7 +261,6 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-std::cout << "Mark2" << std::endl;
     // Load data into a CL texture
     cl_image_format source_format;
     source_format.image_channel_order = CL_INTENSITY;
@@ -317,7 +278,7 @@ std::cout << "Mark2" << std::endl;
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
-std::cout << "Mark3" << std::endl;
+
     cl_mem background_cl = clCreateImage2D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
@@ -330,7 +291,7 @@ std::cout << "Mark3" << std::endl;
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
-std::cout << "Mark4" << std::endl;
+
     // A sampler
     cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
@@ -349,7 +310,7 @@ std::cout << "Mark4" << std::endl;
     RotationMatrix<float> KAPPA;
     RotationMatrix<float> OMEGA;
     RotationMatrix<float> sampleRotMat;
-std::cout << "Mark5" << std::endl;
+
     float alpha =  0.8735582;
     float beta =  0.000891863;
 
@@ -358,9 +319,7 @@ std::cout << "Mark5" << std::endl;
     OMEGA.setZRotation(-omega);
 
     sampleRotMat = PHI*KAPPA*OMEGA;
-    //~ std::cout << omega << std::endl;
-    //~ sampleRotMat.print(2, "Sample Rotation Matrix");
-std::cout << "Mark6" << std::endl;
+
     cl_mem sample_rotation_matrix_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         sampleRotMat.bytes(),
@@ -378,21 +337,6 @@ std::cout << "Mark6" << std::endl;
         std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
     }
 
-    //~std::cout << "Aquire" << std::endl;
-    //~err = clEnqueueAcquireGLObjects((*queue), 1, alpha_img_clgl, 0, 0, 0);
-    //~std::cout << "Aquire" << std::endl;
-    //~err |= clEnqueueAcquireGLObjects((*queue), 1, beta_img_clgl, 0, 0, 0);
-    //~std::cout << "Aquire" << std::endl;
-    //~err |= clEnqueueAcquireGLObjects((*queue), 1, gamma_img_clgl, 0, 0, 0);
-    //~std::cout << "Aquire" << std::endl;
-    //~err |= clEnqueueAcquireGLObjects((*queue), 1, tsf_img_clgl, 0, 0, 0);
-    //~if (err != CL_SUCCESS)
-    //~{
-        //~std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    //~}
-
-    //~ std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
-std::cout << "Mark7" << std::endl;
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
     err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
@@ -428,7 +372,7 @@ std::cout << "Mark7" << std::endl;
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
     }
-std::cout << "Mark8" << std::endl;
+
     /* Launch rendering kernel */
     size_t area_per_call[2] = {128, 128};
     size_t call_offset[2] = {0,0};
@@ -447,7 +391,7 @@ std::cout << "Mark8" << std::endl;
         }
     }
     clFinish((*queue));
-std::cout << "Mark9" << std::endl;
+
     // Read the data
     size_t origin[3];
     origin[0] = 0;
@@ -459,9 +403,6 @@ std::cout << "Mark9" << std::endl;
     region[1] = slow_dimension;
     region[2] = 1;
 
-    //~ corrected_data_buf.reserve(fast_dimension*slow_dimension);
-    //~ clEnqueueReadImage ( *queue, i_target_cl, true, origin, region, 0, 0, this->corrected_data_buf.data(), 0, NULL, NULL);
-
     MiniArray<float> projected_data_buf(fast_dimension*slow_dimension*4);
     clEnqueueReadImage ( *queue, xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
 
@@ -471,7 +412,7 @@ std::cout << "Mark9" << std::endl;
     if (sample_rotation_matrix_cl) clReleaseMemObject(sample_rotation_matrix_cl);
     if (intensity_sampler) clReleaseSampler(intensity_sampler);
     if (tsf_sampler) clReleaseSampler(tsf_sampler);
-std::cout << "Mark10" << std::endl;
+
     if (isProjectionActive)
     {
         for (size_t i = 0; i < fast_dimension*slow_dimension; i++)
@@ -516,14 +457,14 @@ int PilatusFile::readData()
     in.seekg (0, in.beg);
     int offset = 0;
     int header_length_max = 2000;
-    //~ std::cout << "Mark r" << std::endl;
+
     // Read file
     char * buf = new char[length];
     in.read(buf, length);
     in.close();
 
     this->data_buf.reserve(fast_dimension*slow_dimension);
-    //~ std::cout << "Mark r22" << std::endl;
+
     // Find beginning of binary section
     for (int i = 0; i < header_length_max; i++)
     {
@@ -533,7 +474,6 @@ int PilatusFile::readData()
             break;
         }
     }
-    //~ std::cout << "Mark r1" << std::endl;
     // Decompress data and neglect data outside given thresholds
     int prev = 0;
     size_t id = offset;
@@ -542,7 +482,6 @@ int PilatusFile::readData()
     int int32;
 
     int i, j;
-    //~ std::cout << "Mark r2" << std::endl;
     for (i = 0; i < (int) slow_dimension; i++)
     {
         for (j = 0; j < (int) fast_dimension; j++)
@@ -577,11 +516,9 @@ int PilatusFile::readData()
             if (max_counts < counts) max_counts = counts;
         }
     }
-    //~ std::cout << "Mark r3" << std::endl;
     delete[] buf;
 
 
-//~ std::cout << "Mark r4" << std::endl;
     return 1;
 }
 

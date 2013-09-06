@@ -1,4 +1,4 @@
-#include "octnode.h"
+#include "bricknode.h"
 BrickNode::BrickNode()
 {
     this->dataFlag = 0;

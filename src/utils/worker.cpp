@@ -14,13 +14,19 @@
 BaseWorker::BaseWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 BaseWorker::~BaseWorker()
 {
+
+}
+
+void BaseWorker::writeLog(QString str)
+{
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
 void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue)
@@ -36,8 +42,6 @@ void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clg
     this->beta_img_clgl = beta_img_clgl;
     this->gamma_img_clgl = gamma_img_clgl;
     this->tsf_img_clgl = tsf_img_clgl;
-
-    std::cout << Q_FUNC_INFO << std::endl;
 }
 
 void BaseWorker::setReduceThresholdLow(float * value)
@@ -64,6 +68,7 @@ void BaseWorker::killProcess()
 
 void BaseWorker::setFilePaths(QStringList * file_paths)
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->file_paths = file_paths;
 }
 void BaseWorker::setBrickInfo(int brick_inner_dimension, int brick_outer_dimension)
@@ -93,13 +98,14 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 SetFileWorker::SetFileWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 SetFileWorker::~SetFileWorker()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
 void SetFileWorker::process()
@@ -217,17 +223,20 @@ void SetFileWorker::process()
 ReadFileWorker::ReadFileWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 ReadFileWorker::~ReadFileWorker()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
 void ReadFileWorker::process()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     QCoreApplication::processEvents();
 
     if (files->size() <= 0)
@@ -314,23 +323,20 @@ void ReadFileWorker::process()
 ProjectFileWorker::ProjectFileWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     if (isCLInitialized && projection_kernel) clReleaseKernel(projection_kernel);
 }
 
-//~void ProjectFileWorker::setImageRenderWidget(ImageRenderGLWidget * imageRenderWidget)
-//~{
-    //~this->imageRenderWidget = imageRenderWidget;
-//~}
-
 void ProjectFileWorker::initializeCLKernel()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     // Program
     QByteArray qsrc = open_resource(":/src/kernels/frameFilter.cl");
     const char * src = qsrc.data();
@@ -350,7 +356,6 @@ void ProjectFileWorker::initializeCLKernel()
     if (err != CL_SUCCESS)
     {
         // Compile log
-
         char* build_log;
         size_t log_size;
         clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -385,7 +390,7 @@ void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
 
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     QCoreApplication::processEvents();
 
@@ -495,19 +500,19 @@ void ProjectFileWorker::process()
 AllInOneWorker::AllInOneWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 AllInOneWorker::~AllInOneWorker()
 {
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
 void AllInOneWorker::process()
 {
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     qDebug("Hello World!");
     emit finished();
 }
@@ -525,18 +530,18 @@ void AllInOneWorker::process()
 VoxelizeWorker::VoxelizeWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
 void VoxelizeWorker::process()
 {
-    if (verbosity == 1) writeLog(Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     emit finished();
 }

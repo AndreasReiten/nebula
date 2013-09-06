@@ -47,17 +47,16 @@ class PilatusFile
     public:
         ~PilatusFile();
         PilatusFile();
-        PilatusFile(QString path, cl_context * context, cl_command_queue * queue);//, cl_kernel * kernel, ImageRenderGLWidget * widget);
+        PilatusFile(QString path, cl_context * context, cl_command_queue * queue);
 
         QString getPath() const;
 
-        int set(QString path, cl_context * context, cl_command_queue * queue);//, cl_kernel * kernel, ImageRenderGLWidget * widget);
+        int set(QString path, cl_context * context, cl_command_queue * queue);
         int readData();
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         int filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive = true);
         int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
-        //~ float * getImage();
-        //~ float * getCorrectedImage();
+
         MiniArray<float> getTest();
         int getWidth() const;
         int getHeight() const;
@@ -70,15 +69,9 @@ class PilatusFile
         void setBackground(Matrix<float> * buffer, float flux, float exposure_time);
         float getFlux();
         float getExpTime();
-        //~void setTsfImgCLGL(cl_mem * image);
-        //~void setRawImgCLGL(cl_mem * image);
-        //~void setCorrectedImgCLGL(cl_mem * image);
-        //~void setImageRenderWidget(ImageRenderGLWidget * widget);
         void setProjectionKernel(cl_kernel * kernel);
 
     private:
-        //~ImageRenderGLWidget * imageRenderWidget;
-
         cl_mem * alpha_img_clgl;
         cl_mem * beta_img_clgl;
         cl_mem * gamma_img_clgl;

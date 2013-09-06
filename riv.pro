@@ -9,31 +9,29 @@ else:win32 {
 HEADERS       = src/mainwindow.h \
                 src/utils/worker.h \
                 src/utils/miniarray.h \
-                src/utils/text_highlighter.h \
-                src/utils/vol_data_set.h \
-                src/utils/glclinit.h \
+                src/utils/texthighlighter.h \
+                src/utils/contextgl.h \
                 src/utils/volumerender.h \
                 src/utils/imagerender.h \
                 src/utils/tools.h \
                 src/utils/matrix.h \
-                src/utils/octnode.h \
-                src/utils/node.h \
-                src/utils/file_formats.h \
+                src/utils/searchnode.h \
+                src/utils/bricknode.h \
+                src/utils/fileformat.h \
                 src/utils/atlas.h
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
                 src/utils/worker.cpp \
                 src/utils/miniarray.cpp \
-                src/utils/text_highlighter.cpp \
-                src/utils/vol_data_set.cpp \
-                src/utils/glclinit.cpp \
+                src/utils/texthighlighter.cpp \
+                src/utils/contextgl.cpp \
                 src/utils/volumerender.cpp \
                 src/utils/imagerender.cpp \
                 src/utils/tools.cpp \
                 src/utils/matrix.cpp \
-                src/utils/octnode.cpp \
-                src/utils/node.cpp \
-                src/utils/file_formats.cpp \
+                src/utils/searchnode.cpp \
+                src/utils/bricknode.cpp \
+                src/utils/fileformat.cpp \
                 src/utils/atlas.cpp
 RESOURCES     = riv.qrc
 

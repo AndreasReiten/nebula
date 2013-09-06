@@ -16,7 +16,7 @@ QString timeString(size_t ms)
     return time;
 }
 
-void writeLog(QString text, QString file, bool append)
+void writeToLogAndPrint(QString text, QString file, bool append)
 {
     QDateTime dateTime = dateTime.currentDateTime();
     QString dateTimeString = QString("["+dateTime.toString("hh:mm:ss")+"] ");

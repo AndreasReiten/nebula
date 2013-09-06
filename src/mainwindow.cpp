@@ -2,19 +2,15 @@
 
 MainWindow::MainWindow()
 {
+    verbosity = 1;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
+
     // Set default values
     brick_inner_dimension = 7;
     brick_outer_dimension = 8;
-    verbosity = 1;
-
-    // Initialize the log file
-    QDateTime dateTime = dateTime.currentDateTime();
-    QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
-    writeLog("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
-    if (verbosity) appendLog("MainWindow-> Constructing...");
 
     // Set stylesheet
-    if (verbosity) appendLog("MainWindow: Initializing Style Sheet");
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
     QFile styleFile( ":/src/stylesheets/gosutheme.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
@@ -24,22 +20,14 @@ MainWindow::MainWindow()
 
     QGLFormat glFormat(QGL::DoubleBuffer | QGL::DepthBuffer | QGL::Rgba | QGL::AlphaChannel | QGL::StencilBuffer | QGL::DirectRendering, 0);
 
-    if (verbosity) appendLog("MainWindow: Initializing ContextGLWidget");
     contextGLWidget = new ContextGLWidget(glFormat);
     contextGLWidget->updateGL();
     contextGLWidget->hide();
 
-    dataInstance = new VolumeDataSet(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
-
-    if (verbosity) appendLog("MainWindow: Initializing Actions");
     this->initializeActions();
-    if (verbosity) appendLog("MainWindow: Initializing Menus");
     this->initializeMenus();
-    if (verbosity) appendLog("MainWindow: Initializing Interactives");
     this->initializeInteractives();
-    if (verbosity) appendLog("MainWindow: Initializing Connects");
     this->initializeConnects();
-    if (verbosity) appendLog("MainWindow: Initializing Worker Threads");
     this->initializeThreads();
 
     setCentralWidget(mainWidget);
@@ -56,13 +44,12 @@ MainWindow::MainWindow()
     toolChainWidget->show();
     outputDockWidget->show();
 
-    if (verbosity) appendLog("MainWindow-> Construction done");
-    //~std::cout << "Done Constructing MainWindow" << std::endl;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
 }
 
 MainWindow::~MainWindow()
 {
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
 void MainWindow::initializeThreads()
@@ -82,7 +69,6 @@ void MainWindow::initializeThreads()
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
-    connect(setFileWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
@@ -98,7 +84,6 @@ void MainWindow::initializeThreads()
     connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()));
 
 
-
     readFileWorker = new ReadFileWorker();
     readFileWorker->setFilePaths(&file_paths);
     readFileWorker->setFiles(&files);
@@ -106,7 +91,6 @@ void MainWindow::initializeThreads()
 
     readFileWorker->moveToThread(readFileThread);
     connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
-    connect(readFileWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
@@ -123,11 +107,6 @@ void MainWindow::initializeThreads()
 
 
 
-
-
-
-
-
     projectFileWorker = new ProjectFileWorker();
     projectFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
     projectFileWorker->setFilePaths(&file_paths);
@@ -139,11 +118,9 @@ void MainWindow::initializeThreads()
     projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
     projectFileWorker->setProjectThresholdLow(&threshold_project_low);
     projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
-    //~projectFileWorker->setImageRenderWidget(irWidget);
 
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
-    connect(projectFileWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
     connect(projectFileWorker, SIGNAL(finished()), vrWidget, SLOT(show()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
@@ -160,25 +137,17 @@ void MainWindow::initializeThreads()
     connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()));
     connect(projectFileWorker, SIGNAL(repaintImageWidget()), this, SLOT(paintImage()), Qt::BlockingQueuedConnection);
-    //~connect(projectFileWorker, SIGNAL(repaintImageWidget()), irWidget, SLOT(repaint()));
-    //~connect(projectFileWorker, SIGNAL(testSignal(int)), irWidget, SLOT(setImageWidth(int)));
 
     allInOneWorker = new AllInOneWorker();
     allInOneWorker->moveToThread(allInOneThread);
-    connect(allInOneWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
-    //~connect(allInOneWorker, SIGNAL(finished()), allInOneWorker, SLOT(deleteLater()));
-    //~connect(allInOneThread, SIGNAL(finished()), allInOneThread, SLOT(deleteLater()));
 
 
     voxelizeWorker = new VoxelizeWorker();
     voxelizeWorker->moveToThread(voxelizeThread);
-    connect(voxelizeWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
-    //~connect(voxelizeWorker, SIGNAL(finished()), voxelizeWorker, SLOT(deleteLater()));
-    //~connect(voxelizeThread, SIGNAL(finished()), voxelizeThread, SLOT(deleteLater()));
 }
 
 void MainWindow::runProjectFileThread()
@@ -188,15 +157,6 @@ void MainWindow::runProjectFileThread()
     irWidget->finish();
     projectFileThread->start();
 }
-
-//~void MainWindow::makeIrWidgetCurrent()
-//~{
-    //~std::cout << Q_FUNC_INFO << std::endl;
-    //~irWidget->setThreadFlag(1);
-
-    //~irWidget->makeCurrent();
-    //~std::cout << " End runProjectFileThread thrad" << std::endl;
-//~}
 
 void MainWindow::setReduceThresholdLow(double value)
 {
@@ -217,9 +177,9 @@ void MainWindow::setProjectThresholdHigh(double value)
 
 void MainWindow::init_emit()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     tabWidget->setCurrentIndex(0);
-    //~ formatComboBox->setCurrentIndex(0);
     svoLevelSpinBox->setValue(9);
 
     treshLimA_DSB->setValue(10);
@@ -269,6 +229,8 @@ void MainWindow::open()
 
 void MainWindow::initializeActions()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     // Actions
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
@@ -466,7 +428,6 @@ void MainWindow::openUnitcellFile()
         {
             QString value = tmp.cap(1);
             wavelength = value.toFloat();
-            //~ qDebug() << pos << " - " << ": "<< value << " <->" << wavelength;
         }
 
         // Find UB matrix
@@ -514,6 +475,8 @@ void MainWindow::openUnitcellFile()
 
 void MainWindow::openSVO()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".h5 (*.h5);; All Files (*)"));
 
     if ((fileName != ""))
@@ -634,9 +597,9 @@ void MainWindow::openSVO()
         status = H5Fclose(file_id);
 
 
-        vrWidget->setOCT_INDEX(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
-        vrWidget->setOCT_BRICK(&(this->VIEW_OCT_BRICK), VIEW_BPP);
-        vrWidget->setBRICKS(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
+        vrWidget->setOcttreeIndices(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
+        vrWidget->setOcttreeBricks(&(this->VIEW_OCT_BRICK), VIEW_BPP);
+        vrWidget->setBrickPool(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
         vrWidget->setMeta(&(this->HIST_NORM), &(this->HIST_LOG), &(this->HIST_MINMAX), &(this->SVO_COMMENT));
         alphaSpinBox->setValue(0.1);
         brightnessSpinBox->setValue(2.0);
@@ -653,13 +616,9 @@ void MainWindow::openSVO()
 
 void MainWindow::paintImage()
 {
-    std::cout << "painRequest" << std::endl;
-    //~irWidget->makeCurrent();
     irWidget->releaseSharedBuffers();
     irWidget->repaint();
     irWidget->finish();
-    std::cout << "painRequest return" << std::endl;
-    //~irWidget->doneCurrent();
 }
 
 void MainWindow::setTab(int tab)
@@ -682,7 +641,6 @@ void MainWindow::setTab(int tab)
             toolChainWidget->show();
             fileDockWidget->show();
             outputDockWidget->show();
-            //~irWidget->makeCurrent();
             break;
 
         case 2:
@@ -692,38 +650,30 @@ void MainWindow::setTab(int tab)
             graphicsDockWidget->show();
             unitcellDockWidget->show();
             functionDockWidget->show();
-            //~ vrWidget->makeCurrent();
             break;
 
         default:
             std::cout << "Reverting to Default Tab" << std::endl;
             break;
     }
-    //~ std::cout << "initCLGL: Alpha Channel = " << contextGLWidget->format().alpha() << " size = "<< contextGLWidget->format().alphaBufferSize()<< "sharing = "<< contextGLWidget->isSharing() <<std::endl;
-    //~ std::cout << "vrWidget Alpha Channel = " << vrWidget->format().alpha() << " size = "<< vrWidget->format().alphaBufferSize()<< "sharing = "<< vrWidget->isSharing() <<std::endl;
-    //~ std::cout << "irWidget Alpha Channel = " << irWidget->format().alpha() << " size = "<< irWidget->format().alphaBufferSize()<< "sharing = "<< irWidget->isSharing() << std::endl;
 }
 
 void MainWindow::initializeConnects()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     /* this <-> vrWidget */
-    //~connect( vrWidget, SIGNAL(appendLog(QString)), this, SLOT(appendLog(QString)));
     connect(this->tsfAlphaComboBox, SIGNAL(activated(int)), vrWidget, SLOT(setTsfAlphaStyle(int)));
     connect(dataStructureAct, SIGNAL(triggered()), vrWidget, SLOT(toggleDataStructure()));
     connect(backgroundAct, SIGNAL(triggered()), vrWidget, SLOT(toggleBackground()));
     connect(screenshotAct, SIGNAL(triggered()), vrWidget, SLOT(takeScreenshot()));
     connect(logAct, SIGNAL(triggered()), vrWidget, SLOT(toggleLog()));
     connect(projectionAct, SIGNAL(triggered()), vrWidget, SLOT(togglePerspective()));
-    //~ connect(this->graphicsBackgroundButton, SIGNAL(clicked()), vrWidget, SLOT(toggleBackground()));
-    //~ connect(this->screenshotButton, SIGNAL(clicked()), vrWidget, SLOT(takeScreenshot()));
     connect(this->tsfComboBox, SIGNAL(activated(int)), vrWidget, SLOT(setTsf(int)));
     connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfMin(double)));
     connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfMax(double)));
     connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfAlpha(double)));
     connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfBrightness(double)));
-    //~ connect(this->graphicsLogarithmButton, SIGNAL(clicked()), vrWidget, SLOT(toggleLog()));
-    //~ connect(this->graphicsDataStructureButton, SIGNAL(clicked()), vrWidget, SLOT(toggleDataStructure()));
-    //~ connect(this->graphicsPerspectiveButton, SIGNAL(clicked()), vrWidget, SLOT(togglePerspective()));
     connect(this->functionToggleButton, SIGNAL(clicked()), vrWidget, SLOT(toggleFunctionView()));
     connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamA(double)));
     connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamB(double)));
@@ -743,27 +693,26 @@ void MainWindow::initializeConnects()
     connect(vrWidget, SIGNAL(changedFuncParamD(double)), this->funcParamDSpinBox, SLOT(setValue(double)));
 
     /* this <-> dataInstance */
-    connect(this->svoLevelSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setSvoLevels(int)));
-    connect(saveSVOButton, SIGNAL(clicked()), dataInstance, SLOT(saveSVO()));
-    connect(formatComboBox, SIGNAL(currentIndexChanged(int)), dataInstance, SLOT(setFormat(int)));
-    connect(dataInstance, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    connect(treshLimA_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdReduce(double)));
-    connect(treshLimB_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdReduce(double)));
-    connect(treshLimC_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdProject(double)));
-    connect(treshLimD_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdProject(double)));
-    connect(dataInstance, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
-    connect(dataInstance, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(this->imageForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame1()));
-    connect(this->imageFastForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame5()));
-    connect(this->imageBackButton, SIGNAL(clicked()), dataInstance, SLOT(decrementDisplayFrame1()));
-    connect(this->imageFastBackButton, SIGNAL(clicked()), dataInstance, SLOT(decrementDisplayFrame5()));
-    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setDisplayFrame(int)));
-    connect(dataInstance, SIGNAL(displayFrameChanged(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
-    //~connect(this , SIGNAL(changedPaths(QStringList)), dataInstance, SLOT(setPaths(QStringList)));
+    //~connect(this->svoLevelSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setSvoLevels(int)));
+    //~connect(saveSVOButton, SIGNAL(clicked()), dataInstance, SLOT(saveSVO()));
+    //~connect(formatComboBox, SIGNAL(currentIndexChanged(int)), dataInstance, SLOT(setFormat(int)));
+    //~connect(dataInstance, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    //~connect(treshLimA_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdReduce(double)));
+    //~connect(treshLimB_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdReduce(double)));
+    //~connect(treshLimC_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdProject(double)));
+    //~connect(treshLimD_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdProject(double)));
+    //~connect(dataInstance, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    //~connect(dataInstance, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    //~connect(this->imageForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame1()));
+    //~connect(this->imageFastForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame5()));
+    //~connect(this->imageBackButton, SIGNAL(clicked()), dataInstance, SLOT(decrementDisplayFrame1()));
+    //~connect(this->imageFastBackButton, SIGNAL(clicked()), dataInstance, SLOT(decrementDisplayFrame5()));
+    //~connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setDisplayFrame(int)));
+    //~connect(dataInstance, SIGNAL(displayFrameChanged(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
 
     /* irWidget <-> dataInstance */
-    connect(dataInstance, SIGNAL(repaintRequest()), this, SLOT(paintImage()));
-    connect( irWidget, SIGNAL(appendLog(QString)), this, SLOT(appendLog(QString)));
+    //~connect(dataInstance, SIGNAL(repaintRequest()), this, SLOT(paintImage()));
+
 
     /* this <-> this */
     connect(this->treshLimA_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
@@ -784,14 +733,10 @@ void MainWindow::initializeConnects()
     connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
     connect(aboutHDF5Act, SIGNAL(triggered()), this, SLOT(aboutHDF5()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-    connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
-    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOne()));
-    //~connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFiles()));
-    connect(generateSvoButton, SIGNAL(clicked()), this, SLOT(runGenerateSvo()));
+    //~connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOne()));
+    //~connect(generateSvoButton, SIGNAL(clicked()), this, SLOT(runGenerateSvo()));
     connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
-
-    // this <-> contextGLWidget
-    //~connect( contextGLWidget, SIGNAL(appendLog(QString)), this, SLOT(appendLog(QString)));
+    connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
 }
 
 void MainWindow::setGenericProgressFormat(QString str)
@@ -801,20 +746,7 @@ void MainWindow::setGenericProgressFormat(QString str)
 
 void MainWindow::previewSVO()
 {
-    if (!(dataInstance->getOCT_INDEX()->size() > 0) && !(dataInstance->getOCT_BRICK()->size() > 0) && !(dataInstance->getBRICKS()->size() > 0))
-    {
-        print("\nWarning: No data to preview!");
-        return;
-    }
-    else
-    {
-        print("\nPreview enabled in 3D View tab.");
-        vrWidget->setOCT_INDEX(dataInstance->getOCT_INDEX(), dataInstance->getLEVELS(), dataInstance->getExtent());
-        vrWidget->setOCT_BRICK(dataInstance->getOCT_BRICK(), dataInstance->getBPP());
-        vrWidget->setBRICKS(dataInstance->getBRICKS(), dataInstance->getN_BRICKS(), dataInstance->getBRICK_DIM_TOT());
-
-        tabWidget->setCurrentIndex(4);
-    }
+    // Save file - then load it?
 }
 
 
@@ -849,6 +781,8 @@ void MainWindow::initializeMenus()
 
 void MainWindow::initializeInteractives()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
+
 	mainWidget = new QWidget(this);
     mainLayout = new QGridLayout;
 
@@ -981,10 +915,9 @@ void MainWindow::initializeInteractives()
 
         imageNumberSpinBox = new QSpinBox;
 
-        //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << contextGLWidget->format().alpha() << std::endl;
 
         irWidget = new ImageRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
-        dataInstance->setImageRenderWidget(irWidget);
+        //~dataInstance->setImageRenderWidget(irWidget);
 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setSpacing(0);
@@ -1005,10 +938,8 @@ void MainWindow::initializeInteractives()
 
     /*      3D View widget      */
     {
-        //~ std::cout << "Before Set: INITGLCL Render: Alpha Channel = " << contextGLWidget->format().alpha() << std::endl;
         viewWidget = new QWidget;
         vrWidget = new VolumeRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
-        //~ vrWidget->setCursor(Qt::SizeAllCursor);
 
         // Toolbar
         viewToolBar = new QToolBar(tr("3D View"));
@@ -1042,13 +973,6 @@ void MainWindow::initializeInteractives()
         QLabel * l5= new QLabel(QString("Max: "));
         QLabel * l6= new QLabel(QString("Alpha: "));
         QLabel * l7= new QLabel(QString("Brightness: "));
-
-        //~ graphicsBackgroundButton = new QPushButton(tr("Toggle Background"));
-        //~ graphicsDataStructureButton = new QPushButton(tr("Show Data Structure"));
-        //~ graphicsLogarithmButton = new QPushButton(tr("Toggle Logarithmic"));
-        //~ graphicsPerspectiveButton = new QPushButton(tr("Toggle Perspective"));
-        //~ screenshotButton = new QPushButton(tr("Take Screenshot"));
-
 
         dataMinSpinBox = new QDoubleSpinBox;
         dataMinSpinBox->setDecimals(2);
@@ -1112,11 +1036,6 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(alphaSpinBox,7,2,1,2);
         graphicsLayout->addWidget(l7,8,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(brightnessSpinBox,8,2,1,2);
-        //~ graphicsLayout->addWidget(graphicsBackgroundButton,9,0,1,8);
-        //~ graphicsLayout->addWidget(graphicsPerspectiveButton,10,0,1,8);
-        //~ graphicsLayout->addWidget(graphicsLogarithmButton,11,0,1,8);
-        //~ graphicsLayout->addWidget(graphicsDataStructureButton,12,0,1,8);
-        //~ graphicsLayout->addWidget(screenshotButton,13,0,1,8);
 
         graphicsWidget->setLayout(graphicsLayout);
         graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
@@ -1396,144 +1315,14 @@ void MainWindow::initializeInteractives()
     /* Script engine */
 	rawFilesQs = engine.newVariant(file_paths);
 	engine.globalObject().setProperty("files", rawFilesQs);
-}
 
-void MainWindow::runAllInOne()
-{
-    /*################################################################*/
-	/* STEP ONE, TWO, and THREE - All in one go to minimize intermediate
-     * memory consumption between stages */
-
-    progressBar->show();
-    tabWidget->setCurrentIndex(1);
-    allInOneButton->setEnabled(false);
-    readFilesButton->setEnabled(false);
-    projectFilesButton->setEnabled(false);
-
-    #ifndef QT_NO_CURSOR
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-    #endif
-
-    int STATUS_OK = dataInstance->funcAllInOne();
-
-    #ifndef QT_NO_CURSOR
-        QApplication::restoreOverrideCursor();
-    #endif
-
-    allInOneButton->setEnabled(true);
-    if (STATUS_OK)
-    {
-        generateSvoButton->setEnabled(true);
-    }
-    progressBar->hide();
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
 }
 
 
-void MainWindow::runReadFiles()
+void MainWindow::writeLog(QString str)
 {
-    /*################################################################*/
-	/* STEP TWO - READING FILE CONTENTS */
-    progressBar->show();
-    tabWidget->setCurrentIndex(1);
-    readFilesButton->setEnabled(false);
-
-    #ifndef QT_NO_CURSOR
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-    #endif
-    int STATUS_OK = dataInstance->funcReadFiles();
-    #ifndef QT_NO_CURSOR
-        QApplication::restoreOverrideCursor();
-    #endif
-
-    readFilesButton->setEnabled(true);
-    if (STATUS_OK)
-    {
-        projectFilesButton->setEnabled(true);
-        generateSvoButton->setEnabled(false);
-    }
-    progressBar->hide();
-}
-
-void MainWindow::runSetFiles()
-{
-	/*################################################################*/
-	/* STEP ONE - HEADER RETRIEVEAL*/
-    //~progressBar->show();
-    //~tabWidget->setCurrentIndex(1);
-    //~setFilesButton->setEnabled(false);
-
-    //~#ifndef QT_NO_CURSOR
-        //~QApplication::setOverrideCursor(Qt::WaitCursor);
-    //~#endif
-    //~setFileThread->start();
-    //~int STATUS_OK = dataInstance->funcSetFiles();
-
-    //~#ifndef QT_NO_CURSOR
-        //~QApplication::restoreOverrideCursor();
-    //~#endif
-
-    //~setFilesButton->setEnabled(true);
-    //~if (STATUS_OK)
-    //~{
-        //~readFilesButton->setEnabled(true);
-        //~projectFilesButton->setEnabled(false);
-        //~generateSvoButton->setEnabled(false);
-    //~}
-    //~progressBar->hide();
-}
-
-void MainWindow::runProjectFiles()
-{
-    /*################################################################*/
-	/* STEP THREE - EWALD PROJECTION */
-
-    progressBar->show();
-    tabWidget->setCurrentIndex(1);
-    projectFilesButton->setEnabled(false);
-
-    #ifndef QT_NO_CURSOR
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-    #endif
-
-    int STATUS_OK = dataInstance->funcProjectFiles();
-
-    #ifndef QT_NO_CURSOR
-        QApplication::restoreOverrideCursor();
-    #endif
-
-    projectFilesButton->setEnabled(true);
-    if (STATUS_OK)
-    {
-        generateSvoButton->setEnabled(true);
-    }
-    progressBar->hide();
-}
-
-void MainWindow::runGenerateSvo()
-{
-    /*################################################################*/
-	/* STEP FOUR - GENERATING A SPARSE VOXEL OCTREE*/
-    progressBar->show();
-    tabWidget->setCurrentIndex(1);
-    generateSvoButton->setEnabled(false);
-
-    #ifndef QT_NO_CURSOR
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-    #endif
-
-    int STATUS_OK = dataInstance->funcGenerateSvo();
-
-    #ifndef QT_NO_CURSOR
-        QApplication::restoreOverrideCursor();
-    #endif
-
-    generateSvoButton->setEnabled(true);
-    progressBar->hide();
-}
-
-void MainWindow::appendLog(QString str)
-{
-    writeLog(str.toStdString().c_str(), "riv.log", 1);
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
 void MainWindow::print(QString str)
@@ -1551,8 +1340,7 @@ void MainWindow::print(QString str)
 
 void MainWindow::runReadScript()
 {
-	/*################################################################*/
-	/* STEP ZERO - FINDING FILES */
+	if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
 	// Set the corresponding tab
     tabWidget->setCurrentIndex(0);
@@ -1672,7 +1460,6 @@ void MainWindow::loadFile(const QString &fileName)
     #endif
 
     setCurrentFile(fileName);
-    //statusBar()->showMessage(tr("File loaded"), 2000);
 }
 
 bool MainWindow::saveFile(const QString &fileName)
@@ -1697,7 +1484,6 @@ bool MainWindow::saveFile(const QString &fileName)
     #endif
 
     setCurrentFile(fileName);
-    //statusBar()->showMessage(tr("File saved"), 2000);
     return true;
 }
 

@@ -35,7 +35,7 @@
 #include "tools.h"
 #include "miniarray.h"
 #include "matrix.h"
-#include "file_formats.h"
+#include "fileformat.h"
 #include "imagerender.h"
 
 class BaseWorker : public QObject
@@ -63,7 +63,6 @@ class BaseWorker : public QObject
     signals:
         void finished();
         void abort();
-        void writeLog(QString err);
         void changedMessageString(QString str);
         void changedGenericProgress(int value);
         void changedFormatGenericProgress(QString str);
@@ -80,6 +79,7 @@ class BaseWorker : public QObject
         // Related to the runtime
         bool kill_flag;
         int verbosity;
+        void writeLog(QString str);
 
         // Related to OpenCL
         cl_mem * alpha_img_clgl;

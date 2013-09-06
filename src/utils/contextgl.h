@@ -3,6 +3,7 @@
 
 /* Useful C++ libs */
 #include <iostream>
+#include <sstream>
 
 /* GL and CL*/
 #ifdef _WIN32
@@ -40,26 +41,26 @@ public:
 
 signals:
     void changedMessageString(QString str);
-    void appendLog(QString str);
 
 protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
+    void writeLog(QString str);
 
 private:
     void setMessageString(QString str);
     int verbosity;
 
     // OpenGL Related
-    int init_gl();
+    int initResourcesGL();
     bool isGLIntitialized;
 
     // OpenCL Related
-    int init_cl_device(int verbosity);
-    int init_cl();
+    int initDeviceCL(int verbosity);
+    int initResourcesCL();
     cl_device * device; // Might have to declare with new
-    cl_context * context2;
+    cl_context * context;
     cl_command_queue * queue;
     cl_uint num_devices;
     cl_uint num_platforms;

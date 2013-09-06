@@ -1,4 +1,4 @@
-#include "node.h"
+#include "searchnode.h"
 
 unsigned int MAX_POINTS = 8;
 unsigned int MAX_LEVELS = 16;

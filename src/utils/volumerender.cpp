@@ -1,12 +1,12 @@
 #include "volumerender.h"
 
-VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * context2, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
+VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
     QGLWidget(format, parent, shareWidget)
 {
-    //~std::cout << "Constructing VolumeRenderGLWidget" << std::endl;
-    //~ std::cout << "Volume Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
-    isGLIntitialized = false;
     verbosity = 1;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
+    isGLIntitialized = false;
 
     ray_res = 20;
 
@@ -83,7 +83,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     this->ray_loc_ws[1] = 16;
     this->device = device;
     this->queue = queue;
-    this->context2 = context2;
+    this->context = context;
     this->N = 0.1;
     this->F = 10.0;
     this->fov = 10.0;
@@ -162,16 +162,15 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
 
-    this->glInit();
+    //~this->glInit();
     //~std::cout << "Done Constructing VolumeRenderGLWidget" << std::endl;
 }
 
 VolumeRenderGLWidget::~VolumeRenderGLWidget()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     if (isGLIntitialized)
     {
-        if (verbosity) emit appendLog( "VolumeRenderGLWidget-> Destroying..." );
-
         if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
         if (misc_int_cl) clReleaseMemObject(misc_int_cl);
         if (misc_float_cl) clReleaseMemObject(misc_float_cl);
@@ -240,10 +239,13 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteProgram(msaa_program);
         glDeleteProgram(msaa_hdr_program);
         glDeleteProgram(std_text_program);
-
-        if (verbosity) emit appendLog( "VolumeRenderGLWidget-> Destruction done" );
     }
 
+}
+
+void VolumeRenderGLWidget::writeLog(QString str)
+{
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
 void VolumeRenderGLWidget::takeScreenshot()
@@ -283,14 +285,16 @@ void VolumeRenderGLWidget::setResolutionf(double value)
         //~ std::cout << ray_res << ": "<< level << " / " << LEVELS << std::endl;
 
 
-        this->gen_ray_tex();
-        this->screen_buffer_refresh();
+        this->setRaytracingTexture();
+        this->setTexturesVBO();
         //~ emit changedResolutioni( (int) value);
     }
 }
 
-void VolumeRenderGLWidget::init_freetype()
+void VolumeRenderGLWidget::initFreetype()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     /* Initialize the FreeType2 library */
     FT_Library ft;
     FT_Face face;
@@ -317,18 +321,15 @@ void VolumeRenderGLWidget::setResolutioni(int value)
     if (value > 0)
     {
         setResolutionf((double)value);
-        //~ emit changedResolutionf( (double) value);
     }
 }
-//~ void VolumeRenderGLWidget::toggleFastMove(bool value)
-//~ {
-    //~ fastMove = value;
-//~ }
+
 void VolumeRenderGLWidget::togglePerspective()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     isPerspectiveRequired = !isPerspectiveRequired;
     CTC_MATRIX.setProjection(isPerspectiveRequired);
-    //~ CTC_MATRIX.print(2);
 
     // Scale up/down a bit
     float f;
@@ -405,7 +406,7 @@ void VolumeRenderGLWidget::setFuncParamD(double value)
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::auto_rotate(int time, int threshold)
+void VolumeRenderGLWidget::autoRotate(int time, int threshold)
 {
     if (time > threshold)
     {
@@ -420,39 +421,32 @@ void VolumeRenderGLWidget::auto_rotate(int time, int threshold)
 
 
 }
-void VolumeRenderGLWidget::view_matrix_reset()
+void VolumeRenderGLWidget::resetViewMatrix()
 {
     DATA_SCALING.setIdentity(4);
     ROTATION.setIdentity(4);
     DATA_TRANSLATION.setIdentity(4);
 }
 
-void VolumeRenderGLWidget::setOCT_INDEX(MiniArray<unsigned int> * OCT_INDEX, size_t n_levels, float * extent)
+void VolumeRenderGLWidget::setOcttreeIndices(MiniArray<unsigned int> * OCT_INDEX, size_t n_levels, float * extent)
 {
-    //~ std::cout << "(3) setOCT_INDEX" << std::endl;
-    //~
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     this->OCT_INDEX = OCT_INDEX;
     this->LEVELS = n_levels;
     this->setMinLevel(1.0);
     this->setMiscArrays();
-    //~
+
     this->DATA_EXTENT.setDeep(4, 2, extent);
     this->DATA_VIEW_EXTENT.setDeep(4, 2, extent);
-    this->data_extent_refresh();
+    this->setDataExtent();
     this->vbo_buffers_refresh();
-    this->view_matrix_reset();
+    this->resetViewMatrix();
 
     MISC_INT[0] = (int) LEVELS;
-    //~
-    //~
-    //~ std::cout << "this->OCT_INDEX.size() " << this->OCT_INDEX->size() << std::endl;
-    //~ std::cout << "this->LEVELS " << this->LEVELS << std::endl;
-    //~ std::cout << "this->DATA_EXTENT: " << std::endl;
-    //~ DATA_EXTENT.print(3);
-
 
     /* Load the contents into a CL texture */
-    oct_index_cl = clCreateBuffer((*context2),
+    oct_index_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         this->OCT_INDEX->size()*sizeof(cl_uint),
         this->OCT_INDEX->data(),
@@ -486,8 +480,6 @@ void VolumeRenderGLWidget::setMeta(MiniArray<double> * HIST_NORM, MiniArray<doub
 
 void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color)
 {
-    //~ buf->print(2);
-
     double max = buf->max();
 
     Matrix<float> texture(height, buf->size()*4, 0.0);
@@ -526,9 +518,9 @@ void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> *
 
 }
 
-void VolumeRenderGLWidget::setOCT_BRICK(MiniArray<unsigned int> * OCT_BRICK, size_t pool_power)
+void VolumeRenderGLWidget::setOcttreeBricks(MiniArray<unsigned int> * OCT_BRICK, size_t pool_power)
 {
-    //~ std::cout << "(4) setOCT_BRICK" << std::endl;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     this->OCT_BRICK = OCT_BRICK;
     this->BPP = pool_power;
@@ -538,7 +530,7 @@ void VolumeRenderGLWidget::setOCT_BRICK(MiniArray<unsigned int> * OCT_BRICK, siz
     std::cout << "this->BPP " << this->BPP << std::endl;
 
     /* Load the contents into a CL texture */
-    oct_brick_cl = clCreateBuffer((*context2),
+    oct_brick_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         this->OCT_BRICK->size()*sizeof(cl_uint),
         this->OCT_BRICK->data(),
@@ -560,7 +552,7 @@ void VolumeRenderGLWidget::setOCT_BRICK(MiniArray<unsigned int> * OCT_BRICK, siz
 }
 
 
-void VolumeRenderGLWidget::brick_to_tex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power)
+void VolumeRenderGLWidget::brickToTex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power)
 {
     // Bitwise operations used here:
     // X / 2^n = X >> n
@@ -592,12 +584,11 @@ void VolumeRenderGLWidget::brick_to_tex(float * buf_in, float * buf_out, size_t 
         }
     }
 
-    //~ std::cout << id << " brick_xyz = [" << brick_xyz[0] << " " << brick_xyz[1] << " " << brick_xyz[2] << "]" << std::endl;
 }
 
-void VolumeRenderGLWidget::setBRICKS(MiniArray<float> * BRICKS, size_t n_bricks, size_t dim_bricks)
+void VolumeRenderGLWidget::setBrickPool(MiniArray<float> * BRICKS, size_t n_bricks, size_t dim_bricks)
 {
-    //~ std::cout << "(2, 5) setBRICKS" << std::endl;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->BRICKS = BRICKS;
     this->N_BRICKS = n_bricks;
     this->DIM_BRICKS = dim_bricks;
@@ -624,7 +615,7 @@ void VolumeRenderGLWidget::setBRICKS(MiniArray<float> * BRICKS, size_t n_bricks,
     /* Rearrange bricks for a 3D texture*/
     for (size_t i = 0; i < N_BRICKS; i++)
     {
-        brick_to_tex(this->BRICKS->data(), tex_buf.data(), i, DIM_BRICKS, BPP);
+        brickToTex(this->BRICKS->data(), tex_buf.data(), i, DIM_BRICKS, BPP);
     }
 
     /* Load the contents into a CL texture */
@@ -633,7 +624,7 @@ void VolumeRenderGLWidget::setBRICKS(MiniArray<float> * BRICKS, size_t n_bricks,
 
     std::cout << tex_buf_dim[0] << " " << tex_buf_dim[2] << " " << std::endl;
 
-    bricks_cl = clCreateImage3D ( (*context2),
+    bricks_cl = clCreateImage3D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &bricks_format,
         tex_buf_dim[0],
@@ -648,7 +639,7 @@ void VolumeRenderGLWidget::setBRICKS(MiniArray<float> * BRICKS, size_t n_bricks,
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    bricks_sampler = clCreateSampler((*context2), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
+    bricks_sampler = clCreateSampler((*context), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
 
     /* Send to the kernel */
     err = clSetKernelArg(K_SVO_RAYTRACE, 2, sizeof(cl_mem), &bricks_cl);
@@ -673,22 +664,22 @@ QSize VolumeRenderGLWidget::sizeHint() const
 
 void VolumeRenderGLWidget::initializeGL()
 {
-    //~std::cout << " Initializing OpenGL and CL" << std::endl;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     setMouseTracking( true );
-    if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
-    if (!this->init_cl()) std::cout << "VolumeRenderGLWidget: OpenCL context could not be initialized!" << std::endl;
+    if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
+    if (!this->initResourcesCL()) std::cout << "VolumeRenderGLWidget: OpenCL context could not be initialized!" << std::endl;
 
     /* Initialize and set the other stuff */
-    this->init_freetype();
+    this->initFreetype();
     init_tsf(0, 0, &transferFunction);
-    this->gen_tsf_tex(&transferFunction);
-    this->data_extent_refresh();
+    this->setTsfTexture(&transferFunction);
+    this->setDataExtent();
     this->setTsfParameters();
     this->setMiscArrays();
     this->setEmit();
 
     isGLIntitialized = true;
-    //~std::cout << "Done Initializing OpenGL and CL " << std::endl;
 }
 void VolumeRenderGLWidget::setEmit()
 {
@@ -740,9 +731,6 @@ void VolumeRenderGLWidget::setTsfParameters()
 {
     if ((*queue))
     {
-        //~ MiniArray<float> BUF(TSF_PARAMETERS.size());
-        //~ BUF.setDeep(BUF.size(), TSF_PARAMETERS.data());
-
         err = clEnqueueWriteBuffer ( (*queue),
             tsf_parameters_cl,
             CL_TRUE,
@@ -770,7 +758,7 @@ void VolumeRenderGLWidget::setTsfParameters()
             //~ setVbo(&tex_coord_vbo[2], tsf_texcoords.getColMajor().data(), tsf_texcoords.size());
         //~ }
 
-        //~ this->gen_tsf_tex(&transferFunction);
+        //~ this->setTsfTexture(&transferFunction);
     }
 }
 
@@ -1084,7 +1072,7 @@ void VolumeRenderGLWidget::setTsf(int value)
 {
     tsf_style = value;
     init_tsf(value, tsf_alpha_style, &transferFunction);
-    this->gen_tsf_tex(&transferFunction);
+    this->setTsfTexture(&transferFunction);
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -1095,7 +1083,7 @@ void VolumeRenderGLWidget::setTsfAlphaStyle(int value)
 {
     tsf_alpha_style = value;
     init_tsf(tsf_style, value, &transferFunction);
-    this->gen_tsf_tex(&transferFunction);
+    this->setTsfTexture(&transferFunction);
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -1107,8 +1095,8 @@ void VolumeRenderGLWidget::paintGL()
     QElapsedTimer paintTimer;
     paintTimer.start();
 
-    this->auto_rotate(rotationTimer->elapsed(), auto_rotation_delay);
-    this->view_matrix_refresh();
+    this->autoRotate(rotationTimer->elapsed(), auto_rotation_delay);
+    this->setViewMatrix();
     this->vbo_buffers_refresh();
 
     GLuint indices[6] = {0,1,3,1,2,3};
@@ -1255,8 +1243,8 @@ void VolumeRenderGLWidget::paintGL()
 
 
         {
-            if (bricks_cl && oct_index_cl && oct_brick_cl && !isFunctionActive) this->ray_tex_refresh(K_SVO_RAYTRACE);
-            else this->ray_tex_refresh(K_FUNCTION_RAYTRACE);
+            if (bricks_cl && oct_index_cl && oct_brick_cl && !isFunctionActive) this->raytrace(K_SVO_RAYTRACE);
+            else this->raytrace(K_FUNCTION_RAYTRACE);
 
             std_2d_tex_draw(indices, 6, 0, ray_tex, &position_vbo[1], &tex_coord_vbo[1]);
 
@@ -1468,13 +1456,14 @@ void VolumeRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements
 
 void VolumeRenderGLWidget::resizeGL(int w, int h)
 {
-    //~ std::cout << "resizeGL" << std::endl;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     this->WIDTH = w;
     this->HEIGHT = h;
     this->SMALL_WIDTH = w/2;
     this->SMALL_HEIGHT = h/2;
-    this->gen_ray_tex();
-    this->screen_buffer_refresh();
+    this->setRaytracingTexture();
+    this->setTexturesVBO();
 
     CTC_MATRIX.setWindow(WIDTH, HEIGHT);
 
@@ -1483,7 +1472,7 @@ void VolumeRenderGLWidget::resizeGL(int w, int h)
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::data_extent_refresh()
+void VolumeRenderGLWidget::setDataExtent()
 {
     err = clEnqueueWriteBuffer ( (*queue),
         data_extent_cl,
@@ -1521,7 +1510,7 @@ void VolumeRenderGLWidget::data_extent_refresh()
 }
 
 
-void VolumeRenderGLWidget::view_matrix_refresh()
+void VolumeRenderGLWidget::setViewMatrix()
 {
 
     NORM_SCALING[0] = BBOX_SCALING[0] * PROJECTION_SCALING[0] * (BBOX_EXTENT[1] - BBOX_EXTENT[0]) / (DATA_EXTENT[1] - DATA_EXTENT[0]);
@@ -1569,7 +1558,7 @@ void VolumeRenderGLWidget::view_matrix_refresh()
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
     }
 
-    this->data_extent_refresh();
+    this->setDataExtent();
 }
 
 
@@ -1684,7 +1673,7 @@ void VolumeRenderGLWidget::keyPressEvent(QKeyEvent *event)
             if (MSAA_SAMPLES < 1) MSAA_SAMPLES = 1;
             if (MSAA_SAMPLES > 32) MSAA_SAMPLES = 32;
             std::cout << "MSAA_SAMPLES " << MSAA_SAMPLES << std::endl;
-            screen_buffer_refresh();
+            setTexturesVBO();
             break;
         case (Qt::Key_F3):
             MSAA_EXPOSURE += sign_modifier*0.1;
@@ -1743,8 +1732,8 @@ void VolumeRenderGLWidget::keyPressEvent(QKeyEvent *event)
     //~ std::cout << std::setprecision(3) << std::fixed << "Misc float k_raytrace = [" << MISC_FLOAT_K_RAYTRACE[0] << ", " << MISC_FLOAT_K_RAYTRACE[1] << ", " << MISC_FLOAT_K_RAYTRACE[2]<< ", " << MISC_FLOAT_K_RAYTRACE[3] << ", " << MISC_FLOAT_K_RAYTRACE[4] << "]" << std::endl;
     this->setTsfParameters();
     this->setMiscArrays();
-    this->gen_ray_tex();
-    this->screen_buffer_refresh();
+    this->setRaytracingTexture();
+    this->setTexturesVBO();
 }
 
 void VolumeRenderGLWidget::wheelEvent(QWheelEvent *event)
@@ -1784,8 +1773,9 @@ void VolumeRenderGLWidget::wheelEvent(QWheelEvent *event)
 }
 
 
-int VolumeRenderGLWidget::init_gl()
+int VolumeRenderGLWidget::initResourcesGL()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     // BLEND
     glEnable(GL_BLEND);
@@ -1813,10 +1803,10 @@ int VolumeRenderGLWidget::init_gl()
     glGenTextures(1, &msaa_tex);
     glGenTextures(1, &msaa_depth_tex);
     glGenTextures(1, &msaa_intermediate_storage_tex);
-    this->screen_buffer_refresh();
+    this->setTexturesVBO();
 
     // Shader programs
-    init_gl_programs();
+    initializeProgramsGL();
 
     // Vertice buffer objects
     glGenBuffers(1, &text_texpos_vbo);
@@ -2039,7 +2029,7 @@ void VolumeRenderGLWidget::vbo_buffers_refresh()
     }
 }
 
-void VolumeRenderGLWidget::screen_buffer_refresh()
+void VolumeRenderGLWidget::setTexturesVBO()
 {
     /* std_3d_tex */
     glActiveTexture(GL_TEXTURE0);
@@ -2180,7 +2170,7 @@ void VolumeRenderGLWidget::setTsfBrightness(double value)
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::ray_tex_refresh(cl_kernel kernel)
+void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
 {
     if (ray_tex_cl && tsf_tex_cl && isRefreshRequired)
     {
@@ -2347,8 +2337,9 @@ void VolumeRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * col
     glUseProgram(0);
 }
 
-void VolumeRenderGLWidget::init_gl_programs()
+void VolumeRenderGLWidget::initializeProgramsGL()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     GLint link_ok = GL_FALSE;
     GLuint vertice_shader, fragment_shader; // Delete these after use?
@@ -2838,7 +2829,7 @@ void VolumeRenderGLWidget::init_gl_programs()
     }
 }
 
-void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
+void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
 {
     /* Generate a transfer function CL texture */
     if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
@@ -2873,7 +2864,7 @@ void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
     tsf_format.image_channel_order = CL_RGBA;
     tsf_format.image_channel_data_type = CL_FLOAT;
 
-    tsf_tex_cl = clCreateImage2D ( (*context2),
+    tsf_tex_cl = clCreateImage2D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &tsf_format,
         tsf->getSpline().getN(),
@@ -2887,7 +2878,7 @@ void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
     }
 
     // The sampler for tsf_tex_cl
-    tsf_tex_sampler = clCreateSampler((*context2), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    tsf_tex_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
@@ -2903,7 +2894,7 @@ void VolumeRenderGLWidget::gen_tsf_tex(TsfMatrix<double> * tsf)
     }
 }
 
-int VolumeRenderGLWidget::gen_ray_tex()
+int VolumeRenderGLWidget::setRaytracingTexture()
 {
     /* Set a usable texture for thevolume rendering kernel */
     // Set dimensions
@@ -2945,7 +2936,7 @@ int VolumeRenderGLWidget::gen_ray_tex()
     // Convert to CL texture
     //~ if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
 
-    ray_tex_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex, &err);
+    ray_tex_cl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex, &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
@@ -2965,14 +2956,16 @@ int VolumeRenderGLWidget::gen_ray_tex()
 }
 
 
-int VolumeRenderGLWidget::init_cl()
+int VolumeRenderGLWidget::initResourcesCL()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     // Program
     QByteArray qsrc = open_resource(":/src/kernels/render.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 
-    program = clCreateProgramWithSource((*context2), 1, (const char **)&src, &src_length, &err);
+    program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "VolumeRenderGLWidget: Could not create program from source: " << cl_error_cstring(err) << std::endl;
@@ -3015,7 +3008,7 @@ int VolumeRenderGLWidget::init_cl()
     }
 
     // Buffers
-    view_matrix_inv_cl = clCreateBuffer((*context2),
+    view_matrix_inv_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         16*sizeof(cl_float),
         NULL,
@@ -3025,7 +3018,7 @@ int VolumeRenderGLWidget::init_cl()
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    function_view_matrix_inv_cl = clCreateBuffer((*context2),
+    function_view_matrix_inv_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         16*sizeof(cl_float),
         NULL,
@@ -3035,7 +3028,7 @@ int VolumeRenderGLWidget::init_cl()
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    data_extent_cl = clCreateBuffer((*context2),
+    data_extent_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         8*sizeof(cl_float),
         NULL,
@@ -3045,7 +3038,7 @@ int VolumeRenderGLWidget::init_cl()
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    data_view_extent_cl = clCreateBuffer((*context2),
+    data_view_extent_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         8*sizeof(cl_float),
         NULL,
@@ -3055,7 +3048,7 @@ int VolumeRenderGLWidget::init_cl()
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    tsf_parameters_cl = clCreateBuffer((*context2),
+    tsf_parameters_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         TSF_PARAMETERS.size()*sizeof(cl_float),
         NULL,
@@ -3065,7 +3058,7 @@ int VolumeRenderGLWidget::init_cl()
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    misc_float_cl = clCreateBuffer((*context2),
+    misc_float_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         MISC_FLOAT_K_FUNCTION.size()*sizeof(cl_float),
         NULL,
@@ -3075,7 +3068,7 @@ int VolumeRenderGLWidget::init_cl()
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    misc_int_cl = clCreateBuffer((*context2),
+    misc_int_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         MISC_INT.size()*sizeof(cl_float),
         NULL,
@@ -3085,7 +3078,7 @@ int VolumeRenderGLWidget::init_cl()
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-    misc_float_k_raytrace_cl = clCreateBuffer((*context2),
+    misc_float_k_raytrace_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         MISC_FLOAT_K_RAYTRACE.size()*sizeof(cl_float),
         NULL,

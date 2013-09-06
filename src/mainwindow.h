@@ -49,10 +49,9 @@
 #include <iomanip>
 #include <cmath>
 
-#include "utils/text_highlighter.h"
-#include "utils/vol_data_set.h"
+#include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
-#include "utils/glclinit.h"
+#include "utils/contextgl.h"
 #include "utils/volumerender.h"
 #include "utils/imagerender.h"
 #include "utils/worker.h"
@@ -67,7 +66,6 @@ public:
 
 
 protected:
-    VolumeDataSet * dataInstance;
 
 private slots:
     void setTab(int tab);
@@ -83,19 +81,14 @@ private slots:
     void aboutOpenGL();
     void aboutHDF5();
 
-    void runAllInOne();
     void runReadScript();
-    void runSetFiles();
-    void runReadFiles();
-    void runProjectFiles();
-    void runGenerateSvo();
 
     void previewSVO();
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
     void initializeThreads();
-    void appendLog(QString str);
+    void writeLog(QString str);
 
     void setReduceThresholdLow(double value);
     void setReduceThresholdHigh(double value);
@@ -141,7 +134,7 @@ private:
     //void createStatusBar();
 
     void init_emit();
-    int init_cl_device();
+    int initDeviceCL();
     int init_cl_base();
 	void setFileTree();
     void readSettings();

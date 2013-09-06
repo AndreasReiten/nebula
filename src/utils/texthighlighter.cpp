@@ -1,9 +1,9 @@
-#include "text_highlighter.h"
+#include "texthighlighter.h"
 
 Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
 {
     HighlightingRule rule;
-    
+
     /* KEYWORDS */
     keywordFormat.setForeground(QBrush(QColor(106, 27, 224, 255)));
     keywordFormat.setFontWeight(QFont::Bold);
@@ -18,13 +18,13 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
         << "\\btemplate\\b" << "\\btypedef\\b" << "\\btypename\\b"
         << "\\bunion\\b" << "\\bunsigned\\b" << "\\bvirtual\\b"
         << "\\bvoid\\b" << "\\bvolatile\\b";
-    foreach (const QString &pattern, keywordPatterns) 
+    foreach (const QString &pattern, keywordPatterns)
     {
         rule.pattern = QRegExp(pattern);
         rule.format = keywordFormat;
         highlightingRules.append(rule);
     }
-    
+
     /* WARNINGS */
     warningFormat.setForeground(QBrush(QColor(255, 40, 40, 255)));
     rule.pattern = QRegExp("Warning:");
@@ -36,36 +36,36 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
     rule.pattern = QRegExp("(?:\\S+)?Error:");
     rule.format = errorFormat;
     highlightingRules.append(rule);
-    
+
     /* STAMPS */
     stampFormat.setForeground(QBrush(QColor(40, 255, 20, 255)));
     //~ rule.pattern = QRegExp("(?:[Script])?(?:[Set])?(?:[Read])?(?:[Project])?(?:[Voxelize])?");
     rule.pattern = QRegExp("\\[\\S+\\]");
     rule.format = stampFormat;
     highlightingRules.append(rule);
-    
+
     /* CLASSES */
     classFormat.setFontWeight(QFont::Bold);
     classFormat.setForeground(QBrush(QColor(106, 27, 224, 255)));
     rule.pattern = QRegExp("\\bQ[A-Za-z]+\\b");
     rule.format = classFormat;
     highlightingRules.append(rule);
-    
+
     /* SINGLE LINE COMMENTS */
     singleLineCommentFormat.setForeground(QBrush(QColor(195, 83, 20, 255)));
     rule.pattern = QRegExp("//[^\n]*");
     rule.format = singleLineCommentFormat;
     highlightingRules.append(rule);
-    
+
     /* MULT LINE COMMENTS */
     multiLineCommentFormat.setForeground(QBrush(QColor(195, 83, 20, 255)));
-    
+
     /* NUMBERS */
     numberFormat.setForeground(QBrush(QColor(40, 140, 255, 255)));
     rule.pattern = QRegExp("(?:\\d*\\.\\d+)|(?:\\d+)");
     rule.format = numberFormat;
     highlightingRules.append(rule);
-    
+
     /* QUOTATIONS */
     quotationFormat.setForeground(QBrush(QColor(255, 230, 171, 255)));
     rule.pattern = QRegExp("\".*\"");
@@ -77,7 +77,7 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
     rule.pattern = QRegExp("[()]");
     rule.format = paranthesisFormat;
     highlightingRules.append(rule);
-    
+
     /* FUNCTIONS */
     functionFormat.setForeground(QColor(106, 27, 224, 255));
     rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
@@ -90,11 +90,11 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
 
 void Highlighter::highlightBlock(const QString &text)
 {
-    foreach (const HighlightingRule &rule, highlightingRules) 
+    foreach (const HighlightingRule &rule, highlightingRules)
     {
         QRegExp expression(rule.pattern);
         int index = expression.indexIn(text);
-        while (index >= 0) 
+        while (index >= 0)
         {
             int length = expression.matchedLength();
             setFormat(index, length, rule.format);
@@ -107,16 +107,16 @@ void Highlighter::highlightBlock(const QString &text)
     if (previousBlockState() != 1)
     startIndex = commentStartExpression.indexIn(text);
 
-    while (startIndex >= 0) 
+    while (startIndex >= 0)
     {
         int endIndex = commentEndExpression.indexIn(text, startIndex);
         int commentLength;
-        if (endIndex == -1) 
+        if (endIndex == -1)
         {
             setCurrentBlockState(1);
             commentLength = text.length() - startIndex;
-        } 
-        else 
+        }
+        else
         {
             commentLength = endIndex - startIndex
             + commentEndExpression.matchedLength();

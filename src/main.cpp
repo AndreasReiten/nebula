@@ -16,11 +16,19 @@
 #include <QCoreApplication>
 #include <QApplication>
 #include "mainwindow.h"
+#include "utils/tools.h"
 
 /* This is the top level GUI implementation */
 int main(int argc, char **argv)
 {
-    //~QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+    // Initialize the log file
+    int verbosity = 1;
+    QDateTime dateTime = dateTime.currentDateTime();
+    QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
+    if (verbosity == 1) writeToLogAndPrint("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
+    if (verbosity == 1) writeToLogAndPrint(Q_FUNC_INFO, "riv.log", 1);
+
+    //~if (Q_OS_LINUX) QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
     //~std::cout << "Qt::AA_X11InitThreads = " << QCoreApplication::testAttribute(Qt::AA_X11InitThreads) << std::endl;
     QApplication app(argc, argv);
 

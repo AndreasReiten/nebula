@@ -44,13 +44,13 @@ class VolumeRenderGLWidget : public QGLWidget
     Q_OBJECT
 
 public:
-    explicit VolumeRenderGLWidget(cl_device * device, cl_context * context2, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
+    explicit VolumeRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
     ~VolumeRenderGLWidget();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
-    void setOCT_INDEX(MiniArray<unsigned int> * OCT_INDEX, size_t n_levels, float * extent);
-    void setOCT_BRICK(MiniArray<unsigned int> * OCT_BRICK, size_t pool_power);
-    void setBRICKS(MiniArray<float> * BRICKS, size_t n_bricks, size_t dim_bricks);
+    void setOcttreeIndices(MiniArray<unsigned int> * OCT_INDEX, size_t n_levels, float * extent);
+    void setOcttreeBricks(MiniArray<unsigned int> * OCT_BRICK, size_t pool_power);
+    void setBrickPool(MiniArray<float> * BRICKS, size_t n_bricks, size_t dim_bricks);
     void setMeta(MiniArray<double> * HIST_NORM, MiniArray<double> * HIST_LOG, MiniArray<double> * HIST_MINMAX, MiniArray<char> * SVO_COMMENT);
     void setMatrixU(float * buf);
     void setMatrixB(float * buf);
@@ -92,7 +92,6 @@ signals:
     void changedFuncParamB(double value);
     void changedFuncParamC(double value);
     void changedFuncParamD(double value);
-    void appendLog(QString str);
 
 protected:
     int verbosity;
@@ -102,6 +101,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void wheelEvent(QWheelEvent *event);
+    void writeLog(QString str);
 
 private:
     Atlas * fontSmall;
@@ -111,7 +111,7 @@ private:
     void setEmit();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
-    void init_freetype();
+    void initFreetype();
     void setMinLevel(float level);
     int getUnitcellVBO(GLuint * xyz_coords, int * hkl_low, int * hkl_high, float * a, float * b, float * c);
     void getUnitcellBasis(float * buf, int * hkl_offset, float * a, float * b, float * c);
@@ -119,21 +119,21 @@ private:
     void pixPos(GLuint * vbo, float x, float y, float w, float h);
     void backDropTexPos(GLuint * vbo, int border_pixel_offset);
     void histTexPos(int log, float hist_min, float hist_max, float data_min, float data_max);
-    void screen_buffer_refresh();
+    void setTexturesVBO();
     void vbo_buffers_refresh();
-    void view_matrix_reset();
-    void view_matrix_refresh();
-    void data_extent_refresh();
+    void resetViewMatrix();
+    void setViewMatrix();
+    void setDataExtent();
     void setTsfParameters();
     void setMiscArrays();
     void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
     void std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * M1, float * M2, float * bbox_min, float * bbox_max );
-    void gen_tsf_tex(TsfMatrix<double> * tsf);
-    void auto_rotate(int time, int threshold);
-    void init_gl_programs();
+    void setTsfTexture(TsfMatrix<double> * tsf);
+    void autoRotate(int time, int threshold);
+    void initializeProgramsGL();
     void setMessageString(QString str);
-    void brick_to_tex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power);
-    void ray_tex_refresh(cl_kernel kernel);
+    void brickToTex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power);
+    void raytrace(cl_kernel kernel);
     void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
     //~ void paint_texture_2d(GLuint texture, double * coordinates, double * vertices);
 
@@ -165,7 +165,7 @@ private:
     cl_kernel K_SVO_RAYTRACE, K_FUNCTION_RAYTRACE;
     cl_device * device;
     cl_program program;
-    cl_context * context2;
+    cl_context * context;
     cl_command_queue * queue;
     cl_int err;
 
@@ -244,9 +244,9 @@ private:
     float MSAA_EXPOSURE;
     int WIDTH, HEIGHT, SMALL_WIDTH, SMALL_HEIGHT;
     int ray_tex_dim[2];
-    int gen_ray_tex();
-    int init_gl();
-    int init_cl();
+    int setRaytracingTexture();
+    int initResourcesGL();
+    int initResourcesCL();
 
     size_t ray_glb_ws[2];
     size_t ray_loc_ws[2];

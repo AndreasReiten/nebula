@@ -1,21 +1,17 @@
 #include "imagerender.h"
 
-ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * context2, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
+ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
     QGLWidget(format, parent, shareWidget)
 {
-    //~std::cout << "Constructing ImageRenderGLWidget" << std::endl;
-    //~ std::cout << "Image Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
-    isGLIntitialized = false;
-    //~isInMainThread = true;
     verbosity = 1;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
+    isGLIntitialized = false;
+
 
     this->device = device;
     this->queue = queue;
-    this->context2 = context2;
-
-    //~ this->alpha_img_clgl = new cl_mem;
-    //~ this->beta_img_clgl = new cl_mem;
-    //~ this->tsf_img_clgl = new cl_mem;
+    this->context = context;
 
     /* colors */
     float c_white[4] = {1,1,1,1};
@@ -41,7 +37,6 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     this->setFocusPolicy(Qt::StrongFocus);
 
 
-
     /* This timer keeps track of the time since this constructor was
      * called */
     time = new QElapsedTimer();
@@ -56,37 +51,30 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     //~connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
     this->glInit();
-    //~std::cout << "Done Constructing ImageRenderGLWidget" << std::endl;
 }
 
 void ImageRenderGLWidget::setImageWidth(int value)
 {
-    std::cout << "Were talking!" << std::endl;
     if (value != image_w)
     {
         this->image_w = value;
         this->setTarget();
         this->setTexturePositions();
     }
-    std::cout << "Were talking!" << std::endl;
 }
 
 void ImageRenderGLWidget::setImageHeight(int value)
 {
-    std::cout << "Were talking!" << std::endl;
     if (value != image_h)
     {
         this->image_h = value;
         this->setTarget();
         this->setTexturePositions();
     }
-    std::cout << "Were talking!" << std::endl;
 }
 
 void ImageRenderGLWidget::setImageSize(int w, int h)
 {
-    std::cout << "Were talking! w x h = " << w << " x " << h << std::endl;
-
     if ((w != image_w) || (h != image_h))
     {
         this->image_w = w;
@@ -94,15 +82,14 @@ void ImageRenderGLWidget::setImageSize(int w, int h)
         this->setTarget();
         this->setTexturePositions();
     }
-    std::cout << "Were talking!" << std::endl;
 }
 
 ImageRenderGLWidget::~ImageRenderGLWidget()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     if (isGLIntitialized)
     {
-        if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() calling");
-
         glDeleteTextures(5, image_tex);
 
         glDeleteBuffers(1, &text_coord_vbo);
@@ -113,13 +100,13 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
         glDeleteProgram(std_text_program);
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
-
-        if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() done");
     }
 }
 
-void ImageRenderGLWidget::init_freetype()
+void ImageRenderGLWidget::initFreetype()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     /* Initialize the FreeType2 library */
     FT_Library ft;
     FT_Face face;
@@ -153,28 +140,29 @@ QSize ImageRenderGLWidget::sizeHint() const
 
 void ImageRenderGLWidget::initializeGL()
 {
-    if (!isGLIntitialized){
-        std::cout << Q_FUNC_INFO << std::endl;
-        if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() called");
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-        if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
+    if (!isGLIntitialized){
+        if (verbosity == 1) writeLog(QString(this->metaObject()->className())+"->initializeGL() called");
+
+        if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
 
         /* Initialize and set the other stuff */
-        this->init_freetype();
+        this->initFreetype();
         this->setTarget();
         this->setTsfTexture(&transferFunction);
 
         isGLIntitialized = true;
     }
-    if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() done");
 }
 
-
+void ImageRenderGLWidget::writeLog(QString str)
+{
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
+}
 
 void ImageRenderGLWidget::paintGL()
 {
-    //~std::cout << Q_FUNC_INFO << std::endl;
-
     glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -237,7 +225,6 @@ void ImageRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements,
 {
     glUseProgram(std_2d_color_program);
 
-
     // Set std_2d_color_attribute_position
     glEnableVertexAttribArray(std_2d_color_attribute_position);
     glBindBuffer(GL_ARRAY_BUFFER, *xy_coords);
@@ -260,36 +247,16 @@ void ImageRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements,
 
 void ImageRenderGLWidget::resizeGL(int w, int h)
 {
-    //~std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->WIDTH = w;
     this->HEIGHT = h;
     this->setTexturePositions();
     glViewport(0, 0, w, h);
 }
 
-void ImageRenderGLWidget::aquireSharedBuffers()
-{
-    // Aquire shared CL/GL objects
-    //~std::cout << "GLfinish" << std::endl;
-    glFinish();
-    //~std::cout << "Aquire" << std::endl;
-    err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
-    //~std::cout << "Aquire" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
-    //~std::cout << "Aquire" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
-    //~std::cout << "Aquire tsf_img_clgl" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
-    //~std::cout << "Aquire" << std::endl;
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
-}
-
 void ImageRenderGLWidget::releaseSharedBuffers()
 {
-    //~ // Release shared CL/GL objects
+     // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
     err |= clEnqueueReleaseGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
     err |= clEnqueueReleaseGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
@@ -349,8 +316,10 @@ void ImageRenderGLWidget::setTexturePositions()
 }
 
 
-int ImageRenderGLWidget::init_gl()
+int ImageRenderGLWidget::initResourcesGL()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     isGLIntitialized = true;
 
     // BLEND
@@ -361,7 +330,7 @@ int ImageRenderGLWidget::init_gl()
     glGenTextures(5, image_tex);
 
     // Shader programs
-    init_gl_programs();
+    initializeProgramsGL();
 
     // Vertice buffer objects
     glGenBuffers(5, screen_texpos_vbo);
@@ -485,8 +454,9 @@ void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * colo
 
 
 
-void ImageRenderGLWidget::init_gl_programs()
+void ImageRenderGLWidget::initializeProgramsGL()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     GLint link_ok = GL_FALSE;
     GLuint vertice_shader, fragment_shader; // Delete these after use?
@@ -512,7 +482,7 @@ void ImageRenderGLWidget::init_gl_programs()
                 char* log = new char[log_length];
 
                 glGetProgramInfoLog(std_text_program, log_length, NULL, log);
-                std::cout << log << std::endl;
+                if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"]\n"+QString(log));
 
                 delete[] log;
                 glDeleteProgram(std_text_program);
@@ -566,7 +536,7 @@ void ImageRenderGLWidget::init_gl_programs()
                 char* log = new char[log_length];
 
                 glGetProgramInfoLog(std_2d_tex_program, log_length, NULL, log);
-                std::cout << log << std::endl;
+                if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"]\n"+QString(log));
 
                 delete[] log;
                 glDeleteProgram(std_2d_tex_program);
@@ -614,7 +584,7 @@ void ImageRenderGLWidget::init_gl_programs()
                 char* log = new char[log_length];
 
                 glGetProgramInfoLog(std_2d_color_program, log_length, NULL, log);
-                std::cout << log << std::endl;
+                if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"]\n"+QString(log));
 
                 delete[] log;
                 glDeleteProgram(std_2d_color_program);
@@ -637,58 +607,11 @@ void ImageRenderGLWidget::init_gl_programs()
     }
 }
 
-//~void ImageRenderGLWidget::runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws)
-//~{
-    //~glFinish();
-    //~err |= clSetKernelArg(*kernel, 1, sizeof(cl_mem), (void *) &alpha_img_clgl);
-    //~err |= clSetKernelArg(*kernel, 2, sizeof(cl_mem), (void *) &beta_img_clgl);
-    //~err |= clSetKernelArg(*kernel, 3, sizeof(cl_mem), (void *) &tsf_img_clgl);
-//~
-    //~err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
-    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
-    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
-    //~if (err != CL_SUCCESS)
-    //~{
-        //~std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    //~}
-//~
-    //~/* Launch rendering kernel */
-    //~size_t area_per_call[2] = {128, 128};
-    //~size_t call_offset[2] = {0,0};
-    //~std::cout << "Time to go - 2b" << std::endl;
-    //~for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
-    //~{
-        //~for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
-        //~{
-            //~call_offset[0] = glb_x;
-            //~call_offset[1] = glb_y;
-//~
-            //~err = clEnqueueNDRangeKernel((*queue), *kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
-            //~if (err != CL_SUCCESS)
-            //~{
-                //~std::cout << "[->] Error launching kernel: " << cl_error_cstring(err) << std::endl;
-            //~}
-        //~}
-    //~}
-    //~clFinish((*queue));
-//~
-    //~// Release shared CL/GL objects
-    //~err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
-    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
-    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
-    //~if (err != CL_SUCCESS)
-    //~{
-        //~std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    //~}
-//~}
-
 
 void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
 {
-    std::cout << "making ze TSF!!!!!" << std::endl;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     /* Generate a transfer function CL texture */
-     //~if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
-     //~if (tsf_img_clgl) clReleaseMemObject(tsf_img_clgl);
 
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
@@ -713,26 +636,11 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Buffer for tsf_img_clgl
-    tsf_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
+    tsf_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
     }
-
-    //~ // The sampler for tsf_img_clgl
-    //~ tsf_tex_sampler = clCreateSampler((*context2), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
-    //~ if (err != CL_SUCCESS)
-    //~ {
-        //~ std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
-    //~ }
-    //~ // SET KERNEL ARGS
-    //~ err = clSetKernelArg(K_FRAME_TO_IMAGE, 2, sizeof(cl_mem), (void *) &tsf_img_clgl);
-    //~ err |= clSetKernelArg(K_FRAME_TO_IMAGE, 3, sizeof(cl_sampler), &tsf_tex_sampler);
-    //~ if (err != CL_SUCCESS)
-    //~ {
-        //~ std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
-    //~ }
-    std::cout << Q_FUNC_INFO << std::endl;
 }
 
 cl_mem * ImageRenderGLWidget::getTsfImgCLGL()
@@ -755,13 +663,6 @@ cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
     return &beta_img_clgl;
 }
 
-//~void ImageRenderGLWidget::setThreadFlag(bool value)
-//~{
-    //~this->isInMainThread = value;
-    //~std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
-//~
-//~}
-
 //~void ImageRenderGLWidget::resizeEvent(QResizeEvent * event)
 //~{
     //~this->makeCurrent();
@@ -781,33 +682,24 @@ cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
 void ImageRenderGLWidget::finish()
 {
     glFinish();
-    std::cout << "Aquire" << std::endl;
     err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
-    std::cout << "Aquire" << std::endl;
     err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
-    std::cout << "Aquire" << std::endl;
     err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
-    std::cout << "Aquire" << std::endl;
     err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
     }
 }
-//~void ImageRenderGLWidget::setMainThread
 
 int ImageRenderGLWidget::setTarget()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     // Set GL texture
-    //~QMutex mutex;
-    //~mutex.lock();
-
-
-    std::cout << "setTarget() begin!" << std::endl;
     glDeleteTextures(1, &image_tex[0]);
     glGenTextures(1, &image_tex[0]);
-    //~std::cout << "Were talking inside!" << std::endl;
-    //~mutex.unlock();
+
     glBindTexture(GL_TEXTURE_2D, image_tex[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -822,9 +714,9 @@ int ImageRenderGLWidget::setTarget()
         GL_FLOAT,
         NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
-    //~std::cout << "Were talking inside!" << std::endl;
+
     // Convert to CL texture
-    alpha_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
+    alpha_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
@@ -849,9 +741,9 @@ int ImageRenderGLWidget::setTarget()
         GL_FLOAT,
         NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
-    // Convert to CL texture
 
-    beta_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
+    // Convert to CL texture
+    beta_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
@@ -878,14 +770,12 @@ int ImageRenderGLWidget::setTarget()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Convert to CL texture
-    gamma_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
+    gamma_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
         return 0;
     }
-    std::cout << "setTarget() end!" << std::endl;
-    std::cout << Q_FUNC_INFO << std::endl;
     return 1;
 }
 

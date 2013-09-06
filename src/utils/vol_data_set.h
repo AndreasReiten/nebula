@@ -43,10 +43,10 @@
 
 #include "tools.h"
 #include "miniarray.h"
-#include "file_formats.h"
+#include "fileformats.h"
 #include "matrix.h"
-#include "octnode.h"
-#include "node.h"
+#include "bricknode.h"
+#include "searchnode.h"
 #include "imagerender.h"
 
 class VolumeDataSet : public QObject
