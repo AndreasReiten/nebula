@@ -267,6 +267,7 @@ void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_cl
     this->beta_img_clgl = beta_img_clgl;
     this->gamma_img_clgl = gamma_img_clgl;
     this->tsf_img_clgl = tsf_img_clgl;
+    std::cout << Q_FUNC_INFO << std::endl;
 }
 
 
@@ -377,18 +378,18 @@ std::cout << "Mark6" << std::endl;
         std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
     }
 
-    std::cout << "Aquire" << std::endl;
-    err = clEnqueueAcquireGLObjects((*queue), 1, alpha_img_clgl, 0, 0, 0);
-    std::cout << "Aquire" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, beta_img_clgl, 0, 0, 0);
-    std::cout << "Aquire" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, gamma_img_clgl, 0, 0, 0);
-    std::cout << "Aquire" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, tsf_img_clgl, 0, 0, 0);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
+    //~std::cout << "Aquire" << std::endl;
+    //~err = clEnqueueAcquireGLObjects((*queue), 1, alpha_img_clgl, 0, 0, 0);
+    //~std::cout << "Aquire" << std::endl;
+    //~err |= clEnqueueAcquireGLObjects((*queue), 1, beta_img_clgl, 0, 0, 0);
+    //~std::cout << "Aquire" << std::endl;
+    //~err |= clEnqueueAcquireGLObjects((*queue), 1, gamma_img_clgl, 0, 0, 0);
+    //~std::cout << "Aquire" << std::endl;
+    //~err |= clEnqueueAcquireGLObjects((*queue), 1, tsf_img_clgl, 0, 0, 0);
+    //~if (err != CL_SUCCESS)
+    //~{
+        //~std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    //~}
 
     //~ std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
 std::cout << "Mark7" << std::endl;

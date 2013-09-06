@@ -118,7 +118,7 @@ private:
 
 
     // OpenCL Related
-    cl_mem raw_target_cl, corrected_target_cl, gamma_target_cl, tsf_tex_cl;
+    cl_mem alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl;
     cl_device * device;
     cl_program program;
     cl_context * context2;

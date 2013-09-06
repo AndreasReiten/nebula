@@ -34,6 +34,8 @@ void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clg
     this->beta_img_clgl = beta_img_clgl;
     this->gamma_img_clgl = gamma_img_clgl;
     this->tsf_img_clgl = tsf_img_clgl;
+
+    std::cout << Q_FUNC_INFO << std::endl;
 }
 
 void BaseWorker::setReduceThresholdLow(float * value)

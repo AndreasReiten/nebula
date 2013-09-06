@@ -67,6 +67,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::initializeThreads()
 {
+    irWidget->setImageSize(1475, 1679);
+
+
     setFileThread = new QThread;
     readFileThread = new QThread;
     projectFileThread = new QThread;
@@ -120,6 +123,12 @@ void MainWindow::initializeThreads()
     connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readFilesButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()));
+
+
+
+
+
+
 
 
     projectFileWorker = new ProjectFileWorker();
@@ -180,7 +189,7 @@ void MainWindow::project()
     //~irWidget->doneCurrent();
     //~irWidget->context()->moveToThread(projectFileThread);
     std::cout << " start project thrad" << std::endl;
-    irWidget->setImageSize(files.back().getWidth(), files.back().getHeight());
+    irWidget->finish();
     projectFileThread->start();
 
 

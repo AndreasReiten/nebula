@@ -13,9 +13,9 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     this->queue = queue;
     this->context2 = context2;
 
-    //~ this->raw_target_cl = new cl_mem;
-    //~ this->corrected_target_cl = new cl_mem;
-    //~ this->tsf_tex_cl = new cl_mem;
+    //~ this->alpha_img_clgl = new cl_mem;
+    //~ this->beta_img_clgl = new cl_mem;
+    //~ this->tsf_img_clgl = new cl_mem;
 
     /* colors */
     float c_white[4] = {1,1,1,1};
@@ -261,13 +261,13 @@ void ImageRenderGLWidget::aquireSharedBuffers()
     //~std::cout << "GLfinish" << std::endl;
     glFinish();
     //~std::cout << "Aquire" << std::endl;
-    err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
     //~std::cout << "Aquire" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
     //~std::cout << "Aquire" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_target_cl, 0, 0, 0);
-    //~std::cout << "Aquire tsf_tex_cl" << std::endl;
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
+    //~std::cout << "Aquire tsf_img_clgl" << std::endl;
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     //~std::cout << "Aquire" << std::endl;
     if (err != CL_SUCCESS)
     {
@@ -278,10 +278,10 @@ void ImageRenderGLWidget::aquireSharedBuffers()
 void ImageRenderGLWidget::releaseSharedBuffers()
 {
     //~ // Release shared CL/GL objects
-    err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &gamma_target_cl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
@@ -628,13 +628,13 @@ void ImageRenderGLWidget::init_gl_programs()
 void ImageRenderGLWidget::runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws)
 {
     //~glFinish();
-    //~err |= clSetKernelArg(*kernel, 1, sizeof(cl_mem), (void *) &raw_target_cl);
-    //~err |= clSetKernelArg(*kernel, 2, sizeof(cl_mem), (void *) &corrected_target_cl);
-    //~err |= clSetKernelArg(*kernel, 3, sizeof(cl_mem), (void *) &tsf_tex_cl);
+    //~err |= clSetKernelArg(*kernel, 1, sizeof(cl_mem), (void *) &alpha_img_clgl);
+    //~err |= clSetKernelArg(*kernel, 2, sizeof(cl_mem), (void *) &beta_img_clgl);
+    //~err |= clSetKernelArg(*kernel, 3, sizeof(cl_mem), (void *) &tsf_img_clgl);
 //~
-    //~err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    //~err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
+    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
+    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     //~if (err != CL_SUCCESS)
     //~{
         //~std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
@@ -661,9 +661,9 @@ void ImageRenderGLWidget::runFilterKernel(cl_kernel * kernel, size_t * loc_ws, s
     //~clFinish((*queue));
 //~
     //~// Release shared CL/GL objects
-    //~err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    //~err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
+    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
+    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     //~if (err != CL_SUCCESS)
     //~{
         //~std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
@@ -676,7 +676,7 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     std::cout << "making ze TSF!!!!!" << std::endl;
     /* Generate a transfer function CL texture */
      //~if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
-     //~if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
+     //~if (tsf_img_clgl) clReleaseMemObject(tsf_img_clgl);
 
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
@@ -700,46 +700,47 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         tsf->getSpline().getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Buffer for tsf_tex_cl
-    tsf_tex_cl = clCreateFromGLTexture2D((*context2), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
+    // Buffer for tsf_img_clgl
+    tsf_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
     }
 
-    //~ // The sampler for tsf_tex_cl
+    //~ // The sampler for tsf_img_clgl
     //~ tsf_tex_sampler = clCreateSampler((*context2), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     //~ if (err != CL_SUCCESS)
     //~ {
         //~ std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
     //~ }
     //~ // SET KERNEL ARGS
-    //~ err = clSetKernelArg(K_FRAME_TO_IMAGE, 2, sizeof(cl_mem), (void *) &tsf_tex_cl);
+    //~ err = clSetKernelArg(K_FRAME_TO_IMAGE, 2, sizeof(cl_mem), (void *) &tsf_img_clgl);
     //~ err |= clSetKernelArg(K_FRAME_TO_IMAGE, 3, sizeof(cl_sampler), &tsf_tex_sampler);
     //~ if (err != CL_SUCCESS)
     //~ {
         //~ std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
     //~ }
+    std::cout << Q_FUNC_INFO << std::endl;
 }
 
 cl_mem * ImageRenderGLWidget::getTsfImgCLGL()
 {
-    return &tsf_tex_cl;
+    return &tsf_img_clgl;
 }
 
 cl_mem * ImageRenderGLWidget::getAlphaImgCLGL()
 {
-    return &raw_target_cl;
+    return &alpha_img_clgl;
 }
 
 cl_mem * ImageRenderGLWidget::getGammaImgCLGL()
 {
-    return &gamma_target_cl;
+    return &gamma_img_clgl;
 }
 
 cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
 {
-    return &corrected_target_cl;
+    return &beta_img_clgl;
 }
 
 void ImageRenderGLWidget::setThreadFlag(bool value)
@@ -772,6 +773,18 @@ void ImageRenderGLWidget::paintEvent(QPaintEvent * event)
 void ImageRenderGLWidget::finish()
 {
     glFinish();
+    std::cout << "Aquire" << std::endl;
+    err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
+    std::cout << "Aquire" << std::endl;
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
+    std::cout << "Aquire" << std::endl;
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
+    std::cout << "Aquire" << std::endl;
+    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    }
 }
 //~void ImageRenderGLWidget::setMainThread
 
@@ -803,7 +816,7 @@ int ImageRenderGLWidget::setTarget()
     glBindTexture(GL_TEXTURE_2D, 0);
     //~std::cout << "Were talking inside!" << std::endl;
     // Convert to CL texture
-    raw_target_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
+    alpha_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
@@ -830,7 +843,7 @@ int ImageRenderGLWidget::setTarget()
     glBindTexture(GL_TEXTURE_2D, 0);
     // Convert to CL texture
 
-    corrected_target_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
+    beta_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
@@ -857,13 +870,14 @@ int ImageRenderGLWidget::setTarget()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Convert to CL texture
-    gamma_target_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
+    gamma_img_clgl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
     if (err != CL_SUCCESS)
     {
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
         return 0;
     }
     std::cout << "setTarget() end!" << std::endl;
+    std::cout << Q_FUNC_INFO << std::endl;
     return 1;
 }
 
