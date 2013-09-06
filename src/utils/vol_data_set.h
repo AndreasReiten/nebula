@@ -105,10 +105,10 @@ class VolumeDataSet : public QObject
         void setFormatGenericProgress(QString str);
         void setMessageString(QString str);
         void setValueGenericProgress(int value);
-        void setLowTresholdReduce(double value);
-        void setLowTresholdProject(double value);
-        void setHighTresholdReduce(double value);
-        void setHighTresholdProject(double value);
+        void setLowThresholdReduce(double value);
+        void setLowThresholdProject(double value);
+        void setHighThresholdReduce(double value);
+        void setHighThresholdProject(double value);
         void setFormat(int value);
         void saveSVO();
         void setSvoLevels(int value);
@@ -171,9 +171,9 @@ class VolumeDataSet : public QObject
 
         float srchrad;
         float volume_extent[8];
-        float treshold_reduce[2];
-        float treshold_project[2];
-        float treshold_voxelize[2];
+        float threshold_reduce[2];
+        float threshold_project[2];
+        float threshold_voxelize[2];
 
         QStringList paths;
 };

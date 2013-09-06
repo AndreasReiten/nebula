@@ -543,24 +543,24 @@ void VolumeDataSet::setSvoLevels(int value)
     LEVELS = value;
 }
 
-void VolumeDataSet::setLowTresholdReduce(double value)
+void VolumeDataSet::setLowThresholdReduce(double value)
 {
-    treshold_reduce[0] = value;
+    threshold_reduce[0] = value;
 }
 
-void VolumeDataSet::setLowTresholdProject(double value)
+void VolumeDataSet::setLowThresholdProject(double value)
 {
-    treshold_project[0] = value;
+    threshold_project[0] = value;
 }
 
-void VolumeDataSet::setHighTresholdReduce(double value)
+void VolumeDataSet::setHighThresholdReduce(double value)
 {
-    treshold_reduce[1] = value;
+    threshold_reduce[1] = value;
 }
 
-void VolumeDataSet::setHighTresholdProject(double value)
+void VolumeDataSet::setHighThresholdProject(double value)
 {
-    treshold_project[1] = value;
+    threshold_project[1] = value;
 }
 
 void VolumeDataSet::setFormat(int value)
@@ -597,7 +597,7 @@ int VolumeDataSet::funcAllInOne()
     {
         PilatusFile file;
         // Set file and get status
-        int STATUS_OK = file.set(paths[i], context, queue, &K_FRAME_FILTER, imageRenderWidget);
+        int STATUS_OK = file.set(paths[i], context, queue);//, &K_FRAME_FILTER, imageRenderWidget);
         // Set the background that will be subtracted from the data
         file.setBackground(&testBackground, file.getFlux(), file.getExpTime());
         if (STATUS_OK)
@@ -637,7 +637,7 @@ int VolumeDataSet::funcAllInOne()
         {
             imageRenderWidget->setImageSize(file.getWidth(), file.getHeight());
 
-            STATUS_OK = file.filterData( &n, POINTS.data(), treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1], 1);
+            STATUS_OK = file.filterData( &n, POINTS.data(), threshold_reduce[0], threshold_reduce[1], threshold_project[0], threshold_project[1], 1);
             if (STATUS_OK)
             {
                 //~ emit changedCorrectedImage(&RAWFILE[i]);
@@ -696,7 +696,7 @@ int VolumeDataSet::funcSetFiles()
     {
         // Set file and get status
         RAWFILE.append(PilatusFile());
-        int STATUS_OK = RAWFILE.back().set(paths[i], context, queue, &K_FRAME_FILTER, imageRenderWidget);
+        int STATUS_OK = RAWFILE.back().set(paths[i], context, queue);//, &K_FRAME_FILTER);
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -783,7 +783,7 @@ void VolumeDataSet::setDisplayFrame(int value)
     PilatusFile file;
 
     // Set file and get status
-    int STATUS_OK = file.set(paths[value], context, queue, &K_FRAME_FILTER, imageRenderWidget);
+    int STATUS_OK = file.set(paths[value], context, queue);//, &K_FRAME_FILTER, imageRenderWidget);
     // Set the background that will be subtracted from the data
     file.setBackground(&testBackground, file.getFlux(), file.getExpTime());
     if (!STATUS_OK)
@@ -806,7 +806,7 @@ void VolumeDataSet::setDisplayFrame(int value)
     // Filter file and get status
     imageRenderWidget->setImageSize(file.getWidth(), file.getHeight());
 
-    STATUS_OK = file.filterData( 0, NULL, treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1], 0);
+    STATUS_OK = file.filterData( 0, NULL, threshold_reduce[0], threshold_reduce[1], threshold_project[0], threshold_project[1], 0);
     if (STATUS_OK)
     {
         //~ emit changedCorrectedImage(&file);
@@ -877,7 +877,7 @@ int VolumeDataSet::funcProjectFiles()
         {
             imageRenderWidget->setImageSize(RAWFILE[i].getWidth(), RAWFILE[i].getHeight());
 
-            int STATUS_OK = RAWFILE[i].filterData( &n, POINTS.data(), treshold_reduce[0], treshold_reduce[1], treshold_project[0], treshold_project[1],1);
+            int STATUS_OK = RAWFILE[i].filterData( &n, POINTS.data(), threshold_reduce[0], threshold_reduce[1], threshold_project[0], threshold_project[1],1);
             if (STATUS_OK)
             {
                 emit changedRawImage(&RAWFILE[i]);

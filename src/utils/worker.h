@@ -50,7 +50,8 @@ class BaseWorker : public QObject
         void setBrickInfo(int brick_inner_dimension, int brick_outer_dimension);
         void setFiles(QList<PilatusFile> * files);
         void setReducedPixels(MiniArray<float> * reduced_pixels);
-        void setOpenCLContext(cl_context * context, cl_command_queue * queue);
+        void setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue);
+        void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
 
     public slots:
         void killProcess();
@@ -62,7 +63,7 @@ class BaseWorker : public QObject
     signals:
         void finished();
         void abort();
-        void error(QString err);
+        void writeLog(QString err);
         void changedMessageString(QString str);
         void changedGenericProgress(int value);
         void changedFormatGenericProgress(QString str);
@@ -73,17 +74,24 @@ class BaseWorker : public QObject
         void enableAllInOneButton(bool value);
         void showGenericProgressBar(bool value);
         void changedTabWidget(int value);
+        void repaintImageWidget();
 
     protected:
         // Related to the runtime
         bool kill_flag;
-
-        // Related to the GLWidgets
-        ImageRenderGLWidget * imageRenderWidget;
+        int verbose;
 
         // Related to OpenCL
+        cl_mem * alpha_img_clgl;
+        cl_mem * beta_img_clgl;
+        cl_mem * gamma_img_clgl;
+        cl_mem * tsf_img_clgl;
+        cl_device * device;
         cl_context * context;
         cl_command_queue * queue;
+        cl_int err;
+        cl_program program;
+        bool isCLInitialized;
 
         // Related to Voxelize
         int brick_inner_dimension;
@@ -92,21 +100,15 @@ class BaseWorker : public QObject
         float suggested_search_radius_high;
         float suggested_q;
 
-        //~MiniArray<float> * projected_data;
-
         // Related to file treatment
-        float * treshold_reduce_low;
-        float * treshold_reduce_high;
-        float * treshold_project_low;
-        float * treshold_project_high;
+        float * threshold_reduce_low;
+        float * threshold_reduce_high;
+        float * threshold_project_low;
+        float * threshold_project_high;
         QStringList * file_paths;
         QList<PilatusFile> * files;
         QList<PilatusFile> * background_files;
         MiniArray<float> * reduced_pixels;
-        Matrix<float> test_background;
-
-    private:
-        int initCL();
 };
 
 
@@ -149,13 +151,21 @@ class ProjectFileWorker : public BaseWorker
     public:
         ProjectFileWorker();
         ~ProjectFileWorker();
+        //~void setImageRenderWidget(ImageRenderGLWidget * imageRenderWidget);
+
+    signals:
+        //~void testSignal(int value);
 
     public slots:
         void process();
         void initializeCLKernel();
 
     private:
+        // Related to OpenCL
         cl_kernel projection_kernel;
+
+        // Related to the GLWidgets
+        //~ImageRenderGLWidget * imageRenderWidget;
 };
 
 

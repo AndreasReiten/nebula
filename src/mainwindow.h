@@ -97,6 +97,14 @@ private slots:
     void initializeThreads();
     void appendLog(QString str);
 
+    void setReduceThresholdLow(double value);
+    void setReduceThresholdHigh(double value);
+    void setProjectThresholdLow(double value);
+    void setProjectThresholdHigh(double value);
+    void project();
+    void makeIrWidgetCurrent();
+    void paintImage();
+
 signals:
     void changedDetector(int value);
     void changedFormat(int value);
@@ -224,8 +232,6 @@ private:
     VolumeRenderGLWidget *vrWidget;
     ImageRenderGLWidget *irWidget;
 
-
-
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;
     QDockWidget *functionDockWidget;
@@ -286,16 +292,18 @@ private:
 
     // Utility
     int verbose;
-    float treshold_reduce_low;
-    float treshold_reduce_high;
-    float treshold_project_low;
-    float treshold_project_high;
 
     // Main resources
 	QStringList file_paths;
     QList<PilatusFile> files;
     QList<PilatusFile> background_files;
     MiniArray<float> reduced_pixels;
+
+    // Related to file treatment
+    float threshold_reduce_low;
+    float threshold_reduce_high;
+    float threshold_project_low;
+    float threshold_project_high;
 
     // Related to Voxelize
     int brick_inner_dimension;

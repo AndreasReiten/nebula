@@ -6,6 +6,7 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     //~std::cout << "Constructing ImageRenderGLWidget" << std::endl;
     //~ std::cout << "Image Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
     isGLIntitialized = false;
+    isInMainThread = true;
     verbose = 1;
 
     this->device = device;
@@ -50,15 +51,30 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
      * The slot is the QGL repaint function */
     timer = new QTimer(this);
 
-    int FPS_MAX = 30;
-    timer->start(1000.0/FPS_MAX);
-    connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
+    //~int FPS_MAX = 30;
+    //~timer->start(1000.0/FPS_MAX);
+    //~connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
+    this->glInit();
     //~std::cout << "Done Constructing ImageRenderGLWidget" << std::endl;
+}
+
+void ImageRenderGLWidget::setImageWidth(int value)
+{
+    std::cout << "Were talking!" << std::endl;
+    if (value != image_w)
+    {
+        this->image_w = value;
+        this->setTarget();
+        this->setTexturePositions();
+    }
+    std::cout << "Were talking!" << std::endl;
 }
 
 void ImageRenderGLWidget::setImageSize(int w, int h)
 {
+    std::cout << "Were talking! w x h = " << w << " x " << h << std::endl;
+
     if ((w != image_w) || (h != image_h))
     {
         this->image_w = w;
@@ -66,13 +82,14 @@ void ImageRenderGLWidget::setImageSize(int w, int h)
         this->setTarget();
         this->setTexturePositions();
     }
+    std::cout << "Were talking!" << std::endl;
 }
 
 ImageRenderGLWidget::~ImageRenderGLWidget()
 {
     if (isGLIntitialized)
     {
-        if (verbose) emit appendLog( "ImageRenderGLWidget-> Destroying..." );
+        if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() calling");
 
         glDeleteTextures(5, image_tex);
 
@@ -85,7 +102,7 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
 
-        if (verbose) emit appendLog( "ImageRenderGLWidget-> Destruction done" );
+        if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() done");
     }
 }
 
@@ -124,22 +141,28 @@ QSize ImageRenderGLWidget::sizeHint() const
 
 void ImageRenderGLWidget::initializeGL()
 {
-    //~std::cout << "Initializing OpenGL" << std::endl;
-    if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
+    if (!isGLIntitialized){
+        std::cout << Q_FUNC_INFO << std::endl;
+        if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() called");
 
-    /* Initialize and set the other stuff */
-    this->init_freetype();
-    this->setTarget();
-    this->setTsfTexture(&transferFunction);
+        if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
 
-    isGLIntitialized = true;
-    //~std::cout << "Done Initializing OpenGL " << std::endl;
+        /* Initialize and set the other stuff */
+        this->init_freetype();
+        this->setTarget();
+        this->setTsfTexture(&transferFunction);
+
+        isGLIntitialized = true;
+    }
+    if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() done");
 }
 
 
 
 void ImageRenderGLWidget::paintGL()
 {
+    //~std::cout << Q_FUNC_INFO << std::endl;
+
     glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -225,7 +248,7 @@ void ImageRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements,
 
 void ImageRenderGLWidget::resizeGL(int w, int h)
 {
-
+    std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
     this->WIDTH = w;
     this->HEIGHT = h;
     this->setTexturePositions();
@@ -235,11 +258,17 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
 void ImageRenderGLWidget::aquireSharedBuffers()
 {
     // Aquire shared CL/GL objects
+    //~std::cout << "GLfinish" << std::endl;
     glFinish();
+    //~std::cout << "Aquire" << std::endl;
     err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    //~std::cout << "Aquire" << std::endl;
     err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    //~std::cout << "Aquire" << std::endl;
     err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_target_cl, 0, 0, 0);
+    //~std::cout << "Aquire tsf_tex_cl" << std::endl;
     err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    //~std::cout << "Aquire" << std::endl;
     if (err != CL_SUCCESS)
     {
         std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
@@ -262,220 +291,6 @@ void ImageRenderGLWidget::setMessageString(QString str)
 {
         emit changedMessageString(str);
 }
-
-
-/*void ImageRenderGLWidget::setRawImage(PilatusFile * file)
-{
-    // Set the image
-
-    // TODO: FIND OUT WHAT TAKES TIME AND OPTIMIZE on GPU.
-    // It is very costly to upload a new texture for every iteration. This image must be declared in a separate function and only change on resize. Moreover, the entire image data will be loaded into the file buffer on decompression to facilitate for GPU image tratment (peak hunting etc). After such operations only needed data will be uploaded to the points buffer, possibly through an intermediate buffer, but not neccessarily. Also add a button for all steps together if someone is concerned with memory usage :>
-
-    if ((image_w != file->getWidth()) || (image_h != file->getHeight()))
-    {
-        // Create a new texture
-        image_w = file->getWidth();
-        image_h = file->getHeight();
-
-        loc_ws[0] = 16;
-        loc_ws[1] = 16;
-        glb_ws[0] = image_w + loc_ws[0]%image_w;
-        glb_ws[1] = image_h + loc_ws[1]%image_h;
-
-
-        glActiveTexture(GL_TEXTURE0);
-        glDeleteTextures(5, image_tex);
-        glGenTextures(5, image_tex);
-
-        setTarget();
-        setSource();
-        setTsfTexture(&transferFunction);
-        this->setTexturePositions();
-    }
-
-    // Let all GL jobs finish
-    glFinish();
-
-    // Transfer detector image data to the CL device
-    size_t origin[3];
-    origin[0] = 0;
-    origin[1] = 0;
-    origin[2] = 0;
-
-    size_t region[3];
-    region[0] = image_w;
-    region[1] = image_h;
-    region[2] = 1;
-
-    err = clEnqueueWriteImage (
-        (*queue),
-        source_cl,
-        CL_TRUE,
-        origin,
-        region,
-        image_w*sizeof(cl_float),
-        0,
-        file->getImage(),
-        0,
-        NULL,
-        NULL);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error writing to image: " << cl_error_cstring(err) << std::endl;
-    }
-
-    // SET KERNEL ARGS
-    float max_count = file->getMaxCount()*0.5;
-    err = clSetKernelArg(K_FRAME_TO_IMAGE, 1, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(K_FRAME_TO_IMAGE, 0, sizeof(cl_mem), (void *) &raw_target_cl);
-    err |= clSetKernelArg(K_FRAME_TO_IMAGE, 5, sizeof(cl_float), &max_count);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
-    }
-
-    // Transfer owenership of the GL display texture to OpenCL so it can be set according to the previously loaded detector image
-    err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
-
-    // Launch rendering kernel
-    size_t area_per_call[2] = {128, 128};
-    size_t call_offset[2] = {0,0};
-
-    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
-    {
-        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
-        {
-            call_offset[0] = glb_x;
-            call_offset[1] = glb_y;
-
-            err = clEnqueueNDRangeKernel((*queue), K_FRAME_TO_IMAGE, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
-            if (err != CL_SUCCESS)
-            {
-                std::cout << "Error launching kernel: " << cl_error_cstring(err) << std::endl;
-            }
-        }
-    }
-    // Let all CL jobs finish
-    clFinish((*queue));
-
-    // Release shared CL/GL objects
-    err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    clFinish((*queue));
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
-}
-
-void ImageRenderGLWidget::setCorrectedImage(PilatusFile * file)
-{
-
-    if ((image_w != file->getWidth()) || (image_h != file->getHeight()))
-    {
-        // Create a new texture
-        image_w = file->getWidth();
-        image_h = file->getHeight();
-
-        loc_ws[0] = 16;
-        loc_ws[1] = 16;
-        glb_ws[0] = image_w + loc_ws[0]%image_w;
-        glb_ws[1] = image_h + loc_ws[1]%image_h;
-
-        glActiveTexture(GL_TEXTURE0);
-        glDeleteTextures(5, image_tex);
-        glGenTextures(5, image_tex);
-
-        setTarget();
-        setSource();
-        setTsfTexture(&transferFunction);
-        this->setTexturePositions();
-    }
-
-    // Let all GL jobs finish
-    glFinish();
-
-    // Transfer detector image data to the CL device
-    size_t origin[3];
-    origin[0] = 0;
-    origin[1] = 0;
-    origin[2] = 0;
-
-    size_t region[3];
-    region[0] = image_w;
-    region[1] = image_h;
-    region[2] = 1;
-
-    err = clEnqueueWriteImage (
-        (*queue),
-        source_cl,
-        CL_TRUE,
-        origin,
-        region,
-        image_w*sizeof(cl_float),
-        0,
-        file->getCorrectedImage(),
-        0,
-        NULL,
-        NULL);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error writing to image: " << cl_error_cstring(err) << std::endl;
-    }
-
-    // SET KERNEL ARGS
-    float max_count = file->getMaxCount()*0.5;
-    err = clSetKernelArg(K_FRAME_TO_IMAGE, 1, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(K_FRAME_TO_IMAGE, 0, sizeof(cl_mem), (void *) &corrected_target_cl);
-    err |= clSetKernelArg(K_FRAME_TO_IMAGE, 5, sizeof(cl_float), &max_count);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
-    }
-
-    // Transfer owenership of the GL display texture to OpenCL so it can be set according to the previously loaded detector image
-    err = clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
-
-    // Launch rendering kernel
-    size_t area_per_call[2] = {128, 128};
-    size_t call_offset[2] = {0,0};
-
-    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
-    {
-        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
-        {
-            call_offset[0] = glb_x;
-            call_offset[1] = glb_y;
-
-            err = clEnqueueNDRangeKernel((*queue), K_FRAME_TO_IMAGE, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
-            if (err != CL_SUCCESS)
-            {
-                std::cout << "Error launching kernel: " << cl_error_cstring(err) << std::endl;
-            }
-        }
-    }
-    // Let all CL jobs finish
-    clFinish((*queue));
-
-    // Release shared CL/GL objects
-    err = clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    clFinish((*queue));
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
-}*/
 
 
 
@@ -812,55 +627,56 @@ void ImageRenderGLWidget::init_gl_programs()
 
 void ImageRenderGLWidget::runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws)
 {
-    glFinish();
-    err |= clSetKernelArg(*kernel, 1, sizeof(cl_mem), (void *) &raw_target_cl);
-    err |= clSetKernelArg(*kernel, 2, sizeof(cl_mem), (void *) &corrected_target_cl);
-    err |= clSetKernelArg(*kernel, 3, sizeof(cl_mem), (void *) &tsf_tex_cl);
-
-    err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
-
-    /* Launch rendering kernel */
-    size_t area_per_call[2] = {128, 128};
-    size_t call_offset[2] = {0,0};
-    std::cout << "Time to go - 2b" << std::endl;
-    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
-    {
-        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
-        {
-            call_offset[0] = glb_x;
-            call_offset[1] = glb_y;
-
-            err = clEnqueueNDRangeKernel((*queue), *kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
-            if (err != CL_SUCCESS)
-            {
-                std::cout << "[->] Error launching kernel: " << cl_error_cstring(err) << std::endl;
-            }
-        }
-    }
-    clFinish((*queue));
-
-    // Release shared CL/GL objects
-    err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
-    }
+    //~glFinish();
+    //~err |= clSetKernelArg(*kernel, 1, sizeof(cl_mem), (void *) &raw_target_cl);
+    //~err |= clSetKernelArg(*kernel, 2, sizeof(cl_mem), (void *) &corrected_target_cl);
+    //~err |= clSetKernelArg(*kernel, 3, sizeof(cl_mem), (void *) &tsf_tex_cl);
+//~
+    //~err = clEnqueueAcquireGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    //~err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    //~if (err != CL_SUCCESS)
+    //~{
+        //~std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    //~}
+//~
+    //~/* Launch rendering kernel */
+    //~size_t area_per_call[2] = {128, 128};
+    //~size_t call_offset[2] = {0,0};
+    //~std::cout << "Time to go - 2b" << std::endl;
+    //~for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
+    //~{
+        //~for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
+        //~{
+            //~call_offset[0] = glb_x;
+            //~call_offset[1] = glb_y;
+//~
+            //~err = clEnqueueNDRangeKernel((*queue), *kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            //~if (err != CL_SUCCESS)
+            //~{
+                //~std::cout << "[->] Error launching kernel: " << cl_error_cstring(err) << std::endl;
+            //~}
+        //~}
+    //~}
+    //~clFinish((*queue));
+//~
+    //~// Release shared CL/GL objects
+    //~err = clEnqueueReleaseGLObjects((*queue), 1, &raw_target_cl, 0, 0, 0);
+    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &corrected_target_cl, 0, 0, 0);
+    //~err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_tex_cl, 0, 0, 0);
+    //~if (err != CL_SUCCESS)
+    //~{
+        //~std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    //~}
 }
 
 
 void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
 {
+    std::cout << "making ze TSF!!!!!" << std::endl;
     /* Generate a transfer function CL texture */
-    //~ if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
-    //~ if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
+     //~if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
+     //~if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
 
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
@@ -911,7 +727,7 @@ cl_mem * ImageRenderGLWidget::getTsfImgCLGL()
     return &tsf_tex_cl;
 }
 
-cl_mem * ImageRenderGLWidget::getRawImgCLGL()
+cl_mem * ImageRenderGLWidget::getAlphaImgCLGL()
 {
     return &raw_target_cl;
 }
@@ -921,18 +737,56 @@ cl_mem * ImageRenderGLWidget::getGammaImgCLGL()
     return &gamma_target_cl;
 }
 
-cl_mem * ImageRenderGLWidget::getCorrectedImgCLGL()
+cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
 {
     return &corrected_target_cl;
 }
 
+void ImageRenderGLWidget::setThreadFlag(bool value)
+{
+    this->isInMainThread = value;
+    std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
+
+}
+
+void ImageRenderGLWidget::resizeEvent(QResizeEvent * event)
+{
+    std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
+    if (isInMainThread) this->makeCurrent();
+    QSize size(event->size());
+    this->resizeGL(size.rwidth(), size.rheight());
+}
+//~
+void ImageRenderGLWidget::paintEvent(QPaintEvent * event)
+{
+    //~std::cout << Q_FUNC_INFO << std::endl;
+    if (isInMainThread) this->makeCurrent();
+    if (!isGLIntitialized) this->initializeGL();
+    this->paintGL();
+    //~QImage this->grabFrameBuffer(0);
+    //~this->swapBuffers();
+    this->updateGL();
+}
+
+
+void ImageRenderGLWidget::finish()
+{
+    glFinish();
+}
+//~void ImageRenderGLWidget::setMainThread
 
 int ImageRenderGLWidget::setTarget()
 {
     // Set GL texture
+    //~QMutex mutex;
+    //~mutex.lock();
+
+
+    std::cout << "setTarget() begin!" << std::endl;
     glDeleteTextures(1, &image_tex[0]);
     glGenTextures(1, &image_tex[0]);
-
+    //~std::cout << "Were talking inside!" << std::endl;
+    //~mutex.unlock();
     glBindTexture(GL_TEXTURE_2D, image_tex[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -947,6 +801,7 @@ int ImageRenderGLWidget::setTarget()
         GL_FLOAT,
         NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
+    //~std::cout << "Were talking inside!" << std::endl;
     // Convert to CL texture
     raw_target_cl = clCreateFromGLTexture2D((*context2), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
     if (err != CL_SUCCESS)
@@ -954,6 +809,7 @@ int ImageRenderGLWidget::setTarget()
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
         return 0;
     }
+
     // Set GL texture
     glDeleteTextures(1, &image_tex[1]);
     glGenTextures(1, &image_tex[1]);
@@ -1007,7 +863,7 @@ int ImageRenderGLWidget::setTarget()
         std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
         return 0;
     }
-
+    std::cout << "setTarget() end!" << std::endl;
     return 1;
 }
 

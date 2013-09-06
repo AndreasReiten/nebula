@@ -48,7 +48,7 @@ class Matrix {
         size_t getM() const;
         size_t getN() const;
         size_t size() const;
-        size_t bytes();
+        size_t bytes() const;
 
         void print(int precision = 0, const char * id = "") const;
 
@@ -153,7 +153,7 @@ void Matrix<T>::setIdentity(size_t n)
 }
 
 template <class T>
-size_t Matrix<T>::bytes()
+size_t Matrix<T>::bytes() const
 {
     return m*n*sizeof(T);
 }

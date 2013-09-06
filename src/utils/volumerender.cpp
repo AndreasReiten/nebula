@@ -405,11 +405,11 @@ void VolumeRenderGLWidget::setFuncParamD(double value)
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::auto_rotate(int time, int treshold)
+void VolumeRenderGLWidget::auto_rotate(int time, int threshold)
 {
-    if (time > treshold)
+    if (time > threshold)
     {
-        double roll = std::fmod(pi * (time - treshold) * 0.00001, pi*2.0);
+        double roll = std::fmod(pi * (time - threshold) * 0.00001, pi*2.0);
 
         AUTO_ROTATION.setArbRotation(-0.5*pi, 0.5*pi, roll);
 

@@ -77,10 +77,12 @@ void MainWindow::initializeThreads()
     setFileWorker->setFilePaths(&file_paths);
     setFileWorker->setFiles(&files);
     setFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
+    setFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
+    setFileWorker->setOpenCLBuffers(irWidget->getAlphaImgCLGL(), irWidget->getBetaImgCLGL(), irWidget->getGammaImgCLGL(), irWidget->getTsfImgCLGL());
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
-    connect(setFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
+    connect(setFileWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
@@ -104,7 +106,7 @@ void MainWindow::initializeThreads()
 
     readFileWorker->moveToThread(readFileThread);
     connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
-    connect(readFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
+    connect(readFileWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
@@ -121,7 +123,7 @@ void MainWindow::initializeThreads()
 
 
     projectFileWorker = new ProjectFileWorker();
-    projectFileWorker->setOpenCLContext(contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
+    projectFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
     projectFileWorker->setFilePaths(&file_paths);
     projectFileWorker->setFiles(&files);
     projectFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
@@ -131,12 +133,13 @@ void MainWindow::initializeThreads()
     projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
     projectFileWorker->setProjectThresholdLow(&threshold_project_low);
     projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
+    //~projectFileWorker->setImageRenderWidget(irWidget);
 
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
-    connect(projectFileWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
-    connect(projectFileWorker, SIGNAL(abort()), projectFileThread, SLOT(quit()));
+    connect(projectFileWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
+    connect(projectFileWorker, SIGNAL(finished()), this, SLOT(makeIrWidgetCurrent()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -146,17 +149,15 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
     connect(projectFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-    connect(projectFilesButton, SIGNAL(clicked()), projectFileThread, SLOT(start()));
+    connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(project()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()));
-
-    connect(this->treshLimA_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
-    connect(this->treshLimB_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
-    connect(this->treshLimC_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
-    connect(this->treshLimD_DSB, SIGNAL(valueChanged(double)), this, SLOT(appendLog(QString)));
+    connect(projectFileWorker, SIGNAL(repaintImageWidget()), this, SLOT(paintImage()), Qt::BlockingQueuedConnection);
+    //~connect(projectFileWorker, SIGNAL(repaintImageWidget()), irWidget, SLOT(repaint()));
+    //~connect(projectFileWorker, SIGNAL(testSignal(int)), irWidget, SLOT(setImageWidth(int)));
 
     allInOneWorker = new AllInOneWorker();
     allInOneWorker->moveToThread(allInOneThread);
-    connect(allInOneWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
+    connect(allInOneWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
     //~connect(allInOneWorker, SIGNAL(finished()), allInOneWorker, SLOT(deleteLater()));
@@ -165,11 +166,50 @@ void MainWindow::initializeThreads()
 
     voxelizeWorker = new VoxelizeWorker();
     voxelizeWorker->moveToThread(voxelizeThread);
-    connect(voxelizeWorker, SIGNAL(error(QString)), this, SLOT(appendLog(QString)));
+    connect(voxelizeWorker, SIGNAL(writeLog(QString)), this, SLOT(appendLog(QString)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
     //~connect(voxelizeWorker, SIGNAL(finished()), voxelizeWorker, SLOT(deleteLater()));
     //~connect(voxelizeThread, SIGNAL(finished()), voxelizeThread, SLOT(deleteLater()));
+}
+
+void MainWindow::project()
+{
+    std::cout << Q_FUNC_INFO << std::endl;
+    //~irWidget->setThreadFlag(0);
+    //~irWidget->doneCurrent();
+    //~irWidget->context()->moveToThread(projectFileThread);
+    std::cout << " start project thrad" << std::endl;
+    irWidget->setImageSize(files.back().getWidth(), files.back().getHeight());
+    projectFileThread->start();
+
+
+}
+
+void MainWindow::makeIrWidgetCurrent()
+{
+    std::cout << Q_FUNC_INFO << std::endl;
+    //~irWidget->setThreadFlag(1);
+
+    //~irWidget->makeCurrent();
+    //~std::cout << " End project thrad" << std::endl;
+}
+
+void MainWindow::setReduceThresholdLow(double value)
+{
+    this->threshold_reduce_low = (float) value;
+}
+void MainWindow::setReduceThresholdHigh(double value)
+{
+    this->threshold_reduce_high = (float) value;
+}
+void MainWindow::setProjectThresholdLow(double value)
+{
+    this->threshold_project_low = (float) value;
+}
+void MainWindow::setProjectThresholdHigh(double value)
+{
+    this->threshold_project_low = (float) value;
 }
 
 void MainWindow::init_emit()
@@ -177,7 +217,7 @@ void MainWindow::init_emit()
 
     tabWidget->setCurrentIndex(0);
     //~ formatComboBox->setCurrentIndex(0);
-    svoLevelSpinBox->setValue(7);
+    svoLevelSpinBox->setValue(9);
 
     treshLimA_DSB->setValue(10);
     treshLimB_DSB->setValue(1e9);
@@ -607,6 +647,18 @@ void MainWindow::openSVO()
     }
 }
 
+
+void MainWindow::paintImage()
+{
+    std::cout << "painRequest" << std::endl;
+    //~irWidget->makeCurrent();
+    irWidget->releaseSharedBuffers();
+    irWidget->repaint();
+    irWidget->finish();
+    std::cout << "painRequest return" << std::endl;
+    //~irWidget->doneCurrent();
+}
+
 void MainWindow::setTab(int tab)
 {
     switch (tab)
@@ -627,7 +679,7 @@ void MainWindow::setTab(int tab)
             toolChainWidget->show();
             fileDockWidget->show();
             outputDockWidget->show();
-            //~ irWidget->makeCurrent();
+            //~irWidget->makeCurrent();
             break;
 
         case 2:
@@ -674,6 +726,7 @@ void MainWindow::initializeConnects()
     connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamB(double)));
     connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamC(double)));
     connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamD(double)));
+
     connect(vrWidget, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(this->unitcellButton, SIGNAL(clicked()), vrWidget, SLOT(toggleUnitcellView()));
     connect(this->hklEdit, SIGNAL(textChanged(const QString)), vrWidget, SLOT(setHklFocus(const QString)));
@@ -691,10 +744,10 @@ void MainWindow::initializeConnects()
     connect(saveSVOButton, SIGNAL(clicked()), dataInstance, SLOT(saveSVO()));
     connect(formatComboBox, SIGNAL(currentIndexChanged(int)), dataInstance, SLOT(setFormat(int)));
     connect(dataInstance, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    connect(treshLimA_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowTresholdReduce(double)));
-    connect(treshLimB_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighTresholdReduce(double)));
-    connect(treshLimC_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowTresholdProject(double)));
-    connect(treshLimD_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighTresholdProject(double)));
+    connect(treshLimA_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdReduce(double)));
+    connect(treshLimB_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdReduce(double)));
+    connect(treshLimC_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdProject(double)));
+    connect(treshLimD_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdProject(double)));
     connect(dataInstance, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(dataInstance, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(this->imageForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame1()));
@@ -706,10 +759,14 @@ void MainWindow::initializeConnects()
     //~connect(this , SIGNAL(changedPaths(QStringList)), dataInstance, SLOT(setPaths(QStringList)));
 
     /* irWidget <-> dataInstance */
-    connect(dataInstance, SIGNAL(repaintRequest()), irWidget, SLOT(repaint()));
+    connect(dataInstance, SIGNAL(repaintRequest()), this, SLOT(paintImage()));
     connect( irWidget, SIGNAL(appendLog(QString)), this, SLOT(appendLog(QString)));
 
     /* this <-> this */
+    connect(this->treshLimA_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
+    connect(this->treshLimB_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdHigh(double)));
+    connect(this->treshLimC_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdLow(double)));
+    connect(this->treshLimD_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdHigh(double)));
     connect(textEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSVO()));
@@ -1503,7 +1560,7 @@ void MainWindow::runReadScript()
 	if (engine.hasUncaughtException() == true)
 	{
 		// Exceptions
-		print( "\n[Script] Error: Uncaught exception in line " + QString::number(engine.uncaughtExceptionLineNumber()) + "\n[Script] " + engine.uncaughtException().toString());
+		print( "\n["+QString(this->metaObject()->className())+"] Error: Uncaught exception in line " + QString::number(engine.uncaughtExceptionLineNumber()) + "\n["+QString(this->metaObject()->className())+"] " + engine.uncaughtException().toString());
 	}
 	else
 	{
@@ -1513,9 +1570,9 @@ void MainWindow::runReadScript()
 		#endif
 
 		file_paths = engine.globalObject().property("files").toVariant().toStringList();
-        print( "\n[Script] Script ran successfully and could register "+QString::number(file_paths.size())+" files...");
+        print( "\n["+QString(this->metaObject()->className())+"] Script ran successfully and could register "+QString::number(file_paths.size())+" files...");
         int n = file_paths.removeDuplicates();
-        if (n > 0) print( "\n[Script] Removed "+QString::number(n)+" duplicates...");
+        if (n > 0) print( "\n["+QString(this->metaObject()->className())+"] Removed "+QString::number(n)+" duplicates...");
 
         size_t n_files = file_paths.size();
 
@@ -1529,13 +1586,13 @@ void MainWindow::runReadScript()
 
             if (!curFile.exists())
 			{
-				print( "\n[Script]  Warning: \"" + fileName + "\" - missing or no access!");
+				print( "\n["+QString(this->metaObject()->className())+"]  Warning: \"" + fileName + "\" - missing or no access!");
                 file_paths.removeAt(i);
                 i--;
             }
         }
         emit changedPaths(file_paths);
-		print("\n[Script] "+ QString::number(file_paths.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths.size())+"  missing or no access)");
+		print("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths.size())+"  missing or no access)");
 
         if (file_paths.size() > 0)
         {

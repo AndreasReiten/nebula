@@ -129,7 +129,7 @@ private:
     void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
     void std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * M1, float * M2, float * bbox_min, float * bbox_max );
     void gen_tsf_tex(TsfMatrix<double> * tsf);
-    void auto_rotate(int time, int treshold);
+    void auto_rotate(int time, int threshold);
     void init_gl_programs();
     void setMessageString(QString str);
     void brick_to_tex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power);

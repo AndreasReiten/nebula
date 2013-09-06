@@ -47,20 +47,21 @@ class PilatusFile
     public:
         ~PilatusFile();
         PilatusFile();
-        PilatusFile(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget);
+        PilatusFile(QString path, cl_context * context, cl_command_queue * queue);//, cl_kernel * kernel, ImageRenderGLWidget * widget);
 
         QString getPath() const;
 
-        int set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget);
+        int set(QString path, cl_context * context, cl_command_queue * queue);//, cl_kernel * kernel, ImageRenderGLWidget * widget);
         int readData();
-        int filterData(size_t * n, float * outBuf, int treshold_reduce_low, int treshold_reduce_high, int treshold_project_low, int treshold_project_high, bool isProjectionActive = true);
-        int project(size_t * n, float * outBuf, int treshold_project_low, int treshold_project_high);
+        void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
+        int filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive = true);
+        int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
         //~ float * getImage();
         //~ float * getCorrectedImage();
         MiniArray<float> getTest();
-        int getWidth();
-        int getHeight();
-        size_t getBytes();
+        int getWidth() const;
+        int getHeight() const;
+        size_t getBytes() const;
         float getSearchRadiusLowSuggestion();
         float getSearchRadiusHighSuggestion();
         float getQSuggestion();
@@ -69,17 +70,19 @@ class PilatusFile
         void setBackground(Matrix<float> * buffer, float flux, float exposure_time);
         float getFlux();
         float getExpTime();
-        void setTsfImgCLGL(cl_mem * image);
-        void setRawImgCLGL(cl_mem * image);
-        void setCorrectedImgCLGL(cl_mem * image);
-        void setImageRenderWidget(ImageRenderGLWidget * widget);
+        //~void setTsfImgCLGL(cl_mem * image);
+        //~void setRawImgCLGL(cl_mem * image);
+        //~void setCorrectedImgCLGL(cl_mem * image);
+        //~void setImageRenderWidget(ImageRenderGLWidget * widget);
+        void setProjectionKernel(cl_kernel * kernel);
 
     private:
-        ImageRenderGLWidget * imageRenderWidget;
+        //~ImageRenderGLWidget * imageRenderWidget;
 
+        cl_mem * alpha_img_clgl;
+        cl_mem * beta_img_clgl;
+        cl_mem * gamma_img_clgl;
         cl_mem * tsf_img_clgl;
-        cl_mem * raw_img_clgl;
-        cl_mem * corrected_img_clgl;
         cl_command_queue * queue;
         cl_context * context;
         cl_kernel * filterKernel;
@@ -89,9 +92,6 @@ class PilatusFile
         size_t glb_ws[2];
 
         MiniArray<float> data_buf;
-        //~ MiniArray<float> corrected_data_buf;
-        //~ MiniArray<float> intensity;
-        //~ MiniArray<int> index;
         Matrix<float> * background;
         float background_flux;
         float backgroundExpTime;
@@ -101,8 +101,8 @@ class PilatusFile
         float max_counts;
         int STATUS_OK;
 
-        int treshold_reduce_low, treshold_reduce_high;
-        int treshold_project_low, treshold_project_high;
+        int threshold_reduce_low, threshold_reduce_high;
+        int threshold_project_low, threshold_project_high;
         float srchrad_sugg_low, srchrad_sugg_high;
 
         void suggestSearchRadius();

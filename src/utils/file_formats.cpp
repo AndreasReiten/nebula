@@ -11,20 +11,20 @@ PilatusFile::PilatusFile()
     max_counts = 0;
     STATUS_OK = 0;
 }
-PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget)
+PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * queue)//, cl_kernel * kernel, ImageRenderGLWidget * widget)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
-    STATUS_OK = this->set(path, context, queue, kernel, widget);
+    STATUS_OK = this->set(path, context, queue);//, kernel, widget);
 }
 
-int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue, cl_kernel * kernel, ImageRenderGLWidget * widget)
+int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue)//, cl_kernel * kernel, ImageRenderGLWidget * widget)
 {
     this->context = context;
     this->queue = queue;
-    this->filterKernel = kernel;
-    this->imageRenderWidget = widget;
+    //~this->filterKernel = kernel;
+    //~this->imageRenderWidget = widget;
 
     this->path = path;
     if (!this->readHeader()) return 0;
@@ -73,16 +73,16 @@ float PilatusFile::getQSuggestion()
     return 1.0/wavelength;
 }
 
-int PilatusFile::getWidth()
+int PilatusFile::getWidth() const
 {
     return fast_dimension;
 }
-int PilatusFile::getHeight()
+int PilatusFile::getHeight() const
 {
     return slow_dimension;
 }
 
-size_t PilatusFile::getBytes()
+size_t PilatusFile::getBytes() const
 {
     return data_buf.bytes();
 }
@@ -242,37 +242,48 @@ void PilatusFile::clearData()
 }
 
 
-void PilatusFile::setTsfImgCLGL(cl_mem * image)
+//~void PilatusFile::setTsfImgCLGL(cl_mem * image)
+//~{
+    //~this->tsf_img_clgl = image;
+//~}
+//~void PilatusFile::setRawImgCLGL(cl_mem * image)
+//~{
+    //~this->raw_img_clgl = image;
+//~}
+//~void PilatusFile::setCorrectedImgCLGL(cl_mem * image)
+//~{
+    //~this->corrected_img_clgl = image;
+//~}
+
+
+//~void PilatusFile::setImageRenderWidget(ImageRenderGLWidget * widget)
+//~{
+    //~imageRenderWidget = widget;
+//~}
+
+void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
 {
-    this->tsf_img_clgl = image;
-}
-void PilatusFile::setRawImgCLGL(cl_mem * image)
-{
-    this->raw_img_clgl = image;
-}
-void PilatusFile::setCorrectedImgCLGL(cl_mem * image)
-{
-    this->corrected_img_clgl = image;
+    this->alpha_img_clgl = alpha_img_clgl;
+    this->beta_img_clgl = beta_img_clgl;
+    this->gamma_img_clgl = gamma_img_clgl;
+    this->tsf_img_clgl = tsf_img_clgl;
 }
 
 
-void PilatusFile::setImageRenderWidget(ImageRenderGLWidget * widget)
-{
-    imageRenderWidget = widget;
-}
-
-int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low, int treshold_reduce_high, int treshold_project_low, int treshold_project_high, bool isProjectionActive)
+int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive)
 {
     // Let all GL jobs finish
     //~ glFinish();
-    imageRenderWidget->aquireSharedBuffers();
-    this->treshold_reduce_low = treshold_reduce_low;
-    this->treshold_reduce_high = treshold_reduce_high;
+    std::cout << "Begin filtering file" << std::endl;
+    //~imageRenderWidget->makeCurrent();
+
+    this->threshold_reduce_low = threshold_reduce_low;
+    this->threshold_reduce_high = threshold_reduce_high;
 
     cl_image_format target_format;
     target_format.image_channel_order = CL_RGBA;
     target_format.image_channel_data_type = CL_FLOAT;
-
+    std::cout << "Mark1" << std::endl;
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
     cl_mem xyzi_target_cl = clCreateImage2D ( (*context),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -287,7 +298,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
 
-
+std::cout << "Mark2" << std::endl;
     // Load data into a CL texture
     cl_image_format source_format;
     source_format.image_channel_order = CL_INTENSITY;
@@ -305,7 +316,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
-
+std::cout << "Mark3" << std::endl;
     cl_mem background_cl = clCreateImage2D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
@@ -318,7 +329,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
     }
-
+std::cout << "Mark4" << std::endl;
     // A sampler
     cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
@@ -337,7 +348,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     RotationMatrix<float> KAPPA;
     RotationMatrix<float> OMEGA;
     RotationMatrix<float> sampleRotMat;
-
+std::cout << "Mark5" << std::endl;
     float alpha =  0.8735582;
     float beta =  0.000891863;
 
@@ -348,7 +359,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     sampleRotMat = PHI*KAPPA*OMEGA;
     //~ std::cout << omega << std::endl;
     //~ sampleRotMat.print(2, "Sample Rotation Matrix");
-
+std::cout << "Mark6" << std::endl;
     cl_mem sample_rotation_matrix_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         sampleRotMat.bytes(),
@@ -366,21 +377,34 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
         std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
     }
 
-    //~ std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
+    std::cout << "Aquire" << std::endl;
+    err = clEnqueueAcquireGLObjects((*queue), 1, alpha_img_clgl, 0, 0, 0);
+    std::cout << "Aquire" << std::endl;
+    err |= clEnqueueAcquireGLObjects((*queue), 1, beta_img_clgl, 0, 0, 0);
+    std::cout << "Aquire" << std::endl;
+    err |= clEnqueueAcquireGLObjects((*queue), 1, gamma_img_clgl, 0, 0, 0);
+    std::cout << "Aquire" << std::endl;
+    err |= clEnqueueAcquireGLObjects((*queue), 1, tsf_img_clgl, 0, 0, 0);
+    if (err != CL_SUCCESS)
+    {
+        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+    }
 
+    //~ std::cout << "Bg  " << background_flux  << " " << backgroundExpTime << std::endl;
+std::cout << "Mark7" << std::endl;
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) imageRenderWidget->getRawImgCLGL());
-    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) imageRenderWidget->getCorrectedImgCLGL());
-    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) imageRenderWidget->getGammaImgCLGL());
-    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_mem), (void *) imageRenderWidget->getTsfImgCLGL());
+    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
+    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) beta_img_clgl);
+    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) gamma_img_clgl);
+    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_mem), (void *) tsf_img_clgl);
     err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &background_cl);
     err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_mem), (void *) &source_cl);
     err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_sampler), &tsf_sampler);
     err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_sampler), &intensity_sampler);
     err |= clSetKernelArg(*filterKernel, 9, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
-    float threshold_one[2] = {(float)treshold_reduce_low, (float)treshold_reduce_high};
-    float threshold_two[2] = {(float)treshold_project_low, (float)treshold_project_high};
+    float threshold_one[2] = {(float)threshold_reduce_low, (float)threshold_reduce_high};
+    float threshold_two[2] = {(float)threshold_project_low, (float)threshold_project_high};
     err |= clSetKernelArg(*filterKernel, 10, 2*sizeof(cl_float), threshold_one);
     err |= clSetKernelArg(*filterKernel, 11, 2*sizeof(cl_float), threshold_two);
     err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &background_flux);
@@ -403,7 +427,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     {
         std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
     }
-
+std::cout << "Mark8" << std::endl;
     /* Launch rendering kernel */
     size_t area_per_call[2] = {128, 128};
     size_t call_offset[2] = {0,0};
@@ -422,8 +446,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
         }
     }
     clFinish((*queue));
-    imageRenderWidget->releaseSharedBuffers();
-
+std::cout << "Mark9" << std::endl;
     // Read the data
     size_t origin[3];
     origin[0] = 0;
@@ -447,7 +470,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int treshold_reduce_low,
     if (sample_rotation_matrix_cl) clReleaseMemObject(sample_rotation_matrix_cl);
     if (intensity_sampler) clReleaseSampler(intensity_sampler);
     if (tsf_sampler) clReleaseSampler(tsf_sampler);
-
+std::cout << "Mark10" << std::endl;
     if (isProjectionActive)
     {
         for (size_t i = 0; i < fast_dimension*slow_dimension; i++)
@@ -470,6 +493,11 @@ void PilatusFile::setBackground(Matrix<float>  * buffer, float flux, float expos
     this->background = buffer;
     this->background_flux = flux;
     this->backgroundExpTime = exposure_time;
+}
+
+void PilatusFile::setProjectionKernel(cl_kernel * kernel)
+{
+    this->filterKernel = kernel;
 }
 
 int PilatusFile::readData()
@@ -505,7 +533,7 @@ int PilatusFile::readData()
         }
     }
     //~ std::cout << "Mark r1" << std::endl;
-    // Decompress data and neglect data outside given tresholds
+    // Decompress data and neglect data outside given thresholds
     int prev = 0;
     size_t id = offset;
     int counts;

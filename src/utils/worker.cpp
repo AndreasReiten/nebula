@@ -14,35 +14,44 @@
 BaseWorker::BaseWorker()
 {
     this->isCLInitialized = false;
+    this->verbose = 1;
 }
 
 BaseWorker::~BaseWorker()
 {
 }
 
-void BaseWorker::setOpenCLContext(cl_context * context, cl_command_queue * queue)
+void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue)
 {
+    this->device = device;
     this->context = context;
     this->queue = queue;
 }
 
+void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
+{
+    this->alpha_img_clgl = alpha_img_clgl;
+    this->beta_img_clgl = beta_img_clgl;
+    this->gamma_img_clgl = gamma_img_clgl;
+    this->tsf_img_clgl = tsf_img_clgl;
+}
+
 void BaseWorker::setReduceThresholdLow(float * value)
 {
-    this->treshold_reduce_low = value;
+    this->threshold_reduce_low = value;
 }
 void BaseWorker::setReduceThresholdHigh(float * value)
 {
-    this->treshold_reduce_high = value;
+    this->threshold_reduce_high = value;
 }
 void BaseWorker::setProjectThresholdLow(float * value)
 {
-    this->treshold_project_low = value;
+    this->threshold_project_low = value;
 }
 void BaseWorker::setProjectThresholdHigh(float * value)
 {
-    this->treshold_project_high = value;
+    this->threshold_project_high = value;
 }
-
 
 void BaseWorker::killProcess()
 {
@@ -80,6 +89,7 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 SetFileWorker::SetFileWorker()
 {
     this->isCLInitialized = false;
+    this->verbose = 1;
 }
 
 SetFileWorker::~SetFileWorker()
@@ -88,21 +98,19 @@ SetFileWorker::~SetFileWorker()
 
 void SetFileWorker::process()
 {
-    //~test_background.set(1679, 1475, 0.0);
     QCoreApplication::processEvents();
     kill_flag = false;
 
     if (file_paths->size() <= 0)
     {
-        QString str("\n[Set] Error: No paths specified!");
-        emit error(str);
+        QString str("\n["+QString(this->metaObject()->className())+"] Error: No paths specified!");
+        emit writeLog(str);
         emit changedMessageString(str);
-        //~emit abort();
         kill_flag = true;
     }
 
     // Emit to appropriate slots
-    emit changedMessageString("\n[Set] Setting "+QString::number(file_paths->size())+" files (headers etc.)...");
+    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Setting "+QString::number(file_paths->size())+" files (headers etc.)...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
     emit enableSetFileButton(false);
     emit enableReadFileButton(false);
@@ -130,17 +138,18 @@ void SetFileWorker::process()
         QCoreApplication::processEvents();
         if (kill_flag)
         {
-            QString str("\n[Set] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
-            emit error(str);
+            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
+            emit writeLog(str);
             emit changedMessageString(str);
             files->clear();
-            //~emit abort();
+
             break;
         }
 
         // Set file and get status
         files->append(PilatusFile());
-        int STATUS_OK = files->back().set(file_paths->at(i), context, queue, projection_kernel, imageRenderWidget);
+        int STATUS_OK = files->back().set(file_paths->at(i), context, queue);
+        files->back().setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -149,14 +158,11 @@ void SetFileWorker::process()
 
             // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
             if (suggested_q < files->back().getQSuggestion()) suggested_q = files->back().getQSuggestion();
-
-            // Set the background that will be subtracted from the data
-            //~files->back().setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
         }
         else
         {
             files->removeLast();
-            emit changedMessageString("\n[Set] Warning: Could not process \""+QString(file_paths->at(i))+"\"");
+            emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not process \""+QString(file_paths->at(i))+"\"");
         }
 
         // Update the progress bar
@@ -174,7 +180,7 @@ void SetFileWorker::process()
         emit enableProjectFileButton(false);
         emit enableVoxelizeButton(false);
 
-        emit changedMessageString("\n[Set] "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
 
         // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
         float resolution_min = 2*suggested_q/suggested_search_radius_high;
@@ -183,10 +189,10 @@ void SetFileWorker::process()
         float level_min = std::log(resolution_min/(float)this->brick_inner_dimension)/std::log(2);
         float level_max = std::log(resolution_max/(float)this->brick_inner_dimension)/std::log(2);
 
-        emit changedMessageString("\n[Set] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
-        emit changedMessageString("\n[Set] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
-        emit changedMessageString("\n[Set] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
-        emit changedMessageString("\n[Set] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+"");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+"");
     }
 
     emit finished();
@@ -205,6 +211,7 @@ void SetFileWorker::process()
 ReadFileWorker::ReadFileWorker()
 {
     this->isCLInitialized = false;
+    this->verbose = 1;
 }
 
 ReadFileWorker::~ReadFileWorker()
@@ -217,15 +224,14 @@ void ReadFileWorker::process()
 
     if (files->size() <= 0)
     {
-        QString str("\n[Read] Error: No files specified!");
-        emit error(str);
+        QString str("\n["+QString(this->metaObject()->className())+"] Error: No files specified!");
+        emit writeLog(str);
         emit changedMessageString(str);
-        //~emit abort();
         kill_flag = true;
     }
 
     // Emit to appropriate slots
-    emit changedMessageString("\n[Read] Reading "+QString::number(files->size())+" files...");
+    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Reading "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
     emit enableSetFileButton(false);
     emit enableReadFileButton(false);
@@ -247,8 +253,8 @@ void ReadFileWorker::process()
         QCoreApplication::processEvents();
         if (kill_flag)
         {
-            QString str("\n[Read] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
-            emit error(str);
+            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
+            emit writeLog(str);
             emit changedMessageString(str);
             break;
         }
@@ -258,10 +264,10 @@ void ReadFileWorker::process()
         size_raw += (*files)[i].getBytes();
         if (!STATUS_OK)
         {
-            QString str("\n[Read] Error: could not read \""+files->at(i).getPath()+"\"");
-            emit error(str);
+            QString str("\n["+QString(this->metaObject()->className())+"] Error: could not read \""+files->at(i).getPath()+"\"");
+            emit writeLog(str);
             emit changedMessageString(str);
-            //~emit abort();
+
             kill_flag = true;
         }
 
@@ -281,7 +287,7 @@ void ReadFileWorker::process()
         emit enableVoxelizeButton(false);
         emit enableAllInOneButton(true);
 
-        emit changedMessageString("\n[Read] "+QString::number(files->size())+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
     }
 
     emit finished();
@@ -300,16 +306,22 @@ void ReadFileWorker::process()
 ProjectFileWorker::ProjectFileWorker()
 {
     this->isCLInitialized = false;
+    this->verbose = 1;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
 {
-    if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
+    if (isCLInitialized && projection_kernel) clReleaseKernel(projection_kernel);
 }
+
+//~void ProjectFileWorker::setImageRenderWidget(ImageRenderGLWidget * imageRenderWidget)
+//~{
+    //~this->imageRenderWidget = imageRenderWidget;
+//~}
 
 void ProjectFileWorker::initializeCLKernel()
 {
-        // Program
+    // Program
     QByteArray qsrc = open_resource(":/src/kernels/frameFilter.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
@@ -317,10 +329,10 @@ void ProjectFileWorker::initializeCLKernel()
     program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
     if (err != CL_SUCCESS)
     {
-        QString str("Error in "+(*this)::staticMetaObject.className()+": Could not create program from source: "+QSting(cl_error_cstring(err)));
-        std::cout << str << std::endl;
-        emit error(str);
-        return 0;
+        QString str("Error in "+QString(this->metaObject()->className())+": Could not create program from source: "+QString(cl_error_cstring(err)));
+        std::cout << str.toStdString().c_str() << std::endl;
+        emit writeLog(str);
+        return;
     }
     // Compile kernel
     const char * options = "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math";
@@ -336,48 +348,51 @@ void ProjectFileWorker::initializeCLKernel()
         clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
         build_log[log_size] = '\0';
 
-        QString str("Error in "+(*this)::staticMetaObject.className()+
+        QString str("Error in "+QString(this->metaObject()->className())+
             ": Could not compile/link program: "+
             QString(cl_error_cstring(err))+
             "\n--- START KERNEL COMPILE LOG ---"+
             QString(build_log)+
             "\n---  END KERNEL COMPILE LOG  ---");
-        std::cout << str << std::endl;
-        emit error(str);
+        std::cout << str.toStdString().c_str() << std::endl;
+        emit writeLog(str);
         delete[] build_log;
-        return 0;
+        return;
     }
 
     // Entry point
     projection_kernel = clCreateKernel(program, "FRAME_FILTER", &err);
     if (err != CL_SUCCESS)
     {
-        QString str("Error in "+(*this)::staticMetaObject.className()+": Could not create kernel object: "+QSting(cl_error_cstring(err)));
-        std::cout << str << std::endl;
-        emit error(str);
-        return 0;
+        QString str("Error in "+QString(this->metaObject()->className())+": Could not create kernel object: "+QString(cl_error_cstring(err)));
+        std::cout << str.toStdString().c_str() << std::endl;
+        emit writeLog(str);
+        return;
     }
-
-    return 1;
 }
 
 void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
+    std::cout << "Start Filtering..." << std::endl;
+    //~imageRenderWidget->makeCurrent();
+    std::cout << "makecurrent in " << Q_FUNC_INFO << std::endl;
+
+    if (verbose == 1) writeLog(QString(this->metaObject()->className())+"->process() called");
 
     QCoreApplication::processEvents();
 
     if (files->size() <= 0)
     {
-        QString str("\n[Cor/Proj] Error: No files specified!");
-        emit error(str);
+        QString str("\n["+QString(this->metaObject()->className())+"] Error: No files specified!");
+        emit writeLog(str);
         emit changedMessageString(str);
-        //~emit abort();
+
         kill_flag = true;
     }
 
     // Emit to appropriate slots
-    emit changedMessageString("\n[Cor/Proj] Correcting and Projecting "+QString::number(files->size())+" files...");
+    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Correcting and Projecting "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
     emit enableSetFileButton(false);
     emit enableReadFileButton(false);
@@ -387,11 +402,11 @@ void ProjectFileWorker::process()
     emit showGenericProgressBar(true);
     emit changedTabWidget(1);
 
-
+    Matrix<float> test_background;
+    test_background.set(1679, 1475, 0.0);
     QElapsedTimer stopwatch;
     stopwatch.start();
     kill_flag = false;
-    size_t size_raw = 0;
     size_t n = 0;
     size_t limit = 0.25e9;
     reduced_pixels->reserve(limit);
@@ -402,8 +417,8 @@ void ProjectFileWorker::process()
         QCoreApplication::processEvents();
         if (kill_flag)
         {
-            QString str("\n[Cor/Proj] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
-            emit error(str);
+            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
+            emit writeLog(str);
             emit changedMessageString(str);
             break;
         }
@@ -412,21 +427,44 @@ void ProjectFileWorker::process()
         if (n > limit)
         {
             // Break if there is too much data.
-            setMessageString(QString("\n[Cor/Proj] Error: There was too much data!"));
+            emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));
             kill_flag = true;
         }
         else
         {
-            imageRenderWidget->setImageSize(files->at(i).getWidth(), files->at(i).getHeight());
+            //~std::cout << "omg" << std::endl;
+            //~emit testSignal(100);
+            //~QCoreApplication::processEvents();
+            //~std::cout << "Making current" << std::endl;
+            //~imageRenderWidget->makeCurrent();
 
-            int STATUS_OK = (*files)[i]->filterData( &n, reduced_pixels->data(), treshold_reduce_low, treshold_reduce_high, treshold_project_low, treshold_project_high,1);
+
+
+            //~imageRenderWidget->setImageSize(files->at(i).getWidth(), files->at(i).getHeight());
+            //~(*files)[i].setImageRenderWidget(imageRenderWidget);
+            (*files)[i].setProjectionKernel(&projection_kernel);
+            (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
+
+            //~std::cout << "Done current" << std::endl;
+            //~imageRenderWidget->doneCurrent();
+            //~imageRenderWidget->aquireSharedBuffers();
+            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
+            //~imageRenderWidget->releaseSharedBuffers();
+            std::cout << "Done Filtering..." << std::endl;
+
             if (STATUS_OK)
             {
+                std::cout << "Repaint please" << std::endl;
+                //~imageRenderWidget->doneCurrent();
+                //~imageRenderWidget->setThreadFlag(1);
                 emit repaintImageWidget();
+                QCoreApplication::processEvents();
+                //~imageRenderWidget->setThreadFlag(0);
+                //~imageRenderWidget->makeCurrent();
             }
             else
             {
-                setMessageString("\n[Cor/Proj] Error: could not process data \""+files->at(i).getPath()+"\"");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
         }
@@ -446,10 +484,14 @@ void ProjectFileWorker::process()
     if (!kill_flag)
     {
         emit enableVoxelizeButton(true);
-        emit enableAllInOneButton(true);
 
-        emit changedMessageString("\n[Cor/Proj] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
     }
+
+    if (verbose == 1) writeLog(QString(this->metaObject()->className())+"->process() done");
+
+    //~imageRenderWidget->doneCurrent();
+    //~irWidget->context()->moveToThread(QApplication::instance()->thread());
 
     emit finished();
 }
@@ -468,7 +510,8 @@ void ProjectFileWorker::process()
 
 AllInOneWorker::AllInOneWorker()
 {
-    // you could copy data from constructor arguments to internal variables here.
+    this->isCLInitialized = false;
+    this->verbose = 1;
 }
 
 AllInOneWorker::~AllInOneWorker()
@@ -496,11 +539,12 @@ void AllInOneWorker::process()
 VoxelizeWorker::VoxelizeWorker()
 {
     this->isCLInitialized = false;
+    this->verbose = 1;
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-    if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
+
 }
 
 void VoxelizeWorker::process()

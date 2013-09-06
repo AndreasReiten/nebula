@@ -25,6 +25,7 @@
 #include <QDebug>
 #include <QString>
 #include <QByteArray>
+#include <QMutex>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -49,9 +50,9 @@ public:
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
     cl_mem * getTsfImgCLGL();
-    cl_mem * getRawImgCLGL();
+    cl_mem * getAlphaImgCLGL();
     cl_mem * getGammaImgCLGL();
-    cl_mem * getCorrectedImgCLGL();
+    cl_mem * getBetaImgCLGL();
     void setImageSize(int w, int h);
     void aquireSharedBuffers();
     void releaseSharedBuffers();
@@ -61,10 +62,16 @@ signals:
     void changedMessageString(QString str);
     void appendLog(QString str);
 
+public slots:
+    void setImageWidth(int value);
+    void setThreadFlag(bool value);
+    void finish();
 protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
+    void resizeEvent(QResizeEvent * event);
+    void paintEvent(QPaintEvent * event);
 
 private:
     void init_freetype();
@@ -86,6 +93,7 @@ private:
     MiniArray<float> green;
 
     // OpenGL Related
+    bool isInMainThread;
     bool isGLIntitialized;
     int init_gl();
     void init_gl_programs();
