@@ -6,7 +6,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     //~std::cout << "Constructing VolumeRenderGLWidget" << std::endl;
     //~ std::cout << "Volume Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
     isGLIntitialized = false;
-    verbose = 1;
+    verbosity = 1;
 
     ray_res = 20;
 
@@ -162,7 +162,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
 
-
+    this->glInit();
     //~std::cout << "Done Constructing VolumeRenderGLWidget" << std::endl;
 }
 
@@ -170,7 +170,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
 {
     if (isGLIntitialized)
     {
-        if (verbose) emit appendLog( "VolumeRenderGLWidget-> Destroying..." );
+        if (verbosity) emit appendLog( "VolumeRenderGLWidget-> Destroying..." );
 
         if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
         if (misc_int_cl) clReleaseMemObject(misc_int_cl);
@@ -241,7 +241,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteProgram(msaa_hdr_program);
         glDeleteProgram(std_text_program);
 
-        if (verbose) emit appendLog( "VolumeRenderGLWidget-> Destruction done" );
+        if (verbosity) emit appendLog( "VolumeRenderGLWidget-> Destruction done" );
     }
 
 }

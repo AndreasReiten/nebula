@@ -25,8 +25,9 @@ void writeLog(QString text, QString file, bool append)
 	if (myfile.is_open())
 	{
 		myfile << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
+        std::cout << "[Log]"<< dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
 	}
-	else std::cout << "Unable to open file" << std::endl;
+	else std::cout << "Unable to open log file" << std::endl;
 }
 
 const char * cl_error_cstring(cl_int error)

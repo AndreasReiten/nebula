@@ -49,14 +49,14 @@ protected:
 
 private:
     void setMessageString(QString str);
-    int verbose;
+    int verbosity;
 
     // OpenGL Related
     int init_gl();
     bool isGLIntitialized;
 
     // OpenCL Related
-    int init_cl_device(int verbose);
+    int init_cl_device(int verbosity);
     int init_cl();
     cl_device * device; // Might have to declare with new
     cl_context * context2;

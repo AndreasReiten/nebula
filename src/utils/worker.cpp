@@ -13,8 +13,10 @@
  */
 BaseWorker::BaseWorker()
 {
+    verbosity = 1;
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     this->isCLInitialized = false;
-    this->verbose = 1;
+    this->verbosity = verbosity;
 }
 
 BaseWorker::~BaseWorker()
@@ -90,8 +92,10 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 
 SetFileWorker::SetFileWorker()
 {
+    verbosity = 1;
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     this->isCLInitialized = false;
-    this->verbose = 1;
+    this->verbosity = verbosity;
 }
 
 SetFileWorker::~SetFileWorker()
@@ -212,8 +216,10 @@ void SetFileWorker::process()
 
 ReadFileWorker::ReadFileWorker()
 {
+    verbosity = 1;
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     this->isCLInitialized = false;
-    this->verbose = 1;
+    this->verbosity = verbosity;
 }
 
 ReadFileWorker::~ReadFileWorker()
@@ -307,8 +313,10 @@ void ReadFileWorker::process()
 
 ProjectFileWorker::ProjectFileWorker()
 {
+    verbosity = 1;
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     this->isCLInitialized = false;
-    this->verbose = 1;
+    this->verbosity = verbosity;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
@@ -376,11 +384,8 @@ void ProjectFileWorker::initializeCLKernel()
 void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
-    std::cout << "Start Filtering..." << std::endl;
-    //~imageRenderWidget->makeCurrent();
-    std::cout << "makecurrent in " << Q_FUNC_INFO << std::endl;
 
-    if (verbose == 1) writeLog(QString(this->metaObject()->className())+"->process() called");
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
 
     QCoreApplication::processEvents();
 
@@ -402,7 +407,6 @@ void ProjectFileWorker::process()
     emit enableVoxelizeButton(false);
     emit enableAllInOneButton(false);
     emit showGenericProgressBar(true);
-    emit changedTabWidget(1);
 
     Matrix<float> test_background;
     test_background.set(1679, 1475, 0.0);
@@ -434,35 +438,18 @@ void ProjectFileWorker::process()
         }
         else
         {
-            //~std::cout << "omg" << std::endl;
-            //~emit testSignal(100);
-            //~QCoreApplication::processEvents();
-            //~std::cout << "Making current" << std::endl;
-            //~imageRenderWidget->makeCurrent();
+            emit changedImageWidth(files->at(i).getWidth());
+            emit changedImageHeight(files->at(i).getHeight());
 
-
-
-            //~imageRenderWidget->setImageSize(files->at(i).getWidth(), files->at(i).getHeight());
-            //~(*files)[i].setImageRenderWidget(imageRenderWidget);
             (*files)[i].setProjectionKernel(&projection_kernel);
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
 
-            //~std::cout << "Done current" << std::endl;
-            //~imageRenderWidget->doneCurrent();
-            //~imageRenderWidget->aquireSharedBuffers();
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
-            //~imageRenderWidget->releaseSharedBuffers();
-            std::cout << "Done Filtering..." << std::endl;
 
             if (STATUS_OK)
             {
-                std::cout << "Repaint please" << std::endl;
-                //~imageRenderWidget->doneCurrent();
-                //~imageRenderWidget->setThreadFlag(1);
                 emit repaintImageWidget();
                 QCoreApplication::processEvents();
-                //~imageRenderWidget->setThreadFlag(0);
-                //~imageRenderWidget->makeCurrent();
             }
             else
             {
@@ -490,11 +477,6 @@ void ProjectFileWorker::process()
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
     }
 
-    if (verbose == 1) writeLog(QString(this->metaObject()->className())+"->process() done");
-
-    //~imageRenderWidget->doneCurrent();
-    //~irWidget->context()->moveToThread(QApplication::instance()->thread());
-
     emit finished();
 }
 
@@ -512,18 +494,20 @@ void ProjectFileWorker::process()
 
 AllInOneWorker::AllInOneWorker()
 {
+    verbosity = 1;
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     this->isCLInitialized = false;
-    this->verbose = 1;
+    this->verbosity = verbosity;
 }
 
 AllInOneWorker::~AllInOneWorker()
 {
-    // free resources
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
 }
 
 void AllInOneWorker::process()
 {
-    // allocate resources using new here
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     qDebug("Hello World!");
     emit finished();
 }
@@ -540,18 +524,19 @@ void AllInOneWorker::process()
 
 VoxelizeWorker::VoxelizeWorker()
 {
+    verbosity = 1;
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     this->isCLInitialized = false;
-    this->verbose = 1;
+    this->verbosity = verbosity;
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
 }
 
 void VoxelizeWorker::process()
 {
-    // allocate resources using new here
-    qDebug("Hello World!");
+    if (verbosity == 1) writeLog(Q_FUNC_INFO);
     emit finished();
 }

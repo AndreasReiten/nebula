@@ -56,7 +56,7 @@ public:
     void setImageSize(int w, int h);
     void aquireSharedBuffers();
     void releaseSharedBuffers();
-    void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
+    //~void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
 
 signals:
     void changedMessageString(QString str);
@@ -64,14 +64,16 @@ signals:
 
 public slots:
     void setImageWidth(int value);
-    void setThreadFlag(bool value);
+    void setImageHeight(int value);
+    //~void setThreadFlag(bool value);
     void finish();
+
 protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
-    void resizeEvent(QResizeEvent * event);
-    void paintEvent(QPaintEvent * event);
+    //~void resizeEvent(QResizeEvent * event);
+    //~void paintEvent(QPaintEvent * event);
 
 private:
     void init_freetype();
@@ -81,7 +83,7 @@ private:
     QElapsedTimer * time;
     int image_w, image_h;
     int WIDTH, HEIGHT;
-    int verbose;
+    int verbosity;
 
     TsfMatrix<double> transferFunction;
 
@@ -93,7 +95,7 @@ private:
     MiniArray<float> green;
 
     // OpenGL Related
-    bool isInMainThread;
+    //~bool isInMainThread;
     bool isGLIntitialized;
     int init_gl();
     void init_gl_programs();

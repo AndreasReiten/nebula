@@ -5,7 +5,7 @@ ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
 {
     //~std::cout << "Constructing ContextGLWidget" << std::endl;
     isGLIntitialized = false;
-    verbose = 1;
+    verbosity = 1;
     //~std::cout << "Done Constructing ContextGLWidget" << std::endl;
 }
 
@@ -13,10 +13,10 @@ ContextGLWidget::~ContextGLWidget()
 {
     if (isGLIntitialized)
     {
-        if (verbose) appendLog( "ContextGLWidget-> Destroying" );
+        if (verbosity) appendLog( "ContextGLWidget-> Destroying" );
         if (*queue) clReleaseCommandQueue(*queue);
         if (*context2) clReleaseContext(*context2);
-        if (verbose) appendLog( "ContextGLWidget-> Destruction done" );
+        if (verbosity) appendLog( "ContextGLWidget-> Destruction done" );
     }
 }
 
@@ -95,7 +95,7 @@ int ContextGLWidget::init_gl()
     return 1;
 }
 
-int ContextGLWidget::init_cl_device(int verbose)
+int ContextGLWidget::init_cl_device(int verbosity)
 {
     // DEVICE & INFO
     device = new cl_device;
@@ -130,7 +130,7 @@ int ContextGLWidget::init_cl_device(int verbose)
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WRITE_IMAGE_ARGS, sizeof(cl_uint), &device->max_write_image_args, NULL);
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_SAMPLERS, sizeof(cl_uint), &device->max_samplers, NULL);
 
-    if (verbose == 1)
+    if (verbosity == 1)
     {
         std::cout << "CL_DEVICE_NAME:                       " << device->cl_device_name << std::endl;
         std::cout << "CL_DEVICE_VERSION:                    " << device->cl_device_version << std::endl;

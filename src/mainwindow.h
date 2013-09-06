@@ -101,8 +101,8 @@ private slots:
     void setReduceThresholdHigh(double value);
     void setProjectThresholdLow(double value);
     void setProjectThresholdHigh(double value);
-    void project();
-    void makeIrWidgetCurrent();
+    void runProjectFileThread();
+    //~void makeIrWidgetCurrent();
     void paintImage();
 
 signals:
@@ -291,7 +291,7 @@ private:
 	QScriptValue rawFilesQs;
 
     // Utility
-    int verbose;
+    int verbosity;
 
     // Main resources
 	QStringList file_paths;

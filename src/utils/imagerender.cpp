@@ -6,8 +6,8 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     //~std::cout << "Constructing ImageRenderGLWidget" << std::endl;
     //~ std::cout << "Image Render: Alpha Channel = " << this->context()->format().alpha() << std::endl;
     isGLIntitialized = false;
-    isInMainThread = true;
-    verbose = 1;
+    //~isInMainThread = true;
+    verbosity = 1;
 
     this->device = device;
     this->queue = queue;
@@ -71,6 +71,18 @@ void ImageRenderGLWidget::setImageWidth(int value)
     std::cout << "Were talking!" << std::endl;
 }
 
+void ImageRenderGLWidget::setImageHeight(int value)
+{
+    std::cout << "Were talking!" << std::endl;
+    if (value != image_h)
+    {
+        this->image_h = value;
+        this->setTarget();
+        this->setTexturePositions();
+    }
+    std::cout << "Were talking!" << std::endl;
+}
+
 void ImageRenderGLWidget::setImageSize(int w, int h)
 {
     std::cout << "Were talking! w x h = " << w << " x " << h << std::endl;
@@ -89,7 +101,7 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
 {
     if (isGLIntitialized)
     {
-        if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() calling");
+        if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() calling");
 
         glDeleteTextures(5, image_tex);
 
@@ -102,7 +114,7 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
 
-        if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() done");
+        if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->~ImageRenderGLWidget() done");
     }
 }
 
@@ -143,7 +155,7 @@ void ImageRenderGLWidget::initializeGL()
 {
     if (!isGLIntitialized){
         std::cout << Q_FUNC_INFO << std::endl;
-        if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() called");
+        if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() called");
 
         if (!this->init_gl()) std::cout << "Error initializing OpenGL" << std::endl;
 
@@ -154,7 +166,7 @@ void ImageRenderGLWidget::initializeGL()
 
         isGLIntitialized = true;
     }
-    if (verbose == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() done");
+    if (verbosity == 1) appendLog(QString(this->metaObject()->className())+"->initializeGL() done");
 }
 
 
@@ -248,7 +260,7 @@ void ImageRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements,
 
 void ImageRenderGLWidget::resizeGL(int w, int h)
 {
-    std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
+    //~std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
     this->WIDTH = w;
     this->HEIGHT = h;
     this->setTexturePositions();
@@ -625,8 +637,8 @@ void ImageRenderGLWidget::init_gl_programs()
     }
 }
 
-void ImageRenderGLWidget::runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws)
-{
+//~void ImageRenderGLWidget::runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws)
+//~{
     //~glFinish();
     //~err |= clSetKernelArg(*kernel, 1, sizeof(cl_mem), (void *) &alpha_img_clgl);
     //~err |= clSetKernelArg(*kernel, 2, sizeof(cl_mem), (void *) &beta_img_clgl);
@@ -668,7 +680,7 @@ void ImageRenderGLWidget::runFilterKernel(cl_kernel * kernel, size_t * loc_ws, s
     //~{
         //~std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
     //~}
-}
+//~}
 
 
 void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
@@ -743,31 +755,27 @@ cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
     return &beta_img_clgl;
 }
 
-void ImageRenderGLWidget::setThreadFlag(bool value)
-{
-    this->isInMainThread = value;
-    std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
-
-}
-
-void ImageRenderGLWidget::resizeEvent(QResizeEvent * event)
-{
-    std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
-    if (isInMainThread) this->makeCurrent();
-    QSize size(event->size());
-    this->resizeGL(size.rwidth(), size.rheight());
-}
+//~void ImageRenderGLWidget::setThreadFlag(bool value)
+//~{
+    //~this->isInMainThread = value;
+    //~std::cout << Q_FUNC_INFO << "isInMainThread = " << isInMainThread <<std::endl;
 //~
-void ImageRenderGLWidget::paintEvent(QPaintEvent * event)
-{
-    //~std::cout << Q_FUNC_INFO << std::endl;
-    if (isInMainThread) this->makeCurrent();
-    if (!isGLIntitialized) this->initializeGL();
-    this->paintGL();
-    //~QImage this->grabFrameBuffer(0);
-    //~this->swapBuffers();
-    this->updateGL();
-}
+//~}
+
+//~void ImageRenderGLWidget::resizeEvent(QResizeEvent * event)
+//~{
+    //~this->makeCurrent();
+    //~QSize size(event->size());
+    //~this->resizeGL(size.rwidth(), size.rheight());
+//~}
+//~
+//~void ImageRenderGLWidget::paintEvent(QPaintEvent * event)
+//~{
+    //~this->makeCurrent();
+    //~if (!isGLIntitialized) this->initializeGL();
+    //~this->paintGL();
+    //~this->updateGL();
+//~}
 
 
 void ImageRenderGLWidget::finish()

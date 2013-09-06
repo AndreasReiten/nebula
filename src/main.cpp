@@ -20,8 +20,8 @@
 /* This is the top level GUI implementation */
 int main(int argc, char **argv)
 {
-    QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
-    std::cout << "Qt::AA_X11InitThreads = " << QCoreApplication::testAttribute(Qt::AA_X11InitThreads) << std::endl;
+    //~QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+    //~std::cout << "Qt::AA_X11InitThreads = " << QCoreApplication::testAttribute(Qt::AA_X11InitThreads) << std::endl;
     QApplication app(argc, argv);
 
 	app.setOrganizationName("Norwegian University of Science and Technology");

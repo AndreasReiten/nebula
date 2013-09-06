@@ -79,7 +79,7 @@ class BaseWorker : public QObject
     protected:
         // Related to the runtime
         bool kill_flag;
-        int verbose;
+        int verbosity;
 
         // Related to OpenCL
         cl_mem * alpha_img_clgl;
@@ -155,6 +155,8 @@ class ProjectFileWorker : public BaseWorker
 
     signals:
         //~void testSignal(int value);
+        void changedImageWidth(int value);
+        void changedImageHeight(int value);
 
     public slots:
         void process();
