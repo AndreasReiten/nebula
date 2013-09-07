@@ -398,6 +398,7 @@ void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
 
+
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     QCoreApplication::processEvents();
@@ -469,7 +470,6 @@ void ProjectFileWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
-            std::cout << n << std::endl;
         }
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/files->size());

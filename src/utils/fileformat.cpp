@@ -244,6 +244,8 @@ void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_cl
 
 int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive)
 {
+    //~std::cout << threshold_reduce_low << " " << threshold_reduce_high << " " << threshold_project_low << " " << threshold_project_high << std::endl;
+
     this->threshold_reduce_low = threshold_reduce_low;
     this->threshold_reduce_high = threshold_reduce_high;
 
@@ -297,7 +299,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     }
 
     // A sampler
-    cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
     if (err != CL_SUCCESS)
     {
         writeLog("[PilatusFile][OpenCL][filterData]: Could not create sampler: "+QString(cl_error_cstring(err)));

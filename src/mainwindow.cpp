@@ -153,7 +153,7 @@ void MainWindow::initializeThreads()
 
 void MainWindow::runProjectFileThread()
 {
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     volumeRenderWidget->hide();
     tabWidget->setCurrentIndex(1);
     imageRenderWidget->aquireSharedBuffers();
@@ -171,18 +171,22 @@ void MainWindow::paintImage()
 void MainWindow::setReduceThresholdLow(double value)
 {
     this->threshold_reduce_low = (float) value;
+    //~std::cout << threshold_reduce_low <<  std::endl;
 }
 void MainWindow::setReduceThresholdHigh(double value)
 {
     this->threshold_reduce_high = (float) value;
+    //~std::cout << threshold_reduce_high <<  std::endl;
 }
 void MainWindow::setProjectThresholdLow(double value)
 {
     this->threshold_project_low = (float) value;
+    //~std::cout << threshold_project_low <<  std::endl;
 }
 void MainWindow::setProjectThresholdHigh(double value)
 {
-    this->threshold_project_low = (float) value;
+    this->threshold_project_high = (float) value;
+    //~std::cout << threshold_project_high <<  std::endl;
 }
 
 void MainWindow::init_emit()

@@ -55,7 +55,7 @@ class PilatusFile
         int readData();
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         int filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive = true);
-        int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
+        //~int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
 
         MiniArray<float> getTest();
         int getWidth() const;

@@ -692,19 +692,6 @@ void VolumeRenderGLWidget::initializeGL()
 
     isGLIntitialized = true;
 }
-//~void VolumeRenderGLWidget::setEmit()
-//~{
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-//~
-    //~emit changedDataMinValue(10.0);
-    //~emit changedDataMaxValue(1000.0);
-    //~emit changedAlphaValue(0.5);
-    //~emit changedBrightnessValue(1.5);
-    //~emit changedFuncParamA(13.5);
-    //~emit changedFuncParamB(10.5);
-    //~emit changedFuncParamC(10.0);
-    //~emit changedFuncParamD(0.001);
-//~}
 
 
 void VolumeRenderGLWidget::setProjection(double F, double N, double fov, bool isPerspectiveRequired)
@@ -2201,7 +2188,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
         /* Launch rendering kernel */
         size_t area_per_call[2] = {64, 64};
         size_t call_offset[2] = {0,0};
-        callTimeMax = 1000/30;
+        callTimeMax = 1000/60; // Dividend is FPS
         timeLastActionMin = 1000;
         isBadCall = false;
 
