@@ -102,13 +102,13 @@ int ContextGLWidget::initDeviceCL(int verbosity)
     err = clGetPlatformIDs(1, &device->platform_id, &num_platforms);
     if ( err != CL_SUCCESS)
     {
-        std::cout << "Could not establish a CL platform: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not establish a CL platform: "+QString(cl_error_cstring(err)));
         return 0;
     }
     err = clGetDeviceIDs( device->platform_id, CL_DEVICE_TYPE_GPU, 1, &device->device_id, &num_devices);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Could not get device IDs: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not get device IDs: "+QString(cl_error_cstring(err)));
         return 0;
     }
     clGetDeviceInfo(device->device_id, CL_DEVICE_NAME, sizeof(device->cl_device_name)*8, &device->cl_device_name, NULL);
@@ -189,7 +189,7 @@ int ContextGLWidget::initResourcesCL()
     *context = clCreateContext(properties, 1, &device->device_id, NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "MainWindow: Could not establish CL context: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": MainWindow: Could not establish CL context: "+QString(cl_error_cstring(err)));
         return 0;
     }
 
@@ -197,7 +197,7 @@ int ContextGLWidget::initResourcesCL()
     *queue = clCreateCommandQueue(*context, device->device_id, 0, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "MainWindow: Could not create command queue: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": MainWindow: Could not create command queue: "+QString(cl_error_cstring(err)));
         return 0;
     }
     return 1;

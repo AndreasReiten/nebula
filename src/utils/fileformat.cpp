@@ -16,7 +16,12 @@ PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * 
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
-    STATUS_OK = this->set(path, context, queue);//, kernel, widget);
+    STATUS_OK = this->set(path, context, queue);
+}
+
+void PilatusFile::writeLog(QString str)
+{
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
 int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue)
@@ -234,7 +239,6 @@ void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_cl
     this->beta_img_clgl = beta_img_clgl;
     this->gamma_img_clgl = gamma_img_clgl;
     this->tsf_img_clgl = tsf_img_clgl;
-    std::cout << Q_FUNC_INFO << std::endl;
 }
 
 
@@ -258,7 +262,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     // Load data into a CL texture
@@ -276,7 +280,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     cl_mem background_cl = clCreateImage2D ( (*context),
@@ -289,14 +293,14 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     // A sampler
     cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
+        writeLog("[PilatusFile][OpenCL][filterData]: Could not create sampler: "+QString(cl_error_cstring(err)));
     }
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
@@ -327,14 +331,14 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     // The sampler for tsf_img_clgl
     cl_sampler tsf_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
+        writeLog("[PilatusFile][OpenCL][filterData]: Could not create sampler: "+QString(cl_error_cstring(err)));
     }
 
     // SET KERNEL ARGS
@@ -370,7 +374,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     err |= clSetKernelArg(*filterKernel, 27, sizeof(cl_float), &max_counts);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("[PilatusFile][OpenCL][filterData]: Error setting kernel argument:"+QString(cl_error_cstring(err)));
     }
 
     /* Launch rendering kernel */
@@ -386,7 +390,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
             err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if (err != CL_SUCCESS)
             {
-                std::cout << "[->] Error launching kernel: " << cl_error_cstring(err) << std::endl;
+                writeLog("[PilatusFile][OpenCL][filterData]: Error launching kernel: "+QString(cl_error_cstring(err)));
             }
         }
     }

@@ -43,7 +43,7 @@ int VolumeDataSet::initCL()
     program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "ImageRenderGLWidget: Could not create program from source: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": ImageRenderGLWidget: Could not create program from source: "+QString(cl_error_cstring(err)));
         return 0;
     }
     // Compile kernel
@@ -52,7 +52,7 @@ int VolumeDataSet::initCL()
     if (err != CL_SUCCESS)
     {
         // Compile log
-        std::cout << "Could not compile/link program: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not compile/link program: "+QString(cl_error_cstring(err)));
         std::cout << "--- START KERNEL COMPILE LOG ---" << std::endl;
         char* build_log;
         size_t log_size;
@@ -70,7 +70,7 @@ int VolumeDataSet::initCL()
     K_FRAME_FILTER = clCreateKernel(program, "FRAME_FILTER", &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Could not create kernel object: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not create kernel object: "+QString(cl_error_cstring(err)));
         return 0;
     }
 

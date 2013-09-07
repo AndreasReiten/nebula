@@ -21,7 +21,7 @@ BaseWorker::BaseWorker()
 
 BaseWorker::~BaseWorker()
 {
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
 void BaseWorker::writeLog(QString str)
@@ -31,6 +31,7 @@ void BaseWorker::writeLog(QString str)
 
 void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue)
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->device = device;
     this->context = context;
     this->queue = queue;
@@ -38,6 +39,7 @@ void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_c
 
 void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->alpha_img_clgl = alpha_img_clgl;
     this->beta_img_clgl = beta_img_clgl;
     this->gamma_img_clgl = gamma_img_clgl;
@@ -63,6 +65,7 @@ void BaseWorker::setProjectThresholdHigh(float * value)
 
 void BaseWorker::killProcess()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     kill_flag = true;
 }
 
@@ -73,15 +76,18 @@ void BaseWorker::setFilePaths(QStringList * file_paths)
 }
 void BaseWorker::setBrickInfo(int brick_inner_dimension, int brick_outer_dimension)
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->brick_inner_dimension = brick_inner_dimension;
     this->brick_outer_dimension = brick_outer_dimension;
 }
 void BaseWorker::setFiles(QList<PilatusFile> * files)
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->files = files;
 }
 void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     this->reduced_pixels = reduced_pixels;
 }
 
@@ -110,6 +116,8 @@ SetFileWorker::~SetFileWorker()
 
 void SetFileWorker::process()
 {
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     QCoreApplication::processEvents();
     kill_flag = false;
 
@@ -147,7 +155,7 @@ void SetFileWorker::process()
     for (size_t i = 0; i < (size_t) file_paths->size(); i++)
     {
         // Kill process if requested
-        QCoreApplication::processEvents();
+        //--QCoreApplication::processEvents();
         if (kill_flag)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
@@ -267,7 +275,7 @@ void ReadFileWorker::process()
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
-        QCoreApplication::processEvents();
+        //--QCoreApplication::processEvents();
         if (kill_flag)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
@@ -425,7 +433,7 @@ void ProjectFileWorker::process()
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
-        QCoreApplication::processEvents();
+        //--QCoreApplication::processEvents();
         if (kill_flag)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
@@ -454,13 +462,14 @@ void ProjectFileWorker::process()
             if (STATUS_OK)
             {
                 emit repaintImageWidget();
-                QCoreApplication::processEvents();
+                //--QCoreApplication::processEvents();
             }
             else
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
+            std::cout << n << std::endl;
         }
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/files->size());
@@ -479,7 +488,7 @@ void ProjectFileWorker::process()
     {
         emit enableVoxelizeButton(true);
 
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
     }
 
     emit finished();

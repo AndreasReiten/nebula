@@ -7,7 +7,10 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     isGLIntitialized = false;
-
+    isAlphaImgInitialized = false;
+    isBetaImgInitialized = false;
+    isGammaImgInitialized = false;
+    isTsfImgInitialized= false;;
 
     this->device = device;
     this->queue = queue;
@@ -57,9 +60,11 @@ void ImageRenderGLWidget::setImageWidth(int value)
 {
     if (value != image_w)
     {
+        this->releaseSharedBuffers();
         this->image_w = value;
         this->setTarget();
         this->setTexturePositions();
+        this->aquireSharedBuffers();
     }
 }
 
@@ -67,9 +72,11 @@ void ImageRenderGLWidget::setImageHeight(int value)
 {
     if (value != image_h)
     {
+        this->releaseSharedBuffers();
         this->image_h = value;
         this->setTarget();
         this->setTexturePositions();
+        this->aquireSharedBuffers();
     }
 }
 
@@ -90,6 +97,10 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
 
     if (isGLIntitialized)
     {
+        if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
+        if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
+        if (isGammaImgInitialized) clReleaseMemObject(gamma_img_clgl);
+
         glDeleteTextures(5, image_tex);
 
         glDeleteBuffers(1, &text_coord_vbo);
@@ -143,8 +154,6 @@ void ImageRenderGLWidget::initializeGL()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     if (!isGLIntitialized){
-        if (verbosity == 1) writeLog(QString(this->metaObject()->className())+"->initializeGL() called");
-
         if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
 
         /* Initialize and set the other stuff */
@@ -256,6 +265,8 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
 
 void ImageRenderGLWidget::releaseSharedBuffers()
 {
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
      // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
     err |= clEnqueueReleaseGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
@@ -263,7 +274,7 @@ void ImageRenderGLWidget::releaseSharedBuffers()
     err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error releasing shared CL/GL objects: "+QString(cl_error_cstring(err)));
     }
 }
 void ImageRenderGLWidget::setMessageString(QString str)
@@ -613,6 +624,8 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     /* Generate a transfer function CL texture */
 
+    if (isTsfImgInitialized) clReleaseMemObject(tsf_img_clgl);
+
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
     glDeleteTextures(1, &image_tex[3]);
@@ -639,8 +652,9 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     tsf_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
     }
+    isTsfImgInitialized = true;
 }
 
 cl_mem * ImageRenderGLWidget::getTsfImgCLGL()
@@ -679,8 +693,10 @@ cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
 //~}
 
 
-void ImageRenderGLWidget::finish()
+void ImageRenderGLWidget::aquireSharedBuffers()
 {
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     glFinish();
     err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
     err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
@@ -688,13 +704,17 @@ void ImageRenderGLWidget::finish()
     err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error aquiring shared CL/GL objects: "+QString(cl_error_cstring(err)));
     }
 }
 
 int ImageRenderGLWidget::setTarget()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
+    if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
+    if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
+    if (isGammaImgInitialized) clReleaseMemObject(gamma_img_clgl);
 
     // Set GL texture
     glDeleteTextures(1, &image_tex[0]);
@@ -719,9 +739,10 @@ int ImageRenderGLWidget::setTarget()
     alpha_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
         return 0;
     }
+    isAlphaImgInitialized = true;
 
     // Set GL texture
     glDeleteTextures(1, &image_tex[1]);
@@ -746,9 +767,10 @@ int ImageRenderGLWidget::setTarget()
     beta_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
         return 0;
     }
+    isBetaImgInitialized = true;
 
     // Set GL texture
     glDeleteTextures(1, &image_tex[2]);
@@ -773,9 +795,10 @@ int ImageRenderGLWidget::setTarget()
     gamma_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
         return 0;
     }
+    isGammaImgInitialized = true;
     return 1;
 }
 

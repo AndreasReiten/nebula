@@ -54,6 +54,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::initializeThreads()
 {
+
     setFileThread = new QThread;
     readFileThread = new QThread;
     projectFileThread = new QThread;
@@ -65,7 +66,7 @@ void MainWindow::initializeThreads()
     setFileWorker->setFiles(&files);
     setFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
     setFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
-    setFileWorker->setOpenCLBuffers(irWidget->getAlphaImgCLGL(), irWidget->getBetaImgCLGL(), irWidget->getGammaImgCLGL(), irWidget->getTsfImgCLGL());
+    setFileWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
@@ -81,7 +82,7 @@ void MainWindow::initializeThreads()
     connect(setFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
     connect(setFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(setFilesButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
     readFileWorker = new ReadFileWorker();
@@ -103,7 +104,7 @@ void MainWindow::initializeThreads()
     connect(readFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
     connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readFilesButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
 
@@ -122,7 +123,7 @@ void MainWindow::initializeThreads()
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
-    connect(projectFileWorker, SIGNAL(finished()), vrWidget, SLOT(show()));
+    connect(projectFileWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -132,10 +133,10 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
     connect(projectFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-    connect(projectFileWorker, SIGNAL(changedImageWidth(int)), irWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(changedImageHeight(int)), irWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
     connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
-    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
     connect(projectFileWorker, SIGNAL(repaintImageWidget()), this, SLOT(paintImage()), Qt::BlockingQueuedConnection);
 
     allInOneWorker = new AllInOneWorker();
@@ -152,10 +153,19 @@ void MainWindow::initializeThreads()
 
 void MainWindow::runProjectFileThread()
 {
-    vrWidget->hide();
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    volumeRenderWidget->hide();
     tabWidget->setCurrentIndex(1);
-    irWidget->finish();
+    imageRenderWidget->aquireSharedBuffers();
     projectFileThread->start();
+}
+
+void MainWindow::paintImage()
+{
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    imageRenderWidget->releaseSharedBuffers();
+    imageRenderWidget->repaint();
+    imageRenderWidget->aquireSharedBuffers();
 }
 
 void MainWindow::setReduceThresholdLow(double value)
@@ -187,6 +197,15 @@ void MainWindow::init_emit()
     treshLimC_DSB->setValue(10);
     treshLimD_DSB->setValue(1e9);
 
+    dataMinSpinBox->setValue(10);
+    dataMaxSpinBox->setValue(1000);
+    alphaSpinBox->setValue(0.5);
+    brightnessSpinBox->setValue(1.5);
+
+    funcParamASpinBox->setValue(13.5);
+    funcParamBSpinBox->setValue(10.5);
+    funcParamCSpinBox->setValue(10.0);
+    funcParamDSpinBox->setValue(0.001);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -325,13 +344,13 @@ void MainWindow::documentWasModified()
 
 void MainWindow::toggleFullScreen()
 {
-    if (vrWidget->isFullScreen())
+    if (volumeRenderWidget->isFullScreen())
     {
-        vrWidget->showNormal();
+        volumeRenderWidget->showNormal();
     }
     else
     {
-        vrWidget->showFullScreen();
+        volumeRenderWidget->showFullScreen();
     }
 }
 
@@ -468,8 +487,8 @@ void MainWindow::openUnitcellFile()
         Matrix<float> U(3,3);
         U = UB * B.getInverse();
 
-        vrWidget->setMatrixU(U.data());
-        vrWidget->setMatrixB(B.data());
+        volumeRenderWidget->setMatrixU(U.data());
+        volumeRenderWidget->setMatrixB(B.data());
     }
 }
 
@@ -597,10 +616,10 @@ void MainWindow::openSVO()
         status = H5Fclose(file_id);
 
 
-        vrWidget->setOcttreeIndices(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
-        vrWidget->setOcttreeBricks(&(this->VIEW_OCT_BRICK), VIEW_BPP);
-        vrWidget->setBrickPool(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
-        vrWidget->setMeta(&(this->HIST_NORM), &(this->HIST_LOG), &(this->HIST_MINMAX), &(this->SVO_COMMENT));
+        volumeRenderWidget->setOcttreeIndices(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
+        volumeRenderWidget->setOcttreeBricks(&(this->VIEW_OCT_BRICK), VIEW_BPP);
+        volumeRenderWidget->setBrickPool(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
+        volumeRenderWidget->setMeta(&(this->HIST_NORM), &(this->HIST_LOG), &(this->HIST_MINMAX), &(this->SVO_COMMENT));
         alphaSpinBox->setValue(0.1);
         brightnessSpinBox->setValue(2.0);
         dataMinSpinBox->setValue(this->HIST_MINMAX[0]);
@@ -613,13 +632,6 @@ void MainWindow::openSVO()
     }
 }
 
-
-void MainWindow::paintImage()
-{
-    irWidget->releaseSharedBuffers();
-    irWidget->repaint();
-    irWidget->finish();
-}
 
 void MainWindow::setTab(int tab)
 {
@@ -662,35 +674,35 @@ void MainWindow::initializeConnects()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-    /* this <-> vrWidget */
-    connect(this->tsfAlphaComboBox, SIGNAL(activated(int)), vrWidget, SLOT(setTsfAlphaStyle(int)));
-    connect(dataStructureAct, SIGNAL(triggered()), vrWidget, SLOT(toggleDataStructure()));
-    connect(backgroundAct, SIGNAL(triggered()), vrWidget, SLOT(toggleBackground()));
-    connect(screenshotAct, SIGNAL(triggered()), vrWidget, SLOT(takeScreenshot()));
-    connect(logAct, SIGNAL(triggered()), vrWidget, SLOT(toggleLog()));
-    connect(projectionAct, SIGNAL(triggered()), vrWidget, SLOT(togglePerspective()));
-    connect(this->tsfComboBox, SIGNAL(activated(int)), vrWidget, SLOT(setTsf(int)));
-    connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfMin(double)));
-    connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfMax(double)));
-    connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfAlpha(double)));
-    connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setTsfBrightness(double)));
-    connect(this->functionToggleButton, SIGNAL(clicked()), vrWidget, SLOT(toggleFunctionView()));
-    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamA(double)));
-    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamB(double)));
-    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamC(double)));
-    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), vrWidget, SLOT(setFuncParamD(double)));
+    /* this <-> volumeRenderWidget */
+    connect(this->tsfAlphaComboBox, SIGNAL(activated(int)), volumeRenderWidget, SLOT(setTsfAlphaStyle(int)));
+    connect(dataStructureAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleDataStructure()));
+    connect(backgroundAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleBackground()));
+    connect(screenshotAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(takeScreenshot()));
+    connect(logAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleLog()));
+    connect(projectionAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(togglePerspective()));
+    connect(this->tsfComboBox, SIGNAL(activated(int)), volumeRenderWidget, SLOT(setTsf(int)));
+    connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setTsfMin(double)));
+    connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setTsfMax(double)));
+    connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setTsfAlpha(double)));
+    connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setTsfBrightness(double)));
+    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWidget, SLOT(toggleFunctionView()));
+    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setFuncParamA(double)));
+    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setFuncParamB(double)));
+    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setFuncParamC(double)));
+    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setFuncParamD(double)));
 
-    connect(vrWidget, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(this->unitcellButton, SIGNAL(clicked()), vrWidget, SLOT(toggleUnitcellView()));
-    connect(this->hklEdit, SIGNAL(textChanged(const QString)), vrWidget, SLOT(setHklFocus(const QString)));
-    connect(vrWidget, SIGNAL(changedAlphaValue(double)), this->alphaSpinBox, SLOT(setValue(double)));
-    connect(vrWidget, SIGNAL(changedBrightnessValue(double)), this->brightnessSpinBox, SLOT(setValue(double)));
-    connect(vrWidget, SIGNAL(changedDataMinValue(double)), this->dataMinSpinBox, SLOT(setValue(double)));
-    connect(vrWidget, SIGNAL(changedDataMaxValue(double)), this->dataMaxSpinBox, SLOT(setValue(double)));
-    connect(vrWidget, SIGNAL(changedFuncParamA(double)), this->funcParamASpinBox, SLOT(setValue(double)));
-    connect(vrWidget, SIGNAL(changedFuncParamB(double)), this->funcParamBSpinBox, SLOT(setValue(double)));
-    connect(vrWidget, SIGNAL(changedFuncParamC(double)), this->funcParamCSpinBox, SLOT(setValue(double)));
-    connect(vrWidget, SIGNAL(changedFuncParamD(double)), this->funcParamDSpinBox, SLOT(setValue(double)));
+    connect(volumeRenderWidget, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWidget, SLOT(toggleUnitcellView()));
+    connect(this->hklEdit, SIGNAL(textChanged(const QString)), volumeRenderWidget, SLOT(setHklFocus(const QString)));
+    //~connect(volumeRenderWidget, SIGNAL(changedAlphaValue(double)), this->alphaSpinBox, SLOT(setValue(double)));
+    //~connect(volumeRenderWidget, SIGNAL(changedBrightnessValue(double)), this->brightnessSpinBox, SLOT(setValue(double)));
+    //~connect(volumeRenderWidget, SIGNAL(changedDataMinValue(double)), this->dataMinSpinBox, SLOT(setValue(double)));
+    //~connect(volumeRenderWidget, SIGNAL(changedDataMaxValue(double)), this->dataMaxSpinBox, SLOT(setValue(double)));
+    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamA(double)), this->funcParamASpinBox, SLOT(setValue(double)));
+    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamB(double)), this->funcParamBSpinBox, SLOT(setValue(double)));
+    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamC(double)), this->funcParamCSpinBox, SLOT(setValue(double)));
+    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamD(double)), this->funcParamDSpinBox, SLOT(setValue(double)));
 
     /* this <-> dataInstance */
     //~connect(this->svoLevelSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setSvoLevels(int)));
@@ -710,7 +722,7 @@ void MainWindow::initializeConnects()
     //~connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setDisplayFrame(int)));
     //~connect(dataInstance, SIGNAL(displayFrameChanged(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
 
-    /* irWidget <-> dataInstance */
+    /* imageRenderWidget <-> dataInstance */
     //~connect(dataInstance, SIGNAL(repaintRequest()), this, SLOT(paintImage()));
 
 
@@ -916,8 +928,8 @@ void MainWindow::initializeInteractives()
         imageNumberSpinBox = new QSpinBox;
 
 
-        irWidget = new ImageRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
-        //~dataInstance->setImageRenderWidget(irWidget);
+        imageRenderWidget = new ImageRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
+        //~dataInstance->setImageRenderWidget(imageRenderWidget);
 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setSpacing(0);
@@ -925,7 +937,7 @@ void MainWindow::initializeInteractives()
         imageLayout->setContentsMargins(0,0,0,0);
         imageLayout->setColumnStretch(0,1);
         imageLayout->setColumnStretch(6,1);
-        imageLayout->addWidget(irWidget,0,0,1,7);
+        imageLayout->addWidget(imageRenderWidget,0,0,1,7);
         imageLayout->addWidget(imageFastBackButton,1,1,1,1);
         imageLayout->addWidget(imageBackButton,1,2,1,1);
         imageLayout->addWidget(imageNumberSpinBox,1,3,1,1);
@@ -939,7 +951,7 @@ void MainWindow::initializeInteractives()
     /*      3D View widget      */
     {
         viewWidget = new QWidget;
-        vrWidget = new VolumeRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
+        volumeRenderWidget = new VolumeRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
 
         // Toolbar
         viewToolBar = new QToolBar(tr("3D View"));
@@ -958,7 +970,7 @@ void MainWindow::initializeInteractives()
         viewLayout->setContentsMargins(0,0,0,0);
         viewLayout->setAlignment(Qt::AlignTop);
         viewLayout->addWidget(viewToolBar,0,0,1,1);
-        viewLayout->addWidget(vrWidget,1,0,1,1);
+        viewLayout->addWidget(volumeRenderWidget,1,0,1,1);
         viewWidget->setLayout(viewLayout);
     }
 

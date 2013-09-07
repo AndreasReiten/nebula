@@ -72,6 +72,8 @@ class PilatusFile
         void setProjectionKernel(cl_kernel * kernel);
 
     private:
+        void writeLog(QString str);
+
         cl_mem * alpha_img_clgl;
         cl_mem * beta_img_clgl;
         cl_mem * gamma_img_clgl;

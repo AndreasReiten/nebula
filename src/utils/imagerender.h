@@ -65,7 +65,7 @@ public slots:
     void setImageWidth(int value);
     void setImageHeight(int value);
     //~void setThreadFlag(bool value);
-    void finish();
+
 
 protected:
     void initializeGL();
@@ -132,6 +132,8 @@ private:
 
     size_t glb_ws[2];
     size_t loc_ws[2];
+
+    bool isAlphaImgInitialized, isBetaImgInitialized, isGammaImgInitialized, isTsfImgInitialized;
 };
 
 #endif

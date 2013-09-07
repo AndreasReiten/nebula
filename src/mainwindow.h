@@ -222,8 +222,8 @@ private:
     QWidget *scriptWidget;
     QWidget *viewWidget;
     ContextGLWidget * contextGLWidget;
-    VolumeRenderGLWidget *vrWidget;
-    ImageRenderGLWidget *irWidget;
+    VolumeRenderGLWidget *volumeRenderWidget;
+    ImageRenderGLWidget *imageRenderWidget;
 
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;

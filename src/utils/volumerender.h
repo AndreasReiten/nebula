@@ -108,7 +108,7 @@ private:
     Atlas * fontMedium;
     Atlas * fontLarge;
 
-    void setEmit();
+    //~void setEmit();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
     void initFreetype();
@@ -160,7 +160,7 @@ private:
     cl_sampler bricks_sampler, tsf_tex_sampler;
     cl_mem ray_tex_cl, tsf_tex_cl;
     cl_mem view_matrix_inv_cl, function_view_matrix_inv_cl;
-    cl_mem bbox_extent_cl, data_extent_cl, data_view_extent_cl, tsf_parameters_cl, misc_float_cl, misc_int_cl, misc_float_k_raytrace_cl;
+    cl_mem data_extent_cl, data_view_extent_cl, tsf_parameters_cl, misc_float_cl, misc_int_cl, misc_float_k_raytrace_cl;
     cl_mem bricks_cl, oct_index_cl, oct_brick_cl;
     cl_kernel K_SVO_RAYTRACE, K_FUNCTION_RAYTRACE;
     cl_device * device;
@@ -276,6 +276,8 @@ private:
     MiniArray<float> colorBackDropC;
 
     bool isGLIntitialized;
+    bool isRayTexInitialized;
+    bool isTsfTexInitialized;
 };
 
 #endif

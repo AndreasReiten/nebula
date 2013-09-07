@@ -7,6 +7,8 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     isGLIntitialized = false;
+    isRayTexInitialized = false;
+    isTsfTexInitialized = false;
 
     ray_res = 20;
 
@@ -162,8 +164,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
 
-    //~this->glInit();
-    //~std::cout << "Done Constructing VolumeRenderGLWidget" << std::endl;
+    this->glInit();
 }
 
 VolumeRenderGLWidget::~VolumeRenderGLWidget()
@@ -171,26 +172,35 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     if (isGLIntitialized)
     {
-        if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 1");
+        if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl); // Might need aquire...
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark s2");
         if (misc_int_cl) clReleaseMemObject(misc_int_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark d2");
         if (misc_float_cl) clReleaseMemObject(misc_float_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark f2");
         if (misc_float_k_raytrace_cl) clReleaseMemObject(misc_float_k_raytrace_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2d");
         if (tsf_parameters_cl) clReleaseMemObject(tsf_parameters_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark g2");
         if (data_view_extent_cl) clReleaseMemObject(data_view_extent_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2a");
         if (data_extent_cl) clReleaseMemObject(data_extent_cl);
-        if (bbox_extent_cl) clReleaseMemObject(bbox_extent_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark h2");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2b");
         if (view_matrix_inv_cl) clReleaseMemObject(view_matrix_inv_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2x");
         if (function_view_matrix_inv_cl) clReleaseMemObject(function_view_matrix_inv_cl);
-
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2x");
         if (oct_index_cl) clReleaseMemObject(oct_index_cl);
         if (oct_brick_cl) clReleaseMemObject(oct_brick_cl);
 
-        if (bricks_sampler) clReleaseSampler(bricks_sampler);
+        //~if (bricks_sampler) clReleaseSampler(bricks_sampler);
         if (bricks_cl) clReleaseMemObject(bricks_cl);
 
-        if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
-        if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
-
+        //~if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
+        if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 3");
         if (K_FUNCTION_RAYTRACE) clReleaseKernel(K_FUNCTION_RAYTRACE);
         if (K_SVO_RAYTRACE) clReleaseKernel(K_SVO_RAYTRACE);
 
@@ -198,11 +208,11 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         //~ if (context) clReleaseContext(context);
         if (program) clReleaseProgram(program);
 
-
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 4");
         glDeleteFramebuffers(1, &STD_FBO);
         glDeleteFramebuffers(1, &MSAA_FBO);
         glDeleteFramebuffers(1, &SMALL_FBO);
-
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 5");
         glDeleteTextures(1, &msaa_intermediate_storage_tex);
         glDeleteTextures(1, &small_storage_tex);
         glDeleteTextures(1, &storage_tex);
@@ -218,7 +228,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteTextures(1, &hist_tex);
         glDeleteTextures(1, &hist_tex_norm);
         glDeleteTextures(1, &hist_tex_log);
-
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 6");
         glDeleteBuffers(10, tex_coord_vbo);
         glDeleteBuffers(20, position_vbo);
         glDeleteBuffers(5, lab_reference_vbo);
@@ -230,7 +240,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteBuffers(1, &text_position_vbo);
         glDeleteBuffers(1, &text_texpos_vbo);
 
-
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 7");
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
         glDeleteProgram(std_3d_program);
@@ -453,14 +463,14 @@ void VolumeRenderGLWidget::setOcttreeIndices(MiniArray<unsigned int> * OCT_INDEX
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     /* Send to the kernel */
     err = clSetKernelArg(K_SVO_RAYTRACE, 3, sizeof(cl_mem), &oct_index_cl);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
     }
 }
 
@@ -537,14 +547,14 @@ void VolumeRenderGLWidget::setOcttreeBricks(MiniArray<unsigned int> * OCT_BRICK,
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     /* Send to the kernel */
     err = clSetKernelArg(K_SVO_RAYTRACE, 4, sizeof(cl_mem), &oct_brick_cl);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
     }
 
     this->timerLastAction->start();
@@ -636,7 +646,7 @@ void VolumeRenderGLWidget::setBrickPool(MiniArray<float> * BRICKS, size_t n_bric
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     bricks_sampler = clCreateSampler((*context), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
@@ -646,7 +656,7 @@ void VolumeRenderGLWidget::setBrickPool(MiniArray<float> * BRICKS, size_t n_bric
     err |= clSetKernelArg(K_SVO_RAYTRACE, 5, sizeof(cl_sampler), &bricks_sampler);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
     }
 
     this->setMiscArrays();
@@ -674,24 +684,27 @@ void VolumeRenderGLWidget::initializeGL()
     this->initFreetype();
     init_tsf(0, 0, &transferFunction);
     this->setTsfTexture(&transferFunction);
+    this->setRaytracingTexture();
     this->setDataExtent();
     this->setTsfParameters();
     this->setMiscArrays();
-    this->setEmit();
+    //~this->setEmit();
 
     isGLIntitialized = true;
 }
-void VolumeRenderGLWidget::setEmit()
-{
-    emit changedDataMinValue(10.0);
-    emit changedDataMaxValue(1000.0);
-    emit changedAlphaValue(0.5);
-    emit changedBrightnessValue(1.5);
-    emit changedFuncParamA(13.5);
-    emit changedFuncParamB(10.5);
-    emit changedFuncParamC(10.0);
-    emit changedFuncParamD(0.001);
-}
+//~void VolumeRenderGLWidget::setEmit()
+//~{
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+//~
+    //~emit changedDataMinValue(10.0);
+    //~emit changedDataMaxValue(1000.0);
+    //~emit changedAlphaValue(0.5);
+    //~emit changedBrightnessValue(1.5);
+    //~emit changedFuncParamA(13.5);
+    //~emit changedFuncParamB(10.5);
+    //~emit changedFuncParamC(10.0);
+    //~emit changedFuncParamD(0.001);
+//~}
 
 
 void VolumeRenderGLWidget::setProjection(double F, double N, double fov, bool isPerspectiveRequired)
@@ -740,14 +753,14 @@ void VolumeRenderGLWidget::setTsfParameters()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error writing to CL buffer 'tsf_parameters_cl': " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'tsf_parameters_cl': "+QString(cl_error_cstring(err)));
         }
 
         err = clSetKernelArg(K_FUNCTION_RAYTRACE, 6, sizeof(cl_mem), &tsf_parameters_cl);
         err |= clSetKernelArg(K_SVO_RAYTRACE, 10, sizeof(cl_mem), &tsf_parameters_cl);
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error setting kernel argument 'tsf_parameters_cl': " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument 'tsf_parameters_cl': "+QString(cl_error_cstring(err)));
         }
         //~ {
             //~ Matrix<float> tsf_texcoords;
@@ -775,7 +788,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error writing to CL buffer 'misc_int_cl': " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'misc_int_cl': "+QString(cl_error_cstring(err)));
         }
 
         err = clEnqueueWriteBuffer ( (*queue),
@@ -787,7 +800,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error writing to CL buffer 'misc_float_cl': " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'misc_float_cl': "+QString(cl_error_cstring(err)));
         }
 
         err = clEnqueueWriteBuffer ( (*queue),
@@ -799,7 +812,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error writing to CL buffer 'misc_float_cl': " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'misc_float_cl': "+QString(cl_error_cstring(err)));
         }
 
         err = clSetKernelArg(K_FUNCTION_RAYTRACE, 7, sizeof(cl_mem), &misc_float_cl);
@@ -808,7 +821,7 @@ void VolumeRenderGLWidget::setMiscArrays()
         err |= clSetKernelArg(K_SVO_RAYTRACE, 12, sizeof(cl_mem), &misc_int_cl);
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error setting kernel argument 'misc_float/int_cl': " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument 'misc_float/int_cl': "+QString(cl_error_cstring(err)));
         }
     }
 }
@@ -1483,7 +1496,7 @@ void VolumeRenderGLWidget::setDataExtent()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error writing to CL buffer 'data_extent_cl': " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'data_extent_cl': "+QString(cl_error_cstring(err)));
     }
 
     err = clEnqueueWriteBuffer ( (*queue),
@@ -1495,7 +1508,7 @@ void VolumeRenderGLWidget::setDataExtent()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error writing to CL buffer 'data_view_extent_cl': " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'data_view_extent_cl': "+QString(cl_error_cstring(err)));
     }
 
     err = clSetKernelArg(K_FUNCTION_RAYTRACE, 4, sizeof(cl_mem),  &data_extent_cl);
@@ -1505,7 +1518,7 @@ void VolumeRenderGLWidget::setDataExtent()
     err |= clSetKernelArg(K_SVO_RAYTRACE, 9, sizeof(cl_mem), &data_view_extent_cl);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
     }
 }
 
@@ -1536,7 +1549,7 @@ void VolumeRenderGLWidget::setViewMatrix()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error writing to CL buffer 'view_matrix_inv_cl': " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'view_matrix_inv_cl': "+QString(cl_error_cstring(err)));
     }
 
     err = clEnqueueWriteBuffer ( (*queue),
@@ -1548,14 +1561,14 @@ void VolumeRenderGLWidget::setViewMatrix()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error writing to CL buffer 'view_matrix_inv_cl': " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'view_matrix_inv_cl': "+QString(cl_error_cstring(err)));
     }
 
     err = clSetKernelArg(K_FUNCTION_RAYTRACE, 3, sizeof(cl_mem), (void *) &function_view_matrix_inv_cl);
     err |= clSetKernelArg(K_SVO_RAYTRACE, 7, sizeof(cl_mem), (void *) &view_matrix_inv_cl);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
     }
 
     this->setDataExtent();
@@ -2172,7 +2185,7 @@ void VolumeRenderGLWidget::setTsfBrightness(double value)
 
 void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
 {
-    if (ray_tex_cl && tsf_tex_cl && isRefreshRequired)
+    if (isRefreshRequired) // MMM
     {
         /* Aquire shared CL/GL objects */
         callTimer->start();
@@ -2182,7 +2195,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
         err = clEnqueueAcquireGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error aquiring shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error aquiring shared CL/GL objects: "+QString(cl_error_cstring(err)));
         }
 
         /* Launch rendering kernel */
@@ -2209,7 +2222,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
                 err = clEnqueueNDRangeKernel((*queue), kernel, 2, call_offset, area_per_call, ray_loc_ws, 0, NULL, NULL);
                 if (err != CL_SUCCESS)
                 {
-                    std::cout << "Error launching kernel: " << cl_error_cstring(err) << std::endl;
+                    writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error launching kernel: "+QString(cl_error_cstring(err)));
                 }
                 clFinish((*queue));
             }
@@ -2220,7 +2233,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
         clFinish((*queue));
         if (err != CL_SUCCESS)
         {
-            std::cout << "Error releasing shared CL/GL objects: " << cl_error_cstring(err) << std::endl;
+            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error releasing shared CL/GL objects: "+QString(cl_error_cstring(err)));
         }
 
 
@@ -2831,15 +2844,16 @@ void VolumeRenderGLWidget::initializeProgramsGL()
 
 void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
 {
-    /* Generate a transfer function CL texture */
-    if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
-    //~ if (tsf_tex_cl) clReleaseMemObject(tsf_tex_cl);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
+    /* Generate a transfer function CL texture */
+    if (isTsfTexInitialized) clReleaseSampler(tsf_tex_sampler);
+     //~if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
+    std::cout << "hi" << std::endl;
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
     glDeleteTextures(1, &tsf_tex);
     glGenTextures(1, &tsf_tex);
-
     glBindTexture(GL_TEXTURE_2D, tsf_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2856,7 +2870,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         GL_FLOAT,
         tsf->getSpline().getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
-
+    std::cout << "hi" << std::endl;
     // Buffer for tsf_tex_cl
     //~ tsf->getPreIntegrated().getColMajor().toFloat().print(2, "preIntegrated");
 
@@ -2874,14 +2888,16 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
+    std::cout << "hi" << std::endl;
+    isTsfTexInitialized = true;
 
     // The sampler for tsf_tex_cl
     tsf_tex_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Could not create sampler: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not create sampler: "+QString(cl_error_cstring(err)));
     }
     // SET KERNEL ARGS
     err = clSetKernelArg(K_SVO_RAYTRACE, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
@@ -2890,7 +2906,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     err |= clSetKernelArg(K_FUNCTION_RAYTRACE, 2, sizeof(cl_sampler), &tsf_tex_sampler);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
     }
 }
 
@@ -2910,9 +2926,24 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     else ray_glb_ws[1] = ray_tex_dim[1];
 
 
-    MISC_INT[6] = ray_tex_dim[0];
-    MISC_INT[7] = ray_tex_dim[1];
-    setMiscArrays();
+    //~MISC_INT[6] = ray_tex_dim[0];
+    //~MISC_INT[7] = ray_tex_dim[1];
+    //~setMiscArrays();
+
+    //~glFinish();//MMM
+    //~err = clEnqueueAcquireGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
+    //~if (err != CL_SUCCESS)
+    //~{
+        //~writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error aquiring shared CL/GL objects: "+QString(cl_error_cstring(err)));
+    //~}
+    if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl);
+    //~err = clEnqueueReleaseGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
+    //~clFinish((*queue));
+    //~if (err != CL_SUCCESS)
+    //~{
+        //~writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error releasing shared CL/GL objects: "+QString(cl_error_cstring(err)));
+    //~}
+
 
     // Update GL texture
     glActiveTexture(GL_TEXTURE0);
@@ -2934,21 +2965,21 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Convert to CL texture
-    //~ if (ray_tex_cl) clReleaseMemObject(ray_tex_cl);
-
     ray_tex_cl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL object from GL texture: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
         return 0;
     }
+
+    isRayTexInitialized = true;
 
     // Pass texture to CL kernel
     err = clSetKernelArg(K_SVO_RAYTRACE, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
     err |= clSetKernelArg(K_FUNCTION_RAYTRACE, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error setting kernel argument: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
         return 0;
     }
 
@@ -2968,7 +2999,7 @@ int VolumeRenderGLWidget::initResourcesCL()
     program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "VolumeRenderGLWidget: Could not create program from source: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": VolumeRenderGLWidget: Could not create program from source: "+QString(cl_error_cstring(err)));
         return 0;
     }
 
@@ -2978,7 +3009,7 @@ int VolumeRenderGLWidget::initResourcesCL()
     if (err != CL_SUCCESS)
     {
         // Compile log
-        std::cout << "Could not compile/link program: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not compile/link program: "+QString(cl_error_cstring(err)));
         std::cout << "--- START KERNEL COMPILE LOG ---" << std::endl;
         char* build_log;
         size_t log_size;
@@ -2996,14 +3027,14 @@ int VolumeRenderGLWidget::initResourcesCL()
     K_SVO_RAYTRACE = clCreateKernel(program, "svoRayTrace", &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Could not create kernel object: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not create kernel object: "+QString(cl_error_cstring(err)));
         return 0;
     }
 
     K_FUNCTION_RAYTRACE = clCreateKernel(program, "modelRayTrace", &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Could not create kernel object: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not create kernel object: "+QString(cl_error_cstring(err)));
         return 0;
     }
 
@@ -3015,7 +3046,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     function_view_matrix_inv_cl = clCreateBuffer((*context),
@@ -3025,7 +3056,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     data_extent_cl = clCreateBuffer((*context),
@@ -3035,7 +3066,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     data_view_extent_cl = clCreateBuffer((*context),
@@ -3045,7 +3076,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     tsf_parameters_cl = clCreateBuffer((*context),
@@ -3055,7 +3086,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     misc_float_cl = clCreateBuffer((*context),
@@ -3065,7 +3096,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     misc_int_cl = clCreateBuffer((*context),
@@ -3075,7 +3106,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     misc_float_k_raytrace_cl = clCreateBuffer((*context),
@@ -3085,7 +3116,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        std::cout << "Error creating CL buffer: " << cl_error_cstring(err) << std::endl;
+        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
 
     return 1;
