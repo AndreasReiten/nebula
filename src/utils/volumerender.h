@@ -278,6 +278,9 @@ private:
     bool isGLIntitialized;
     bool isRayTexInitialized;
     bool isTsfTexInitialized;
+    bool isOcttreeIndicesInitialized;
+    bool isOcttreeBricksInitialized;
+    bool isBrickPoolInitialized;
 };
 
 #endif

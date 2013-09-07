@@ -122,7 +122,7 @@ void ImageRenderGLWidget::initFreetype()
     FT_Library ft;
     FT_Face face;
     FT_Error error;
-    const char * fontfilename = "../../src/fonts/FreeMonoBold.ttf";
+    const char * fontfilename = "../../src/fonts/FreeMono.ttf";
 
     error = FT_Init_FreeType(&ft);
     if(error)
@@ -265,7 +265,7 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
 
 void ImageRenderGLWidget::releaseSharedBuffers()
 {
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
      // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
@@ -695,7 +695,7 @@ cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
 
 void ImageRenderGLWidget::aquireSharedBuffers()
 {
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     glFinish();
     err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);

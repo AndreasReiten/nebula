@@ -554,3 +554,63 @@ void VoxelizeWorker::process()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     emit finished();
 }
+
+
+
+/***
+ *         dBBBBb  dBP.dBBBBP dBBBBBb  dBP dBBBBBb dBP dBP
+ *            dB'     BP          dB'           BB    dBP
+ *       dBP dB' dBP  `BBBBb  dBBBP' dBP    dBP BB   dBP
+ *      dBP dB' dBP      dBP dBP    dBP    dBP  BB  dBP
+ *     dBBBBB' dBP  dBBBBP' dBP    dBBBBP dBBBBBBB dBP
+ *
+ */
+
+DisplayFileWorker::DisplayFileWorker()
+{
+    verbosity = 1;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    this->isCLInitialized = false;
+    this->verbosity = verbosity;
+    test_background.set(1475, 1679, 0.0);
+}
+
+DisplayFileWorker::~DisplayFileWorker()
+{
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    if (isCLInitialized) clReleaseKernel(projection_kernel);
+}
+
+void DisplayFileWorker::setDisplayFile(int value)
+{
+    display_file = value;
+}
+
+
+void DisplayFileWorker::process()
+{
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    PilatusFile file;
+
+    int STATUS_OK = file.set(file_paths->at(display_file), context, queue);
+    if (STATUS_OK)
+    {
+        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
+        STATUS_OK = file.readData();
+        if (STATUS_OK)
+        {
+            emit changedImageWidth(file.getWidth());
+            emit changedImageHeight(file.getHeight());
+            file.setProjectionKernel(&projection_kernel);
+            file.setBackground(&test_background, file.getFlux(), file.getExpTime());
+
+            size_t n;
+            STATUS_OK = file.filterData( &n, NULL, *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high, 0);
+            if (STATUS_OK)
+            {
+                emit repaintImageWidget();
+            }
+        }
+    }
+    emit finished();
+}

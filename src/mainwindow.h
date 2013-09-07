@@ -95,8 +95,13 @@ private slots:
     void setProjectThresholdLow(double value);
     void setProjectThresholdHigh(double value);
     void runProjectFileThread();
-    //~void makeIrWidgetCurrent();
+    void runDisplayFileThread(int value);
     void paintImage();
+    void incrementDisplayFile1();
+    void incrementDisplayFile10();
+    void decrementDisplayFile1();
+    void decrementDisplayFile10();
+    void setDisplayFile(int value);
 
 signals:
     void changedDetector(int value);
@@ -306,16 +311,21 @@ private:
     QGridLayout * mainLayout;
     QGridLayout * viewLayout;
 
+    // Related to workers and threading
     QThread * setFileThread;
     QThread * readFileThread;
     QThread * projectFileThread;
     QThread * voxelizeThread;
     QThread * allInOneThread;
+    QThread * displayFileThread;
+
+    int display_file;
 
     SetFileWorker * setFileWorker;
     ReadFileWorker * readFileWorker;
     ProjectFileWorker * projectFileWorker;
     AllInOneWorker * allInOneWorker;
     VoxelizeWorker * voxelizeWorker;
+    DisplayFileWorker * displayFileWorker;
 };
 #endif

@@ -136,7 +136,7 @@ class ReadFileWorker : public BaseWorker
         ReadFileWorker();
         ~ReadFileWorker();
 
-    public slots:
+    private slots:
         void process();
 
     private:
@@ -151,10 +151,8 @@ class ProjectFileWorker : public BaseWorker
     public:
         ProjectFileWorker();
         ~ProjectFileWorker();
-        //~void setImageRenderWidget(ImageRenderGLWidget * imageRenderWidget);
 
     signals:
-        //~void testSignal(int value);
         void changedImageWidth(int value);
         void changedImageHeight(int value);
 
@@ -162,12 +160,26 @@ class ProjectFileWorker : public BaseWorker
         void process();
         void initializeCLKernel();
 
-    private:
+    protected:
         // Related to OpenCL
         cl_kernel projection_kernel;
+};
 
-        // Related to the GLWidgets
-        //~ImageRenderGLWidget * imageRenderWidget;
+class DisplayFileWorker: public ProjectFileWorker
+{
+    Q_OBJECT
+
+    public:
+        DisplayFileWorker();
+        ~DisplayFileWorker();
+        void setDisplayFile(int value);
+
+    private slots:
+        void process();
+
+    private:
+        int display_file;
+        Matrix<float> test_background;
 };
 
 

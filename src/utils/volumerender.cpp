@@ -9,6 +9,9 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     isGLIntitialized = false;
     isRayTexInitialized = false;
     isTsfTexInitialized = false;
+    isOcttreeIndicesInitialized = false;
+    isOcttreeBricksInitialized = false;
+    isBrickPoolInitialized = false;
 
     ray_res = 20;
 
@@ -192,12 +195,12 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2x");
         if (function_view_matrix_inv_cl) clReleaseMemObject(function_view_matrix_inv_cl);
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2x");
-        if (oct_index_cl) clReleaseMemObject(oct_index_cl);
-        if (oct_brick_cl) clReleaseMemObject(oct_brick_cl);
-
+        if (isOcttreeIndicesInitialized) clReleaseMemObject(oct_index_cl);
+        if (isOcttreeBricksInitialized) clReleaseMemObject(oct_brick_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 21x");
         //~if (bricks_sampler) clReleaseSampler(bricks_sampler);
-        if (bricks_cl) clReleaseMemObject(bricks_cl);
-
+        if (isBrickPoolInitialized) clReleaseMemObject(bricks_cl);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 22x");
         //~if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
         if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 3");
@@ -455,6 +458,9 @@ void VolumeRenderGLWidget::setOcttreeIndices(MiniArray<unsigned int> * OCT_INDEX
 
     MISC_INT[0] = (int) LEVELS;
 
+    if (isOcttreeIndicesInitialized) clReleaseMemObject(oct_index_cl);
+    isOcttreeIndicesInitialized = true;
+
     /* Load the contents into a CL texture */
     oct_index_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -536,8 +542,11 @@ void VolumeRenderGLWidget::setOcttreeBricks(MiniArray<unsigned int> * OCT_BRICK,
     this->BPP = pool_power;
     this->isFunctionActive = false;
 
-    std::cout << "this->OCT_BRICK.size() " << this->OCT_BRICK->size() << std::endl;
-    std::cout << "this->BPP " << this->BPP << std::endl;
+    //~std::cout << "this->OCT_BRICK.size() " << this->OCT_BRICK->size() << std::endl;
+    //~std::cout << "this->BPP " << this->BPP << std::endl;
+
+    if (isOcttreeBricksInitialized) clReleaseMemObject(oct_brick_cl);
+    isOcttreeBricksInitialized = true;
 
     /* Load the contents into a CL texture */
     oct_brick_cl = clCreateBuffer((*context),
@@ -605,9 +614,9 @@ void VolumeRenderGLWidget::setBrickPool(MiniArray<float> * BRICKS, size_t n_bric
 
     MISC_INT[1] = (int) DIM_BRICKS;
 
-    std::cout << "this->BRICKS.size() " << this->BRICKS->size() << std::endl;
-    std::cout << "this->N_BRICKS " << this->N_BRICKS << std::endl;
-    std::cout << "this->DIM_BRICKS " << this->DIM_BRICKS << std::endl;
+    //~std::cout << "this->BRICKS.size() " << this->BRICKS->size() << std::endl;
+    //~std::cout << "this->N_BRICKS " << this->N_BRICKS << std::endl;
+    //~std::cout << "this->DIM_BRICKS " << this->DIM_BRICKS << std::endl;
 
     MiniArray<float> tex_buf;
 
@@ -632,7 +641,10 @@ void VolumeRenderGLWidget::setBrickPool(MiniArray<float> * BRICKS, size_t n_bric
     bricks_format.image_channel_order = CL_INTENSITY;
     bricks_format.image_channel_data_type = CL_FLOAT;
 
-    std::cout << tex_buf_dim[0] << " " << tex_buf_dim[2] << " " << std::endl;
+    //~std::cout << tex_buf_dim[0] << " " << tex_buf_dim[2] << " " << std::endl;
+
+    if (isBrickPoolInitialized) clReleaseMemObject(bricks_cl);
+    isBrickPoolInitialized = true;
 
     bricks_cl = clCreateImage3D ( (*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -2836,7 +2848,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     /* Generate a transfer function CL texture */
     if (isTsfTexInitialized) clReleaseSampler(tsf_tex_sampler);
      //~if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
-    std::cout << "hi" << std::endl;
+
     // Buffer for tsf_tex
     glActiveTexture(GL_TEXTURE0);
     glDeleteTextures(1, &tsf_tex);
@@ -2857,7 +2869,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         GL_FLOAT,
         tsf->getSpline().getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
-    std::cout << "hi" << std::endl;
+
     // Buffer for tsf_tex_cl
     //~ tsf->getPreIntegrated().getColMajor().toFloat().print(2, "preIntegrated");
 
@@ -2877,7 +2889,6 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     {
         writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
-    std::cout << "hi" << std::endl;
     isTsfTexInitialized = true;
 
     // The sampler for tsf_tex_cl

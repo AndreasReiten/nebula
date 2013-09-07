@@ -8,6 +8,7 @@ MainWindow::MainWindow()
     // Set default values
     brick_inner_dimension = 7;
     brick_outer_dimension = 8;
+    display_file = 0;
 
     // Set stylesheet
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
@@ -60,6 +61,7 @@ void MainWindow::initializeThreads()
     projectFileThread = new QThread;
     voxelizeThread = new QThread;
     allInOneThread = new QThread;
+    displayFileThread = new QThread;
 
     setFileWorker = new SetFileWorker();
     setFileWorker->setFilePaths(&file_paths);
@@ -149,6 +151,83 @@ void MainWindow::initializeThreads()
     voxelizeWorker->moveToThread(voxelizeThread);
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
+
+
+    displayFileWorker = new DisplayFileWorker();
+    displayFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
+    displayFileWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
+    displayFileWorker->setFilePaths(&file_paths);
+    displayFileWorker->setFiles(&files);
+    displayFileWorker->initializeCLKernel();
+    displayFileWorker->setReduceThresholdLow(&threshold_reduce_low);
+    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
+    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
+    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
+
+    displayFileWorker->moveToThread(displayFileThread);
+    connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
+    connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
+    connect(displayFileWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
+    connect(displayFileWorker, SIGNAL(finished()), imageRenderWidget, SLOT(releaseSharedBuffers));
+    connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(displayFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
+    connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(displayFileWorker, SIGNAL(repaintImageWidget()), this, SLOT(paintImage()), Qt::BlockingQueuedConnection);
+
+    // Qt5: connect(taxFileButton, &TaxFileButton::clicked, [this](bool arg) { doStuff(arg, "taxfile.txt");}  );
+    connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
+    connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
+    connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
+    connect(this->imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
+    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
+}
+
+void MainWindow::incrementDisplayFile1()
+{
+    display_file++;
+    runDisplayFileThread(display_file);
+}
+void MainWindow::incrementDisplayFile10()
+{
+    display_file+=10;
+    runDisplayFileThread(display_file);
+}
+void MainWindow::decrementDisplayFile1()
+{
+    display_file--;
+    runDisplayFileThread(display_file);
+}
+void MainWindow::decrementDisplayFile10()
+{
+    display_file-=10;
+    runDisplayFileThread(display_file);
+}
+void MainWindow::setDisplayFile(int value)
+{
+    if (display_file != value)
+    {
+        display_file = value;
+        runDisplayFileThread(display_file);
+    }
+}
+
+void MainWindow::runDisplayFileThread(int value)
+{
+    display_file = value;
+
+    if (file_paths.size() > 0 )
+    {
+        if (display_file < 0) display_file = 0;
+        if (display_file >= file_paths.size()) display_file = file_paths.size() - 1;
+
+        imageNumberSpinBox->setValue(display_file);
+        displayFileWorker->setDisplayFile(display_file);
+
+        volumeRenderWidget->hide();
+        imageRenderWidget->aquireSharedBuffers();
+        displayFileThread->start();
+    }
 }
 
 void MainWindow::runProjectFileThread()
@@ -719,11 +798,7 @@ void MainWindow::initializeConnects()
     //~connect(treshLimD_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdProject(double)));
     //~connect(dataInstance, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     //~connect(dataInstance, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    //~connect(this->imageForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame1()));
-    //~connect(this->imageFastForwardButton, SIGNAL(clicked()), dataInstance, SLOT(incrementDisplayFrame5()));
-    //~connect(this->imageBackButton, SIGNAL(clicked()), dataInstance, SLOT(decrementDisplayFrame1()));
-    //~connect(this->imageFastBackButton, SIGNAL(clicked()), dataInstance, SLOT(decrementDisplayFrame5()));
-    //~connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setDisplayFrame(int)));
+    //~
     //~connect(dataInstance, SIGNAL(displayFrameChanged(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
 
     /* imageRenderWidget <-> dataInstance */
@@ -930,6 +1005,8 @@ void MainWindow::initializeInteractives()
         imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
         imageNumberSpinBox = new QSpinBox;
+        imageNumberSpinBox->setMinimum(0);
+        imageNumberSpinBox->setAccelerated(true);
 
 
         imageRenderWidget = new ImageRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
@@ -1414,6 +1491,9 @@ void MainWindow::runReadScript()
 			QApplication::restoreOverrideCursor();
 		#endif
 	}
+
+    imageNumberSpinBox->setMaximum(file_paths.size()-1);
+    imageNumberSpinBox->setMinimum(0);
 
 }
 
