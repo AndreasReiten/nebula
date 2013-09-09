@@ -18,7 +18,8 @@ HEADERS       = src/mainwindow.h \
                 src/utils/searchnode.h \
                 src/utils/bricknode.h \
                 src/utils/fileformat.h \
-                src/utils/atlas.h
+                src/utils/atlas.h \
+                src/utils/sparsevoxelocttree.h
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
                 src/utils/worker.cpp \
@@ -32,7 +33,8 @@ SOURCES       = src/main.cpp \
                 src/utils/searchnode.cpp \
                 src/utils/bricknode.cpp \
                 src/utils/fileformat.cpp \
-                src/utils/atlas.cpp
+                src/utils/atlas.cpp \
+                src/utils/sparsevoxelocttree.cpp
 RESOURCES     = riv.qrc
 
 unix {

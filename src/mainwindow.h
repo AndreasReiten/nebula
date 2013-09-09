@@ -30,7 +30,7 @@
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QSlider>
-
+#include <QList>
 
 #include <hdf5.h>
 /* GL and CL*/
@@ -55,6 +55,7 @@
 #include "utils/volumerender.h"
 #include "utils/imagerender.h"
 #include "utils/worker.h"
+#include "utils/sparsevoxelocttree.h"
 
 class MainWindow : public QMainWindow
 {
@@ -68,6 +69,7 @@ public:
 protected:
 
 private slots:
+    void setCurrentSvoLevel(int value);
     void setTab(int tab);
     void openSVO();
     void toggleFullScreen();
@@ -96,7 +98,6 @@ private slots:
     void setProjectThresholdHigh(double value);
     void runProjectFileThread();
     void runDisplayFileThread(int value);
-    void paintImage();
     void incrementDisplayFile1();
     void incrementDisplayFile10();
     void decrementDisplayFile1();
@@ -110,6 +111,12 @@ signals:
     void changedPaths(QStringList strlist);
 
 private:
+    float suggested_search_radius_high;
+    float suggested_search_radius_low;
+    float suggested_q;
+
+    QList<SparseVoxelOcttree> svo_list;
+
     MiniArray<float> VIEW_BRICKS;
     MiniArray<unsigned int> VIEW_OCT_INDEX;
     MiniArray<unsigned int> VIEW_OCT_BRICK;

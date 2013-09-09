@@ -29,6 +29,7 @@ class SearchNode {
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);
         double * getExtent();
+
     private:
         SearchNode * parent;
         SearchNode ** children;

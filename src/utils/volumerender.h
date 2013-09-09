@@ -38,6 +38,7 @@
 #include "miniarray.h"
 #include "matrix.h"
 #include "atlas.h"
+#include "sparsevoxelocttree.h"
 
 class VolumeRenderGLWidget : public QGLWidget
 {
@@ -108,6 +109,7 @@ private:
     Atlas * fontMedium;
     Atlas * fontLarge;
 
+    SparseVoxelOcttree * svo;
     //~void setEmit();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);

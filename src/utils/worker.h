@@ -37,6 +37,9 @@
 #include "matrix.h"
 #include "fileformat.h"
 #include "imagerender.h"
+#include "searchnode.h"
+#include "bricknode.h"
+#include "sparsevoxelocttree.h"
 
 class BaseWorker : public QObject
 {
@@ -47,11 +50,12 @@ class BaseWorker : public QObject
         ~BaseWorker();
 
         void setFilePaths(QStringList * file_paths);
-        void setBrickInfo(int brick_inner_dimension, int brick_outer_dimension);
+        void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
         void setFiles(QList<PilatusFile> * files);
         void setReducedPixels(MiniArray<float> * reduced_pixels);
         void setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
+        void setSVOFile(SparseVoxelOcttree * svo);
 
     public slots:
         void killProcess();
@@ -74,6 +78,8 @@ class BaseWorker : public QObject
         void showGenericProgressBar(bool value);
         void changedTabWidget(int value);
         void repaintImageWidget();
+        void aquireSharedBuffers();
+        void releaseSharedBuffers();
 
     protected:
         // Related to the runtime
@@ -94,11 +100,10 @@ class BaseWorker : public QObject
         bool isCLInitialized;
 
         // Related to Voxelize
-        int brick_inner_dimension;
-        int brick_outer_dimension;
-        float suggested_search_radius_low;
-        float suggested_search_radius_high;
-        float suggested_q;
+        SparseVoxelOcttree * svo;
+        float * suggested_search_radius_low;
+        float * suggested_search_radius_high;
+        float * suggested_q;
 
         // Related to file treatment
         float * threshold_reduce_low;
@@ -190,12 +195,17 @@ class VoxelizeWorker : public BaseWorker
     public:
         VoxelizeWorker();
         ~VoxelizeWorker();
+        void setResources(MiniArray<unsigned int> * gpuIndices, MiniArray<unsigned int> * gpuBricks, MiniArray<float> * gpuBrickPool);
 
     public slots:
         void process();
+        void initializeCLKernel();
 
     private:
-        // add your variables here
+        cl_kernel brick_maker_kernel;
+
+        unsigned int getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child);
+        unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);
 };
 
 class AllInOneWorker : public BaseWorker

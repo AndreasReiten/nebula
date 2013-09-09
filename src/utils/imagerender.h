@@ -54,8 +54,7 @@ public:
     cl_mem * getGammaImgCLGL();
     cl_mem * getBetaImgCLGL();
     void setImageSize(int w, int h);
-    void aquireSharedBuffers();
-    void releaseSharedBuffers();
+
     //~void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
 
 signals:
@@ -64,6 +63,8 @@ signals:
 public slots:
     void setImageWidth(int value);
     void setImageHeight(int value);
+    void aquireSharedBuffers();
+    void releaseSharedBuffers();
     //~void setThreadFlag(bool value);
 
 

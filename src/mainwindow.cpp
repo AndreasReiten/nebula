@@ -6,9 +6,8 @@ MainWindow::MainWindow()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
 
     // Set default values
-    brick_inner_dimension = 7;
-    brick_outer_dimension = 8;
     display_file = 0;
+    svo_list.append(SparseVoxelOcttree());
 
     // Set stylesheet
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
@@ -53,6 +52,13 @@ MainWindow::~MainWindow()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
+void MainWindow::setCurrentSvoLevel(int value)
+{
+    int current_svo = 0;
+    std::cout << "svo_list[" << current_svo << "].getLevels() = " << value << std::endl;
+    svo_list[current_svo].setLevels(value);
+}
+
 void MainWindow::initializeThreads()
 {
 
@@ -63,10 +69,12 @@ void MainWindow::initializeThreads()
     allInOneThread = new QThread;
     displayFileThread = new QThread;
 
+    //### setFileWorker ###
     setFileWorker = new SetFileWorker();
     setFileWorker->setFilePaths(&file_paths);
     setFileWorker->setFiles(&files);
-    setFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
+    setFileWorker->setSVOFile(&(svo_list[0]));
+    setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     setFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
     setFileWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
 
@@ -87,10 +95,10 @@ void MainWindow::initializeThreads()
     connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
+    //### readFileWorker ###
     readFileWorker = new ReadFileWorker();
     readFileWorker->setFilePaths(&file_paths);
     readFileWorker->setFiles(&files);
-    readFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
 
     readFileWorker->moveToThread(readFileThread);
     connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
@@ -109,12 +117,11 @@ void MainWindow::initializeThreads()
     connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
-
+    //### projectFileWorker ###
     projectFileWorker = new ProjectFileWorker();
     projectFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
     projectFileWorker->setFilePaths(&file_paths);
     projectFileWorker->setFiles(&files);
-    projectFileWorker->setBrickInfo(brick_inner_dimension, brick_outer_dimension);
     projectFileWorker->setReducedPixels(&reduced_pixels);
     projectFileWorker->initializeCLKernel();
     projectFileWorker->setReduceThresholdLow(&threshold_reduce_low);
@@ -139,7 +146,9 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
     connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(projectFileWorker, SIGNAL(repaintImageWidget()), this, SLOT(paintImage()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWidget, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWidget, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
     allInOneWorker = new AllInOneWorker();
     allInOneWorker->moveToThread(allInOneThread);
@@ -147,12 +156,33 @@ void MainWindow::initializeThreads()
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
 
 
+    //### voxelizeWorker ###
     voxelizeWorker = new VoxelizeWorker();
     voxelizeWorker->moveToThread(voxelizeThread);
+    voxelizeWorker->setSVOFile(&(svo_list[0]));
+    voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+    voxelizeWorker->setReducedPixels(&reduced_pixels);
+    voxelizeWorker->initializeCLKernel();
+
+    voxelizeWorker->moveToThread(voxelizeThread);
+
+    connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
+    //~connect(voxelizeWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
+    connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(voxelizeWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
+    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(voxelizeWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
+    connect(voxelizeWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
+    connect(voxelizeWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
+    connect(voxelizeWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
+    connect(generateSvoButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
+    //### displayFileWorker ###
     displayFileWorker = new DisplayFileWorker();
     displayFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
     displayFileWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
@@ -168,13 +198,13 @@ void MainWindow::initializeThreads()
     connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
     connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
     connect(displayFileWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
-    connect(displayFileWorker, SIGNAL(finished()), imageRenderWidget, SLOT(releaseSharedBuffers));
     connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(displayFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
     connect(displayFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
     connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(displayFileWorker, SIGNAL(repaintImageWidget()), this, SLOT(paintImage()), Qt::BlockingQueuedConnection);
-
+    connect(displayFileWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWidget, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWidget, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
     // Qt5: connect(taxFileButton, &TaxFileButton::clicked, [this](bool arg) { doStuff(arg, "taxfile.txt");}  );
     connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
     connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
@@ -185,47 +215,41 @@ void MainWindow::initializeThreads()
 
 void MainWindow::incrementDisplayFile1()
 {
-    display_file++;
-    runDisplayFileThread(display_file);
+    int value = display_file + 1;
+    runDisplayFileThread(value);
 }
 void MainWindow::incrementDisplayFile10()
 {
-    display_file+=10;
-    runDisplayFileThread(display_file);
+    int value = display_file + 10;
+    runDisplayFileThread(value);
 }
 void MainWindow::decrementDisplayFile1()
 {
-    display_file--;
-    runDisplayFileThread(display_file);
+    int value = display_file - 1;
+    runDisplayFileThread(value);
 }
 void MainWindow::decrementDisplayFile10()
 {
-    display_file-=10;
-    runDisplayFileThread(display_file);
+    int value = display_file - 10;
+    runDisplayFileThread(value);
 }
 void MainWindow::setDisplayFile(int value)
 {
-    if (display_file != value)
-    {
-        display_file = value;
-        runDisplayFileThread(display_file);
-    }
+    runDisplayFileThread(value);
 }
 
 void MainWindow::runDisplayFileThread(int value)
 {
-    display_file = value;
+    if (value < 0) value = 0;
+    if (value >= file_paths.size()) value = file_paths.size() - 1;
 
-    if (file_paths.size() > 0 )
+    if ((file_paths.size() > 0 ) && (display_file != value))
     {
-        if (display_file < 0) display_file = 0;
-        if (display_file >= file_paths.size()) display_file = file_paths.size() - 1;
-
+        display_file = value;
         imageNumberSpinBox->setValue(display_file);
         displayFileWorker->setDisplayFile(display_file);
 
         volumeRenderWidget->hide();
-        imageRenderWidget->aquireSharedBuffers();
         displayFileThread->start();
     }
 }
@@ -235,16 +259,7 @@ void MainWindow::runProjectFileThread()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     volumeRenderWidget->hide();
     tabWidget->setCurrentIndex(1);
-    imageRenderWidget->aquireSharedBuffers();
     projectFileThread->start();
-}
-
-void MainWindow::paintImage()
-{
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-    imageRenderWidget->releaseSharedBuffers();
-    imageRenderWidget->repaint();
-    imageRenderWidget->aquireSharedBuffers();
 }
 
 void MainWindow::setReduceThresholdLow(double value)

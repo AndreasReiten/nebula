@@ -60,11 +60,11 @@ void ImageRenderGLWidget::setImageWidth(int value)
 {
     if (value != image_w)
     {
-        this->releaseSharedBuffers();
+        //~this->releaseSharedBuffers();
         this->image_w = value;
         this->setTarget();
         this->setTexturePositions();
-        this->aquireSharedBuffers();
+        //~this->aquireSharedBuffers();
     }
 }
 
@@ -72,11 +72,11 @@ void ImageRenderGLWidget::setImageHeight(int value)
 {
     if (value != image_h)
     {
-        this->releaseSharedBuffers();
+        //~this->releaseSharedBuffers();
         this->image_h = value;
         this->setTarget();
         this->setTexturePositions();
-        this->aquireSharedBuffers();
+        //~this->aquireSharedBuffers();
     }
 }
 
@@ -97,20 +97,28 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
 
     if (isGLIntitialized)
     {
+        std::cout << "Mark 0" << std::endl;
         if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
+        std::cout << "Mark 1" << std::endl;
         if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
+        std::cout << "Mark 2" << std::endl;
         if (isGammaImgInitialized) clReleaseMemObject(gamma_img_clgl);
-
+        std::cout << "Mark 3" << std::endl;
         glDeleteTextures(5, image_tex);
-
+        std::cout << "Mark 4" << std::endl;
         glDeleteBuffers(1, &text_coord_vbo);
+        std::cout << "Mark 5" << std::endl;
         glDeleteBuffers(1, &text_texpos_vbo);
+        std::cout << "Mark 6" << std::endl;
         glDeleteBuffers(5, screen_texpos_vbo);
+        std::cout << "Mark 7" << std::endl;
         glDeleteBuffers(5, screen_coord_vbo);
-
+        std::cout << "Mark 8" << std::endl;
         glDeleteProgram(std_text_program);
         glDeleteProgram(std_2d_tex_program);
+        std::cout << "Mark 9" << std::endl;
         glDeleteProgram(std_2d_color_program);
+        std::cout << "Mark 10" << std::endl;
     }
 }
 
@@ -265,7 +273,7 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
 
 void ImageRenderGLWidget::releaseSharedBuffers()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
      // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
@@ -695,7 +703,7 @@ cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
 
 void ImageRenderGLWidget::aquireSharedBuffers()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     glFinish();
     err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);

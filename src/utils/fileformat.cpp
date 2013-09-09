@@ -244,8 +244,7 @@ void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_cl
 
 int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive)
 {
-    //~std::cout << threshold_reduce_low << " " << threshold_reduce_high << " " << threshold_project_low << " " << threshold_project_high << std::endl;
-    std::cout << "omg" << std::endl;
+
     this->threshold_reduce_low = threshold_reduce_low;
     this->threshold_reduce_high = threshold_reduce_high;
 
@@ -297,8 +296,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     {
         writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
     }
-    std::cout << "omg" << std::endl;
-    // A sampler
+
+    // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
     cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
     if (err != CL_SUCCESS)
     {
@@ -342,7 +341,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     {
         writeLog("[PilatusFile][OpenCL][filterData]: Could not create sampler: "+QString(cl_error_cstring(err)));
     }
-    std::cout << "omg" << std::endl;
+
     // SET KERNEL ARGS
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
     err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
@@ -403,7 +402,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     origin[0] = 0;
     origin[1] = 0;
     origin[2] = 0;
-    std::cout << "omg" << std::endl;
+
     size_t region[3];
     region[0] = fast_dimension;
     region[1] = slow_dimension;
@@ -433,7 +432,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
             }
         }
     }
-    std::cout << "omg" << std::endl;
+
     return 1;
 }
 
