@@ -263,7 +263,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
     // Load data into a CL texture
@@ -281,7 +281,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
     cl_mem background_cl = clCreateImage2D ( (*context),
@@ -294,14 +294,14 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
     // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
     cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[PilatusFile][OpenCL][filterData]: Could not create sampler: "+QString(cl_error_cstring(err)));
+        writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
@@ -332,14 +332,14 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[PilatusFile][OpenCL][filterData]: Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
     // The sampler for tsf_img_clgl
     cl_sampler tsf_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[PilatusFile][OpenCL][filterData]: Could not create sampler: "+QString(cl_error_cstring(err)));
+        writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
     // SET KERNEL ARGS
@@ -375,7 +375,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     err |= clSetKernelArg(*filterKernel, 27, sizeof(cl_float), &max_counts);
     if (err != CL_SUCCESS)
     {
-        writeLog("[PilatusFile][OpenCL][filterData]: Error setting kernel argument:"+QString(cl_error_cstring(err)));
+        writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
     /* Launch rendering kernel */
@@ -391,7 +391,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
             err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if (err != CL_SUCCESS)
             {
-                writeLog("[PilatusFile][OpenCL][filterData]: Error launching kernel: "+QString(cl_error_cstring(err)));
+                writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
             }
         }
     }

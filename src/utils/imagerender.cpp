@@ -97,28 +97,29 @@ ImageRenderGLWidget::~ImageRenderGLWidget()
 
     if (isGLIntitialized)
     {
-        std::cout << "Mark 0" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
-        std::cout << "Mark 1" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
-        std::cout << "Mark 2" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (isGammaImgInitialized) clReleaseMemObject(gamma_img_clgl);
-        std::cout << "Mark 3" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteTextures(5, image_tex);
-        std::cout << "Mark 4" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteBuffers(1, &text_coord_vbo);
-        std::cout << "Mark 5" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteBuffers(1, &text_texpos_vbo);
-        std::cout << "Mark 6" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteBuffers(5, screen_texpos_vbo);
-        std::cout << "Mark 7" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteBuffers(5, screen_coord_vbo);
-        std::cout << "Mark 8" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteProgram(std_text_program);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteProgram(std_2d_tex_program);
-        std::cout << "Mark 9" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteProgram(std_2d_color_program);
-        std::cout << "Mark 10" << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
     }
 }
 
@@ -282,7 +283,7 @@ void ImageRenderGLWidget::releaseSharedBuffers()
     err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error releasing shared CL/GL objects: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 }
 void ImageRenderGLWidget::setMessageString(QString str)
@@ -660,7 +661,7 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     tsf_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
     isTsfImgInitialized = true;
 }
@@ -712,7 +713,7 @@ void ImageRenderGLWidget::aquireSharedBuffers()
     err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error aquiring shared CL/GL objects: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 }
 
@@ -747,7 +748,7 @@ int ImageRenderGLWidget::setTarget()
     alpha_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
     isAlphaImgInitialized = true;
@@ -775,7 +776,7 @@ int ImageRenderGLWidget::setTarget()
     beta_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
     isBetaImgInitialized = true;
@@ -803,7 +804,7 @@ int ImageRenderGLWidget::setTarget()
     gamma_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
     isGammaImgInitialized = true;

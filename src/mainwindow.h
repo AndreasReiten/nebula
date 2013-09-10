@@ -71,10 +71,12 @@ protected:
 private slots:
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
-    void openSVO();
+    //~void openSVO();
     void toggleFullScreen();
     void newFile();
-    void open();
+    void openScript();
+    void openSvo();
+    void saveSvo();
     bool save();
     bool saveAs();
     void about();
@@ -111,11 +113,14 @@ signals:
     void changedPaths(QStringList strlist);
 
 private:
+    int current_svo;
+
     float suggested_search_radius_high;
     float suggested_search_radius_low;
     float suggested_q;
 
-    QList<SparseVoxelOcttree> svo_list;
+    SparseVoxelOcttree svo_inprocess;
+    QList<SparseVoxelOcttree> svo_loaded;
 
     MiniArray<float> VIEW_BRICKS;
     MiniArray<unsigned int> VIEW_OCT_INDEX;
@@ -273,6 +278,7 @@ private:
 	QToolBar *scriptToolBar;
     QToolBar *viewToolBar;
 
+    QAction *saveSVOAct;
     QAction *logAct;
     QAction *dataStructureAct;
     QAction *backgroundAct;

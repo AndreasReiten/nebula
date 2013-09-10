@@ -6,8 +6,9 @@ MainWindow::MainWindow()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
 
     // Set default values
+    current_svo = 0;
     display_file = 0;
-    svo_list.append(SparseVoxelOcttree());
+    svo_loaded.append(SparseVoxelOcttree());
 
     // Set stylesheet
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
@@ -54,9 +55,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::setCurrentSvoLevel(int value)
 {
-    int current_svo = 0;
-    std::cout << "svo_list[" << current_svo << "].getLevels() = " << value << std::endl;
-    svo_list[current_svo].setLevels(value);
+    svo_inprocess.setLevels(value);
 }
 
 void MainWindow::initializeThreads()
@@ -73,7 +72,7 @@ void MainWindow::initializeThreads()
     setFileWorker = new SetFileWorker();
     setFileWorker->setFilePaths(&file_paths);
     setFileWorker->setFiles(&files);
-    setFileWorker->setSVOFile(&(svo_list[0]));
+    setFileWorker->setSVOFile(&svo_inprocess);
     setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     setFileWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
     setFileWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
@@ -159,7 +158,7 @@ void MainWindow::initializeThreads()
     //### voxelizeWorker ###
     voxelizeWorker = new VoxelizeWorker();
     voxelizeWorker->moveToThread(voxelizeThread);
-    voxelizeWorker->setSVOFile(&(svo_list[0]));
+    voxelizeWorker->setSVOFile(&svo_inprocess);
     voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     voxelizeWorker->setReducedPixels(&reduced_pixels);
     voxelizeWorker->initializeCLKernel();
@@ -329,7 +328,7 @@ void MainWindow::newFile()
     }
 }
 
-void MainWindow::open()
+void MainWindow::openScript()
 {
     if (maybeSave())
     {
@@ -360,7 +359,8 @@ void MainWindow::initializeActions()
     aboutOpenCLAct = new QAction(tr("About OpenCL"), this);
     aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
     aboutHDF5Act = new QAction(tr("About HDF"), this);
-    openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Load SVO"), this);
+    openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
+    saveSVOAct = new QAction(QIcon(":/art/save.png"), tr("Save SVO"), this);
     logAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle Logarithm"), this);
     dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle Data Structure"), this);
     backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle Background Color"), this);
@@ -590,145 +590,145 @@ void MainWindow::openUnitcellFile()
     }
 }
 
-void MainWindow::openSVO()
-{
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".h5 (*.h5);; All Files (*)"));
-
-    if ((fileName != ""))
-    {
-        /* HDF5 File structure
-        * File ->
-        *   /bricks -> (Data)
-        *       n_bricks (Attribute)
-        *       dim_brick (Attribute)
-        *
-        *   /oct_index -> (Data)
-        *       n_nodes (Attribute)
-        *       n_levels (Attribute)
-        *       extent (Attribute)
-        *
-        *   /oct_brick -> (Data)
-        *       brick_pool_power (Attribute)
-        */
-
-        hid_t file_id;
-        hid_t dset_id, atrib_id, plist_id;
-        herr_t status;
-        hsize_t dims[5];
-
-        size_t   nelmts;
-        unsigned flags, filter_info;
-        H5Z_filter_t filter_type;
-
-        /* Open file */
-        file_id = H5Fopen(fileName.toStdString().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-
-
-        /* Get misc metadata */
-        dset_id = H5Dopen(file_id, "/meta", H5P_DEFAULT);
-
-        atrib_id = H5Aopen(dset_id, "hist_norm_len", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
-        status = H5Aclose(atrib_id);
-
-        atrib_id = H5Aopen(dset_id, "hist_log10_len", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[1] );
-        status = H5Aclose(atrib_id);
-
-        HIST_NORM.reserve(dims[0]);
-        HIST_LOG.reserve(dims[1]);
-        HIST_MINMAX.reserve(2);
-        SVO_COMMENT.reserve(2000);
-
-        atrib_id = H5Aopen(dset_id, "histogram_normal", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_NORM.data() );
-        status = H5Aclose(atrib_id);
-
-        atrib_id = H5Aopen(dset_id, "histogram_log10", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_LOG.data() );
-        status = H5Aclose(atrib_id);
-
-        atrib_id = H5Aopen(dset_id, "value_min_max", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_MINMAX.data() );
-        status = H5Aclose(atrib_id);
-
-        status = H5Dread(dset_id, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, SVO_COMMENT.data());
-        status = H5Dclose(dset_id);
-
-        /* Get brick data */
-        dset_id = H5Dopen(file_id, "/bricks", H5P_DEFAULT);
-
-        atrib_id = H5Aopen(dset_id, "n_bricks", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_N_BRICKS );
-        status = H5Aclose(atrib_id);
-
-        atrib_id = H5Aopen(dset_id, "dim_brick", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_DIM_BRICKS );
-        status = H5Aclose(atrib_id);
-
-        VIEW_BRICKS.reserve(VIEW_N_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS);
-
-        plist_id = H5Dget_create_plist(dset_id);
-        nelmts = 0;
-        filter_type = H5Pget_filter(plist_id, 0, &flags, &nelmts, NULL, 0, NULL, &filter_info);
-        status = H5Dread(dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_BRICKS.data());
-
-        status = H5Dclose(dset_id);
-        status = H5Pclose (plist_id);
-
-
-        /* Get octtree data */
-        dset_id = H5Dopen(file_id, "/oct_index", H5P_DEFAULT);
-
-        atrib_id = H5Aopen(dset_id, "n_nodes", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
-        status = H5Aclose(atrib_id);
-
-        atrib_id = H5Aopen(dset_id, "n_levels", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_LEVELS );
-        status = H5Aclose(atrib_id);
-
-        atrib_id = H5Aopen(dset_id, "extent", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_FLOAT, VIEW_EXTENT );
-        status = H5Aclose(atrib_id);
-
-        VIEW_OCT_INDEX.reserve(dims[0]);
-        VIEW_OCT_BRICK.reserve(dims[0]);
-
-        status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_INDEX.data());
-        status = H5Dclose(dset_id);
-
-
-        dset_id = H5Dopen(file_id, "/oct_brick", H5P_DEFAULT);
-
-        atrib_id = H5Aopen(dset_id, "brick_pool_power", H5P_DEFAULT);
-        status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_BPP );
-        status = H5Aclose(atrib_id);
-
-        status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_BRICK.data());
-        status = H5Dclose(dset_id);
-
-        /* Close the file */
-        status = H5Fclose(file_id);
-
-
-        volumeRenderWidget->setOcttreeIndices(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
-        volumeRenderWidget->setOcttreeBricks(&(this->VIEW_OCT_BRICK), VIEW_BPP);
-        volumeRenderWidget->setBrickPool(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
-        volumeRenderWidget->setMeta(&(this->HIST_NORM), &(this->HIST_LOG), &(this->HIST_MINMAX), &(this->SVO_COMMENT));
-        alphaSpinBox->setValue(0.1);
-        brightnessSpinBox->setValue(2.0);
-        dataMinSpinBox->setValue(this->HIST_MINMAX[0]);
-        dataMaxSpinBox->setValue(this->HIST_MINMAX[1]);
-
-
-        print("\nLoaded file: \""+fileName+"\"");
-
-        tabWidget->setCurrentIndex(4);
-    }
-}
+//~void MainWindow::openSVO()
+//~{
+    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+//~
+    //~QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".h5 (*.h5);; All Files (*)"));
+//~
+    //~if ((fileName != ""))
+    //~{
+        //~/* HDF5 File structure
+        //~* File ->
+        //~*   /bricks -> (Data)
+        //~*       n_bricks (Attribute)
+        //~*       dim_brick (Attribute)
+        //~*
+        //~*   /oct_index -> (Data)
+        //~*       n_nodes (Attribute)
+        //~*       n_levels (Attribute)
+        //~*       extent (Attribute)
+        //~*
+        //~*   /oct_brick -> (Data)
+        //~*       brick_pool_power (Attribute)
+        //~*/
+//~
+        //~hid_t file_id;
+        //~hid_t dset_id, atrib_id, plist_id;
+        //~herr_t status;
+        //~hsize_t dims[5];
+//~
+        //~size_t   nelmts;
+        //~unsigned flags, filter_info;
+        //~H5Z_filter_t filter_type;
+//~
+        //~/* Open file */
+        //~file_id = H5Fopen(fileName.toStdString().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+//~
+//~
+        //~/* Get misc metadata */
+        //~dset_id = H5Dopen(file_id, "/meta", H5P_DEFAULT);
+//~
+        //~atrib_id = H5Aopen(dset_id, "hist_norm_len", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~atrib_id = H5Aopen(dset_id, "hist_log10_len", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[1] );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~HIST_NORM.reserve(dims[0]);
+        //~HIST_LOG.reserve(dims[1]);
+        //~HIST_MINMAX.reserve(2);
+        //~SVO_COMMENT.reserve(2000);
+//~
+        //~atrib_id = H5Aopen(dset_id, "histogram_normal", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_NORM.data() );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~atrib_id = H5Aopen(dset_id, "histogram_log10", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_LOG.data() );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~atrib_id = H5Aopen(dset_id, "value_min_max", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_MINMAX.data() );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~status = H5Dread(dset_id, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, SVO_COMMENT.data());
+        //~status = H5Dclose(dset_id);
+//~
+        //~/* Get brick data */
+        //~dset_id = H5Dopen(file_id, "/bricks", H5P_DEFAULT);
+//~
+        //~atrib_id = H5Aopen(dset_id, "n_bricks", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_N_BRICKS );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~atrib_id = H5Aopen(dset_id, "dim_brick", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_DIM_BRICKS );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~VIEW_BRICKS.reserve(VIEW_N_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS);
+//~
+        //~plist_id = H5Dget_create_plist(dset_id);
+        //~nelmts = 0;
+        //~filter_type = H5Pget_filter(plist_id, 0, &flags, &nelmts, NULL, 0, NULL, &filter_info);
+        //~status = H5Dread(dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_BRICKS.data());
+//~
+        //~status = H5Dclose(dset_id);
+        //~status = H5Pclose (plist_id);
+//~
+//~
+        //~/* Get octtree data */
+        //~dset_id = H5Dopen(file_id, "/oct_index", H5P_DEFAULT);
+//~
+        //~atrib_id = H5Aopen(dset_id, "n_nodes", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~atrib_id = H5Aopen(dset_id, "n_levels", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_LEVELS );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~atrib_id = H5Aopen(dset_id, "extent", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_FLOAT, VIEW_EXTENT );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~VIEW_OCT_INDEX.reserve(dims[0]);
+        //~VIEW_OCT_BRICK.reserve(dims[0]);
+//~
+        //~status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_INDEX.data());
+        //~status = H5Dclose(dset_id);
+//~
+//~
+        //~dset_id = H5Dopen(file_id, "/oct_brick", H5P_DEFAULT);
+//~
+        //~atrib_id = H5Aopen(dset_id, "brick_pool_power", H5P_DEFAULT);
+        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_BPP );
+        //~status = H5Aclose(atrib_id);
+//~
+        //~status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_BRICK.data());
+        //~status = H5Dclose(dset_id);
+//~
+        //~/* Close the file */
+        //~status = H5Fclose(file_id);
+//~
+//~
+        //~volumeRenderWidget->setOcttreeIndices(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
+        //~volumeRenderWidget->setOcttreeBricks(&(this->VIEW_OCT_BRICK), VIEW_BPP);
+        //~volumeRenderWidget->setBrickPool(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
+        //~volumeRenderWidget->setMeta(&(this->HIST_NORM), &(this->HIST_LOG), &(this->HIST_MINMAX), &(this->SVO_COMMENT));
+        //~alphaSpinBox->setValue(0.1);
+        //~brightnessSpinBox->setValue(2.0);
+        //~dataMinSpinBox->setValue(this->HIST_MINMAX[0]);
+        //~dataMaxSpinBox->setValue(this->HIST_MINMAX[1]);
+//~
+//~
+        //~print("\nLoaded file: \""+fileName+"\"");
+//~
+        //~tabWidget->setCurrentIndex(4);
+    //~}
+//~}
 
 
 void MainWindow::setTab(int tab)
@@ -827,9 +827,11 @@ void MainWindow::initializeConnects()
     connect(this->treshLimD_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdHigh(double)));
     connect(textEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
-    connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSVO()));
+    connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSvo()));
+    connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
+    connect(saveSVOButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
     connect(newAct, SIGNAL(triggered()), this, SLOT(newFile()));
-    connect(openAct, SIGNAL(triggered()), this, SLOT(open()));
+    connect(openAct, SIGNAL(triggered()), this, SLOT(openScript()));
     connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
 	connect(runScriptAct, SIGNAL(triggered()), this, SLOT(runReadScript()));
     connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveAs()));
@@ -848,6 +850,38 @@ void MainWindow::initializeConnects()
 void MainWindow::setGenericProgressFormat(QString str)
 {
     progressBar->setFormat(str);
+}
+
+void MainWindow::saveSvo()
+{
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
+    QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"), "", tr(".h5 (*.h5);; All Files (*)"));
+
+    if (file_name != "")
+    {
+        svo_inprocess.save(file_name);
+    }
+}
+
+void MainWindow::openSvo()
+{
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".h5 (*.h5);; All Files (*)"));
+
+    if ((file_name != ""))
+    {
+        svo_loaded[current_svo].open(file_name);
+        volumeRenderWidget->setSvo(&(svo_loaded[current_svo]));
+
+        alphaSpinBox->setValue(0.05);
+        brightnessSpinBox->setValue(2.0);
+        dataMinSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(0));
+        dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
+
+        print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+file_name+"\"");
+    }
 }
 
 void MainWindow::previewSVO()

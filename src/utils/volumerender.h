@@ -18,6 +18,7 @@
 #include <CL/cl_gl.h>
 
 /* QT */
+#include <QFileDialog>
 #include <QMouseEvent>
 #include <QGLWidget>
 #include <QTimer>
@@ -49,15 +50,13 @@ public:
     ~VolumeRenderGLWidget();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
-    void setOcttreeIndices(MiniArray<unsigned int> * OCT_INDEX, size_t n_levels, float * extent);
-    void setOcttreeBricks(MiniArray<unsigned int> * OCT_BRICK, size_t pool_power);
-    void setBrickPool(MiniArray<float> * BRICKS, size_t n_bricks, size_t dim_bricks);
-    void setMeta(MiniArray<double> * HIST_NORM, MiniArray<double> * HIST_LOG, MiniArray<double> * HIST_MINMAX, MiniArray<char> * SVO_COMMENT);
     void setMatrixU(float * buf);
     void setMatrixB(float * buf);
-
+    void setSvo(SparseVoxelOcttree * svo);
 
 public slots:
+
+    //~void open();
     void takeScreenshot();
     void setResolutionf(double value);
     void setResolutioni(int value);
@@ -109,7 +108,6 @@ private:
     Atlas * fontMedium;
     Atlas * fontLarge;
 
-    SparseVoxelOcttree * svo;
     //~void setEmit();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
@@ -175,6 +173,11 @@ private:
     float pp_deviation;
     float pp_scale;
 
+    unsigned int levels;
+    unsigned int brick_pool_power;
+    unsigned int brick_inner_dimension;
+    unsigned int brick_outer_dimension;
+
     RotationMatrix<float> X_ROTATION;
     RotationMatrix<float> Y_ROTATION;
     RotationMatrix<float> Z_ROTATION;
@@ -213,6 +216,7 @@ private:
 
     TsfMatrix<double> transferFunction;
 
+    MiniArray<double> MINMAX;
     MiniArray<GLuint> hkl_indices;
     MiniArray<float> color;
     MiniArray<float> * BRICKS;

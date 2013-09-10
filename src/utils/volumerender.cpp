@@ -45,6 +45,8 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
 
     HIST_MINMAX.reserve(2);
 
+    MINMAX.reserve(2);
+
     TSF_PARAMETERS.reserve(1,6);
     TSF_PARAMETERS[0] = 0.0;
     TSF_PARAMETERS[1] = 1.0;
@@ -175,35 +177,34 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     if (isGLIntitialized)
     {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 1");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl); // Might need aquire...
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark s2");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (misc_int_cl) clReleaseMemObject(misc_int_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark d2");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (misc_float_cl) clReleaseMemObject(misc_float_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark f2");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (misc_float_k_raytrace_cl) clReleaseMemObject(misc_float_k_raytrace_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2d");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (tsf_parameters_cl) clReleaseMemObject(tsf_parameters_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark g2");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (data_view_extent_cl) clReleaseMemObject(data_view_extent_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2a");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (data_extent_cl) clReleaseMemObject(data_extent_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark h2");
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2b");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (view_matrix_inv_cl) clReleaseMemObject(view_matrix_inv_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2x");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (function_view_matrix_inv_cl) clReleaseMemObject(function_view_matrix_inv_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 2x");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (isOcttreeIndicesInitialized) clReleaseMemObject(oct_index_cl);
         if (isOcttreeBricksInitialized) clReleaseMemObject(oct_brick_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 21x");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         //~if (bricks_sampler) clReleaseSampler(bricks_sampler);
         if (isBrickPoolInitialized) clReleaseMemObject(bricks_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 22x");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         //~if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
         if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 3");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         if (K_FUNCTION_RAYTRACE) clReleaseKernel(K_FUNCTION_RAYTRACE);
         if (K_SVO_RAYTRACE) clReleaseKernel(K_SVO_RAYTRACE);
 
@@ -211,11 +212,11 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         //~ if (context) clReleaseContext(context);
         if (program) clReleaseProgram(program);
 
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 4");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteFramebuffers(1, &STD_FBO);
         glDeleteFramebuffers(1, &MSAA_FBO);
         glDeleteFramebuffers(1, &SMALL_FBO);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 5");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteTextures(1, &msaa_intermediate_storage_tex);
         glDeleteTextures(1, &small_storage_tex);
         glDeleteTextures(1, &storage_tex);
@@ -231,7 +232,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteTextures(1, &hist_tex);
         glDeleteTextures(1, &hist_tex_norm);
         glDeleteTextures(1, &hist_tex_log);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 6");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteBuffers(10, tex_coord_vbo);
         glDeleteBuffers(20, position_vbo);
         glDeleteBuffers(5, lab_reference_vbo);
@@ -243,7 +244,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteBuffers(1, &text_position_vbo);
         glDeleteBuffers(1, &text_texpos_vbo);
 
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Mark 7");
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
         glDeleteProgram(std_3d_program);
@@ -252,6 +253,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteProgram(msaa_program);
         glDeleteProgram(msaa_hdr_program);
         glDeleteProgram(std_text_program);
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
     }
 
 }
@@ -276,13 +278,9 @@ void VolumeRenderGLWidget::setResolutionf(double value)
     if ((ray_res != value))
     {
         // Set resolution
-        //~ std::cout << "Setting resolution to " << value << " %" << std::endl;
         ray_res = (float) value;
 
         // Limit the deepest SVO descent level
-        //~ int level = LEVELS;
-        //~ if (value <= 60) level = LEVELS - 1;
-        //~ if (value <= 40) level = LEVELS - 2;
         if (value <= 20) this->setMinLevel(256.0);
         else if (value <= 30) this->setMinLevel(128.0);
         else if (value <= 40) this->setMinLevel(64.0);
@@ -292,15 +290,9 @@ void VolumeRenderGLWidget::setResolutionf(double value)
         else if (value <= 80) this->setMinLevel(4.0);
         else if (value <= 90) this->setMinLevel(2.0);
         else this->setMinLevel(1.0);
-        //~ if (level > LEVELS) level = LEVELS;
-        //~ if (level < 2) level = 2;
-
-        //~ std::cout << ray_res << ": "<< level << " / " << LEVELS << std::endl;
-
 
         this->setRaytracingTexture();
         this->setTexturesVBO();
-        //~ emit changedResolutioni( (int) value);
     }
 }
 
@@ -369,12 +361,6 @@ void VolumeRenderGLWidget::toggleBackground()
     clear.setDeep(4, clearInv.data());
     clearInv.setDeep(4, tmp.data());
 
-    //~ if  (bricks_cl && oct_index_cl && oct_brick_cl && !isFunctionActive)
-    //~ {
-        //~ hist_tex_norm = getHistogramTexture(HIST_NORM, 100);
-        //~ hist_tex_log = getHistogramTexture(HIST_LOG, 100);
-    //~ }
-
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
@@ -431,8 +417,6 @@ void VolumeRenderGLWidget::autoRotate(int time, int threshold)
         this->isRefreshRequired = true;
     }
     else AUTO_ROTATION.setIdentity(4);
-
-
 }
 void VolumeRenderGLWidget::resetViewMatrix()
 {
@@ -441,80 +425,145 @@ void VolumeRenderGLWidget::resetViewMatrix()
     DATA_TRANSLATION.setIdentity(4);
 }
 
-void VolumeRenderGLWidget::setOcttreeIndices(MiniArray<unsigned int> * OCT_INDEX, size_t n_levels, float * extent)
+void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-    this->OCT_INDEX = OCT_INDEX;
-    this->LEVELS = n_levels;
-    this->setMinLevel(1.0);
-    this->setMiscArrays();
+    this->levels = svo->getLevels();
+    this->brick_pool_power = svo->getBrickPoolPower();
+    this->brick_inner_dimension = svo->getBrickInnerDimension();
+    this->brick_outer_dimension = svo->getBrickOuterDimension();
+    this->MINMAX.setDeep(2, svo->getMinMax()->data());
+    this->DATA_EXTENT.setDeep(4, 2, svo->getExtent()->toFloat().data());
+    this->DATA_VIEW_EXTENT.setDeep(4, 2, svo->getExtent()->toFloat().data());
 
-    this->DATA_EXTENT.setDeep(4, 2, extent);
-    this->DATA_VIEW_EXTENT.setDeep(4, 2, extent);
+    getHistogramTexture(&hist_tex_norm, svo->getDataHistogram(), 100, white.data());
+
+    getHistogramTexture(&hist_tex_log, svo->getDataHistogramLog(), 100, white.data());
+
+    MISC_INT[0] = (int) levels;
+    MISC_INT[1] = (int) brick_outer_dimension;
+    TSF_PARAMETERS[2] = MINMAX[0];
+    TSF_PARAMETERS[3] = MINMAX[1];
+
     this->setDataExtent();
     this->vbo_buffers_refresh();
     this->resetViewMatrix();
+    this->setMiscArrays();
+    this->setTsfParameters();
+    this->isFunctionActive = false;
 
-    MISC_INT[0] = (int) LEVELS;
+    // Rearrange bricks for a 3D texture
+    size_t n_bricks = svo->pool.size()/(brick_outer_dimension*brick_outer_dimension*brick_outer_dimension);
 
+    MiniArray<size_t> tex_buf_dim(3);
+    tex_buf_dim[0] = (1 << brick_pool_power)*brick_outer_dimension;
+    tex_buf_dim[1] = (1 << brick_pool_power)*brick_outer_dimension;
+    tex_buf_dim[2] = (n_bricks) / ((1 << brick_pool_power)*(1 << brick_pool_power));
+
+    if ((n_bricks) % ((1 << brick_pool_power)*(1 << brick_pool_power))) tex_buf_dim[2]++;
+    if (tex_buf_dim[2] < 2) tex_buf_dim[2] = 2;
+    tex_buf_dim[2] *= (brick_outer_dimension);
+
+    tex_buf_dim.print(2, "tex_buf_dim");
+
+    MiniArray<float> tex_buf(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2], 0.0f);
+    for (size_t i = 0; i < n_bricks; i++)
+    {
+        brickToTex(svo->pool.data(), tex_buf.data(), i, brick_outer_dimension, brick_pool_power);
+    }
+
+    // Load the contents into a CL texture
     if (isOcttreeIndicesInitialized) clReleaseMemObject(oct_index_cl);
-    isOcttreeIndicesInitialized = true;
+    if (isOcttreeBricksInitialized) clReleaseMemObject(oct_brick_cl);
+    if (isBrickPoolInitialized) clReleaseMemObject(bricks_cl);
 
-    /* Load the contents into a CL texture */
     oct_index_cl = clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        this->OCT_INDEX->size()*sizeof(cl_uint),
-        this->OCT_INDEX->data(),
+        svo->index.size()*sizeof(cl_uint),
+        svo->index.data(),
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
-    /* Send to the kernel */
-    err = clSetKernelArg(K_SVO_RAYTRACE, 3, sizeof(cl_mem), &oct_index_cl);
+    oct_brick_cl = clCreateBuffer((*context),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        svo->brick.size()*sizeof(cl_uint),
+        svo->brick.data(),
+        &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
+
+    bricks_format.image_channel_order = CL_INTENSITY;
+    bricks_format.image_channel_data_type = CL_FLOAT;
+
+    bricks_cl = clCreateImage3D ( (*context),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        &bricks_format,
+        tex_buf_dim[0],
+        tex_buf_dim[1],
+        tex_buf_dim[2], // This is padded according to spec
+        tex_buf_dim[0]*sizeof(cl_float),
+        tex_buf_dim[0]*tex_buf_dim[1]*sizeof(cl_float),
+        tex_buf.data(),
+        &err);
+    if (err != CL_SUCCESS)
+    {
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+    }
+
+    bricks_sampler = clCreateSampler((*context), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
+
+    // Send stuff to the kernel
+    err = clSetKernelArg(K_SVO_RAYTRACE, 2, sizeof(cl_mem), &bricks_cl);
+    err |= clSetKernelArg(K_SVO_RAYTRACE, 5, sizeof(cl_sampler), &bricks_sampler);
+    err |= clSetKernelArg(K_SVO_RAYTRACE, 3, sizeof(cl_mem), &oct_index_cl);
+    err |= clSetKernelArg(K_SVO_RAYTRACE, 4, sizeof(cl_mem), &oct_brick_cl);
+    if (err != CL_SUCCESS)
+    {
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+    }
+
+    isOcttreeIndicesInitialized = true;
+    isOcttreeBricksInitialized = true;
+    isBrickPoolInitialized = true;
+
+    this->timerLastAction->start();
+    this->isRefreshRequired = true;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
 }
 
-void VolumeRenderGLWidget::setMeta(MiniArray<double> * HIST_NORM, MiniArray<double> * HIST_LOG, MiniArray<double> * HIST_MINMAX, MiniArray<char> * SVO_COMMENT)
-{
-    this->HIST_NORM = HIST_NORM;
-    this->HIST_LOG = HIST_LOG;
-    getHistogramTexture(&hist_tex_norm, HIST_NORM, 100, white.data());
-    getHistogramTexture(&hist_tex_log, HIST_LOG, 100, white.data());
-    this->HIST_MINMAX[0] = HIST_MINMAX->at(0);
-    this->HIST_MINMAX[1] = HIST_MINMAX->at(1);
-
-    TSF_PARAMETERS[2] = 1.0;
-    TSF_PARAMETERS[3] = this->HIST_MINMAX[1];
-    // If the texture exists, it should be drawn!
-}
 
 void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color)
 {
     double max = buf->max();
-
+    if (max <= 0) max = 1e-5;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+    std::cout << buf->size() << std::endl;
     Matrix<float> texture(height, buf->size()*4, 0.0);
     for (size_t i = 0; i < buf->size(); i++)
     {
+        //~std::cout << i << " " << buf->at(i) << std::endl;
         size_t span = (buf->at(i)*(double)height/max);
         for (size_t j = 0; j < span; j++)
         {
+            //~std::cout << (i + j*buf->size())*4+0 << " " << texture.size() << std::endl;
             texture[(i + j*buf->size())*4+0] = color[0];
             texture[(i + j*buf->size())*4+1] = color[1];
             texture[(i + j*buf->size())*4+2] = color[2];
             texture[(i + j*buf->size())*4+3] = (float)(j*0.5+span*0.5)/(float)span;
         }
     }
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
 
     glDeleteBuffers(1, tex);
     glGenBuffers(1, tex);
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
     glBindTexture(GL_TEXTURE_2D, *tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -531,44 +580,9 @@ void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> *
         GL_FLOAT,
         texture.data());
     glBindTexture(GL_TEXTURE_2D, 0);
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
 }
 
-void VolumeRenderGLWidget::setOcttreeBricks(MiniArray<unsigned int> * OCT_BRICK, size_t pool_power)
-{
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-
-    this->OCT_BRICK = OCT_BRICK;
-    this->BPP = pool_power;
-    this->isFunctionActive = false;
-
-    //~std::cout << "this->OCT_BRICK.size() " << this->OCT_BRICK->size() << std::endl;
-    //~std::cout << "this->BPP " << this->BPP << std::endl;
-
-    if (isOcttreeBricksInitialized) clReleaseMemObject(oct_brick_cl);
-    isOcttreeBricksInitialized = true;
-
-    /* Load the contents into a CL texture */
-    oct_brick_cl = clCreateBuffer((*context),
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        this->OCT_BRICK->size()*sizeof(cl_uint),
-        this->OCT_BRICK->data(),
-        &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
-    }
-
-    /* Send to the kernel */
-    err = clSetKernelArg(K_SVO_RAYTRACE, 4, sizeof(cl_mem), &oct_brick_cl);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
-    }
-
-    this->timerLastAction->start();
-    this->isRefreshRequired = true;
-}
 
 
 void VolumeRenderGLWidget::brickToTex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power)
@@ -603,75 +617,6 @@ void VolumeRenderGLWidget::brickToTex(float * buf_in, float * buf_out, size_t id
         }
     }
 
-}
-
-void VolumeRenderGLWidget::setBrickPool(MiniArray<float> * BRICKS, size_t n_bricks, size_t dim_bricks)
-{
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-    this->BRICKS = BRICKS;
-    this->N_BRICKS = n_bricks;
-    this->DIM_BRICKS = dim_bricks;
-
-    MISC_INT[1] = (int) DIM_BRICKS;
-
-    //~std::cout << "this->BRICKS.size() " << this->BRICKS->size() << std::endl;
-    //~std::cout << "this->N_BRICKS " << this->N_BRICKS << std::endl;
-    //~std::cout << "this->DIM_BRICKS " << this->DIM_BRICKS << std::endl;
-
-    MiniArray<float> tex_buf;
-
-    size_t tex_buf_dim[3];
-    tex_buf_dim[0] = (1 << BPP)*DIM_BRICKS;
-    tex_buf_dim[1] = (1 << BPP)*DIM_BRICKS;
-    tex_buf_dim[2] = (N_BRICKS) / ((1 << BPP)*(1 << BPP));
-
-    if ((N_BRICKS) % ((1 << BPP)*(1 << BPP))) tex_buf_dim[2]++;
-    if (tex_buf_dim[2] < 2) tex_buf_dim[2] = 2;
-    tex_buf_dim[2] *= (DIM_BRICKS);
-
-    tex_buf.reserve(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2]);
-
-    /* Rearrange bricks for a 3D texture*/
-    for (size_t i = 0; i < N_BRICKS; i++)
-    {
-        brickToTex(this->BRICKS->data(), tex_buf.data(), i, DIM_BRICKS, BPP);
-    }
-
-    /* Load the contents into a CL texture */
-    bricks_format.image_channel_order = CL_INTENSITY;
-    bricks_format.image_channel_data_type = CL_FLOAT;
-
-    //~std::cout << tex_buf_dim[0] << " " << tex_buf_dim[2] << " " << std::endl;
-
-    if (isBrickPoolInitialized) clReleaseMemObject(bricks_cl);
-    isBrickPoolInitialized = true;
-
-    bricks_cl = clCreateImage3D ( (*context),
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        &bricks_format,
-        tex_buf_dim[0],
-        tex_buf_dim[1],
-        tex_buf_dim[2], // This is padded according to spec
-        tex_buf_dim[0]*sizeof(cl_float),
-        tex_buf_dim[0]*tex_buf_dim[1]*sizeof(cl_float),
-        tex_buf.data(),
-        &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
-    }
-
-    bricks_sampler = clCreateSampler((*context), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
-
-    /* Send to the kernel */
-    err = clSetKernelArg(K_SVO_RAYTRACE, 2, sizeof(cl_mem), &bricks_cl);
-    err |= clSetKernelArg(K_SVO_RAYTRACE, 5, sizeof(cl_sampler), &bricks_sampler);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
-    }
-
-    this->setMiscArrays();
 }
 
 QSize VolumeRenderGLWidget::minimumSizeHint() const
@@ -752,14 +697,14 @@ void VolumeRenderGLWidget::setTsfParameters()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'tsf_parameters_cl': "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
 
         err = clSetKernelArg(K_FUNCTION_RAYTRACE, 6, sizeof(cl_mem), &tsf_parameters_cl);
         err |= clSetKernelArg(K_SVO_RAYTRACE, 10, sizeof(cl_mem), &tsf_parameters_cl);
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument 'tsf_parameters_cl': "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
         //~ {
             //~ Matrix<float> tsf_texcoords;
@@ -787,7 +732,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'misc_int_cl': "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
 
         err = clEnqueueWriteBuffer ( (*queue),
@@ -799,7 +744,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'misc_float_cl': "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
 
         err = clEnqueueWriteBuffer ( (*queue),
@@ -811,7 +756,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'misc_float_cl': "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
 
         err = clSetKernelArg(K_FUNCTION_RAYTRACE, 7, sizeof(cl_mem), &misc_float_cl);
@@ -820,7 +765,7 @@ void VolumeRenderGLWidget::setMiscArrays()
         err |= clSetKernelArg(K_SVO_RAYTRACE, 12, sizeof(cl_mem), &misc_int_cl);
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument 'misc_float/int_cl': "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
     }
 }
@@ -1269,12 +1214,12 @@ void VolumeRenderGLWidget::paintGL()
 
             std_2d_tex_draw(indices, 6, 0, tsf_tex, &position_vbo[2], &tex_coord_vbo[2]);
 
-            histTexPos(isLog, (float) HIST_MINMAX[0], (float) HIST_MINMAX[1], TSF_PARAMETERS[2], TSF_PARAMETERS[3]);
-            //~ this->setTsfParameters();
-
-            if (isLog) std_2d_tex_draw(indices, 6, 0, hist_tex_log, &position_vbo[3], &tex_coord_vbo[3]);
-            else std_2d_tex_draw(indices, 6, 0, hist_tex_norm, &position_vbo[3], &tex_coord_vbo[3]);
-
+            if (isBrickPoolInitialized)
+            {
+                histTexPos(isLog, (float) MINMAX[0], (float) MINMAX[1], TSF_PARAMETERS[2], TSF_PARAMETERS[3]);
+                if (isLog) std_2d_tex_draw(indices, 6, 0, hist_tex_log, &position_vbo[3], &tex_coord_vbo[3]);
+                else std_2d_tex_draw(indices, 6, 0, hist_tex_norm, &position_vbo[3], &tex_coord_vbo[3]);
+            }
             if (isUnitcellValid && isUnitcellActive)
             {
                 // Draw hkl text
@@ -1478,7 +1423,6 @@ void VolumeRenderGLWidget::resizeGL(int w, int h)
     this->setTexturesVBO();
 
     CTC_MATRIX.setWindow(WIDTH, HEIGHT);
-
     glViewport(0, 0, w, h);
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -1495,7 +1439,7 @@ void VolumeRenderGLWidget::setDataExtent()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'data_extent_cl': "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     err = clEnqueueWriteBuffer ( (*queue),
@@ -1507,7 +1451,7 @@ void VolumeRenderGLWidget::setDataExtent()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'data_view_extent_cl': "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     err = clSetKernelArg(K_FUNCTION_RAYTRACE, 4, sizeof(cl_mem),  &data_extent_cl);
@@ -1517,7 +1461,7 @@ void VolumeRenderGLWidget::setDataExtent()
     err |= clSetKernelArg(K_SVO_RAYTRACE, 9, sizeof(cl_mem), &data_view_extent_cl);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 }
 
@@ -1548,7 +1492,7 @@ void VolumeRenderGLWidget::setViewMatrix()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'view_matrix_inv_cl': "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     err = clEnqueueWriteBuffer ( (*queue),
@@ -1560,14 +1504,14 @@ void VolumeRenderGLWidget::setViewMatrix()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error writing to CL buffer 'view_matrix_inv_cl': "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     err = clSetKernelArg(K_FUNCTION_RAYTRACE, 3, sizeof(cl_mem), (void *) &function_view_matrix_inv_cl);
     err |= clSetKernelArg(K_SVO_RAYTRACE, 7, sizeof(cl_mem), (void *) &view_matrix_inv_cl);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     this->setDataExtent();
@@ -2194,7 +2138,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
         err = clEnqueueAcquireGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error aquiring shared CL/GL objects: "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
 
         /* Launch rendering kernel */
@@ -2221,7 +2165,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
                 err = clEnqueueNDRangeKernel((*queue), kernel, 2, call_offset, area_per_call, ray_loc_ws, 0, NULL, NULL);
                 if (err != CL_SUCCESS)
                 {
-                    writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error launching kernel: "+QString(cl_error_cstring(err)));
+                    writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
                 }
                 clFinish((*queue));
             }
@@ -2232,7 +2176,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
         clFinish((*queue));
         if (err != CL_SUCCESS)
         {
-            writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error releasing shared CL/GL objects: "+QString(cl_error_cstring(err)));
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
 
 
@@ -2887,7 +2831,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
     isTsfTexInitialized = true;
 
@@ -2895,7 +2839,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     tsf_tex_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not create sampler: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
     // SET KERNEL ARGS
     err = clSetKernelArg(K_SVO_RAYTRACE, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
@@ -2904,7 +2848,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     err |= clSetKernelArg(K_FUNCTION_RAYTRACE, 2, sizeof(cl_sampler), &tsf_tex_sampler);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 }
 
@@ -2932,14 +2876,14 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     //~err = clEnqueueAcquireGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
     //~if (err != CL_SUCCESS)
     //~{
-        //~writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error aquiring shared CL/GL objects: "+QString(cl_error_cstring(err)));
+        //~writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     //~}
     if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl);
     //~err = clEnqueueReleaseGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
     //~clFinish((*queue));
     //~if (err != CL_SUCCESS)
     //~{
-        //~writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error releasing shared CL/GL objects: "+QString(cl_error_cstring(err)));
+        //~writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     //~}
 
 
@@ -2966,7 +2910,7 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     ray_tex_cl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL object from GL texture: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
 
@@ -2977,7 +2921,7 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     err |= clSetKernelArg(K_FUNCTION_RAYTRACE, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error setting kernel argument: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
 
@@ -2997,7 +2941,7 @@ int VolumeRenderGLWidget::initResourcesCL()
     program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": VolumeRenderGLWidget: Could not create program from source: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
 
@@ -3007,7 +2951,7 @@ int VolumeRenderGLWidget::initResourcesCL()
     if (err != CL_SUCCESS)
     {
         // Compile log
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not compile/link program: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         std::cout << "--- START KERNEL COMPILE LOG ---" << std::endl;
         char* build_log;
         size_t log_size;
@@ -3025,14 +2969,14 @@ int VolumeRenderGLWidget::initResourcesCL()
     K_SVO_RAYTRACE = clCreateKernel(program, "svoRayTrace", &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not create kernel object: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
 
     K_FUNCTION_RAYTRACE = clCreateKernel(program, "modelRayTrace", &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Could not create kernel object: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
 
@@ -3044,7 +2988,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     function_view_matrix_inv_cl = clCreateBuffer((*context),
@@ -3054,7 +2998,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     data_extent_cl = clCreateBuffer((*context),
@@ -3064,7 +3008,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     data_view_extent_cl = clCreateBuffer((*context),
@@ -3074,7 +3018,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     tsf_parameters_cl = clCreateBuffer((*context),
@@ -3084,7 +3028,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     misc_float_cl = clCreateBuffer((*context),
@@ -3094,7 +3038,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     misc_int_cl = clCreateBuffer((*context),
@@ -3104,7 +3048,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     misc_float_k_raytrace_cl = clCreateBuffer((*context),
@@ -3114,7 +3058,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("["+QString(this->metaObject()->className())+"][OpenCL] "+Q_FUNC_INFO+": Error creating CL buffer: "+QString(cl_error_cstring(err)));
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
     }
 
     return 1;

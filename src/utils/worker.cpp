@@ -490,6 +490,33 @@ void ProjectFileWorker::process()
 
     reduced_pixels->resize(n);
 
+    /* Create dummy dataset for debugging purposes.
+     *
+    */
+
+     int theta_max = 180; // Up to 180
+     int phi_max = 360; // Up to 360
+
+     reduced_pixels->resize(theta_max*phi_max*4);
+
+     float radius = 0.45;
+     double pi = 4.0*std::atan(1.0);
+
+     for (int i = 0; i < theta_max; i++)
+     {
+         for (int j = 0; j < phi_max; j++)
+         {
+             float theta = ((float) i)/180.0 * pi;
+             float phi = ((float) j)/180.0 * pi;
+
+             (*reduced_pixels)[(i*phi_max+j)*4+0] = radius * std::sin(theta)*std::cos(phi);
+             (*reduced_pixels)[(i*phi_max+j)*4+1] = radius * std::sin(theta)*std::sin(phi);
+             (*reduced_pixels)[(i*phi_max+j)*4+2] = radius * std::cos(theta);
+             (*reduced_pixels)[(i*phi_max+j)*4+3] = 10;
+         }
+     }
+
+
     emit enableSetFileButton(true);
     emit enableReadFileButton(true);
     emit enableAllInOneButton(true);
@@ -608,16 +635,10 @@ void VoxelizeWorker::process()
         size_t n_max_bricks = 2e9/n_points_brick*sizeof(float); // Allow up 2 GB of bricks
 
         // The extent of the volume
-        MiniArray<double> volume_extent(6);
-        volume_extent[0] = -(*suggested_q);
-        volume_extent[1] = +(*suggested_q);
-        volume_extent[2] = -(*suggested_q);
-        volume_extent[3] = +(*suggested_q);
-        volume_extent[4] = -(*suggested_q);
-        volume_extent[5] = +(*suggested_q);
+        svo->setExtent(*suggested_q);
 
         // Generate an octtree data structure from which to construct bricks
-        SearchNode root(NULL, volume_extent.data());
+        SearchNode root(NULL, svo->getExtent()->data());
 
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
@@ -663,10 +684,10 @@ void VoxelizeWorker::process()
                 gpuHelpOcttree[7].setParent(0);
 
                 float * brick_data = new float[n_points_brick];
-                float search_radius = sqrt(3.0f)*0.5f*((volume_extent[1]-volume_extent[0])/ (svo->getBrickInnerDimension()*(1 << 0)));
+                float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1) - svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << 0)));
 
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
-                root.getBrick(brick_data, volume_extent.data(), 1.0, search_radius, svo->getBrickOuterDimension());
+                root.getBrick(brick_data, svo->getExtent()->data(), 1.0, search_radius, svo->getBrickOuterDimension());
 
                 gpuHelpOcttree[0].setBrick(brick_data);
 
@@ -684,10 +705,10 @@ void VoxelizeWorker::process()
                 timer.start();
 
                 // Find the correct range search radius
-                float search_radius = sqrt(3.0f)*0.5f*((volume_extent[1]-volume_extent[0])/ (svo->getBrickInnerDimension()*(1 << lvl)));
+                float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
-                double tmp = (volume_extent[1]-volume_extent[0])/(1 << lvl);
+                double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
 
                 // For each node
                 size_t iter = 0;
@@ -708,12 +729,12 @@ void VoxelizeWorker::process()
                     unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
 
                     Matrix<double> brick_extent(3,2);
-                    brick_extent[0] = volume_extent[0] + tmp*brickId[0];
-                    brick_extent[1] = volume_extent[0] + tmp*(brickId[0]+1);
-                    brick_extent[2] = volume_extent[2] + tmp*brickId[1];
-                    brick_extent[3] = volume_extent[2] + tmp*(brickId[1]+1);
-                    brick_extent[4] = volume_extent[4] + tmp*brickId[2];
-                    brick_extent[5] = volume_extent[4] + tmp*(brickId[2]+1);
+                    brick_extent[0] = svo->getExtent()->at(0) + tmp*brickId[0];
+                    brick_extent[1] = svo->getExtent()->at(0) + tmp*(brickId[0]+1);
+                    brick_extent[2] = svo->getExtent()->at(2) + tmp*brickId[1];
+                    brick_extent[3] = svo->getExtent()->at(2) + tmp*(brickId[1]+1);
+                    brick_extent[4] = svo->getExtent()->at(4) + tmp*brickId[2];
+                    brick_extent[5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
 
                     float * brick_data = new float[n_points_brick];
 
@@ -798,6 +819,12 @@ void VoxelizeWorker::process()
                     emit changedGenericProgress((i+1)*100/confirmed_nodes);
                 }
             }
+
+            std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
+            std::cout << "reduced_pixels.min() " << reduced_pixels->min() << std::endl;
+
+            std::cout << "pool.max() " << svo->pool.max() << std::endl;
+            std::cout << "pool.min() " << svo->pool.min() << std::endl;
 
             if (!kill_flag)
             {

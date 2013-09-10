@@ -25,6 +25,7 @@ class MiniArray{
         MiniArray& operator = (MiniArray other);
 
         /* Management */
+        MiniArray<float> toFloat() const;
         void setShallow(size_t length, T * buffer);
         void setDeep(size_t length, T * buffer);
         void set(size_t length, T value);
@@ -130,6 +131,18 @@ MiniArray<T>& MiniArray<T>::operator = (MiniArray other)
     return * this;
 }
 
+template <class T>
+MiniArray<float> MiniArray<T>::toFloat() const
+{
+    MiniArray<float> buf(this->size());
+
+    for (size_t i = 0; i < this->size(); i++)
+    {
+        buf[i] = (float) this->buffer[i];
+    }
+
+    return buf;
+}
 
 template <class T>
 T MiniArray<T>::min()
