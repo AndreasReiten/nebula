@@ -467,11 +467,15 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
 
     tex_buf_dim.print(2, "tex_buf_dim");
 
+    //~svo->pool.print(2,"[New] pool");
+
     MiniArray<float> tex_buf(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2], 0.0f);
     for (size_t i = 0; i < n_bricks; i++)
     {
         brickToTex(svo->pool.data(), tex_buf.data(), i, brick_outer_dimension, brick_pool_power);
     }
+
+
 
     // Load the contents into a CL texture
     if (isOcttreeIndicesInitialized) clReleaseMemObject(oct_index_cl);

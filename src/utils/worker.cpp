@@ -493,28 +493,28 @@ void ProjectFileWorker::process()
     /* Create dummy dataset for debugging purposes.
      *
     */
-
-     int theta_max = 180; // Up to 180
-     int phi_max = 360; // Up to 360
-
-     reduced_pixels->resize(theta_max*phi_max*4);
-
-     float radius = 0.45;
-     double pi = 4.0*std::atan(1.0);
-
-     for (int i = 0; i < theta_max; i++)
-     {
-         for (int j = 0; j < phi_max; j++)
-         {
-             float theta = ((float) i)/180.0 * pi;
-             float phi = ((float) j)/180.0 * pi;
-
-             (*reduced_pixels)[(i*phi_max+j)*4+0] = radius * std::sin(theta)*std::cos(phi);
-             (*reduced_pixels)[(i*phi_max+j)*4+1] = radius * std::sin(theta)*std::sin(phi);
-             (*reduced_pixels)[(i*phi_max+j)*4+2] = radius * std::cos(theta);
-             (*reduced_pixels)[(i*phi_max+j)*4+3] = 10;
-         }
-     }
+//~
+     //~int theta_max = 180; // Up to 180
+     //~int phi_max = 360; // Up to 360
+//~
+     //~reduced_pixels->resize(theta_max*phi_max*4);
+//~
+     //~float radius = 0.45;
+     //~double pi = 4.0*std::atan(1.0);
+//~
+     //~for (int i = 0; i < theta_max; i++)
+     //~{
+         //~for (int j = 0; j < phi_max; j++)
+         //~{
+             //~float theta = ((float) i)/180.0 * pi;
+             //~float phi = ((float) j)/180.0 * pi;
+//~
+             //~(*reduced_pixels)[(i*phi_max+j)*4+0] = radius * std::sin(theta)*std::cos(phi);
+             //~(*reduced_pixels)[(i*phi_max+j)*4+1] = radius * std::sin(theta)*std::sin(phi);
+             //~(*reduced_pixels)[(i*phi_max+j)*4+2] = radius * std::cos(theta);
+             //~(*reduced_pixels)[(i*phi_max+j)*4+3] = 10;
+         //~}
+     //~}
 
 
     emit enableSetFileButton(true);
@@ -695,10 +695,18 @@ void VoxelizeWorker::process()
             }
 
 
+
             // Cycle through the remaining levels
             QElapsedTimer timer;
             for (size_t lvl = 1; lvl < svo->getLevels(); lvl++)
             {
+
+                QElapsedTimer timer_total, timer_spec;
+                timer_total.start();
+                timer_spec.start();
+                size_t t_spec = 0, t_total;
+
+
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
@@ -738,8 +746,9 @@ void VoxelizeWorker::process()
 
                     float * brick_data = new float[n_points_brick];
 
+                    timer_spec.restart();
                     bool isEmpty = root.getBrick(brick_data, brick_extent.data(), 1.0, search_radius, svo->getBrickOuterDimension());
-
+                    t_spec += timer_spec.restart();
                     if (isEmpty)
                     {
                         gpuHelpOcttree[currentId].setDataFlag(0);
@@ -783,6 +792,9 @@ void VoxelizeWorker::process()
 
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
+
+                t_total = timer_total.restart();
+                std::cout << "L " << lvl << " Total time " << t_total << " Time bricking " << t_spec << " (" << t_spec*100/t_total<< " %)" << std::endl;
             }
 
             if (!kill_flag)
@@ -792,7 +804,6 @@ void VoxelizeWorker::process()
                 svo->index.reserve(confirmed_nodes);
                 svo->brick.reserve(confirmed_nodes);
                 svo->pool.reserve(non_empty_node_counter*n_points_brick);
-                //~n_bricks = non_empty_node_counter;
 
                 size_t iter = 0;
                 for (size_t i = 0; i < confirmed_nodes; i++)

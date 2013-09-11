@@ -142,7 +142,7 @@ void SparseVoxelOcttree::save(QString path, int compression)
         dims[0] = pool.size();
         dspace_id = H5Screate_simple(1, dims, NULL);
         dset_id = H5Dcreate(file_id, "/bricks", H5T_IEEE_F32LE, dspace_id, H5P_DEFAULT, plist_id, H5P_DEFAULT);
-        status = H5Dwrite (dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, brick.data());
+        status = H5Dwrite (dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, pool.data());
         status = H5Sclose(dspace_id);
 
         dims[0] = 1;
