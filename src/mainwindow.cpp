@@ -157,6 +157,7 @@ void MainWindow::initializeThreads()
 
     //### voxelizeWorker ###
     voxelizeWorker = new VoxelizeWorker();
+    voxelizeWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
     voxelizeWorker->moveToThread(voxelizeThread);
     voxelizeWorker->setSVOFile(&svo_inprocess);
     voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);

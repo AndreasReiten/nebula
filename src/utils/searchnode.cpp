@@ -231,7 +231,7 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     else return 0;
 }
 
-bool SearchNode::getBrick(float * dst, double * brick_extent, float p, float search_radius, unsigned int dimension)
+bool SearchNode::getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension)
 {
     float idw;
     MiniArray<float> sample(3);
@@ -249,7 +249,7 @@ bool SearchNode::getBrick(float * dst, double * brick_extent, float p, float sea
                 sample[2] = brick_extent[4] + brick_step * z;
                 idw = this->getIDW(sample.data(), p, search_radius);
 
-                dst[x + y*dimension + z*dimension*dimension] = idw;
+                target[x + y*dimension + z*dimension*dimension] = idw;
 
                 if (idw > 0) isEmptyBrick = false;
             }

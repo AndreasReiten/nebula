@@ -24,7 +24,7 @@ class SearchNode {
         /* gets and sets */
         void setParent(SearchNode * parent);
 
-        bool getBrick(float * dst, double * brick_extent, float p, float search_radius, unsigned int dimension);
+        bool getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension);
         float getIDW(float * sample, float p, float search_radius);
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);
