@@ -342,7 +342,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
     }
 
-    // SET KERNEL ARGS
+    // Set kernel arguments
     err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
     err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
     err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) beta_img_clgl);

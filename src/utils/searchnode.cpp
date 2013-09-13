@@ -1,9 +1,9 @@
 #include "searchnode.h"
 
-unsigned int MAX_POINTS = 32;
-unsigned int MAX_LEVELS = 16;
-unsigned int CL_MAX_ITEMS = 256;
-unsigned int CL_LEVEL = 2;
+static const unsigned int MAX_POINTS = 32;
+static const unsigned int MAX_LEVELS = 16;
+static const unsigned int CL_MAX_ITEMS = 256;
+static const unsigned int CL_LEVEL = 2;
 
 SearchNode::SearchNode()
 {
@@ -240,7 +240,7 @@ void SearchNode::getIntersectedItems(MiniArray<double> * extent, unsigned int * 
         if (*item_counter + n_points <= CL_MAX_ITEMS)
         {
             err = clEnqueueWriteBuffer(*queue, *items,
-                CL_FALSE,
+                CL_TRUE, // try CL_FALSE
                 (*item_counter)*sizeof(cl_float4),
                 n_points*sizeof(cl_float4),
                 points,
@@ -274,47 +274,87 @@ void SearchNode::writeLog(QString str)
     writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
-bool SearchNode::getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension, unsigned int level, cl_mem * items, cl_command_queue * queue)
+bool SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue)
 {
-    float idw;
-    MiniArray<float> sample(3);
-    float brick_step = (brick_extent[1] - brick_extent[0]) / ((float)(dimension-1));
     bool isEmptyBrick = true;
 
-    // Here we count the number of items in the volume intersected by the brick and the octtree. If this number is less than CL_MAX_ITEMS the calculations are carried out in parallel by OpenCL employing fast shared memory. Also, to be realistic, the check is only done for bricks deeper than CL_LEVEL
     MiniArray<double> effective_extent(6);
-    effective_extent[0] = brick_extent[0] - search_radius;
-    effective_extent[1] = brick_extent[1] + search_radius;
-    effective_extent[2] = brick_extent[2] - search_radius;
-    effective_extent[3] = brick_extent[3] + search_radius;
-    effective_extent[4] = brick_extent[4] - search_radius;
-    effective_extent[5] = brick_extent[5] + search_radius;
+    effective_extent[0] = brick_extent->at(0) - search_radius;
+    effective_extent[1] = brick_extent->at(1) + search_radius;
+    effective_extent[2] = brick_extent->at(2) - search_radius;
+    effective_extent[3] = brick_extent->at(3) + search_radius;
+    effective_extent[4] = brick_extent->at(4) - search_radius;
+    effective_extent[5] = brick_extent->at(5) + search_radius;
+
+    // Here we count the number of items in the volume intersected by the brick and the octtree. If this number is less than CL_MAX_ITEMS the calculations are carried out in parallel by OpenCL employing fast shared memory. Also, to be realistic, the check is only done for bricks deeper than CL_LEVEL
 
     unsigned int item_counter = 0;
 
-    getIntersectedItems(&effective_extent, &item_counter, items, queue);
+    getIntersectedItems(&effective_extent, &item_counter, items_cl, queue);
 
     if ((level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
     {
         clFinish(*queue);
-        std::cout << "level: " << level << " items " << item_counter << std::endl;
-        isEmptyBrick = true;
+        // Prepare buffers
+        err = clEnqueueWriteBuffer(*queue, *brick_extent_cl,
+            CL_TRUE,
+            0,
+            6*sizeof(cl_float),
+            brick_extent->toFloat().data(),
+            0, NULL, NULL);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+        }
+
+        // Set kernel arguments
+        err = clSetKernelArg(*voxelize_kernel, 0, sizeof(cl_mem), (void *) items_cl);
+        err |= clSetKernelArg(*voxelize_kernel, 1, sizeof(cl_mem), (void *) brick_extent_cl);
+        err |= clSetKernelArg(*voxelize_kernel, 2, sizeof(cl_mem), (void *) target_cl);
+        err |= clSetKernelArg(*voxelize_kernel, 3, sizeof(cl_int), &brick_outer_dimension);
+        err |= clSetKernelArg(*voxelize_kernel, 4, sizeof(cl_int), &item_counter);
+        err |= clSetKernelArg(*voxelize_kernel, 5, sizeof(cl_float), &search_radius);
+        err |= clSetKernelArg(*voxelize_kernel, 6, 512*sizeof(cl_float), NULL);
+        err |= clSetKernelArg(*voxelize_kernel, 7, sizeof(cl_bool), &isEmptyBrick);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        }
+
+        // Launch kernel
+        size_t loc_ws[3] = {8,8,8};
+        size_t glb_ws[3] = {8,8,8};
+        err = clEnqueueNDRangeKernel(*queue, *voxelize_kernel, 3, NULL, glb_ws, loc_ws, 0, NULL, NULL);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        }
+
+        clFinish(*queue);
+
+        // Read results
+
+
     }
     else
     {
+        float idw;
+        MiniArray<float> sample(3);
+        float brick_step = (brick_extent->at(1) - brick_extent->at(0)) / ((float)(brick_outer_dimension-1));
+
         // If not, however, the calculations are simply carried out on the CPU instead
-        for (unsigned int z = 0; z < dimension; z++)
+        for (unsigned int z = 0; z < brick_outer_dimension; z++)
         {
-            for (unsigned int y = 0; y < dimension; y++)
+            for (unsigned int y = 0; y < brick_outer_dimension; y++)
             {
-                for (unsigned int x = 0; x < dimension; x++)
+                for (unsigned int x = 0; x < brick_outer_dimension; x++)
                 {
-                    sample[0] = brick_extent[0] + brick_step * x;
-                    sample[1] = brick_extent[2] + brick_step * y;
-                    sample[2] = brick_extent[4] + brick_step * z;
+                    sample[0] = brick_extent->at(0) + brick_step * x;
+                    sample[1] = brick_extent->at(2) + brick_step * y;
+                    sample[2] = brick_extent->at(4) + brick_step * z;
                     idw = this->getIDW(sample.data(), p, search_radius);
 
-                    target[x + y*dimension + z*dimension*dimension] = idw;
+                    target[x + y*brick_outer_dimension + z*brick_outer_dimension*brick_outer_dimension] = idw;
 
                     if (idw > 0) isEmptyBrick = false;
                 }

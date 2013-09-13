@@ -31,7 +31,7 @@ class SearchNode {
         /* gets and sets */
         void setParent(SearchNode * parent);
 
-        bool getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension, unsigned int level, cl_mem * items, cl_command_queue * queue);
+        bool getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue);
         float getIDW(float * sample, float p, float search_radius);
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);

@@ -402,6 +402,8 @@ void ProjectFileWorker::initializeCLKernel()
         emit writeLog(str);
         return;
     }
+
+    isCLInitialized = true;
 }
 
 void ProjectFileWorker::process()
@@ -607,6 +609,10 @@ VoxelizeWorker::VoxelizeWorker()
 VoxelizeWorker::~VoxelizeWorker()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
+    if (isCLInitialized && voxelize_kernel) clReleaseKernel(voxelize_kernel);
+    if (isCLInitialized && items_cl) clReleaseMemObject(items_cl);
+    if (isCLInitialized && target_cl) clReleaseMemObject(target_cl);
 }
 
 unsigned int VoxelizeWorker::getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child)
@@ -668,7 +674,7 @@ void VoxelizeWorker::initializeCLKernel()
         return;
     }
 
-    items =  clCreateBuffer((*context),
+    items_cl =  clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         1024*16,
         NULL,
@@ -678,6 +684,30 @@ void VoxelizeWorker::initializeCLKernel()
         writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
         return;
     }
+
+    brick_extent_cl =  clCreateBuffer((*context),
+        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        6*sizeof(cl_float),
+        NULL,
+        &err);
+    if (err != CL_SUCCESS)
+    {
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+        return;
+    }
+
+    target_cl =  clCreateBuffer((*context),
+        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        512*sizeof(cl_float),
+        NULL,
+        &err);
+    if (err != CL_SUCCESS)
+    {
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+        return;
+    }
+
+    isCLInitialized = true;
 }
 
 void VoxelizeWorker::process()
@@ -762,9 +792,19 @@ void VoxelizeWorker::process()
 
                 float * brick_data = new float[n_points_brick];
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1) - svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << 0)));
-
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
-                root.getBrick(brick_data, svo->getExtent()->data(), 1.0, search_radius, svo->getBrickOuterDimension(), 0, &items, queue);
+
+                root.getBrick(brick_data,
+                    svo->getExtent(),
+                    1.0,
+                    search_radius,
+                    svo->getBrickOuterDimension(),
+                    0,
+                    &items_cl,
+                    &brick_extent_cl,
+                    &target_cl,
+                    &voxelize_kernel,
+                    queue);
 
                 gpuHelpOcttree[0].setBrick(brick_data);
 
@@ -824,7 +864,18 @@ void VoxelizeWorker::process()
 
                     t0 += timer_spec.nsecsElapsed();
                     timer_spec.restart();
-                    bool isEmpty = root.getBrick(brick_data, brick_extent.data(), 1.0, search_radius, svo->getBrickOuterDimension(), lvl, &items, queue);
+                    bool isEmpty = root.getBrick(brick_data,
+                        svo->getExtent(),
+                        1.0,
+                        search_radius,
+                        svo->getBrickOuterDimension(),
+                        lvl,
+                        &items_cl,
+                        &brick_extent_cl,
+                        &target_cl,
+                        &voxelize_kernel,
+                        queue);
+
                     t1 += timer_spec.nsecsElapsed();
                     timer_spec.restart();
                     if (isEmpty)
@@ -874,7 +925,7 @@ void VoxelizeWorker::process()
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
 
                 t_total = timer_total.nsecsElapsed();
-                std::cout << "L " << lvl << " t0: "<< t0 << "ns " << t0*100/t_total << "% t1: "<< t1 << "ns "  << t1*100/t_total << "% t2: "<< t0 << "ns "  << t2*100/t_total << std::endl;
+                std::cout << "L " << lvl << " t0: "<< t0 << " ns " << t0*100/t_total << "% t1: "<< t1 << " ns "  << t1*100/t_total << "% t2: "<< t0 << " ns "  << t2*100/t_total << "%" << std::endl;
             }
 
             if (!kill_flag)

@@ -203,7 +203,7 @@ class VoxelizeWorker : public BaseWorker
 
     private:
         cl_kernel voxelize_kernel;
-        cl_mem items;
+        cl_mem items_cl, brick_extent_cl, target_cl;
 
         unsigned int getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child);
         unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);

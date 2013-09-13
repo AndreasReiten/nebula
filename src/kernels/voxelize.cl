@@ -1,33 +1,25 @@
 __kernel void voxelize(
-    __global float4 * points,
-    __global int * subbox_offsets,
-    __global int * subbox_lengths,
-    __global int * brick_ids,
-    __global int * brick_ids_offsets,
-    __global int * brick_ids_lengths,
-    __global float * extents,
-    __global float * output,
-    int brick_dim,
-    float srchrad
+    __constant float4 * items,
+    __constant float * extent,
+    __global float * target,
+    int brick_outer_dimension,
+    int item_count,
+    float search_radius,
+    __local float * addition_array,
+    bool is_empty
     )
 {
-    // Bitwise operations used here:
-    // X / 2^n = X >> n
-    // X % 2^n = X & (2^n - 1)
-    // 2^n = 1 << n
-
-    // Each WG is one brick. Each WI is one interpolation point in the brick.
+    // Each Work Group is one brick. Each Work Item is one interpolation point in the brick.
     int id_glb_x = get_local_id(0);
     int id_glb_y = get_local_id(1);
     int id_glb_z = get_local_id(2);
-    int id_brick = get_global_id(2) >> 3; // NB: ASSUMES brick_dim = 8 !
-    int id_output = id_glb_x + id_glb_y*brick_dim + get_global_id(2)*brick_dim*brick_dim;
+    int id_output = id_glb_x + id_glb_y*brick_outer_dimension + id_glb_z*brick_outer_dimension*brick_outer_dimension;
 
     // Position of point
     float4 xyzw;
-    xyzw.x = native_divide((float)id_glb_x, (float)brick_dim-1.0)*(extents[id_brick*6+1]-extents[id_brick*6+0]) + extents[id_brick*6+0];
-    xyzw.y = native_divide((float)id_glb_y, (float)brick_dim-1.0)*(extents[id_brick*6+3]-extents[id_brick*6+2]) + extents[id_brick*6+2];
-    xyzw.z = native_divide((float)id_glb_z, (float)brick_dim-1.0)*(extents[id_brick*6+5]-extents[id_brick*6+4]) + extents[id_brick*6+4];
+    xyzw.x = native_divide((float)id_glb_x, (float)brick_outer_dimension-1.0)*(extent[1]-extent[0]) + extent[0];
+    xyzw.y = native_divide((float)id_glb_y, (float)brick_outer_dimension-1.0)*(extent[3]-extent[2]) + extent[2];
+    xyzw.z = native_divide((float)id_glb_z, (float)brick_outer_dimension-1.0)*(extent[5]-extent[4]) + extent[4];
     xyzw.w = 0.0f;
 
     // Interpolate around positions using invrese distance weighting
@@ -35,29 +27,47 @@ __kernel void voxelize(
     float sum_intensity = 0;
     float sum_distance = 0;
     float distance;
-    int id_sub;
-    // For each sub box intersecting with the brick
-    for (int i = 0; i < brick_ids_lengths[id_brick]; i++)
+
+    for (int i = 0; i < item_count; i++)
     {
-        id_sub = brick_ids[brick_ids_offsets[id_brick]+i];
+        point = items[i];
+        distance = fast_distance(xyzw.xyz, point.xyz);
 
-        // For each data point
-        for (int j = 0; j < subbox_lengths[id_sub]; j++) // There is a read error here
+        if (distance <= 0)
         {
-            //~ xyzw.w += 0.01;
-            // IDW
-            point = points[subbox_offsets[id_sub]+j]; //ERROR
-            distance = fast_distance(xyzw.xyz, point.xyz);
-
-            if (distance <= srchrad)
-            {
-                sum_intensity += native_divide(point.w, distance);
-                sum_distance += native_divide(1.0f, distance);
-            }
+            sum_intensity = point.w;
+            sum_distance = 1.0;
+            break;
+        }
+        if (distance <= srchrad)
+        {
+            sum_intensity += native_divide(point.w, distance);
+            sum_distance += native_divide(1.0f, distance);
         }
     }
     if (sum_distance > 0) xyzw.w = native_divide(sum_intensity, sum_distance);
 
     // Pass result to output array
-    output[id_output] = xyzw.w;
+    target[id_output] = xyzw.w;
+
+
+
+    // Parallel reduction to find sum of items
+    addition_array[id_output] = xyzw.w;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for (unsigned int i = 256; i > 0; i >>= 1)
+    {
+        if (id_output < i)
+        {
+            for (uint m = 0; m < s_q; m++)
+            {
+                addition_array[loc_id] += addition_array[i + loc_id];
+            }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    if (addition_array[0] > 0.0) is_empty = false;
+    else is_empty = true;
 }
