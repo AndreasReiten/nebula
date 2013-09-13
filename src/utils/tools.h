@@ -66,6 +66,10 @@ struct cl_device{
     cl_uint max_read_image_args;
     cl_uint max_write_image_args;
     cl_uint max_samplers;
+    cl_ulong max_constant_buffer_size;
+    char vendor[64];
+    cl_device_type type;
+    cl_uint vendor_id;
 };
 
 QByteArray open_resource(const char * path);

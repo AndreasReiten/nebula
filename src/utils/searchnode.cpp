@@ -1,7 +1,9 @@
 #include "searchnode.h"
 
-unsigned int MAX_POINTS = 8;
+unsigned int MAX_POINTS = 32;
 unsigned int MAX_LEVELS = 16;
+unsigned int CL_MAX_ITEMS = 256;
+unsigned int CL_LEVEL = 2;
 
 SearchNode::SearchNode()
 {
@@ -231,31 +233,94 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     else return 0;
 }
 
-bool SearchNode::getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension)
+void SearchNode::getIntersectedItems(MiniArray<double> * extent, unsigned int * item_counter, cl_mem * items, cl_command_queue * queue)
+{
+    if ((this->isMsd) && (!this->isEmpty) && (*item_counter <= CL_MAX_ITEMS))
+    {
+        if (*item_counter + n_points <= CL_MAX_ITEMS)
+        {
+            err = clEnqueueWriteBuffer(*queue, *items,
+                CL_FALSE,
+                (*item_counter)*sizeof(cl_float4),
+                n_points*sizeof(cl_float4),
+                points,
+                0, NULL, NULL);
+            if (err != CL_SUCCESS)
+            {
+                writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+                return;
+            }
+            *item_counter += n_points;
+        }
+        else
+        {
+            *item_counter+= 9000; // "a lot"
+        }
+    }
+    else if ((n_children > 0) && (*item_counter < CL_MAX_ITEMS))
+    {
+        for (unsigned int i = 0; i < 8; i++)
+        {
+            if(children[i]->isIntersected(extent->data()))
+            {
+                children[i]->getIntersectedItems(extent, item_counter, items, queue);
+            }
+        }
+    }
+}
+
+void SearchNode::writeLog(QString str)
+{
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
+}
+
+bool SearchNode::getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension, unsigned int level, cl_mem * items, cl_command_queue * queue)
 {
     float idw;
     MiniArray<float> sample(3);
     float brick_step = (brick_extent[1] - brick_extent[0]) / ((float)(dimension-1));
     bool isEmptyBrick = true;
 
-    for (unsigned int z = 0; z < dimension; z++)
+    // Here we count the number of items in the volume intersected by the brick and the octtree. If this number is less than CL_MAX_ITEMS the calculations are carried out in parallel by OpenCL employing fast shared memory. Also, to be realistic, the check is only done for bricks deeper than CL_LEVEL
+    MiniArray<double> effective_extent(6);
+    effective_extent[0] = brick_extent[0] - search_radius;
+    effective_extent[1] = brick_extent[1] + search_radius;
+    effective_extent[2] = brick_extent[2] - search_radius;
+    effective_extent[3] = brick_extent[3] + search_radius;
+    effective_extent[4] = brick_extent[4] - search_radius;
+    effective_extent[5] = brick_extent[5] + search_radius;
+
+    unsigned int item_counter = 0;
+
+    getIntersectedItems(&effective_extent, &item_counter, items, queue);
+
+    if ((level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
     {
-        for (unsigned int y = 0; y < dimension; y++)
+        clFinish(*queue);
+        std::cout << "level: " << level << " items " << item_counter << std::endl;
+        isEmptyBrick = true;
+    }
+    else
+    {
+        // If not, however, the calculations are simply carried out on the CPU instead
+        for (unsigned int z = 0; z < dimension; z++)
         {
-            for (unsigned int x = 0; x < dimension; x++)
+            for (unsigned int y = 0; y < dimension; y++)
             {
-                sample[0] = brick_extent[0] + brick_step * x;
-                sample[1] = brick_extent[2] + brick_step * y;
-                sample[2] = brick_extent[4] + brick_step * z;
-                idw = this->getIDW(sample.data(), p, search_radius);
+                for (unsigned int x = 0; x < dimension; x++)
+                {
+                    sample[0] = brick_extent[0] + brick_step * x;
+                    sample[1] = brick_extent[2] + brick_step * y;
+                    sample[2] = brick_extent[4] + brick_step * z;
+                    idw = this->getIDW(sample.data(), p, search_radius);
 
-                target[x + y*dimension + z*dimension*dimension] = idw;
+                    target[x + y*dimension + z*dimension*dimension] = idw;
 
-                if (idw > 0) isEmptyBrick = false;
+                    if (idw > 0) isEmptyBrick = false;
+                }
             }
         }
     }
-
     return isEmptyBrick;
 }
 
@@ -281,8 +346,6 @@ unsigned int SearchNode::getOctant(float * point, bool * isOutofBounds)
 
     // Find 1D octant id
     return id;
-
-
 }
 
 void SearchNode::split()

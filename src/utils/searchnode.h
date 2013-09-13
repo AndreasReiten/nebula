@@ -4,7 +4,14 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+
+#include <QObject>
+#include <QString>
+
+#include <CL/opencl.h>
+
 #include "miniarray.h"
+#include "tools.h"
 
 class SearchNode {
     /* This class represents a node in the "search octtree" data structure. It is used in order to create bricks for the GPU octtree. */
@@ -24,20 +31,21 @@ class SearchNode {
         /* gets and sets */
         void setParent(SearchNode * parent);
 
-        bool getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension);
+        bool getBrick(float * target, double * brick_extent, float p, float search_radius, unsigned int dimension, unsigned int level, cl_mem * items, cl_command_queue * queue);
         float getIDW(float * sample, float p, float search_radius);
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);
         double * getExtent();
 
     private:
+        void getIntersectedItems(MiniArray<double> * extent, unsigned int * item_counter, cl_mem * items, cl_command_queue * queue);
         SearchNode * parent;
         SearchNode ** children;
         float * points;
         double extent[6];
 
         float distance(float * a, float * b);
-
+        void writeLog(QString str);
 
         unsigned int level;
         unsigned int n_children;
@@ -45,5 +53,6 @@ class SearchNode {
 
         bool isEmpty;
         bool isMsd;
+        cl_int err;
 };
 #endif

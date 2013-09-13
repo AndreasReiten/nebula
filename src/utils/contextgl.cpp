@@ -129,16 +129,25 @@ int ContextGLWidget::initDeviceCL(int verbosity)
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WRITE_IMAGE_ARGS, sizeof(cl_uint), &device->max_write_image_args, NULL);
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_SAMPLERS, sizeof(cl_uint), &device->max_samplers, NULL);
 
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_uint), &device->max_constant_buffer_size, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_VENDOR, sizeof(cl_uint), &device->vendor, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_TYPE, sizeof(cl_uint), &device->type, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_VENDOR_ID, sizeof(cl_uint), &device->vendor_id, NULL);
+
     if (verbosity == 1)
     {
         std::stringstream ss;
         ss << "CL_DEVICE_NAME:                       " << device->cl_device_name << std::endl;
         ss << "CL_DEVICE_VERSION:                    " << device->cl_device_version << std::endl;
+        ss << "CL_DEVICE_TYPE:                       " << device->type << std::endl;
         ss << "CL_DRIVER_VERSION:                    " << device->cl_driver_version << std::endl;
+        ss << "CL_DEVICE_VENDOR:                     " << device->vendor << std::endl;
+        ss << "CL_DEVICE_VENDOR_ID:                  " << device->vendor_id << std::endl;
         ss << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:         " << device->gpu_max_mem_alloc_size << std::endl;
         ss << "CL_DEVICE_MAX_CLOCK_FREQUENCY:        " << device->gpu_clock_max << std::endl;
         ss << "CL_DEVICE_GLOBAL_MEM_SIZE:            " << device->gpu_global_mem << std::endl;
         ss << "CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE:  " << device->gpu_global_mem_cache_line << std::endl;
+        ss << "CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE:   " << device->max_constant_buffer_size << std::endl;
         ss << "CL_DEVICE_LOCAL_MEM_SIZE:             " << device->gpu_local_mem << std::endl;
         ss << "CL_DEVICE_MAX_COMPUTE_UNITS:          " << device->gpu_compute_units << std::endl;
         ss << "CL_DEVICE_MAX_WORK_GROUP_SIZE:        " << device->gpu_work_group_size << std::endl;

@@ -199,18 +199,14 @@ class VoxelizeWorker : public BaseWorker
 
     public slots:
         void process();
-        void processOpenCL();
         void initializeCLKernel();
 
     private:
         cl_kernel voxelize_kernel;
+        cl_mem items;
 
         unsigned int getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child);
         unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);
-
-        void swap(unsigned int * arr, int i, int j);
-        void quickSortAux2(unsigned int * arr, unsigned int * arr_aux, unsigned int * arr_aux2,  int left, int right);
-        void quickSortAux3(unsigned int * arr, unsigned int * arr_aux, unsigned int * arr_aux2, unsigned int * arr_aux3, int left, int right);
 };
 
 class AllInOneWorker : public BaseWorker
