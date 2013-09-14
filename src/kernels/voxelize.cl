@@ -5,8 +5,7 @@ __kernel void voxelize(
     int brick_outer_dimension,
     int item_count,
     float search_radius,
-    __local float * addition_array,
-    bool is_empty
+    __local float * addition_array
     )
 {
     // Each Work Group is one brick. Each Work Item is one interpolation point in the brick.
@@ -17,6 +16,7 @@ __kernel void voxelize(
 
     // Position of point
     float4 xyzw;
+
     xyzw.x = native_divide((float)id_glb_x, (float)brick_outer_dimension-1.0)*(extent[1]-extent[0]) + extent[0];
     xyzw.y = native_divide((float)id_glb_y, (float)brick_outer_dimension-1.0)*(extent[3]-extent[2]) + extent[2];
     xyzw.z = native_divide((float)id_glb_z, (float)brick_outer_dimension-1.0)*(extent[5]-extent[4]) + extent[4];
@@ -26,23 +26,22 @@ __kernel void voxelize(
     float4 point;
     float sum_intensity = 0;
     float sum_distance = 0;
-    float distance;
+    float dst;
 
     for (int i = 0; i < item_count; i++)
     {
         point = items[i];
-        distance = fast_distance(xyzw.xyz, point.xyz);
-
-        if (distance <= 0)
+        dst = fast_distance(xyzw.xyz, point.xyz);
+        if (dst <= 0.0)
         {
             sum_intensity = point.w;
             sum_distance = 1.0;
             break;
         }
-        if (distance <= srchrad)
+        else if (dst <= search_radius)
         {
-            sum_intensity += native_divide(point.w, distance);
-            sum_distance += native_divide(1.0f, distance);
+            sum_intensity += native_divide(point.w, dst);
+            sum_distance += native_divide(1.0f, dst);
         }
     }
     if (sum_distance > 0) xyzw.w = native_divide(sum_intensity, sum_distance);
@@ -60,14 +59,13 @@ __kernel void voxelize(
     {
         if (id_output < i)
         {
-            for (uint m = 0; m < s_q; m++)
-            {
-                addition_array[loc_id] += addition_array[i + loc_id];
-            }
+            addition_array[id_output] += addition_array[i + id_output];
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    if (addition_array[0] > 0.0) is_empty = false;
-    else is_empty = true;
+    if (id_output == 0)
+    {
+        target[512] = addition_array[0];
+    }
 }

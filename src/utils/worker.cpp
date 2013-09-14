@@ -495,7 +495,7 @@ void ProjectFileWorker::process()
     /* Create dummy dataset for debugging purposes.
      *
     */
-    if (0) // A sphere
+    if (1) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
@@ -519,7 +519,7 @@ void ProjectFileWorker::process()
             }
         }
     }
-    else if (1) // A gradiented box
+    else if (0) // A gradiented box
     {
         int res = 60;
         reduced_pixels->resize(res*res*res*4);
@@ -698,7 +698,7 @@ void VoxelizeWorker::initializeCLKernel()
 
     target_cl =  clCreateBuffer((*context),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        512*sizeof(cl_float),
+        513*sizeof(cl_float),
         NULL,
         &err);
     if (err != CL_SUCCESS)
@@ -770,7 +770,7 @@ void VoxelizeWorker::process()
             nodes[1] = 8;
 
             unsigned int confirmed_nodes = 1, non_empty_node_counter = 1;
-
+            int method;
 
             // Intitialize the first level
             {
@@ -790,7 +790,7 @@ void VoxelizeWorker::process()
                 gpuHelpOcttree[6].setParent(0);
                 gpuHelpOcttree[7].setParent(0);
 
-                float * brick_data = new float[n_points_brick];
+                float * brick_data = new float[n_points_brick+1];
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1) - svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << 0)));
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
@@ -804,7 +804,8 @@ void VoxelizeWorker::process()
                     &brick_extent_cl,
                     &target_cl,
                     &voxelize_kernel,
-                    queue);
+                    queue,
+                    &method);
 
                 gpuHelpOcttree[0].setBrick(brick_data);
 
@@ -817,6 +818,9 @@ void VoxelizeWorker::process()
             QElapsedTimer timer;
             for (size_t lvl = 1; lvl < svo->getLevels(); lvl++)
             {
+                size_t cpu_counter = 0;
+                size_t gpu_counter = 0;
+
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
@@ -852,7 +856,7 @@ void VoxelizeWorker::process()
                     // Based on brick id calculate the brick extent and then calculate and set the brick data
                     unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
 
-                    Matrix<double> brick_extent(3,2);
+                    MiniArray<double> brick_extent(6);
                     brick_extent[0] = svo->getExtent()->at(0) + tmp*brickId[0];
                     brick_extent[1] = svo->getExtent()->at(0) + tmp*(brickId[0]+1);
                     brick_extent[2] = svo->getExtent()->at(2) + tmp*brickId[1];
@@ -864,8 +868,8 @@ void VoxelizeWorker::process()
 
                     t0 += timer_spec.nsecsElapsed();
                     timer_spec.restart();
-                    bool isEmpty = root.getBrick(brick_data,
-                        svo->getExtent(),
+                    int isEmpty = root.getBrick(brick_data,
+                        &brick_extent,
                         1.0,
                         search_radius,
                         svo->getBrickOuterDimension(),
@@ -874,7 +878,12 @@ void VoxelizeWorker::process()
                         &brick_extent_cl,
                         &target_cl,
                         &voxelize_kernel,
-                        queue);
+                        queue,
+                        &method);
+
+                    //~std::cout << method << " "<< isEmpty << std::endl;
+                    if (method == 0) gpu_counter++;
+                    if (method == 1) cpu_counter++;
 
                     t1 += timer_spec.nsecsElapsed();
                     timer_spec.restart();
@@ -926,6 +935,8 @@ void VoxelizeWorker::process()
 
                 t_total = timer_total.nsecsElapsed();
                 std::cout << "L " << lvl << " t0: "<< t0 << " ns " << t0*100/t_total << "% t1: "<< t1 << " ns "  << t1*100/t_total << "% t2: "<< t0 << " ns "  << t2*100/t_total << "%" << std::endl;
+                std::cout << "L " << lvl << " cpu: "<< cpu_counter << ", gpu: " << gpu_counter << std::endl;
+                std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
             if (!kill_flag)

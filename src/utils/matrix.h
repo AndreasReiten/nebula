@@ -404,7 +404,7 @@ const Matrix<T> Matrix<T>::operator * (const Matrix& M) const
 template <class T>
 void Matrix<T>::print(int precision, const char * id) const
 {
-    if (strlen(id) > 0) std::cout << id << std::endl;
+    if (strlen(id) > 0) std::cout << id << "("<< this->m << ", " << this->n << "):"<<std::endl;
     for (int i = 0; i < m; i++)
     {
         if (i == 0) std::cout << "{{ ";

@@ -11,6 +11,8 @@ SearchNode::SearchNode()
     this->isEmpty = true;
     this->n_points = 0;
     this->n_children = 0;
+    this->verbosity = 1;
+    this->extent.reserve(6);
 }
 
 SearchNode::SearchNode(SearchNode * parent, double * extent)
@@ -20,6 +22,8 @@ SearchNode::SearchNode(SearchNode * parent, double * extent)
     this->parent = parent;
     this->n_points = 0;
     this->n_children = 0;
+    this->verbosity = 1;
+    this->extent.reserve(6);
 
     for (int i = 0; i < 6; i++)
     {
@@ -233,37 +237,66 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     else return 0;
 }
 
-void SearchNode::getIntersectedItems(MiniArray<double> * extent, unsigned int * item_counter, cl_mem * items, cl_command_queue * queue)
+void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsigned int * item_counter, cl_mem * items, cl_command_queue * queue)
 {
-    if ((this->isMsd) && (!this->isEmpty) && (*item_counter <= CL_MAX_ITEMS))
+    if ((this->isMsd) && (!this->isEmpty))// && (*item_counter <= CL_MAX_ITEMS))
     {
-        if (*item_counter + n_points <= CL_MAX_ITEMS)
-        {
-            err = clEnqueueWriteBuffer(*queue, *items,
-                CL_TRUE, // try CL_FALSE
-                (*item_counter)*sizeof(cl_float4),
-                n_points*sizeof(cl_float4),
-                points,
-                0, NULL, NULL);
-            if (err != CL_SUCCESS)
+        //~if (*item_counter <= CL_MAX_ITEMS)
+        //~{
+            //~effective_extent->print(2, "eff_extent");
+            //~extent.print(2, "extent");
+            int tmp = 0;
+            for (unsigned int i = 0; i < n_points; i++)
             {
-                writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-                return;
+
+                if (
+                ((points[i*4+0] >= effective_extent->at(0)) && (points[i*4+0] <= effective_extent->at(1))) &&
+                ((points[i*4+1] >= effective_extent->at(2)) && (points[i*4+1] <= effective_extent->at(3))) &&
+                ((points[i*4+2] >= effective_extent->at(4)) && (points[i*4+2] <= effective_extent->at(5))))
+                {
+                    if (*item_counter < CL_MAX_ITEMS)
+                    {
+                        err = clEnqueueWriteBuffer(*queue, *items,
+                            CL_TRUE, // try CL_FALSE
+                            (*item_counter)*sizeof(cl_float4),
+                            sizeof(cl_float4),
+                            points + tmp*4,
+                            0, NULL, NULL);
+                        if (err != CL_SUCCESS)
+                        {
+                            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+                            return;
+                        }
+                        tmp++;
+                    }
+                    (*item_counter)++;
+                }
             }
-            *item_counter += n_points;
-        }
-        else
-        {
-            *item_counter+= 9000; // "a lot"
-        }
+            //~err = clEnqueueWriteBuffer(*queue, *items,
+                //~CL_TRUE, // try CL_FALSE
+                //~(*item_counter)*sizeof(cl_float4),
+                //~n_points*sizeof(cl_float4),
+                //~points,
+                //~0, NULL, NULL);
+            //~if (err != CL_SUCCESS)
+            //~{
+                //~writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+                //~return;
+            //~}
+            //~*item_counter += n_points;
+        //~}
+        //~else
+        //~{
+            //~*item_counter+= 9000; // "a lot"
+        //~}
     }
-    else if ((n_children > 0) && (*item_counter < CL_MAX_ITEMS))
+    else if ((n_children > 0))// && (*item_counter < CL_MAX_ITEMS))
     {
         for (unsigned int i = 0; i < 8; i++)
         {
-            if(children[i]->isIntersected(extent->data()))
+            if(children[i]->isIntersected(effective_extent->data()))
             {
-                children[i]->getIntersectedItems(extent, item_counter, items, queue);
+                children[i]->getIntersectedItems(effective_extent, item_counter, items, queue);
             }
         }
     }
@@ -274,9 +307,9 @@ void SearchNode::writeLog(QString str)
     writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
-bool SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue)
+int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue, int * method)
 {
-    bool isEmptyBrick = true;
+    int isEmptyBrick = 1;
 
     MiniArray<double> effective_extent(6);
     effective_extent[0] = brick_extent->at(0) - search_radius;
@@ -292,7 +325,14 @@ bool SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, floa
 
     getIntersectedItems(&effective_extent, &item_counter, items_cl, queue);
 
-    if ((level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
+    std::cout << "lvl "<< level << " item_counter" << item_counter << std::endl;
+     //~effective_extent.print(2, "effective_extent");
+    if (item_counter == 0)
+    {
+        isEmptyBrick = 1;
+        *method = 2;
+    }
+    else if ((level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
     {
         clFinish(*queue);
         // Prepare buffers
@@ -315,7 +355,6 @@ bool SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, floa
         err |= clSetKernelArg(*voxelize_kernel, 4, sizeof(cl_int), &item_counter);
         err |= clSetKernelArg(*voxelize_kernel, 5, sizeof(cl_float), &search_radius);
         err |= clSetKernelArg(*voxelize_kernel, 6, 512*sizeof(cl_float), NULL);
-        err |= clSetKernelArg(*voxelize_kernel, 7, sizeof(cl_bool), &isEmptyBrick);
         if (err != CL_SUCCESS)
         {
             writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
@@ -331,10 +370,65 @@ bool SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, floa
         }
 
         clFinish(*queue);
+        std::cout << "### NEW BRICK ### brick_outer_dimension = " << brick_outer_dimension <<  ", search_radius = " << search_radius << std::endl;
+
+        Matrix<float> extentz(1, 6);
+        err = clEnqueueReadBuffer ( *queue,
+            *brick_extent_cl,
+            CL_TRUE,
+            0,
+            6*sizeof(cl_float),
+            extentz.data(),
+            0,
+            NULL,
+            NULL);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        }
+        extentz.print(2, "extentz");
+
+
+        Matrix<float> itamz(item_counter, 4);
+        err = clEnqueueReadBuffer ( *queue,
+            *items_cl,
+            CL_TRUE,
+            0,
+            item_counter*sizeof(cl_float4),
+            itamz.data(),
+            0,
+            NULL,
+            NULL);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        }
+        itamz.print(2, "itamz");
 
         // Read results
+        err = clEnqueueReadBuffer ( *queue,
+            *target_cl,
+            CL_TRUE,
+            0,
+            513*sizeof(cl_float),
+            target,
+            0,
+            NULL,
+            NULL);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        }
 
+        if (target[512] > 0.0) isEmptyBrick = 0;
+        else isEmptyBrick = 1;
 
+        Matrix<float> targetz(32,16);
+        targetz.setDeep(32,16, target);
+        targetz.print(2,"targetz");
+        std::cout << "sum " << target[512] << std::endl;
+
+        *method = 0;
     }
     else
     {
@@ -356,11 +450,13 @@ bool SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, floa
 
                     target[x + y*brick_outer_dimension + z*brick_outer_dimension*brick_outer_dimension] = idw;
 
-                    if (idw > 0) isEmptyBrick = false;
+                    if (idw > 0) isEmptyBrick = 0;
                 }
             }
         }
+        *method = 1;
     }
+    //~if (verbosity == 1) writeLog("[SearchNode] Line "+QString::number(__LINE__));
     return isEmptyBrick;
 }
 
@@ -433,5 +529,5 @@ void SearchNode::split()
 
 double * SearchNode::getExtent()
 {
-    return this->extent;
+    return this->extent.data();
 }

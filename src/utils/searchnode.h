@@ -11,6 +11,7 @@
 #include <CL/opencl.h>
 
 #include "miniarray.h"
+#include "matrix.h"
 #include "tools.h"
 
 class SearchNode {
@@ -31,18 +32,18 @@ class SearchNode {
         /* gets and sets */
         void setParent(SearchNode * parent);
 
-        bool getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue);
+        int getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue, int * method);
         float getIDW(float * sample, float p, float search_radius);
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);
         double * getExtent();
 
     private:
-        void getIntersectedItems(MiniArray<double> * extent, unsigned int * item_counter, cl_mem * items, cl_command_queue * queue);
+        void getIntersectedItems(MiniArray<double> * effective_extent, unsigned int * item_counter, cl_mem * items, cl_command_queue * queue);
         SearchNode * parent;
         SearchNode ** children;
         float * points;
-        double extent[6];
+        MiniArray<double> extent;
 
         float distance(float * a, float * b);
         void writeLog(QString str);
@@ -54,5 +55,6 @@ class SearchNode {
         bool isEmpty;
         bool isMsd;
         cl_int err;
+        int verbosity;
 };
 #endif
