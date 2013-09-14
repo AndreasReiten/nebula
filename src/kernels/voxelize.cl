@@ -1,5 +1,5 @@
 __kernel void voxelize(
-    __constant float4 * items,
+    __global float4 * items,
     __constant float * extent,
     __global float * target,
     int brick_outer_dimension,
@@ -16,10 +16,10 @@ __kernel void voxelize(
 
     // Position of point
     float4 xyzw;
-
-    xyzw.x = native_divide((float)id_glb_x, (float)brick_outer_dimension-1.0)*(extent[1]-extent[0]) + extent[0];
-    xyzw.y = native_divide((float)id_glb_y, (float)brick_outer_dimension-1.0)*(extent[3]-extent[2]) + extent[2];
-    xyzw.z = native_divide((float)id_glb_z, (float)brick_outer_dimension-1.0)*(extent[5]-extent[4]) + extent[4];
+    float step_length = (extent[1] - extent[0]) / ((float)brick_outer_dimension - 1.0);
+    xyzw.x = extent[0] + (float)id_glb_x * step_length;
+    xyzw.y = extent[2] + (float)id_glb_y * step_length;
+    xyzw.z = extent[4] + (float)id_glb_z * step_length;
     xyzw.w = 0.0f;
 
     // Interpolate around positions using invrese distance weighting
@@ -31,30 +31,31 @@ __kernel void voxelize(
     for (int i = 0; i < item_count; i++)
     {
         point = items[i];
-        dst = fast_distance(xyzw.xyz, point.xyz);
-        if (dst <= 0.0)
-        {
-            sum_intensity = point.w;
-            sum_distance = 1.0;
-            break;
-        }
-        else if (dst <= search_radius)
+        dst = distance(xyzw.xyz, point.xyz);
+        //~if (dst <= 0.0)
+        //~{
+            //~sum_intensity = point.w;
+            //~sum_distance = 1.0;
+            //~break;
+        //~}
+        if (dst <= search_radius)
         {
             sum_intensity += native_divide(point.w, dst);
             sum_distance += native_divide(1.0f, dst);
         }
     }
-    if (sum_distance > 0) xyzw.w = native_divide(sum_intensity, sum_distance);
+    if (sum_distance > 0) xyzw.w = sum_intensity / sum_distance;
 
     // Pass result to output array
     target[id_output] = xyzw.w;
 
 
 
-    // Parallel reduction to find sum of items
-    addition_array[id_output] = xyzw.w;
-    barrier(CLK_LOCAL_MEM_FENCE);
+    // Parallel reduction to find if there is nonzero data
+    if (xyzw.w != 0.0) addition_array[id_output] = 1.0;
+    else  addition_array[id_output] = 0.0;
 
+    barrier(CLK_LOCAL_MEM_FENCE);
     for (unsigned int i = 256; i > 0; i >>= 1)
     {
         if (id_output < i)

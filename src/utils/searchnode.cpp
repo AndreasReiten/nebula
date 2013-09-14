@@ -2,7 +2,7 @@
 
 static const unsigned int MAX_POINTS = 32;
 static const unsigned int MAX_LEVELS = 16;
-static const unsigned int CL_MAX_ITEMS = 256;
+static const unsigned int CL_MAX_ITEMS = 1024*2*2*2;
 static const unsigned int CL_LEVEL = 2;
 
 SearchNode::SearchNode()
@@ -184,7 +184,8 @@ void SearchNode::weighSamples(float * sample, double * sample_extent, float * su
             d = distance(points + i*4, sample);
             if (d <= search_radius)
             {
-                w = 1.0 / std::pow(d,p);
+                if (p == 42) std::cout <<  "["<< points[i*4+0] << ", "<< points[i*4+1] << ", "<< points[i*4+2] << ", "<< points[i*4+3] << "]" << " d: "<< d << std::endl;
+                w = 1.0 / d;
                 *sum_w += w;
                 *sum_wu += w * (points[i*4 + 3]);
             }
@@ -249,11 +250,11 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsig
             for (unsigned int i = 0; i < n_points; i++)
             {
 
-                if (
-                ((points[i*4+0] >= effective_extent->at(0)) && (points[i*4+0] <= effective_extent->at(1))) &&
-                ((points[i*4+1] >= effective_extent->at(2)) && (points[i*4+1] <= effective_extent->at(3))) &&
-                ((points[i*4+2] >= effective_extent->at(4)) && (points[i*4+2] <= effective_extent->at(5))))
-                {
+                //~if (
+                //~((points[i*4+0] >= effective_extent->at(0)) && (points[i*4+0] <= effective_extent->at(1))) &&
+                //~((points[i*4+1] >= effective_extent->at(2)) && (points[i*4+1] <= effective_extent->at(3))) &&
+                //~((points[i*4+2] >= effective_extent->at(4)) && (points[i*4+2] <= effective_extent->at(5))))
+                //~{
                     if (*item_counter < CL_MAX_ITEMS)
                     {
                         err = clEnqueueWriteBuffer(*queue, *items,
@@ -270,7 +271,7 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsig
                         tmp++;
                     }
                     (*item_counter)++;
-                }
+                //~}
             }
             //~err = clEnqueueWriteBuffer(*queue, *items,
                 //~CL_TRUE, // try CL_FALSE
@@ -309,6 +310,9 @@ void SearchNode::writeLog(QString str)
 
 int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue, int * method)
 {
+
+    //~std::cout << "### NEW BRICK ### brick_outer_dimension = " << brick_outer_dimension <<  ", search_radius = " << search_radius << std::endl;
+
     int isEmptyBrick = 1;
 
     MiniArray<double> effective_extent(6);
@@ -325,16 +329,35 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
 
     getIntersectedItems(&effective_extent, &item_counter, items_cl, queue);
 
-    std::cout << "lvl "<< level << " item_counter" << item_counter << std::endl;
-     //~effective_extent.print(2, "effective_extent");
+    //~std::cout << "lvl "<< level << " item_counter" << item_counter << std::endl;
+    //~brick_extent->print(4, "brick_extent");
+    //~effective_extent.print(4, "effective_extent");
     if (item_counter == 0)
     {
         isEmptyBrick = 1;
         *method = 2;
     }
-    else if ((level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
+    else if (0)//(level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))//(level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
     {
         clFinish(*queue);
+
+        //~Matrix<float> itamz(item_counter, 4);
+        //~err = clEnqueueReadBuffer ( *queue,
+            //~*items_cl,
+            //~CL_TRUE,
+            //~0,
+            //~item_counter*sizeof(cl_float4),
+            //~itamz.data(),
+            //~0,
+            //~NULL,
+            //~NULL);
+        //~if (err != CL_SUCCESS)
+        //~{
+            //~writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        //~}
+        //~itamz.print(2, "itamz");
+
+
         // Prepare buffers
         err = clEnqueueWriteBuffer(*queue, *brick_extent_cl,
             CL_TRUE,
@@ -370,40 +393,26 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
         }
 
         clFinish(*queue);
-        std::cout << "### NEW BRICK ### brick_outer_dimension = " << brick_outer_dimension <<  ", search_radius = " << search_radius << std::endl;
-
-        Matrix<float> extentz(1, 6);
-        err = clEnqueueReadBuffer ( *queue,
-            *brick_extent_cl,
-            CL_TRUE,
-            0,
-            6*sizeof(cl_float),
-            extentz.data(),
-            0,
-            NULL,
-            NULL);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-        }
-        extentz.print(2, "extentz");
 
 
-        Matrix<float> itamz(item_counter, 4);
-        err = clEnqueueReadBuffer ( *queue,
-            *items_cl,
-            CL_TRUE,
-            0,
-            item_counter*sizeof(cl_float4),
-            itamz.data(),
-            0,
-            NULL,
-            NULL);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-        }
-        itamz.print(2, "itamz");
+        //~Matrix<float> extentz(1, 6);
+        //~err = clEnqueueReadBuffer ( *queue,
+            //~*brick_extent_cl,
+            //~CL_TRUE,
+            //~0,
+            //~6*sizeof(cl_float),
+            //~extentz.data(),
+            //~0,
+            //~NULL,
+            //~NULL);
+        //~if (err != CL_SUCCESS)
+        //~{
+            //~writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        //~}
+        //~extentz.print(4, "extentz");
+
+
+
 
         // Read results
         err = clEnqueueReadBuffer ( *queue,
@@ -422,13 +431,89 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
 
         if (target[512] > 0.0) isEmptyBrick = 0;
         else isEmptyBrick = 1;
-
-        Matrix<float> targetz(32,16);
-        targetz.setDeep(32,16, target);
-        targetz.print(2,"targetz");
-        std::cout << "sum " << target[512] << std::endl;
+//~
+        //~Matrix<float> targetz(32,16);
+        //~targetz.setDeep(32,16, target);
+        //~targetz.print(2,"targetz");
+        //~std::cout << "sum " << target[512] << std::endl;
 
         *method = 0;
+    }
+    else if ( 0)
+    {
+        Matrix<float> itamz(item_counter, 4);
+        err = clEnqueueReadBuffer ( *queue,
+            *items_cl,
+            CL_TRUE,
+            0,
+            item_counter*sizeof(cl_float4),
+            itamz.data(),
+            0,
+            NULL,
+            NULL);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+        }
+
+        float idw;
+        MiniArray<float> sample(3);
+        float brick_step = (brick_extent->at(1) - brick_extent->at(0)) / ((float)(brick_outer_dimension-1));
+
+        // If not, however, the calculations are simply carried out on the CPU instead
+        for (unsigned int z = 0; z < brick_outer_dimension; z++)
+        {
+            for (unsigned int y = 0; y < brick_outer_dimension; y++)
+            {
+                for (unsigned int x = 0; x < brick_outer_dimension; x++)
+                {
+                    idw = 0;
+                    int mark = 0;
+                    if ((x + y*brick_outer_dimension + z*brick_outer_dimension*brick_outer_dimension == 511) && (level == 2)) mark = 1;
+
+                    sample[0] = brick_extent->at(0) + brick_step * x;
+                    sample[1] = brick_extent->at(2) + brick_step * y;
+                    sample[2] = brick_extent->at(4) + brick_step * z;
+
+                    if (mark)
+                    {
+                        idw = this->getIDW(sample.data(), 42, search_radius);
+                        std::cout <<  "idw: " << idw << std::endl;
+                    }
+
+                    float sum_intensity = 0;
+                    float sum_distance = 0;
+                    float dst;
+
+                    for (unsigned int i = 0; i < item_counter; i++)
+                    {
+                        dst = distance(sample.data(), itamz.data() + i*4);
+                        if (dst <= search_radius)
+                        {
+                            sum_intensity += itamz[i*4+3]/ dst;
+                            sum_distance += 1.0f/ dst;
+
+                            if (mark)
+                            {
+                                std::cout <<  "["<< itamz[i*4+0] << ", "<< itamz[i*4+1] << ", "<< itamz[i*4+2] << ", "<< itamz[i*4+3] << "]" << " dst: "<< dst << std::endl;
+                            }
+                        }
+                    }
+                    if (sum_distance > 0) idw = sum_intensity / sum_distance;
+
+                    if (mark)
+                    {
+                        std::cout <<  "idw: " << idw << std::endl;
+                    }
+
+                    target[x + y*brick_outer_dimension + z*brick_outer_dimension*brick_outer_dimension] = idw;
+
+                    if (idw > 0) isEmptyBrick = 0;
+                }
+            }
+        }
+        *method = 1;
+
     }
     else
     {
@@ -449,6 +534,16 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
                     idw = this->getIDW(sample.data(), p, search_radius);
 
                     target[x + y*brick_outer_dimension + z*brick_outer_dimension*brick_outer_dimension] = idw;
+
+                    //~int mark = 0;
+//~
+                    //~if ((x + y*brick_outer_dimension + z*brick_outer_dimension*brick_outer_dimension == 511) && (level == 2)) mark = 1;
+
+
+                    //~if (mark)
+                    //~{
+                        //~std::cout <<  "idw: " << idw << std::endl;
+                    //~}
 
                     if (idw > 0) isEmptyBrick = 0;
                 }

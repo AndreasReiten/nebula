@@ -274,7 +274,7 @@ void ReadFileWorker::process()
     emit enableVoxelizeButton(false);
     emit enableAllInOneButton(false);
     emit showGenericProgressBar(true);
-    emit changedTabWidget(0);
+    emit changedTabWidget(1);
 
 
     QElapsedTimer stopwatch;
@@ -495,14 +495,14 @@ void ProjectFileWorker::process()
     /* Create dummy dataset for debugging purposes.
      *
     */
-    if (1) // A sphere
+    if (0) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
 
         reduced_pixels->resize(theta_max*phi_max*4);
 
-        float radius = 0.45;
+        float radius = 1.15;
         double pi = 4.0*std::atan(1.0);
 
         for (int i = 0; i < theta_max; i++)
@@ -521,7 +521,7 @@ void ProjectFileWorker::process()
     }
     else if (0) // A gradiented box
     {
-        int res = 60;
+        int res = 32;
         reduced_pixels->resize(res*res*res*4);
 
         for (int i = 0; i < res; i++)
@@ -530,10 +530,10 @@ void ProjectFileWorker::process()
             {
                 for (int k = 0; k < res; k++)
                 {
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (i - res*0.5)/res;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (j - res*0.5)/res;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (k - res*0.5)/res;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (float)std::sqrt(i*i+j*j+k*k);
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (((float)i/(float)(res-1)) - 0.5)*2.0*1.25;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*1.25;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*1.25;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
                 }
             }
         }
@@ -676,7 +676,7 @@ void VoxelizeWorker::initializeCLKernel()
 
     items_cl =  clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        1024*16,
+        524288*2*2*2,
         NULL,
         &err);
     if (err != CL_SUCCESS)
@@ -767,56 +767,13 @@ void VoxelizeWorker::process()
             MiniArray<unsigned int> nodes;
             nodes.set(64, (unsigned int) 0);
             nodes[0] = 1;
-            nodes[1] = 8;
 
-            unsigned int confirmed_nodes = 1, non_empty_node_counter = 1;
+            unsigned int confirmed_nodes = 0, non_empty_node_counter = 0;
             int method;
 
-            // Intitialize the first level
-            {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level 0 (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  0))+")");
-
-                gpuHelpOcttree[0].setMsdFlag(0);
-                gpuHelpOcttree[0].setDataFlag(1);
-                gpuHelpOcttree[0].setChild(1);
-                gpuHelpOcttree[0].setPoolId(0,0,0);
-                gpuHelpOcttree[0].setBrickId(0,0,0);
-                gpuHelpOcttree[0].setLevel(0);
-                gpuHelpOcttree[1].setParent(0);
-                gpuHelpOcttree[2].setParent(0);
-                gpuHelpOcttree[3].setParent(0);
-                gpuHelpOcttree[4].setParent(0);
-                gpuHelpOcttree[5].setParent(0);
-                gpuHelpOcttree[6].setParent(0);
-                gpuHelpOcttree[7].setParent(0);
-
-                float * brick_data = new float[n_points_brick+1];
-                float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1) - svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << 0)));
-                if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
-
-                root.getBrick(brick_data,
-                    svo->getExtent(),
-                    1.0,
-                    search_radius,
-                    svo->getBrickOuterDimension(),
-                    0,
-                    &items_cl,
-                    &brick_extent_cl,
-                    &target_cl,
-                    &voxelize_kernel,
-                    queue,
-                    &method);
-
-                gpuHelpOcttree[0].setBrick(brick_data);
-
-                emit changedMessageString(" ...done");
-            }
-
-
-
-            // Cycle through the remaining levels
+            // Cycle through the levels
             QElapsedTimer timer;
-            for (size_t lvl = 1; lvl < svo->getLevels(); lvl++)
+            for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
                 size_t cpu_counter = 0;
                 size_t gpu_counter = 0;
@@ -880,6 +837,11 @@ void VoxelizeWorker::process()
                         &voxelize_kernel,
                         queue,
                         &method);
+
+                    //~Matrix<float> targetz(32,16);
+                    //~targetz.setDeep(32,16, brick_data);
+                    //~targetz.print(2,"targetz");
+                    //~std::cout << "isEmpty: "<< isEmpty << " sum " << brick_data[512] << std::endl;
 
                     //~std::cout << method << " "<< isEmpty << std::endl;
                     if (method == 0) gpu_counter++;

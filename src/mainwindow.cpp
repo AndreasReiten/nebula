@@ -857,7 +857,9 @@ void MainWindow::saveSvo()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-    QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"), "", tr(".h5 (*.h5);; All Files (*)"));
+    QFileDialog dialog;
+    dialog.setDefaultSuffix(".h5");
+    QString file_name = dialog.getSaveFileName(this, tr("Save File"), "", tr(".h5 (*.h5);; All Files (*)"));
 
     if (file_name != "")
     {
@@ -873,6 +875,8 @@ void MainWindow::openSvo()
 
     if ((file_name != ""))
     {
+        setWindowTitle(tr("NebulaX[*] ")+file_name);
+
         svo_loaded[current_svo].open(file_name);
         volumeRenderWidget->setSvo(&(svo_loaded[current_svo]));
 
@@ -1316,7 +1320,7 @@ void MainWindow::initializeInteractives()
         treshLimD_DSB->setFocusPolicy(Qt::ClickFocus);
 
         svoLevelSpinBox = new QSpinBox;
-        svoLevelSpinBox->setRange(2, 15);
+        svoLevelSpinBox->setRange(1, 15);
 
         // Buttons
         saveSVOButton = new QPushButton;
