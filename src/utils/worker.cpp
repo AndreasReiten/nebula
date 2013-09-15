@@ -737,13 +737,13 @@ void VoxelizeWorker::process()
 
         // The number of data points in a single brick
         size_t n_points_brick = std::pow(svo->getBrickOuterDimension(), 3);
-        size_t n_max_bricks = 2e9/n_points_brick*sizeof(float); // Allow up 2 GB of bricks
 
         // The extent of the volume
         svo->setExtent(*suggested_q);
 
         // Prepare the brick pool
         size_t pool_max_size = 1e9;
+        size_t n_max_bricks = pool_max_size/n_points_brick*sizeof(float); // Allow up 2 GB of bricks
         MiniArray<int> pool_dimension(4, 0);
         pool_dimension[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
         pool_dimension[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
@@ -752,12 +752,12 @@ void VoxelizeWorker::process()
         if (pool_dimension[2] < 2) pool_dimension[2] = 2;
         pool_dimension[2] *= svo->getBrickOuterDimension();
 
-        pool_dimension.print(2,"pool_dimension");
+        svo->pool.set(pool_dimension[0]*pool_dimension[1]*pool_dimension[2], 0);
 
         cl_mem pool_cl = clCreateBuffer((*context),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-            pool_dimension[0]*pool_dimension[1]*pool_dimension[2]*sizeof(cl_float),
-            NULL,
+            svo->pool.bytes(),
+            svo->pool.data(),
             &err);
         if (err != CL_SUCCESS)
         {
@@ -816,18 +816,10 @@ void VoxelizeWorker::process()
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
-                //~std::cout << "search_radius: "<< search_radius << std::endl;
-
                 double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
 
                 // For each node
                 size_t iter = 0;
-
-                //~QElapsedTimer timer_total, timer_spec;
-                //~timer_total.start();
-                //~timer_spec.start();
-                //~size_t t0 = 0, t1 = 0, t2 = 0, t_total;
-
                 for (size_t i = 0; i < nodes[lvl]; i++)
                 {
                     if (kill_flag) break;
@@ -861,8 +853,6 @@ void VoxelizeWorker::process()
                         writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
                     }
 
-                    //~t0 += timer_spec.nsecsElapsed();
-                    //~timer_spec.restart();
                     int isEmpty = root.getBrick(brick_data,
                         &brick_extent,
                         1.0,
@@ -880,8 +870,6 @@ void VoxelizeWorker::process()
                     if (method == 0) gpu_counter++;
                     if (method == 1) cpu_counter++;
 
-                    //~t1 += timer_spec.nsecsElapsed();
-                    //~timer_spec.restart();
                     if (isEmpty)
                     {
                         gpuHelpOcttree[currentId].setDataFlag(0);
@@ -913,8 +901,6 @@ void VoxelizeWorker::process()
                         iter++;
                     }
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
-                    //~t2 += timer_spec.nsecsElapsed();
-                    //~timer_spec.restart();
                 }
                 if (kill_flag)
                 {
@@ -928,8 +914,6 @@ void VoxelizeWorker::process()
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
 
-                //~t_total = timer_total.nsecsElapsed();
-                //~std::cout << "L " << lvl << " t0: "<< t0 << " ns " << t0*100/t_total << "% t1: "<< t1 << " ns "  << t1*100/t_total << "% t2: "<< t0 << " ns "  << t2*100/t_total << "%" << std::endl;
                 std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
@@ -967,17 +951,17 @@ void VoxelizeWorker::process()
                 }
 
                 // Round up to the lowest number of bricks that is multiple of the brick pool dimensions. Use this value to reserve data for the data pool
+
                 unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
 
-                // Allocate resources
-                svo->pool.set(non_empty_node_counter_rounded_up*n_points_brick, 0.0);
-
                 // Read results
+                svo->pool.reserve(non_empty_node_counter_rounded_up*n_points_brick);
+
                 err = clEnqueueReadBuffer ( *queue,
                     pool_cl,
                     CL_TRUE,
                     0,
-                    non_empty_node_counter*n_points_brick*sizeof(cl_float),
+                    svo->pool.bytes(),
                     svo->pool.data(),
                     0, NULL, NULL);
                 if (err != CL_SUCCESS)

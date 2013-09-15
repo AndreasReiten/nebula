@@ -461,22 +461,6 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
     tex_buf_dim[1] = (1 << brick_pool_power)*brick_outer_dimension;
     tex_buf_dim[2] = ((n_bricks) / ((1 << brick_pool_power)*(1 << brick_pool_power)))*brick_outer_dimension;
 
-    std::cout << n_bricks << " " << ((1 << brick_pool_power)*(1 << brick_pool_power)) << " " << brick_outer_dimension << std::endl;
-    //~if (tex_buf_dim[2] < 2) tex_buf_dim[2] = 2;
-    //~tex_buf_dim[2] *= (brick_outer_dimension);
-
-    tex_buf_dim.print(2, "Vol render: tex_buf_dim");
-
-    //~svo->pool.print(2,"[New] pool");
-
-    //~MiniArray<float> tex_buf(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2], 0.0f);
-    //~for (size_t i = 0; i < n_bricks; i++)
-    //~{
-        //~brickToTex(svo->pool.data(), tex_buf.data(), i, brick_outer_dimension, brick_pool_power);
-    //~}
-
-
-
     // Load the contents into a CL texture
     if (isOcttreeIndicesInitialized) clReleaseMemObject(oct_index_cl);
     if (isOcttreeBricksInitialized) clReleaseMemObject(oct_brick_cl);
@@ -510,9 +494,9 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
         &bricks_format,
         tex_buf_dim[0],
         tex_buf_dim[1],
-        tex_buf_dim[2], // This is padded according to spec
-        tex_buf_dim[0]*sizeof(cl_float),
-        tex_buf_dim[0]*tex_buf_dim[1]*sizeof(cl_float),
+        tex_buf_dim[2],
+        0,
+        0,
         svo->pool.data(),
         &err);
     if (err != CL_SUCCESS)
@@ -538,7 +522,6 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
 
 }
 
@@ -547,27 +530,22 @@ void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> *
 {
     double max = buf->max();
     if (max <= 0) max = 1e-5;
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
-    std::cout << buf->size() << std::endl;
+
     Matrix<float> texture(height, buf->size()*4, 0.0);
     for (size_t i = 0; i < buf->size(); i++)
     {
-        //~std::cout << i << " " << buf->at(i) << std::endl;
         size_t span = (buf->at(i)*(double)height/max);
         for (size_t j = 0; j < span; j++)
         {
-            //~std::cout << (i + j*buf->size())*4+0 << " " << texture.size() << std::endl;
             texture[(i + j*buf->size())*4+0] = color[0];
             texture[(i + j*buf->size())*4+1] = color[1];
             texture[(i + j*buf->size())*4+2] = color[2];
             texture[(i + j*buf->size())*4+3] = (float)(j*0.5+span*0.5)/(float)span;
         }
     }
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
 
     glDeleteBuffers(1, tex);
     glGenBuffers(1, tex);
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
     glBindTexture(GL_TEXTURE_2D, *tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -584,7 +562,6 @@ void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> *
         GL_FLOAT,
         texture.data());
     glBindTexture(GL_TEXTURE_2D, 0);
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
 }
 
 
