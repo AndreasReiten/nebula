@@ -744,6 +744,48 @@ void VoxelizeWorker::process()
         // The extent of the volume
         svo->setExtent(*suggested_q);
 
+        // Prepare the brick pool
+        size_t pool_max_size = 1e9;
+        MiniArray<size_t> pool_texture_dim(3);
+        pool_texture_dim[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
+        pool_texture_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
+        pool_texture_dim[2] = (pool_max_size/(sizeof(cl_float)*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower()));
+
+        if (pool_texture_dim[2] < 2) pool_texture_dim[2] = 2;
+        pool_texture_dim[2] *= svo->getBrickOuterDimension();
+
+        pool_texture_dim.print(2,"pool_texture_dim");
+
+        cl_image_format pool_format;
+        pool_format.image_channel_order = CL_INTENSITY;
+        pool_format.image_channel_data_type = CL_FLOAT;
+
+        cl_mem pool_cl = clCreateImage3D ( (*context),
+            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+            &pool_format,
+            pool_texture_dim[0],
+            pool_texture_dim[1],
+            pool_texture_dim[2],
+            0,
+            0,
+            NULL,
+            &err);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        }
+
+        cl_sampler pool_sampler = clCreateSampler((*context), CL_FALSE, CL_ADDRESS_CLAMP, CL_FILTER_NEAREST, &err);
+
+        err = clSetKernelArg( voxelize_kernel, 7, sizeof(cl_mem), (void *) &pool_cl );
+        err |= clSetKernelArg( voxelize_kernel, 8, sizeof(cl_mem), (void *) &pool_cl );
+        err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_sampler), (void *) &pool_sampler );
+
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        }
+
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
 
@@ -787,17 +829,17 @@ void VoxelizeWorker::process()
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
-                std::cout << "search_radius: "<< search_radius << std::endl;
+                //~std::cout << "search_radius: "<< search_radius << std::endl;
 
                 double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
 
                 // For each node
                 size_t iter = 0;
 
-                QElapsedTimer timer_total, timer_spec;
-                timer_total.start();
-                timer_spec.start();
-                size_t t0 = 0, t1 = 0, t2 = 0, t3 = 0, t_total;
+                //~QElapsedTimer timer_total, timer_spec;
+                //~timer_total.start();
+                //~timer_spec.start();
+                //~size_t t0 = 0, t1 = 0, t2 = 0, t_total;
 
                 for (size_t i = 0; i < nodes[lvl]; i++)
                 {
@@ -825,8 +867,8 @@ void VoxelizeWorker::process()
 
                     float * brick_data = new float[n_points_brick];
 
-                    t0 += timer_spec.nsecsElapsed();
-                    timer_spec.restart();
+                    //~t0 += timer_spec.nsecsElapsed();
+                    //~timer_spec.restart();
                     int isEmpty = root.getBrick(brick_data,
                         &brick_extent,
                         1.0,
@@ -843,8 +885,8 @@ void VoxelizeWorker::process()
                     if (method == 0) gpu_counter++;
                     if (method == 1) cpu_counter++;
 
-                    t1 += timer_spec.nsecsElapsed();
-                    timer_spec.restart();
+                    //~t1 += timer_spec.nsecsElapsed();
+                    //~timer_spec.restart();
                     if (isEmpty)
                     {
                         gpuHelpOcttree[currentId].setDataFlag(0);
@@ -876,8 +918,8 @@ void VoxelizeWorker::process()
                         iter++;
                     }
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
-                    t2 += timer_spec.nsecsElapsed();
-                    timer_spec.restart();
+                    //~t2 += timer_spec.nsecsElapsed();
+                    //~timer_spec.restart();
                 }
                 if (kill_flag)
                 {
@@ -891,8 +933,8 @@ void VoxelizeWorker::process()
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
 
-                t_total = timer_total.nsecsElapsed();
-                std::cout << "L " << lvl << " t0: "<< t0 << " ns " << t0*100/t_total << "% t1: "<< t1 << " ns "  << t1*100/t_total << "% t2: "<< t0 << " ns "  << t2*100/t_total << "%" << std::endl;
+                //~t_total = timer_total.nsecsElapsed();
+                //~std::cout << "L " << lvl << " t0: "<< t0 << " ns " << t0*100/t_total << "% t1: "<< t1 << " ns "  << t1*100/t_total << "% t2: "<< t0 << " ns "  << t2*100/t_total << "%" << std::endl;
                 std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
@@ -930,18 +972,6 @@ void VoxelizeWorker::process()
                 }
             }
 
-            //~if ((n_bricks) % ((1 << brick_pool_power)*(1 << brick_pool_power))) tex_buf_dim[2]++;
-            //~if (tex_buf_dim[2] < 2) tex_buf_dim[2] = 2;
-            //~tex_buf_dim[2] *= (brick_outer_dimension);
-//~
-            //~tex_buf_dim.print(2, "tex_buf_dim");
-//~
-            //~MiniArray<float> tex_buf(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2], 0.0f);
-            //~for (size_t i = 0; i < n_bricks; i++)
-            //~{
-                //~brickToTex(svo->pool.data(), tex_buf.data(), i, brick_outer_dimension, brick_pool_power);
-            //~}
-
             std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
             std::cout << "reduced_pixels.min() " << reduced_pixels->min() << std::endl;
 
@@ -954,6 +984,8 @@ void VoxelizeWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Number of bricks: "+QString::number(confirmed_nodes));
             }
         }
+
+        clReleaseMemObject(pool_cl);
     }
 
     emit enableSetFileButton(true);

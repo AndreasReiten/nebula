@@ -1,3 +1,6 @@
+#pragma OPENCL EXTENSION cl_khr_3d_image_writes : enable
+
+
 __kernel void voxelize(
     __global float4 * items,
     __constant float * extent,
@@ -5,7 +8,10 @@ __kernel void voxelize(
     int brick_outer_dimension,
     int item_count,
     float search_radius,
-    __local float * addition_array
+    __local float * addition_array,
+    __read_only image3d_t pool_write,
+    __write_only image3d_t pool_read,
+    sampler_t pool_sampler
     )
 {
     // Each Work Group is one brick. Each Work Item is one interpolation point in the brick.
@@ -31,13 +37,13 @@ __kernel void voxelize(
     for (int i = 0; i < item_count; i++)
     {
         point = items[i];
-        dst = distance(xyzw.xyz, point.xyz);
-        //~if (dst <= 0.0)
-        //~{
-            //~sum_intensity = point.w;
-            //~sum_distance = 1.0;
-            //~break;
-        //~}
+        dst = fast_distance(xyzw.xyz, point.xyz);
+        if (dst <= 0.0)
+        {
+            sum_intensity = point.w;
+            sum_distance = 1.0;
+            break;
+        }
         if (dst <= search_radius)
         {
             sum_intensity += native_divide(point.w, dst);
