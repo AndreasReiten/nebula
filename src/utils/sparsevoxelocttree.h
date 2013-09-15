@@ -24,7 +24,7 @@ class SparseVoxelOcttree
         void setLevels(int value);
         void setExtent(float Q);
 
-        void save(QString path, int compression = 4);
+        void save(QString path, int compression = 0);
         void open(QString path);
 
         MiniArray<double> * getExtent();

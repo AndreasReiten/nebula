@@ -787,6 +787,8 @@ void VoxelizeWorker::process()
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
+                std::cout << "search_radius: "<< search_radius << std::endl;
+
                 double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
 
                 // For each node
@@ -838,12 +840,6 @@ void VoxelizeWorker::process()
                         queue,
                         &method);
 
-                    //~Matrix<float> targetz(32,16);
-                    //~targetz.setDeep(32,16, brick_data);
-                    //~targetz.print(2,"targetz");
-                    //~std::cout << "isEmpty: "<< isEmpty << " sum " << brick_data[512] << std::endl;
-
-                    //~std::cout << method << " "<< isEmpty << std::endl;
                     if (method == 0) gpu_counter++;
                     if (method == 1) cpu_counter++;
 
@@ -897,7 +893,6 @@ void VoxelizeWorker::process()
 
                 t_total = timer_total.nsecsElapsed();
                 std::cout << "L " << lvl << " t0: "<< t0 << " ns " << t0*100/t_total << "% t1: "<< t1 << " ns "  << t1*100/t_total << "% t2: "<< t0 << " ns "  << t2*100/t_total << "%" << std::endl;
-                std::cout << "L " << lvl << " cpu: "<< cpu_counter << ", gpu: " << gpu_counter << std::endl;
                 std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
@@ -934,6 +929,18 @@ void VoxelizeWorker::process()
                     emit changedGenericProgress((i+1)*100/confirmed_nodes);
                 }
             }
+
+            //~if ((n_bricks) % ((1 << brick_pool_power)*(1 << brick_pool_power))) tex_buf_dim[2]++;
+            //~if (tex_buf_dim[2] < 2) tex_buf_dim[2] = 2;
+            //~tex_buf_dim[2] *= (brick_outer_dimension);
+//~
+            //~tex_buf_dim.print(2, "tex_buf_dim");
+//~
+            //~MiniArray<float> tex_buf(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2], 0.0f);
+            //~for (size_t i = 0; i < n_bricks; i++)
+            //~{
+                //~brickToTex(svo->pool.data(), tex_buf.data(), i, brick_outer_dimension, brick_pool_power);
+            //~}
 
             std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
             std::cout << "reduced_pixels.min() " << reduced_pixels->min() << std::endl;
