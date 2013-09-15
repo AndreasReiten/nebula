@@ -349,14 +349,14 @@ ProjectFileWorker::ProjectFileWorker()
 ProjectFileWorker::~ProjectFileWorker()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-    if (isCLInitialized && projection_kernel) clReleaseKernel(projection_kernel);
+    if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
 }
 
 void ProjectFileWorker::initializeCLKernel()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     // Program
-    QByteArray qsrc = open_resource(":/src/kernels/frameFilter.cl");
+    QByteArray qsrc = open_resource(":/src/kernels/project.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 
@@ -369,7 +369,7 @@ void ProjectFileWorker::initializeCLKernel()
         return;
     }
     // Compile kernel
-    const char * options = "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math";
+    const char * options = "-cl-mad-enable -Werror";
     err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
     if (err != CL_SUCCESS)
     {
@@ -384,17 +384,16 @@ void ProjectFileWorker::initializeCLKernel()
         QString str("Error in "+QString(this->metaObject()->className())+
             ": Could not compile/link program: "+
             QString(cl_error_cstring(err))+
-            "\n--- START KERNEL COMPILE LOG ---"+
+            "\n--- START KERNEL COMPILE LOG ---\n"+
             QString(build_log)+
             "\n---  END KERNEL COMPILE LOG  ---");
-        std::cout << str.toStdString().c_str() << std::endl;
         emit writeLog(str);
         delete[] build_log;
         return;
     }
 
     // Entry point
-    projection_kernel = clCreateKernel(program, "FRAME_FILTER", &err);
+    project_kernel = clCreateKernel(program, "FRAME_FILTER", &err);
     if (err != CL_SUCCESS)
     {
         QString str("Error in "+QString(this->metaObject()->className())+": Could not create kernel object: "+QString(cl_error_cstring(err)));
@@ -467,7 +466,7 @@ void ProjectFileWorker::process()
             emit changedImageWidth(files->at(i).getWidth());
             emit changedImageHeight(files->at(i).getHeight());
 
-            (*files)[i].setProjectionKernel(&projection_kernel);
+            (*files)[i].setProjectionKernel(&project_kernel);
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
 
             emit aquireSharedBuffers();
@@ -495,7 +494,7 @@ void ProjectFileWorker::process()
     /* Create dummy dataset for debugging purposes.
      *
     */
-    if (0) // A sphere
+    if (1) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
@@ -642,7 +641,7 @@ void VoxelizeWorker::initializeCLKernel()
     }
 
     // Compile kernel
-    const char * options = "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math";
+    const char * options = "-cl-mad-enable -Werror";
     err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
     if (err != CL_SUCCESS)
     {
@@ -657,10 +656,9 @@ void VoxelizeWorker::initializeCLKernel()
         QString str("Error in "+QString(this->metaObject()->className())+
             ": Could not compile/link program: "+
             QString(cl_error_cstring(err))+
-            "\n--- START KERNEL COMPILE LOG ---"+
+            "\n--- START KERNEL COMPILE LOG ---\n"+
             QString(build_log)+
             "\n---  END KERNEL COMPILE LOG  ---");
-        std::cout << str.toStdString().c_str() << std::endl;
         emit writeLog(str);
         delete[] build_log;
         return;
@@ -676,7 +674,7 @@ void VoxelizeWorker::initializeCLKernel()
 
     items_cl =  clCreateBuffer((*context),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        524288*2*2*2,
+        1024*2*2*2*2*2*2*2*16,
         NULL,
         &err);
     if (err != CL_SUCCESS)
@@ -746,45 +744,34 @@ void VoxelizeWorker::process()
 
         // Prepare the brick pool
         size_t pool_max_size = 1e9;
-        MiniArray<size_t> pool_texture_dim(3);
-        pool_texture_dim[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-        pool_texture_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-        pool_texture_dim[2] = (pool_max_size/(sizeof(cl_float)*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower()));
+        MiniArray<int> pool_dimension(4, 0);
+        pool_dimension[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
+        pool_dimension[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
+        pool_dimension[2] = (pool_max_size/(sizeof(cl_float)*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower()));
 
-        if (pool_texture_dim[2] < 2) pool_texture_dim[2] = 2;
-        pool_texture_dim[2] *= svo->getBrickOuterDimension();
+        if (pool_dimension[2] < 2) pool_dimension[2] = 2;
+        pool_dimension[2] *= svo->getBrickOuterDimension();
 
-        pool_texture_dim.print(2,"pool_texture_dim");
+        pool_dimension.print(2,"pool_dimension");
 
-        cl_image_format pool_format;
-        pool_format.image_channel_order = CL_INTENSITY;
-        pool_format.image_channel_data_type = CL_FLOAT;
-
-        cl_mem pool_cl = clCreateImage3D ( (*context),
+        cl_mem pool_cl = clCreateBuffer((*context),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-            &pool_format,
-            pool_texture_dim[0],
-            pool_texture_dim[1],
-            pool_texture_dim[2],
-            0,
-            0,
+            pool_dimension[0]*pool_dimension[1]*pool_dimension[2]*sizeof(cl_float),
             NULL,
             &err);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+            return;
         }
 
-        cl_sampler pool_sampler = clCreateSampler((*context), CL_FALSE, CL_ADDRESS_CLAMP, CL_FILTER_NEAREST, &err);
-
-        err = clSetKernelArg( voxelize_kernel, 7, sizeof(cl_mem), (void *) &pool_cl );
-        err |= clSetKernelArg( voxelize_kernel, 8, sizeof(cl_mem), (void *) &pool_cl );
-        err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_sampler), (void *) &pool_sampler );
-
+        err = clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int4), pool_dimension.data() );
+        err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_mem), (void *) &pool_cl );
         if (err != CL_SUCCESS)
         {
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
+
 
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
@@ -867,6 +854,13 @@ void VoxelizeWorker::process()
 
                     float * brick_data = new float[n_points_brick];
 
+                    // Set brick-specific arguments
+                    err = clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), (void *) &non_empty_node_counter );
+                    if (err != CL_SUCCESS)
+                    {
+                        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+                    }
+
                     //~t0 += timer_spec.nsecsElapsed();
                     //~timer_spec.restart();
                     int isEmpty = root.getBrick(brick_data,
@@ -881,6 +875,7 @@ void VoxelizeWorker::process()
                         &voxelize_kernel,
                         queue,
                         &method);
+
 
                     if (method == 0) gpu_counter++;
                     if (method == 1) cpu_counter++;
@@ -970,6 +965,25 @@ void VoxelizeWorker::process()
                     }
                     emit changedGenericProgress((i+1)*100/confirmed_nodes);
                 }
+
+                // Round up to the lowest number of bricks that is multiple of the brick pool dimensions. Use this value to reserve data for the data pool
+                unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
+
+                // Allocate resources
+                svo->pool.set(non_empty_node_counter_rounded_up*n_points_brick, 0.0);
+
+                // Read results
+                err = clEnqueueReadBuffer ( *queue,
+                    pool_cl,
+                    CL_TRUE,
+                    0,
+                    non_empty_node_counter*n_points_brick*sizeof(cl_float),
+                    svo->pool.data(),
+                    0, NULL, NULL);
+                if (err != CL_SUCCESS)
+                {
+                    writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
+                }
             }
 
             std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
@@ -1022,7 +1036,7 @@ DisplayFileWorker::DisplayFileWorker()
 DisplayFileWorker::~DisplayFileWorker()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-    if (isCLInitialized) clReleaseKernel(projection_kernel);
+    if (isCLInitialized) clReleaseKernel(project_kernel);
 }
 
 void DisplayFileWorker::setDisplayFile(int value)
@@ -1045,7 +1059,7 @@ void DisplayFileWorker::process()
         {
             emit changedImageWidth(file.getWidth());
             emit changedImageHeight(file.getHeight());
-            file.setProjectionKernel(&projection_kernel);
+            file.setProjectionKernel(&project_kernel);
             file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 
             size_t n;

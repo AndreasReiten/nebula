@@ -459,21 +459,21 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
     MiniArray<size_t> tex_buf_dim(3);
     tex_buf_dim[0] = (1 << brick_pool_power)*brick_outer_dimension;
     tex_buf_dim[1] = (1 << brick_pool_power)*brick_outer_dimension;
-    tex_buf_dim[2] = (n_bricks) / ((1 << brick_pool_power)*(1 << brick_pool_power));
+    tex_buf_dim[2] = ((n_bricks) / ((1 << brick_pool_power)*(1 << brick_pool_power)))*brick_outer_dimension;
 
-    if ((n_bricks) % ((1 << brick_pool_power)*(1 << brick_pool_power))) tex_buf_dim[2]++;
-    if (tex_buf_dim[2] < 2) tex_buf_dim[2] = 2;
-    tex_buf_dim[2] *= (brick_outer_dimension);
+    std::cout << n_bricks << " " << ((1 << brick_pool_power)*(1 << brick_pool_power)) << " " << brick_outer_dimension << std::endl;
+    //~if (tex_buf_dim[2] < 2) tex_buf_dim[2] = 2;
+    //~tex_buf_dim[2] *= (brick_outer_dimension);
 
-    //~tex_buf_dim.print(2, "tex_buf_dim");
+    tex_buf_dim.print(2, "Vol render: tex_buf_dim");
 
     //~svo->pool.print(2,"[New] pool");
 
-    MiniArray<float> tex_buf(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2], 0.0f);
-    for (size_t i = 0; i < n_bricks; i++)
-    {
-        brickToTex(svo->pool.data(), tex_buf.data(), i, brick_outer_dimension, brick_pool_power);
-    }
+    //~MiniArray<float> tex_buf(tex_buf_dim[0]*tex_buf_dim[1]*tex_buf_dim[2], 0.0f);
+    //~for (size_t i = 0; i < n_bricks; i++)
+    //~{
+        //~brickToTex(svo->pool.data(), tex_buf.data(), i, brick_outer_dimension, brick_pool_power);
+    //~}
 
 
 
@@ -513,7 +513,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
         tex_buf_dim[2], // This is padded according to spec
         tex_buf_dim[0]*sizeof(cl_float),
         tex_buf_dim[0]*tex_buf_dim[1]*sizeof(cl_float),
-        tex_buf.data(),
+        svo->pool.data(),
         &err);
     if (err != CL_SUCCESS)
     {
@@ -2950,7 +2950,7 @@ int VolumeRenderGLWidget::initResourcesCL()
     }
 
     // Compile kernel
-    const char * options = "-cl-single-precision-constant -cl-mad-enable -cl-fast-relaxed-math";
+    const char * options = "-cl-mad-enable -Werror";
     err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
     if (err != CL_SUCCESS)
     {

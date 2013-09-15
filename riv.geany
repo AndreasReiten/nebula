@@ -16,7 +16,7 @@ indent_mode=2
 name=riv
 base_path=/home/natt/coding/riv/
 description=My first geany project
-file_patterns=*.c;*.cpp;*.cl;*.glsl;*.qss;*.pro;*.qrc;*.h;
+file_patterns=*.c;*.cpp;*.cl;*.glsl;*.qss;*.pro;*.qrc;
 
 [long line marker]
 long_line_behaviour=1

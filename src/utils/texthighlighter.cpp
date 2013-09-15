@@ -67,7 +67,7 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
     highlightingRules.append(rule);
 
     /* QUOTATIONS */
-    quotationFormat.setForeground(QBrush(QColor(255, 230, 171, 255)));
+    quotationFormat.setForeground(QBrush(QColor(40, 255, 20, 255))); //QColor(255, 230, 171, 255) Unique
     rule.pattern = QRegExp("\".*\"");
     rule.format = quotationFormat;
     highlightingRules.append(rule);
@@ -79,7 +79,7 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
     highlightingRules.append(rule);
 
     /* FUNCTIONS */
-    functionFormat.setForeground(QColor(106, 27, 224, 255));
+    functionFormat.setForeground(QColor(150, 70, 224, 255));//QColor(106, 27, 224, 255) Epic
     rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
     rule.format = functionFormat;
     highlightingRules.append(rule);

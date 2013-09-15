@@ -2,8 +2,8 @@
 
 static const unsigned int MAX_POINTS = 32;
 static const unsigned int MAX_LEVELS = 16;
-static const unsigned int CL_MAX_ITEMS = 1024*2*2*2;
-static const unsigned int CL_LEVEL = 2;
+static const unsigned int CL_MAX_ITEMS = 1024*2*2*2*2*2*2*2;
+static const unsigned int CL_LEVEL = 0;
 
 SearchNode::SearchNode()
 {
@@ -334,7 +334,7 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
         err |= clSetKernelArg(*voxelize_kernel, 6, 512*sizeof(cl_float), NULL);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
         }
 
         // Launch kernel
@@ -343,7 +343,7 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
         err = clEnqueueNDRangeKernel(*queue, *voxelize_kernel, 3, NULL, glb_ws, loc_ws, 0, NULL, NULL);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
         }
 
         clFinish(*queue);
@@ -360,7 +360,7 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
             NULL);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!][SearchNode]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
+            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
         }
 
         if (target[512] > 0.0) isEmptyBrick = 0;

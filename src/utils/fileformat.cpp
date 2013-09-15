@@ -343,36 +343,36 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     }
 
     // Set kernel arguments
-    err = clSetKernelArg(*filterKernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(*filterKernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
-    err |= clSetKernelArg(*filterKernel, 2, sizeof(cl_mem), (void *) beta_img_clgl);
-    err |= clSetKernelArg(*filterKernel, 3, sizeof(cl_mem), (void *) gamma_img_clgl);
-    err |= clSetKernelArg(*filterKernel, 4, sizeof(cl_mem), (void *) tsf_img_clgl);
-    err |= clSetKernelArg(*filterKernel, 5, sizeof(cl_mem), (void *) &background_cl);
-    err |= clSetKernelArg(*filterKernel, 6, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(*filterKernel, 7, sizeof(cl_sampler), &tsf_sampler);
-    err |= clSetKernelArg(*filterKernel, 8, sizeof(cl_sampler), &intensity_sampler);
-    err |= clSetKernelArg(*filterKernel, 9, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    err = clSetKernelArg(*project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
+    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
+    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) beta_img_clgl);
+    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) gamma_img_clgl);
+    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) tsf_img_clgl);
+    err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &background_cl);
+    err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &tsf_sampler);
+    err |= clSetKernelArg(*project_kernel, 8, sizeof(cl_sampler), &intensity_sampler);
+    err |= clSetKernelArg(*project_kernel, 9, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
     float threshold_one[2] = {(float)threshold_reduce_low, (float)threshold_reduce_high};
     float threshold_two[2] = {(float)threshold_project_low, (float)threshold_project_high};
-    err |= clSetKernelArg(*filterKernel, 10, 2*sizeof(cl_float), threshold_one);
-    err |= clSetKernelArg(*filterKernel, 11, 2*sizeof(cl_float), threshold_two);
-    err |= clSetKernelArg(*filterKernel, 12, sizeof(cl_float), &background_flux);
-    err |= clSetKernelArg(*filterKernel, 13, sizeof(cl_float), &backgroundExpTime);
-    err |= clSetKernelArg(*filterKernel, 14, sizeof(cl_float), &pixel_size_x);
-    err |= clSetKernelArg(*filterKernel, 15, sizeof(cl_float), &pixel_size_y);
-    err |= clSetKernelArg(*filterKernel, 16, sizeof(cl_float), &exposure_time);
-    err |= clSetKernelArg(*filterKernel, 17, sizeof(cl_float), &wavelength);
-    err |= clSetKernelArg(*filterKernel, 18, sizeof(cl_float), &detector_distance);
-    err |= clSetKernelArg(*filterKernel, 19, sizeof(cl_float), &beam_x);
-    err |= clSetKernelArg(*filterKernel, 20, sizeof(cl_float), &beam_y);
-    err |= clSetKernelArg(*filterKernel, 21, sizeof(cl_float), &flux);
-    err |= clSetKernelArg(*filterKernel, 22, sizeof(cl_float), &start_angle);
-    err |= clSetKernelArg(*filterKernel, 23, sizeof(cl_float), &angle_increment);
-    err |= clSetKernelArg(*filterKernel, 24, sizeof(cl_float), &kappa);
-    err |= clSetKernelArg(*filterKernel, 25, sizeof(cl_float), &phi);
-    err |= clSetKernelArg(*filterKernel, 26, sizeof(cl_float), &omega);
-    err |= clSetKernelArg(*filterKernel, 27, sizeof(cl_float), &max_counts);
+    err |= clSetKernelArg(*project_kernel, 10, 2*sizeof(cl_float), threshold_one);
+    err |= clSetKernelArg(*project_kernel, 11, 2*sizeof(cl_float), threshold_two);
+    err |= clSetKernelArg(*project_kernel, 12, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*project_kernel, 13, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*project_kernel, 14, sizeof(cl_float), &pixel_size_x);
+    err |= clSetKernelArg(*project_kernel, 15, sizeof(cl_float), &pixel_size_y);
+    err |= clSetKernelArg(*project_kernel, 16, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*project_kernel, 17, sizeof(cl_float), &wavelength);
+    err |= clSetKernelArg(*project_kernel, 18, sizeof(cl_float), &detector_distance);
+    err |= clSetKernelArg(*project_kernel, 19, sizeof(cl_float), &beam_x);
+    err |= clSetKernelArg(*project_kernel, 20, sizeof(cl_float), &beam_y);
+    err |= clSetKernelArg(*project_kernel, 21, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*project_kernel, 22, sizeof(cl_float), &start_angle);
+    err |= clSetKernelArg(*project_kernel, 23, sizeof(cl_float), &angle_increment);
+    err |= clSetKernelArg(*project_kernel, 24, sizeof(cl_float), &kappa);
+    err |= clSetKernelArg(*project_kernel, 25, sizeof(cl_float), &phi);
+    err |= clSetKernelArg(*project_kernel, 26, sizeof(cl_float), &omega);
+    err |= clSetKernelArg(*project_kernel, 27, sizeof(cl_float), &max_counts);
     if (err != CL_SUCCESS)
     {
         writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
@@ -388,7 +388,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = clEnqueueNDRangeKernel((*queue), *filterKernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            err = clEnqueueNDRangeKernel((*queue), *project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if (err != CL_SUCCESS)
             {
                 writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
@@ -445,7 +445,7 @@ void PilatusFile::setBackground(Matrix<float>  * buffer, float flux, float expos
 
 void PilatusFile::setProjectionKernel(cl_kernel * kernel)
 {
-    this->filterKernel = kernel;
+    this->project_kernel = kernel;
 }
 
 int PilatusFile::readData()

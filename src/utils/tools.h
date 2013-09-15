@@ -70,6 +70,7 @@ struct cl_device{
     char vendor[64];
     cl_device_type type;
     cl_uint vendor_id;
+    char extensions[2048];
 };
 
 QByteArray open_resource(const char * path);

@@ -80,7 +80,7 @@ class PilatusFile
         cl_mem * tsf_img_clgl;
         cl_command_queue * queue;
         cl_context * context;
-        cl_kernel * filterKernel;
+        cl_kernel * project_kernel;
         cl_int err;
 
         size_t loc_ws[2];

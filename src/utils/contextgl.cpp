@@ -111,28 +111,29 @@ int ContextGLWidget::initDeviceCL(int verbosity)
         writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
-    clGetDeviceInfo(device->device_id, CL_DEVICE_NAME, sizeof(device->cl_device_name)*8, &device->cl_device_name, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_VERSION, sizeof(device->cl_device_version)*8, &device->cl_device_version, NULL);
-    clGetDeviceInfo(device->device_id, CL_DRIVER_VERSION, sizeof(device->cl_driver_version)*8, &device->cl_driver_version, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(device->gpu_max_mem_alloc_size)*8, &device->gpu_max_mem_alloc_size, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(device->gpu_clock_max)*8, &device->gpu_clock_max, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(device->gpu_global_mem)*8, &device->gpu_global_mem, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, sizeof(device->gpu_global_mem_cache_line)*8, &device->gpu_global_mem_cache_line, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(device->gpu_local_mem)*8, &device->gpu_local_mem, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(device->gpu_compute_units)*8, &device->gpu_compute_units, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(device->gpu_work_group_size)*8, &device->gpu_work_group_size, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(device->gpu_work_item_dim)*8, &device->gpu_work_item_dim, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_IMAGE_SUPPORT, sizeof(device->gpu_image_support)*8, &device->gpu_image_support, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(device->gpu_work_item_sizes)*8, device->gpu_work_item_sizes, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_NAME, sizeof(char)*64, &device->cl_device_name, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_VERSION, sizeof(char)*64, &device->cl_device_version, NULL);
+    clGetDeviceInfo(device->device_id, CL_DRIVER_VERSION, sizeof(char)*64, &device->cl_driver_version, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(device->gpu_max_mem_alloc_size), &device->gpu_max_mem_alloc_size, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint), &device->gpu_clock_max, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &device->gpu_global_mem, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, sizeof(cl_uint), &device->gpu_global_mem_cache_line, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &device->gpu_local_mem, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &device->gpu_compute_units, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(cl_ulong), &device->gpu_work_group_size, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), &device->gpu_work_item_dim, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_IMAGE_SUPPORT, sizeof(cl_bool), &device->gpu_image_support, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t)*3, device->gpu_work_item_sizes, NULL);
 
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_READ_IMAGE_ARGS, sizeof(cl_uint), &device->max_read_image_args, NULL);
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_WRITE_IMAGE_ARGS, sizeof(cl_uint), &device->max_write_image_args, NULL);
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_SAMPLERS, sizeof(cl_uint), &device->max_samplers, NULL);
 
     clGetDeviceInfo(device->device_id, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_uint), &device->max_constant_buffer_size, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_VENDOR, sizeof(cl_uint), &device->vendor, NULL);
-    clGetDeviceInfo(device->device_id, CL_DEVICE_TYPE, sizeof(cl_uint), &device->type, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_VENDOR, sizeof(char)*64, &device->vendor, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_TYPE, sizeof(cl_device_type), &device->type, NULL);
     clGetDeviceInfo(device->device_id, CL_DEVICE_VENDOR_ID, sizeof(cl_uint), &device->vendor_id, NULL);
+    clGetDeviceInfo(device->device_id, CL_DEVICE_EXTENSIONS, sizeof(char)*2048, &device->extensions, NULL);
 
     if (verbosity == 1)
     {
@@ -156,6 +157,7 @@ int ContextGLWidget::initDeviceCL(int verbosity)
         ss << "CL_DEVICE_MAX_READ_IMAGE_ARGS:        " << device->max_read_image_args << std::endl;
         ss << "CL_DEVICE_MAX_WRITE_IMAGE_ARGS:       " << device->max_write_image_args << std::endl;
         ss << "CL_DEVICE_MAX_SAMPLERS:               " << device->max_samplers << std::endl;
+        ss << "CL_DEVICE_EXTENSIONS:               " << device->extensions << std::endl;
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"]\n"+ss.str().c_str());
     }
     return 1;

@@ -19,10 +19,8 @@
     <file>src/shaders/std_3d_color.v.glsl</file>
     <file>src/shaders/std_3d_color.f.glsl</file>
     <file>src/kernels/voxelize.cl</file>
-    <file>src/kernels/reduce.cl</file>
     <file>src/kernels/render.cl</file>
-    <file>src/kernels/frameFilter.cl</file>
-    <file>src/kernels/frameToImage.cl</file>
+    <file>src/kernels/project.cl</file>
     <file>src/stylesheets/gosutheme.qss</file>
     <file>art/placeholder.png</file>
     <file>art/new.png</file>

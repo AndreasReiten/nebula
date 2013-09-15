@@ -167,7 +167,7 @@ class ProjectFileWorker : public BaseWorker
 
     protected:
         // Related to OpenCL
-        cl_kernel projection_kernel;
+        cl_kernel project_kernel;
 };
 
 class DisplayFileWorker: public ProjectFileWorker
