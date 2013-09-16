@@ -223,7 +223,7 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     float sum_w = 0;
     float sum_wu = 0;
 
-    double sample_extent[6];
+    MiniArray<double> sample_extent(6);
     sample_extent[0] = sample[0] - search_radius;
     sample_extent[1] = sample[0] + search_radius;
     sample_extent[2] = sample[1] - search_radius;
@@ -231,7 +231,7 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     sample_extent[4] = sample[2] - search_radius;
     sample_extent[5] = sample[2] + search_radius;
 
-    weighSamples(sample, sample_extent, &sum_w, &sum_wu, p, search_radius);
+    weighSamples(sample, sample_extent.data(), &sum_w, &sum_wu, p, search_radius);
 
     if (sum_w > 0.0) return sum_wu / sum_w;
     else return 0;
@@ -285,7 +285,7 @@ void SearchNode::writeLog(QString str)
     writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
-int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float p, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * brick_extent_cl, cl_mem * target_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue, int * method)
+int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * pool_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue, int * method, cl_context * context, unsigned int brick_counter, unsigned int brick_pool_power)
 {
     int isEmptyBrick = 1;
 
@@ -311,27 +311,23 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
     else if ((level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
     {
         clFinish(*queue);
-
-        // Prepare buffers
-        err = clEnqueueWriteBuffer(*queue, *brick_extent_cl,
-            CL_TRUE,
-            0,
-            6*sizeof(cl_float),
-            brick_extent->toFloat().data(),
-            0, NULL, NULL);
+        cl_mem isEmpty_cl =  clCreateBuffer((*context),
+            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+            sizeof(cl_int),
+            NULL,
+            &err);
         if (err != CL_SUCCESS)
         {
             writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
         }
 
+
         // Set kernel arguments
-        err = clSetKernelArg(*voxelize_kernel, 0, sizeof(cl_mem), (void *) items_cl);
-        err |= clSetKernelArg(*voxelize_kernel, 1, sizeof(cl_mem), (void *) brick_extent_cl);
-        err |= clSetKernelArg(*voxelize_kernel, 2, sizeof(cl_mem), (void *) target_cl);
+        err |= clSetKernelArg(*voxelize_kernel, 2, sizeof(cl_mem), (void *) &isEmpty_cl);
         err |= clSetKernelArg(*voxelize_kernel, 3, sizeof(cl_int), &brick_outer_dimension);
         err |= clSetKernelArg(*voxelize_kernel, 4, sizeof(cl_int), &item_counter);
         err |= clSetKernelArg(*voxelize_kernel, 5, sizeof(cl_float), &search_radius);
-        err |= clSetKernelArg(*voxelize_kernel, 6, 512*sizeof(cl_float), NULL);
+        err |= clSetKernelArg(*voxelize_kernel, 6, brick_outer_dimension*brick_outer_dimension*brick_outer_dimension*sizeof(cl_float), NULL);
         if (err != CL_SUCCESS)
         {
             writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
@@ -349,28 +345,28 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
         clFinish(*queue);
 
         // Read results
+        int tmp[1];
         err = clEnqueueReadBuffer ( *queue,
-            *target_cl,
+            isEmpty_cl,
             CL_TRUE,
             0,
-            513*sizeof(cl_float),
-            target,
-            0,
-            NULL,
-            NULL);
+            sizeof(cl_int),
+            tmp,
+            0, NULL, NULL);
         if (err != CL_SUCCESS)
         {
             writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
         }
 
-        if (target[512] > 0.0) isEmptyBrick = 0;
-        else isEmptyBrick = 1;
+        isEmptyBrick = tmp[0];
+
+        clReleaseMemObject(isEmpty_cl);
 
         *method = 0;
     }
     else
     {
-        float idw;
+        float idw[1];
         MiniArray<float> sample(3);
         float brick_step = (brick_extent->at(1) - brick_extent->at(0)) / ((float)(brick_outer_dimension-1));
 
@@ -384,11 +380,33 @@ int SearchNode::getBrick(float * target, MiniArray<double> * brick_extent, float
                     sample[0] = brick_extent->at(0) + brick_step * x;
                     sample[1] = brick_extent->at(2) + brick_step * y;
                     sample[2] = brick_extent->at(4) + brick_step * z;
-                    idw = this->getIDW(sample.data(), p, search_radius);
+                    idw[0] = this->getIDW(sample.data(), 1.0, search_radius);
 
-                    target[x + y*brick_outer_dimension + z*brick_outer_dimension*brick_outer_dimension] = idw;
+                    Matrix<int> brick_offset(1,3);
+                    brick_offset[2] = brick_counter / ((1 << brick_pool_power) * (1 << brick_pool_power));
+                    brick_offset[1] = (brick_counter % ((1 << brick_pool_power) * (1 << brick_pool_power))) / (1 << brick_pool_power);
+                    brick_offset[0] = (brick_counter % ((1 << brick_pool_power) * (1 << brick_pool_power))) % (1 << brick_pool_power);
 
-                    if (idw > 0) isEmptyBrick = 0;
+                    Matrix<int> index3d(1,3);
+                    index3d[2] = brick_offset[2]*brick_outer_dimension + z;
+                    index3d[1] = brick_offset[1]*brick_outer_dimension + y;
+                    index3d[0] = brick_offset[0]*brick_outer_dimension + x;
+
+                    size_t id_1D = index3d[0] + index3d[1] * (1 << brick_pool_power) * brick_outer_dimension + index3d[2] * (1 << brick_pool_power) * brick_outer_dimension * (1 << brick_pool_power) * brick_outer_dimension;
+
+                    err = clEnqueueWriteBuffer((*queue),
+                        *pool_cl ,
+                        CL_TRUE,
+                        id_1D*sizeof(cl_float),
+                        sizeof(cl_float),
+                        idw,
+                        0, NULL, NULL);
+                    if (err != CL_SUCCESS)
+                    {
+                        writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
+                    }
+
+                    if (idw[0] > 0) isEmptyBrick = 0;
                 }
             }
         }

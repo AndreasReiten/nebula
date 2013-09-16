@@ -116,7 +116,7 @@ void SparseVoxelOcttree::save(QString path, int compression)
         dims[0] = (size_t)(brick_outer_dimension*brick_outer_dimension*brick_outer_dimension);
         status = H5Pset_chunk (plist_id, 1, dims);
 
-        // Set ZLIB / DEFLATE Compressi.
+        // Set compression
         status = H5Pset_deflate (plist_id, compression);
 
         // Save traversal index part of octtree data

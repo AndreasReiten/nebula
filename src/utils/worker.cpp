@@ -610,8 +610,6 @@ VoxelizeWorker::~VoxelizeWorker()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     if (isCLInitialized && voxelize_kernel) clReleaseKernel(voxelize_kernel);
-    if (isCLInitialized && items_cl) clReleaseMemObject(items_cl);
-    if (isCLInitialized && target_cl) clReleaseMemObject(target_cl);
 }
 
 unsigned int VoxelizeWorker::getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child)
@@ -672,39 +670,6 @@ void VoxelizeWorker::initializeCLKernel()
         return;
     }
 
-    items_cl =  clCreateBuffer((*context),
-        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        1024*2*2*2*2*2*2*2*16,
-        NULL,
-        &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        return;
-    }
-
-    brick_extent_cl =  clCreateBuffer((*context),
-        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        6*sizeof(cl_float),
-        NULL,
-        &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        return;
-    }
-
-    target_cl =  clCreateBuffer((*context),
-        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        513*sizeof(cl_float),
-        NULL,
-        &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        return;
-    }
-
     isCLInitialized = true;
 }
 
@@ -755,7 +720,7 @@ void VoxelizeWorker::process()
         svo->pool.set(pool_dimension[0]*pool_dimension[1]*pool_dimension[2], 0);
 
         cl_mem pool_cl = clCreateBuffer((*context),
-            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+            CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
             svo->pool.bytes(),
             svo->pool.data(),
             &err);
@@ -764,9 +729,36 @@ void VoxelizeWorker::process()
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
             return;
         }
+        svo->pool.clear();
 
-        err = clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int4), pool_dimension.data() );
-        err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_mem), (void *) &pool_cl );
+        // Other CL buffers
+        cl_mem items_cl =  clCreateBuffer((*context),
+            CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+            1024*2*2*2*2*2*2*2*16,
+            NULL,
+            &err);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+            return;
+        }
+
+        cl_mem brick_extent_cl =  clCreateBuffer((*context),
+            CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+            6*sizeof(float),
+            NULL,
+            &err);
+        if (err != CL_SUCCESS)
+        {
+            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+            return;
+        }
+
+
+        err = clSetKernelArg( voxelize_kernel, 0, sizeof(cl_mem), (void *) &items_cl);
+        err |= clSetKernelArg( voxelize_kernel, 1, sizeof(cl_mem), (void *) &brick_extent_cl);
+        err |= clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int4), pool_dimension.data());
+        err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_mem), (void *) &pool_cl);
         if (err != CL_SUCCESS)
         {
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
@@ -844,27 +836,40 @@ void VoxelizeWorker::process()
                     brick_extent[4] = svo->getExtent()->at(4) + tmp*brickId[2];
                     brick_extent[5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
 
-                    float * brick_data = new float[n_points_brick];
-
                     // Set brick-specific arguments
+                    err = clEnqueueWriteBuffer((*queue),
+                        brick_extent_cl ,
+                        CL_TRUE,
+                        0,
+                        brick_extent.toFloat().bytes(),
+                        brick_extent.toFloat().data(),
+                        0, NULL, NULL);
+                    if (err != CL_SUCCESS)
+                    {
+                        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+                        return;
+                    }
+
                     err = clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), (void *) &non_empty_node_counter );
                     if (err != CL_SUCCESS)
                     {
                         writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
                     }
 
-                    int isEmpty = root.getBrick(brick_data,
+                    // Calculate the brick data
+                    int isEmpty = root.getBrick(
                         &brick_extent,
-                        1.0,
                         search_radius,
                         svo->getBrickOuterDimension(),
                         lvl,
                         &items_cl,
-                        &brick_extent_cl,
-                        &target_cl,
+                        &pool_cl,
                         &voxelize_kernel,
                         queue,
-                        &method);
+                        &method,
+                        context,
+                        non_empty_node_counter,
+                        svo->getBrickPoolPower());
 
 
                     if (method == 0) gpu_counter++;
@@ -875,14 +880,12 @@ void VoxelizeWorker::process()
                         gpuHelpOcttree[currentId].setDataFlag(0);
                         gpuHelpOcttree[currentId].setMsdFlag(1);
                         gpuHelpOcttree[currentId].setChild(0);
-                        delete[] brick_data;
                     }
                     else
                     {
                         gpuHelpOcttree[currentId].setDataFlag(1);
                         gpuHelpOcttree[currentId].setMsdFlag(0);
                         if (lvl >= svo->getLevels() - 1) gpuHelpOcttree[currentId].setMsdFlag(1);
-                        gpuHelpOcttree[currentId].setBrick(brick_data);
                         gpuHelpOcttree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
 
                         if (!gpuHelpOcttree[currentId].getMsdFlag())
@@ -923,30 +926,12 @@ void VoxelizeWorker::process()
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"]"+QString(" Transforming: %p%"));
                 svo->index.reserve(confirmed_nodes);
                 svo->brick.reserve(confirmed_nodes);
-                svo->pool.reserve(non_empty_node_counter*n_points_brick);
 
-                size_t iter = 0;
                 for (size_t i = 0; i < confirmed_nodes; i++)
                 {
-                    if (kill_flag)
-                    {
-                        QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(confirmed_nodes)+"!");
-                        emit writeLog(str);
-                        emit changedMessageString(str);
-                        break;
-                    }
-
                     svo->index[i] = getOctIndex(gpuHelpOcttree[i].getMsdFlag(), gpuHelpOcttree[i].getDataFlag(), gpuHelpOcttree[i].getChild());
                     svo->brick[i] = getOctBrick(gpuHelpOcttree[i].getPoolId()[0], gpuHelpOcttree[i].getPoolId()[1], gpuHelpOcttree[i].getPoolId()[2]);
 
-                    if (gpuHelpOcttree[i].getDataFlag())
-                    {
-                        for (size_t j = 0; j < n_points_brick; j++)
-                        {
-                            svo->pool[n_points_brick*iter + j] = gpuHelpOcttree[i].getBrick()[j]; //Omfg this is so wasteful
-                        }
-                        iter++;
-                    }
                     emit changedGenericProgress((i+1)*100/confirmed_nodes);
                 }
 
@@ -982,7 +967,7 @@ void VoxelizeWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Number of bricks: "+QString::number(confirmed_nodes));
             }
         }
-
+        clReleaseMemObject(items_cl);
         clReleaseMemObject(pool_cl);
     }
 
