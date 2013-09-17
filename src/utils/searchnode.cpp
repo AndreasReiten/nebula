@@ -3,7 +3,7 @@
 static const unsigned int MAX_POINTS = 32;
 static const unsigned int MAX_LEVELS = 16;
 static const unsigned int CL_MAX_ITEMS = 1024*2*2*2*2*2*2*2;
-static const unsigned int CL_LEVEL = 2;
+static const unsigned int CL_LEVEL = 0;
 
 SearchNode::SearchNode()
 {
@@ -302,7 +302,6 @@ int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, 
     unsigned int item_counter = 0;
 
     getIntersectedItems(&effective_extent, &item_counter, items_cl, queue);
-
     if (item_counter == 0)
     {
         isEmptyBrick = 1;

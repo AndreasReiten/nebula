@@ -12,7 +12,9 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     isOcttreeIndicesInitialized = false;
     isOcttreeBricksInitialized = false;
     isBrickPoolInitialized = false;
+    isDSViewForced = false;
 
+    fps = 60;
     ray_res = 20;
 
     LINEWIDTH = 0.5;
@@ -277,20 +279,45 @@ void VolumeRenderGLWidget::setResolutionf(double value)
     if (value > 100) value = 100;
     if ((ray_res != value))
     {
+        // Limit the deepest SVO descent level
+        if (value <= 20)
+        {
+            if (MISC_INT[3] != 1)
+            {
+                isDSViewForced = true;
+                MISC_INT[3] = 1;
+
+            }
+            fps = 60;
+        }
+        else
+        {
+            //~if (value <= 30) this->setMinLevel(3.0);
+            //~else if (value <= 40) this->setMinLevel(2.4);
+            //~else if (value <= 50) this->setMinLevel(2.0);
+            //~else if (value <= 60) this->setMinLevel(1.8);
+            //~else if (value <= 70) this->setMinLevel(1.6);
+            //~else if (value <= 80) this->setMinLevel(1.4);
+            //~else if (value <= 90) this->setMinLevel(1.2);
+            //~else this->setMinLevel(1.0);
+
+            if (value <= 30) fps = 10;
+            else if (value <= 40) fps = 10;
+            else if (value <= 50) fps = 10;
+            else if (value <= 60) fps = 20;
+            else if (value <= 70) fps = 30;
+            else if (value <= 80) fps = 40;
+            else if (value <= 90) fps = 50;
+            else fps = 60;
+
+            if (isDSViewForced) MISC_INT[3] = 0;
+            isDSViewForced = false;
+        }
+
         // Set resolution
         ray_res = (float) value;
 
-        // Limit the deepest SVO descent level
-        if (value <= 20) this->setMinLevel(256.0);
-        else if (value <= 30) this->setMinLevel(128.0);
-        else if (value <= 40) this->setMinLevel(64.0);
-        else if (value <= 50) this->setMinLevel(32.0);
-        else if (value <= 60) this->setMinLevel(16.0);
-        else if (value <= 70) this->setMinLevel(8.0);
-        else if (value <= 80) this->setMinLevel(4.0);
-        else if (value <= 90) this->setMinLevel(2.0);
-        else this->setMinLevel(1.0);
-
+        this->setMiscArrays();
         this->setRaytracingTexture();
         this->setTexturesVBO();
     }
@@ -447,7 +474,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
     TSF_PARAMETERS[3] = MINMAX[1];
 
     this->setDataExtent();
-    this->vbo_buffers_refresh();
+    this->setDataViewExtent();
     this->resetViewMatrix();
     this->setMiscArrays();
     this->setTsfParameters();
@@ -565,40 +592,6 @@ void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> *
 }
 
 
-
-void VolumeRenderGLWidget::brickToTex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power)
-{
-    // Bitwise operations used here:
-    // X / 2^n = X >> n
-    // X % 2^n = X & (2^n - 1)
-    // 2^n = 1 << n
-
-    size_t n_points_brick = brick_dim*brick_dim*brick_dim;
-    size_t n_brick_pool = 1 << pool_power;
-    size_t n_points_pool = brick_dim*n_brick_pool;
-    size_t n_points_offset = id*n_points_brick;
-    size_t brick_xyz[3];
-    size_t remainder;
-    size_t id_x, id_y, id_z, i = 0;
-
-    remainder = id % (n_brick_pool*n_brick_pool);
-    brick_xyz[2] = id / (n_brick_pool*n_brick_pool);
-    brick_xyz[1] = remainder / n_brick_pool;
-    brick_xyz[0] = remainder % n_brick_pool;
-
-    for (id_z = brick_xyz[2]*brick_dim; id_z < (brick_xyz[2]+1)*brick_dim; id_z++)
-    {
-        for (id_y = brick_xyz[1]*brick_dim; id_y < (brick_xyz[1]+1)*brick_dim; id_y++)
-        {
-            for (id_x = brick_xyz[0]*brick_dim; id_x < (brick_xyz[0]+1)*brick_dim; id_x++)
-            {
-                buf_out[id_x + id_y*n_points_pool + id_z*n_points_pool*n_points_pool] = buf_in[i + n_points_offset];
-                i++;
-            }
-        }
-    }
-
-}
 
 QSize VolumeRenderGLWidget::minimumSizeHint() const
 {
@@ -1035,7 +1028,7 @@ void VolumeRenderGLWidget::paintGL()
 
     this->autoRotate(rotationTimer->elapsed(), auto_rotation_delay);
     this->setViewMatrix();
-    this->vbo_buffers_refresh();
+    this->setDataViewExtent();
 
     GLuint indices[6] = {0,1,3,1,2,3};
 
@@ -1588,90 +1581,88 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
 }
 
 
-void VolumeRenderGLWidget::keyPressEvent(QKeyEvent *event)
-{
-    //~ std::cout << "Key event!" << std::endl;
-    float sign_modifier = 1.0;
-    this->timerLastAction->start();
-    this->isRefreshRequired = true;
-
-    if (event->modifiers() & Qt::ShiftModifier) sign_modifier = -1.0;
-
-
-    switch(event->key())
-    {
-        case (Qt::Key_F1):
-            MSAA_METHOD = !MSAA_METHOD;
-            std::cout << "MSAA_METHOD " << MSAA_METHOD << std::endl;
-            break;
-        case (Qt::Key_F2):
-            if (sign_modifier+1) MSAA_SAMPLES = MSAA_SAMPLES/2;
-            else MSAA_SAMPLES = MSAA_SAMPLES*2;
-            if (MSAA_SAMPLES < 1) MSAA_SAMPLES = 1;
-            if (MSAA_SAMPLES > 32) MSAA_SAMPLES = 32;
-            std::cout << "MSAA_SAMPLES " << MSAA_SAMPLES << std::endl;
-            setTexturesVBO();
-            break;
-        case (Qt::Key_F3):
-            MSAA_EXPOSURE += sign_modifier*0.1;
-            std::cout << "MSAA_EXPOSURE " << MSAA_EXPOSURE << std::endl;
-            break;
-        case (Qt::Key_F4):
-            if (isLog)
-            {
-                if (TSF_PARAMETERS[2] <= 0.0) TSF_PARAMETERS[2] = 0.001;
-                if (TSF_PARAMETERS[3] <= 0.0) TSF_PARAMETERS[3] = 0.001;
-
-                float cur_exp_low = std::log10(TSF_PARAMETERS[2]);
-                float cur_exp_high = std::log10(TSF_PARAMETERS[3]);
-
-                cur_exp_high += (cur_exp_high - cur_exp_low) * 0.01 * sign_modifier;
-
-                TSF_PARAMETERS[3] = std::pow(10.0, cur_exp_high);
-            }
-            else TSF_PARAMETERS[3] += (TSF_PARAMETERS[3] - TSF_PARAMETERS[2]) * 0.01 * sign_modifier;
-            break;
-        case (Qt::Key_F5):
-            TSF_PARAMETERS[4] += 0.01 * sign_modifier;
-            break;
-        case (Qt::Key_F6):
-            TSF_PARAMETERS[5] += 0.01 * sign_modifier;
-            break;
-        case (Qt::Key_F7):
-            MISC_FLOAT_K_FUNCTION[0] += 0.01 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
-            break;
-        case (Qt::Key_F8):
-            MISC_FLOAT_K_FUNCTION[1] += 0.01 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
-            break;
-        case (Qt::Key_F9):
-            MISC_FLOAT_K_FUNCTION[2] += 0.01 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
-            break;
-        case (Qt::Key_F10):
-            MISC_FLOAT_K_FUNCTION[3] += 0.001 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
-            break;
-        case (Qt::Key_F11):
-            LINEWIDTH += sign_modifier*0.1;
-            std::cout << "LINEWIDTH " << LINEWIDTH << std::endl;
-            break;
-        case (Qt::Key_F12):
-            MISC_FLOAT_K_RAYTRACE[5] += sign_modifier*0.1;
-            this->setMinLevel(MISC_FLOAT_K_RAYTRACE[5]);
-            std::cout << "MISC_FLOAT_K_RAYTRACE[5] " << MISC_FLOAT_K_RAYTRACE[5] << std::endl;
-            break;
-
-
-        case (Qt::Key_Escape):
-            break;
-    }
-
-    //~ std::cout << std::setprecision(3) << std::fixed << "Tsf = " << TSF_PARAMETERS[0] << ", " << TSF_PARAMETERS[1] << "] Data = [" << TSF_PARAMETERS[2]<< ", " << TSF_PARAMETERS[3] << "] Alpha factor = " << TSF_PARAMETERS[4] << " Intensity = " << TSF_PARAMETERS[5] <<std::endl;
-    //~ std::cout << std::setprecision(3) << std::fixed << "Misc float = [" << MISC_FLOAT_K_FUNCTION[0] << ", " << MISC_FLOAT_K_FUNCTION[1] << ", " << MISC_FLOAT_K_FUNCTION[2]<< ", " << MISC_FLOAT_K_FUNCTION[3] << "]" << std::endl;
-    //~ std::cout << std::setprecision(3) << std::fixed << "Misc float k_raytrace = [" << MISC_FLOAT_K_RAYTRACE[0] << ", " << MISC_FLOAT_K_RAYTRACE[1] << ", " << MISC_FLOAT_K_RAYTRACE[2]<< ", " << MISC_FLOAT_K_RAYTRACE[3] << ", " << MISC_FLOAT_K_RAYTRACE[4] << "]" << std::endl;
-    this->setTsfParameters();
-    this->setMiscArrays();
-    this->setRaytracingTexture();
-    this->setTexturesVBO();
-}
+//~void VolumeRenderGLWidget::keyPressEvent(QKeyEvent *event)
+//~{
+     //~std::cout << "Key event!" << std::endl;
+    //~float sign_modifier = 1.0;
+    //~if (event->modifiers() & Qt::ShiftModifier) sign_modifier = -1.0;
+//~
+//~
+    //~switch(event->key())
+    //~{
+        //~case (Qt::Key_F1):
+            //~MSAA_METHOD = !MSAA_METHOD;
+            //~std::cout << "MSAA_METHOD " << MSAA_METHOD << std::endl;
+            //~break;
+        //~case (Qt::Key_F2):
+            //~if (sign_modifier+1) MSAA_SAMPLES = MSAA_SAMPLES/2;
+            //~else MSAA_SAMPLES = MSAA_SAMPLES*2;
+            //~if (MSAA_SAMPLES < 1) MSAA_SAMPLES = 1;
+            //~if (MSAA_SAMPLES > 32) MSAA_SAMPLES = 32;
+            //~std::cout << "MSAA_SAMPLES " << MSAA_SAMPLES << std::endl;
+            //~setTexturesVBO();
+            //~break;
+        //~case (Qt::Key_F3):
+            //~MSAA_EXPOSURE += sign_modifier*0.1;
+            //~std::cout << "MSAA_EXPOSURE " << MSAA_EXPOSURE << std::endl;
+            //~break;
+        //~case (Qt::Key_F4):
+            //~if (isLog)
+            //~{
+                //~if (TSF_PARAMETERS[2] <= 0.0) TSF_PARAMETERS[2] = 0.001;
+                //~if (TSF_PARAMETERS[3] <= 0.0) TSF_PARAMETERS[3] = 0.001;
+//~
+                //~float cur_exp_low = std::log10(TSF_PARAMETERS[2]);
+                //~float cur_exp_high = std::log10(TSF_PARAMETERS[3]);
+//~
+                //~cur_exp_high += (cur_exp_high - cur_exp_low) * 0.01 * sign_modifier;
+//~
+                //~TSF_PARAMETERS[3] = std::pow(10.0, cur_exp_high);
+            //~}
+            //~else TSF_PARAMETERS[3] += (TSF_PARAMETERS[3] - TSF_PARAMETERS[2]) * 0.01 * sign_modifier;
+            //~break;
+        //~case (Qt::Key_F5):
+            //~TSF_PARAMETERS[4] += 0.01 * sign_modifier;
+            //~break;
+        //~case (Qt::Key_F6):
+            //~TSF_PARAMETERS[5] += 0.01 * sign_modifier;
+            //~break;
+        //~case (Qt::Key_F7):
+            //~MISC_FLOAT_K_FUNCTION[0] += 0.01 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
+            //~break;
+        //~case (Qt::Key_F8):
+            //~MISC_FLOAT_K_FUNCTION[1] += 0.01 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
+            //~break;
+        //~case (Qt::Key_F9):
+            //~MISC_FLOAT_K_FUNCTION[2] += 0.01 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
+            //~break;
+        //~case (Qt::Key_F10):
+            //~MISC_FLOAT_K_FUNCTION[3] += 0.001 * std::abs(MISC_FLOAT_K_FUNCTION[0]) * sign_modifier;
+            //~break;
+        //~case (Qt::Key_F11):
+            //~LINEWIDTH += sign_modifier*0.1;
+            //~std::cout << "LINEWIDTH " << LINEWIDTH << std::endl;
+            //~break;
+        //~case (Qt::Key_F12):
+            //~MISC_FLOAT_K_RAYTRACE[5] += sign_modifier*0.1;
+            //~this->setMinLevel(MISC_FLOAT_K_RAYTRACE[5]);
+            //~std::cout << "MISC_FLOAT_K_RAYTRACE[5] " << MISC_FLOAT_K_RAYTRACE[5] << std::endl;
+            //~break;
+        //~case (Qt::Key_Escape):
+            //~break;
+    //~}
+//~
+     //~std::cout << std::setprecision(3) << std::fixed << "Tsf = " << TSF_PARAMETERS[0] << ", " << TSF_PARAMETERS[1] << "] Data = [" << TSF_PARAMETERS[2]<< ", " << TSF_PARAMETERS[3] << "] Alpha factor = " << TSF_PARAMETERS[4] << " Intensity = " << TSF_PARAMETERS[5] <<std::endl;
+     //~std::cout << std::setprecision(3) << std::fixed << "Misc float = [" << MISC_FLOAT_K_FUNCTION[0] << ", " << MISC_FLOAT_K_FUNCTION[1] << ", " << MISC_FLOAT_K_FUNCTION[2]<< ", " << MISC_FLOAT_K_FUNCTION[3] << "]" << std::endl;
+     //~std::cout << std::setprecision(3) << std::fixed << "Misc float k_raytrace = [" << MISC_FLOAT_K_RAYTRACE[0] << ", " << MISC_FLOAT_K_RAYTRACE[1] << ", " << MISC_FLOAT_K_RAYTRACE[2]<< ", " << MISC_FLOAT_K_RAYTRACE[3] << ", " << MISC_FLOAT_K_RAYTRACE[4] << "]" << std::endl;
+//~
+    //~this->setTsfParameters();
+    //~this->setMiscArrays();
+    //~this->setRaytracingTexture();
+    //~this->setTexturesVBO();
+    //~this->timerLastAction->start();
+    //~this->isRefreshRequired = true;
+//~}
 
 void VolumeRenderGLWidget::wheelEvent(QWheelEvent *event)
 {
@@ -1757,7 +1748,7 @@ int VolumeRenderGLWidget::initResourcesGL()
     glGenBuffers(5, screen_vbo);
     glGenBuffers(1, &sampleWeightBuf);
 
-    this->vbo_buffers_refresh();
+    this->setDataViewExtent();
 
     {
         Matrix<float> tex_position;
@@ -1938,7 +1929,7 @@ int VolumeRenderGLWidget::initResourcesGL()
     return 1;
 }
 
-void VolumeRenderGLWidget::vbo_buffers_refresh()
+void VolumeRenderGLWidget::setDataViewExtent()
 {
     {
         Matrix<float> data_extent_position;
@@ -2109,9 +2100,9 @@ void VolumeRenderGLWidget::setTsfBrightness(double value)
 
 void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
 {
-    if (isRefreshRequired) // MMM
+    if (isRefreshRequired)
     {
-        /* Aquire shared CL/GL objects */
+        // Aquire shared CL/GL objects
         callTimer->start();
         glFinish();
         this->isRefreshRequired = false;
@@ -2122,10 +2113,10 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         }
 
-        /* Launch rendering kernel */
-        size_t area_per_call[2] = {64, 64};
+        // Launch rendering kernel
+        size_t area_per_call[2] = {128, 128};
         size_t call_offset[2] = {0,0};
-        callTimeMax = 1000/60; // Dividend is FPS
+        callTimeMax = 1000/fps; // Dividend is FPS
         timeLastActionMin = 1000;
         isBadCall = false;
 
@@ -2837,8 +2828,10 @@ int VolumeRenderGLWidget::setRaytracingTexture()
 {
     /* Set a usable texture for thevolume rendering kernel */
     // Set dimensions
+
     ray_tex_dim[0] = (int)((float)WIDTH*ray_res*0.01f);
     ray_tex_dim[1] = (int)((float)HEIGHT*ray_res*0.01f);
+
     // Clamping
     if (ray_tex_dim[0] < 32) ray_tex_dim[0] = 32;
     if (ray_tex_dim[1] < 32) ray_tex_dim[1] = 32;
@@ -2848,25 +2841,7 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     if (ray_tex_dim[1] % ray_loc_ws[1]) ray_glb_ws[1] = ray_loc_ws[1]*(1 + (ray_tex_dim[1] / ray_loc_ws[1]));
     else ray_glb_ws[1] = ray_tex_dim[1];
 
-
-    //~MISC_INT[6] = ray_tex_dim[0];
-    //~MISC_INT[7] = ray_tex_dim[1];
-    //~setMiscArrays();
-
-    //~glFinish();//MMM
-    //~err = clEnqueueAcquireGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
-    //~if (err != CL_SUCCESS)
-    //~{
-        //~writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-    //~}
     if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl);
-    //~err = clEnqueueReleaseGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
-    //~clFinish((*queue));
-    //~if (err != CL_SUCCESS)
-    //~{
-        //~writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-    //~}
-
 
     // Update GL texture
     glActiveTexture(GL_TEXTURE0);

@@ -20,9 +20,7 @@ class BrickNode {
         void setLevel(unsigned int index);
         void setBrickId(unsigned int x, unsigned int y, unsigned int z);
         void setPoolId(unsigned int x, unsigned int y, unsigned int z);
-        void setBrick(float * buf);
 
-        float * getBrick();
         unsigned int getDataFlag();
         unsigned int getMsdFlag();
 
@@ -48,6 +46,5 @@ class BrickNode {
         unsigned int level;
         unsigned int brickId[3];
         unsigned int poolId[3];
-        float * brickData;
 };
 #endif

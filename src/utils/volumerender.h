@@ -99,7 +99,7 @@ protected:
     void paintGL();
     void resizeGL(int w, int h);
     void mouseMoveEvent(QMouseEvent *event);
-    void keyPressEvent(QKeyEvent *event);
+    //~void keyPressEvent(QKeyEvent *event);
     void wheelEvent(QWheelEvent *event);
     void writeLog(QString str);
 
@@ -107,6 +107,9 @@ private:
     Atlas * fontSmall;
     Atlas * fontMedium;
     Atlas * fontLarge;
+
+    float fps;
+    bool isDSViewForced;
 
     //~void setEmit();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
@@ -120,7 +123,7 @@ private:
     void backDropTexPos(GLuint * vbo, int border_pixel_offset);
     void histTexPos(int log, float hist_min, float hist_max, float data_min, float data_max);
     void setTexturesVBO();
-    void vbo_buffers_refresh();
+    void setDataViewExtent();
     void resetViewMatrix();
     void setViewMatrix();
     void setDataExtent();
@@ -132,7 +135,6 @@ private:
     void autoRotate(int time, int threshold);
     void initializeProgramsGL();
     void setMessageString(QString str);
-    void brickToTex(float * buf_in, float * buf_out, size_t id, size_t brick_dim, size_t pool_power);
     void raytrace(cl_kernel kernel);
     void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
     //~ void paint_texture_2d(GLuint texture, double * coordinates, double * vertices);

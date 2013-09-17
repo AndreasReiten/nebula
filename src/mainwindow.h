@@ -99,6 +99,7 @@ private slots:
     void setProjectThresholdLow(double value);
     void setProjectThresholdHigh(double value);
     void runProjectFileThread();
+    void runAllInOneThread();
     void runDisplayFileThread(int value);
     void incrementDisplayFile1();
     void incrementDisplayFile10();

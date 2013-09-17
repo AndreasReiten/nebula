@@ -149,10 +149,41 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWidget, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
     connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWidget, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
+    //### allInOneWorker ###
     allInOneWorker = new AllInOneWorker();
+    allInOneWorker->setFilePaths(&file_paths);
+    allInOneWorker->setSVOFile(&svo_inprocess);
+    allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+    allInOneWorker->setOpenCLContext(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue());
+    allInOneWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
+    allInOneWorker->setReducedPixels(&reduced_pixels);
+    allInOneWorker->initializeCLKernel();
+    allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
+    allInOneWorker->setReduceThresholdHigh(&threshold_reduce_high);
+    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
+    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
+
     allInOneWorker->moveToThread(allInOneThread);
+
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
+    connect(allInOneWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
+    connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(allInOneWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
+    connect(allInOneWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
+    connect(allInOneWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
+    connect(allInOneWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
+    connect(allInOneWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
+    connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(allInOneWorker, SIGNAL(changedImageWidth(int)), imageRenderWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
+    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
+    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(allInOneWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWidget, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWidget, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
 
     //### voxelizeWorker ###
@@ -166,10 +197,9 @@ void MainWindow::initializeThreads()
 
     voxelizeWorker->moveToThread(voxelizeThread);
 
-    connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)));
+    connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)), Qt::DirectConnection);
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
-    //~connect(voxelizeWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
     connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(voxelizeWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
     connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
@@ -260,6 +290,14 @@ void MainWindow::runProjectFileThread()
     volumeRenderWidget->hide();
     tabWidget->setCurrentIndex(1);
     projectFileThread->start();
+}
+
+void MainWindow::runAllInOneThread()
+{
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    volumeRenderWidget->hide();
+    tabWidget->setCurrentIndex(1);
+    allInOneThread->start();
 }
 
 void MainWindow::setReduceThresholdLow(double value)

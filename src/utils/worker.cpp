@@ -1,8 +1,9 @@
 #include "worker.h"
+
+static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
+static const size_t BRICK_POOL_SOFT_MAX_BYTES = 1e9;
+
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
-
-
-
 /***
  *        dBBBBb dBBBBBb  .dBBBBP   dBBBP     dBBBP  dBP dBBBBBb  .dBBBBP.dBBBBP
  *           dBP      BB  BP                                  BB  BP     BP
@@ -439,8 +440,7 @@ void ProjectFileWorker::process()
     stopwatch.start();
     kill_flag = false;
     size_t n = 0;
-    size_t limit = 0.25e9;
-    reduced_pixels->reserve(limit);
+    reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
@@ -455,7 +455,7 @@ void ProjectFileWorker::process()
         }
 
         // Project and correct file and get status
-        if (n > limit)
+        if (n > reduced_pixels->size())
         {
             // Break if there is too much data.
             emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));
@@ -494,7 +494,7 @@ void ProjectFileWorker::process()
     /* Create dummy dataset for debugging purposes.
      *
     */
-    if (1) // A sphere
+    if (0) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
@@ -583,7 +583,157 @@ AllInOneWorker::~AllInOneWorker()
 void AllInOneWorker::process()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-    qDebug("Hello World!");
+
+    kill_flag = false;
+    if (file_paths->size() <= 0)
+    {
+        QString str("\n["+QString(this->metaObject()->className())+"] Error: No paths specified!");
+        emit writeLog(str);
+        emit changedMessageString(str);
+        kill_flag = true;
+    }
+
+    // Emit to appropriate slots
+    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Treating "+QString::number(file_paths->size())+" files...");
+    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit enableSetFileButton(false);
+    emit enableReadFileButton(false);
+    emit enableProjectFileButton(false);
+    emit enableVoxelizeButton(false);
+    emit enableAllInOneButton(false);
+    emit showGenericProgressBar(true);
+    emit changedTabWidget(1);
+
+    // Parameters for Ewald's projection
+    Matrix<float> test_background;
+    test_background.set(1679, 1475, 0.0);
+    size_t limit = 0.25e9;
+    reduced_pixels->reserve(limit);
+
+    // Reset suggested values
+    (*suggested_q) = std::numeric_limits<float>::min();
+    (*suggested_search_radius_low) = std::numeric_limits<float>::max();
+    (*suggested_search_radius_high) = std::numeric_limits<float>::min();
+
+    QElapsedTimer stopwatch;
+    stopwatch.start();
+    size_t n_ok_files = 0;
+    size_t n = 0;
+    size_t size_raw = 0;
+    for (size_t i = 0; i < (size_t) file_paths->size(); i++)
+    {
+        // Kill process if requested
+        if (kill_flag)
+        {
+            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
+            emit writeLog(str);
+            emit changedMessageString(str);
+            reduced_pixels->clear();
+
+            break;
+        }
+
+        // Set file and get status
+        PilatusFile file;
+        int STATUS_OK = file.set(file_paths->at(i), context, queue);
+        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
+
+        if (STATUS_OK)
+        {
+            // Read file and get status
+            int STATUS_OK = file.readData();
+            if (STATUS_OK)
+            {
+                size_raw += file.getBytes();
+
+                // Project and correct file and get status
+                if (n > limit)
+                {
+                    // Break if there is too much data.
+                    emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));
+                    kill_flag = true;
+                }
+                else
+                {
+                    emit changedImageWidth(file.getWidth());
+                    emit changedImageHeight(file.getHeight());
+                    file.setProjectionKernel(&project_kernel);
+                    file.setBackground(&test_background, file.getFlux(), file.getExpTime());
+
+                    emit aquireSharedBuffers();
+                    int STATUS_OK = file.filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
+                    emit releaseSharedBuffers();
+                    if (STATUS_OK)
+                    {
+                        emit repaintImageWidget();
+
+                        // Get suggestions on the minimum search radius that can safely be applied during interpolation
+                        if ((*suggested_search_radius_low) > file.getSearchRadiusLowSuggestion()) (*suggested_search_radius_low) = file.getSearchRadiusLowSuggestion();
+                        if ((*suggested_search_radius_high) < file.getSearchRadiusHighSuggestion()) (*suggested_search_radius_high) = file.getSearchRadiusHighSuggestion();
+
+                        // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
+                        if ((*suggested_q) < file.getQSuggestion()) (*suggested_q) = file.getQSuggestion();
+
+                        n_ok_files++;
+                    }
+                    else
+                    {
+                        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
+                        kill_flag = true;
+                    }
+                }
+            }
+            else if (!STATUS_OK)
+            {
+                QString str("\n["+QString(this->metaObject()->className())+"] Error: could not read \""+files->at(i).getPath()+"\"");
+                emit writeLog(str);
+                emit changedMessageString(str);
+
+                kill_flag = true;
+            }
+        }
+        else
+        {
+            emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not set \""+QString(file_paths->at(i))+"\"");
+        }
+
+        // Update the progress bar
+        emit changedGenericProgress(100*(i+1)/file_paths->size());
+    }
+    reduced_pixels->resize(n);
+
+    size_t t = stopwatch.restart();
+
+
+    emit enableSetFileButton(true);
+    emit enableAllInOneButton(true);
+    emit showGenericProgressBar(false);
+
+    if (!kill_flag)
+    {
+        emit enableReadFileButton(false);
+        emit enableProjectFileButton(false);
+        emit enableVoxelizeButton(true);
+
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
+
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
+
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" files were successfully projected and merged ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
+
+        // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
+        float resolution_min = 2*(*suggested_q)/(*suggested_search_radius_high);
+        float resolution_max = 2*(*suggested_q)/(*suggested_search_radius_low);
+
+        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2);
+        float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2);
+
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number((*suggested_q), 'g', 3)+" inverse "+trUtf8("Å"));
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number((*suggested_search_radius_low), 'g', 2)+" to "+QString::number((*suggested_search_radius_high), 'g', 2)+" inverse "+trUtf8("Å"));
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+"");
+    }
+
     emit finished();
 }
 
@@ -707,17 +857,18 @@ void VoxelizeWorker::process()
         svo->setExtent(*suggested_q);
 
         // Prepare the brick pool
-        size_t pool_max_size = 1e9;
-        size_t n_max_bricks = pool_max_size/n_points_brick*sizeof(float); // Allow up 2 GB of bricks
         MiniArray<int> pool_dimension(4, 0);
         pool_dimension[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
         pool_dimension[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-        pool_dimension[2] = (pool_max_size/(sizeof(cl_float)*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower()));
+        pool_dimension[2] = (BRICK_POOL_SOFT_MAX_BYTES/(sizeof(cl_float)*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower()));
 
-        if (pool_dimension[2] < 2) pool_dimension[2] = 2;
+        if (pool_dimension[2] < 1) pool_dimension[2] = 1;
         pool_dimension[2] *= svo->getBrickOuterDimension();
 
         svo->pool.set(pool_dimension[0]*pool_dimension[1]*pool_dimension[2], 0);
+        size_t BRICK_POOL_HARD_MAX_BYTES = svo->pool.bytes();
+
+        size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
         cl_mem pool_cl = clCreateBuffer((*context),
             CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
@@ -742,6 +893,7 @@ void VoxelizeWorker::process()
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
             return;
         }
+
 
         cl_mem brick_extent_cl =  clCreateBuffer((*context),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -784,7 +936,8 @@ void VoxelizeWorker::process()
         if (!kill_flag)
         {
             /* Create an octtree from brick data. The nodes are maintained in a linear array rather than on the heap. This is due to lack of proper support for recursion on GPUs */
-            MiniArray<BrickNode> gpuHelpOcttree(n_max_bricks*2);
+            MiniArray<BrickNode> gpuHelpOcttree(n_max_bricks*8);
+            gpuHelpOcttree[0].setParent(0);
             MiniArray<unsigned int> nodes;
             nodes.set(64, (unsigned int) 0);
             nodes[0] = 1;
@@ -796,6 +949,7 @@ void VoxelizeWorker::process()
             QElapsedTimer timer;
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
+
                 size_t cpu_counter = 0;
                 size_t gpu_counter = 0;
 
@@ -814,8 +968,18 @@ void VoxelizeWorker::process()
                 size_t iter = 0;
                 for (size_t i = 0; i < nodes[lvl]; i++)
                 {
-                    if (kill_flag) break;
 
+
+                    std::cout << non_empty_node_counter+1 << " " <<n_max_bricks << " "<< __LINE__ <<std::endl;
+                    if((non_empty_node_counter+1) >= n_max_bricks)
+                    {
+                        QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed due to memory overflow. The dataset has grown too large! ("+QString::number(non_empty_node_counter*n_points_brick*sizeof(cl_float)/1e6, 'g', 3)+" MB)");
+                        emit writeLog(str);
+                        emit changedMessageString(str);
+                        kill_flag = true;
+                    }
+
+                    if (kill_flag) break;
                     // The id of the octnode in the octnode array
                     unsigned int currentId = confirmed_nodes + i;
 
@@ -827,7 +991,6 @@ void VoxelizeWorker::process()
 
                     // Based on brick id calculate the brick extent and then calculate and set the brick data
                     unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
-
                     MiniArray<double> brick_extent(6);
                     brick_extent[0] = svo->getExtent()->at(0) + tmp*brickId[0];
                     brick_extent[1] = svo->getExtent()->at(0) + tmp*(brickId[0]+1);
@@ -874,7 +1037,6 @@ void VoxelizeWorker::process()
 
                     if (method == 0) gpu_counter++;
                     if (method == 1) cpu_counter++;
-
                     if (isEmpty)
                     {
                         gpuHelpOcttree[currentId].setDataFlag(0);
@@ -887,7 +1049,6 @@ void VoxelizeWorker::process()
                         gpuHelpOcttree[currentId].setMsdFlag(0);
                         if (lvl >= svo->getLevels() - 1) gpuHelpOcttree[currentId].setMsdFlag(1);
                         gpuHelpOcttree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
-
                         if (!gpuHelpOcttree[currentId].getMsdFlag())
                         {
                             unsigned int childId = confirmed_nodes + nodes[lvl] + iter*8;
@@ -905,19 +1066,22 @@ void VoxelizeWorker::process()
                     }
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
                 }
+
                 if (kill_flag)
                 {
+
                     QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(lvl)+" of "+QString::number(svo->getLevels())+"!");
                     emit writeLog(str);
                     emit changedMessageString(str);
                     break;
                 }
+
                 confirmed_nodes += nodes[lvl];
 
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
 
-                std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
+                if (cpu_counter+gpu_counter > 0) std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
             if (!kill_flag)

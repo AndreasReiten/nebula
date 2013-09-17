@@ -6,20 +6,6 @@ BrickNode::BrickNode()
 
 BrickNode::~BrickNode()
 {
-    if(this->dataFlag)
-    {
-        delete[] brickData;
-    }
-}
-
-void BrickNode::setBrick(float * buf)
-{
-    brickData = buf;
-}
-
-float * BrickNode::getBrick()
-{
-    return brickData;
 }
 
 void BrickNode::print()
@@ -56,18 +42,27 @@ void BrickNode::calcBrickId(unsigned int octant, BrickNode * par)
     // X % 2^n = X & (2^n - 1)
     // 2^n = 1 << n
 
-    // The 3D index of the octant
-    unsigned int oct_x = ((octant & 3) & 1);
-    unsigned int oct_y = (octant & 3) >> 1;
-    unsigned int oct_z = octant >> 2;
+    if (this != par)
+    {
+        // The 3D index of the octant
+        unsigned int oct_x = ((octant & 3) & 1);
+        unsigned int oct_y = (octant & 3) >> 1;
+        unsigned int oct_z = octant >> 2;
 
-    // The parents brick id
-    unsigned int * parentBrickId = par->getBrickId();
+        // The parents brick id
+        unsigned int * parentBrickId = par->getBrickId();
 
-    // The brick id of this brick
-    this->brickId[0] = parentBrickId[0]*2 + oct_x;
-    this->brickId[1] = parentBrickId[1]*2 + oct_y;
-    this->brickId[2] = parentBrickId[2]*2 + oct_z;
+        // The brick id of this brick
+        this->brickId[0] = parentBrickId[0]*2 + oct_x;
+        this->brickId[1] = parentBrickId[1]*2 + oct_y;
+        this->brickId[2] = parentBrickId[2]*2 + oct_z;
+    }
+    else
+    {
+        this->brickId[0] = 0;
+        this->brickId[1] = 0;
+        this->brickId[2] = 0;
+    }
 }
 
 void BrickNode::setDataFlag(unsigned int flag)

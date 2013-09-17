@@ -125,7 +125,7 @@ class SetFileWorker : public BaseWorker
         SetFileWorker();
         ~SetFileWorker();
 
-    public slots:
+    private slots:
         void process();
 
     private:
@@ -162,8 +162,10 @@ class ProjectFileWorker : public BaseWorker
         void changedImageHeight(int value);
 
     public slots:
-        void process();
         void initializeCLKernel();
+
+    private slots:
+        void process();
 
     protected:
         // Related to OpenCL
@@ -201,14 +203,14 @@ class VoxelizeWorker : public BaseWorker
         void process();
         void initializeCLKernel();
 
-    private:
+    protected:
         cl_kernel voxelize_kernel;
 
         unsigned int getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child);
         unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);
 };
 
-class AllInOneWorker : public BaseWorker
+class AllInOneWorker : public ProjectFileWorker
 {
     Q_OBJECT
 

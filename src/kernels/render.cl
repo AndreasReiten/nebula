@@ -109,7 +109,7 @@ __kernel void svoRayTrace(
     int brickSize = misc_int[1];
     int isLogActive = misc_int[2];
     int isDsActive = misc_int[3];
-    float stepLengthFactor = misc_float[5];
+    float stepLengthFactor = misc_float[4];
 
     float tsfOffsetLow = tsf_var[0];
     float tsfOffsetHigh = tsf_var[1];
