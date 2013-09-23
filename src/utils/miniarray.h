@@ -5,6 +5,7 @@
 
 #endif
 
+#include <QVector>
 #include <CL/opencl.h>
 #include <cassert>
 #include <iostream>
@@ -30,6 +31,7 @@ class MiniArray{
 
         /* Management */
         MiniArray<float> toFloat() const;
+        QVector<T> toQVector() const;
         void setShallow(size_t length, T * buffer);
         void setDeep(size_t length, T * buffer);
         void set(size_t length, T value);
@@ -45,8 +47,8 @@ class MiniArray{
         size_t bytes() const;
         size_t size() const;
         double * histogram(size_t bins, T min, T max, bool log_x = 0, bool log_y = 0);
-        T minValue();
-        T maxValue();
+        T min();
+        T max();
 
     protected:
         T * buffer;
@@ -149,7 +151,22 @@ MiniArray<float> MiniArray<T>::toFloat() const
 }
 
 template <class T>
-T MiniArray<T>::minValue()
+QVector<T> MiniArray<T>::toQVector() const
+{
+    QVector<T> buf;
+    buf.resize(this->size());
+
+    for (size_t i = 0; i < this->size(); i++)
+    {
+        buf[i] = this->buffer[i];
+    }
+
+    return buf;
+}
+
+
+template <class T>
+T MiniArray<T>::min()
 {
     if (length > 0)
     {
@@ -166,7 +183,7 @@ T MiniArray<T>::minValue()
 }
 
 template <class T>
-T MiniArray<T>::maxValue()
+T MiniArray<T>::max()
 {
     if (length > 0)
     {

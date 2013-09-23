@@ -1,6 +1,6 @@
 # QMAKE PROJECT FILE
 unix {
-    LIBS += -lm -lGLEW -lGL -lOpenCL  -lhdf5 -lfreetype
+    LIBS += -lm -lGLEW -lGL -lOpenCL -lfreetype
 }
 else:win32 {
     LIBS += -lm -lglew32 -lOpenCL -lfreetype -Lwin32_lib

@@ -6,13 +6,8 @@
 #include <fstream>
 #include <iomanip>
 
-#ifdef _WIN32
-    #include "HDF/hdf5.h"
-#endif
-#ifdef __linux__
-    #include "hdf5.h"
-#endif
-
+#include <QDataStream>
+#include <QVector>
 #include <QString>
 
 #include "miniarray.h"
@@ -30,7 +25,7 @@ class SparseVoxelOcttree
         void setLevels(int value);
         void setExtent(float Q);
 
-        void save(QString path, int compression = 0);
+        void save(QString path);
         void open(QString path);
 
         MiniArray<double> * getExtent();
@@ -45,7 +40,7 @@ class SparseVoxelOcttree
         unsigned int getBrickNumber();
         void print();
 
-        size_t getBytes();
+        quint64 getBytes();
 
         MiniArray<unsigned int> index;
         MiniArray<unsigned int> brick;
@@ -57,13 +52,13 @@ class SparseVoxelOcttree
         MiniArray<double> minmax;
         MiniArray<double> extent;
 
-        size_t version_major;
-        size_t version_minor;
+        quint64 version_major;
+        quint64 version_minor;
 
-        size_t filesize;
-        size_t levels;
-        size_t brick_pool_power;
-        size_t brick_inner_dimension;
-        size_t brick_outer_dimension;
+        quint64 filesize;
+        quint64 levels;
+        quint64 brick_pool_power;
+        quint64 brick_inner_dimension;
+        quint64 brick_outer_dimension;
 };
 #endif

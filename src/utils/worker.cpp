@@ -365,7 +365,7 @@ void ProjectFileWorker::initializeCLKernel()
     if (err != CL_SUCCESS)
     {
         QString str("Error in "+QString(this->metaObject()->className())+": Could not create program from source: "+QString(cl_error_cstring(err)));
-        std::cout << str.toStdString().c_str() << std::endl;
+        //~std::cout << str.toStdString().c_str() << std::endl;
         emit writeLog(str);
         return;
     }
@@ -398,7 +398,7 @@ void ProjectFileWorker::initializeCLKernel()
     if (err != CL_SUCCESS)
     {
         QString str("Error in "+QString(this->metaObject()->className())+": Could not create kernel object: "+QString(cl_error_cstring(err)));
-        std::cout << str.toStdString().c_str() << std::endl;
+        //~std::cout << str.toStdString().c_str() << std::endl;
         emit writeLog(str);
         return;
     }
@@ -968,7 +968,6 @@ void VoxelizeWorker::process()
                 {
 
 
-                    std::cout << non_empty_node_counter+1 << " " <<n_max_bricks << " "<< __LINE__ <<std::endl;
                     if((non_empty_node_counter+1) >= n_max_bricks)
                     {
                         QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed due to memory overflow. The dataset has grown too large! ("+QString::number(non_empty_node_counter*n_points_brick*sizeof(cl_float)/1e6, 'g', 3)+" MB)");
@@ -1078,7 +1077,7 @@ void VoxelizeWorker::process()
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
 
-                if (cpu_counter+gpu_counter > 0) std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
+                //~if (cpu_counter+gpu_counter > 0) std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
             if (!kill_flag)
@@ -1116,11 +1115,11 @@ void VoxelizeWorker::process()
                 }
             }
 
-            std::cout << "reduced_pixels.max() " << reduced_pixels->maxValue() << std::endl;
-            std::cout << "reduced_pixels.min() " << reduced_pixels->minValue() << std::endl;
-
-            std::cout << "pool.max() " << svo->pool.maxValue() << std::endl;
-            std::cout << "pool.min() " << svo->pool.minValue() << std::endl;
+            //~std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
+            //~std::cout << "reduced_pixels.min() " << reduced_pixels->min() << std::endl;
+//~
+            //~std::cout << "pool.max() " << svo->pool.max() << std::endl;
+            //~std::cout << "pool.min() " << svo->pool.min() << std::endl;
 
             if (!kill_flag)
             {

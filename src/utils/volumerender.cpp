@@ -554,7 +554,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
 
 void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color)
 {
-    double max = buf->maxValue();
+    double max = buf->max();
     if (max <= 0) max = 1e-5;
 
     Matrix<float> texture(height, buf->size()*4, 0.0);

@@ -129,16 +129,16 @@ private:
     SparseVoxelOcttree svo_inprocess;
     QList<SparseVoxelOcttree> svo_loaded;
 
-    MiniArray<float> VIEW_BRICKS;
-    MiniArray<unsigned int> VIEW_OCT_INDEX;
-    MiniArray<unsigned int> VIEW_OCT_BRICK;
-    MiniArray<double> HIST_NORM;
-    MiniArray<double> HIST_LOG;
-    MiniArray<double> HIST_MINMAX;
-    MiniArray<char> SVO_COMMENT;
+    //~MiniArray<float> VIEW_BRICKS;
+    //~MiniArray<unsigned int> VIEW_OCT_INDEX;
+    //~MiniArray<unsigned int> VIEW_OCT_BRICK;
+    //~MiniArray<double> HIST_NORM;
+    //~MiniArray<double> HIST_LOG;
+    //~MiniArray<double> HIST_MINMAX;
+    //~MiniArray<char> SVO_COMMENT;
 
-    size_t VIEW_LEVELS, VIEW_BPP, VIEW_DIM_BRICKS, VIEW_N_BRICKS;
-    float VIEW_EXTENT[8];
+    //~size_t VIEW_LEVELS, VIEW_BPP, VIEW_DIM_BRICKS, VIEW_N_BRICKS;
+    //~float VIEW_EXTENT[8];
 
     //~cl_device device;
     //~cl_context context;
@@ -157,7 +157,7 @@ private:
     void initializeMenus();
     //void createStatusBar();
 
-    void init_emit();
+    void initializeEmit();
     //~int initDeviceCL();
     //~int init_cl_base();
 	//~void setFileTree();
@@ -302,7 +302,7 @@ private:
     QAction *aboutQtAct;
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
-    QAction *aboutHDF5Act;
+    //~QAction *aboutHDF5Act;
 
 	QScriptValue rawFilesValue;
 	QScriptEngine engine;

@@ -34,7 +34,7 @@ MainWindow::MainWindow()
     setCentralWidget(mainWidget);
     readSettings();
     setCurrentFile("");
-    init_emit();
+    initializeEmit();
     print("[Nebula] Welcome to Nebula alpha!");
     setWindowTitle(tr("Nebula[*]"));
 
@@ -321,7 +321,7 @@ void MainWindow::setProjectThresholdHigh(double value)
     //~std::cout << threshold_project_high <<  std::endl;
 }
 
-void MainWindow::init_emit()
+void MainWindow::initializeEmit()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
@@ -371,7 +371,7 @@ void MainWindow::openScript()
 {
     if (maybeSave())
     {
-        QString fileName = QFileDialog::getOpenFileName(this);
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".txt (*.txt);; All Files (*)"));
         if (!fileName.isEmpty())
         {
             QFileInfo fileInfo = QFileInfo(fileName);
@@ -397,7 +397,7 @@ void MainWindow::initializeActions()
     aboutQtAct = new QAction(tr("About &Qt"), this);
     aboutOpenCLAct = new QAction(tr("About OpenCL"), this);
     aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
-    aboutHDF5Act = new QAction(tr("About HDF"), this);
+    //~aboutHDF5Act = new QAction(tr("About HDF"), this);
     openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
     saveSVOAct = new QAction(QIcon(":/art/save.png"), tr("Save SVO"), this);
     logAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle Logarithm"), this);
@@ -418,7 +418,7 @@ void MainWindow::initializeActions()
     aboutQtAct->setStatusTip(tr("About Qt"));
     aboutOpenCLAct->setStatusTip(tr("About OpenCL"));
     aboutOpenGLAct->setStatusTip(tr("About OpenGL"));
-    aboutHDF5Act->setStatusTip(tr("About HDF"));
+    //~aboutHDF5Act->setStatusTip(tr("About HDF"));
 
     // Shortcuts
     newAct->setShortcuts(QKeySequence::New);
@@ -617,145 +617,6 @@ void MainWindow::openUnitcellFile()
     }
 }
 
-//~void MainWindow::openSVO()
-//~{
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-//~
-    //~QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".h5 (*.h5);; All Files (*)"));
-//~
-    //~if ((fileName != ""))
-    //~{
-        //~/* HDF5 File structure
-        //~* File ->
-        //~*   /bricks -> (Data)
-        //~*       n_bricks (Attribute)
-        //~*       dim_brick (Attribute)
-        //~*
-        //~*   /oct_index -> (Data)
-        //~*       n_nodes (Attribute)
-        //~*       n_levels (Attribute)
-        //~*       extent (Attribute)
-        //~*
-        //~*   /oct_brick -> (Data)
-        //~*       brick_pool_power (Attribute)
-        //~*/
-//~
-        //~hid_t file_id;
-        //~hid_t dset_id, atrib_id, plist_id;
-        //~herr_t status;
-        //~hsize_t dims[5];
-//~
-        //~size_t   nelmts;
-        //~unsigned flags, filter_info;
-        //~H5Z_filter_t filter_type;
-//~
-        //~/* Open file */
-        //~file_id = H5Fopen(fileName.toStdString().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-//~
-//~
-        //~/* Get misc metadata */
-        //~dset_id = H5Dopen(file_id, "/meta", H5P_DEFAULT);
-//~
-        //~atrib_id = H5Aopen(dset_id, "hist_norm_len", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~atrib_id = H5Aopen(dset_id, "hist_log10_len", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[1] );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~HIST_NORM.reserve(dims[0]);
-        //~HIST_LOG.reserve(dims[1]);
-        //~HIST_MINMAX.reserve(2);
-        //~SVO_COMMENT.reserve(2000);
-//~
-        //~atrib_id = H5Aopen(dset_id, "histogram_normal", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_NORM.data() );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~atrib_id = H5Aopen(dset_id, "histogram_log10", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_LOG.data() );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~atrib_id = H5Aopen(dset_id, "value_min_max", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_DOUBLE, HIST_MINMAX.data() );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~status = H5Dread(dset_id, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, SVO_COMMENT.data());
-        //~status = H5Dclose(dset_id);
-//~
-        //~/* Get brick data */
-        //~dset_id = H5Dopen(file_id, "/bricks", H5P_DEFAULT);
-//~
-        //~atrib_id = H5Aopen(dset_id, "n_bricks", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_N_BRICKS );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~atrib_id = H5Aopen(dset_id, "dim_brick", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_DIM_BRICKS );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~VIEW_BRICKS.reserve(VIEW_N_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS*VIEW_DIM_BRICKS);
-//~
-        //~plist_id = H5Dget_create_plist(dset_id);
-        //~nelmts = 0;
-        //~filter_type = H5Pget_filter(plist_id, 0, &flags, &nelmts, NULL, 0, NULL, &filter_info);
-        //~status = H5Dread(dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_BRICKS.data());
-//~
-        //~status = H5Dclose(dset_id);
-        //~status = H5Pclose (plist_id);
-//~
-//~
-        //~/* Get octtree data */
-        //~dset_id = H5Dopen(file_id, "/oct_index", H5P_DEFAULT);
-//~
-        //~atrib_id = H5Aopen(dset_id, "n_nodes", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &dims[0] );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~atrib_id = H5Aopen(dset_id, "n_levels", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_LEVELS );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~atrib_id = H5Aopen(dset_id, "extent", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_FLOAT, VIEW_EXTENT );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~VIEW_OCT_INDEX.reserve(dims[0]);
-        //~VIEW_OCT_BRICK.reserve(dims[0]);
-//~
-        //~status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_INDEX.data());
-        //~status = H5Dclose(dset_id);
-//~
-//~
-        //~dset_id = H5Dopen(file_id, "/oct_brick", H5P_DEFAULT);
-//~
-        //~atrib_id = H5Aopen(dset_id, "brick_pool_power", H5P_DEFAULT);
-        //~status = H5Aread(atrib_id, H5T_NATIVE_ULONG, &VIEW_BPP );
-        //~status = H5Aclose(atrib_id);
-//~
-        //~status = H5Dread(dset_id, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT, VIEW_OCT_BRICK.data());
-        //~status = H5Dclose(dset_id);
-//~
-        //~/* Close the file */
-        //~status = H5Fclose(file_id);
-//~
-//~
-        //~volumeRenderWidget->setOcttreeIndices(&(this->VIEW_OCT_INDEX), VIEW_LEVELS, VIEW_EXTENT);
-        //~volumeRenderWidget->setOcttreeBricks(&(this->VIEW_OCT_BRICK), VIEW_BPP);
-        //~volumeRenderWidget->setBrickPool(&(this->VIEW_BRICKS), VIEW_N_BRICKS, VIEW_DIM_BRICKS);
-        //~volumeRenderWidget->setMeta(&(this->HIST_NORM), &(this->HIST_LOG), &(this->HIST_MINMAX), &(this->SVO_COMMENT));
-        //~alphaSpinBox->setValue(0.1);
-        //~brightnessSpinBox->setValue(2.0);
-        //~dataMinSpinBox->setValue(this->HIST_MINMAX[0]);
-        //~dataMaxSpinBox->setValue(this->HIST_MINMAX[1]);
-//~
-//~
-        //~print("\nLoaded file: \""+fileName+"\"");
-//~
-        //~tabWidget->setCurrentIndex(4);
-    //~}
-//~}
 
 
 void MainWindow::setTab(int tab)
@@ -820,31 +681,6 @@ void MainWindow::initializeConnects()
     connect(volumeRenderWidget, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWidget, SLOT(toggleUnitcellView()));
     connect(this->hklEdit, SIGNAL(textChanged(const QString)), volumeRenderWidget, SLOT(setHklFocus(const QString)));
-    //~connect(volumeRenderWidget, SIGNAL(changedAlphaValue(double)), this->alphaSpinBox, SLOT(setValue(double)));
-    //~connect(volumeRenderWidget, SIGNAL(changedBrightnessValue(double)), this->brightnessSpinBox, SLOT(setValue(double)));
-    //~connect(volumeRenderWidget, SIGNAL(changedDataMinValue(double)), this->dataMinSpinBox, SLOT(setValue(double)));
-    //~connect(volumeRenderWidget, SIGNAL(changedDataMaxValue(double)), this->dataMaxSpinBox, SLOT(setValue(double)));
-    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamA(double)), this->funcParamASpinBox, SLOT(setValue(double)));
-    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamB(double)), this->funcParamBSpinBox, SLOT(setValue(double)));
-    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamC(double)), this->funcParamCSpinBox, SLOT(setValue(double)));
-    //~connect(volumeRenderWidget, SIGNAL(changedFuncParamD(double)), this->funcParamDSpinBox, SLOT(setValue(double)));
-
-    /* this <-> dataInstance */
-    //~connect(this->svoLevelSpinBox, SIGNAL(valueChanged(int)), dataInstance, SLOT(setSvoLevels(int)));
-    //~connect(saveSVOButton, SIGNAL(clicked()), dataInstance, SLOT(saveSVO()));
-    //~connect(formatComboBox, SIGNAL(currentIndexChanged(int)), dataInstance, SLOT(setFormat(int)));
-    //~connect(dataInstance, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    //~connect(treshLimA_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdReduce(double)));
-    //~connect(treshLimB_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdReduce(double)));
-    //~connect(treshLimC_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setLowThresholdProject(double)));
-    //~connect(treshLimD_DSB, SIGNAL(valueChanged(double)), dataInstance, SLOT(setHighThresholdProject(double)));
-    //~connect(dataInstance, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
-    //~connect(dataInstance, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    //~
-    //~connect(dataInstance, SIGNAL(displayFrameChanged(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
-
-    /* imageRenderWidget <-> dataInstance */
-    //~connect(dataInstance, SIGNAL(repaintRequest()), this, SLOT(paintImage()));
 
 
     /* this <-> this */
@@ -866,10 +702,8 @@ void MainWindow::initializeConnects()
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
     connect(aboutOpenCLAct, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
     connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
-    connect(aboutHDF5Act, SIGNAL(triggered()), this, SLOT(aboutHDF5()));
+    //~connect(aboutHDF5Act, SIGNAL(triggered()), this, SLOT(aboutHDF5()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-    //~connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOne()));
-    //~connect(generateSvoButton, SIGNAL(clicked()), this, SLOT(runGenerateSvo()));
     connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
     connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
 }
@@ -883,13 +717,20 @@ void MainWindow::saveSvo()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-    QFileDialog dialog;
-    dialog.setDefaultSuffix(".h5");
-    QString file_name = dialog.getSaveFileName(this, tr("Save File"), "", tr(".h5 (*.h5);; All Files (*)"));
-
-    if (file_name != "")
+    if (svo_inprocess.index.size() > 0)
     {
-        svo_inprocess.save(file_name);
+        QFileDialog dialog;
+        dialog.setDefaultSuffix(".svo");
+        QString file_name = dialog.getSaveFileName(this, tr("Save File"), "", tr(".svo (*.svo);; All Files (*)"));
+
+        if (file_name != "")
+        {
+            svo_inprocess.save(file_name);
+        }
+    }
+    else
+    {
+
     }
 }
 
@@ -897,7 +738,7 @@ void MainWindow::openSvo()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".h5 (*.h5);; All Files (*)"));
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".svo (*.svo);; All Files (*)"));
 
     if ((file_name != ""))
     {
@@ -914,11 +755,6 @@ void MainWindow::openSvo()
         print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+file_name+"\"");
     }
 }
-
-//~void MainWindow::previewSVO()
-//~{
-    //~// Save file - then load it?
-//~}
 
 
 
@@ -940,7 +776,7 @@ void MainWindow::initializeMenus()
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutOpenCLAct);
     helpMenu->addAction(aboutOpenGLAct);
-    helpMenu->addAction(aboutHDF5Act);
+    //~helpMenu->addAction(aboutHDF5Act);
 
     mainMenu->addMenu(scriptMenu);
     mainMenu->addMenu(viewMenu);
