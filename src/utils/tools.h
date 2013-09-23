@@ -5,12 +5,6 @@
 #ifdef _WIN32
     #define GLEW_STATIC
 #endif
-
-#include <QByteArray>
-#include <QFile>
-#include <QDateTime>
-#include <QString>
-
 #include <GL/glew.h>
 #include <CL/opencl.h>
 #include <CL/cl_gl.h>
@@ -21,6 +15,12 @@
 #include <iomanip>
 #include <cmath>
 #include <cstring>
+
+/* QT */
+#include <QByteArray>
+#include <QFile>
+#include <QDateTime>
+#include <QString>
 
 #include "miniarray.h"
 #include "matrix.h"
@@ -48,7 +48,7 @@ struct BMPHeader {
 
 struct cl_device{
     cl_platform_id platform_id;
-    cl_device_id device_id = NULL;
+    cl_device_id device_id;
 
     char cl_device_name[64];
     char cl_device_version[64];

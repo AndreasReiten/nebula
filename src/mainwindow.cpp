@@ -500,24 +500,24 @@ void MainWindow::openUnitcellFile()
         // Regular expressions to match data in .par files
         QString wavelengthRegExp("CRYSTALLOGRAPHY\\sWAVELENGTH\\D+(\\d+\\.\\d+)");
 
-        QStringList UBRegExp = {
-        "CRYSTALLOGRAPHY\\sUB\\D+([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+",
-        "([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+"};
+        QStringList UBRegExp;
+        UBRegExp.append("CRYSTALLOGRAPHY\\sUB\\D+([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
 
-        QStringList unitcellRegExp = {
-        "CELL\\sINFORMATION\\D+(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
-        "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
-        "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
-        "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
-        "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+",
-        "(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+"};
+        QStringList unitcellRegExp;
+        unitcellRegExp.append("CELL\\sINFORMATION\\D+(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
 
         // Open file
         QFile f(fileName);

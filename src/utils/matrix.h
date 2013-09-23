@@ -559,7 +559,7 @@ size_t Matrix<T>::size() const
 template <class T>
 class CameraToClipMatrix : public Matrix<T>{
     public:
-        using Matrix<T>::Matrix;
+        //~ using Matrix<T>::Matrix;
         CameraToClipMatrix();
         ~CameraToClipMatrix();
 

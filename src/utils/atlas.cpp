@@ -1,7 +1,9 @@
 #include "atlas.h"
 
-Atlas::Atlas(FT_Face face, int height) 
+Atlas::Atlas(FT_Face face, int height)
 {
+    verbosity = 1;
+
     FT_Set_Pixel_Sizes(face, 0, height);
     FT_GlyphSlot glyph = face->glyph;
 
@@ -13,10 +15,11 @@ Atlas::Atlas(FT_Face face, int height)
     memset(c, 0, sizeof(c));
 
     /* Find minimum size for a texture holding all visible ASCII characters */
-    for(int i = 32; i < 128; i++) 
+    for(int i = 32; i < 128; i++)
     {
-        if(FT_Load_Char(face, i, FT_LOAD_RENDER)) {
-            std::cout << "Loading character failed: " << i << std::endl;
+        if(FT_Load_Char(face, i, FT_LOAD_RENDER))
+        {
+            if (verbosity == 1) writeLog("[Atlas] Error before line "+QString::number(__LINE__));
             continue;
         }
         if(roww + glyph->bitmap.width + 1 >= 1024) {
@@ -58,7 +61,7 @@ Atlas::Atlas(FT_Face face, int height)
 
     for(int i = 32; i < 128; i++) {
         if(FT_Load_Char(face, i, FT_LOAD_RENDER)) {
-            std::cout << "Loading character failed: " << i << std::endl;
+            if (verbosity == 1) writeLog("[Atlas] Error before line "+QString::number(__LINE__));
             continue;
         }
 
@@ -86,7 +89,12 @@ Atlas::Atlas(FT_Face face, int height)
     }
 }
 
-Atlas::~Atlas() 
+Atlas::~Atlas()
 {
     glDeleteTextures(1, &tex);
+}
+
+void Atlas::writeLog(QString str)
+{
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }

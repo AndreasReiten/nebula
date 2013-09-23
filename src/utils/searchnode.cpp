@@ -3,7 +3,7 @@
 static const unsigned int MAX_POINTS = 32;
 static const unsigned int MAX_LEVELS = 16;
 static const unsigned int CL_MAX_ITEMS = 1024*2*2*2*2*2*2*2;
-static const unsigned int CL_LEVEL = 0;
+static const unsigned int CL_LEVEL = 2;
 
 SearchNode::SearchNode()
 {

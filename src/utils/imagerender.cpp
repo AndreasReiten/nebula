@@ -1,5 +1,5 @@
 #include "imagerender.h"
-
+//~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": At line "+QString::number(__LINE__));
 ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
     QGLWidget(format, parent, shareWidget)
 {
@@ -131,16 +131,22 @@ void ImageRenderGLWidget::initFreetype()
     FT_Library ft;
     FT_Face face;
     FT_Error error;
-    const char * fontfilename = "../../src/fonts/FreeMono.ttf";
+
+    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMono.ttf");
+    //~ const char * fontfilename = qsrc.data();
+    const char * fontfilename = "../../../src/fonts/FreeMono.ttf";
 
     error = FT_Init_FreeType(&ft);
     if(error)
     {
-        std::cout << "Could not init freetype library: " << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        if (verbosity == 1) writeLog("Could not init freetype library");
     }
     /* Load a font */
-    if(FT_New_Face(ft, fontfilename, 0, &face)) {
-        std::cout << "Could not open font " << fontfilename << std::endl;
+    if(FT_New_Face(ft, fontfilename, 0, &face))
+    {
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
     }
 
     fontSmall = new Atlas(face, 12);
@@ -181,6 +187,7 @@ void ImageRenderGLWidget::writeLog(QString str)
 
 void ImageRenderGLWidget::paintGL()
 {
+
     glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -188,6 +195,7 @@ void ImageRenderGLWidget::paintGL()
     std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[0]);
     std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[1]);
     std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[2]);
+
     std_2d_tex_draw(indices, 6, 0, image_tex[0], &screen_coord_vbo[0], &screen_texpos_vbo[0]);
     std_2d_tex_draw(indices, 6, 0, image_tex[1], &screen_coord_vbo[1], &screen_texpos_vbo[1]);
     std_2d_tex_draw(indices, 6, 0, image_tex[2], &screen_coord_vbo[2], &screen_texpos_vbo[2]);
@@ -195,6 +203,7 @@ void ImageRenderGLWidget::paintGL()
     Matrix<float> xy(2,1);
     xy[0] = -1.0;
     xy[1] = -1.0;
+
     std_text_draw("Raw Data", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
 
     float IMAGE_WIDTH = 2*((float)image_w/(float)image_h)*((float)HEIGHT/(float)WIDTH);
@@ -380,7 +389,8 @@ int ImageRenderGLWidget::initResourcesGL()
 
 void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h)
 {
-	const uint8_t *p;
+
+    const uint8_t *p;
 
 	MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
     MiniArray<float> texpos(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
@@ -396,7 +406,8 @@ void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * colo
     y -= std::fmod(y,sy);
 
 	/* Loop through all characters */
-	for(p = (const uint8_t *)text; *p; p++)
+	//~ for(p = (const char *)text; *p; p++)
+    for (p = (const uint8_t *)text; *p; p++)
     {
 		/* Calculate the vertex and texture coordinates */
 		float x2 = x + a->c[*p].bl * sx;

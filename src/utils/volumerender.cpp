@@ -331,18 +331,26 @@ void VolumeRenderGLWidget::initFreetype()
     FT_Library ft;
     FT_Face face;
     FT_Error error;
-    const char * fontfilename = "../../src/fonts/FreeMonoOblique.ttf";
 
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
+    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
+    //~ const char * fontfilename = qsrc.data();
+    const char * fontfilename = "../../../src/fonts/FreeMonoOblique.ttf";
+
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     error = FT_Init_FreeType(&ft);
     if(error)
     {
-        std::cout << "Could not init freetype library: " << std::endl;
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        if (verbosity == 1) writeLog("Could not init freetype library");
     }
     /* Load a font */
-    if(FT_New_Face(ft, fontfilename, 0, &face)) {
-        std::cout << "Could not open font " << fontfilename << std::endl;
+    if(FT_New_Face(ft, fontfilename, 0, &face))
+    {
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
     }
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     fontSmall = new Atlas(face, 12);
     fontMedium = new Atlas(face, 24);
     fontLarge = new Atlas(face, 48);
@@ -555,7 +563,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
 
 void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color)
 {
-    double max = buf->max();
+    double max = buf->maxValue();
     if (max <= 0) max = 1e-5;
 
     Matrix<float> texture(height, buf->size()*4, 0.0);

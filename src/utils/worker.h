@@ -12,7 +12,7 @@
 
 /* GL and CL */
 #ifdef _WIN32
-#define GLEW_STATIC
+    #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
 #include <CL/opencl.h>

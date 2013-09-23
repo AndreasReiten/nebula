@@ -1,7 +1,7 @@
 #include "worker.h"
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
-static const size_t BRICK_POOL_SOFT_MAX_BYTES = 1e9;
+static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.2e9;
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
 /***
@@ -217,8 +217,8 @@ void SetFileWorker::process()
         float resolution_min = 2*(*suggested_q)/(*suggested_search_radius_high);
         float resolution_max = 2*(*suggested_q)/(*suggested_search_radius_low);
 
-        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2);
-        float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2);
+        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2.0);
+        float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2.0);
 
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number((*suggested_q), 'g', 3)+" inverse "+trUtf8("Å"));
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number((*suggested_search_radius_low), 'g', 2)+" to "+QString::number((*suggested_search_radius_high), 'g', 2)+" inverse "+trUtf8("Å"));
@@ -725,8 +725,8 @@ void AllInOneWorker::process()
         float resolution_min = 2*(*suggested_q)/(*suggested_search_radius_high);
         float resolution_max = 2*(*suggested_q)/(*suggested_search_radius_low);
 
-        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2);
-        float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2);
+        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2.0);
+        float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2.0);
 
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number((*suggested_q), 'g', 3)+" inverse "+trUtf8("Å"));
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number((*suggested_search_radius_low), 'g', 2)+" to "+QString::number((*suggested_search_radius_high), 'g', 2)+" inverse "+trUtf8("Å"));
@@ -851,7 +851,7 @@ void VoxelizeWorker::process()
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] The source data is "+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB");
 
         // The number of data points in a single brick
-        size_t n_points_brick = std::pow(svo->getBrickOuterDimension(), 3);
+        size_t n_points_brick = svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension();
 
         // The extent of the volume
         svo->setExtent(*suggested_q);
@@ -870,6 +870,7 @@ void VoxelizeWorker::process()
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
+        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": svo->pool.bytes() "+QString::number(svo->pool.bytes())+" "+QString::number(pool_dimension[0])+" "+QString::number(pool_dimension[1])+" "+QString::number(pool_dimension[2]));
         cl_mem pool_cl = clCreateBuffer((*context),
             CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
             svo->pool.bytes(),
@@ -878,7 +879,6 @@ void VoxelizeWorker::process()
         if (err != CL_SUCCESS)
         {
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-            return;
         }
         svo->pool.clear();
 
@@ -891,7 +891,6 @@ void VoxelizeWorker::process()
         if (err != CL_SUCCESS)
         {
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-            return;
         }
 
 
@@ -903,7 +902,6 @@ void VoxelizeWorker::process()
         if (err != CL_SUCCESS)
         {
             writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-            return;
         }
 
 
@@ -1010,7 +1008,6 @@ void VoxelizeWorker::process()
                     if (err != CL_SUCCESS)
                     {
                         writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-                        return;
                     }
 
                     err = clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), (void *) &non_empty_node_counter );
@@ -1119,11 +1116,11 @@ void VoxelizeWorker::process()
                 }
             }
 
-            std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
-            std::cout << "reduced_pixels.min() " << reduced_pixels->min() << std::endl;
+            std::cout << "reduced_pixels.max() " << reduced_pixels->maxValue() << std::endl;
+            std::cout << "reduced_pixels.min() " << reduced_pixels->minValue() << std::endl;
 
-            std::cout << "pool.max() " << svo->pool.max() << std::endl;
-            std::cout << "pool.min() " << svo->pool.min() << std::endl;
+            std::cout << "pool.max() " << svo->pool.maxValue() << std::endl;
+            std::cout << "pool.min() " << svo->pool.minValue() << std::endl;
 
             if (!kill_flag)
             {

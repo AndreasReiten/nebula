@@ -48,3 +48,6 @@ C++FT_01_LB=_Build
 C++FT_01_CM=
 C++FT_01_WD=
 filetypes=C++;
+
+[files]
+current_page=0

@@ -8,10 +8,11 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
+#include <algorithm>
 
 /* GL and CL*/
 #ifdef _WIN32
-#define GLEW_STATIC
+    #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
 #include <CL/opencl.h>
@@ -29,11 +30,15 @@
 #include <QDateTime>
 
 #ifdef _WIN32
-#include <windows.h>
+    #include <windows.h>
+    #include <ft2build.h>
 #endif
 #ifdef __linux__
-#include <GL/glx.h>
+    #include <GL/glx.h>
+    #include <ft2build.h>
 #endif
+
+#include FT_FREETYPE_H
 
 #include "tools.h"
 #include "miniarray.h"

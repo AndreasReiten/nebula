@@ -1,6 +1,10 @@
 #ifndef MINIARRAY_H
 #define MINIARRAY_H
 
+#ifdef _WIN32
+
+#endif
+
 #include <CL/opencl.h>
 #include <cassert>
 #include <iostream>
@@ -41,8 +45,8 @@ class MiniArray{
         size_t bytes() const;
         size_t size() const;
         double * histogram(size_t bins, T min, T max, bool log_x = 0, bool log_y = 0);
-        T min();
-        T max();
+        T minValue();
+        T maxValue();
 
     protected:
         T * buffer;
@@ -145,7 +149,7 @@ MiniArray<float> MiniArray<T>::toFloat() const
 }
 
 template <class T>
-T MiniArray<T>::min()
+T MiniArray<T>::minValue()
 {
     if (length > 0)
     {
@@ -162,7 +166,7 @@ T MiniArray<T>::min()
 }
 
 template <class T>
-T MiniArray<T>::max()
+T MiniArray<T>::maxValue()
 {
     if (length > 0)
     {

@@ -1,10 +1,10 @@
 # QMAKE PROJECT FILE
 unix {
-    LIBS += -lm -lGLEW -lGL -lOpenCL -lhdf5 -lfreetype
+    LIBS += -lm -lGLEW -lGL -lOpenCL -lfreetype
 }
 else:win32 {
-    LIBS += -lm -lhdf5 -lglew32_static -lOpenCL -Llib_mingw32 -lfreetype
-    INCLUDEPATH += inc_mingw32
+    LIBS += -lm -lglew32 -lOpenCL -lfreetype -Lwin32_lib
+    INCLUDEPATH += win32_include
 }
 HEADERS       = src/mainwindow.h \
                 src/utils/worker.h \
@@ -35,13 +35,13 @@ SOURCES       = src/main.cpp \
                 src/utils/fileformat.cpp \
                 src/utils/atlas.cpp \
                 src/utils/sparsevoxelocttree.cpp
-RESOURCES     = riv.qrc
+RESOURCES     = nebula.qrc
 
 unix {
     QMAKE_CXXFLAGS += -std=c++0x -I/usr/include/freetype2
     QT += script opengl
     CONFIG       += debug
-    TARGET = riv
+    TARGET = nebula
     QMAKE_MAKEFILE = Makefile_unix
 
     DESTDIR = build/unix
@@ -51,10 +51,12 @@ unix {
     UI_DIR = build/unix/.ui
 }
 else:win32 {
-    QMAKE_CXXFLAGS += -std=c++0x -I/usr/include/freetype2
+    QMAKE_LFLAGS += -static
+    QMAKE_CXXFLAGS += -std=c++0x
     QT += script opengl
-    #CONFIG       += release
-    TARGET = riv
+    CONFIG       += debug \
+                    staticlib
+    TARGET = nebula
     QMAKE_MAKEFILE = Makefile_win32
 
     Release:DESTDIR = build/win32/release

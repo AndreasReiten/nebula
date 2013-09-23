@@ -1,16 +1,22 @@
 #ifndef SPARSEVOXELOCTTREE_H
 #define SPARSEVOXELOCTTREE_H
 
-#ifdef _win32
-#include "HDF/hdf5.h"
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
+#ifdef _WIN32
+    #include "HDF/hdf5.h"
 #endif
 #ifdef __linux__
-#include "hdf5.h"
+    #include "hdf5.h"
 #endif
 
 #include <QString>
 
 #include "miniarray.h"
+#include "tools.h"
 
 class SparseVoxelOcttree
 {

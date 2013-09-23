@@ -1,6 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <cmath>
+
 #include <QMainWindow>
 #include <QApplication>
 #include <QWidget>
@@ -32,7 +40,14 @@
 #include <QSlider>
 #include <QList>
 
-#include <hdf5.h>
+//~ #ifdef _WIN32
+    //~ #include <HDF/hdf5.h>
+//~ #endif
+//~ #ifdef __linux__
+    //~ #include <hdf5.h>
+//~ #endif
+
+
 /* GL and CL*/
 #ifdef _WIN32
     #define GLEW_STATIC
@@ -40,14 +55,6 @@
 #include <GL/glew.h>
 #include <CL/opencl.h>
 #include <CL/cl_gl.h>
-
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <cmath>
 
 #include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
