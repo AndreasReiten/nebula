@@ -49,12 +49,12 @@
 
 
 /* GL and CL*/
-#ifdef _WIN32
-    #define GLEW_STATIC
-#endif
-#include <GL/glew.h>
-#include <CL/opencl.h>
-#include <CL/cl_gl.h>
+//~#ifdef _WIN32
+    //~#define GLEW_STATIC
+//~#endif
+//~#include <GL/glew.h>
+//~#include <CL/opencl.h>
+//~#include <CL/cl_gl.h>
 
 #include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
@@ -79,7 +79,6 @@ private slots:
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
     //~void openSVO();
-    void toggleFullScreen();
     void newFile();
     void openScript();
     void openSvo();
@@ -90,11 +89,11 @@ private slots:
     void documentWasModified();
     void aboutOpenCL();
     void aboutOpenGL();
-    void aboutHDF5();
+    //~void aboutHDF5();
 
     void runReadScript();
 
-    void previewSVO();
+    //~void previewSVO();
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
@@ -141,16 +140,16 @@ private:
     size_t VIEW_LEVELS, VIEW_BPP, VIEW_DIM_BRICKS, VIEW_N_BRICKS;
     float VIEW_EXTENT[8];
 
-    cl_device device;
-    cl_context context;
-    cl_command_queue queue;
-    cl_uint num_devices;
-    cl_uint num_platforms;
-    cl_int err;
+    //~cl_device device;
+    //~cl_context context;
+    //~cl_command_queue queue;
+    //~cl_uint num_devices;
+    //~cl_uint num_platforms;
+    //~cl_int err;
 
-    int function_success;
+    //~int function_success;
 
-    const char * cl_error_cstring(cl_int error);
+    //~const char * cl_error_cstring(cl_int error);
     void closeEvent(QCloseEvent *event);
     void initializeActions();
     void initializeConnects();
@@ -159,9 +158,9 @@ private:
     //void createStatusBar();
 
     void init_emit();
-    int initDeviceCL();
-    int init_cl_base();
-	void setFileTree();
+    //~int initDeviceCL();
+    //~int init_cl_base();
+	//~void setFileTree();
     void readSettings();
     void writeSettings();
     bool maybeSave();

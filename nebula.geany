@@ -13,9 +13,9 @@ detect_indent_width=false
 indent_mode=2
 
 [project]
-name=riv
-base_path=/home/natt/coding/riv/
-description=My first geany project
+name=nebula
+base_path=/home/natt/coding/nebula/
+description=Nebula
 file_patterns=*.c;*.cpp;*.cl;*.glsl;*.qss;*.pro;*.qrc;
 
 [long line marker]
@@ -31,16 +31,16 @@ generate_tags=true
 [build-menu]
 NF_00_LB=_Make
 NF_00_CM=make -f Makefile_unix
-NF_00_WD=/home/natt/coding/riv/
+NF_00_WD=/home/natt/coding/nebula/
 NF_01_LB=Make Custom _Target
 NF_01_CM=make -f Makefile_unix clean
-NF_01_WD=/home/natt/coding/riv/
+NF_01_WD=/home/natt/coding/nebula/
 NF_02_LB=Make _Object
 NF_02_CM=
 NF_02_WD=
 EX_00_LB=_Execute
-EX_00_CM="./riv"
-EX_00_WD=/home/natt/coding/riv/build/unix/
+EX_00_CM="./nebula"
+EX_00_WD=/home/natt/coding/nebula/build/unix/debug/
 C++FT_00_LB=_Compile
 C++FT_00_CM=
 C++FT_00_WD=

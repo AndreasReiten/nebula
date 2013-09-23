@@ -29,16 +29,22 @@
 #include <QByteArray>
 #include <QDateTime>
 
+//~#ifdef _WIN32
+    //~#include <windows.h>
+    //~#include <ft2build.h>
+//~#endif
+//~#ifdef __linux__
+    //~#include <GL/glx.h>
+    //~#include <ft2build.h>
+//~#endif
 #ifdef _WIN32
-    #include <windows.h>
-    #include <ft2build.h>
+#include <windows.h>
 #endif
 #ifdef __linux__
-    #include <GL/glx.h>
-    #include <ft2build.h>
+#include <GL/glx.h>
 #endif
 
-#include FT_FREETYPE_H
+//~#include FT_FREETYPE_H
 
 #include "tools.h"
 #include "miniarray.h"

@@ -18,7 +18,6 @@
 #include <QGLWidget>
 
 #ifdef _WIN32
-
     #include <windows.h>
 #endif
 #ifdef __linux__

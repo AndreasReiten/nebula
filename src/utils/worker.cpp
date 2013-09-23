@@ -1,7 +1,7 @@
 #include "worker.h"
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
-static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.2e9;
+static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.5e9;
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
 /***

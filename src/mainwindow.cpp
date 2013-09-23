@@ -35,8 +35,8 @@ MainWindow::MainWindow()
     readSettings();
     setCurrentFile("");
     init_emit();
-    print("[NebulaX] Welcome to NebulaX alpha!");
-    setWindowTitle(tr("NebulaX[*]"));
+    print("[Nebula] Welcome to Nebula alpha!");
+    setWindowTitle(tr("Nebula[*]"));
 
     graphicsDockWidget->hide();
     unitcellDockWidget->hide();
@@ -393,7 +393,7 @@ void MainWindow::initializeActions()
 	runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
     saveAsAct = new QAction(tr("Save script &As..."), this);
     exitAct = new QAction(tr("E&xit program"), this);
-    aboutAct = new QAction(tr("&About NebulaX"), this);
+    aboutAct = new QAction(tr("&About Nebula"), this);
     aboutQtAct = new QAction(tr("About &Qt"), this);
     aboutOpenCLAct = new QAction(tr("About OpenCL"), this);
     aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
@@ -413,7 +413,7 @@ void MainWindow::initializeActions()
     saveAct->setStatusTip(tr("Save the document to disk"));
     saveAsAct->setStatusTip(tr("Save the document under a new name"));
 	runScriptAct->setStatusTip(tr("Run the script"));
-    exitAct->setStatusTip(tr("Exit NebulaX"));
+    exitAct->setStatusTip(tr("Exit Nebula"));
     aboutAct->setStatusTip(tr("About"));
     aboutQtAct->setStatusTip(tr("About Qt"));
     aboutOpenCLAct->setStatusTip(tr("About OpenCL"));
@@ -451,8 +451,8 @@ bool MainWindow::saveAs()
 
 void MainWindow::about()
 {
-    QMessageBox::about(this, tr("About NebulaX"),
-        tr("<h1>About NebulaX</h1> <b>NebulaX</b> is primarily a program to reduce, visualize, and analyze diffuse X-ray scattering. <br> <a href=\"www.github.org/\">github.org</a> <h1>Lisencing (LGPL)</h1> This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details. \n You should have received a copy of the GNU Lesser General Public License along with this program.  If not, see <a href=\"http://www.gnu.org/licenses/\">http://www.gnu.org/licenses/</a> "));
+    QMessageBox::about(this, tr("About Nebula"),
+        tr("<h1>About Nebula</h1> <b>Nebula</b> is primarily a program to reduce, visualize, and analyze diffuse X-ray scattering. <br> <a href=\"www.github.org/\">github.org</a> <h1>Lisencing (LGPL)</h1> This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details. \n You should have received a copy of the GNU Lesser General Public License along with this program.  If not, see <a href=\"http://www.gnu.org/licenses/\">http://www.gnu.org/licenses/</a> "));
 }
 
 void MainWindow::aboutOpenCL()
@@ -467,29 +467,17 @@ void MainWindow::aboutOpenGL()
         tr("<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>"));
 }
 
-void MainWindow::aboutHDF5()
-{
-    QMessageBox::about(this, tr("About HDF"),
-        tr("<h1>About HDF</h1> <b>Hierarchical Data Format</b>  (HDF, HDF4, or HDF5) is the name of a set of file formats and libraries designed to store and organize large amounts of numerical data. Originally developed at the National Center for Supercomputing Applications, it is currently supported by the non-profit HDF Group, whose mission is to ensure continued development of HDF technologies, and the continued accessibility of data currently stored in HDF. <br> In keeping with this goal, the HDF format, libraries and associated tools are available under a liberal, BSD-like license for general use. <br> <a href=\"http://www.hdfgroup.org/\">www.hdfgroup.org/</a>"));
-}
+//~void MainWindow::aboutHDF5()
+//~{
+    //~QMessageBox::about(this, tr("About HDF"),
+        //~tr("<h1>About HDF</h1> <b>Hierarchical Data Format</b>  (HDF, HDF4, or HDF5) is the name of a set of file formats and libraries designed to store and organize large amounts of numerical data. Originally developed at the National Center for Supercomputing Applications, it is currently supported by the non-profit HDF Group, whose mission is to ensure continued development of HDF technologies, and the continued accessibility of data currently stored in HDF. <br> In keeping with this goal, the HDF format, libraries and associated tools are available under a liberal, BSD-like license for general use. <br> <a href=\"http://www.hdfgroup.org/\">www.hdfgroup.org/</a>"));
+//~}
 
 void MainWindow::documentWasModified()
 {
     setWindowModified(textEdit->document()->isModified());
 }
 
-
-void MainWindow::toggleFullScreen()
-{
-    if (volumeRenderWidget->isFullScreen())
-    {
-        volumeRenderWidget->showNormal();
-    }
-    else
-    {
-        volumeRenderWidget->showFullScreen();
-    }
-}
 
 void MainWindow::openUnitcellFile()
 {
@@ -913,7 +901,7 @@ void MainWindow::openSvo()
 
     if ((file_name != ""))
     {
-        setWindowTitle(tr("NebulaX[*] ")+file_name);
+        setWindowTitle(tr("Nebula[*] ")+file_name);
 
         svo_loaded[current_svo].open(file_name);
         volumeRenderWidget->setSvo(&(svo_loaded[current_svo]));
@@ -927,10 +915,10 @@ void MainWindow::openSvo()
     }
 }
 
-void MainWindow::previewSVO()
-{
-    // Save file - then load it?
-}
+//~void MainWindow::previewSVO()
+//~{
+    //~// Save file - then load it?
+//~}
 
 
 
@@ -1591,7 +1579,7 @@ void MainWindow::runReadScript()
 
 void MainWindow::readSettings()
 {
-    QSettings settings("Norwegian University of Science and Technology", "NebulaX");
+    QSettings settings("Norwegian University of Science and Technology", "Nebula");
     QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
     QSize size = settings.value("size", QSize(400, 400)).toSize();
     svoDir = settings.value("svoDir", "").toString();
@@ -1602,7 +1590,7 @@ void MainWindow::readSettings()
 
 void MainWindow::writeSettings()
 {
-    QSettings settings("Norwegian University of Science and Technology", "NebulaX");
+    QSettings settings("Norwegian University of Science and Technology", "Nebula");
     settings.setValue("pos", pos());
     settings.setValue("size", size());
     settings.setValue("svoDir", svoDir);
@@ -1614,7 +1602,7 @@ bool MainWindow::maybeSave()
     if (textEdit->document()->isModified())
     {
         QMessageBox::StandardButton ret;
-        ret = QMessageBox::warning(this, tr("NebulaX"),
+        ret = QMessageBox::warning(this, tr("Nebula"),
             tr("The script has been modified.\n"
             "Do you want to save your changes?"),
             QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
@@ -1631,7 +1619,7 @@ void MainWindow::loadFile(const QString &fileName)
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
-        QMessageBox::warning(this, tr("NebulaX"),
+        QMessageBox::warning(this, tr("Nebula"),
             tr("Cannot read file %1:\n%2.")
             .arg(fileName)
             .arg(file.errorString()));
@@ -1655,7 +1643,7 @@ bool MainWindow::saveFile(const QString &fileName)
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text))
     {
-        QMessageBox::warning(this, tr("NebulaX"),
+        QMessageBox::warning(this, tr("Nebula"),
             tr("Cannot write file %1:\n%2.")
             .arg(fileName)
             .arg(file.errorString()));

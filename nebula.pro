@@ -1,6 +1,6 @@
 # QMAKE PROJECT FILE
 unix {
-    LIBS += -lm -lGLEW -lGL -lOpenCL -lfreetype
+    LIBS += -lm -lGLEW -lGL -lOpenCL  -lhdf5 -lfreetype
 }
 else:win32 {
     LIBS += -lm -lglew32 -lOpenCL -lfreetype -Lwin32_lib
@@ -44,11 +44,11 @@ unix {
     TARGET = nebula
     QMAKE_MAKEFILE = Makefile_unix
 
-    DESTDIR = build/unix
-    OBJECTS_DIR = build/unix/.obj
-    MOC_DIR = build/unix/.moc
-    RCC_DIR = build/unix/.rcc
-    UI_DIR = build/unix/.ui
+    DESTDIR = build/unix/debug
+    OBJECTS_DIR = build/unix/debug/.obj
+    MOC_DIR = build/unix/debug/.moc
+    RCC_DIR = build/unix/debug/.rcc
+    UI_DIR = build/unix/debug/.ui
 }
 else:win32 {
     QMAKE_LFLAGS += -static

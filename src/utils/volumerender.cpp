@@ -292,20 +292,11 @@ void VolumeRenderGLWidget::setResolutionf(double value)
         }
         else
         {
-            //~if (value <= 30) this->setMinLevel(3.0);
-            //~else if (value <= 40) this->setMinLevel(2.4);
-            //~else if (value <= 50) this->setMinLevel(2.0);
-            //~else if (value <= 60) this->setMinLevel(1.8);
-            //~else if (value <= 70) this->setMinLevel(1.6);
-            //~else if (value <= 80) this->setMinLevel(1.4);
-            //~else if (value <= 90) this->setMinLevel(1.2);
-            //~else this->setMinLevel(1.0);
-
-            if (value <= 30) fps = 10;
-            else if (value <= 40) fps = 10;
-            else if (value <= 50) fps = 10;
-            else if (value <= 60) fps = 20;
-            else if (value <= 70) fps = 30;
+            if (value <= 30) fps = 15;
+            else if (value <= 40) fps = 25;
+            else if (value <= 50) fps = 30;
+            else if (value <= 60) fps = 35;
+            else if (value <= 70) fps = 40;
             else if (value <= 80) fps = 40;
             else if (value <= 90) fps = 50;
             else fps = 60;
@@ -1261,6 +1252,10 @@ void VolumeRenderGLWidget::paintGL()
         std_2d_tex_draw(indices, 6, 0, std_3d_tex, &screen_vbo[4], &tex_coord_vbo[1]);
         std_2d_tex_draw(indices, 6, 0, std_2d_tex, &screen_vbo[4], &tex_coord_vbo[1]);
         std_2d_tex_draw(indices, 6, 0, mini_uc_tex, &screen_vbo[0], &tex_coord_vbo[1]);
+
+        float xy[2] = {-0.99,-0.99};
+        QString str("(Resolution: "+QString::number(ray_res)+"%, Max FPS: "+QString::number(fps)+")");
+        std_text_draw(str.toStdString().c_str(), fontSmall, clearInv.data(), xy, 1.0, this->WIDTH, this->HEIGHT);
     }
 }
 
