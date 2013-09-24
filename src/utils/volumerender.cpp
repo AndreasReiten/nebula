@@ -292,11 +292,11 @@ void VolumeRenderGLWidget::setResolutionf(double value)
         }
         else
         {
-            if (value <= 30) fps = 15;
-            else if (value <= 40) fps = 25;
-            else if (value <= 50) fps = 30;
-            else if (value <= 60) fps = 35;
-            else if (value <= 70) fps = 40;
+            if (value <= 30) fps = 10;
+            else if (value <= 40) fps = 15;
+            else if (value <= 50) fps = 20;
+            else if (value <= 60) fps = 25;
+            else if (value <= 70) fps = 30;
             else if (value <= 80) fps = 40;
             else if (value <= 90) fps = 50;
             else fps = 60;

@@ -381,7 +381,7 @@ int ImageRenderGLWidget::initResourcesGL()
         setVbo(&screen_texpos_vbo[4], mat.getColMajor().data(), mat.size());
     }
 
-    init_tsf(3, 1, &transferFunction);
+    init_tsf(3, 0, &transferFunction);
 
     return 1;
 }

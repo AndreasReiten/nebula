@@ -3,6 +3,8 @@
 ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
     QGLWidget(format, parent)
 {
+    //~std::cout << "this->format().hasOverlay() " <<  this->format().hasOverlay() << std::endl;
+    //~std::cout << "this->format().alpha() " <<  this->format().alpha() << std::endl;
     verbosity = 1;
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
     isGLIntitialized = false;
@@ -55,17 +57,29 @@ void ContextGLWidget::paintGL()
 }
 
 
-
-
 void ContextGLWidget::resizeGL(int w, int h)
 {
     glViewport(0, 0, w, h);
 }
 
 
+//~void ContextGLWidget::paintOverlayGL()
+//~{
+    //~;
+//~}
+//~void ContextGLWidget::resizeOverlayGL(int w, int h)
+//~{
+    //~;
+//~}
+//~void ContextGLWidget::initializeOverlayGL()
+//~{
+    //~;
+//~}
+
+
 void ContextGLWidget::setMessageString(QString str)
 {
-        emit changedMessageString(str);
+    emit changedMessageString(str);
 }
 
 

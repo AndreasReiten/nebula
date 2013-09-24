@@ -47,6 +47,9 @@ protected:
     void paintGL();
     void resizeGL(int w, int h);
     void writeLog(QString str);
+    //~void paintOverlayGL();
+    //~void resizeOverlayGL(int w, int h);
+    //~void initializeOverlayGL();
 
 private:
     void setMessageString(QString str);

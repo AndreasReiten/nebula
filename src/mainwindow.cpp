@@ -10,7 +10,7 @@ MainWindow::MainWindow()
     display_file = 0;
     svo_loaded.append(SparseVoxelOcttree());
 
-    // Set stylesheet
+    // Set stylesheet.
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
     QFile styleFile( ":/src/stylesheets/gosutheme.qss" );
     styleFile.open( QFile::ReadOnly );
@@ -19,9 +19,32 @@ MainWindow::MainWindow()
     this->setStyleSheet(style);
 
 
-    QGLFormat glFormat(QGL::DoubleBuffer | QGL::DepthBuffer | QGL::Rgba | QGL::AlphaChannel | QGL::StencilBuffer | QGL::DirectRendering, 0);
+    // Set the OpenGL rendering context. Multisampling can be enabled here.
+    QGLFormat gl_context_format;
+    gl_context_format.setDoubleBuffer(true);
+    gl_context_format.setRgba(true);
+    gl_context_format.setAlpha(true);
+    gl_context_format.setStencil(true);
+    gl_context_format.setDirectRendering(true);
+    //~gl_context_format.setOverlay(true);
+//~
+//~
+    //~QGLFormat f = QGLFormat::defaultOverlayFormat();
+    //~f.setDoubleBuffer(true);
+    //~gl_context_format.setDefaultOverlayFormat(f);
+    //~std::cout << "gl_context_format.hasOverlay() " <<  gl_context_format.hasOverlay() << std::endl;
+    //~std::cout << "gl_context_format.alpha() " <<  gl_context_format.alpha() << std::endl;
+    std::cout << "gl_context_format.hasOpenGLOverlays() " <<  gl_context_format.hasOpenGLOverlays() << std::endl;
 
-    contextGLWidget = new ContextGLWidget(glFormat);
+    contextGLWidget = new ContextGLWidget(gl_context_format);
+    //~if (!contextGLWidget->format().hasOverlay())
+    //~{
+        //~writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" The GL context has no overlay!");
+    //~}
+    //~else
+    //~{
+        //~writeLog("[!!!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" The GL context has an overlay!");
+    //~}
     contextGLWidget->updateGL();
     contextGLWidget->hide();
 

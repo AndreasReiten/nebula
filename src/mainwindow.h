@@ -169,7 +169,7 @@ private:
     void setCurrentFile(const QString &fileName);
 
     //~ QCheckBox * fastMoveCheckBox;
-    QGLFormat glFormat;
+    //~QGLFormat gl_context_format;
 
     QString strippedName(const QString &fullFileName);
 	QString scriptHelp;

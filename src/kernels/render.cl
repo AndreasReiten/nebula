@@ -355,22 +355,6 @@ __kernel void svoRayTrace(
 
                         color.xyz += (1 - color.w)*sample.xyz*sample.w;
                         color.w += (1 - color.w)*sample.w;
-                        //~float steps = native_divide(coneDiameter, coneDiameterLow);
-                        //~float restStep = fmod(steps, 1.0);
-                        //~int cycles = (int) steps;
-//~
-                        //~// This shit needs to get analytic
-                        //~for (int k = 0; k < cycles; k++)
-                        //~{
-                            //~color.xyz += (1 - color.w)*sample.xyz*sample.w;
-                            //~color.w += (1 - color.w)*sample.w;
-                        //~}
-                        //~if (restStep > 0)
-                        //~{
-                            //~sample.w *= restStep;
-                            //~color.xyz += (1 - color.w)*sample.xyz*sample.w;
-                            //~color.w += (1 - color.w)*sample.w;
-                        //~}
 
                         rayBoxXyz += rayBoxAdd;
                         break;
