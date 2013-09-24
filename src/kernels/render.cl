@@ -351,24 +351,26 @@ __kernel void svoRayTrace(
 
                         sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
-                        sample.w *= alpha;
+                        sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);
 
-                        float steps = native_divide(coneDiameter, coneDiameterLow);
-                        float restStep = fmod(steps, 1.0);
-                        int cycles = (int) steps;
-
-                        // This shit needs to get analytic
-                        for (int k = 0; k < cycles; k++)
-                        {
-                            color.xyz += (1 - color.w)*sample.xyz*sample.w;
-                            color.w += (1 - color.w)*sample.w;
-                        }
-                        if (restStep > 0)
-                        {
-                            sample.w *= restStep;
-                            color.xyz += (1 - color.w)*sample.xyz*sample.w;
-                            color.w += (1 - color.w)*sample.w;
-                        }
+                        color.xyz += (1 - color.w)*sample.xyz*sample.w;
+                        color.w += (1 - color.w)*sample.w;
+                        //~float steps = native_divide(coneDiameter, coneDiameterLow);
+                        //~float restStep = fmod(steps, 1.0);
+                        //~int cycles = (int) steps;
+//~
+                        //~// This shit needs to get analytic
+                        //~for (int k = 0; k < cycles; k++)
+                        //~{
+                            //~color.xyz += (1 - color.w)*sample.xyz*sample.w;
+                            //~color.w += (1 - color.w)*sample.w;
+                        //~}
+                        //~if (restStep > 0)
+                        //~{
+                            //~sample.w *= restStep;
+                            //~color.xyz += (1 - color.w)*sample.xyz*sample.w;
+                            //~color.w += (1 - color.w)*sample.w;
+                        //~}
 
                         rayBoxXyz += rayBoxAdd;
                         break;
@@ -501,6 +503,7 @@ __kernel void modelRayTrace(
 
             float3 rayBoxXyz = rayBoxOrigin;
             float val;
+            float intensity_scaling = native_divide(data_view_extent[1] - data_view_extent[0], data_extent[1] - data_extent[0]);
 
             while ( fast_length(rayBoxXyz - rayBoxOrigin) < rayBoxLength )
             {
@@ -527,8 +530,8 @@ __kernel void modelRayTrace(
                 //~ color.xyz += (1 - color.w)*rgba.xyz;
                 //~ color.w += (1 - color.w)*rgba.w;
                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                sample.w *= alpha;
-                clamp(sample, 0.0,1.0);
+                sample.w *= alpha*intensity_scaling;
+                //~clamp(sample, 0.0,1.0);
 
                 color.xyz += (1 - color.w)*sample.xyz*sample.w;
                 color.w += (1 - color.w)*sample.w;

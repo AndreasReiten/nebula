@@ -328,6 +328,9 @@ void MainWindow::initializeEmit()
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(9);
 
+    tsfAlphaComboBox->setCurrentIndex(1);
+    tsfComboBox->setCurrentIndex(3);
+
     treshLimA_DSB->setValue(10);
     treshLimB_DSB->setValue(1e9);
     treshLimC_DSB->setValue(10);
@@ -336,7 +339,7 @@ void MainWindow::initializeEmit()
     dataMinSpinBox->setValue(10);
     dataMaxSpinBox->setValue(1000);
     alphaSpinBox->setValue(0.5);
-    brightnessSpinBox->setValue(1.5);
+    brightnessSpinBox->setValue(2.0);
 
     funcParamASpinBox->setValue(13.5);
     funcParamBSpinBox->setValue(10.5);
