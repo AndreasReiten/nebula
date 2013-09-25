@@ -5,6 +5,7 @@ QWidget
 {
     color: #CCCCCC; /*The color used to render text.*/
     background-color: #222222;
+    font: 18px "Arial";
 }
 
 
@@ -19,7 +20,7 @@ QLineEdit
     padding: 3px;
     padding-left: 5px;
     padding-right: 5px;
-    
+
     background: #FFFFFF;
     border: 1px solid #000000;
     border-radius: 3px;
@@ -45,7 +46,7 @@ QTabWidget::pane {
     top: 1px;
 }
 
-QTabBar::tab { 
+QTabBar::tab {
     color: #FFFFFF;
     border: 1px solid #444;
     border-bottom-style: none;
@@ -135,7 +136,7 @@ QAbstractSpinBox::up-button
     background-color: #1e1e1e;
     border-left-color: #FF5D3C;
     border-left-width: 2px;
-    border-left-style: solid; 
+    border-left-style: solid;
     border-top-right-radius: 2px;
 }
 
@@ -146,7 +147,7 @@ QAbstractSpinBox::down-button
     background-color: #1e1e1e;
     border-left-color: #FF5D3C;
     border-left-width: 2px;
-    border-left-style: solid; 
+    border-left-style: solid;
     border-bottom-right-radius: 2px;
 }
 
@@ -187,7 +188,7 @@ QProgressBar
     text-align: center;
     color: black;
     height: 17px;
-    
+
     /*border: 0px solid black;
     border-radius: 2px;
     text-align: center;
@@ -201,7 +202,7 @@ QProgressBar::chunk
     border-radius: 2px;
     width: 17px;
     margin: 0.5px;*/
-    
+
     background-color: #67FF2B;
     border-radius: 2px;
     width: 17px;
@@ -332,6 +333,7 @@ QPlainTextEdit
     margin: 2.5px;
     background-color: #111111;
     color: #CCCCCC;
+    font: 16px "Monospace";
 }
 
 QDockWidget::title
@@ -373,7 +375,7 @@ QComboBox
 
 QComboBox::drop-down
 {
-    min-width: 20px; 
+    min-width: 20px;
     min-height: 10px;
     border: 1px solid #000000;
     background-color: #1e1e1e;

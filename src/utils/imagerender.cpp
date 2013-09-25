@@ -5,7 +5,7 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
 {
     verbosity = 1;
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
     isGLIntitialized = false;
     isAlphaImgInitialized = false;
     isBetaImgInitialized = false;
@@ -24,7 +24,8 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     float c_red[4] = {1,0,0,1};
     float c_green[4] = {0,1,0,1};
 
-
+    clear.setDeep(4, c_white);
+    clearInv.setDeep(4, c_black);
     white.setDeep(4, c_white);
     transparent.setDeep(4, c_transparent);
     black.setDeep(4, c_black);
@@ -132,27 +133,58 @@ void ImageRenderGLWidget::initFreetype()
     FT_Face face;
     FT_Error error;
 
-    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMono.ttf");
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
+    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
     //~ const char * fontfilename = qsrc.data();
-    const char * fontfilename = "../../../src/fonts/FreeMono.ttf";
+    const char * fontfilename = "../../../src/fonts/FreeMonoOblique.ttf";
 
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     error = FT_Init_FreeType(&ft);
     if(error)
     {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"][!] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
         if (verbosity == 1) writeLog("Could not init freetype library");
     }
     /* Load a font */
     if(FT_New_Face(ft, fontfilename, 0, &face))
     {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"][!] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
         if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
     }
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     fontSmall = new Atlas(face, 12);
     fontMedium = new Atlas(face, 24);
     fontLarge = new Atlas(face, 48);
 }
+//~ {
+    //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+//~
+    //~ /* Initialize the FreeType2 library */
+    //~ FT_Library ft;
+    //~ FT_Face face;
+    //~ FT_Error error;
+//~
+    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMono.ttf");
+    //~ const char * fontfilename = qsrc.data();
+    //~ const char * fontfilename = "../../../src/fonts/FreeMono.ttf";
+//~
+    //~ error = FT_Init_FreeType(&ft);
+    //~ if(error)
+    //~ {
+        //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        //~ if (verbosity == 1) writeLog("Could not init freetype library");
+    //~ }
+    //~ /* Load a font */
+    //~ if(FT_New_Face(ft, fontfilename, 0, &face))
+    //~ {
+        //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+        //~ if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
+    //~ }
+//~
+    //~ fontSmall = new Atlas(face, 12);
+    //~ fontMedium = new Atlas(face, 24);
+    //~ fontLarge = new Atlas(face, 48);
+//~ }
 
 QSize ImageRenderGLWidget::minimumSizeHint() const
 {
@@ -187,8 +219,7 @@ void ImageRenderGLWidget::writeLog(QString str)
 
 void ImageRenderGLWidget::paintGL()
 {
-
-    glClearColor(1, 1, 1, 1);
+    glClearColor(clear[0], clear[0], clear[0], clear[0]);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     GLuint indices[6] = {0,1,3,1,2,3};
@@ -212,7 +243,7 @@ void ImageRenderGLWidget::paintGL()
 
     xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
     std_text_draw("LP Correction, Threshold Two", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
 }
 
 
@@ -811,6 +842,7 @@ int ImageRenderGLWidget::setTarget()
         NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+
     // Convert to CL texture
     gamma_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
     if (err != CL_SUCCESS)
@@ -818,6 +850,7 @@ int ImageRenderGLWidget::setTarget()
         writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
         return 0;
     }
+
     isGammaImgInitialized = true;
     return 1;
 }

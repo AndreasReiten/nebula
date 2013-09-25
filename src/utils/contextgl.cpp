@@ -9,7 +9,7 @@ ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
     isGLIntitialized = false;
     glInit();
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
+    //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
 }
 
 ContextGLWidget::~ContextGLWidget()

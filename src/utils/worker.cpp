@@ -1,7 +1,7 @@
 #include "worker.h"
 
-static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
-static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.5e9;
+static const size_t REDUCED_PIXELS_MAX_BYTES = 2e8;
+static const size_t BRICK_POOL_SOFT_MAX_BYTES = 5e8;
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
 /***
@@ -435,11 +435,16 @@ void ProjectFileWorker::process()
     emit showGenericProgressBar(true);
 
     Matrix<float> test_background;
+
     test_background.set(1679, 1475, 0.0);
+
     QElapsedTimer stopwatch;
     stopwatch.start();
+
     kill_flag = false;
+
     size_t n = 0;
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__)+"] Line "+QString::number((REDUCED_PIXELS_MAX_BYTES/sizeof(float))));
     reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     for (size_t i = 0; i < (size_t) files->size(); i++)
@@ -463,15 +468,20 @@ void ProjectFileWorker::process()
         }
         else
         {
+
             emit changedImageWidth(files->at(i).getWidth());
             emit changedImageHeight(files->at(i).getHeight());
 
             (*files)[i].setProjectionKernel(&project_kernel);
+
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
 
             emit aquireSharedBuffers();
+
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
+
             emit releaseSharedBuffers();
+
 
             if (STATUS_OK)
             {
@@ -483,9 +493,11 @@ void ProjectFileWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
+
         }
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/files->size());
+
     }
     size_t t = stopwatch.restart();
 
@@ -607,8 +619,7 @@ void AllInOneWorker::process()
     // Parameters for Ewald's projection
     Matrix<float> test_background;
     test_background.set(1679, 1475, 0.0);
-    size_t limit = 0.25e9;
-    reduced_pixels->reserve(limit);
+    reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
     (*suggested_q) = std::numeric_limits<float>::min();
@@ -647,7 +658,7 @@ void AllInOneWorker::process()
                 size_raw += file.getBytes();
 
                 // Project and correct file and get status
-                if (n > limit)
+                if (n > REDUCED_PIXELS_MAX_BYTES/sizeof(float))
                 {
                     // Break if there is too much data.
                     emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));

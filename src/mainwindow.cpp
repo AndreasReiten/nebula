@@ -34,7 +34,7 @@ MainWindow::MainWindow()
     //~gl_context_format.setDefaultOverlayFormat(f);
     //~std::cout << "gl_context_format.hasOverlay() " <<  gl_context_format.hasOverlay() << std::endl;
     //~std::cout << "gl_context_format.alpha() " <<  gl_context_format.alpha() << std::endl;
-    std::cout << "gl_context_format.hasOpenGLOverlays() " <<  gl_context_format.hasOpenGLOverlays() << std::endl;
+    //~ std::cout << "gl_context_format.hasOpenGLOverlays() " <<  gl_context_format.hasOpenGLOverlays() << std::endl;
 
     contextGLWidget = new ContextGLWidget(gl_context_format);
     //~if (!contextGLWidget->format().hasOverlay())
@@ -1074,7 +1074,7 @@ void MainWindow::initializeInteractives()
 
         graphicsWidget->setLayout(graphicsLayout);
         graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
+        //~ graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
@@ -1157,7 +1157,7 @@ void MainWindow::initializeInteractives()
 
         unitcellWidget->setLayout(unitcellLayout);
         unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
+        //~ unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
         unitcellDockWidget->setWidget(unitcellWidget);
         viewMenu->addAction(unitcellDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
@@ -1232,7 +1232,7 @@ void MainWindow::initializeInteractives()
         fileLayout->addWidget(saveSVOButton,4,0,1,8);
 
         fileControlsWidget->setLayout(fileLayout);
-        fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
+        //~ fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileDockWidget->setWidget(fileControlsWidget);
@@ -1292,7 +1292,7 @@ void MainWindow::initializeInteractives()
 
         functionWidget->setLayout(functionLayout);
         functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
+        //~ functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
         functionDockWidget->setWidget(functionWidget);
         functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         viewMenu->addAction(functionDockWidget->toggleViewAction());

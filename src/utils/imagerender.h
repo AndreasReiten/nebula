@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
+#include <string>
 
 /* GL and CL*/
 #ifdef _WIN32
@@ -46,6 +47,15 @@
     //~#include <ft2build.h>
 //~#endif
 //~#include FT_FREETYPE_H
+
+/* Freetype */
+#ifdef _WIN32
+    #include <ft2build.h>
+#endif
+#ifdef __linux__
+    #include <ft2build.h>
+#endif
+#include FT_FREETYPE_H
 
 #include "tools.h"
 //~ #include "fileformats.h"
@@ -107,6 +117,8 @@ private:
     MiniArray<float> blue;
     MiniArray<float> red;
     MiniArray<float> green;
+    MiniArray<float> clear;
+    MiniArray<float> clearInv;
 
     // OpenGL Related
     //~bool isInMainThread;
