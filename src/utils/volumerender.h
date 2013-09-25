@@ -131,6 +131,7 @@ private:
     bool isDSViewForced;
 
     //~void setEmit();
+    void drawScaleBar();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
     void initFreetype();
@@ -157,7 +158,6 @@ private:
     void raytrace(cl_kernel kernel);
     void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
     //~ void paint_texture_2d(GLuint texture, double * coordinates, double * vertices);
-
     void getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color);
 
     GLint msaa_hdr_attribute_position , msaa_hdr_attribute_texpos , msaa_hdr_uniform_samples , msaa_hdr_uniform_method , msaa_hdr_uniform_exposure , msaa_hdr_uniform_texture , msaa_hdr_uniform_weight;

@@ -260,6 +260,42 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
 
 }
 
+void VolumeRenderGLWidget::drawScaleBar()
+{
+    // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
+    float length = DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0];
+    //~float start_x = - length * 0.5;
+    //~float start_y = - length * 0.5;
+    //~float start_z = - length * 0.5;
+
+    float tick_interdistance_min = 0.025*length; // % of length
+
+    int tick_levels = 0;
+    int tick_levels_max = 4;
+
+    // Draw ticks
+    for (int i = 0; i < 5; i++)
+    {
+        float tick_interdistance = std::pow((double) 0.1, (double) i);
+
+        if (( tick_interdistance >= tick_interdistance_min) && (tick_levels < tick_levels_max))
+        {
+            tick_levels++;
+
+            int tick_number = 2.0*((length*0.5)/ tick_interdistance) - 1.0;
+
+            //~std::cout << tick_number << " ticks of length: " << tick_interdistance << std::endl;
+
+            //for each tick
+            for (int j = 0; j < tick_number; j++)
+            {
+                ;
+            }
+        }
+    }
+}
+
+
 void VolumeRenderGLWidget::writeLog(QString str)
 {
     writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
@@ -1051,6 +1087,10 @@ void VolumeRenderGLWidget::paintGL()
         bbox_max[0] = DATA_VIEW_EXTENT[1];
         bbox_max[1] = DATA_VIEW_EXTENT[3];
         bbox_max[2] = DATA_VIEW_EXTENT[5];
+
+
+        // Draw scalebars
+        drawScaleBar();
 
         // Draw the unitcell
         if (isUnitcellValid && isUnitcellActive)
