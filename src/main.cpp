@@ -18,11 +18,12 @@
 #include "mainwindow.h"
 #include "utils/tools.h"
 
+const int verbosity = 1;
+
 /* This is the top level GUI implementation */
 int main(int argc, char **argv)
 {
     // Initialize the log file
-    int verbosity = 1;
     QDateTime dateTime = dateTime.currentDateTime();
     QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
     if (verbosity == 1) writeToLogAndPrint("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
@@ -31,6 +32,7 @@ int main(int argc, char **argv)
     //~if (Q_OS_LINUX) QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
     //~std::cout << "Qt::AA_X11InitThreads = " << QCoreApplication::testAttribute(Qt::AA_X11InitThreads) << std::endl;
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(":/art/app.png"));
 
 	app.setOrganizationName("Norwegian University of Science and Technology");
     app.setApplicationName("Nebula");

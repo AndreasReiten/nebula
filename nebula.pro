@@ -42,13 +42,13 @@ unix {
     QT += script opengl
     CONFIG       += debug
     TARGET = nebula
-    QMAKE_MAKEFILE = Makefile_unix
+    QMAKE_MAKEFILE = Makefile_linux
 
-    DESTDIR = build/unix/debug
-    OBJECTS_DIR = build/unix/debug/.obj
-    MOC_DIR = build/unix/debug/.moc
-    RCC_DIR = build/unix/debug/.rcc
-    UI_DIR = build/unix/debug/.ui
+    DESTDIR = build/linux/debug
+    OBJECTS_DIR = build/linux/debug/.obj
+    MOC_DIR = build/linux/debug/.moc
+    RCC_DIR = build/linux/debug/.rcc
+    UI_DIR = build/linux/debug/.ui
 }
 else:win32 {
     QMAKE_LFLAGS += -static
@@ -57,17 +57,17 @@ else:win32 {
     CONFIG       += debug \
                     staticlib
     TARGET = nebula
-    QMAKE_MAKEFILE = Makefile_win32
+    QMAKE_MAKEFILE = Makefile_windows
 
-    Release:DESTDIR = build/win32/release
-    Release:OBJECTS_DIR = build/win32/release/obj
-    Release:MOC_DIR = build/win32/release/moc
-    Release:RCC_DIR = build/win32/release/rcc
-    Release:UI_DIR = build/win32/release/ui
+    Release:DESTDIR = build/windows/release
+    Release:OBJECTS_DIR = build/windows/release/obj
+    Release:MOC_DIR = build/windows/release/moc
+    Release:RCC_DIR = build/windows/release/rcc
+    Release:UI_DIR = build/windows/release/ui
 
-    Debug:DESTDIR = build/win32/debug
-    Debug:OBJECTS_DIR = build/win32/debug/obj
-    Debug:MOC_DIR = build/win32/debug/moc
-    Debug:RCC_DIR = build/win32/debug/rcc
-    Debug:UI_DIR = build/win32/debug/ui
+    Debug:DESTDIR = build/windows/debug
+    Debug:OBJECTS_DIR = build/windows/debug/obj
+    Debug:MOC_DIR = build/windows/debug/moc
+    Debug:RCC_DIR = build/windows/debug/rcc
+    Debug:UI_DIR = build/windows/debug/ui
 }

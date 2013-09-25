@@ -21,6 +21,7 @@
     <file>src/kernels/voxelize.cl</file>
     <file>src/kernels/render.cl</file>
     <file>src/kernels/project.cl</file>
+    <file>art/app.png</file>
     <file>src/fonts/FreeMono.ttf</file>
     <file>src/fonts/FreeMonoBold.ttf</file>
     <file>src/fonts/FreeMonoOblique.ttf</file>

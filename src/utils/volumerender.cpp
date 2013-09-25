@@ -271,10 +271,10 @@ void VolumeRenderGLWidget::drawScaleBar()
     float tick_interdistance_min = 0.025*length; // % of length
 
     int tick_levels = 0;
-    int tick_levels_max = 4;
+    int tick_levels_max = 3;
 
     // Draw ticks
-    for (int i = 0; i < 5; i++)
+    for (int i = 5; i >= 0; i--)
     {
         float tick_interdistance = std::pow((double) 0.1, (double) i);
 
@@ -285,11 +285,25 @@ void VolumeRenderGLWidget::drawScaleBar()
             int tick_number = 2.0*((length*0.5)/ tick_interdistance) - 1.0;
 
             //~std::cout << tick_number << " ticks of length: " << tick_interdistance << std::endl;
+            float x_start = DATA_VIEW_EXTENT[0] + std::fmod(DATA_VIEW_EXTENT[0], tick_interdistance);
+            float y_start = DATA_VIEW_EXTENT[2] + std::fmod(DATA_VIEW_EXTENT[2], tick_interdistance);
+            float z_start = DATA_VIEW_EXTENT[4] + std::fmod(DATA_VIEW_EXTENT[4], tick_interdistance);
+            float tick_width = tick_interdistance*0.1;
 
-            //for each tick
+            float x, y, z;
+            // Each tick consists of 4 points to form a cross
             for (int j = 0; j < tick_number; j++)
             {
-                ;
+                // X-tick
+                x = x_start + tick_number * tick_interdistance;
+                y = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
+                z = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+
+                // Y-tick
+                y = y_start + tick_number * tick_interdistance;
+
+                // Z-tick
+                z = z_start + tick_number * tick_interdistance;
             }
         }
     }
