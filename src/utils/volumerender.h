@@ -101,16 +101,16 @@ public slots:
 
 signals:
     void changedMessageString(QString str);
-    void changedResolutioni(int value);
-    void changedResolutionf(double value);
-    void changedAlphaValue(double value);
-    void changedBrightnessValue(double value);
-    void changedDataMinValue(double value);
-    void changedDataMaxValue(double value);
-    void changedFuncParamA(double value);
-    void changedFuncParamB(double value);
-    void changedFuncParamC(double value);
-    void changedFuncParamD(double value);
+    //~void changedResolutioni(int value);
+    //~void changedResolutionf(double value);
+    //~void changedAlphaValue(double value);
+    //~void changedBrightnessValue(double value);
+    //~void changedDataMinValue(double value);
+    //~void changedDataMaxValue(double value);
+    //~void changedFuncParamA(double value);
+    //~void changedFuncParamB(double value);
+    //~void changedFuncParamC(double value);
+    //~void changedFuncParamD(double value);
 
 protected:
     int verbosity;

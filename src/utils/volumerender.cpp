@@ -1050,6 +1050,7 @@ void VolumeRenderGLWidget::getUnitcellBasis(float * buf, int * hkl_offset, float
 
 void VolumeRenderGLWidget::setTsf(int value)
 {
+
     tsf_style = value;
     init_tsf(value, tsf_alpha_style, &transferFunction);
     this->setTsfTexture(&transferFunction);

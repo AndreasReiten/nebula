@@ -28,7 +28,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -2363,7 +2363,7 @@
        x2="3758.1531"
        y1="-3261.0803"
        x1="3670.887"
-       gradientTransform="matrix(0.45477273,0,0,0.24820223,1965.2363,-2527.7808)"
+       gradientTransform="matrix(0.45477273,0,0,0.24820223,1965.2363,-2529.9905)"
        gradientUnits="userSpaceOnUse"
        id="linearGradient5001"
        xlink:href="#linearGradient4746-0-9-6-1-9"
@@ -2800,6 +2800,37 @@
        id="linearGradient3597"
        xlink:href="#linearGradient4746-0-7-3"
        inkscape:collect="always" />
+    <linearGradient
+       y2="-3337"
+       x2="3758.1531"
+       y1="-3261.0803"
+       x1="3670.887"
+       gradientTransform="matrix(1.0070125,0,0,0.53300401,97.261077,-1509.0662)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient4951-7"
+       xlink:href="#linearGradient4746-0-7-88"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient4746-0-7-88">
+      <stop
+         style="stop-color:#009cff;stop-opacity:1;"
+         offset="0"
+         id="stop4748-1-3-57" />
+      <stop
+         style="stop-color:#32ff00;stop-opacity:0;"
+         offset="1"
+         id="stop4750-8-1-07" />
+    </linearGradient>
+    <linearGradient
+       y2="-3337"
+       x2="3758.1531"
+       y1="-3261.0803"
+       x1="3670.887"
+       gradientTransform="matrix(1.1651785,0,0,3.6302874,-491.61161,8815.984)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3602"
+       xlink:href="#linearGradient4746-0-7-88"
+       inkscape:collect="always" />
   </defs>
   <sodipodi:namedview
      pagecolor="#ffffff"
@@ -2814,9 +2845,9 @@
      inkscape:window-height="980"
      id="namedview4"
      showgrid="false"
-     inkscape:zoom="1.8101934"
-     inkscape:cx="3657.5168"
-     inkscape:cy="3277.3484"
+     inkscape:zoom="1.28"
+     inkscape:cx="3732.0283"
+     inkscape:cy="3208.9595"
      inkscape:window-x="0"
      inkscape:window-y="36"
      inkscape:window-maximized="0"
@@ -2837,13 +2868,24 @@
        enabled="true"
        snapvisiblegridlinesonly="true" />
   </sodipodi:namedview>
+  <rect
+     style="fill:url(#linearGradient3602);fill-opacity:1.0;fill-rule:nonzero;stroke:#000000;stroke-width:1.69700169999999995;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4718-5-2-85"
+     width="133.27864"
+     height="298.97961"
+     x="3782.397"
+     y="-3292.8413"
+     ry="5.5082822"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
+     inkscape:export-xdpi="93.494629"
+     inkscape:export-ydpi="93.494629" />
   <path
      style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-start:none;marker-end:url(#Arrow2Send)"
      d="m 3660,-3338 0,20"
      id="path5404-3-8-1-9-8-9"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="cc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <rect
@@ -2854,7 +2896,7 @@
      x="3599.2002"
      y="-3316.4854"
      ry="17.376633"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -2864,7 +2906,7 @@
      y="-3292.0339"
      id="text4754"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -2887,7 +2929,7 @@
      x="3411.0989"
      y="-3166.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -2897,7 +2939,7 @@
      y="-3148.2886"
      id="text4754-5"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -2916,7 +2958,7 @@
      x="3411.0989"
      y="-3226.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -2926,7 +2968,7 @@
      y="-3208.2886"
      id="text4754-5-6"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -2945,7 +2987,7 @@
      x="3411.0989"
      y="-3286.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -2955,7 +2997,7 @@
      y="-3268.2886"
      id="text4754-5-6-9"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -2974,7 +3016,7 @@
      x="3436.8503"
      y="-3094.4705"
      ry="4.3144526"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -2984,7 +3026,7 @@
      y="-3084.3784"
      id="text4754-5-6-9-1"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -2999,7 +3041,7 @@
      x="3791.0989"
      y="-3286.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3009,7 +3051,7 @@
      y="-3268.2886"
      id="text4754-5-8"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3026,7 +3068,10 @@
      x="3622.2649"
      y="-3244.998"
      id="text4976"
-     sodipodi:linespacing="125%"><tspan
+     sodipodi:linespacing="125%"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
+     inkscape:export-xdpi="93.494629"
+     inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
        id="tspan4978" /></text>
   <text
@@ -3036,7 +3081,7 @@
      y="-3254.2058"
      id="text4982"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3050,24 +3095,24 @@
      width="52.019062"
      height="20.441196"
      x="3633.3953"
-     y="-3355.6594"
+     y="-3357.8691"
      ry="4.3144526"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
      xml:space="preserve"
      style="font-size:8.02846813px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Monospace;-inkscape-font-specification:Monospace Bold"
      x="3659.7805"
-     y="-3342.9983"
+     y="-3345.208"
      id="text4754-5-6-9-1-2"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
        x="3659.7805"
-       y="-3342.9983"
+       y="-3345.208"
        id="tspan4798-5-9-2-5">Main</tspan></text>
   <rect
      style="fill:url(#linearGradient5059);fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.19787979;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
@@ -3077,7 +3122,7 @@
      x="3791.0989"
      y="-3236.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3087,7 +3132,7 @@
      y="-3218.2886"
      id="text4754-5-8-3"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3106,7 +3151,7 @@
      x="3791.0989"
      y="-3186.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3116,7 +3161,7 @@
      y="-3168.2886"
      id="text4754-5-8-9"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3135,7 +3180,7 @@
      x="3791.0989"
      y="-3136.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3145,7 +3190,7 @@
      y="-3118.2886"
      id="text4754-5-8-91"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3164,7 +3209,7 @@
      x="3791.0989"
      y="-3086.9011"
      ry="9.2651091"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3174,7 +3219,7 @@
      y="-3068.2886"
      id="text4754-5-8-94"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3193,7 +3238,7 @@
      x="3944.6699"
      y="-3087.668"
      ry="4.3144526"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3203,7 +3248,7 @@
      y="-3077.5759"
      id="text4754-5-6-9-1-3"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3218,7 +3263,7 @@
      x="3945.0955"
      y="-3058.3926"
      ry="4.3144526"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3228,7 +3273,7 @@
      y="-3048.3005"
      id="text4754-5-6-9-1-3-6"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3243,7 +3288,7 @@
      x="3630.5039"
      y="-3187.4961"
      ry="4.3144526"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3253,7 +3298,7 @@
      y="-3177.4041"
      id="text4754-5-6-9-1-3-8"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3268,7 +3313,7 @@
      x="3630.5039"
      y="-3157.4961"
      ry="4.3144526"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3278,7 +3323,7 @@
      y="-3147.4041"
      id="text4754-5-6-9-1-3-8-8"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3293,7 +3338,7 @@
      x="3630.5039"
      y="-3127.4961"
      ry="4.3144526"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3303,7 +3348,7 @@
      y="-3117.4041"
      id="text4754-5-6-9-1-3-8-8-0"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3316,32 +3361,35 @@
      x="3559.375"
      y="-3454.7188"
      id="text5377"
-     sodipodi:linespacing="125%"><tspan
+     sodipodi:linespacing="125%"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
+     inkscape:export-xdpi="93.494629"
+     inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
        id="tspan5379"
        x="3559.375"
        y="-3454.7188" /></text>
   <text
      xml:space="preserve"
-     style="font-size:34.97380447px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Monospace;-inkscape-font-specification:Monospace Bold"
-     x="3663.2007"
-     y="-3400.7505"
+     style="font-size:31.92579651px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Monospace;-inkscape-font-specification:Monospace Bold"
+     x="3656.5364"
+     y="-3390.9336"
      id="text4754-5-6-9-1-2-0"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
-       x="3663.2007"
-       y="-3400.7505"
-       id="tspan4798-5-9-2-5-5">Class Map</tspan></text>
+       x="3656.5364"
+       y="-3390.9336"
+       id="tspan4798-5-9-2-5-5">Essential Classes of Nebula</tspan></text>
   <path
      style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-start:url(#Arrow2Sstart);marker-end:url(#Arrow2Send)"
      d="m 3530,-3268 10,0 59.2002,-18.3427 m 0,7.8184 L 3545,-3208 l -15,0"
      id="path5402"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="cccccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3350,7 +3398,7 @@
      id="path5404"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3359,7 +3407,7 @@
      id="path6596"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="cccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3368,7 +3416,7 @@
      id="path6598"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="cc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3379,7 +3427,7 @@
      id="text4754-5-6-9-3"
      sodipodi:linespacing="125%"
      transform="matrix(0,-1,1,0,0,0)"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
@@ -3392,7 +3440,7 @@
      id="path5404-3"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3401,7 +3449,7 @@
      id="path5404-3-8"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3410,7 +3458,7 @@
      id="path5404-3-8-8"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3419,7 +3467,7 @@
      id="path5404-3-8-2"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3428,7 +3476,7 @@
      id="path5404-3-8-1"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3437,7 +3485,7 @@
      id="path5404-3-8-1-9"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <path
@@ -3446,7 +3494,7 @@
      id="path5404-3-8-1-9-8"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <rect
@@ -3457,7 +3505,7 @@
      x="3816.1582"
      y="-3328.6858"
      ry="5.7234936"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629" />
   <text
@@ -3467,11 +3515,29 @@
      y="-3312.9678"
      id="text4754-5-8-4"
      sodipodi:linespacing="125%"
-     inkscape:export-filename="/home/natt/coding/riv/art/splash.png"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
      inkscape:export-xdpi="93.494629"
      inkscape:export-ydpi="93.494629"><tspan
        sodipodi:role="line"
        x="3852.5774"
        y="-3312.9678"
        id="tspan3624">DetectorFile</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:14.04087162px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Monospace;-inkscape-font-specification:Monospace Bold"
+     x="3847.8264"
+     y="-3014.2197"
+     id="text4754-5-8-94-9"
+     sodipodi:linespacing="125%"
+     inkscape:export-filename="/home/natt/coding/nebula/art/splash.png"
+     inkscape:export-xdpi="93.494629"
+     inkscape:export-ydpi="93.494629"><tspan
+       sodipodi:role="line"
+       x="3847.8264"
+       y="-3014.2197"
+       id="tspan4798-0-4-7">Worker Threads</tspan><tspan
+       sodipodi:role="line"
+       x="3847.8264"
+       y="-2996.6687"
+       id="tspan4499" /></text>
 </svg>

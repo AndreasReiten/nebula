@@ -687,13 +687,13 @@ void MainWindow::initializeConnects()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     /* this <-> volumeRenderWidget */
-    connect(this->tsfAlphaComboBox, SIGNAL(activated(int)), volumeRenderWidget, SLOT(setTsfAlphaStyle(int)));
+    connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWidget, SLOT(setTsfAlphaStyle(int)));
     connect(dataStructureAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleDataStructure()));
     connect(backgroundAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleBackground()));
     connect(screenshotAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(takeScreenshot()));
     connect(logAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleLog()));
     connect(projectionAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(togglePerspective()));
-    connect(this->tsfComboBox, SIGNAL(activated(int)), volumeRenderWidget, SLOT(setTsf(int)));
+    connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWidget, SLOT(setTsf(int)));
     connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setTsfMin(double)));
     connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setTsfMax(double)));
     connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWidget, SLOT(setTsfAlpha(double)));
@@ -1073,7 +1073,7 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(brightnessSpinBox,8,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
-        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        //~graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         //~ graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
@@ -1156,7 +1156,7 @@ void MainWindow::initializeInteractives()
         unitcellLayout->addWidget(gammaStar,8,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
 
         unitcellWidget->setLayout(unitcellLayout);
-        unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        //~unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         //~ unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
         unitcellDockWidget->setWidget(unitcellWidget);
         viewMenu->addAction(unitcellDockWidget->toggleViewAction());
@@ -1291,7 +1291,7 @@ void MainWindow::initializeInteractives()
         functionLayout->addWidget(funcParamDSpinBox,4,2,1,2);
 
         functionWidget->setLayout(functionLayout);
-        functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        //~functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         //~ functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
         functionDockWidget->setWidget(functionWidget);
         functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
