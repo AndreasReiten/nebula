@@ -241,6 +241,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteBuffers(5, data_extent_vbo);
         glDeleteBuffers(5, data_view_extent_vbo);
         glDeleteBuffers(5, unitcell_vbo);
+        glDeleteBuffers(1, &scalebar_vbo);
         glDeleteBuffers(5, screen_vbo);
         glDeleteBuffers(1, &sampleWeightBuf);
         glDeleteBuffers(1, &text_position_vbo);
@@ -260,18 +261,19 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
 
 }
 
-void VolumeRenderGLWidget::drawScaleBar()
+size_t VolumeRenderGLWidget::getScaleBar()
 {
     // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
     float length = DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0];
-    //~float start_x = - length * 0.5;
-    //~float start_y = - length * 0.5;
-    //~float start_z = - length * 0.5;
 
     float tick_interdistance_min = 0.025*length; // % of length
 
     int tick_levels = 0;
     int tick_levels_max = 3;
+
+    Matrix<float> coords(5000,3);
+
+    size_t coord_counter = 0;
 
     // Draw ticks
     for (int i = 5; i >= 0; i--)
@@ -290,23 +292,94 @@ void VolumeRenderGLWidget::drawScaleBar()
             float z_start = DATA_VIEW_EXTENT[4] + std::fmod(DATA_VIEW_EXTENT[4], tick_interdistance);
             float tick_width = tick_interdistance*0.1;
 
-            float x, y, z;
             // Each tick consists of 4 points to form a cross
             for (int j = 0; j < tick_number; j++)
             {
                 // X-tick
-                x = x_start + tick_number * tick_interdistance;
-                y = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
-                z = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+0)*3+0] = x_start + tick_number * tick_interdistance;
+                coords[(coord_counter+0)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+0)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+
+                coords[(coord_counter+1)*3+0] = x_start + tick_number * tick_interdistance;
+                coords[(coord_counter+1)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+1)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
+
+                coords[(coord_counter+2)*3+0] = x_start + tick_number * tick_interdistance;
+                coords[(coord_counter+2)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+2)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+
+                coords[(coord_counter+3)*3+0] = x_start + tick_number * tick_interdistance;
+                coords[(coord_counter+3)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+3)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
 
                 // Y-tick
-                y = y_start + tick_number * tick_interdistance;
+                coords[(coord_counter+4)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+4)*3+1] = y_start + tick_number * tick_interdistance;
+                coords[(coord_counter+4)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+
+                coords[(coord_counter+5)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+5)*3+1] = y_start + tick_number * tick_interdistance;
+                coords[(coord_counter+5)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
+
+                coords[(coord_counter+6)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+6)*3+1] = y_start + tick_number * tick_interdistance;
+                coords[(coord_counter+6)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+
+                coords[(coord_counter+7)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+7)*3+1] = y_start + tick_number * tick_interdistance;
+                coords[(coord_counter+7)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
 
                 // Z-tick
-                z = z_start + tick_number * tick_interdistance;
+                coords[(coord_counter+8)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+8)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+8)*3+2] = z_start + tick_number * tick_interdistance;
+
+                coords[(coord_counter+9)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+9)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+9)*3+2] = z_start + tick_number * tick_interdistance;
+
+                coords[(coord_counter+10)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+10)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+10)*3+2] = z_start + tick_number * tick_interdistance;
+
+                coords[(coord_counter+11)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
+                coords[(coord_counter+11)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
+                coords[(coord_counter+11)*3+2] = z_start + tick_number * tick_interdistance;
+
+                coord_counter += 12;
             }
         }
     }
+
+    // Cross
+    coords[(coord_counter+0)*3+0] = DATA_VIEW_EXTENT[0];
+    coords[(coord_counter+0)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+    coords[(coord_counter+0)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+    coords[(coord_counter+1)*3+0] = DATA_VIEW_EXTENT[1];
+    coords[(coord_counter+1)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+    coords[(coord_counter+1)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+    coords[(coord_counter+2)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+    coords[(coord_counter+2)*3+1] = DATA_VIEW_EXTENT[2];
+    coords[(coord_counter+2)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+    coords[(coord_counter+3)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+    coords[(coord_counter+3)*3+1] = DATA_VIEW_EXTENT[3];
+    coords[(coord_counter+3)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+    coords[(coord_counter+4)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+    coords[(coord_counter+4)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+    coords[(coord_counter+4)*3+2] = DATA_VIEW_EXTENT[4];
+
+    coords[(coord_counter+5)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+    coords[(coord_counter+5)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+    coords[(coord_counter+5)*3+2] = DATA_VIEW_EXTENT[5];
+
+    coord_counter += 6;
+
+    setVbo(&scalebar_vbo, coords.data(), coord_counter*3);
+    return coord_counter;
 }
 
 
@@ -376,7 +449,7 @@ void VolumeRenderGLWidget::initFreetype()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
     //~ const char * fontfilename = qsrc.data();
-    const char * fontfilename = "../../../src/fonts/FreeMonoOblique.ttf";
+    const char * fontfilename = "../fonts/FreeMonoOblique.ttf";
 
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     error = FT_Init_FreeType(&ft);
@@ -1103,9 +1176,42 @@ void VolumeRenderGLWidget::paintGL()
         bbox_max[1] = DATA_VIEW_EXTENT[3];
         bbox_max[2] = DATA_VIEW_EXTENT[5];
 
+        color.setDeep(4, clearInv.data());
+        color[3] = 0.4;
 
         // Draw scalebars
-        drawScaleBar();
+        if (1)
+        {
+            size_t coord_count = getScaleBar();
+
+            glUseProgram(std_3d_program);
+            glEnableVertexAttribArray(std_3d_attribute_position);
+
+            // Set std_3d_attribute_position
+            glBindBuffer(GL_ARRAY_BUFFER, scalebar_vbo);
+            glVertexAttribPointer(std_3d_attribute_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            // Set std_3d_uniform_transform
+            glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, CELL_VIEW_MATRIX.getColMajor().data());
+
+            // Set std_3d_uniform_u
+            glUniformMatrix4fv(std_3d_uniform_u, 1, GL_FALSE, I.getColMajor().data());
+
+            // Set color
+            glUniform4fv(std_3d_uniform_color, 1, color.data());
+
+            // Set bbox
+            glUniform3fv(std_3d_uniform_bbox_min, 1, bbox_min.data());
+            glUniform3fv(std_3d_uniform_bbox_max, 1, bbox_max.data());
+
+            // Draw verices
+            glDrawArrays(GL_LINES,  0, coord_count);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            glDisableVertexAttribArray(std_3d_attribute_position);
+            glUseProgram(0);
+        }
 
         // Draw the unitcell
         if (isUnitcellValid && isUnitcellActive)
@@ -1803,6 +1909,7 @@ int VolumeRenderGLWidget::initResourcesGL()
     glGenBuffers(5, data_extent_vbo);
     glGenBuffers(5, data_view_extent_vbo);
     glGenBuffers(5, unitcell_vbo);
+    glGenBuffers(1, &scalebar_vbo);
     glGenBuffers(5, screen_vbo);
     glGenBuffers(1, &sampleWeightBuf);
 
@@ -2231,13 +2338,13 @@ void VolumeRenderGLWidget::getScreenPosition(float * screen_pos, float * space_p
 
 void VolumeRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h)
 {
-	const uint8_t *p;
+    const uint8_t *p;
 
-	MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
+    MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
     MiniArray<float> texpos(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
     MiniArray<unsigned int> indices(6 * strlen(text)); // 6 indices per character
 
-	int c = 0;
+    int c = 0;
     float sx = scale*2.0/w;
     float sy = scale*2.0/h;
     float x = xy[0];
@@ -2246,22 +2353,22 @@ void VolumeRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * col
     x -= std::fmod(x,sx);
     y -= std::fmod(y,sy);
 
-	/* Loop through all characters */
-	for(p = (const uint8_t *)text; *p; p++)
+    /* Loop through all characters */
+    for(p = (const uint8_t *)text; *p; p++)
     {
-		/* Calculate the vertex and texture coordinates */
-		float x2 = x + a->c[*p].bl * sx;
-		float y2 = y + a->c[*p].bt * sy;
-		float foo_w = a->c[*p].bw * sx;
-		float foo_h = a->c[*p].bh * sy;
+        /* Calculate the vertex and texture coordinates */
+        float x2 = x + a->c[*p].bl * sx;
+        float y2 = y + a->c[*p].bt * sy;
+        float foo_w = a->c[*p].bw * sx;
+        float foo_h = a->c[*p].bh * sy;
 
-		/* Advance the cursor to the start of the next character */
-		x += a->c[*p].ax * sx;
-		y += a->c[*p].ay * sy;
+        /* Advance the cursor to the start of the next character */
+        x += a->c[*p].ax * sx;
+        y += a->c[*p].ay * sy;
 
-		/* Skip glyphs that have no pixels */
-		if(!foo_w || !foo_h)
-			continue;
+        /* Skip glyphs that have no pixels */
+        if(!foo_w || !foo_h)
+            continue;
 
         position[c*8+0] = x2;
         position[c*8+1] = y2;
@@ -2293,13 +2400,13 @@ void VolumeRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * col
 
     glUseProgram(std_text_program);
 
-	// Set std_text_uniform_texture
+    // Set std_text_uniform_texture
     glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, a->tex);
-	glUniform1i(std_text_uniform_tex, 0);
+    glBindTexture(GL_TEXTURE_2D, a->tex);
+    glUniform1i(std_text_uniform_tex, 0);
 
     // Set std_text_uniform_color
-	 glUniform4fv(std_text_uniform_color, 1, color);
+     glUniform4fv(std_text_uniform_color, 1, color);
 
     // Set std_2d_tex_attribute_position
     glEnableVertexAttribArray(std_text_attribute_position);
@@ -2315,11 +2422,11 @@ void VolumeRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * col
     glVertexAttribPointer(std_text_attribute_texpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	/* Draw all the character on the screen in one go */
-	glDrawElements(GL_TRIANGLES,  c*6,  GL_UNSIGNED_INT,  indices.data());
+    /* Draw all the character on the screen in one go */
+    glDrawElements(GL_TRIANGLES,  c*6,  GL_UNSIGNED_INT,  indices.data());
 
     glDisableVertexAttribArray(std_text_attribute_position);
-	glDisableVertexAttribArray(std_text_attribute_texpos);
+    glDisableVertexAttribArray(std_text_attribute_texpos);
     glUseProgram(0);
 }
 

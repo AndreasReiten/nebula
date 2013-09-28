@@ -1,0 +1,10 @@
+QWidget
+{
+    font: 18px "Arial";
+}
+
+QPlainTextEdit
+{
+    font: 16px "Monospace";
+}
+

@@ -136,7 +136,7 @@ void ImageRenderGLWidget::initFreetype()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
     //~ const char * fontfilename = qsrc.data();
-    const char * fontfilename = "../../../src/fonts/FreeMonoOblique.ttf";
+    const char * fontfilename = "../fonts/FreeMonoOblique.ttf";
 
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     error = FT_Init_FreeType(&ft);
@@ -423,11 +423,11 @@ void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * colo
 
     const uint8_t *p;
 
-	MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
+    MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
     MiniArray<float> texpos(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
     MiniArray<unsigned int> indices(6 * strlen(text)); // 6 indices per character
 
-	int c = 0;
+    int c = 0;
     float sx = scale*2.0/w;
     float sy = scale*2.0/h;
     float x = xy[0];
@@ -436,23 +436,23 @@ void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * colo
     x -= std::fmod(x,sx);
     y -= std::fmod(y,sy);
 
-	/* Loop through all characters */
-	//~ for(p = (const char *)text; *p; p++)
+    /* Loop through all characters */
+    //~ for(p = (const char *)text; *p; p++)
     for (p = (const uint8_t *)text; *p; p++)
     {
-		/* Calculate the vertex and texture coordinates */
-		float x2 = x + a->c[*p].bl * sx;
-		float y2 = y + a->c[*p].bt * sy;
-		float foo_w = a->c[*p].bw * sx;
-		float foo_h = a->c[*p].bh * sy;
+        /* Calculate the vertex and texture coordinates */
+        float x2 = x + a->c[*p].bl * sx;
+        float y2 = y + a->c[*p].bt * sy;
+        float foo_w = a->c[*p].bw * sx;
+        float foo_h = a->c[*p].bh * sy;
 
-		/* Advance the cursor to the start of the next character */
-		x += a->c[*p].ax * sx;
-		y += a->c[*p].ay * sy;
+        /* Advance the cursor to the start of the next character */
+        x += a->c[*p].ax * sx;
+        y += a->c[*p].ay * sy;
 
-		/* Skip glyphs that have no pixels */
-		if(!foo_w || !foo_h)
-			continue;
+        /* Skip glyphs that have no pixels */
+        if(!foo_w || !foo_h)
+            continue;
 
         position[c*8+0] = x2;
         position[c*8+1] = y2;
@@ -484,13 +484,13 @@ void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * colo
 
     glUseProgram(std_text_program);
 
-	// Set std_text_uniform_texture
+    // Set std_text_uniform_texture
     glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, a->tex);
-	glUniform1i(std_text_uniform_tex, 0);
+    glBindTexture(GL_TEXTURE_2D, a->tex);
+    glUniform1i(std_text_uniform_tex, 0);
 
     // Set std_text_uniform_color
-	 glUniform4fv(std_text_uniform_color, 1, color);
+     glUniform4fv(std_text_uniform_color, 1, color);
 
     // Set std_2d_tex_attribute_position
     glEnableVertexAttribArray(std_text_attribute_position);
@@ -506,11 +506,11 @@ void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * colo
     glVertexAttribPointer(std_text_attribute_texpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	/* Draw all the character on the screen in one go */
-	glDrawElements(GL_TRIANGLES,  c*6,  GL_UNSIGNED_INT,  indices.data());
+    /* Draw all the character on the screen in one go */
+    glDrawElements(GL_TRIANGLES,  c*6,  GL_UNSIGNED_INT,  indices.data());
 
     glDisableVertexAttribArray(std_text_attribute_position);
-	glDisableVertexAttribArray(std_text_attribute_texpos);
+    glDisableVertexAttribArray(std_text_attribute_texpos);
     glUseProgram(0);
 }
 

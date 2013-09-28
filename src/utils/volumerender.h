@@ -131,7 +131,7 @@ private:
     bool isDSViewForced;
 
     //~void setEmit();
-    void drawScaleBar();
+    size_t getScaleBar();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
     void initFreetype();
@@ -166,7 +166,7 @@ private:
     GLuint MSAA_FBO, STD_FBO, SMALL_FBO;
     GLuint std_3d_tex, std_2d_tex, msaa_tex, msaa_depth_tex, glow_tex, blend_tex, small_storage_tex, storage_tex, mini_uc_tex, msaa_intermediate_storage_tex;
     GLuint tex_coord_vbo[10], position_vbo[10], lab_reference_vbo[5], data_extent_vbo[5], data_view_extent_vbo[5], text_position_vbo, text_texpos_vbo;
-    GLuint unitcell_vbo[5], screen_vbo[5];
+    GLuint unitcell_vbo[5], screen_vbo[5], scalebar_vbo;
     GLuint sampleWeightBuf;
     GLint std_3d_attribute_position, std_3d_attribute_texpos, std_3d_uniform_transform, std_3d_uniform_color, std_3d_uniform_texture, std_3d_uniform_time, std_3d_uniform_bbox_min, std_3d_uniform_bbox_max, std_3d_uniform_u;
     GLint pp_glow_attribute_position, pp_glow_attribute_texpos, pp_glow_uniform_color, pp_glow_uniform_texture, pp_glow_uniform_time, pp_glow_uniform_pixel_size, pp_glow_uniform_orientation, pp_glow_uniform_scale, pp_glow_uniform_deviation, pp_glow_uniform_samples;

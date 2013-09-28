@@ -12,7 +12,7 @@ MainWindow::MainWindow()
 
     // Set stylesheet.
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
-    QFile styleFile( ":/src/stylesheets/gosutheme.qss" );
+    QFile styleFile( ":/src/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
     styleFile.close();
@@ -367,7 +367,7 @@ void MainWindow::initializeEmit()
     funcParamASpinBox->setValue(13.5);
     funcParamBSpinBox->setValue(10.5);
     funcParamCSpinBox->setValue(10.0);
-    funcParamDSpinBox->setValue(0.001);
+    funcParamDSpinBox->setValue(0.005);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -416,7 +416,7 @@ void MainWindow::initializeActions()
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
     saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
-	runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
+    runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
     saveAsAct = new QAction(tr("Save script &As..."), this);
     exitAct = new QAction(tr("E&xit program"), this);
     aboutAct = new QAction(tr("&About Nebula"), this);
@@ -438,7 +438,7 @@ void MainWindow::initializeActions()
     openAct->setStatusTip(tr("Open an existing file"));
     saveAct->setStatusTip(tr("Save the document to disk"));
     saveAsAct->setStatusTip(tr("Save the document under a new name"));
-	runScriptAct->setStatusTip(tr("Run the script"));
+    runScriptAct->setStatusTip(tr("Run the script"));
     exitAct->setStatusTip(tr("Exit Nebula"));
     aboutAct->setStatusTip(tr("About"));
     aboutQtAct->setStatusTip(tr("About Qt"));
@@ -590,7 +590,7 @@ void MainWindow::openUnitcellFile()
         this->gammaStar->setText(value);
 
         // Find wavelength
-        float wavelength;
+        float wavelength = 0.0;
         pos = 0;
         QRegExp tmp(wavelengthRegExp);
         pos = tmp.indexIn(contents, pos);
@@ -722,7 +722,7 @@ void MainWindow::initializeConnects()
     connect(newAct, SIGNAL(triggered()), this, SLOT(newFile()));
     connect(openAct, SIGNAL(triggered()), this, SLOT(openScript()));
     connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
-	connect(runScriptAct, SIGNAL(triggered()), this, SLOT(runReadScript()));
+    connect(runScriptAct, SIGNAL(triggered()), this, SLOT(runReadScript()));
     connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveAs()));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
@@ -816,7 +816,7 @@ void MainWindow::initializeInteractives()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
 
-	mainWidget = new QWidget(this);
+    mainWidget = new QWidget(this);
     mainLayout = new QGridLayout;
 
     /* Top Widget */
@@ -1060,21 +1060,27 @@ void MainWindow::initializeInteractives()
         graphicsLayout->setSpacing(0);
         graphicsLayout->setMargin(0);
         graphicsLayout->setContentsMargins(0,0,0,0);
-        graphicsLayout->addWidget(l3,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-        graphicsLayout->addWidget(tsfComboBox,4,2,1,1);
-        graphicsLayout->addWidget(tsfAlphaComboBox,4,3,1,1);
-        graphicsLayout->addWidget(l4,5,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-        graphicsLayout->addWidget(dataMinSpinBox,5,2,1,2);
-        graphicsLayout->addWidget(l5,6,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-        graphicsLayout->addWidget(dataMaxSpinBox,6,2,1,2);
-        graphicsLayout->addWidget(l6,7,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-        graphicsLayout->addWidget(alphaSpinBox,7,2,1,2);
-        graphicsLayout->addWidget(l7,8,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-        graphicsLayout->addWidget(brightnessSpinBox,8,2,1,2);
+        graphicsLayout->setRowStretch( 0, 3 );
+        graphicsLayout->setRowStretch( 1, 3 );
+        graphicsLayout->setRowStretch( 2, 1 );
+        graphicsLayout->setRowStretch( 3, 1 );
+        graphicsLayout->setRowStretch( 4, 3 );
+
+        graphicsLayout->addWidget(l3,0,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(tsfComboBox,0,2,1,1);
+        graphicsLayout->addWidget(tsfAlphaComboBox,0,3,1,1);
+        graphicsLayout->addWidget(l4,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(dataMinSpinBox,1,2,1,2);
+        graphicsLayout->addWidget(l5,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(dataMaxSpinBox,2,2,1,2);
+        graphicsLayout->addWidget(l6,3,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(alphaSpinBox,3,2,1,2);
+        graphicsLayout->addWidget(l7,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(brightnessSpinBox,4,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
-        //~graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        //~ graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
+//        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+//        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
@@ -1230,7 +1236,6 @@ void MainWindow::initializeInteractives()
         fileLayout->addWidget(labelD,3,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         fileLayout->addWidget(svoLevelSpinBox,3,4,1,4);
         fileLayout->addWidget(saveSVOButton,4,0,1,8);
-
         fileControlsWidget->setLayout(fileLayout);
         //~ fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
@@ -1289,7 +1294,7 @@ void MainWindow::initializeInteractives()
         functionLayout->addWidget(funcParamCSpinBox,3,2,1,2);
         functionLayout->addWidget(p3,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         functionLayout->addWidget(funcParamDSpinBox,4,2,1,2);
-
+        functionLayout->setRowStretch( 3, 500 );
         functionWidget->setLayout(functionLayout);
         //~functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
         //~ functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
@@ -1345,11 +1350,11 @@ void MainWindow::initializeInteractives()
     mainLayout->setContentsMargins(3,3,3,3);
     mainLayout->addWidget(topWidget,0,0,1,1);
     mainLayout->addWidget(tabWidget,1,0,1,1);
-	mainWidget->setLayout(mainLayout);
+    mainWidget->setLayout(mainLayout);
 
     /* Script engine */
-	rawFilesQs = engine.newVariant(file_paths);
-	engine.globalObject().setProperty("files", rawFilesQs);
+    rawFilesQs = engine.newVariant(file_paths);
+    engine.globalObject().setProperty("files", rawFilesQs);
 
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
 }
@@ -1375,27 +1380,27 @@ void MainWindow::print(QString str)
 
 void MainWindow::runReadScript()
 {
-	if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-	// Set the corresponding tab
+    // Set the corresponding tab
     tabWidget->setCurrentIndex(0);
 
-	// Evaluate the script input
+    // Evaluate the script input
     engine.evaluate("var files = [];");
-	engine.evaluate(textEdit->toPlainText());
-	if (engine.hasUncaughtException() == true)
-	{
-		// Exceptions
-		print( "\n["+QString(this->metaObject()->className())+"] Error: Uncaught exception in line " + QString::number(engine.uncaughtExceptionLineNumber()) + "\n["+QString(this->metaObject()->className())+"] " + engine.uncaughtException().toString());
-	}
-	else
-	{
-		// Store evaluated file paths in a list
-		#ifndef QT_NO_CURSOR
-			QApplication::setOverrideCursor(Qt::WaitCursor);
-		#endif
+    engine.evaluate(textEdit->toPlainText());
+    if (engine.hasUncaughtException() == true)
+    {
+        // Exceptions
+        print( "\n["+QString(this->metaObject()->className())+"] Error: Uncaught exception in line " + QString::number(engine.uncaughtExceptionLineNumber()) + "\n["+QString(this->metaObject()->className())+"] " + engine.uncaughtException().toString());
+    }
+    else
+    {
+        // Store evaluated file paths in a list
+        #ifndef QT_NO_CURSOR
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+        #endif
 
-		file_paths = engine.globalObject().property("files").toVariant().toStringList();
+        file_paths = engine.globalObject().property("files").toVariant().toStringList();
         print( "\n["+QString(this->metaObject()->className())+"] Script ran successfully and could register "+QString::number(file_paths.size())+" files...");
         int n = file_paths.removeDuplicates();
         if (n > 0) print( "\n["+QString(this->metaObject()->className())+"] Removed "+QString::number(n)+" duplicates...");
@@ -1403,22 +1408,22 @@ void MainWindow::runReadScript()
         size_t n_files = file_paths.size();
 
         for (int i = 0; i < file_paths.size(); i++)
-		{
-			if(i >= file_paths.size()) break;
+        {
+            if(i >= file_paths.size()) break;
 
             QString fileName = file_paths[i];
 
             QFileInfo curFile(fileName);
 
             if (!curFile.exists())
-			{
-				print( "\n["+QString(this->metaObject()->className())+"]  Warning: \"" + fileName + "\" - missing or no access!");
+            {
+                print( "\n["+QString(this->metaObject()->className())+"]  Warning: \"" + fileName + "\" - missing or no access!");
                 file_paths.removeAt(i);
                 i--;
             }
         }
         emit changedPaths(file_paths);
-		print("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths.size())+"  missing or no access)");
+        print("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths.size())+"  missing or no access)");
 
         if (file_paths.size() > 0)
         {
@@ -1429,10 +1434,10 @@ void MainWindow::runReadScript()
             generateSvoButton->setEnabled(false);
         }
 
-		#ifndef QT_NO_CURSOR
-			QApplication::restoreOverrideCursor();
-		#endif
-	}
+        #ifndef QT_NO_CURSOR
+            QApplication::restoreOverrideCursor();
+        #endif
+    }
 
     imageNumberSpinBox->setMaximum(file_paths.size()-1);
     imageNumberSpinBox->setMinimum(0);
