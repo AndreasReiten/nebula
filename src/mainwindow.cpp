@@ -1060,11 +1060,6 @@ void MainWindow::initializeInteractives()
         graphicsLayout->setSpacing(0);
         graphicsLayout->setMargin(0);
         graphicsLayout->setContentsMargins(0,0,0,0);
-        graphicsLayout->setRowStretch( 0, 3 );
-        graphicsLayout->setRowStretch( 1, 3 );
-        graphicsLayout->setRowStretch( 2, 1 );
-        graphicsLayout->setRowStretch( 3, 1 );
-        graphicsLayout->setRowStretch( 4, 3 );
 
         graphicsLayout->addWidget(l3,0,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(tsfComboBox,0,2,1,1);
@@ -1080,7 +1075,7 @@ void MainWindow::initializeInteractives()
 
         graphicsWidget->setLayout(graphicsLayout);
 //        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
+        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
@@ -1163,7 +1158,7 @@ void MainWindow::initializeInteractives()
 
         unitcellWidget->setLayout(unitcellLayout);
         //~unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        //~ unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
+        unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
         unitcellDockWidget->setWidget(unitcellWidget);
         viewMenu->addAction(unitcellDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
@@ -1237,7 +1232,7 @@ void MainWindow::initializeInteractives()
         fileLayout->addWidget(svoLevelSpinBox,3,4,1,4);
         fileLayout->addWidget(saveSVOButton,4,0,1,8);
         fileControlsWidget->setLayout(fileLayout);
-        //~ fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
+        fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileDockWidget->setWidget(fileControlsWidget);
@@ -1294,10 +1289,9 @@ void MainWindow::initializeInteractives()
         functionLayout->addWidget(funcParamCSpinBox,3,2,1,2);
         functionLayout->addWidget(p3,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         functionLayout->addWidget(funcParamDSpinBox,4,2,1,2);
-        functionLayout->setRowStretch( 3, 500 );
         functionWidget->setLayout(functionLayout);
-        //~functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        //~ functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
+//        functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
         functionDockWidget->setWidget(functionWidget);
         functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         viewMenu->addAction(functionDockWidget->toggleViewAction());
