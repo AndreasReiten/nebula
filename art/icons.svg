@@ -2747,14 +2747,6 @@
     </filter>
     <filter
        inkscape:collect="always"
-       id="filter6351">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="2.3386403"
-         id="feGaussianBlur6353" />
-    </filter>
-    <filter
-       inkscape:collect="always"
        id="filter6399">
       <feGaussianBlur
          inkscape:collect="always"
@@ -2804,10 +2796,10 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="1.290039"
-     inkscape:cx="289.06464"
-     inkscape:cy="286.42175"
+     inkscape:cx="-701.82532"
+     inkscape:cy="-477.47601"
      inkscape:window-x="0"
-     inkscape:window-y="36"
+     inkscape:window-y="35"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg2"
      inkscape:snap-bbox="true"
@@ -2827,7 +2819,7 @@
        snapvisiblegridlinesonly="true" />
   </sodipodi:namedview>
   <rect
-     style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+     style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-opacity:1;stroke-width:0.1;stroke-miterlimit:4;stroke-dasharray:none"
      id="rect5099"
      width="1200"
      height="1151.5625"
@@ -7093,5 +7085,210 @@
        id="path6610-6-5-9-3"
        d="m 338.08691,-206.22952 22.43186,-22.43185 49.35007,0 22.43186,22.43185 0,49.35008 -22.43186,22.43187 -49.35007,0 -22.43186,-22.43187 z"
        style="opacity:0.48201438;fill:#000000;fill-opacity:0;stroke:url(#linearGradient6450);stroke-width:1.79499996;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter6437)" />
+  </g>
+  <path
+     style="fill:#1e1e1e;fill-opacity:1;stroke:#ffffff;stroke-width:8.42000008;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -469.74178,461.08259 0,130.65812 120.58,0 0,-95.81596 -35.16917,-34.84216 z"
+     id="path3889-5-3"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <rect
+     style="fill:#1e1e1e;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:6;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4682-8"
+     width="85.626213"
+     height="44.194176"
+     x="-452.26489"
+     y="530.91168"
+     ry="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -437.73303,461.76321 0,35 50,0 0,-35"
+     id="path4687-8"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cccc"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:1.15269279px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m -412.65668,459.83956 0,26.8473 14.8473,0 0,-26.8473"
+     id="path4689-4"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m -437.73303,496.76321 -20,0 0,-35"
+     id="path4691-1"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;fill-opacity:1;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -442.73303,541.76321 50,0"
+     id="path4693-9"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;fill-opacity:1;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -442.73303,551.76321 35,0"
+     id="path4695-7"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;fill-opacity:1;stroke:#0096ff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -442.73303,561.76321 60,0"
+     id="path4697-9"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/riv/art/save.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <rect
+     style="fill:#1e1e1e;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:8.38521004000000048;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     id="rect4682-8-9"
+     width="131.61482"
+     height="131.61473"
+     x="-720.48651"
+     y="454.54831"
+     ry="0"
+     inkscape:export-filename="/home/natt/coding/nebula/art/scalebar.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -654.4543,465.35562 0,110"
+     id="path4854"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/nebula/art/scalebar.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -599.67913,520.35562 -110,0"
+     id="path4854-4"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/nebula/art/scalebar.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:none;stroke:#ffffff;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -627.57203,493.31282 -54.14661,54.14661"
+     id="path4854-4-0"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/nebula/art/scalebar.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <path
+     style="fill:#0096ff;fill-opacity:1;stroke:#0096ff;stroke-width:5.32324553;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+     d="m -634.20974,552.12105 26.30417,0"
+     id="path4695-7-4"
+     inkscape:connector-curvature="0"
+     inkscape:export-filename="/home/natt/coding/nebula/art/scalebar.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792" />
+  <g
+     id="g5042"
+     transform="translate(-64.67913,-1.6443846)"
+     inkscape:export-filename="/home/natt/coding/nebula/art/scalebar.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792">
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915"
+       d="m -597.17292,562 14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-4"
+       d="m -597.25437,482 14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8"
+       d="m -629.95927,514.78635 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-4-5"
+       d="m -549.95927,514.7049 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8-6"
+       d="m -610,534.74563 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-4-5-8"
+       d="m -570,494.74563 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8-6-9"
+       d="m -602.74563,542 -14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8-6-9-7"
+       d="m -562.74563,502 -14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+  </g>
+  <g
+     transform="matrix(0.5449387,0,0,0.5449387,-332.96266,235.89762)"
+     id="g5042-9"
+     inkscape:export-filename="/home/natt/coding/nebula/art/scalebar.png"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792">
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-2"
+       d="m -597.17292,562 14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-4-3"
+       d="m -597.25437,482 14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8-68"
+       d="m -629.95927,514.78635 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-4-5-1"
+       d="m -549.95927,514.7049 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8-6-4"
+       d="m -610,534.74563 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-4-5-8-6"
+       d="m -570,494.74563 0,14.50874"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8-6-9-5"
+       d="m -602.74563,542 -14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4915-8-6-9-7-4"
+       d="m -562.74563,502 -14.50874,0"
+       style="fill:none;stroke:#ffffff;stroke-width:2.21799994;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
   </g>
 </svg>

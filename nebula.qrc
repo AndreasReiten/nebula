@@ -48,5 +48,6 @@
         <file>art/log.png</file>
         <file>art/projection.png</file>
         <file>src/stylesheets/plain.qss</file>
+        <file>art/scalebar.png</file>
     </qresource>
 </RCC>

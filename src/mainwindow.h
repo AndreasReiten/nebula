@@ -160,7 +160,7 @@ private:
     void initializeEmit();
     //~int initDeviceCL();
     //~int init_cl_base();
-	//~void setFileTree();
+    //~void setFileTree();
     void readSettings();
     void writeSettings();
     bool maybeSave();
@@ -172,8 +172,8 @@ private:
     //~QGLFormat gl_context_format;
 
     QString strippedName(const QString &fullFileName);
-	QString scriptHelp;
-	QString curFile;
+    QString scriptHelp;
+    QString curFile;
     QString info;
 
     QLineEdit * hklEdit;
@@ -225,6 +225,7 @@ private:
 
     QTabWidget *tabWidget;
 
+    QAction *scalebarAct;
     QPushButton *allInOneButton;
     QPushButton *imageForwardButton;
     QPushButton *imageFastForwardButton;
@@ -258,7 +259,7 @@ private:
     QString scriptDir;
 
     QPlainTextEdit *textEdit;
-	QPlainTextEdit *errorTextEdit;
+    QPlainTextEdit *errorTextEdit;
     QProgressBar *progressBar;
 
     QPushButton *readScriptButton;
@@ -279,10 +280,10 @@ private:
     QMenuBar * mainMenu;
     QMenu *reduceMenu;
     QMenu *svoMenu;
-	QMenu *scriptMenu;
+    QMenu *scriptMenu;
     QMenu *viewMenu;
     QMenu *helpMenu;
-	QToolBar *scriptToolBar;
+    QToolBar *scriptToolBar;
     QToolBar *viewToolBar;
 
     QAction *saveSVOAct;
@@ -295,7 +296,7 @@ private:
     QAction *newAct;
     QAction *openAct;
     QAction *saveAct;
-	QAction *runScriptAct;
+    QAction *runScriptAct;
     QAction *saveAsAct;
     QAction *exitAct;
     QAction *aboutAct;
@@ -304,15 +305,15 @@ private:
     QAction *aboutOpenGLAct;
     //~QAction *aboutHDF5Act;
 
-	QScriptValue rawFilesValue;
-	QScriptEngine engine;
-	QScriptValue rawFilesQs;
+    QScriptValue rawFilesValue;
+    QScriptEngine engine;
+    QScriptValue rawFilesQs;
 
     // Utility
     int verbosity;
 
     // Main resources
-	QStringList file_paths;
+    QStringList file_paths;
     QList<PilatusFile> files;
     QList<PilatusFile> background_files;
     MiniArray<float> reduced_pixels;

@@ -431,7 +431,7 @@ void MainWindow::initializeActions()
     backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle Background Color"), this);
     projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle Projection"), this);
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take Screenshot"), this);
-
+    scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle Scalebars"), this);
 
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
@@ -691,6 +691,7 @@ void MainWindow::initializeConnects()
     connect(dataStructureAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleDataStructure()));
     connect(backgroundAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleBackground()));
     connect(screenshotAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(takeScreenshot()));
+    connect(scalebarAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleScalebar()));
     connect(logAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleLog()));
     connect(projectionAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(togglePerspective()));
     connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWidget, SLOT(setTsf(int)));
@@ -984,6 +985,7 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(backgroundAct);
         viewToolBar->addAction(logAct);
         viewToolBar->addAction(dataStructureAct);
+        viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(screenshotAct);
 
         // Layout

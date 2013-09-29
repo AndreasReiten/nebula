@@ -74,7 +74,7 @@ public:
     void setSvo(SparseVoxelOcttree * svo);
 
 public slots:
-
+    void toggleScalebar();
     //~void open();
     void takeScreenshot();
     void setResolutionf(double value);
@@ -225,7 +225,6 @@ private:
     Matrix<float> NORM_SCALING;
     Matrix<float> DATA_VIEW_EXTENT;
     Matrix<float> DATA_VIEW_MATRIX;
-    Matrix<float> CELL_VIEW_MATRIX;
     Matrix<float> MINI_CELL_VIEW_MATRIX;
     Matrix<float> PROJECTION_SCALING;
     Matrix<float> U;
@@ -262,6 +261,7 @@ private:
     bool isRefreshRequired;
     bool isPerspectiveRequired;
     bool isUnitcellValid;
+    bool isScalebarActive;
 
     int isLog;
     int callTimeMax;

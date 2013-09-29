@@ -79,6 +79,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
 
     isUnitcellValid = false;
     isFunctionActive = true;
+    isScalebarActive = true;
     this->lastPos_x = 0.0;
     this->lastPos_y = 0.0;
     this->zeta = 0.0;
@@ -135,7 +136,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
 
     this->DATA_VIEW_MATRIX.setIdentity(4);
     this->BBOX_VIEW_MATRIX.setIdentity(4);
-    this->CELL_VIEW_MATRIX.setIdentity(4);
+    this->DATA_VIEW_MATRIX.setIdentity(4);
     this->I.setIdentity(4);
 
     this->CTC_MATRIX.setN(N);
@@ -367,7 +368,7 @@ size_t VolumeRenderGLWidget::getScaleBar()
                             Matrix<float> xy(2,1);
                             xy[0] = 0.5;
                             xy[1] = -0.5;
-                            std_text_draw(QString("x "+QString::number(tick_interdistance * 0.1, 'e', 0)).toStdString().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+                            std_text_draw(QString("x "+QString::number(tick_interdistance * 10.0, 'e', 0)).toStdString().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
                             isMultiplierDrawn = true;
                         }
                     }
@@ -473,28 +474,31 @@ void VolumeRenderGLWidget::initFreetype()
     FT_Face face;
     FT_Error error;
 
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
     //~ const char * fontfilename = qsrc.data();
-    const char * fontfilename = "../fonts/FreeMonoOblique.ttf";
+    const char * fontfilename = "../fonts/FreeMono.ttf";
 
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     error = FT_Init_FreeType(&ft);
     if(error)
     {
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
         if (verbosity == 1) writeLog("Could not init freetype library");
     }
+
     /* Load a font */
     if(FT_New_Face(ft, fontfilename, 0, &face))
     {
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
         if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
     }
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
-    fontSmall = new Atlas(face, 12);
+    fontSmall = new Atlas(face, 14);
     fontMedium = new Atlas(face, 24);
     fontLarge = new Atlas(face, 48);
+}
+
+void VolumeRenderGLWidget::toggleScalebar()
+{
+    isScalebarActive = !isScalebarActive;
 }
 
 //void VolumeRenderGLWidget::setResolutioni(int value)
@@ -1208,7 +1212,7 @@ void VolumeRenderGLWidget::paintGL()
         color[3] = 0.4;
 
         // Draw scalebars
-        if (1)
+        if (isScalebarActive)
         {
             this->scalebar_coord_count = getScaleBar();
 
@@ -1257,7 +1261,7 @@ void VolumeRenderGLWidget::paintGL()
                 if (color[3] < 0.0) color[3] = 0.0;
             }
 
-            std_3d_color_draw(hkl_indices.data(), hkl_indices.size(), color.data(), &unitcell_vbo[0] , CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(hkl_indices.data(), hkl_indices.size(), color.data(), &unitcell_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
         }
 
         // Draw bounding boxes
@@ -1270,13 +1274,11 @@ void VolumeRenderGLWidget::paintGL()
         if (!isFunctionActive)
         {
             std_3d_color_draw(elements, 24, color.data(), &data_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+        }
+        if (!isScalebarActive)
+        {
             std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
         }
-        else
-        {
-            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , (DATA_VIEW_MATRIX).getColMajor().data(),  bbox_min.data(), bbox_max.data() );
-        }
-
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
@@ -1414,7 +1416,7 @@ void VolumeRenderGLWidget::paintGL()
                         std::stringstream ss;
                         ss << hkl_text_index[hkl[i]*3+0] << hkl_text_index[hkl[i]*3+1] << hkl_text_index[hkl[i]*3+2];
 
-                        getScreenPosition(xy.data(), hkl_text_pos.data() + hkl[i]*3 , CELL_VIEW_MATRIX.data());
+                        getScreenPosition(xy.data(), hkl_text_pos.data() + hkl[i]*3 , DATA_VIEW_MATRIX.data());
                         std_text_draw(ss.str().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
                     }
                 }
@@ -1639,7 +1641,7 @@ void VolumeRenderGLWidget::setViewMatrix()
     DATA_VIEW_MATRIX = CTC_MATRIX * BBOX_TRANSLATION * NORM_SCALING * DATA_SCALING * AUTO_ROTATION * ROTATION * DATA_TRANSLATION;
     SCALEBAR_MATRIX = CTC_MATRIX * BBOX_TRANSLATION * NORM_SCALING * DATA_SCALING * AUTO_ROTATION *  SCALEBAR_ROTATION * DATA_TRANSLATION;
 
-    CELL_VIEW_MATRIX = DATA_VIEW_MATRIX*I;
+    DATA_VIEW_MATRIX = DATA_VIEW_MATRIX*I;
 
 
     CameraToClipMatrix<float> SMALL_CTC_MATRIX;
