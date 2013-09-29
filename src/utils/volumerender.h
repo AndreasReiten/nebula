@@ -78,7 +78,7 @@ public slots:
     //~void open();
     void takeScreenshot();
     void setResolutionf(double value);
-    void setResolutioni(int value);
+//    void setResolutioni(int value);
     void togglePerspective();
     void toggleBackground();
     //~ void toggleFastMove(bool value);
@@ -135,7 +135,7 @@ private:
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
     void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
     void initFreetype();
-    void setMinLevel(float level);
+    void setConeWidthMultiplier(float level);
     int getUnitcellVBO(GLuint * xyz_coords, int * hkl_low, int * hkl_high, float * a, float * b, float * c);
     void getUnitcellBasis(float * buf, int * hkl_offset, float * a, float * b, float * c);
     void setProjection(double F, double N, double fov, bool isPerspectiveRequired);
@@ -150,7 +150,7 @@ private:
     void setTsfParameters();
     void setMiscArrays();
     void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
-    void std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * M1, float * M2, float * bbox_min, float * bbox_max );
+    void std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * transform, float * bbox_min, float * bbox_max );
     void setTsfTexture(TsfMatrix<double> * tsf);
     void autoRotate(int time, int threshold);
     void initializeProgramsGL();
@@ -193,15 +193,15 @@ private:
     int pp_samples;
     float pp_deviation;
     float pp_scale;
+    size_t scalebar_coord_count;
 
     unsigned int levels;
     unsigned int brick_pool_power;
     unsigned int brick_inner_dimension;
     unsigned int brick_outer_dimension;
 
-    RotationMatrix<float> X_ROTATION;
-    RotationMatrix<float> Y_ROTATION;
-    RotationMatrix<float> Z_ROTATION;
+    RotationMatrix<float> SCALEBAR_MATRIX;
+    RotationMatrix<float> SCALEBAR_ROTATION;
     RotationMatrix<float> ROTATION;
     RotationMatrix<float> ROLL_ROTATION;
     RotationMatrix<float> AUTO_ROTATION;

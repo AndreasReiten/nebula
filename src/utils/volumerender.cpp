@@ -21,6 +21,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     pp_samples = 5;
     pp_deviation = 2;
     pp_scale = 1;
+    scalebar_coord_count = 0;
 
     /* colors */
     float c_white[4] = {1,1,1,1};
@@ -82,8 +83,6 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     this->lastPos_y = 0.0;
     this->zeta = 0.0;
     this->eta = 0.0;
-    this->X_rotation = 0.0;
-    this->Y_rotation = 0.0;
     this->WIDTH = 32;
     this->HEIGHT = 32;
     this->SMALL_WIDTH = 32;
@@ -128,6 +127,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     BBOX_SCALING[5] = 0.3;
     BBOX_SCALING[10] = 0.3;
 
+    this->SCALEBAR_ROTATION.setIdentity (4);
     this->PROJECTION_SCALING.setIdentity(4);
     this->DATA_TRANSLATION.setIdentity(4);
     this->BBOX_TRANSLATION.setIdentity(4);
@@ -264,14 +264,15 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
 size_t VolumeRenderGLWidget::getScaleBar()
 {
     // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
-    float length = DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0];
+    double length = DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0];
 
-    float tick_interdistance_min = 0.01*length; // % of length
+    double tick_interdistance_min = 0.005*length; // % of length
 
     int tick_levels = 0;
-    int tick_levels_max = 3;
+    int tick_levels_max = 2;
 
-    Matrix<float> coords(5000,3);
+    bool isMultiplierDrawn =  false;
+    Matrix<float> coords(20000,3);
 
     size_t coord_counter = 0;
 
@@ -279,19 +280,17 @@ size_t VolumeRenderGLWidget::getScaleBar()
     for (int i = 5; i >= -5; i--)
     {
 //        float tick_interdistance = std::pow((double) 0.1, (double) i);
-        float tick_interdistance = std::pow((double) 10.0, (double) -i);
+        double tick_interdistance = std::pow((double) 10.0, (double) -i);
 
         if (( tick_interdistance >= tick_interdistance_min) && (tick_levels < tick_levels_max))
         {
-            tick_levels++;
-
             int tick_number = ((length*0.5)/ tick_interdistance);
 
             //~std::cout << tick_number << " ticks of length: " << tick_interdistance << std::endl;
-            float x_start = DATA_VIEW_EXTENT[0] + length * 0.5;
-            float y_start = DATA_VIEW_EXTENT[2] + length * 0.5;
-            float z_start = DATA_VIEW_EXTENT[4] + length * 0.5;
-            float tick_width = tick_interdistance*0.2;
+            double x_start = DATA_VIEW_EXTENT[0] + length * 0.5;
+            double y_start = DATA_VIEW_EXTENT[2] + length * 0.5;
+            double z_start = DATA_VIEW_EXTENT[4] + length * 0.5;
+            double tick_width = tick_interdistance*0.2;
 
             // Each tick consists of 4 points to form a cross
             for (int j = -tick_number; j <= tick_number; j++)
@@ -349,9 +348,33 @@ size_t VolumeRenderGLWidget::getScaleBar()
                     coords[(coord_counter+11)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
                     coords[(coord_counter+11)*3+2] = z_start + j * tick_interdistance;
 
+
+                    // Text
+                    if(tick_levels == tick_levels_max - 1)
+                    {
+                        Matrix<float> xy(2,1);
+                        getScreenPosition(xy.data(), coords.data() + (coord_counter+0)*3, SCALEBAR_MATRIX.data());
+                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+
+                        getScreenPosition(xy.data(), coords.data() + (coord_counter+4)*3, SCALEBAR_MATRIX.data());
+                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+
+                        getScreenPosition(xy.data(), coords.data() + (coord_counter+8)*3, SCALEBAR_MATRIX.data());
+                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+
+                        if(!isMultiplierDrawn)
+                        {
+                            Matrix<float> xy(2,1);
+                            xy[0] = 0.5;
+                            xy[1] = -0.5;
+                            std_text_draw(QString("x "+QString::number(tick_interdistance * 0.1, 'e', 0)).toStdString().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+                            isMultiplierDrawn = true;
+                        }
+                    }
                     coord_counter += 12;
                 }
             }
+            tick_levels++;
         }
     }
 
@@ -474,13 +497,13 @@ void VolumeRenderGLWidget::initFreetype()
     fontLarge = new Atlas(face, 48);
 }
 
-void VolumeRenderGLWidget::setResolutioni(int value)
-{
-    if (value > 0)
-    {
-        setResolutionf((double)value);
-    }
-}
+//void VolumeRenderGLWidget::setResolutioni(int value)
+//{
+//    if (value > 0)
+//    {
+//        setResolutionf((double)value);
+//    }
+//}
 
 void VolumeRenderGLWidget::togglePerspective()
 {
@@ -575,6 +598,7 @@ void VolumeRenderGLWidget::resetViewMatrix()
 {
     DATA_SCALING.setIdentity(4);
     ROTATION.setIdentity(4);
+    SCALEBAR_ROTATION.setIdentity (4);
     DATA_TRANSLATION.setIdentity(4);
 }
 
@@ -673,6 +697,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
     isOcttreeBricksInitialized = true;
     isBrickPoolInitialized = true;
 
+//    this->scalebar_coord_count = getScaleBar();
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 
@@ -745,7 +770,7 @@ void VolumeRenderGLWidget::initializeGL()
     this->setDataExtent();
     this->setTsfParameters();
     this->setMiscArrays();
-    //~this->setEmit();
+//    this->scalebar_coord_count = getScaleBar();
 
     isGLIntitialized = true;
 }
@@ -759,10 +784,9 @@ void VolumeRenderGLWidget::setProjection(double F, double N, double fov, bool is
     CTC_MATRIX.setProjection(isPerspectiveRequired);
 }
 
-void VolumeRenderGLWidget::setMinLevel(float level)
+void VolumeRenderGLWidget::setConeWidthMultiplier(float value)
 {
-    //~ std::cout << "Setting value " << level << std::endl;
-    MISC_FLOAT_K_RAYTRACE[4] = level;
+    MISC_FLOAT_K_RAYTRACE[4] = value;
     this->setMiscArrays();
 }
 
@@ -1186,7 +1210,7 @@ void VolumeRenderGLWidget::paintGL()
         // Draw scalebars
         if (1)
         {
-            size_t coord_count = getScaleBar();
+            this->scalebar_coord_count = getScaleBar();
 
             glUseProgram(std_3d_program);
             glEnableVertexAttribArray(std_3d_attribute_position);
@@ -1197,8 +1221,8 @@ void VolumeRenderGLWidget::paintGL()
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             // Set std_3d_uniform_transform
-            glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, CELL_VIEW_MATRIX.getColMajor().data());
-
+            glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, SCALEBAR_MATRIX.getColMajor().data());
+//CTC_MATRIX * BBOX_TRANSLATION * NORM_SCALING * DATA_SCALING * AUTO_ROTATION * ROTATION * DATA_TRANSLATION
             // Set std_3d_uniform_u
             glUniformMatrix4fv(std_3d_uniform_u, 1, GL_FALSE, I.getColMajor().data());
 
@@ -1210,7 +1234,7 @@ void VolumeRenderGLWidget::paintGL()
             glUniform3fv(std_3d_uniform_bbox_max, 1, bbox_max.data());
 
             // Draw verices
-            glDrawArrays(GL_LINES,  0, coord_count);
+            glDrawArrays(GL_LINES,  0, scalebar_coord_count);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             glDisableVertexAttribArray(std_3d_attribute_position);
@@ -1233,7 +1257,7 @@ void VolumeRenderGLWidget::paintGL()
                 if (color[3] < 0.0) color[3] = 0.0;
             }
 
-            std_3d_color_draw(hkl_indices.data(), hkl_indices.size(), color.data(), &unitcell_vbo[0] , CELL_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(hkl_indices.data(), hkl_indices.size(), color.data(), &unitcell_vbo[0] , CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
         }
 
         // Draw bounding boxes
@@ -1245,12 +1269,12 @@ void VolumeRenderGLWidget::paintGL()
 
         if (!isFunctionActive)
         {
-            std_3d_color_draw(elements, 24, color.data(), &data_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
-            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(elements, 24, color.data(), &data_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
         }
         else
         {
-            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , (DATA_VIEW_MATRIX).getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , (DATA_VIEW_MATRIX).getColMajor().data(),  bbox_min.data(), bbox_max.data() );
         }
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -1294,11 +1318,11 @@ void VolumeRenderGLWidget::paintGL()
             getUnitcellVBO(&unitcell_vbo[1], hkl_low, hkl_high, (this->a*(0.4/len_max)).data(), (this->b*(0.4/len_max)).data(), (this->c*(0.4/len_max)).data());
 
             /* Reciprocal unitcell vectors*/
-            std_3d_color_draw(hkl_indices.data(), 2, red.data(), &unitcell_vbo[1]  , MINI_CELL_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(hkl_indices.data(), 2, red.data(), &unitcell_vbo[1]  , MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
 
-            std_3d_color_draw(hkl_indices.data()+2, 2, green.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(hkl_indices.data()+2, 2, green.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
 
-            std_3d_color_draw(hkl_indices.data()+4, 2, blue.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(), I.getColMajor().data(), bbox_min.data(), bbox_max.data() );
+            std_3d_color_draw(hkl_indices.data()+4, 2, blue.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
 
             /* text for h k l*/
             Matrix<float> xy(2,1);
@@ -1465,7 +1489,7 @@ void VolumeRenderGLWidget::setHklFocus(const QString str)
 
 }
 
-void VolumeRenderGLWidget::std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * M1, float * M2, float * bbox_min, float * bbox_max )
+void VolumeRenderGLWidget::std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * transform, float * bbox_min, float * bbox_max )
 {
         glUseProgram(std_3d_program);
         glEnableVertexAttribArray(std_3d_attribute_position);
@@ -1476,10 +1500,7 @@ void VolumeRenderGLWidget::std_3d_color_draw(GLuint * elements, int num_elements
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         // Set std_3d_uniform_transform
-        glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, M1);
-
-        // Set std_3d_uniform_u
-        glUniformMatrix4fv(std_3d_uniform_u, 1, GL_FALSE, M2);
+        glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, transform);
 
         // Set color
         glUniform4fv(std_3d_uniform_color, 1, color);
@@ -1616,6 +1637,7 @@ void VolumeRenderGLWidget::setViewMatrix()
     NORM_SCALING[10] = BBOX_SCALING[10] * PROJECTION_SCALING[10] * (BBOX_EXTENT[5] - BBOX_EXTENT[4]) / (DATA_EXTENT[5] - DATA_EXTENT[4]);
 
     DATA_VIEW_MATRIX = CTC_MATRIX * BBOX_TRANSLATION * NORM_SCALING * DATA_SCALING * AUTO_ROTATION * ROTATION * DATA_TRANSLATION;
+    SCALEBAR_MATRIX = CTC_MATRIX * BBOX_TRANSLATION * NORM_SCALING * DATA_SCALING * AUTO_ROTATION *  SCALEBAR_ROTATION * DATA_TRANSLATION;
 
     CELL_VIEW_MATRIX = DATA_VIEW_MATRIX*I;
 
@@ -1669,8 +1691,7 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
 {
     rotationTimer->restart();
     float move_scaling = 1.0;
-    if(event->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
-    else if(event->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
+    if(event->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
 
 
     if ((event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton))
@@ -1685,7 +1706,13 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
 
         ROLL_ROTATION.setArbRotation(-0.5*pi, eta, roll);
 
-        ROTATION = ROLL_ROTATION * ROTATION;
+        if(event->modifiers() & Qt::ShiftModifier) SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+        else
+        {
+            ROTATION = ROLL_ROTATION * ROTATION;
+            SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+        }
+
         this->timerLastAction->start();
         this->isRefreshRequired = true;
     }
@@ -1701,7 +1728,13 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
 
         ROLL_ROTATION.setArbRotation(0, 0, roll);
 
-        ROTATION = ROLL_ROTATION * ROTATION;
+        if(event->modifiers() & Qt::ShiftModifier) SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+        else
+        {
+            ROTATION = ROLL_ROTATION * ROTATION;
+            SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+        }
+
         this->timerLastAction->start();
         this->isRefreshRequired = true;
     }
@@ -1721,6 +1754,9 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
         DATA_TRANSLATION[7] = dy;
 
         DATA_TRANSLATION = ( ROTATION.getInverse() * DATA_TRANSLATION * ROTATION) * DATA_TRANSLATION_PREV;
+
+        this->DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
+//        this->scalebar_coord_count = getScaleBar();
         this->timerLastAction->start();
         this->isRefreshRequired = true;
     }
@@ -1737,13 +1773,12 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
         DATA_TRANSLATION[11] = dz;
 
         DATA_TRANSLATION = ( ROTATION.getInverse() * DATA_TRANSLATION * ROTATION) * DATA_TRANSLATION_PREV;
+
+        this->DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
+//        this->scalebar_coord_count = getScaleBar();
         this->timerLastAction->start();
         this->isRefreshRequired = true;
     }
-
-
-
-    DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
     lastPos_x = event->x();
     lastPos_y = event->y();
 }
@@ -1813,7 +1848,7 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
             //~break;
         //~case (Qt::Key_F12):
             //~MISC_FLOAT_K_RAYTRACE[5] += sign_modifier*0.1;
-            //~this->setMinLevel(MISC_FLOAT_K_RAYTRACE[5]);
+            //~this->setConeWidthMultiplier(MISC_FLOAT_K_RAYTRACE[5]);
             //~std::cout << "MISC_FLOAT_K_RAYTRACE[5] " << MISC_FLOAT_K_RAYTRACE[5] << std::endl;
             //~break;
         //~case (Qt::Key_Escape):
@@ -1861,10 +1896,12 @@ void VolumeRenderGLWidget::wheelEvent(QWheelEvent *event)
             BBOX_SCALING[0] += BBOX_SCALING[0]*delta;
             BBOX_SCALING[5] += BBOX_SCALING[5]*delta;
             BBOX_SCALING[10] += BBOX_SCALING[10]*delta;
+
             this->timerLastAction->start();
             this->isRefreshRequired = true;
         }
     }
+//    this->scalebar_coord_count = getScaleBar();
     rotationTimer->restart();
 }
 
