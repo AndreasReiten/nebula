@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));
 
-	app.setOrganizationName("Norwegian University of Science and Technology");
+    app.setOrganizationName("Norwegian University of Science and Technology");
     app.setApplicationName("Nebula");
 
     MainWindow window;

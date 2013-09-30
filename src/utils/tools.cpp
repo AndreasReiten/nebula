@@ -22,12 +22,12 @@ void writeToLogAndPrint(QString text, QString file, bool append)
     QString dateTimeString = QString("["+dateTime.toString("hh:mm:ss")+"] ");
 
     std::ofstream myfile (file.toStdString().c_str(), std::ios::out | ((append == true) ? std::ios::app : std::ios::trunc));
-	if (myfile.is_open())
-	{
-		myfile << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
+    if (myfile.is_open())
+    {
+        myfile << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
         std::cout << "[Log]"<< dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
-	}
-	else std::cout << "Unable to open log file" << std::endl;
+    }
+    else std::cout << "Unable to open log file" << std::endl;
 }
 
 const char * cl_error_cstring(cl_int error)
@@ -166,12 +166,34 @@ void setVbo(GLuint * vbo, float * buf, size_t length)
 
 QByteArray open_resource(const char * path)
 {
+//    std::cout << "OPENING RESOURCE: " << path << std::endl;
+
     QFile file( path );
     file.open( QFile::ReadOnly );
     QString qsrc(file.readAll());
     file.close();
 
+//    std::cout << qsrc.toStdString().c_str() << std::endl;
     QByteArray ba = qsrc.toUtf8();
+
+    return ba;
+}
+
+QByteArray openFile(const char * path)
+{
+    std::ifstream in(path, std::ios::in | std::ios::binary);
+    std::string contents;
+
+    if (in)
+    {
+        in.seekg(0, std::ios::end);
+        contents.resize(in.tellg());
+        in.seekg(0, std::ios::beg);
+        in.read(&contents[0], contents.size());
+        in.close();
+    }
+
+    QByteArray ba = QString(contents.c_str()).toUtf8();
 
     return ba;
 }

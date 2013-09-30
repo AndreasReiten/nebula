@@ -1,12 +1,15 @@
 #ifndef GLCLINIT_H
 #define GLCLINIT_H
 
+#include <QtGlobal>
+
 /* Useful C++ libs */
 #include <iostream>
 #include <sstream>
 
+
 /* GL and CL*/
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
@@ -14,18 +17,19 @@
 #include <CL/cl_gl.h>
 
 /* QT */
-#include <QMouseEvent>
 #include <QGLWidget>
+#include <QMouseEvent>
 
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #include <windows.h>
-#endif
-#ifdef __linux__
+#elif defined Q_OS_LINUX
     #include <GL/glx.h>
 #endif
 
 #include "miniarray.h"
 #include "tools.h"
+
+
 
 class ContextGLWidget : public QGLWidget
 {

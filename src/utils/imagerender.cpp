@@ -5,7 +5,7 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
 {
     verbosity = 1;
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
     isGLIntitialized = false;
     isAlphaImgInitialized = false;
     isBetaImgInitialized = false;
@@ -54,7 +54,7 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
     //~timer->start(1000.0/FPS_MAX);
     //~connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
-    this->glInit();
+//    this->glInit();
 }
 
 void ImageRenderGLWidget::setImageWidth(int value)
@@ -133,12 +133,12 @@ void ImageRenderGLWidget::initFreetype()
     FT_Face face;
     FT_Error error;
 
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
     //~ const char * fontfilename = qsrc.data();
     const char * fontfilename = "../fonts/FreeMonoOblique.ttf";
 
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     error = FT_Init_FreeType(&ft);
     if(error)
     {
@@ -151,8 +151,8 @@ void ImageRenderGLWidget::initFreetype()
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"][!] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
         if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
     }
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
-    fontSmall = new Atlas(face, 12);
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
+    fontSmall = new Atlas(face, 16);
     fontMedium = new Atlas(face, 24);
     fontLarge = new Atlas(face, 48);
 }
@@ -200,7 +200,8 @@ void ImageRenderGLWidget::initializeGL()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-    if (!isGLIntitialized){
+    if (!isGLIntitialized)
+    {
         if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
 
         /* Initialize and set the other stuff */
@@ -235,15 +236,15 @@ void ImageRenderGLWidget::paintGL()
     xy[0] = -1.0;
     xy[1] = -1.0;
 
-    std_text_draw("Raw Data", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+    std_text_draw("Raw Data", fontSmall, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
 
     float IMAGE_WIDTH = 2*((float)image_w/(float)image_h)*((float)HEIGHT/(float)WIDTH);
     xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
-    std_text_draw("BG Subtracted, Threshold One", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+    std_text_draw("BG Subtracted, Threshold One", fontSmall, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
 
     xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
-    std_text_draw("LP Correction, Threshold Two", fontMedium, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
+    std_text_draw("LP Correction, Threshold Two", fontSmall, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
 }
 
 

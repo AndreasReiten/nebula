@@ -41,11 +41,14 @@ cl_context * ContextGLWidget::getCLContext()
 void ContextGLWidget::initializeGL()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-    if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
-    if (!this->initDeviceCL(1)) std::cout << "Error initializing OpenCL Device" << std::endl;
-    if (!this->initResourcesCL()) std::cout << "Error initializing OpenCL" << std::endl;
+    if (!isGLIntitialized)
+    {
+        if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
+        if (!this->initDeviceCL(1)) std::cout << "Error initializing OpenCL Device" << std::endl;
+        if (!this->initResourcesCL()) std::cout << "Error initializing OpenCL" << std::endl;
 
-    isGLIntitialized = true;
+        isGLIntitialized = true;
+    }
 }
 
 
@@ -195,20 +198,19 @@ int ContextGLWidget::initResourcesCL()
     }
 
     // Context with GL interopability
-    #ifdef __linux__
-	cl_context_properties properties[] = {
+    #ifdef Q_OS_LINUX
+    cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) glXGetCurrentContext(),
         CL_GLX_DISPLAY_KHR, (cl_context_properties) glXGetCurrentDisplay(),
         CL_CONTEXT_PLATFORM, (cl_context_properties) device->platform_id,
         0};
-	#endif
-	#ifdef _WIN32
-	cl_context_properties properties[] = {
+    #elif defined Q_OS_WIN
+    cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(),
         CL_WGL_HDC_KHR, (cl_context_properties) wglGetCurrentDC(),
         CL_CONTEXT_PLATFORM, (cl_context_properties) device->platform_id,
         0};
-	#endif
+    #endif
 
 
     *context = clCreateContext(properties, 1, &device->device_id, NULL, NULL, &err);

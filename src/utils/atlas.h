@@ -9,17 +9,19 @@
 #include <iomanip>
 #include <ctime>
 
+#include <QtGlobal>
+
 /* GL and CL */
-#ifdef _WIN32
-#define GLEW_STATIC
+#ifdef Q_OS_WIN
+    #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
 
 /* Freetype */
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #include <ft2build.h>
 #endif
-#ifdef __linux__
+#ifdef Q_OS_LINUX
     #include <ft2build.h>
 #endif
 

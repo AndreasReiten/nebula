@@ -1,12 +1,8 @@
 #ifndef MINIARRAY_H
 #define MINIARRAY_H
 
-#ifdef _WIN32
-
-#endif
 
 #include <QVector>
-#include <CL/opencl.h>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
@@ -256,12 +252,13 @@ void MiniArray<T>::resize(size_t new_length)
 template <class T>
 void MiniArray<T>::reserve(size_t length)
 {
-    //~ std::cout << "reserve - length: " << this->length << std::endl;
-    //~ std::cout << "reserve - clear: " << length << std::endl;
+    std::cout << "reserve - length: " << this->length << std::endl;
+    std::cout << "reserve - clear: " << length << std::endl;
     this->clear();
     this->length = length;
-    //~ std::cout << "reserve - new: " << length << std::endl;
+    std::cout << "reserve - new: " << length << std::endl;
     this->buffer = new T[length];
+    std::cout << "reserve - done: " << length << std::endl;
 }
 
 template <class T>
@@ -316,10 +313,12 @@ void MiniArray<T>::set(size_t length, T value)
 template <class T>
 void MiniArray<T>::clear()
 {
+    std::cout << "Attempting clear of " << length << " elements" << std::endl;
     if (this->length > 0)
     {
         delete[] this->buffer;
         this->length = 0;
+        std::cout << "Cleared , new length: " << length << " elements" << std::endl;
     }
 }
 

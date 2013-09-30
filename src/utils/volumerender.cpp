@@ -172,7 +172,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
 
-    this->glInit();
+//    this->glInit();
 }
 
 VolumeRenderGLWidget::~VolumeRenderGLWidget()
@@ -525,7 +525,7 @@ void VolumeRenderGLWidget::togglePerspective()
     PROJECTION_SCALING[10] = f;
 
     MISC_INT[5] = isPerspectiveRequired;
-    this->setMiscArrays();
+//    this->setMiscArrays();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -555,7 +555,7 @@ void VolumeRenderGLWidget::toggleFunctionView()
 void VolumeRenderGLWidget::setFuncParamA(double value)
 {
     MISC_FLOAT_K_FUNCTION[0] = value;
-    this->setMiscArrays();
+//    this->setMiscArrays();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -563,7 +563,7 @@ void VolumeRenderGLWidget::setFuncParamA(double value)
 void VolumeRenderGLWidget::setFuncParamB(double value)
 {
     MISC_FLOAT_K_FUNCTION[1] = value;
-    this->setMiscArrays();
+//    this->setMiscArrays();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -571,7 +571,7 @@ void VolumeRenderGLWidget::setFuncParamB(double value)
 void VolumeRenderGLWidget::setFuncParamC(double value)
 {
     MISC_FLOAT_K_FUNCTION[2] = value;
-    this->setMiscArrays();
+//    this->setMiscArrays();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -579,7 +579,7 @@ void VolumeRenderGLWidget::setFuncParamC(double value)
 void VolumeRenderGLWidget::setFuncParamD(double value)
 {
     MISC_FLOAT_K_FUNCTION[3] = value;
-    this->setMiscArrays();
+//    this->setMiscArrays();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -630,8 +630,8 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
     this->setDataExtent();
     this->setDataViewExtent();
     this->resetViewMatrix();
-    this->setMiscArrays();
-    this->setTsfParameters();
+//    this->setMiscArrays();
+//    this->setTsfParameters();
     this->isFunctionActive = false;
 
     // Rearrange bricks for a 3D texture
@@ -762,21 +762,25 @@ void VolumeRenderGLWidget::initializeGL()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
-    setMouseTracking( true );
-    if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
-    if (!this->initResourcesCL()) std::cout << "VolumeRenderGLWidget: OpenCL context could not be initialized!" << std::endl;
+    if (!isGLIntitialized)
+    {
+        setMouseTracking( true );
+        if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
+        if (!this->initResourcesCL()) std::cout << "VolumeRenderGLWidget: OpenCL context could not be initialized!" << std::endl;
 
-    /* Initialize and set the other stuff */
-    this->initFreetype();
-    init_tsf(0, 0, &transferFunction);
-    this->setTsfTexture(&transferFunction);
-    this->setRaytracingTexture();
-    this->setDataExtent();
-    this->setTsfParameters();
-    this->setMiscArrays();
-//    this->scalebar_coord_count = getScaleBar();
+        /* Initialize and set the other stuff */
+        this->initFreetype();
+        init_tsf(0, 0, &transferFunction);
+        this->setTsfTexture(&transferFunction);
+        this->setRaytracingTexture();
+        this->setDataExtent();
+//        this->setTsfParameters();
+//        this->setMiscArrays();
+    //    this->scalebar_coord_count = getScaleBar();
 
-    isGLIntitialized = true;
+        isGLIntitialized = true;
+    }
+    std::cout << "GLWIDGET IS NOW INITED: isGLIntitialized: " << isGLIntitialized << std::endl;
 }
 
 
@@ -791,14 +795,14 @@ void VolumeRenderGLWidget::setProjection(double F, double N, double fov, bool is
 void VolumeRenderGLWidget::setConeWidthMultiplier(float value)
 {
     MISC_FLOAT_K_RAYTRACE[4] = value;
-    this->setMiscArrays();
+//    this->setMiscArrays();
 }
 
 void VolumeRenderGLWidget::toggleLog()
 {
     isLog = !isLog;
     MISC_INT[2] = isLog;
-    this->setMiscArrays();
+//    this->setMiscArrays();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -806,7 +810,7 @@ void VolumeRenderGLWidget::toggleLog()
 void VolumeRenderGLWidget::toggleDataStructure()
 {
     MISC_INT[3] = !MISC_INT[3];
-    this->setMiscArrays();
+//    this->setMiscArrays();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -1181,6 +1185,8 @@ void VolumeRenderGLWidget::paintGL()
     QElapsedTimer paintTimer;
     paintTimer.start();
 
+    this->setMiscArrays();
+    this->setTsfParameters();
     this->autoRotate(rotationTimer->elapsed(), auto_rotation_delay);
     this->setViewMatrix();
     this->setDataViewExtent();
@@ -2276,7 +2282,7 @@ void VolumeRenderGLWidget::setTexturesVBO()
 void VolumeRenderGLWidget::setTsfMin(double value)
 {
     TSF_PARAMETERS[2] = value;
-    this->setTsfParameters();
+//    this->setTsfParameters();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -2284,7 +2290,7 @@ void VolumeRenderGLWidget::setTsfMin(double value)
 void VolumeRenderGLWidget::setTsfMax(double value)
 {
     TSF_PARAMETERS[3] = value;
-    this->setTsfParameters();
+//    this->setTsfParameters();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -2292,7 +2298,7 @@ void VolumeRenderGLWidget::setTsfMax(double value)
 void VolumeRenderGLWidget::setTsfAlpha(double value)
 {
     TSF_PARAMETERS[4] = value;
-    this->setTsfParameters();
+//    this->setTsfParameters();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -2300,7 +2306,7 @@ void VolumeRenderGLWidget::setTsfAlpha(double value)
 void VolumeRenderGLWidget::setTsfBrightness(double value)
 {
     TSF_PARAMETERS[5] = value;
-    this->setTsfParameters();
+//    this->setTsfParameters();
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
@@ -3098,7 +3104,8 @@ int VolumeRenderGLWidget::initResourcesCL()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     // Program
-    QByteArray qsrc = open_resource(":/src/kernels/render.cl");
+//    QByteArray qsrc = open_resource(":/src/kernels/render.cl");
+    QByteArray qsrc = openFile("../kernels/render.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 

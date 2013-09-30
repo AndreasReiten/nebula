@@ -1,8 +1,16 @@
 #ifndef TOOLS_H
 #define TOOLS_H
 
+
+/* QT */
+#include <QtGlobal>
+#include <QByteArray>
+#include <QFile>
+#include <QDateTime>
+#include <QString>
+
 /* GL and CL*/
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
@@ -15,12 +23,6 @@
 #include <iomanip>
 #include <cmath>
 #include <cstring>
-
-/* QT */
-#include <QByteArray>
-#include <QFile>
-#include <QDateTime>
-#include <QString>
 
 #include "miniarray.h"
 #include "matrix.h"
@@ -74,6 +76,7 @@ struct cl_device{
 };
 
 QByteArray open_resource(const char * path);
+QByteArray openFile(const char * path);
 GLuint create_shader(const char* resource, GLenum type);
 
 QString timeString(size_t ms);

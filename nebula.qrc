@@ -19,7 +19,6 @@
         <file>src/shaders/std_3d_color.v.glsl</file>
         <file>src/shaders/std_3d_color.f.glsl</file>
         <file>src/kernels/voxelize.cl</file>
-        <file>src/kernels/render.cl</file>
         <file>src/kernels/project.cl</file>
         <file>art/app.png</file>
         <file>src/fonts/FreeMono.ttf</file>
@@ -49,5 +48,6 @@
         <file>art/projection.png</file>
         <file>src/stylesheets/plain.qss</file>
         <file>art/scalebar.png</file>
+        <file>src/kernels/render.cl</file>
     </qresource>
 </RCC>

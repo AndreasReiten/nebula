@@ -10,8 +10,10 @@
 #include <ctime>
 #include <algorithm>
 
+#include <QtGlobal>
+
 /* GL and CL*/
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
@@ -21,38 +23,23 @@
 /* QT */
 #include <QFileDialog>
 #include <QMouseEvent>
-#include <QGLWidget>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QDebug>
 #include <QString>
 #include <QByteArray>
 #include <QDateTime>
+#include <QGLWidget>
 
-//~#ifdef _WIN32
-    //~#include <windows.h>
-    //~#include <ft2build.h>
-//~#endif
-//~#ifdef __linux__
-    //~#include <GL/glx.h>
-    //~#include <ft2build.h>
-//~#endif
-#ifdef _WIN32
-#include <windows.h>
-#endif
-#ifdef __linux__
-#include <GL/glx.h>
+#ifdef Q_OS_WIN
+    #include <windows.h>
+#elif defined Q_OS_LINUX
+    #include <GL/glx.h>
 #endif
 
-//~#include FT_FREETYPE_H
-
-#ifdef _WIN32
-    #include <ft2build.h>
-#endif
-#ifdef __linux__
-    #include <ft2build.h>
-#endif
+#include <ft2build.h>
 #include FT_FREETYPE_H
+
 
 #include "tools.h"
 #include "miniarray.h"

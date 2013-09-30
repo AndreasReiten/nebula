@@ -10,8 +10,11 @@
 #include <ctime>
 #include <limits>
 
+#include <QtGlobal>
+
+
 /* GL and CL */
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
@@ -21,7 +24,6 @@
 /* QT */
 #include <QCoreApplication>
 #include <QMouseEvent>
-#include <QGLWidget>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QDebug>
@@ -30,6 +32,7 @@
 #include <QStringList>
 #include <QByteArray>
 #include <QDateTime>
+#include <QGLWidget>
 
 /* Project files */
 #include "tools.h"

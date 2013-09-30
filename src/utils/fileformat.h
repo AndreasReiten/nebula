@@ -9,9 +9,10 @@
 #include <cmath>
 #include <limits>
 
+#include <QtGlobal>
 
 /* GL and CL*/
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
@@ -20,16 +21,15 @@
 
 /* QT */
 #include <QMouseEvent>
-#include <QGLWidget>
 #include <QRegExp>
 #include <QString>
 #include <QDebug>
 #include <QFileInfo>
+#include <QGLWidget>
 
-#ifdef _WIN32
+#ifdef Q_OS_WIN
     #include <windows.h>
-#endif
-#ifdef __linux__
+#elif defined  Q_OS_LINUX
     #include <GL/glx.h>
 #endif
 
@@ -37,6 +37,7 @@
 #include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
+
 
 
 /* This is the file to edit/append if you would like to add your own file formats */

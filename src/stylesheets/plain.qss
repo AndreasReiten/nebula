@@ -5,6 +5,7 @@ QWidget
 
 QPlainTextEdit
 {
+    background-color: #111111;
+    color: #CCCCCC;
     font: 16px "Monospace";
 }
-

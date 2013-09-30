@@ -1,7 +1,7 @@
 #include "worker.h"
 
-static const size_t REDUCED_PIXELS_MAX_BYTES = 2e8;
-static const size_t BRICK_POOL_SOFT_MAX_BYTES = 5e8;
+static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
+static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
 /***
@@ -357,7 +357,8 @@ void ProjectFileWorker::initializeCLKernel()
 {
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
     // Program
-    QByteArray qsrc = open_resource(":/src/kernels/project.cl");
+//    QByteArray qsrc = open_resource(":/src/kernels/project.cl");
+    QByteArray qsrc = openFile("../kernels/project.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 
@@ -445,6 +446,7 @@ void ProjectFileWorker::process()
 
     size_t n = 0;
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__)+"] Line "+QString::number((REDUCED_PIXELS_MAX_BYTES/sizeof(float))));
+    std::cout << "RESERVING for reduced_pixels: " << REDUCED_PIXELS_MAX_BYTES/sizeof(float) << std::endl;
     reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     for (size_t i = 0; i < (size_t) files->size(); i++)
@@ -462,6 +464,7 @@ void ProjectFileWorker::process()
         // Project and correct file and get status
         if (n > reduced_pixels->size())
         {
+            std::cout << "TOO MUCH for reduced_pixels: " << n << " > " << reduced_pixels->size()<< std::endl;
             // Break if there is too much data.
             emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));
             kill_flag = true;
@@ -501,6 +504,7 @@ void ProjectFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
+    std::cout << "RESIZING for reduced_pixels: " << n << std::endl;
     reduced_pixels->resize(n);
 
     /* Create dummy dataset for debugging purposes.
@@ -619,6 +623,7 @@ void AllInOneWorker::process()
     // Parameters for Ewald's projection
     Matrix<float> test_background;
     test_background.set(1679, 1475, 0.0);
+    std::cout << "RESERVING for reduced_pixels: " << REDUCED_PIXELS_MAX_BYTES/sizeof(float) << std::endl;
     reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
@@ -639,6 +644,7 @@ void AllInOneWorker::process()
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
             emit writeLog(str);
             emit changedMessageString(str);
+            std::cout << "CLEARING for reduced_pixels" << std::endl;
             reduced_pixels->clear();
 
             break;
@@ -788,7 +794,8 @@ void VoxelizeWorker::initializeCLKernel()
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 
     // Crate the program
-    QByteArray qsrc = open_resource(":/src/kernels/voxelize.cl");
+//    QByteArray qsrc = open_resource(":/src/kernels/voxelize.cl");
+    QByteArray qsrc = openFile("../kernels/voxelize.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 

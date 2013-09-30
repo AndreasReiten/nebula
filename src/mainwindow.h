@@ -40,16 +40,16 @@
 #include <QSlider>
 #include <QList>
 
-//~ #ifdef _WIN32
+//~ #ifdef Q_OS_WIN
     //~ #include <HDF/hdf5.h>
 //~ #endif
-//~ #ifdef __linux__
+//~ #ifdef Q_OS_LINUX
     //~ #include <hdf5.h>
 //~ #endif
 
 
 /* GL and CL*/
-//~#ifdef _WIN32
+//~#ifdef Q_OS_WIN
     //~#define GLEW_STATIC
 //~#endif
 //~#include <GL/glew.h>
