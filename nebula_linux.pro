@@ -33,7 +33,8 @@ SOURCES       = src/main.cpp \
 RESOURCES     = nebula.qrc
 
 QMAKE_CXXFLAGS += -std=c++0x -I/usr/include/freetype2
-QT += script opengl
+#QT += core gui opengl widgets script
+QT += opengl script
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
 

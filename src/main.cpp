@@ -15,6 +15,7 @@
 
 #include <QCoreApplication>
 #include <QApplication>
+#include <QIcon>
 #include "mainwindow.h"
 #include "utils/tools.h"
 
