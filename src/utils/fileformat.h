@@ -20,10 +20,10 @@
 //#include <CL/cl_gl.h>
 
 /* QT */
-#include <QMouseEvent>
+//#include <QMouseEvent>
 #include <QRegExp>
 #include <QString>
-#include <QDebug>
+//#include <QDebug>
 #include <QFileInfo>
 //#include <QGLWidget>
 

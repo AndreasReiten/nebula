@@ -23,10 +23,10 @@
 
 /* QT */
 #include <QCoreApplication>
-#include <QMouseEvent>
+//#include <QMouseEvent>
 #include <QTimer>
 #include <QElapsedTimer>
-#include <QDebug>
+//#include <QDebug>
 #include <QObject>
 #include <QString>
 #include <QStringList>

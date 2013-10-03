@@ -41,12 +41,12 @@
 //#include <QList>
 
 #include "utils/contextgl.h"
-//#include "utils/texthighlighter.h"
-//#include "utils/miniarray.h"
+#include "utils/texthighlighter.h"
+#include "utils/miniarray.h"
 //#include "utils/volumerender.h"
-//#include "utils/imagerender.h"
-//#include "utils/worker.h"
-//#include "utils/sparsevoxelocttree.h"
+#include "utils/imagerender.h"
+#include "utils/worker.h"
+#include "utils/sparsevoxelocttree.h"
 
 class MainWindow : public QMainWindow
 {
