@@ -30,11 +30,11 @@
 #include <QMutex>
 #include <QGLWidget>
 
-#ifdef Q_OS_WIN
-    #include <windows.h>
-#elif defined Q_OS_LINUX
-    #include <GL/glx.h>
-#endif
+//#ifdef Q_OS_WIN
+//    #include <windows.h>
+//#elif defined Q_OS_LINUX
+//    #include <GL/glx.h>
+//#endif
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
