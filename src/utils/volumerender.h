@@ -21,8 +21,8 @@
 #include <CL/cl_gl.h>
 
 /* QT */
-#include <QFileDialog>
-#include <QMouseEvent>
+//#include <QFileDialog>
+#include <QMouseEvent> // Omg so how do I include this, Qt5?
 #include <QTimer>
 #include <QElapsedTimer>
 //#include <QDebug>
