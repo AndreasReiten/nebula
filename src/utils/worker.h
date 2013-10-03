@@ -17,9 +17,9 @@
 #ifdef Q_OS_WIN
     #define GLEW_STATIC
 #endif
-#include <GL/glew.h>
+//#include <GL/glew.h>
 #include <CL/opencl.h>
-#include <CL/cl_gl.h>
+//#include <CL/cl_gl.h>
 
 /* QT */
 #include <QCoreApplication>
@@ -32,7 +32,13 @@
 #include <QStringList>
 #include <QByteArray>
 #include <QDateTime>
-#include <QGLWidget>
+//#include <QGLWidget>
+
+//#ifdef Q_OS_WIN
+//    #include <windows.h>
+//#elif defined Q_OS_LINUX
+//    #include <GL/glx.h>
+//#endif
 
 /* Project files */
 #include "tools.h"
