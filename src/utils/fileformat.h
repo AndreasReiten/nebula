@@ -12,12 +12,12 @@
 #include <QtGlobal>
 
 /* GL and CL*/
-#ifdef Q_OS_WIN
-    #define GLEW_STATIC
-#endif
-#include <GL/glew.h>
+//#ifdef Q_OS_WIN
+//    #define GLEW_STATIC
+//#endif
+//#include <GL/glew.h>
 #include <CL/opencl.h>
-#include <CL/cl_gl.h>
+//#include <CL/cl_gl.h>
 
 /* QT */
 #include <QMouseEvent>
@@ -25,13 +25,13 @@
 #include <QString>
 #include <QDebug>
 #include <QFileInfo>
-#include <QGLWidget>
+//#include <QGLWidget>
 
-#ifdef Q_OS_WIN
-    #include <windows.h>
-#elif defined  Q_OS_LINUX
-    #include <GL/glx.h>
-#endif
+//#ifdef Q_OS_WIN
+//    #include <windows.h>
+//#elif defined  Q_OS_LINUX
+//    #include <GL/glx.h>
+//#endif
 
 #include "imagerender.h"
 #include "miniarray.h"

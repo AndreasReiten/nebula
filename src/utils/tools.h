@@ -15,7 +15,7 @@
 #endif
 #include <GL/glew.h>
 #include <CL/opencl.h>
-#include <CL/cl_gl.h>
+//#include <CL/cl_gl.h>
 
 #include <string>
 #include <fstream>

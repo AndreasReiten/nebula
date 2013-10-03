@@ -18,7 +18,7 @@
 #endif
 #include <GL/glew.h>
 #include <CL/opencl.h>
-#include <CL/cl_gl.h>
+//#include <CL/cl_gl.h>
 
 /* QT */
 #include <QFileDialog>
@@ -31,11 +31,11 @@
 #include <QDateTime>
 #include <QGLWidget>
 
-#ifdef Q_OS_WIN
-    #include <windows.h>
-#elif defined Q_OS_LINUX
-    #include <GL/glx.h>
-#endif
+//#ifdef Q_OS_WIN
+//    #include <windows.h>
+//#elif defined Q_OS_LINUX
+//    #include <GL/glx.h>
+//#endifs
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
