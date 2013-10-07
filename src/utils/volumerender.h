@@ -22,7 +22,7 @@
 
 /* QT */
 //#include <QFileDialog>
-#include <QMouseEvent> // Omg so how do I include this, Qt5?
+//#include <QMouseEvent> // Omg so how do I include this in Qt5 if it interferes with glx.h?
 #include <QTimer>
 #include <QElapsedTimer>
 //#include <QDebug>
@@ -30,6 +30,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QGLWidget>
+#include <QMouseEvent>
 
 //#ifdef Q_OS_WIN
 //    #include <windows.h>

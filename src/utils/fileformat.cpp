@@ -21,7 +21,7 @@ PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * 
 
 void PilatusFile::writeLog(QString str)
 {
-//    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
+    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
 int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue)
