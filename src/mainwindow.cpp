@@ -5,12 +5,12 @@ MainWindow::MainWindow()
     verbosity = 1;
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
 
-//     Set default values
+    //     Set default values
     current_svo = 0;
     display_file = 0;
     svo_loaded.append(SparseVoxelOcttree());
 
-//     Set stylesheet.
+    //     Set stylesheet
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
     QFile styleFile( ":/src/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
@@ -939,7 +939,6 @@ void MainWindow::initializeInteractives()
 
 
         imageRenderWidget = new ImageRenderGLWidget(contextGLWidget->getCLDevice(), contextGLWidget->getCLContext(), contextGLWidget->getCLCommandQueue(), contextGLWidget->format(), 0, contextGLWidget);
-        //~dataInstance->setImageRenderWidget(imageRenderWidget);
 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setSpacing(0);
@@ -991,11 +990,11 @@ void MainWindow::initializeInteractives()
 
     /* Graphics dock widget */
     {
-        QLabel * l3= new QLabel(QString("Texture "));
-        QLabel * l4= new QLabel(QString("Min: "));
-        QLabel * l5= new QLabel(QString("Max: "));
-        QLabel * l6= new QLabel(QString("Alpha: "));
-        QLabel * l7= new QLabel(QString("Brightness: "));
+        QLabel * label_texture= new QLabel(QString("Texture "));
+        QLabel * label_data_min= new QLabel(QString("Min: "));
+        QLabel * label_data_max= new QLabel(QString("Max: "));
+        QLabel * label_alpha= new QLabel(QString("Alpha: "));
+        QLabel * label_brightness = new QLabel(QString("Brightness: "));
 
         dataMinSpinBox = new QDoubleSpinBox;
         dataMinSpinBox->setDecimals(2);
@@ -1049,16 +1048,16 @@ void MainWindow::initializeInteractives()
         graphicsLayout->setMargin(0);
         graphicsLayout->setContentsMargins(0,0,0,0);
 
-        graphicsLayout->addWidget(l3,0,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_texture,0,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(tsfComboBox,0,2,1,1);
         graphicsLayout->addWidget(tsfAlphaComboBox,0,3,1,1);
-        graphicsLayout->addWidget(l4,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_data_min,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(dataMinSpinBox,1,2,1,2);
-        graphicsLayout->addWidget(l5,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_data_max,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(dataMaxSpinBox,2,2,1,2);
-        graphicsLayout->addWidget(l6,3,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_alpha,3,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(alphaSpinBox,3,2,1,2);
-        graphicsLayout->addWidget(l7,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_brightness,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(brightnessSpinBox,4,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
