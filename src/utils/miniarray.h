@@ -110,7 +110,6 @@ MiniArray<T>::MiniArray(size_t length)
 template <class T>
 MiniArray<T>::~MiniArray()
 {
-    //~ std::cout << "MiniArray::~ for length " << this->length << " buffer!" << std::endl;
     if (this->length > 0)
     {
         delete[] this->buffer;
@@ -252,13 +251,9 @@ void MiniArray<T>::resize(size_t new_length)
 template <class T>
 void MiniArray<T>::reserve(size_t length)
 {
-    std::cout << "reserve - length: " << this->length << std::endl;
-    std::cout << "reserve - clear: " << length << std::endl;
     this->clear();
     this->length = length;
-    std::cout << "reserve - new: " << length << std::endl;
     this->buffer = new T[length];
-    std::cout << "reserve - done: " << length << std::endl;
 }
 
 template <class T>
@@ -280,7 +275,6 @@ const T& MiniArray<T>::operator[] (const size_t index) const
 template <class T>
 void MiniArray<T>::setShallow(size_t length, T * buffer)
 {
-    //~ std::cout << "Set shallow!!" <<std::endl;
     this->clear();
     this->length = length;
     this->buffer = buffer;
@@ -313,12 +307,10 @@ void MiniArray<T>::set(size_t length, T value)
 template <class T>
 void MiniArray<T>::clear()
 {
-    std::cout << "Attempting clear of " << length << " elements" << std::endl;
     if (this->length > 0)
     {
         delete[] this->buffer;
         this->length = 0;
-        std::cout << "Cleared , new length: " << length << " elements" << std::endl;
     }
 }
 
@@ -377,7 +369,6 @@ double * MiniArray<T>::histogram(size_t bins, T min, T max, bool log_x, bool log
             }
             else
             {
-                //~ if (buffer[i] == 0.0) continue;
                 id = (buffer[i] - min)/ (max - min)*(bins - 1);
             }
             if ( (id >= 0) && (id < bins))

@@ -15,14 +15,14 @@ static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
 BaseWorker::BaseWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 BaseWorker::~BaseWorker()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 }
 
 void BaseWorker::writeLog(QString str)
@@ -32,7 +32,7 @@ void BaseWorker::writeLog(QString str)
 
 void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->device = device;
     this->context = context;
     this->queue = queue;
@@ -40,7 +40,7 @@ void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_c
 
 void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->alpha_img_clgl = alpha_img_clgl;
     this->beta_img_clgl = beta_img_clgl;
     this->gamma_img_clgl = gamma_img_clgl;
@@ -49,7 +49,7 @@ void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clg
 
 void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->svo = svo;
 }
 
@@ -72,19 +72,19 @@ void BaseWorker::setProjectThresholdHigh(float * value)
 
 void BaseWorker::killProcess()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     kill_flag = true;
 }
 
 void BaseWorker::setFilePaths(QStringList * file_paths)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->file_paths = file_paths;
 }
 
 void BaseWorker::setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->suggested_search_radius_low = suggested_search_radius_low;
     this->suggested_search_radius_high = suggested_search_radius_high;
     this->suggested_q = suggested_q;
@@ -93,12 +93,12 @@ void BaseWorker::setQSpaceInfo(float * suggested_search_radius_low, float * sugg
 
 void BaseWorker::setFiles(QList<PilatusFile> * files)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->files = files;
 }
 void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->reduced_pixels = reduced_pixels;
 }
 
@@ -115,19 +115,19 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 SetFileWorker::SetFileWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 SetFileWorker::~SetFileWorker()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 }
 
 void SetFileWorker::process()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     QCoreApplication::processEvents();
     kill_flag = false;
@@ -242,19 +242,19 @@ void SetFileWorker::process()
 ReadFileWorker::ReadFileWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 ReadFileWorker::~ReadFileWorker()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 }
 
 void ReadFileWorker::process()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     QCoreApplication::processEvents();
 
@@ -342,20 +342,20 @@ void ReadFileWorker::process()
 ProjectFileWorker::ProjectFileWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
 }
 
 void ProjectFileWorker::initializeCLKernel()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     // Program
 //    QByteArray qsrc = open_resource(":/src/kernels/project.cl");
     QByteArray qsrc = openFile("../kernels/project.cl");
@@ -412,7 +412,7 @@ void ProjectFileWorker::process()
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
 
 
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     QCoreApplication::processEvents();
 
@@ -586,19 +586,19 @@ void ProjectFileWorker::process()
 AllInOneWorker::AllInOneWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 AllInOneWorker::~AllInOneWorker()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 }
 
 void AllInOneWorker::process()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     kill_flag = false;
     if (file_paths->size() <= 0)
@@ -767,14 +767,14 @@ void AllInOneWorker::process()
 VoxelizeWorker::VoxelizeWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     if (isCLInitialized && voxelize_kernel) clReleaseKernel(voxelize_kernel);
 }
@@ -791,7 +791,7 @@ unsigned int VoxelizeWorker::getOctBrick(unsigned int poolX, unsigned int poolY,
 
 void VoxelizeWorker::initializeCLKernel()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     // Crate the program
 //    QByteArray qsrc = open_resource(":/src/kernels/voxelize.cl");
@@ -843,7 +843,7 @@ void VoxelizeWorker::initializeCLKernel()
 
 void VoxelizeWorker::process()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     kill_flag = false;
 
@@ -1174,7 +1174,7 @@ void VoxelizeWorker::process()
 DisplayFileWorker::DisplayFileWorker()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     this->isCLInitialized = false;
     this->verbosity = verbosity;
     test_background.set(1475, 1679, 0.0);
@@ -1182,7 +1182,7 @@ DisplayFileWorker::DisplayFileWorker()
 
 DisplayFileWorker::~DisplayFileWorker()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     if (isCLInitialized) clReleaseKernel(project_kernel);
 }
 
@@ -1194,7 +1194,7 @@ void DisplayFileWorker::setDisplayFile(int value)
 
 void DisplayFileWorker::process()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     PilatusFile file;
 
     int STATUS_OK = file.set(file_paths->at(display_file), context, queue);

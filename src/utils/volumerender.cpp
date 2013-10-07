@@ -4,7 +4,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     QGLWidget(format, parent, shareWidget)
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     isGLIntitialized = false;
     isRayTexInitialized = false;
@@ -177,37 +177,37 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
 
 VolumeRenderGLWidget::~VolumeRenderGLWidget()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     if (isGLIntitialized)
     {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl); // Might need aquire...
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (misc_int_cl) clReleaseMemObject(misc_int_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (misc_float_cl) clReleaseMemObject(misc_float_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (misc_float_k_raytrace_cl) clReleaseMemObject(misc_float_k_raytrace_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (tsf_parameters_cl) clReleaseMemObject(tsf_parameters_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (data_view_extent_cl) clReleaseMemObject(data_view_extent_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (data_extent_cl) clReleaseMemObject(data_extent_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (view_matrix_inv_cl) clReleaseMemObject(view_matrix_inv_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (function_view_matrix_inv_cl) clReleaseMemObject(function_view_matrix_inv_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (isOcttreeIndicesInitialized) clReleaseMemObject(oct_index_cl);
         if (isOcttreeBricksInitialized) clReleaseMemObject(oct_brick_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         //~if (bricks_sampler) clReleaseSampler(bricks_sampler);
         if (isBrickPoolInitialized) clReleaseMemObject(bricks_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         //~if (tsf_tex_sampler) clReleaseSampler(tsf_tex_sampler);
         if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (K_FUNCTION_RAYTRACE) clReleaseKernel(K_FUNCTION_RAYTRACE);
         if (K_SVO_RAYTRACE) clReleaseKernel(K_SVO_RAYTRACE);
 
@@ -215,11 +215,11 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         //~ if (context) clReleaseContext(context);
         if (program) clReleaseProgram(program);
 
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteFramebuffers(1, &STD_FBO);
         glDeleteFramebuffers(1, &MSAA_FBO);
         glDeleteFramebuffers(1, &SMALL_FBO);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteTextures(1, &msaa_intermediate_storage_tex);
         glDeleteTextures(1, &small_storage_tex);
         glDeleteTextures(1, &storage_tex);
@@ -235,7 +235,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteTextures(1, &hist_tex);
         glDeleteTextures(1, &hist_tex_norm);
         glDeleteTextures(1, &hist_tex_log);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteBuffers(10, tex_coord_vbo);
         glDeleteBuffers(20, position_vbo);
         glDeleteBuffers(5, lab_reference_vbo);
@@ -248,7 +248,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteBuffers(1, &text_position_vbo);
         glDeleteBuffers(1, &text_texpos_vbo);
 
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteProgram(std_2d_tex_program);
         glDeleteProgram(std_2d_color_program);
         glDeleteProgram(std_3d_program);
@@ -257,7 +257,7 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteProgram(msaa_program);
         glDeleteProgram(msaa_hdr_program);
         glDeleteProgram(std_text_program);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
     }
 
 }
@@ -467,7 +467,7 @@ void VolumeRenderGLWidget::setResolutionf(double value)
 
 void VolumeRenderGLWidget::initFreetype()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     /* Initialize the FreeType2 library */
     FT_Library ft;
@@ -511,7 +511,7 @@ void VolumeRenderGLWidget::toggleScalebar()
 
 void VolumeRenderGLWidget::togglePerspective()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     isPerspectiveRequired = !isPerspectiveRequired;
     CTC_MATRIX.setProjection(isPerspectiveRequired);
@@ -608,7 +608,7 @@ void VolumeRenderGLWidget::resetViewMatrix()
 
 void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     this->levels = svo->getLevels();
     this->brick_pool_power = svo->getBrickPoolPower();
@@ -760,8 +760,6 @@ QSize VolumeRenderGLWidget::sizeHint() const
 
 void VolumeRenderGLWidget::initializeGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-
     if (!isGLIntitialized)
     {
         setMouseTracking( true );
@@ -774,13 +772,9 @@ void VolumeRenderGLWidget::initializeGL()
         this->setTsfTexture(&transferFunction);
         this->setRaytracingTexture();
         this->setDataExtent();
-//        this->setTsfParameters();
-//        this->setMiscArrays();
-    //    this->scalebar_coord_count = getScaleBar();
 
         isGLIntitialized = true;
     }
-    std::cout << "GLWIDGET IS NOW INITED: isGLIntitialized: " << isGLIntitialized << std::endl;
 }
 
 
@@ -1584,7 +1578,7 @@ void VolumeRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements
 
 void VolumeRenderGLWidget::resizeGL(int w, int h)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     this->WIDTH = w;
     this->HEIGHT = h;
@@ -1916,7 +1910,7 @@ void VolumeRenderGLWidget::wheelEvent(QWheelEvent *event)
 
 int VolumeRenderGLWidget::initResourcesGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     // BLEND
     glEnable(GL_BLEND);
@@ -2481,7 +2475,7 @@ void VolumeRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * col
 
 void VolumeRenderGLWidget::initializeProgramsGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     GLint link_ok = GL_FALSE;
     GLuint vertice_shader, fragment_shader; // Delete these after use?
@@ -2973,7 +2967,7 @@ void VolumeRenderGLWidget::initializeProgramsGL()
 
 void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     /* Generate a transfer function CL texture */
     if (isTsfTexInitialized) clReleaseSampler(tsf_tex_sampler);
@@ -3101,7 +3095,7 @@ int VolumeRenderGLWidget::setRaytracingTexture()
 
 int VolumeRenderGLWidget::initResourcesCL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     // Program
 //    QByteArray qsrc = open_resource(":/src/kernels/render.cl");

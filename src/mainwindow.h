@@ -65,7 +65,6 @@ private slots:
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
 
-//    //~void openSVO();
     void newFile();
     void openScript();
     void openSvo();
@@ -77,11 +76,9 @@ private slots:
     void about();
     void aboutOpenCL();
     void aboutOpenGL();
-//    //~void aboutHDF5();
 
     void runReadScript();
 
-//    //~void previewSVO();
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
@@ -117,14 +114,6 @@ private:
     SparseVoxelOcttree svo_inprocess;
     QList<SparseVoxelOcttree> svo_loaded;
 
-//    ~MiniArray<float> VIEW_BRICKS;
-//    ~MiniArray<unsigned int> VIEW_OCT_INDEX;
-//    ~MiniArray<unsigned int> VIEW_OCT_BRICK;
-//    ~MiniArray<double> HIST_NORM;
-//    ~MiniArray<double> HIST_LOG;
-//    ~MiniArray<double> HIST_MINMAX;
-//    ~MiniArray<char> SVO_COMMENT;
-
     void closeEvent(QCloseEvent *event);
     void initializeActions();
     void initializeConnects();
@@ -132,9 +121,6 @@ private:
     void initializeMenus();
 
     void initializeEmit();
-//    //~int initDeviceCL();
-//    //~int init_cl_base();
-//    //~void setFileTree();
     void readSettings();
     void writeSettings();
     bool maybeSave();
@@ -142,8 +128,6 @@ private:
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
 
-//    //~ QCheckBox * fastMoveCheckBox;
-//    //~QGLFormat gl_context_format;
 
     QString strippedName(const QString &fullFileName);
     QString scriptHelp;
@@ -245,12 +229,6 @@ protected:
     QPushButton *generateSvoButton;
     QPushButton *saveSVOButton;
     QPushButton *killButton;
-    //~ QPushButton *previewSVOButton;
-    //~ QPushButton *graphicsBackgroundButton;
-    //~ QPushButton *graphicsDataStructureButton;
-    //~ QPushButton *graphicsLogarithmButton;
-    //~ QPushButton *graphicsPerspectiveButton;
-    //~ QPushButton *screenshotButton;
     QPushButton *functionToggleButton;
 
     QMenuBar * mainMenu;
@@ -279,28 +257,27 @@ protected:
     QAction *aboutQtAct;
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
-    //~QAction *aboutHDF5Act;
 
     QScriptValue rawFilesValue;
     QScriptEngine engine;
     QScriptValue rawFilesQs;
 
-//    // Utility
+    // Utility
     int verbosity;
 
-//    // Main resources
+    // Main resources
     QStringList file_paths;
     QList<PilatusFile> files;
     QList<PilatusFile> background_files;
     MiniArray<float> reduced_pixels;
 
-//    // Related to file treatment
+    // Related to file treatment
     float threshold_reduce_low;
     float threshold_reduce_high;
     float threshold_project_low;
     float threshold_project_high;
 
-//    // Related to Voxelize
+    // Related to Voxelize
     int brick_inner_dimension;
     int brick_outer_dimension;
 

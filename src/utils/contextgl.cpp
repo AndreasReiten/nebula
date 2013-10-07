@@ -14,7 +14,7 @@ ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
 
 ContextGLWidget::~ContextGLWidget()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     if (isGLIntitialized)
     {
         if (*queue) clReleaseCommandQueue(*queue);
@@ -40,7 +40,7 @@ cl_context * ContextGLWidget::getCLContext()
 
 void ContextGLWidget::initializeGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     if (!isGLIntitialized)
     {
         if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
@@ -88,7 +88,7 @@ void ContextGLWidget::setMessageString(QString str)
 
 int ContextGLWidget::initResourcesGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
 
     /* Initialize OpenGL */
     GLenum glew_status = glewInit();
@@ -113,7 +113,7 @@ int ContextGLWidget::initResourcesGL()
 int ContextGLWidget::initDeviceCL(int verbosity)
 {
     // DEVICE & INFO
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     device = new cl_device;
 
     err = clGetPlatformIDs(1, &device->platform_id, &num_platforms);
@@ -187,7 +187,7 @@ void ContextGLWidget::writeLog(QString str)
 
 int ContextGLWidget::initResourcesCL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+    
     context = new cl_context;
     queue = new cl_command_queue;
 

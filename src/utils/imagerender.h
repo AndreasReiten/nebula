@@ -18,23 +18,15 @@
 #endif
 #include <GL/glew.h>
 #include <CL/opencl.h>
-//#include <CL/cl_gl.h>
 
 /* QT */
-//#include <QMouseEvent>
 #include <QTimer>
 #include <QElapsedTimer>
-//#include <QDebug>
 #include <QString>
 #include <QByteArray>
 #include <QMutex>
 #include <QGLWidget>
 
-//#ifdef Q_OS_WIN
-//    #include <windows.h>
-//#elif defined Q_OS_LINUX
-//    #include <GL/glx.h>
-//#endif
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -42,7 +34,6 @@
 
 
 #include "tools.h"
-//~ #include "fileformats.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "atlas.h"
@@ -62,8 +53,6 @@ public:
     cl_mem * getBetaImgCLGL();
     void setImageSize(int w, int h);
 
-    //~void runFilterKernel(cl_kernel * kernel, size_t * loc_ws, size_t * glb_ws);
-
 signals:
     void changedMessageString(QString str);
 
@@ -72,15 +61,13 @@ public slots:
     void setImageHeight(int value);
     void aquireSharedBuffers();
     void releaseSharedBuffers();
-    //~void setThreadFlag(bool value);
 
 
 protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
-    //~void resizeEvent(QResizeEvent * event);
-    //~void paintEvent(QPaintEvent * event);
+
 
 private:
     void initFreetype();
@@ -105,7 +92,6 @@ private:
     MiniArray<float> clearInv;
 
     // OpenGL Related
-    //~bool isInMainThread;
     bool isGLIntitialized;
     int initResourcesGL();
     void initializeProgramsGL();

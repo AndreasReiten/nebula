@@ -776,7 +776,6 @@ void TsfMatrix<T>::setSpline(size_t resolution)
         }
 
     }
-    //~ secondDerivatives.print(2,"Second derivatives");
 
     this->splinedTsf.reserve(this->m, resolution);
     double interpolationStepLength = 1.0/((float) (resolution - 1));
@@ -810,6 +809,7 @@ void TsfMatrix<T>::setSpline(size_t resolution)
         }
     }
 }
+
 template <class T>
 void TsfMatrix<T>::setPreIntegrated()
 {

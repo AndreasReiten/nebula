@@ -30,8 +30,6 @@ int main(int argc, char **argv)
     if (verbosity == 1) writeToLogAndPrint("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
     if (verbosity == 1) writeToLogAndPrint(Q_FUNC_INFO, "riv.log", 1);
 
-//    ~if (Q_OS_LINUX) QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
-//    ~std::cout << "Qt::AA_X11InitThreads = " << QCoreApplication::testAttribute(Qt::AA_X11InitThreads) << std::endl;
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));
 
@@ -43,3 +41,6 @@ int main(int argc, char **argv)
 
     return app.exec();
 }
+
+// if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+// if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));

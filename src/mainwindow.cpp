@@ -57,7 +57,7 @@ MainWindow::MainWindow()
 
 MainWindow::~MainWindow()
 {
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+//
 }
 
 void MainWindow::setCurrentSvoLevel(int value)
@@ -293,7 +293,7 @@ void MainWindow::runDisplayFileThread(int value)
 
 void MainWindow::runProjectFileThread()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     volumeRenderWidget->hide();
     tabWidget->setCurrentIndex(1);
     projectFileThread->start();
@@ -301,7 +301,7 @@ void MainWindow::runProjectFileThread()
 
 void MainWindow::runAllInOneThread()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     volumeRenderWidget->hide();
     tabWidget->setCurrentIndex(1);
     allInOneThread->start();
@@ -330,7 +330,7 @@ void MainWindow::setProjectThresholdHigh(double value)
 
 void MainWindow::initializeEmit()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(9);
@@ -394,7 +394,7 @@ void MainWindow::openScript()
 
 void MainWindow::initializeActions()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     // Actions
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
@@ -450,10 +450,6 @@ void MainWindow::save()
     }
 }
 
-//bool MainWindow::someFunc()
-//{
-//    return true;
-//}
 
 void MainWindow::saveAs()
 {
@@ -536,7 +532,6 @@ void MainWindow::openUnitcellFile()
                 pos += tmp.matchedLength();;
                 QString value = tmp.cap(1);
                 abc[i] = value.toFloat();
-                //~ qDebug() << pos << " - "<< i << ": "<< value << " <->" << abc[i];
             }
         }
         float a = abc[0];
@@ -670,7 +665,7 @@ void MainWindow::setTab(int tab)
 
 void MainWindow::initializeConnects()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     /* this <-> volumeRenderWidget */
     connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWidget, SLOT(setTsfAlphaStyle(int)));
@@ -715,7 +710,6 @@ void MainWindow::initializeConnects()
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
     connect(aboutOpenCLAct, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
     connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
-    //~connect(aboutHDF5Act, SIGNAL(triggered()), this, SLOT(aboutHDF5()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
     connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
@@ -728,7 +722,7 @@ void MainWindow::setGenericProgressFormat(QString str)
 
 void MainWindow::saveSvo()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     if (svo_inprocess.index.size() > 0)
     {
@@ -749,7 +743,7 @@ void MainWindow::saveSvo()
 
 void MainWindow::openSvo()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".svo (*.svo);; All Files (*)"));
 
@@ -789,7 +783,6 @@ void MainWindow::initializeMenus()
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutOpenCLAct);
     helpMenu->addAction(aboutOpenGLAct);
-    //~helpMenu->addAction(aboutHDF5Act);
 
     mainMenu->addMenu(scriptMenu);
     mainMenu->addMenu(viewMenu);
@@ -801,8 +794,6 @@ void MainWindow::initializeMenus()
 
 void MainWindow::initializeInteractives()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
-
     mainWidget = new QWidget(this);
     mainLayout = new QGridLayout;
 
@@ -1336,8 +1327,6 @@ void MainWindow::initializeInteractives()
     /* Script engine */
     rawFilesQs = engine.newVariant(file_paths);
     engine.globalObject().setProperty("files", rawFilesQs);
-
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
 }
 
 
@@ -1361,7 +1350,7 @@ void MainWindow::print(QString str)
 
 void MainWindow::runReadScript()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     // Set the corresponding tab
     tabWidget->setCurrentIndex(0);

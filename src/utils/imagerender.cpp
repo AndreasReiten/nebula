@@ -1,11 +1,10 @@
 #include "imagerender.h"
-//~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": At line "+QString::number(__LINE__));
+
 ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
     QGLWidget(format, parent, shareWidget)
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
+
     isGLIntitialized = false;
     isAlphaImgInitialized = false;
     isBetaImgInitialized = false;
@@ -45,27 +44,15 @@ ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * contex
      * called */
     time = new QElapsedTimer();
     time->start();
-
-    /* This timer emits a signal every 1000.0/FPS_MAX milli seconds.
-     * The slot is the QGL repaint function */
-    timer = new QTimer(this);
-
-    //~int FPS_MAX = 30;
-    //~timer->start(1000.0/FPS_MAX);
-    //~connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
-
-//    this->glInit();
 }
 
 void ImageRenderGLWidget::setImageWidth(int value)
 {
     if (value != image_w)
     {
-        //~this->releaseSharedBuffers();
         this->image_w = value;
         this->setTarget();
         this->setTexturePositions();
-        //~this->aquireSharedBuffers();
     }
 }
 
@@ -73,11 +60,9 @@ void ImageRenderGLWidget::setImageHeight(int value)
 {
     if (value != image_h)
     {
-        //~this->releaseSharedBuffers();
         this->image_h = value;
         this->setTarget();
         this->setTexturePositions();
-        //~this->aquireSharedBuffers();
     }
 }
 
@@ -94,97 +79,66 @@ void ImageRenderGLWidget::setImageSize(int w, int h)
 
 ImageRenderGLWidget::~ImageRenderGLWidget()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     if (isGLIntitialized)
     {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         if (isGammaImgInitialized) clReleaseMemObject(gamma_img_clgl);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteTextures(5, image_tex);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteBuffers(1, &text_coord_vbo);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteBuffers(1, &text_texpos_vbo);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteBuffers(5, screen_texpos_vbo);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteBuffers(5, screen_coord_vbo);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteProgram(std_text_program);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteProgram(std_2d_tex_program);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
         glDeleteProgram(std_2d_color_program);
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));
+
     }
 }
 
 void ImageRenderGLWidget::initFreetype()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     /* Initialize the FreeType2 library */
     FT_Library ft;
     FT_Face face;
     FT_Error error;
 
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
-    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
-    //~ const char * fontfilename = qsrc.data();
     const char * fontfilename = "../fonts/FreeMonoOblique.ttf";
 
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
     error = FT_Init_FreeType(&ft);
     if(error)
     {
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"][!] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
         if (verbosity == 1) writeLog("Could not init freetype library");
     }
+
     /* Load a font */
     if(FT_New_Face(ft, fontfilename, 0, &face))
     {
         if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"][!] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
         if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
     }
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] got to line "+QString::number(__LINE__));
+
     fontSmall = new Atlas(face, 16);
     fontMedium = new Atlas(face, 24);
     fontLarge = new Atlas(face, 48);
 }
-//~ {
-    //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-//~
-    //~ /* Initialize the FreeType2 library */
-    //~ FT_Library ft;
-    //~ FT_Face face;
-    //~ FT_Error error;
-//~
-    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMono.ttf");
-    //~ const char * fontfilename = qsrc.data();
-    //~ const char * fontfilename = "../../../src/fonts/FreeMono.ttf";
-//~
-    //~ error = FT_Init_FreeType(&ft);
-    //~ if(error)
-    //~ {
-        //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
-        //~ if (verbosity == 1) writeLog("Could not init freetype library");
-    //~ }
-    //~ /* Load a font */
-    //~ if(FT_New_Face(ft, fontfilename, 0, &face))
-    //~ {
-        //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
-        //~ if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
-    //~ }
-//~
-    //~ fontSmall = new Atlas(face, 12);
-    //~ fontMedium = new Atlas(face, 24);
-    //~ fontLarge = new Atlas(face, 48);
-//~ }
+
 
 QSize ImageRenderGLWidget::minimumSizeHint() const
 {
@@ -198,7 +152,7 @@ QSize ImageRenderGLWidget::sizeHint() const
 
 void ImageRenderGLWidget::initializeGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     if (!isGLIntitialized)
     {
@@ -244,7 +198,6 @@ void ImageRenderGLWidget::paintGL()
 
     xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
     std_text_draw("LP Correction, Threshold Two", fontSmall, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] alpha = "+QString::number(this->format().alpha()));
 }
 
 
@@ -306,7 +259,7 @@ void ImageRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements,
 
 void ImageRenderGLWidget::resizeGL(int w, int h)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     this->WIDTH = w;
     this->HEIGHT = h;
     this->setTexturePositions();
@@ -315,8 +268,6 @@ void ImageRenderGLWidget::resizeGL(int w, int h)
 
 void ImageRenderGLWidget::releaseSharedBuffers()
 {
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-
      // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
     err |= clEnqueueReleaseGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
@@ -379,7 +330,7 @@ void ImageRenderGLWidget::setTexturePositions()
 
 int ImageRenderGLWidget::initResourcesGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     isGLIntitialized = true;
 
@@ -519,7 +470,7 @@ void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * colo
 
 void ImageRenderGLWidget::initializeProgramsGL()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     GLint link_ok = GL_FALSE;
     GLuint vertice_shader, fragment_shader; // Delete these after use?
@@ -673,7 +624,7 @@ void ImageRenderGLWidget::initializeProgramsGL()
 
 void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
     /* Generate a transfer function CL texture */
 
     if (isTsfImgInitialized) clReleaseMemObject(tsf_img_clgl);
@@ -729,26 +680,9 @@ cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
     return &beta_img_clgl;
 }
 
-//~void ImageRenderGLWidget::resizeEvent(QResizeEvent * event)
-//~{
-    //~this->makeCurrent();
-    //~QSize size(event->size());
-    //~this->resizeGL(size.rwidth(), size.rheight());
-//~}
-//~
-//~void ImageRenderGLWidget::paintEvent(QPaintEvent * event)
-//~{
-    //~this->makeCurrent();
-    //~if (!isGLIntitialized) this->initializeGL();
-    //~this->paintGL();
-    //~this->updateGL();
-//~}
-
 
 void ImageRenderGLWidget::aquireSharedBuffers()
 {
-    //~if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-
     glFinish();
     err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
     err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
@@ -762,7 +696,7 @@ void ImageRenderGLWidget::aquireSharedBuffers()
 
 int ImageRenderGLWidget::setTarget()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+
 
     if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
     if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
