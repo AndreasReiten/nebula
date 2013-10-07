@@ -17,9 +17,7 @@
 //#include <CL/cl_gl.h>
 
 /* QT */
-//#include <QtGui>
 #include <QGLWidget>
-//#include <QMouseEvent>
 
 #ifdef Q_OS_WIN
     #include <windows.h>

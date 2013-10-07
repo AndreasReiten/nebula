@@ -21,10 +21,10 @@
 //#include <CL/cl_gl.h>
 
 /* QT */
-#include <QMouseEvent>
+//#include <QMouseEvent>
 #include <QTimer>
 #include <QElapsedTimer>
-#include <QDebug>
+//#include <QDebug>
 #include <QString>
 #include <QByteArray>
 #include <QMutex>

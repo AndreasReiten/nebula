@@ -20,10 +20,10 @@
 //#include <CL/cl_gl.h>
 
 /* QT */
-#include <QMouseEvent>
+//#include <QMouseEvent>
 #include <QRegExp>
 #include <QString>
-#include <QDebug>
+//#include <QDebug>
 #include <QFileInfo>
 //#include <QGLWidget>
 
@@ -33,7 +33,7 @@
 //    #include <GL/glx.h>
 //#endif
 
-#include "imagerender.h"
+//#include "imagerender.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"

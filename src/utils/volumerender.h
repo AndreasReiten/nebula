@@ -21,21 +21,22 @@
 //#include <CL/cl_gl.h>
 
 /* QT */
-#include <QFileDialog>
-#include <QMouseEvent>
+//#include <QFileDialog>
+//#include <QMouseEvent> // Omg so how do I include this in Qt5 if it interferes with glx.h?
 #include <QTimer>
 #include <QElapsedTimer>
-#include <QDebug>
+//#include <QDebug>
 #include <QString>
 #include <QByteArray>
 #include <QDateTime>
 #include <QGLWidget>
+#include <QMouseEvent>
 
 //#ifdef Q_OS_WIN
 //    #include <windows.h>
 //#elif defined Q_OS_LINUX
 //    #include <GL/glx.h>
-//#endifs
+//#endif
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

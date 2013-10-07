@@ -5,12 +5,12 @@ MainWindow::MainWindow()
     verbosity = 1;
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
 
-    // Set default values
+//     Set default values
     current_svo = 0;
     display_file = 0;
     svo_loaded.append(SparseVoxelOcttree());
 
-    // Set stylesheet.
+//     Set stylesheet.
     if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
     QFile styleFile( ":/src/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
@@ -26,25 +26,9 @@ MainWindow::MainWindow()
     gl_context_format.setAlpha(true);
     gl_context_format.setStencil(true);
     gl_context_format.setDirectRendering(true);
-    //~gl_context_format.setOverlay(true);
-//~
-//~
-    //~QGLFormat f = QGLFormat::defaultOverlayFormat();
-    //~f.setDoubleBuffer(true);
-    //~gl_context_format.setDefaultOverlayFormat(f);
-    //~std::cout << "gl_context_format.hasOverlay() " <<  gl_context_format.hasOverlay() << std::endl;
-    //~std::cout << "gl_context_format.alpha() " <<  gl_context_format.alpha() << std::endl;
-    //~ std::cout << "gl_context_format.hasOpenGLOverlays() " <<  gl_context_format.hasOpenGLOverlays() << std::endl;
 
     contextGLWidget = new ContextGLWidget(gl_context_format);
-    //~if (!contextGLWidget->format().hasOverlay())
-    //~{
-        //~writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" The GL context has no overlay!");
-    //~}
-    //~else
-    //~{
-        //~writeLog("[!!!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" The GL context has an overlay!");
-    //~}
+
     contextGLWidget->updateGL();
     contextGLWidget->hide();
 
@@ -68,12 +52,12 @@ MainWindow::MainWindow()
     toolChainWidget->show();
     outputDockWidget->show();
 
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
+//    if (verbosity s== 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
 }
 
 MainWindow::~MainWindow()
 {
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
 }
 
 void MainWindow::setCurrentSvoLevel(int value)
@@ -454,25 +438,27 @@ void MainWindow::initializeActions()
     exitAct->setShortcuts(QKeySequence::Quit);
 }
 
-bool MainWindow::save()
-    {
+void MainWindow::save()
+{
     if (curFile.isEmpty())
     {
-        return saveAs();
+        saveAs();
     }
     else
     {
-        return saveFile(curFile);
+        saveFile(curFile);
     }
 }
 
-bool MainWindow::saveAs()
+//bool MainWindow::someFunc()
+//{
+//    return true;
+//}
+
+void MainWindow::saveAs()
 {
     QString fileName = QFileDialog::getSaveFileName(this);
-    if (fileName.isEmpty())
-        return false;
-
-    return saveFile(fileName);
+    if (!fileName.isEmpty()) saveFile(fileName);
 }
 
 void MainWindow::about()
@@ -493,11 +479,11 @@ void MainWindow::aboutOpenGL()
         tr("<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>"));
 }
 
-//~void MainWindow::aboutHDF5()
-//~{
-    //~QMessageBox::about(this, tr("About HDF"),
-        //~tr("<h1>About HDF</h1> <b>Hierarchical Data Format</b>  (HDF, HDF4, or HDF5) is the name of a set of file formats and libraries designed to store and organize large amounts of numerical data. Originally developed at the National Center for Supercomputing Applications, it is currently supported by the non-profit HDF Group, whose mission is to ensure continued development of HDF technologies, and the continued accessibility of data currently stored in HDF. <br> In keeping with this goal, the HDF format, libraries and associated tools are available under a liberal, BSD-like license for general use. <br> <a href=\"http://www.hdfgroup.org/\">www.hdfgroup.org/</a>"));
-//~}
+////~void MainWindow::aboutHDF5()
+////~{
+//    //~QMessageBox::about(this, tr("About HDF"),
+//        //~tr("<h1>About HDF</h1> <b>Hierarchical Data Format</b>  (HDF, HDF4, or HDF5) is the name of a set of file formats and libraries designed to store and organize large amounts of numerical data. Originally developed at the National Center for Supercomputing Applications, it is currently supported by the non-profit HDF Group, whose mission is to ensure continued development of HDF technologies, and the continued accessibility of data currently stored in HDF. <br> In keeping with this goal, the HDF format, libraries and associated tools are available under a liberal, BSD-like license for general use. <br> <a href=\"http://www.hdfgroup.org/\">www.hdfgroup.org/</a>"));
+////~}
 
 void MainWindow::documentWasModified()
 {
@@ -989,7 +975,7 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(screenshotAct);
 
         // Layout
-        viewLayout = new QGridLayout;
+        QGridLayout * viewLayout = new QGridLayout;
         viewLayout->setSpacing(0);
         viewLayout->setMargin(0);
         viewLayout->setContentsMargins(0,0,0,0);
@@ -1076,8 +1062,8 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(brightnessSpinBox,4,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
-//        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
+////        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+////        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
@@ -1159,8 +1145,8 @@ void MainWindow::initializeInteractives()
         unitcellLayout->addWidget(gammaStar,8,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
 
         unitcellWidget->setLayout(unitcellLayout);
-        //~unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//        unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
+//        //~unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+////        unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
         unitcellDockWidget->setWidget(unitcellWidget);
         viewMenu->addAction(unitcellDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
@@ -1369,7 +1355,7 @@ void MainWindow::print(QString str)
     if (removable > 0) info.remove(0, removable);
 
     errorTextEdit->setPlainText(info);
-    errorTextEdit->moveCursor(QTextCursor::End) ;
+    errorTextEdit->moveCursor(QTextCursor::End);
     errorTextEdit->ensureCursorVisible();
 }
 
@@ -1470,7 +1456,10 @@ bool MainWindow::maybeSave()
             "Do you want to save your changes?"),
             QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
         if (ret == QMessageBox::Save)
-            return save();
+        {
+            save();
+            return true;
+        }
         else if (ret == QMessageBox::Cancel)
             return false;
     }
@@ -1540,7 +1529,7 @@ void MainWindow::setCurrentFile(const QString &fileName)
     setWindowFilePath(shownName);
 }
 
-QString MainWindow::strippedName(const QString &fullFileName)
-{
-    return QFileInfo(fullFileName).fileName();
-}
+//QString MainWindow::strippedName(const QString &fullFileName)
+//{
+//    return QFileInfo(fullFileName).fileName();
+//}

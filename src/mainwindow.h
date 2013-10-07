@@ -40,29 +40,14 @@
 #include <QSlider>
 #include <QList>
 
-//~ #ifdef Q_OS_WIN
-    //~ #include <HDF/hdf5.h>
-//~ #endif
-//~ #ifdef Q_OS_LINUX
-    //~ #include <hdf5.h>
-//~ #endif
-
-
-/* GL and CL*/
-//~#ifdef Q_OS_WIN
-    //~#define GLEW_STATIC
-//~#endif
-//~#include <GL/glew.h>
-//~#include <CL/opencl.h>
-//~#include <CL/cl_gl.h>
-
+#include "utils/contextgl.h"
 #include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
-#include "utils/contextgl.h"
 #include "utils/volumerender.h"
 #include "utils/imagerender.h"
 #include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
+#include "utils/tools.h"
 
 class MainWindow : public QMainWindow
 {
@@ -76,24 +61,27 @@ public:
 protected:
 
 private slots:
+    void saveAs();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
-    //~void openSVO();
+
+//    //~void openSVO();
     void newFile();
     void openScript();
     void openSvo();
     void saveSvo();
-    bool save();
-    bool saveAs();
-    void about();
+    void save();
+
     void documentWasModified();
+
+    void about();
     void aboutOpenCL();
     void aboutOpenGL();
-    //~void aboutHDF5();
+//    //~void aboutHDF5();
 
     void runReadScript();
 
-    //~void previewSVO();
+//    //~void previewSVO();
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
@@ -129,38 +117,24 @@ private:
     SparseVoxelOcttree svo_inprocess;
     QList<SparseVoxelOcttree> svo_loaded;
 
-    //~MiniArray<float> VIEW_BRICKS;
-    //~MiniArray<unsigned int> VIEW_OCT_INDEX;
-    //~MiniArray<unsigned int> VIEW_OCT_BRICK;
-    //~MiniArray<double> HIST_NORM;
-    //~MiniArray<double> HIST_LOG;
-    //~MiniArray<double> HIST_MINMAX;
-    //~MiniArray<char> SVO_COMMENT;
+//    ~MiniArray<float> VIEW_BRICKS;
+//    ~MiniArray<unsigned int> VIEW_OCT_INDEX;
+//    ~MiniArray<unsigned int> VIEW_OCT_BRICK;
+//    ~MiniArray<double> HIST_NORM;
+//    ~MiniArray<double> HIST_LOG;
+//    ~MiniArray<double> HIST_MINMAX;
+//    ~MiniArray<char> SVO_COMMENT;
 
-    //~size_t VIEW_LEVELS, VIEW_BPP, VIEW_DIM_BRICKS, VIEW_N_BRICKS;
-    //~float VIEW_EXTENT[8];
-
-    //~cl_device device;
-    //~cl_context context;
-    //~cl_command_queue queue;
-    //~cl_uint num_devices;
-    //~cl_uint num_platforms;
-    //~cl_int err;
-
-    //~int function_success;
-
-    //~const char * cl_error_cstring(cl_int error);
     void closeEvent(QCloseEvent *event);
     void initializeActions();
     void initializeConnects();
     void initializeInteractives();
     void initializeMenus();
-    //void createStatusBar();
 
     void initializeEmit();
-    //~int initDeviceCL();
-    //~int init_cl_base();
-    //~void setFileTree();
+//    //~int initDeviceCL();
+//    //~int init_cl_base();
+//    //~void setFileTree();
     void readSettings();
     void writeSettings();
     bool maybeSave();
@@ -168,8 +142,8 @@ private:
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
 
-    //~ QCheckBox * fastMoveCheckBox;
-    //~QGLFormat gl_context_format;
+//    //~ QCheckBox * fastMoveCheckBox;
+//    //~QGLFormat gl_context_format;
 
     QString strippedName(const QString &fullFileName);
     QString scriptHelp;
@@ -246,6 +220,8 @@ private:
     QWidget *unitcellWidget;
     QWidget *scriptWidget;
     QWidget *viewWidget;
+
+protected:
     ContextGLWidget * contextGLWidget;
     VolumeRenderGLWidget *volumeRenderWidget;
     ImageRenderGLWidget *imageRenderWidget;
@@ -256,7 +232,7 @@ private:
     QDockWidget *unitcellDockWidget;
 
     QString svoDir;
-    QString scriptDir;
+//    QString scriptDir;
 
     QPlainTextEdit *textEdit;
     QPlainTextEdit *errorTextEdit;
@@ -309,36 +285,33 @@ private:
     QScriptEngine engine;
     QScriptValue rawFilesQs;
 
-    // Utility
+//    // Utility
     int verbosity;
 
-    // Main resources
+//    // Main resources
     QStringList file_paths;
     QList<PilatusFile> files;
     QList<PilatusFile> background_files;
     MiniArray<float> reduced_pixels;
 
-    // Related to file treatment
+//    // Related to file treatment
     float threshold_reduce_low;
     float threshold_reduce_high;
     float threshold_project_low;
     float threshold_project_high;
 
-    // Related to Voxelize
+//    // Related to Voxelize
     int brick_inner_dimension;
     int brick_outer_dimension;
 
-
-    QGridLayout * mainLayout;
-    QGridLayout * viewLayout;
-
-    // Related to workers and threading
     QThread * setFileThread;
     QThread * readFileThread;
     QThread * projectFileThread;
     QThread * voxelizeThread;
     QThread * allInOneThread;
     QThread * displayFileThread;
+
+    QGridLayout * mainLayout;
 
     int display_file;
 
