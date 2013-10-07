@@ -5,7 +5,12 @@ QWidget
 
 QPlainTextEdit
 {
-    background-color: #111111;
-    color: #CCCCCC;
     font: 16px "Monospace";
+}
+
+QDockWidget::title
+{
+    border: 2.0px solid #000000;
+    border-radius: 2px;
+    text-align: center;
 }

@@ -368,7 +368,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 
-void MainWindow::newFile()
+void MainWindow::newScriptFile()
 {
     if (maybeSave())
     {
@@ -399,7 +399,7 @@ void MainWindow::initializeActions()
     // Actions
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
-    saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
+    saveAct = new QAction(QIcon(":/art/saveScript.png"), tr("&Save script"), this);
     runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
     saveAsAct = new QAction(tr("Save script &As..."), this);
     exitAct = new QAction(tr("E&xit program"), this);
@@ -409,7 +409,7 @@ void MainWindow::initializeActions()
     aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
     //~aboutHDF5Act = new QAction(tr("About HDF"), this);
     openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
-    saveSVOAct = new QAction(QIcon(":/art/save.png"), tr("Save SVO"), this);
+    saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
     logAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle Logarithm"), this);
     dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle Data Structure"), this);
     backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle Background Color"), this);
@@ -438,11 +438,11 @@ void MainWindow::initializeActions()
     exitAct->setShortcuts(QKeySequence::Quit);
 }
 
-void MainWindow::save()
+void MainWindow::saveScript()
 {
     if (curFile.isEmpty())
     {
-        saveAs();
+        saveScriptAs();
     }
     else
     {
@@ -451,7 +451,7 @@ void MainWindow::save()
 }
 
 
-void MainWindow::saveAs()
+void MainWindow::saveScriptAs()
 {
     QString fileName = QFileDialog::getSaveFileName(this);
     if (!fileName.isEmpty()) saveFile(fileName);
@@ -701,11 +701,11 @@ void MainWindow::initializeConnects()
     connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
     connect(saveSVOButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
-    connect(newAct, SIGNAL(triggered()), this, SLOT(newFile()));
+    connect(newAct, SIGNAL(triggered()), this, SLOT(newScriptFile()));
     connect(openAct, SIGNAL(triggered()), this, SLOT(openScript()));
-    connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
+    connect(saveAct, SIGNAL(triggered()), this, SLOT(saveScript()));
     connect(runScriptAct, SIGNAL(triggered()), this, SLOT(runReadScript()));
-    connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveAs()));
+    connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveScriptAs()));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
     connect(aboutOpenCLAct, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
@@ -1012,22 +1012,22 @@ void MainWindow::initializeInteractives()
         brightnessSpinBox->setAccelerated(1);
 
         tsfComboBox = new QComboBox;
-        tsfComboBox->addItem(trUtf8("Hot"));
-        tsfComboBox->addItem(trUtf8("Winter"));
-        tsfComboBox->addItem(trUtf8("Ice"));
         tsfComboBox->addItem(trUtf8("Rainbow"));
+        tsfComboBox->addItem(trUtf8("Hot"));
         tsfComboBox->addItem(trUtf8("Hsv"));
+        tsfComboBox->addItem(trUtf8("Galaxy"));
         tsfComboBox->addItem(trUtf8("Binary"));
         tsfComboBox->addItem(trUtf8("Yranib"));
-        tsfComboBox->addItem(trUtf8("Galaxy"));
-        tsfComboBox->addItem(trUtf8("White"));
-        tsfComboBox->addItem(trUtf8("Black"));
+        tsfComboBox->addItem(trUtf8("Winter"));
+        tsfComboBox->addItem(trUtf8("Ice"));
+//        tsfComboBox->addItem(trUtf8("White"));
+//        tsfComboBox->addItem(trUtf8("Black"));
 
         tsfAlphaComboBox = new QComboBox;
-        tsfAlphaComboBox->addItem(trUtf8("Uniform"));
         tsfAlphaComboBox->addItem(trUtf8("Linear"));
         tsfAlphaComboBox->addItem(trUtf8("Exponential"));
-        tsfAlphaComboBox->addItem(trUtf8("Opaque"));
+        tsfAlphaComboBox->addItem(trUtf8("Uniform"));
+//        tsfAlphaComboBox->addItem(trUtf8("Opaque"));
 
 
         graphicsDockWidget = new QDockWidget(tr("View Settings"), this);
@@ -1191,7 +1191,7 @@ void MainWindow::initializeInteractives()
 
         // Buttons
         saveSVOButton = new QPushButton;
-        saveSVOButton->setIcon(QIcon(":/art/save.png"));
+        saveSVOButton->setIcon(QIcon(":/art/saveScript.png"));
         saveSVOButton->setText("Save Octtree");
 
         QGridLayout * fileLayout = new QGridLayout;
@@ -1441,11 +1441,11 @@ bool MainWindow::maybeSave()
         QMessageBox::StandardButton ret;
         ret = QMessageBox::warning(this, tr("Nebula"),
             tr("The script has been modified.\n"
-            "Do you want to save your changes?"),
+            "Do you want to saveScript your changes?"),
             QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
         if (ret == QMessageBox::Save)
         {
-            save();
+            saveScript();
             return true;
         }
         else if (ret == QMessageBox::Cancel)

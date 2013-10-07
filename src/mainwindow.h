@@ -61,15 +61,16 @@ public:
 protected:
 
 private slots:
-    void saveAs();
+    void saveScriptAs();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
 
-    void newFile();
+    void newScriptFile();
     void openScript();
+    void saveScript();
     void openSvo();
     void saveSvo();
-    void save();
+
 
     void documentWasModified();
 

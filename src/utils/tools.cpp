@@ -373,28 +373,28 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
     switch (color_style)
     {
         case 0:
-            tmp.setDeep(8, 4, buf_hot);
-            break;
-        case 1:
-            tmp.setDeep(8, 4, buf_winter);
-            break;
-        case 2:
-            tmp.setDeep(8, 4, buf_ice);
-            break;
-        case 3:
             tmp.setDeep(8, 4, buf_rainbow);
             break;
-        case 4:
+        case 1:
+            tmp.setDeep(8, 4, buf_hot);
+            break;
+        case 2:
             tmp.setDeep(8, 4, buf_hsv);
             break;
-        case 5:
+        case 3:
+            tmp.setDeep(8, 4, buf_galaxy);
+            break;
+        case 4:
             tmp.setDeep(8, 4, buf_binary);
             break;
-        case 6:
+        case 5:
             tmp.setDeep(8, 4, buf_yranib);
             break;
+        case 6:
+            tmp.setDeep(8, 4, buf_winter);
+            break;
         case 7:
-            tmp.setDeep(8, 4, buf_galaxy);
+            tmp.setDeep(8, 4, buf_ice);
             break;
         case 8:
             tmp.setDeep(8, 4, buf_white);
@@ -413,7 +413,7 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
     // Compute the alpha
     switch (alpha_style)
     {
-        case 0:
+        case 2:
             // Uniform alpha except for the first vertex
             tmp[3] = 0.0;
             for (int i = 4; i < 32; i+=4)
@@ -421,14 +421,14 @@ void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_fun
                 tmp[i+3] = 1.0;
             }
             break;
-        case 1:
+        case 0:
             // Linearly increasing alpha
             for (int i = 0; i < 32; i+=4)
             {
                 tmp[i+3] = ((float)i/4)/7.0;
             }
             break;
-        case 2:
+        case 1:
             // Exponentially increasing data
             tmp[3] = 0.0;
             for (int i = 4; i < 32; i+=4)

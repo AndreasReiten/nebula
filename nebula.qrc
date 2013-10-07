@@ -21,10 +21,6 @@
         <file>src/kernels/voxelize.cl</file>
         <file>src/kernels/project.cl</file>
         <file>art/app.png</file>
-        <file>src/fonts/FreeMono.ttf</file>
-        <file>src/fonts/FreeMonoBold.ttf</file>
-        <file>src/fonts/FreeMonoOblique.ttf</file>
-        <file>src/fonts/FreeMonoBoldOblique.ttf</file>
         <file>src/stylesheets/gosutheme.qss</file>
         <file>art/placeholder.png</file>
         <file>art/new.png</file>

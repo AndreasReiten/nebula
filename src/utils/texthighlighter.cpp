@@ -4,8 +4,22 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
 {
     HighlightingRule rule;
 
+    // Colors
+    QColor keyword_color(106, 27, 224, 255);
+    QColor warning_color(255, 40, 40, 255);
+    QColor error_color(255, 70, 70, 255);
+//    QColor stamp_color(40, 255, 20, 255);
+    QColor class_color(106, 27, 224, 255);
+    QColor singlecomment_color(195, 83, 20, 255);
+    QColor multicomment_color(195, 83, 20, 255);
+    QColor number_color(40, 140, 255, 255);
+    QColor quote_color(40, 100, 20, 255);
+    QColor paranthesis_color(255, 93, 60, 255);
+    QColor function_color(150, 70, 224, 255);
+
+
     /* KEYWORDS */
-    keywordFormat.setForeground(QBrush(QColor(106, 27, 224, 255)));
+    keywordFormat.setForeground(keyword_color);
     keywordFormat.setFontWeight(QFont::Bold);
     QStringList keywordPatterns;
     keywordPatterns << "\\bchar\\b" << "\\bclass\\b" << "\\bconst\\b"
@@ -26,60 +40,60 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
     }
 
     /* WARNINGS */
-    warningFormat.setForeground(QBrush(QColor(255, 40, 40, 255)));
+    warningFormat.setForeground(warning_color);
     rule.pattern = QRegExp("Warning:");
     rule.format = warningFormat;
     highlightingRules.append(rule);
 
     /* ERRORS */
-    errorFormat.setForeground(QBrush(QColor(255, 70, 70, 255)));
+    errorFormat.setForeground(error_color);
     rule.pattern = QRegExp("(?:\\S+)?Error:");
     rule.format = errorFormat;
     highlightingRules.append(rule);
 
     /* STAMPS */
-    stampFormat.setForeground(QBrush(QColor(40, 255, 20, 255)));
+//    stampFormat.setForeground(stamp_color);
     //~ rule.pattern = QRegExp("(?:[Script])?(?:[Set])?(?:[Read])?(?:[Project])?(?:[Voxelize])?");
-    rule.pattern = QRegExp("\\[\\S+\\]");
-    rule.format = stampFormat;
-    highlightingRules.append(rule);
+//    rule.pattern = QRegExp("\\[\\S+\\]");
+//    rule.format = stampFormat;
+//    highlightingRules.append(rule);
 
     /* CLASSES */
     classFormat.setFontWeight(QFont::Bold);
-    classFormat.setForeground(QBrush(QColor(106, 27, 224, 255)));
+    classFormat.setForeground(class_color);
     rule.pattern = QRegExp("\\bQ[A-Za-z]+\\b");
     rule.format = classFormat;
     highlightingRules.append(rule);
 
     /* SINGLE LINE COMMENTS */
-    singleLineCommentFormat.setForeground(QBrush(QColor(195, 83, 20, 255)));
+    singleLineCommentFormat.setForeground(singlecomment_color);
     rule.pattern = QRegExp("//[^\n]*");
     rule.format = singleLineCommentFormat;
     highlightingRules.append(rule);
 
     /* MULT LINE COMMENTS */
-    multiLineCommentFormat.setForeground(QBrush(QColor(195, 83, 20, 255)));
+    multiLineCommentFormat.setForeground(multicomment_color);
 
     /* NUMBERS */
-    numberFormat.setForeground(QBrush(QColor(40, 140, 255, 255)));
+    numberFormat.setForeground(number_color);
     rule.pattern = QRegExp("(?:\\d*\\.\\d+)|(?:\\d+)");
     rule.format = numberFormat;
     highlightingRules.append(rule);
 
     /* QUOTATIONS */
-    quotationFormat.setForeground(QBrush(QColor(40, 255, 20, 255))); //QColor(255, 230, 171, 255) Unique
+    quotationFormat.setForeground(quote_color); //QColor(255, 230, 171, 255) Unique
     rule.pattern = QRegExp("\".*\"");
     rule.format = quotationFormat;
     highlightingRules.append(rule);
 
     /* PARANTHESES */
-    paranthesisFormat.setForeground(QBrush(QColor(255, 93, 60, 255)));
+    paranthesisFormat.setForeground(paranthesis_color);
     rule.pattern = QRegExp("[()]");
     rule.format = paranthesisFormat;
     highlightingRules.append(rule);
 
     /* FUNCTIONS */
-    functionFormat.setForeground(QColor(150, 70, 224, 255));//QColor(106, 27, 224, 255) Epic
+    functionFormat.setForeground(function_color);//QColor(106, 27, 224, 255) Epic
     rule.pattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
     rule.format = functionFormat;
     highlightingRules.append(rule);
