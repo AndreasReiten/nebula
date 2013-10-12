@@ -1,12 +1,14 @@
 #include "contextgl.h"
 
+// Device should maybe not be own class. Rather make functions here to act on devices in the raw device list.
+
 ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
     QGLWidget(format, parent)
 {
     //~std::cout << "this->format().hasOverlay() " <<  this->format().hasOverlay() << std::endl;
     //~std::cout << "this->format().alpha() " <<  this->format().alpha() << std::endl;
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
     isGLIntitialized = false;
     glInit();
     //~ if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
@@ -14,7 +16,7 @@ ContextGLWidget::ContextGLWidget(const QGLFormat & format, QWidget * parent) :
 
 ContextGLWidget::~ContextGLWidget()
 {
-    
+
     if (isGLIntitialized)
     {
         if (*queue) clReleaseCommandQueue(*queue);
@@ -40,7 +42,7 @@ cl_context * ContextGLWidget::getCLContext()
 
 void ContextGLWidget::initializeGL()
 {
-    
+
     if (!isGLIntitialized)
     {
         if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
@@ -88,7 +90,7 @@ void ContextGLWidget::setMessageString(QString str)
 
 int ContextGLWidget::initResourcesGL()
 {
-    
+
 
     /* Initialize OpenGL */
     GLenum glew_status = glewInit();
@@ -113,7 +115,7 @@ int ContextGLWidget::initResourcesGL()
 int ContextGLWidget::initDeviceCL(int verbosity)
 {
     // DEVICE & INFO
-    
+
     device = new cl_device;
 
     err = clGetPlatformIDs(1, &device->platform_id, &num_platforms);
@@ -187,7 +189,7 @@ void ContextGLWidget::writeLog(QString str)
 
 int ContextGLWidget::initResourcesCL()
 {
-    
+
     context = new cl_context;
     queue = new cl_command_queue;
 

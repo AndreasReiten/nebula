@@ -118,7 +118,7 @@ void ImageRenderGLWidget::initFreetype()
     FT_Face face;
     FT_Error error;
 
-    const char * fontfilename = "../fonts/FreeMonoOblique.ttf";
+    const char * fontfilename = "fonts/FreeMonoOblique.ttf";
 
     error = FT_Init_FreeType(&ft);
     if(error)

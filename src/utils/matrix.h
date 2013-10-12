@@ -684,7 +684,7 @@ void CameraToClipMatrix<T>::setProjection(bool value)
 template <class T>
 class TsfMatrix : public Matrix<T>{
     public:
-        using Matrix<T>::Matrix;
+//        using Matrix<T>::Matrix;
         TsfMatrix();
         ~TsfMatrix();
 
@@ -848,7 +848,7 @@ void TsfMatrix<T>::setPreIntegrated()
 template <class T>
 class RotationMatrix : public Matrix<T>{
     public:
-        using Matrix<T>::Matrix;
+//        using Matrix<T>::Matrix;
         RotationMatrix();
         ~RotationMatrix();
 

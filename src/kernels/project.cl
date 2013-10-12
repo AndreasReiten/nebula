@@ -73,11 +73,11 @@ __kernel void FRAME_FILTER(
         // Flat min/max filter (threshold_one)
         if (((intensity < threshold_one.x) || (intensity > threshold_one.y)))
         {
-            intensity = 0.0;
+            intensity = 0.0f;
         }
         
-        float4 xyzi = (float4)(0.0);
-        if (intensity > 0.0)
+        float4 xyzi = (float4)(0.0f);
+        if (intensity > 0.0f)
         {
             /*
              * Lorentz Polarization correction and distance correction + projecting the pixel onto the Ewald sphere
@@ -130,7 +130,7 @@ __kernel void FRAME_FILTER(
             // Flat min/max filter (threshold_one)
             if (((xyzi.w < threshold_two.x) || (xyzi.w > threshold_two.y)))
             {
-                xyzi.w = 0.0;
+                xyzi.w = 0.0f;
             }
         }
 

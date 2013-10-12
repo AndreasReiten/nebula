@@ -28,8 +28,8 @@ int boundingBoxIntersectNorm(float3 r_origin, float3 r_delta, float * t_near, fl
 
     // Compute relative intersects
     float3 r_delta_inv = native_divide((float3)(1.0f),r_delta);
-    float3 T1 = ((float3)(0.0) - r_origin)*r_delta_inv;
-    float3 T2 = ((float3)(2.0) - r_origin)*r_delta_inv;
+    float3 T1 = ((float3)(0.0f) - r_origin)*r_delta_inv;
+    float3 T2 = ((float3)(2.0f) - r_origin)*r_delta_inv;
 
     // Swap
     float3 t_min = min(T2, T1);
@@ -46,14 +46,17 @@ int boundingBoxIntersectNorm(float3 r_origin, float3 r_delta, float * t_near, fl
     return smallest_t_max > largest_t_min;
 }
 
-void sc2xyz(float4 * b, __constant float * A, float4 * x)
+float4 sc2xyz( __constant float * A, float4 x)
 {
     // This is an adapted matrix multiplication function
 
-    b->w = native_divide(1.0f, x->x*A[12] + x->y*A[13] + x->z*A[14] + x->w*A[15]);
-    b->x = b->w * (x->x*A[0] + x->y*A[1] + x->z*A[2] + x->w*A[3]);
-    b->y = b->w * (x->x*A[4] + x->y*A[5] + x->z*A[6] + x->w*A[7]);
-    b->z = b->w * (x->x*A[8] + x->y*A[9] + x->z*A[10] + x->w*A[11]);
+    float4 b;
+    b.w = native_divide(1.0f, x.x*A[12] + x.y*A[13] + x.z*A[14] + x.w*A[15]);
+    b.x = b.w * (x.x*A[0] + x.y*A[1] + x.z*A[2] + x.w*A[3]);
+    b.y = b.w * (x.x*A[4] + x.y*A[5] + x.z*A[6] + x.w*A[7]);
+    b.z = b.w * (x.x*A[8] + x.y*A[9] + x.z*A[10] + x.w*A[11]);
+
+    return b;
 }
 
 
@@ -80,7 +83,7 @@ float model(float3 k, __constant float * param)
         (-k.y*f*f + e*k.x*f + d*k.z*f - c*d*k.x + a*c*k.y - a*e*k.z),
         (-k.z*d*d + e*k.x*d + f*k.y*d - b*f*k.x - a*e*k.y + a*b*k.z));
 
-    return exp(-2.0*(k.x*k.x + k.y*k.y + k.z*k.z)*param[3])*native_divide(1.0f,(a*b*c - a*e*e - b*f*f - c*d*d + 2.0f*d*e*f))*dot(k, Ak);
+    return exp(-2.0f*(k.x*k.x + k.y*k.y + k.z*k.z)*param[3])*native_divide(1.0f,(a*b*c - a*e*e - b*f*f - c*d*d + 2.0f*d*e*f))*dot(k, Ak);
 }
 
 
@@ -122,8 +125,8 @@ __kernel void svoRayTrace(
 
     if (isLogActive)
     {
-        if (dataLimits.x <= 0) dataLimits.x = 0.01;
-        if (dataLimits.y <= 0) dataLimits.y = 0.01;
+        if (dataLimits.x <= 0.0f) dataLimits.x = 0.01f;
+        if (dataLimits.y <= 0.0f) dataLimits.y = 0.01f;
         dataLimits.x = log10(dataLimits.x);
         dataLimits.y = log10(dataLimits.y);
     }
@@ -156,10 +159,10 @@ __kernel void svoRayTrace(
             float4 rayFarNdcEdge = (float4)(ndcEdge, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            sc2xyz(&rayNear, data_view_matrix, &rayNearNdc);
-            sc2xyz(&rayFar, data_view_matrix, &rayFarNdc);
-            sc2xyz(&rayNearEdge, data_view_matrix, &rayNearNdcEdge);
-            sc2xyz(&rayFarEdge, data_view_matrix, &rayFarNdcEdge);
+            rayNear = sc2xyz(data_view_matrix, rayNearNdc);
+            rayFar = sc2xyz(data_view_matrix, rayFarNdc);
+            rayNearEdge = sc2xyz(data_view_matrix, rayNearNdcEdge);
+            rayFarEdge = sc2xyz(data_view_matrix, rayFarNdcEdge);
 
             rayDelta = rayFar.xyz - rayNear.xyz;
             pixelRadiusNear = rayNearEdge.xyz - rayNear.xyz;
@@ -173,8 +176,8 @@ __kernel void svoRayTrace(
             float3 a2Far = pixelRadiusFar - a1Far;
 
             // The geometry of the cone
-            coneDiameterIncrement = 2.0*native_divide( length(a2Far - a2Near), length(rayDelta - a1Near + a1Far) );
-            coneDiameterNear = 2.0*length(a2Near); // small approximation
+            coneDiameterIncrement = 2.0f*native_divide( length(a2Far - a2Near), length(rayDelta - a1Near + a1Far) );
+            coneDiameterNear = 2.0f*length(a2Near); // small approximation
         }
 
         // To limit resource spending we limit the ray to the intersection between itself and a bounding box
@@ -197,8 +200,8 @@ __kernel void svoRayTrace(
                 hit = boundingBoxIntersect(rayNear.xyz, rayDelta.xyz, bbox, &t_near, &t_far);
             }
         }
-        float4 sample = (float4)(0.0, 0.0, 0.0, 0.0);
-        float4 color = (float4)(0.0, 0.0, 0.0, 0.0);
+        float4 sample = (float4)(0.0f);
+        float4 color = (float4)(0.0f);
 
         // In the case that the ray actually hits the bounding box, prepare for volume sampling and color accumulation
         if(hit)
@@ -212,7 +215,7 @@ __kernel void svoRayTrace(
 
             // Some variables we will need during ray traversal
             float skipLength, intensity, voxelSize, voxelSizeUp;
-            float coneDiameter, f, stepLength;
+            float coneDiameter, stepLength;
             float coneDiameterLow = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (numOctLevels-1))));
             float cone_diameter_high = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (0))));
             uint index, index_prev, brick, isMsd, isLowEnough, isEmpty;
@@ -229,7 +232,7 @@ __kernel void svoRayTrace(
             rayBoxXyzPrev = rayBoxOrigin;
 
             // Merged bits in the octtree can be read using these bitmasks:
-            uint mask_msd_flag = ((1 << 1) - 1) << 31;
+            uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
             uint mask_data_flag = ((1 << 1) - 1) << 30;
             uint mask_child_index = ((1 << 30) - 1) << 0;
             uint mask_brick_id_x = ((1 << 10) - 1) << 20;
@@ -241,18 +244,18 @@ __kernel void svoRayTrace(
             while ( fast_length(rayBoxXyz - rayBoxOrigin) < fast_length(rayBoxDelta) )
             {
                 // Break off early if the accumulated alpha is high enough
-                if (color.w > 0.995) break;
+                if (color.w > 0.995f) break;
 
                 // Index trackers for the traversal.
                 index = 0;
                 index_prev = 0;
 
                 // Calculate the cone diameter at the current ray position
-                coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear) * coneDiameterIncrement) * stepLengthFactor;
+                coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement) * stepLengthFactor;
                 coneDiameter = clamp(coneDiameter, coneDiameterLow, cone_diameter_high);
 
                 // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
-                stepLength = coneDiameter * 0.25;
+                stepLength = coneDiameter * 0.25f;
                 rayBoxAdd = direction * stepLength;
 
                  // We use a normalized convention during octtree traversal. The normalized convention makes it easier to think about the octtree traversal.
@@ -277,9 +280,9 @@ __kernel void svoRayTrace(
 
                         if (isDsActive)
                         {
-                            sample = (float4)(1.0,1.0,1.0, 0.08);
-                            color.xyz = color.xyz +(1 - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1 - color.w)*sample.w;
+                            sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
+                            color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
+                            color.w = color.w +(1.0f - color.w)*sample.w;
                         }
 
                         // This ugly shit needs to go
@@ -289,7 +292,7 @@ __kernel void svoRayTrace(
 
                         if (hit)
                         {
-                            skipLength = 0.01 * coneDiameterLow + 0.5 * fast_length((tmp_a + t_far*tmp_b) - normXyz) * voxelSize * (brickSize-1);
+                            skipLength = 0.01f * coneDiameterLow + 0.5f * fast_length((tmp_a + t_far*tmp_b) - normXyz) * voxelSize * (brickSize-1);
                             rayBoxXyz += skipLength * direction;
                             break;
                         }
@@ -305,7 +308,7 @@ __kernel void svoRayTrace(
                             brick = oct_brick[index_prev];
                             brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                            lookupPos = native_divide(0.5 + convert_float4(brickId * brickSize)  + (float4)(normXyzPrev, 0.0f)*3.5 , convert_float4(bricks_dim));
+                            lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyzPrev, 0.0f)*3.5f , convert_float4(bricks_dim));
 
                             float intensityPrev = read_imagef(bricks, brick_sampler, lookupPos).w;
 
@@ -313,7 +316,7 @@ __kernel void svoRayTrace(
                             brick = oct_brick[index];
                             brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                            lookupPos = native_divide(0.5 + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5 , convert_float4(bricks_dim));
+                            lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
 
                             float intensityHere = read_imagef(bricks, brick_sampler, lookupPos).w;
 
@@ -327,16 +330,16 @@ __kernel void svoRayTrace(
                             brick = oct_brick[index];
                             brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                            lookupPos = native_divide(0.5 + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5 , convert_float4(bricks_dim));
+                            lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
 
                             intensity = read_imagef(bricks, brick_sampler, lookupPos).w;
                         }
 
                         if (isDsActive)
                         {
-                            sample = (float4)(0.2,0.3,1.0, 1.00);
-                            color.xyz = color.xyz +(1 - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1 - color.w)*sample.w;
+                            sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                            color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
+                            color.w = color.w +(1.f - color.w)*sample.w;
                             break;
                         }
 
@@ -353,8 +356,8 @@ __kernel void svoRayTrace(
 
                         sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);
 
-                        color.xyz += (1 - color.w)*sample.xyz*sample.w;
-                        color.w += (1 - color.w)*sample.w;
+                        color.xyz += (1.f - color.w)*sample.xyz*sample.w;
+                        color.w += (1.f - color.w)*sample.w;
 
                         rayBoxXyz += rayBoxAdd;
                         break;
@@ -369,22 +372,23 @@ __kernel void svoRayTrace(
                         index = (oct_index[index] & mask_child_index);
                         index += normIndex.x + normIndex.y*2 + normIndex.z*4;
 
-                        normXyz = (normXyz - convert_float(normIndex))*2.0f;
+                        //normXyz = (normXyz - convert_float(normIndex))*2.0f;
+            normXyz = (normXyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
                         normIndex = convert_int3(normXyz);
                         normIndex = clamp(normIndex, 0, 1);
                     }
                 }
 
                 // This shit shouldnt be needed
-                if (fast_distance(rayBoxXyz, rayBoxXyzPrev) < stepLength*0.5)
+                if (fast_distance(rayBoxXyz, rayBoxXyzPrev) < stepLength*0.5f)
                 {
-                    rayBoxXyz += rayBoxAdd*0.5;
+                    rayBoxXyz += rayBoxAdd*0.5f;
                 }
                 rayBoxXyzPrev = rayBoxXyz;
             }
             if (!isDsActive)color *= brightness;
         }
-        write_imagef(ray_tex, id_glb, clamp(color, 0.0, 1.0));
+        write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
     }
 }
 
@@ -414,13 +418,12 @@ __kernel void modelRayTrace(
     float brightness = tsf_var[5];
 
     int isLogActive = misc_int[2];
-    int isPerspectiveActive = misc_int[5];
 
     float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
     if (isLogActive)
     {
-        if (dataLimits.x <= 0) dataLimits.x = 0.01;
-        if (dataLimits.y <= 0) dataLimits.y = 0.01;
+        if (dataLimits.x <= 0) dataLimits.x = 0.01f;
+        if (dataLimits.y <= 0) dataLimits.y = 0.01f;
         dataLimits.x = log10(dataLimits.x);
         dataLimits.y = log10(dataLimits.y);
     }
@@ -441,8 +444,8 @@ __kernel void modelRayTrace(
             float4 rayFarNdc = (float4)(ndc, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            sc2xyz(&rayNear, data_view_matrix, &rayNearNdc);
-            sc2xyz(&rayFar, data_view_matrix, &rayFarNdc);
+            rayNear = sc2xyz(data_view_matrix, rayNearNdc);
+            rayFar = sc2xyz(data_view_matrix, rayFarNdc);
 
             rayDelta = rayFar.xyz - rayNear.xyz;
         }
@@ -467,11 +470,11 @@ __kernel void modelRayTrace(
             }
         }
 
-        float4 color = (float4)(0.0);
-        float4 sample = (float4)(0.0);
-        //~ float4 sFront = (float4)(0.0);
-        //~ float4 sBack = (float4)(0.0);
-        //~ float4 rgba = (float4)(0.0);
+        float4 color = (float4)(0.0f);
+        float4 sample = (float4)(0.0f);
+        //~ float4 sFront = (float4)(0.0f);
+        //~ float4 sBack = (float4)(0.0f);
+        //~ float4 rgba = (float4)(0.0f);
 
         if(hit)
         {
@@ -480,9 +483,9 @@ __kernel void modelRayTrace(
             float3 rayBoxEnd = rayNear.xyz + t_far * rayDelta.xyz;
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float3 rayBoxAdd = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-
-            data_view_extent[0], 400.0);
+            data_view_extent[0], 400.0f);
             //~ float d = length(rayBoxAdd);
-            //~ float intBack = 0.0, intFront = 0.0;
+            //~ float intBack = 0.0f, intFront = 0.0f;
             float rayBoxLength = fast_length(rayBoxDelta);
 
             float3 rayBoxXyz = rayBoxOrigin;
@@ -496,20 +499,20 @@ __kernel void modelRayTrace(
 
                 if(isLogActive)
                 {
-                    if (val < 1) val = 1;
+                    if (val < 1.f) val = 1.f;
                     val = log10(val);
                 }
 
                 float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataLimits.x)/(dataLimits.y - dataLimits.x)), 0.5f);
 
                 //~ intBack = tsfPosition.x;
-                //~ intBack = clamp(intFront, 0.0, 1.0);
+                //~ intBack = clamp(intFront, 0.0f, 1.0f);
                 //~ sBack = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                //~ rgba.w = 1.0 - exp(-d*native_divide(fabs(sBack.w  - sFront.w), fabs(intBack - intFront) + 1e-10));
+                //~ rgba.w = 1.0f - exp(-d*native_divide(fabs(sBack.w  - sFront.w), fabs(intBack - intFront) + 1e-10));
                 //~ rgba.xyz = native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(sBack.w  - sFront.w) + 1e-10)*rgba.w;
                 //~ rgba.xyz = d*native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(intBack - intFront) + 1e-10);
                 //~ rgba.w *=alpha;
-                //~ rgba = clamp(rgba, 0.0, 1.0);
+                //~ rgba = clamp(rgba, 0.0f, 1.0f);
 //~
                 //~ color.xyz += (1 - color.w)*rgba.xyz;
                 //~ color.w += (1 - color.w)*rgba.w;
@@ -517,16 +520,16 @@ __kernel void modelRayTrace(
                 sample.w *= alpha*intensity_scaling;
                 //~clamp(sample, 0.0,1.0);
 
-                color.xyz += (1 - color.w)*sample.xyz*sample.w;
-                color.w += (1 - color.w)*sample.w;
+                color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                color.w += (1.0f - color.w)*sample.w;
 
                 //~ sFront = sBack;
                 //~ intFront = intBack;
                 rayBoxXyz += rayBoxAdd;
-                if (color.w > 0.999) break;
+                if (color.w > 0.999f) break;
             }
             color *= brightness;
         }
-        write_imagef(ray_tex, id_glb, clamp(color, 0.0, 1.0));
+        write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
     }
 }

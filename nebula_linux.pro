@@ -14,7 +14,10 @@ HEADERS       = src/mainwindow.h \
                 src/utils/searchnode.h \
                 src/utils/bricknode.h \
                 src/utils/atlas.h \
-                src/utils/sparsevoxelocttree.h
+                src/utils/sparsevoxelocttree.h \
+                src/utils/contextcl.h \
+                src/utils/devicecl.h
+
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
                 src/utils/contextgl.cpp \
@@ -29,12 +32,15 @@ SOURCES       = src/main.cpp \
                 src/utils/searchnode.cpp \
                 src/utils/bricknode.cpp \
                 src/utils/atlas.cpp \
-                src/utils/sparsevoxelocttree.cpp
+                src/utils/sparsevoxelocttree.cpp \
+                src/utils/contextcl.cpp \
+                src/utils/devicecl.cpp
+
 RESOURCES     = nebula.qrc
 
 QMAKE_CXXFLAGS += -std=c++0x -I/usr/include/freetype2
-QT += core opengl widgets script
-#QT += opengl script // Use for Qt4
+QT += core gui opengl widgets script # Use for Qt5
+#QT += opengl script # Use for Qt4
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
 

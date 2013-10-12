@@ -33,7 +33,7 @@ __kernel void voxelize(
 
     // Position of point
     float4 xyzw;
-    float step_length = (extent[1] - extent[0]) / ((float)brick_outer_dimension - 1.0);
+    float step_length = (extent[1] - extent[0]) / ((float)brick_outer_dimension - 1.0f);
     xyzw.x = extent[0] + (float)id_loc.x * step_length;
     xyzw.y = extent[2] + (float)id_loc.y * step_length;
     xyzw.z = extent[4] + (float)id_loc.z * step_length;
@@ -41,18 +41,18 @@ __kernel void voxelize(
 
     // Interpolate around positions using invrese distance weighting
     float4 point;
-    float sum_intensity = 0;
-    float sum_distance = 0;
+    float sum_intensity = 0.0f;
+    float sum_distance = 0.0f;
     float dst;
 
     for (int i = 0; i < item_count; i++)
     {
         point = items[i];
         dst = fast_distance(xyzw.xyz, point.xyz);
-        if (dst <= 0.0)
+        if (dst <= 0.0f)
         {
             sum_intensity = point.w;
-            sum_distance = 1.0;
+            sum_distance = 1.0f;
             break;
         }
         if (dst <= search_radius)
@@ -67,8 +67,8 @@ __kernel void voxelize(
     pool[target_index(target_dimension, id_loc, brick_outer_dimension, brick_count)] = xyzw.w;
 
     // Parallel reduction to find if there is nonzero data
-    if (xyzw.w != 0.0) addition_array[id_output] = 1.0;
-    else  addition_array[id_output] = 0.0;
+    if (xyzw.w != 0.0f) addition_array[id_output] = 1.0f;
+    else  addition_array[id_output] = 0.0f;
 
     barrier(CLK_LOCAL_MEM_FENCE);
     for (unsigned int i = 256; i > 0; i >>= 1)

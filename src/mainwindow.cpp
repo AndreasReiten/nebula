@@ -3,7 +3,7 @@
 MainWindow::MainWindow()
 {
     verbosity = 1;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
 
     //     Set default values
     current_svo = 0;
@@ -11,13 +11,17 @@ MainWindow::MainWindow()
     svo_loaded.append(SparseVoxelOcttree());
 
     //     Set stylesheet
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
+//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
     QFile styleFile( ":/src/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
     styleFile.close();
     this->setStyleSheet(style);
 
+
+    // Set the OpenCL context
+    contexto = new ContextCL;
+    contexto->initialize ();
 
     // Set the OpenGL rendering context. Multisampling can be enabled here.
     QGLFormat gl_context_format;

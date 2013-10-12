@@ -19,7 +19,7 @@
 #include "mainwindow.h"
 #include "utils/tools.h"
 
-const int verbosity = 1;
+//const int verbosity = 1;
 
 /* This is the top level GUI implementation */
 int main(int argc, char **argv)
@@ -27,8 +27,8 @@ int main(int argc, char **argv)
     // Initialize the log file
     QDateTime dateTime = dateTime.currentDateTime();
     QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
-    if (verbosity == 1) writeToLogAndPrint("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
-    if (verbosity == 1) writeToLogAndPrint(Q_FUNC_INFO, "riv.log", 1);
+    writeToLogAndPrint("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
+//    if (verbosity == 1) writeToLogAndPrint(Q_FUNC_INFO, "riv.log", 1);
 
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));

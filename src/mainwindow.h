@@ -48,6 +48,7 @@
 #include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
+#include "utils/contextcl.h"
 
 class MainWindow : public QMainWindow
 {
@@ -106,6 +107,8 @@ signals:
     void changedPaths(QStringList strlist);
 
 private:
+    ContextCL * contexto;
+
     int current_svo;
 
     float suggested_search_radius_high;

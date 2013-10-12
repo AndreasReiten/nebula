@@ -15,14 +15,14 @@ static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
 BaseWorker::BaseWorker()
 {
     verbosity = 1;
-    
+
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 BaseWorker::~BaseWorker()
 {
-    
+
 }
 
 void BaseWorker::writeLog(QString str)
@@ -32,7 +32,7 @@ void BaseWorker::writeLog(QString str)
 
 void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue)
 {
-    
+
     this->device = device;
     this->context = context;
     this->queue = queue;
@@ -40,7 +40,7 @@ void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_c
 
 void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
 {
-    
+
     this->alpha_img_clgl = alpha_img_clgl;
     this->beta_img_clgl = beta_img_clgl;
     this->gamma_img_clgl = gamma_img_clgl;
@@ -49,7 +49,7 @@ void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clg
 
 void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
 {
-    
+
     this->svo = svo;
 }
 
@@ -72,19 +72,19 @@ void BaseWorker::setProjectThresholdHigh(float * value)
 
 void BaseWorker::killProcess()
 {
-    
+
     kill_flag = true;
 }
 
 void BaseWorker::setFilePaths(QStringList * file_paths)
 {
-    
+
     this->file_paths = file_paths;
 }
 
 void BaseWorker::setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q)
 {
-    
+
     this->suggested_search_radius_low = suggested_search_radius_low;
     this->suggested_search_radius_high = suggested_search_radius_high;
     this->suggested_q = suggested_q;
@@ -93,12 +93,12 @@ void BaseWorker::setQSpaceInfo(float * suggested_search_radius_low, float * sugg
 
 void BaseWorker::setFiles(QList<PilatusFile> * files)
 {
-    
+
     this->files = files;
 }
 void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 {
-    
+
     this->reduced_pixels = reduced_pixels;
 }
 
@@ -115,19 +115,19 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 SetFileWorker::SetFileWorker()
 {
     verbosity = 1;
-    
+
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 SetFileWorker::~SetFileWorker()
 {
-    
+
 }
 
 void SetFileWorker::process()
 {
-    
+
 
     QCoreApplication::processEvents();
     kill_flag = false;
@@ -242,19 +242,19 @@ void SetFileWorker::process()
 ReadFileWorker::ReadFileWorker()
 {
     verbosity = 1;
-    
+
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 ReadFileWorker::~ReadFileWorker()
 {
-    
+
 }
 
 void ReadFileWorker::process()
 {
-    
+
 
     QCoreApplication::processEvents();
 
@@ -342,23 +342,23 @@ void ReadFileWorker::process()
 ProjectFileWorker::ProjectFileWorker()
 {
     verbosity = 1;
-    
+
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
 {
-    
+
     if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
 }
 
 void ProjectFileWorker::initializeCLKernel()
 {
-    
+
     // Program
 //    QByteArray qsrc = open_resource(":/src/kernels/project.cl");
-    QByteArray qsrc = openFile("../kernels/project.cl");
+    QByteArray qsrc = openFile("kernels/project.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 
@@ -412,7 +412,7 @@ void ProjectFileWorker::process()
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
 
 
-    
+
 
     QCoreApplication::processEvents();
 
@@ -586,19 +586,19 @@ void ProjectFileWorker::process()
 AllInOneWorker::AllInOneWorker()
 {
     verbosity = 1;
-    
+
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 AllInOneWorker::~AllInOneWorker()
 {
-    
+
 }
 
 void AllInOneWorker::process()
 {
-    
+
 
     kill_flag = false;
     if (file_paths->size() <= 0)
@@ -767,14 +767,14 @@ void AllInOneWorker::process()
 VoxelizeWorker::VoxelizeWorker()
 {
     verbosity = 1;
-    
+
     this->isCLInitialized = false;
     this->verbosity = verbosity;
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-    
+
 
     if (isCLInitialized && voxelize_kernel) clReleaseKernel(voxelize_kernel);
 }
@@ -791,11 +791,11 @@ unsigned int VoxelizeWorker::getOctBrick(unsigned int poolX, unsigned int poolY,
 
 void VoxelizeWorker::initializeCLKernel()
 {
-    
+
 
     // Crate the program
 //    QByteArray qsrc = open_resource(":/src/kernels/voxelize.cl");
-    QByteArray qsrc = openFile("../kernels/voxelize.cl");
+    QByteArray qsrc = openFile("kernels/voxelize.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 
@@ -843,7 +843,7 @@ void VoxelizeWorker::initializeCLKernel()
 
 void VoxelizeWorker::process()
 {
-    
+
 
     kill_flag = false;
 
@@ -1174,7 +1174,7 @@ void VoxelizeWorker::process()
 DisplayFileWorker::DisplayFileWorker()
 {
     verbosity = 1;
-    
+
     this->isCLInitialized = false;
     this->verbosity = verbosity;
     test_background.set(1475, 1679, 0.0);
@@ -1182,7 +1182,7 @@ DisplayFileWorker::DisplayFileWorker()
 
 DisplayFileWorker::~DisplayFileWorker()
 {
-    
+
     if (isCLInitialized) clReleaseKernel(project_kernel);
 }
 
@@ -1194,7 +1194,7 @@ void DisplayFileWorker::setDisplayFile(int value)
 
 void DisplayFileWorker::process()
 {
-    
+
     PilatusFile file;
 
     int STATUS_OK = file.set(file_paths->at(display_file), context, queue);

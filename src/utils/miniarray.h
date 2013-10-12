@@ -220,7 +220,7 @@ void MiniArray<T>::resize(size_t new_length)
 {
     if(this->length == 0)
     {
-        this->set(new_length, 0.0f);
+        this->set(new_length, 0);
     }
     else if(this->length > new_length)
     {
@@ -241,7 +241,7 @@ void MiniArray<T>::resize(size_t new_length)
         }
         for (size_t i = this->length; i < new_length; i++)
         {
-            temp[i] =  0.0f;
+            temp[i] =  0;
         }
         this->clear();
         this->setShallow(new_length, temp);

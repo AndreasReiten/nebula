@@ -476,7 +476,7 @@ void VolumeRenderGLWidget::initFreetype()
 
     //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
     //~ const char * fontfilename = qsrc.data();
-    const char * fontfilename = "../fonts/FreeMono.ttf";
+    const char * fontfilename = "fonts/FreeMono.ttf";
 
     error = FT_Init_FreeType(&ft);
     if(error)
@@ -3099,7 +3099,7 @@ int VolumeRenderGLWidget::initResourcesCL()
 
     // Program
 //    QByteArray qsrc = open_resource(":/src/kernels/render.cl");
-    QByteArray qsrc = openFile("../kernels/render.cl");
+    QByteArray qsrc = openFile("kernels/render.cl");
     const char * src = qsrc.data();
     size_t src_length = strlen(src);
 
