@@ -988,7 +988,8 @@ void MainWindow::initializeInteractives()
         volumeRenderWindow->setAnimating(true);
 
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
-
+        volumeRenderWidget->setMinimumSize(200, 200);
+        volumeRenderWidget->setFocusPolicy(Qt::TabFocus);
 
         // Toolbar
         viewToolBar = new QToolBar(tr("3D View"));
@@ -1006,7 +1007,7 @@ void MainWindow::initializeInteractives()
         viewLayout->setSpacing(0);
         viewLayout->setMargin(0);
         viewLayout->setContentsMargins(0,0,0,0);
-        viewLayout->setAlignment(Qt::AlignTop);
+//        viewLayout->setAlignment(Qt::AlignTop);
         viewLayout->addWidget(viewToolBar,0,0,1,1);
         viewLayout->addWidget(volumeRenderWidget,1,0,1,1);
         viewWidget->setLayout(viewLayout);

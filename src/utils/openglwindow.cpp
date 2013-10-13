@@ -133,8 +133,6 @@ void OpenGLWindow::preInitialize()
         initializeOpenGLFunctions();
         initialize();
     }
-
-
 }
 
 void OpenGLWindow::renderNow()
