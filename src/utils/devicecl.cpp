@@ -79,7 +79,7 @@ std::string DeviceCL::getDeviceInfoString()
     ss << "CL_PLATFORM_VERSION:                   " << platform_version << std::endl;
     ss << "CL_PLATFORM_VENDOR:                    " << platform_vendor << std::endl;
     ss << std::endl;
-    ss << "___ Memory and Cores ___" << std::endl;
+    ss << "___ Memory and Compute Units ___" << std::endl;
     ss << "CL_DEVICE_MAX_COMPUTE_UNITS:         " << max_compute_units << std::endl;
     ss << "CL_DEVICE_MAX_CLOCK_FREQUENCY:       " << max_clock_frequency << " MHz" << std::endl;
     ss << "CL_DEVICE_GLOBAL_MEM_SIZE:           " << (global_mem_size >> 20) << " MB" << std::endl;
@@ -88,7 +88,7 @@ std::string DeviceCL::getDeviceInfoString()
     ss << "CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE:  " << (max_constant_buffer_size >> 10) << " KB" << std::endl;
     ss << "CL_DEVICE_LOCAL_MEM_SIZE:            " << (local_mem_size >> 10) << " KB" << std::endl;
     ss << std::endl;
-    ss << "___ Work ___" << std::endl;
+    ss << "___ Work Items and Work Groups ___" << std::endl;
     ss << "CL_DEVICE_MAX_WORK_GROUP_SIZE:       " << max_work_group_size << std::endl;
     ss << "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS:  " << max_work_item_dimensions << std::endl;
     ss << "CL_DEVICE_MAX_WORK_ITEM_SIZES[0]:    " << max_work_item_sizes[0] << std::endl;

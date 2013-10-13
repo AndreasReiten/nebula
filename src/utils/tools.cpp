@@ -83,86 +83,86 @@ const char * cl_error_cstring(cl_int error)
     }
 }
 
-const char * gl_framebuffer_error_cstring(GLint error)
-{
-    switch (error) {
-        case GL_FRAMEBUFFER_COMPLETE:                       return "Success!";
-        case GL_FRAMEBUFFER_UNDEFINED:                      return "GL_FRAMEBUFFER_UNDEFINED";
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
-        case GL_FRAMEBUFFER_UNSUPPORTED:                    return "GL_FRAMEBUFFER_UNSUPPORTED";
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
-        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
-        default:                                            return "Unknown";
-    }
-}
+//const char * gl_framebuffer_error_cstring(GLint error)
+//{
+//    switch (error) {
+//        case GL_FRAMEBUFFER_COMPLETE:                       return "Success!";
+//        case GL_FRAMEBUFFER_UNDEFINED:                      return "GL_FRAMEBUFFER_UNDEFINED";
+//        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+//        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+//        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
+//        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
+//        case GL_FRAMEBUFFER_UNSUPPORTED:                    return "GL_FRAMEBUFFER_UNSUPPORTED";
+//        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
+//        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
+//        default:                                            return "Unknown";
+//    }
+//}
 
-void glGetErrorMessage(const char * context)
-{
-    GLint error = glGetError();
-    while (error != GL_NO_ERROR)
-    {
-        switch (error)
-        {
-            case GL_INVALID_FRAMEBUFFER_OPERATION:      std::cout << "GL Error in " << context <<  ": GL_INVALID_FRAMEBUFFER_OPERATION";
-            case GL_OUT_OF_MEMORY:                      std::cout << "GL Error in " << context <<  ": GL_OUT_OF_MEMORY";
-            case GL_STACK_UNDERFLOW:                    std::cout << "GL Error in " << context <<  ": GL_STACK_UNDERFLOW";
-            case GL_STACK_OVERFLOW:                     std::cout << "GL Error in " << context <<  ": GL_STACK_OVERFLOW";
-            case GL_INVALID_ENUM:                       std::cout << "GL Error in " << context <<  ": GL_INVALID_ENUM";
-            case GL_INVALID_VALUE:                      std::cout << "GL Error in " << context <<  ": GL_INVALID_VALUE";
-            case GL_INVALID_OPERATION:                  std::cout << "GL Error in " << context <<  ": GL_INVALID_OPERATION";
-            case GL_NO_ERROR:                           std::cout << "GL Error in " << context <<  ": GL_NO_ERROR";
-            default:                                    std::cout << "GL Error in " << context <<  ": Unknown";
-        }
-        error = glGetError();
-    }
-}
+//void glGetErrorMessage(const char * context)
+//{
+//    GLint error = glGetError();
+//    while (error != GL_NO_ERROR)
+//    {
+//        switch (error)
+//        {
+//            case GL_INVALID_FRAMEBUFFER_OPERATION:      std::cout << "GL Error in " << context <<  ": GL_INVALID_FRAMEBUFFER_OPERATION";
+//            case GL_OUT_OF_MEMORY:                      std::cout << "GL Error in " << context <<  ": GL_OUT_OF_MEMORY";
+//            case GL_STACK_UNDERFLOW:                    std::cout << "GL Error in " << context <<  ": GL_STACK_UNDERFLOW";
+//            case GL_STACK_OVERFLOW:                     std::cout << "GL Error in " << context <<  ": GL_STACK_OVERFLOW";
+//            case GL_INVALID_ENUM:                       std::cout << "GL Error in " << context <<  ": GL_INVALID_ENUM";
+//            case GL_INVALID_VALUE:                      std::cout << "GL Error in " << context <<  ": GL_INVALID_VALUE";
+//            case GL_INVALID_OPERATION:                  std::cout << "GL Error in " << context <<  ": GL_INVALID_OPERATION";
+//            case GL_NO_ERROR:                           std::cout << "GL Error in " << context <<  ": GL_NO_ERROR";
+//            default:                                    std::cout << "GL Error in " << context <<  ": Unknown";
+//        }
+//        error = glGetError();
+//    }
+//}
 
-void screenshot(int w, int h, const char* path)
-{
-    // HEADER
-    BMPHeader bmp_header;
+//void screenshot(int w, int h, const char* path)
+//{
+//    // HEADER
+//    BMPHeader bmp_header;
 
-    bmp_header.type = 19778;
-    bmp_header.file_size = w*h*4+54;
-    bmp_header.reserved1 = 0;
-    bmp_header.reserved2 = 0;
-    bmp_header.raw_offset = 54;
+//    bmp_header.type = 19778;
+//    bmp_header.file_size = w*h*4+54;
+//    bmp_header.reserved1 = 0;
+//    bmp_header.reserved2 = 0;
+//    bmp_header.raw_offset = 54;
 
-    bmp_header.self_size = 40;
-    bmp_header.pixel_width = w;
-    bmp_header.pixel_height = h;
-    bmp_header.color_planes = 1;
-    bmp_header.pixel_bits = 32;
-    bmp_header.comperssion = 0;
-    bmp_header.image_size = w*h*4;
-    bmp_header.resolution_w = 2835;
-    bmp_header.resolution_h = 2835;
-    bmp_header.colors_used = 0;
-    bmp_header.colors_important = 0;
+//    bmp_header.self_size = 40;
+//    bmp_header.pixel_width = w;
+//    bmp_header.pixel_height = h;
+//    bmp_header.color_planes = 1;
+//    bmp_header.pixel_bits = 32;
+//    bmp_header.comperssion = 0;
+//    bmp_header.image_size = w*h*4;
+//    bmp_header.resolution_w = 2835;
+//    bmp_header.resolution_h = 2835;
+//    bmp_header.colors_used = 0;
+//    bmp_header.colors_important = 0;
 
-    // DATA
-    unsigned char* buf = new unsigned char[w*h*4];
-    glReadPixels(0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, buf);
+//    // DATA
+//    unsigned char* buf = new unsigned char[w*h*4];
+//    glReadPixels(0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, buf);
 
-    // FILE:  OPEN, WRITE, CLOSE
-    std::ofstream file (path, std::ios::out | std::ios::trunc | std::ios::binary);
-    file.write(reinterpret_cast<char *>(&bmp_header), 54);
-    file.write(reinterpret_cast<char *>(buf), w*h*4);
-    file.close();
+//    // FILE:  OPEN, WRITE, CLOSE
+//    std::ofstream file (path, std::ios::out | std::ios::trunc | std::ios::binary);
+//    file.write(reinterpret_cast<char *>(&bmp_header), 54);
+//    file.write(reinterpret_cast<char *>(buf), w*h*4);
+//    file.close();
 
-    // CLEAN UP
-    delete[] buf;
-}
+//    // CLEAN UP
+//    delete[] buf;
+//}
 
-void setVbo(GLuint * vbo, float * buf, size_t length)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
+//void setVbo(GLuint * vbo, float * buf, size_t length)
+//{
+//    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, GL_STATIC_DRAW);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//}
 
 QByteArray open_resource(const char * path)
 {
@@ -198,51 +198,51 @@ QByteArray openFile(const char * path)
     return ba;
 }
 
-GLuint create_shader(const char* resource, GLenum type)
-{
+//GLuint create_shader(const char* resource, GLenum type)
+//{
 
-    QByteArray qsrc = open_resource(resource);
-    const char * source = qsrc.data();
+//    QByteArray qsrc = open_resource(resource);
+//    const char * source = qsrc.data();
 
-    if (source == NULL)
-    {
-        std::cout <<  "Error opening: " << resource << std::endl;
-        return 0;
-    }
-    GLuint shader = glCreateShader(type);
-    const GLchar* sources[] = {"#version 330\n", source };
-    glShaderSource(shader, 2, sources, NULL);
+//    if (source == NULL)
+//    {
+//        std::cout <<  "Error opening: " << resource << std::endl;
+//        return 0;
+//    }
+//    GLuint shader = glCreateShader(type);
+//    const GLchar* sources[] = {"#version 330\n", source };
+//    glShaderSource(shader, 2, sources, NULL);
 
 
-    glCompileShader(shader);
-    GLint compile_ok = GL_FALSE;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_ok);
-    if (compile_ok == GL_FALSE)
-    {
-        std::cout << "Error building GL shader: " << resource << std::endl;
+//    glCompileShader(shader);
+//    GLint compile_ok = GL_FALSE;
+//    glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_ok);
+//    if (compile_ok == GL_FALSE)
+//    {
+//        std::cout << "Error building GL shader: " << resource << std::endl;
 
-        GLint log_length = 0;
+//        GLint log_length = 0;
 
-        if (glIsShader(shader))
-        {
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
-            char* log = new char[log_length];
+//        if (glIsShader(shader))
+//        {
+//            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
+//            char* log = new char[log_length];
 
-            glGetShaderInfoLog(shader, log_length, NULL, log);
-            std::cout << log << std::endl;
+//            glGetShaderInfoLog(shader, log_length, NULL, log);
+//            std::cout << log << std::endl;
 
-            delete[] log;
-            glDeleteShader(shader);
-        }
-        else
-        {
-            std::cout << "Could not create GL shader: Supplied argument is not a shader!" << std::endl;
-            return 0;
-        }
-        return 0;
-    }
-    return shader;
-}
+//            delete[] log;
+//            glDeleteShader(shader);
+//        }
+//        else
+//        {
+//            std::cout << "Could not create GL shader: Supplied argument is not a shader!" << std::endl;
+//            return 0;
+//        }
+//        return 0;
+//    }
+//    return shader;
+//}
 
 void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function)
 {

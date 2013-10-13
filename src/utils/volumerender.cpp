@@ -1,9 +1,8 @@
 #include "volumerender.h"
 
-VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
-    QGLWidget(format, parent, shareWidget)
+VolumeRenderWindow::VolumeRenderWindow()
 {
-    verbosity = 1;
+//    verbosity = 1;
 
 
     isGLIntitialized = false;
@@ -14,7 +13,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     isBrickPoolInitialized = false;
     isDSViewForced = false;
 
-    fps = 60;
+//    minimum_fps = 60;
     ray_res = 20;
 
     LINEWIDTH = 0.5;
@@ -144,7 +143,7 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
     this->CTC_MATRIX.setFov(fov);
     this->CTC_MATRIX.setProjection(isPerspectiveRequired);
 
-    this->setFocusPolicy(Qt::StrongFocus);
+//    this->setFocusPolicy(Qt::StrongFocus);
 
     /* This timer keeps track of the time since this constructor was
      * called */
@@ -165,17 +164,17 @@ VolumeRenderGLWidget::VolumeRenderGLWidget(cl_device * device, cl_context * cont
 
     /* This timer emits a signal every 1000.0/FPS_MAX milli seconds.
      * The slot is the QGL repaint function */
-    timer = new QTimer(this);
+//    timer = new QTimer(this);
 
-    int FPS_MAX = 60;
-    timer->start(1000.0/FPS_MAX);
-    connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
+//    int FPS_MAX = 60;
+//    timer->start(1000.0/FPS_MAX);
+//    connect(timer,SIGNAL(timeout()),this,SLOT(repaint()));
 
 
 //    this->glInit();
 }
 
-VolumeRenderGLWidget::~VolumeRenderGLWidget()
+VolumeRenderWindow::~VolumeRenderWindow()
 {
 
     if (isGLIntitialized)
@@ -216,9 +215,9 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         if (program) clReleaseProgram(program);
 
 
-        glDeleteFramebuffers(1, &STD_FBO);
-        glDeleteFramebuffers(1, &MSAA_FBO);
-        glDeleteFramebuffers(1, &SMALL_FBO);
+//        glDeleteFramebuffers(1, &STD_FBO);
+//        glDeleteFramebuffers(1, &MSAA_FBO);
+//        glDeleteFramebuffers(1, &SMALL_FBO);
 
         glDeleteTextures(1, &msaa_intermediate_storage_tex);
         glDeleteTextures(1, &small_storage_tex);
@@ -236,194 +235,194 @@ VolumeRenderGLWidget::~VolumeRenderGLWidget()
         glDeleteTextures(1, &hist_tex_norm);
         glDeleteTextures(1, &hist_tex_log);
 
-        glDeleteBuffers(10, tex_coord_vbo);
-        glDeleteBuffers(20, position_vbo);
-        glDeleteBuffers(5, lab_reference_vbo);
-        glDeleteBuffers(5, data_extent_vbo);
-        glDeleteBuffers(5, data_view_extent_vbo);
-        glDeleteBuffers(5, unitcell_vbo);
-        glDeleteBuffers(1, &scalebar_vbo);
-        glDeleteBuffers(5, screen_vbo);
-        glDeleteBuffers(1, &sampleWeightBuf);
-        glDeleteBuffers(1, &text_position_vbo);
-        glDeleteBuffers(1, &text_texpos_vbo);
+//        glDeleteBuffers(10, tex_coord_vbo);
+//        glDeleteBuffers(20, position_vbo);
+//        glDeleteBuffers(5, lab_reference_vbo);
+//        glDeleteBuffers(5, data_extent_vbo);
+//        glDeleteBuffers(5, data_view_extent_vbo);
+//        glDeleteBuffers(5, unitcell_vbo);
+//        glDeleteBuffers(1, &scalebar_vbo);
+//        glDeleteBuffers(5, screen_vbo);
+//        glDeleteBuffers(1, &sampleWeightBuf);
+//        glDeleteBuffers(1, &text_position_vbo);
+//        glDeleteBuffers(1, &text_texpos_vbo);
 
 
-        glDeleteProgram(std_2d_tex_program);
-        glDeleteProgram(std_2d_color_program);
-        glDeleteProgram(std_3d_program);
-        glDeleteProgram(pp_glow_program);
-        glDeleteProgram(blend_program);
-        glDeleteProgram(msaa_program);
-        glDeleteProgram(msaa_hdr_program);
-        glDeleteProgram(std_text_program);
+//        glDeleteProgram(std_2d_tex_program);
+//        glDeleteProgram(std_2d_color_program);
+//        glDeleteProgram(std_3d_program);
+//        glDeleteProgram(pp_glow_program);
+//        glDeleteProgram(blend_program);
+//        glDeleteProgram(msaa_program);
+//        glDeleteProgram(msaa_hdr_program);
+//        glDeleteProgram(std_text_program);
 
     }
 
 }
 
-size_t VolumeRenderGLWidget::getScaleBar()
-{
-    // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
-    double length = DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0];
+//size_t VolumeRenderWindow::getScaleBar()
+//{
+//    // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
+//    double length = DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0];
 
-    double tick_interdistance_min = 0.005*length; // % of length
+//    double tick_interdistance_min = 0.005*length; // % of length
 
-    int tick_levels = 0;
-    int tick_levels_max = 2;
+//    int tick_levels = 0;
+//    int tick_levels_max = 2;
 
-    bool isMultiplierDrawn =  false;
-    Matrix<float> coords(20000,3);
+//    bool isMultiplierDrawn =  false;
+//    Matrix<float> coords(20000,3);
 
-    size_t coord_counter = 0;
+//    size_t coord_counter = 0;
 
-    // Draw ticks
-    for (int i = 5; i >= -5; i--)
-    {
-//        float tick_interdistance = std::pow((double) 0.1, (double) i);
-        double tick_interdistance = std::pow((double) 10.0, (double) -i);
+//    // Draw ticks
+//    for (int i = 5; i >= -5; i--)
+//    {
+////        float tick_interdistance = std::pow((double) 0.1, (double) i);
+//        double tick_interdistance = std::pow((double) 10.0, (double) -i);
 
-        if (( tick_interdistance >= tick_interdistance_min) && (tick_levels < tick_levels_max))
-        {
-            int tick_number = ((length*0.5)/ tick_interdistance);
+//        if (( tick_interdistance >= tick_interdistance_min) && (tick_levels < tick_levels_max))
+//        {
+//            int tick_number = ((length*0.5)/ tick_interdistance);
 
-            //~std::cout << tick_number << " ticks of length: " << tick_interdistance << std::endl;
-            double x_start = DATA_VIEW_EXTENT[0] + length * 0.5;
-            double y_start = DATA_VIEW_EXTENT[2] + length * 0.5;
-            double z_start = DATA_VIEW_EXTENT[4] + length * 0.5;
-            double tick_width = tick_interdistance*0.2;
+//            //~std::cout << tick_number << " ticks of length: " << tick_interdistance << std::endl;
+//            double x_start = DATA_VIEW_EXTENT[0] + length * 0.5;
+//            double y_start = DATA_VIEW_EXTENT[2] + length * 0.5;
+//            double z_start = DATA_VIEW_EXTENT[4] + length * 0.5;
+//            double tick_width = tick_interdistance*0.2;
 
-            // Each tick consists of 4 points to form a cross
-            for (int j = -tick_number; j <= tick_number; j++)
-            {
-                if (j != 0)
-                {
-                    // X-tick
-                    coords[(coord_counter+0)*3+0] = x_start + j * tick_interdistance;
-                    coords[(coord_counter+0)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
-                    coords[(coord_counter+0)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+//            // Each tick consists of 4 points to form a cross
+//            for (int j = -tick_number; j <= tick_number; j++)
+//            {
+//                if (j != 0)
+//                {
+//                    // X-tick
+//                    coords[(coord_counter+0)*3+0] = x_start + j * tick_interdistance;
+//                    coords[(coord_counter+0)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
+//                    coords[(coord_counter+0)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
 
-                    coords[(coord_counter+1)*3+0] = x_start + j * tick_interdistance;
-                    coords[(coord_counter+1)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
-                    coords[(coord_counter+1)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+//                    coords[(coord_counter+1)*3+0] = x_start + j * tick_interdistance;
+//                    coords[(coord_counter+1)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
+//                    coords[(coord_counter+1)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
 
-                    coords[(coord_counter+2)*3+0] = x_start + j * tick_interdistance;
-                    coords[(coord_counter+2)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-                    coords[(coord_counter+2)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
+//                    coords[(coord_counter+2)*3+0] = x_start + j * tick_interdistance;
+//                    coords[(coord_counter+2)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//                    coords[(coord_counter+2)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
 
-                    coords[(coord_counter+3)*3+0] = x_start + j * tick_interdistance;
-                    coords[(coord_counter+3)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-                    coords[(coord_counter+3)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+//                    coords[(coord_counter+3)*3+0] = x_start + j * tick_interdistance;
+//                    coords[(coord_counter+3)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//                    coords[(coord_counter+3)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
 
-                    // Y-tick
-                    coords[(coord_counter+4)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
-                    coords[(coord_counter+4)*3+1] = y_start + j * tick_interdistance;
-                    coords[(coord_counter+4)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+//                    // Y-tick
+//                    coords[(coord_counter+4)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
+//                    coords[(coord_counter+4)*3+1] = y_start + j * tick_interdistance;
+//                    coords[(coord_counter+4)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
 
-                    coords[(coord_counter+5)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
-                    coords[(coord_counter+5)*3+1] = y_start + j * tick_interdistance;
-                    coords[(coord_counter+5)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+//                    coords[(coord_counter+5)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
+//                    coords[(coord_counter+5)*3+1] = y_start + j * tick_interdistance;
+//                    coords[(coord_counter+5)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
 
-                    coords[(coord_counter+6)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-                    coords[(coord_counter+6)*3+1] = y_start + j * tick_interdistance;
-                    coords[(coord_counter+6)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
+//                    coords[(coord_counter+6)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//                    coords[(coord_counter+6)*3+1] = y_start + j * tick_interdistance;
+//                    coords[(coord_counter+6)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 + tick_width * 0.5;
 
-                    coords[(coord_counter+7)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-                    coords[(coord_counter+7)*3+1] = y_start + j * tick_interdistance;
-                    coords[(coord_counter+7)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
+//                    coords[(coord_counter+7)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//                    coords[(coord_counter+7)*3+1] = y_start + j * tick_interdistance;
+//                    coords[(coord_counter+7)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5 - tick_width * 0.5;
 
-                    // Z-tick
-                    coords[(coord_counter+8)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
-                    coords[(coord_counter+8)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-                    coords[(coord_counter+8)*3+2] = z_start + j * tick_interdistance;
+//                    // Z-tick
+//                    coords[(coord_counter+8)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 + tick_width * 0.5;
+//                    coords[(coord_counter+8)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//                    coords[(coord_counter+8)*3+2] = z_start + j * tick_interdistance;
 
-                    coords[(coord_counter+9)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
-                    coords[(coord_counter+9)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-                    coords[(coord_counter+9)*3+2] = z_start + j * tick_interdistance;
+//                    coords[(coord_counter+9)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5 - tick_width * 0.5;
+//                    coords[(coord_counter+9)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//                    coords[(coord_counter+9)*3+2] = z_start + j * tick_interdistance;
 
-                    coords[(coord_counter+10)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-                    coords[(coord_counter+10)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
-                    coords[(coord_counter+10)*3+2] = z_start + j * tick_interdistance;
+//                    coords[(coord_counter+10)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//                    coords[(coord_counter+10)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 + tick_width * 0.5;
+//                    coords[(coord_counter+10)*3+2] = z_start + j * tick_interdistance;
 
-                    coords[(coord_counter+11)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-                    coords[(coord_counter+11)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
-                    coords[(coord_counter+11)*3+2] = z_start + j * tick_interdistance;
-
-
-                    // Text
-                    if(tick_levels == tick_levels_max - 1)
-                    {
-                        Matrix<float> xy(2,1);
-                        getScreenPosition(xy.data(), coords.data() + (coord_counter+0)*3, SCALEBAR_MATRIX.data());
-                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-
-                        getScreenPosition(xy.data(), coords.data() + (coord_counter+4)*3, SCALEBAR_MATRIX.data());
-                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-
-                        getScreenPosition(xy.data(), coords.data() + (coord_counter+8)*3, SCALEBAR_MATRIX.data());
-                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-
-                        if(!isMultiplierDrawn)
-                        {
-                            Matrix<float> xy(2,1);
-                            xy[0] = 0.5;
-                            xy[1] = -0.5;
-                            std_text_draw(QString("x "+QString::number(tick_interdistance * 10.0, 'e', 0)).toStdString().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-                            isMultiplierDrawn = true;
-                        }
-                    }
-                    coord_counter += 12;
-                }
-            }
-            tick_levels++;
-        }
-    }
-
-    // Cross
-    coords[(coord_counter+0)*3+0] = DATA_VIEW_EXTENT[0];
-    coords[(coord_counter+0)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-    coords[(coord_counter+0)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
-
-    coords[(coord_counter+1)*3+0] = DATA_VIEW_EXTENT[1];
-    coords[(coord_counter+1)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-    coords[(coord_counter+1)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
-
-    coords[(coord_counter+2)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-    coords[(coord_counter+2)*3+1] = DATA_VIEW_EXTENT[2];
-    coords[(coord_counter+2)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
-
-    coords[(coord_counter+3)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-    coords[(coord_counter+3)*3+1] = DATA_VIEW_EXTENT[3];
-    coords[(coord_counter+3)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
-
-    coords[(coord_counter+4)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-    coords[(coord_counter+4)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-    coords[(coord_counter+4)*3+2] = DATA_VIEW_EXTENT[4];
-
-    coords[(coord_counter+5)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
-    coords[(coord_counter+5)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
-    coords[(coord_counter+5)*3+2] = DATA_VIEW_EXTENT[5];
-
-    coord_counter += 6;
-
-    setVbo(&scalebar_vbo, coords.data(), coord_counter*3);
-    return coord_counter;
-}
+//                    coords[(coord_counter+11)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//                    coords[(coord_counter+11)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5 - tick_width * 0.5;
+//                    coords[(coord_counter+11)*3+2] = z_start + j * tick_interdistance;
 
 
-void VolumeRenderGLWidget::writeLog(QString str)
-{
-    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
-}
+//                    // Text
+//                    if(tick_levels == tick_levels_max - 1)
+//                    {
+//                        Matrix<float> xy(2,1);
+//                        getScreenPosition(xy.data(), coords.data() + (coord_counter+0)*3, SCALEBAR_MATRIX.data());
+//                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
 
-void VolumeRenderGLWidget::takeScreenshot()
-{
-    QDateTime dateTime = dateTime.currentDateTime();
-    QString dateTimeString = QString("screens/Screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")+".bmp");
-    screenshot(WIDTH, HEIGHT, dateTimeString.toStdString().c_str());
-    setMessageString(QString("\n Saved: "+dateTimeString));
-}
-void VolumeRenderGLWidget::setResolutionf(double value)
+//                        getScreenPosition(xy.data(), coords.data() + (coord_counter+4)*3, SCALEBAR_MATRIX.data());
+//                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+
+//                        getScreenPosition(xy.data(), coords.data() + (coord_counter+8)*3, SCALEBAR_MATRIX.data());
+//                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+
+//                        if(!isMultiplierDrawn)
+//                        {
+//                            Matrix<float> xy(2,1);
+//                            xy[0] = 0.5;
+//                            xy[1] = -0.5;
+//                            std_text_draw(QString("x "+QString::number(tick_interdistance * 10.0, 'e', 0)).toStdString().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+//                            isMultiplierDrawn = true;
+//                        }
+//                    }
+//                    coord_counter += 12;
+//                }
+//            }
+//            tick_levels++;
+//        }
+//    }
+
+//    // Cross
+//    coords[(coord_counter+0)*3+0] = DATA_VIEW_EXTENT[0];
+//    coords[(coord_counter+0)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//    coords[(coord_counter+0)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+//    coords[(coord_counter+1)*3+0] = DATA_VIEW_EXTENT[1];
+//    coords[(coord_counter+1)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//    coords[(coord_counter+1)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+//    coords[(coord_counter+2)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//    coords[(coord_counter+2)*3+1] = DATA_VIEW_EXTENT[2];
+//    coords[(coord_counter+2)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+//    coords[(coord_counter+3)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//    coords[(coord_counter+3)*3+1] = DATA_VIEW_EXTENT[3];
+//    coords[(coord_counter+3)*3+2] = DATA_VIEW_EXTENT[4] + length * 0.5;
+
+//    coords[(coord_counter+4)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//    coords[(coord_counter+4)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//    coords[(coord_counter+4)*3+2] = DATA_VIEW_EXTENT[4];
+
+//    coords[(coord_counter+5)*3+0] = DATA_VIEW_EXTENT[0] + length * 0.5;
+//    coords[(coord_counter+5)*3+1] = DATA_VIEW_EXTENT[2] + length * 0.5;
+//    coords[(coord_counter+5)*3+2] = DATA_VIEW_EXTENT[5];
+
+//    coord_counter += 6;
+
+//    setVbo(&scalebar_vbo, coords.data(), coord_counter*3);
+//    return coord_counter;
+//}
+
+
+//void VolumeRenderWindow::writeLog(QString str)
+//{
+//    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
+//}
+
+//void VolumeRenderWindow::takeScreenshot()
+//{
+//    QDateTime dateTime = dateTime.currentDateTime();
+//    QString dateTimeString = QString("screens/Screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")+".bmp");
+////    screenshot(WIDTH, HEIGHT, dateTimeString.toStdString().c_str());
+//    setMessageString(QString("\n Saved: "+dateTimeString));
+//}
+void VolumeRenderWindow::setResolutionf(double value)
 {
     // Clamp
     if (value < 20) value = 20;
@@ -439,18 +438,18 @@ void VolumeRenderGLWidget::setResolutionf(double value)
                 MISC_INT[3] = 1;
 
             }
-            fps = 60;
+            minimum_fps = 60;
         }
         else
         {
-            if (value <= 30) fps = 10;
-            else if (value <= 40) fps = 15;
-            else if (value <= 50) fps = 20;
-            else if (value <= 60) fps = 25;
-            else if (value <= 70) fps = 30;
-            else if (value <= 80) fps = 40;
-            else if (value <= 90) fps = 50;
-            else fps = 60;
+            if (value <= 30) minimum_fps = 10;
+            else if (value <= 40) minimum_fps = 15;
+            else if (value <= 50) minimum_fps = 20;
+            else if (value <= 60) minimum_fps = 25;
+            else if (value <= 70) minimum_fps = 30;
+            else if (value <= 80) minimum_fps = 40;
+            else if (value <= 90) minimum_fps = 50;
+            else minimum_fps = 60;
 
             if (isDSViewForced) MISC_INT[3] = 0;
             isDSViewForced = false;
@@ -465,43 +464,41 @@ void VolumeRenderGLWidget::setResolutionf(double value)
     }
 }
 
-void VolumeRenderGLWidget::initFreetype()
-{
+//void VolumeRenderWindow::initFreetype()
+//{
+//    /* Initialize the FreeType2 library */
+//    FT_Library ft;
+//    FT_Face face;
+//    FT_Error error;
 
+//    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
+//    //~ const char * fontfilename = qsrc.data();
+//    const char * fontfilename = "fonts/FreeMono.ttf";
 
-    /* Initialize the FreeType2 library */
-    FT_Library ft;
-    FT_Face face;
-    FT_Error error;
+//    error = FT_Init_FreeType(&ft);
+//    if(error)
+//    {
+//        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+//        if (verbosity == 1) writeLog("Could not init freetype library");
+//    }
 
-    //~ QByteArray qsrc = open_resource(":/src/fonts/FreeMonoOblique.ttf");
-    //~ const char * fontfilename = qsrc.data();
-    const char * fontfilename = "fonts/FreeMono.ttf";
+//    /* Load a font */
+//    if(FT_New_Face(ft, fontfilename, 0, &face))
+//    {
+//        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
+//        if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
+//    }
+//    fontSmall = new Atlas(face, 14);
+//    fontMedium = new Atlas(face, 24);
+//    fontLarge = new Atlas(face, 48);
+//}
 
-    error = FT_Init_FreeType(&ft);
-    if(error)
-    {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
-        if (verbosity == 1) writeLog("Could not init freetype library");
-    }
-
-    /* Load a font */
-    if(FT_New_Face(ft, fontfilename, 0, &face))
-    {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
-        if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
-    }
-    fontSmall = new Atlas(face, 14);
-    fontMedium = new Atlas(face, 24);
-    fontLarge = new Atlas(face, 48);
-}
-
-void VolumeRenderGLWidget::toggleScalebar()
+void VolumeRenderWindow::toggleScalebar()
 {
     isScalebarActive = !isScalebarActive;
 }
 
-//void VolumeRenderGLWidget::setResolutioni(int value)
+//void VolumeRenderWindow::setResolutioni(int value)
 //{
 //    if (value > 0)
 //    {
@@ -509,7 +506,7 @@ void VolumeRenderGLWidget::toggleScalebar()
 //    }
 //}
 
-void VolumeRenderGLWidget::togglePerspective()
+void VolumeRenderWindow::togglePerspective()
 {
 
 
@@ -530,7 +527,7 @@ void VolumeRenderGLWidget::togglePerspective()
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::toggleBackground()
+void VolumeRenderWindow::toggleBackground()
 {
     //~ std::cout << "Tiem for new BG!" << std::endl;
 
@@ -545,14 +542,14 @@ void VolumeRenderGLWidget::toggleBackground()
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::toggleFunctionView()
+void VolumeRenderWindow::toggleFunctionView()
 {
     isFunctionActive = !isFunctionActive;
 
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::setFuncParamA(double value)
+void VolumeRenderWindow::setFuncParamA(double value)
 {
     MISC_FLOAT_K_FUNCTION[0] = value;
 //    this->setMiscArrays();
@@ -560,7 +557,7 @@ void VolumeRenderGLWidget::setFuncParamA(double value)
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::setFuncParamB(double value)
+void VolumeRenderWindow::setFuncParamB(double value)
 {
     MISC_FLOAT_K_FUNCTION[1] = value;
 //    this->setMiscArrays();
@@ -568,7 +565,7 @@ void VolumeRenderGLWidget::setFuncParamB(double value)
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::setFuncParamC(double value)
+void VolumeRenderWindow::setFuncParamC(double value)
 {
     MISC_FLOAT_K_FUNCTION[2] = value;
 //    this->setMiscArrays();
@@ -576,7 +573,7 @@ void VolumeRenderGLWidget::setFuncParamC(double value)
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::setFuncParamD(double value)
+void VolumeRenderWindow::setFuncParamD(double value)
 {
     MISC_FLOAT_K_FUNCTION[3] = value;
 //    this->setMiscArrays();
@@ -585,7 +582,7 @@ void VolumeRenderGLWidget::setFuncParamD(double value)
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::autoRotate(int time, int threshold)
+void VolumeRenderWindow::autoRotate(int time, int threshold)
 {
     if (time > threshold)
     {
@@ -598,7 +595,7 @@ void VolumeRenderGLWidget::autoRotate(int time, int threshold)
     }
     else AUTO_ROTATION.setIdentity(4);
 }
-void VolumeRenderGLWidget::resetViewMatrix()
+void VolumeRenderWindow::resetViewMatrix()
 {
     DATA_SCALING.setIdentity(4);
     ROTATION.setIdentity(4);
@@ -606,7 +603,7 @@ void VolumeRenderGLWidget::resetViewMatrix()
     DATA_TRANSLATION.setIdentity(4);
 }
 
-void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
+void VolumeRenderWindow::setSvo(SparseVoxelOcttree * svo)
 {
 
 
@@ -628,7 +625,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
     TSF_PARAMETERS[3] = MINMAX[1];
 
     this->setDataExtent();
-    this->setDataViewExtent();
+//    this->setDataViewExtent();
     this->resetViewMatrix();
 //    this->setMiscArrays();
 //    this->setTsfParameters();
@@ -654,7 +651,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     oct_brick_cl = clCreateBuffer((*context),
@@ -664,7 +661,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     bricks_format.image_channel_order = CL_INTENSITY;
@@ -682,7 +679,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     bricks_sampler = clCreateSampler((*context), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
@@ -694,7 +691,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
     err |= clSetKernelArg(K_SVO_RAYTRACE, 4, sizeof(cl_mem), &oct_brick_cl);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     isOcttreeIndicesInitialized = true;
@@ -708,7 +705,7 @@ void VolumeRenderGLWidget::setSvo(SparseVoxelOcttree * svo)
 }
 
 
-void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color)
+void VolumeRenderWindow::getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color)
 {
     double max = buf->max();
     if (max <= 0) max = 1e-5;
@@ -726,8 +723,8 @@ void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> *
         }
     }
 
-    glDeleteBuffers(1, tex);
-    glGenBuffers(1, tex);
+    glDeleteTextures(1, tex);
+    glGenTextures(1, tex);
     glBindTexture(GL_TEXTURE_2D, *tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -748,37 +745,37 @@ void VolumeRenderGLWidget::getHistogramTexture(GLuint * tex, MiniArray<double> *
 
 
 
-QSize VolumeRenderGLWidget::minimumSizeHint() const
+QSize VolumeRenderWindow::minimumSizeHint() const
 {
     return QSize(100, 100);
 }
 
-QSize VolumeRenderGLWidget::sizeHint() const
+QSize VolumeRenderWindow::sizeHint() const
 {
     return QSize(2000, 2000);
 }
 
-void VolumeRenderGLWidget::initializeGL()
-{
-    if (!isGLIntitialized)
-    {
-        setMouseTracking( true );
-        if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
-        if (!this->initResourcesCL()) std::cout << "VolumeRenderGLWidget: OpenCL context could not be initialized!" << std::endl;
+//void VolumeRenderWindow::initializeGL()
+//{
+//    if (!isGLIntitialized)
+//    {
+//        setMouseTracking( true );
+//        if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
+//        if (!this->initResourcesCL()) std::cout << "VolumeRenderWindow: OpenCL context could not be initialized!" << std::endl;
 
         /* Initialize and set the other stuff */
-        this->initFreetype();
-        init_tsf(0, 0, &transferFunction);
-        this->setTsfTexture(&transferFunction);
-        this->setRaytracingTexture();
-        this->setDataExtent();
+//        this->initFreetype();
+//        init_tsf(0, 0, &transferFunction);
+//        this->setTsfTexture(&transferFunction);
+//        this->setRaytracingTexture();
+//        this->setDataExtent();
 
-        isGLIntitialized = true;
-    }
-}
+//        isGLIntitialized = true;
+//    }
+//}
 
 
-void VolumeRenderGLWidget::setProjection(double F, double N, double fov, bool isPerspectiveRequired)
+void VolumeRenderWindow::setProjection(double F, double N, double fov, bool isPerspectiveRequired)
 {
     CTC_MATRIX.setN(N);
     CTC_MATRIX.setF(F);
@@ -786,13 +783,13 @@ void VolumeRenderGLWidget::setProjection(double F, double N, double fov, bool is
     CTC_MATRIX.setProjection(isPerspectiveRequired);
 }
 
-void VolumeRenderGLWidget::setConeWidthMultiplier(float value)
+void VolumeRenderWindow::setConeWidthMultiplier(float value)
 {
     MISC_FLOAT_K_RAYTRACE[4] = value;
 //    this->setMiscArrays();
 }
 
-void VolumeRenderGLWidget::toggleLog()
+void VolumeRenderWindow::toggleLog()
 {
     isLog = !isLog;
     MISC_INT[2] = isLog;
@@ -801,7 +798,7 @@ void VolumeRenderGLWidget::toggleLog()
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::toggleDataStructure()
+void VolumeRenderWindow::toggleDataStructure()
 {
     MISC_INT[3] = !MISC_INT[3];
 //    this->setMiscArrays();
@@ -810,7 +807,7 @@ void VolumeRenderGLWidget::toggleDataStructure()
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::setTsfParameters()
+void VolumeRenderWindow::setTsfParameters()
 {
     if ((*queue))
     {
@@ -823,14 +820,14 @@ void VolumeRenderGLWidget::setTsfParameters()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
 
         err = clSetKernelArg(K_FUNCTION_RAYTRACE, 6, sizeof(cl_mem), &tsf_parameters_cl);
         err |= clSetKernelArg(K_SVO_RAYTRACE, 10, sizeof(cl_mem), &tsf_parameters_cl);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
         //~ {
             //~ Matrix<float> tsf_texcoords;
@@ -845,7 +842,7 @@ void VolumeRenderGLWidget::setTsfParameters()
     }
 }
 
-void VolumeRenderGLWidget::setMiscArrays()
+void VolumeRenderWindow::setMiscArrays()
 {
     if ((*queue))
     {
@@ -858,7 +855,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
 
         err = clEnqueueWriteBuffer ( (*queue),
@@ -870,7 +867,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
 
         err = clEnqueueWriteBuffer ( (*queue),
@@ -882,7 +879,7 @@ void VolumeRenderGLWidget::setMiscArrays()
             0,0,0);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
 
         err = clSetKernelArg(K_FUNCTION_RAYTRACE, 7, sizeof(cl_mem), &misc_float_cl);
@@ -891,96 +888,96 @@ void VolumeRenderGLWidget::setMiscArrays()
         err |= clSetKernelArg(K_SVO_RAYTRACE, 12, sizeof(cl_mem), &misc_int_cl);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
     }
 }
 
-void VolumeRenderGLWidget::histTexPos(int log, float hist_min, float hist_max, float data_min, float data_max)
-{
-    Matrix<float> position;
-    {
-        float x_low;
-        float x_high;
+//void VolumeRenderWindow::histTexPos(int log, float hist_min, float hist_max, float data_min, float data_max)
+//{
+//    Matrix<float> position;
+//    {
+//        float x_low;
+//        float x_high;
 
-        if (log)
-        {
-            if (hist_min < 1) hist_min = 1;
-            hist_min = std::log10(hist_min);
+//        if (log)
+//        {
+//            if (hist_min < 1) hist_min = 1;
+//            hist_min = std::log10(hist_min);
 
-            if (hist_max < 1) hist_max = 1;
-            hist_max = std::log10(hist_max);
+//            if (hist_max < 1) hist_max = 1;
+//            hist_max = std::log10(hist_max);
 
 
-            if (data_min <= 0.0) data_min = 0.0001;
-            if (data_max <= 0.0) data_max = 0.0001;
+//            if (data_min <= 0.0) data_min = 0.0001;
+//            if (data_max <= 0.0) data_max = 0.0001;
 
-            x_low = (std::log10(data_min) - hist_min)/(hist_max - hist_min);
-            x_high = (std::log10(data_max) - hist_min)/(hist_max - hist_min);
+//            x_low = (std::log10(data_min) - hist_min)/(hist_max - hist_min);
+//            x_high = (std::log10(data_max) - hist_min)/(hist_max - hist_min);
 
-            //~ std::cout << "data: "<< std::log10(data_min) << ", " << std::log10(data_max) << " hist: " << hist_min << ", " << hist_max << std::endl;
-        }
-        else
-        {
-            x_low = (data_min - hist_min)/(hist_max - hist_min);
-            x_high = (data_max - hist_min)/(hist_max - hist_min);
-        }
+//            //~ std::cout << "data: "<< std::log10(data_min) << ", " << std::log10(data_max) << " hist: " << hist_min << ", " << hist_max << std::endl;
+//        }
+//        else
+//        {
+//            x_low = (data_min - hist_min)/(hist_max - hist_min);
+//            x_high = (data_max - hist_min)/(hist_max - hist_min);
+//        }
 
-        // Clamp
-        //~ if (x_low < 0.0) x_low = 0.0;
-        //~ if (x_low > 1.0) x_low;
-        //~ if () ;
-        //~ if () ;
+//        // Clamp
+//        //~ if (x_low < 0.0) x_low = 0.0;
+//        //~ if (x_low > 1.0) x_low;
+//        //~ if () ;
+//        //~ if () ;
 
-        float buf[] = {
-            x_low,x_high,x_high,x_low,
-            0,0,1.0,1.0};
-        position.setDeep(2, 4, buf);
+//        float buf[] = {
+//            x_low,x_high,x_high,x_low,
+//            0,0,1.0,1.0};
+//        position.setDeep(2, 4, buf);
 
-        //~ position.print(2);
-    }
-    setVbo(&tex_coord_vbo[3], position.getColMajor().data(), position.size());
-}
+//        //~ position.print(2);
+//    }
+//    setVbo(&tex_coord_vbo[3], position.getColMajor().data(), position.size());
+//}
 
-void VolumeRenderGLWidget::backDropTexPos(GLuint * vbo, int border_pixel_offset)
-{
-    Matrix<float> tex_position;
+//void VolumeRenderWindow::backDropTexPos(GLuint * vbo, int border_pixel_offset)
+//{
+//    Matrix<float> tex_position;
 
-    // screen coordinate pixel size, scps
-    float scps[2];
-    scps[0] = 2.0/WIDTH;
-    scps[1] = 2.0/HEIGHT;
+//    // screen coordinate pixel size, scps
+//    float scps[2];
+//    scps[0] = 2.0/WIDTH;
+//    scps[1] = 2.0/HEIGHT;
 
-    float buf[] = {
-        0.9, 0.9, 0.95, 0.95,   0.9, 0.9, 0.8, 0.8,     1.0, 1.0, 0.83, 0.83,         0.83, 0.83,
-        -0.9, 0.9, 0.9, -0.9,   -0.9, 0.9, 0.9, -0.9,   -0.90, 0.90, 0.90, -0.90,   0.90, -0.90};
-    buf[12] -= scps[0]*border_pixel_offset;
-    buf[13] -= scps[0]*border_pixel_offset;
-    buf[22] -= scps[1]*border_pixel_offset;
-    buf[23] += scps[1]*border_pixel_offset;
-    buf[24] += scps[1]*border_pixel_offset;
-    buf[25] -= scps[1]*border_pixel_offset;
+//    float buf[] = {
+//        0.9, 0.9, 0.95, 0.95,   0.9, 0.9, 0.8, 0.8,     1.0, 1.0, 0.83, 0.83,         0.83, 0.83,
+//        -0.9, 0.9, 0.9, -0.9,   -0.9, 0.9, 0.9, -0.9,   -0.90, 0.90, 0.90, -0.90,   0.90, -0.90};
+//    buf[12] -= scps[0]*border_pixel_offset;
+//    buf[13] -= scps[0]*border_pixel_offset;
+//    buf[22] -= scps[1]*border_pixel_offset;
+//    buf[23] += scps[1]*border_pixel_offset;
+//    buf[24] += scps[1]*border_pixel_offset;
+//    buf[25] -= scps[1]*border_pixel_offset;
 
-    tex_position.setDeep(2, 14, buf);
-    setVbo(vbo, tex_position.getColMajor().data(), tex_position.size());
-}
+//    tex_position.setDeep(2, 14, buf);
+//    setVbo(vbo, tex_position.getColMajor().data(), tex_position.size());
+//}
 
-void VolumeRenderGLWidget::pixPos(GLuint * vbo, float x, float y, float w, float h)
-{
-    Matrix<float> tex_position;
+//void VolumeRenderWindow::pixPos(GLuint * vbo, float x, float y, float w, float h)
+//{
+//    Matrix<float> tex_position;
 
-    w *= 2.0/WIDTH;
-    h *= 2.0/HEIGHT;
+//    w *= 2.0/WIDTH;
+//    h *= 2.0/HEIGHT;
 
-    float buf[] = {
-        x, x+w, x+w, x,
-        y, y, y+h, y+h};
+//    float buf[] = {
+//        x, x+w, x+w, x,
+//        y, y, y+h, y+h};
 
-    tex_position.setDeep(2, 4, buf);
-    setVbo(vbo, tex_position.getColMajor().data(), tex_position.size());
-}
+//    tex_position.setDeep(2, 4, buf);
+//    setVbo(vbo, tex_position.getColMajor().data(), tex_position.size());
+//}
 
-void VolumeRenderGLWidget::setMatrixU(float * buf)
+void VolumeRenderWindow::setMatrixU(float * buf)
 {
     this->U[0] = buf[0];
     this->U[1] = buf[1];
@@ -995,7 +992,7 @@ void VolumeRenderGLWidget::setMatrixU(float * buf)
     U3x3.setDeep(3,3,buf);
 }
 
-void VolumeRenderGLWidget::setMatrixB(float * buf)
+void VolumeRenderWindow::setMatrixB(float * buf)
 {
     Matrix<float> B(3,3);
     B.setDeep(3,3,buf);
@@ -1025,71 +1022,71 @@ void VolumeRenderGLWidget::setMatrixB(float * buf)
 
     int hkl_low[3] = {-20,-20,-20};
     int hkl_high[3] = {20,20,20};
-    hkl_text_pos.set(((hkl_high[0]-hkl_low[0] + 1) * (hkl_high[1]-hkl_low[1] + 1) * (hkl_high[2]-hkl_low[2] + 1)),4,1);
-    hkl_text_index.set(((hkl_high[0]-hkl_low[0] + 1) * (hkl_high[1]-hkl_low[1] + 1) * (hkl_high[2]-hkl_low[2] + 1)),4,1);
-    int n = getUnitcellVBO(&unitcell_vbo[0], hkl_low, hkl_high, this->a.data(), this->b.data(), this->c.data());
+//    hkl_text_pos.set(((hkl_high[0]-hkl_low[0] + 1) * (hkl_high[1]-hkl_low[1] + 1) * (hkl_high[2]-hkl_low[2] + 1)),4,1);
+//    hkl_text_index.set(((hkl_high[0]-hkl_low[0] + 1) * (hkl_high[1]-hkl_low[1] + 1) * (hkl_high[2]-hkl_low[2] + 1)),4,1);
+//    int n = getUnitcellVBO(&unitcell_vbo[0], hkl_low, hkl_high, this->a.data(), this->b.data(), this->c.data());
 
 
-    hkl_indices.reserve(6*n);
-    for (int i = 0; i < n; i++)
-    {
-        hkl_indices[i*6] = i*4;
-        hkl_indices[i*6+1] = i*4+1;
-        hkl_indices[i*6+2] = i*4;
-        hkl_indices[i*6+3] = i*4+2;
-        hkl_indices[i*6+4] = i*4;
-        hkl_indices[i*6+5] = i*4+3;
-    }
+//    hkl_indices.reserve(6*n);
+//    for (int i = 0; i < n; i++)
+//    {
+//        hkl_indices[i*6] = i*4;
+//        hkl_indices[i*6+1] = i*4+1;
+//        hkl_indices[i*6+2] = i*4;
+//        hkl_indices[i*6+3] = i*4+2;
+//        hkl_indices[i*6+4] = i*4;
+//        hkl_indices[i*6+5] = i*4+3;
+//    }
 }
 
-void VolumeRenderGLWidget::toggleUnitcellView()
+void VolumeRenderWindow::toggleUnitcellView()
 {
     isUnitcellActive = !isUnitcellActive;
 }
 
-int VolumeRenderGLWidget::getUnitcellVBO(GLuint * xyz_coords, int * hkl_low, int * hkl_high, float * a, float * b, float * c)
-{
-    int n = (hkl_high[0]-hkl_low[0] + 1) * (hkl_high[1]-hkl_low[1] + 1) * (hkl_high[2]-hkl_low[2] + 1);
+//int VolumeRenderWindow::getUnitcellVBO(GLuint * xyz_coords, int * hkl_low, int * hkl_high, float * a, float * b, float * c)
+//{
+//    int n = (hkl_high[0]-hkl_low[0] + 1) * (hkl_high[1]-hkl_low[1] + 1) * (hkl_high[2]-hkl_low[2] + 1);
 
-    float * buf = new float[n*4*3];
+//    float * buf = new float[n*4*3];
 
-    int hkl_offset[3];
-    int offset = 0;
-    int iter = 0;
+//    int hkl_offset[3];
+//    int offset = 0;
+//    int iter = 0;
 
-    for (int h = hkl_low[0]; h <= hkl_high[0]; h++)
-    {
-        for (int k = hkl_low[1]; k <= hkl_high[1]; k++)
-        {
-            for (int l = hkl_low[2]; l <= hkl_high[2]; l++)
-            {
-                //~ qDebug() << "hkl = " << h << " " << k << " " << l;
+//    for (int h = hkl_low[0]; h <= hkl_high[0]; h++)
+//    {
+//        for (int k = hkl_low[1]; k <= hkl_high[1]; k++)
+//        {
+//            for (int l = hkl_low[2]; l <= hkl_high[2]; l++)
+//            {
+//                //~ qDebug() << "hkl = " << h << " " << k << " " << l;
 
-                hkl_offset[0] = h;
-                hkl_offset[1] = k;
-                hkl_offset[2] = l;
+//                hkl_offset[0] = h;
+//                hkl_offset[1] = k;
+//                hkl_offset[2] = l;
 
-                getUnitcellBasis(buf+offset, hkl_offset, a, b, c);
+//                getUnitcellBasis(buf+offset, hkl_offset, a, b, c);
 
-                hkl_text_pos[iter*3+0] = buf[offset+0];
-                hkl_text_pos[iter*3+1] = buf[offset+1];
-                hkl_text_pos[iter*3+2] = buf[offset+2];
+//                hkl_text_pos[iter*3+0] = buf[offset+0];
+//                hkl_text_pos[iter*3+1] = buf[offset+1];
+//                hkl_text_pos[iter*3+2] = buf[offset+2];
 
-                hkl_text_index[iter*3+0] = h;
-                hkl_text_index[iter*3+1] = k;
-                hkl_text_index[iter*3+2] = l;
-                iter++;
-                offset += 4*3;
-            }
-        }
-    }
+//                hkl_text_index[iter*3+0] = h;
+//                hkl_text_index[iter*3+1] = k;
+//                hkl_text_index[iter*3+2] = l;
+//                iter++;
+//                offset += 4*3;
+//            }
+//        }
+//    }
 
-    setVbo(xyz_coords, buf, n*4*3);
-    //~ delete[] buf;
-    return n;
-}
+//    setVbo(xyz_coords, buf, n*4*3);
+//    //~ delete[] buf;
+//    return n;
+//}
 
-void VolumeRenderGLWidget::getUnitcellBasis(float * buf, int * hkl_offset, float * a, float * b, float * c)
+void VolumeRenderWindow::getUnitcellBasis(float * buf, int * hkl_offset, float * a, float * b, float * c)
 {
     Matrix<float> origo(3,1);
     Matrix<float> h(3,1);
@@ -1135,7 +1132,7 @@ void VolumeRenderGLWidget::getUnitcellBasis(float * buf, int * hkl_offset, float
 
 }
 //~
-//~ void VolumeRenderGLWidget::getColorLine(float * buf, float * a, float * b, float w_scale)
+//~ void VolumeRenderWindow::getColorLine(float * buf, float * a, float * b, float w_scale)
 //~ {
     //~ Matrix<float> A(3);
     //~ A.setDeep(3,a);
@@ -1151,7 +1148,7 @@ void VolumeRenderGLWidget::getUnitcellBasis(float * buf, int * hkl_offset, float
     //~ Matrix<float> VERTS(3,4*2);
 //~ }
 
-void VolumeRenderGLWidget::setTsf(int value)
+void VolumeRenderWindow::setTsf(int value)
 {
 
     tsf_style = value;
@@ -1163,7 +1160,7 @@ void VolumeRenderGLWidget::setTsf(int value)
 }
 
 
-void VolumeRenderGLWidget::setTsfAlphaStyle(int value)
+void VolumeRenderWindow::setTsfAlphaStyle(int value)
 {
     tsf_alpha_style = value;
     init_tsf(tsf_style, value, &transferFunction);
@@ -1173,284 +1170,283 @@ void VolumeRenderGLWidget::setTsfAlphaStyle(int value)
     this->isRefreshRequired = true;
 };
 
-void VolumeRenderGLWidget::paintGL()
-{
-    glEnable(GL_MULTISAMPLE);
-    QElapsedTimer paintTimer;
-    paintTimer.start();
+//void VolumeRenderWindow::paintGL()
+//{
+//    glEnable(GL_MULTISAMPLE);
+//    QElapsedTimer paintTimer;
+//    paintTimer.start();
 
-    this->setMiscArrays();
-    this->setTsfParameters();
-    this->autoRotate(rotationTimer->elapsed(), auto_rotation_delay);
-    this->setViewMatrix();
-    this->setDataViewExtent();
+//    this->setMiscArrays();
+//    this->setTsfParameters();
+//    this->autoRotate(rotationTimer->elapsed(), auto_rotation_delay);
+//    this->setViewMatrix();
+//    this->setDataViewExtent();
 
-    GLuint indices[6] = {0,1,3,1,2,3};
+//    GLuint indices[6] = {0,1,3,1,2,3};
 
-    /*
-     *  Draw GL_LINES to std_3d_tex
-     * */
-    {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, STD_FBO);
-        GLenum buffers[] = {GL_COLOR_ATTACHMENT0};
-        glDrawBuffers(1, buffers);
+//    /*
+//     *  Draw GL_LINES to std_3d_tex
+//     * */
+//    {
+//        fbo_std.bind();
+//        GLenum buffers[] = {GL_COLOR_ATTACHMENT0};
+//        glDrawBuffers(1, buffers);
 
-        glClearColor(transparent[0], transparent[1], transparent[2], transparent[3]);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+//        glClearColor(transparent[0], transparent[1], transparent[2], transparent[3]);
+//        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-        glLineWidth(LINEWIDTH);
+//        glLineWidth(LINEWIDTH);
 
-        MiniArray<float> bbox_min(3), bbox_max(3);
-        bbox_min[0] = DATA_VIEW_EXTENT[0];
-        bbox_min[1] = DATA_VIEW_EXTENT[2];
-        bbox_min[2] = DATA_VIEW_EXTENT[4];
-        bbox_max[0] = DATA_VIEW_EXTENT[1];
-        bbox_max[1] = DATA_VIEW_EXTENT[3];
-        bbox_max[2] = DATA_VIEW_EXTENT[5];
+//        MiniArray<float> bbox_min(3), bbox_max(3);
+//        bbox_min[0] = DATA_VIEW_EXTENT[0];
+//        bbox_min[1] = DATA_VIEW_EXTENT[2];
+//        bbox_min[2] = DATA_VIEW_EXTENT[4];
+//        bbox_max[0] = DATA_VIEW_EXTENT[1];
+//        bbox_max[1] = DATA_VIEW_EXTENT[3];
+//        bbox_max[2] = DATA_VIEW_EXTENT[5];
 
-        color.setDeep(4, clearInv.data());
-        color[3] = 0.4;
+//        color.setDeep(4, clearInv.data());
+//        color[3] = 0.4;
 
-        // Draw scalebars
-        if (isScalebarActive)
-        {
-            this->scalebar_coord_count = getScaleBar();
+//        // Draw scalebars
+//        if (isScalebarActive)
+//        {
+//            this->scalebar_coord_count = getScaleBar();
 
-            glUseProgram(std_3d_program);
-            glEnableVertexAttribArray(std_3d_attribute_position);
+//            glUseProgram(std_3d_program);
+//            glEnableVertexAttribArray(std_3d_attribute_position);
 
-            // Set std_3d_attribute_position
-            glBindBuffer(GL_ARRAY_BUFFER, scalebar_vbo);
-            glVertexAttribPointer(std_3d_attribute_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+//            // Set std_3d_attribute_position
+//            glBindBuffer(GL_ARRAY_BUFFER, scalebar_vbo);
+//            glVertexAttribPointer(std_3d_attribute_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
+//            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            // Set std_3d_uniform_transform
-            glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, SCALEBAR_MATRIX.getColMajor().data());
-//CTC_MATRIX * BBOX_TRANSLATION * NORM_SCALING * DATA_SCALING * AUTO_ROTATION * ROTATION * DATA_TRANSLATION
-            // Set std_3d_uniform_u
-            glUniformMatrix4fv(std_3d_uniform_u, 1, GL_FALSE, I.getColMajor().data());
+//            // Set std_3d_uniform_transform
+//            glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, SCALEBAR_MATRIX.getColMajor().data());
+//            // Set std_3d_uniform_u
+//            glUniformMatrix4fv(std_3d_uniform_u, 1, GL_FALSE, I.getColMajor().data());
 
-            // Set color
-            glUniform4fv(std_3d_uniform_color, 1, color.data());
+//            // Set color
+//            glUniform4fv(std_3d_uniform_color, 1, color.data());
 
-            // Set bbox
-            glUniform3fv(std_3d_uniform_bbox_min, 1, bbox_min.data());
-            glUniform3fv(std_3d_uniform_bbox_max, 1, bbox_max.data());
+//            // Set bbox
+//            glUniform3fv(std_3d_uniform_bbox_min, 1, bbox_min.data());
+//            glUniform3fv(std_3d_uniform_bbox_max, 1, bbox_max.data());
 
-            // Draw verices
-            glDrawArrays(GL_LINES,  0, scalebar_coord_count);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+//            // Draw verices
+//            glDrawArrays(GL_LINES,  0, scalebar_coord_count);
+//            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glDisableVertexAttribArray(std_3d_attribute_position);
-            glUseProgram(0);
-        }
+//            glDisableVertexAttribArray(std_3d_attribute_position);
+//            glUseProgram(0);
+//        }
 
-        // Draw the unitcell
-        if (isUnitcellValid && isUnitcellActive)
-        {
-            {
-                color.setDeep(4, clearInv.data());
+//        // Draw the unitcell
+//        if (isUnitcellValid && isUnitcellActive)
+//        {
+//            {
+//                color.setDeep(4, clearInv.data());
 
-                float len_a = std::sqrt(this->a[0]*this->a[0]+ this->a[1]*this->a[1]+ this->a[2]*this->a[2]);
-                float len_b = std::sqrt(this->b[0]*this->b[0]+ this->b[1]*this->b[1]+ this->b[2]*this->b[2]);
-                float len_c = std::sqrt(this->c[0]*this->c[0]+ this->c[1]*this->c[1]+ this->c[2]*this->c[2]);
+//                float len_a = std::sqrt(this->a[0]*this->a[0]+ this->a[1]*this->a[1]+ this->a[2]*this->a[2]);
+//                float len_b = std::sqrt(this->b[0]*this->b[0]+ this->b[1]*this->b[1]+ this->b[2]*this->b[2]);
+//                float len_c = std::sqrt(this->c[0]*this->c[0]+ this->c[1]*this->c[1]+ this->c[2]*this->c[2]);
 
-                float len_max = std::max(len_a,(std::max(len_b, len_c)));
-                color[3] = (15 - ((DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0]) / len_max))/15*0.7  ;
-                if (color[3] > 0.7) color[3] = 0.7;
-                if (color[3] < 0.0) color[3] = 0.0;
-            }
+//                float len_max = std::max(len_a,(std::max(len_b, len_c)));
+//                color[3] = (15 - ((DATA_VIEW_EXTENT[1] - DATA_VIEW_EXTENT[0]) / len_max))/15*0.7  ;
+//                if (color[3] > 0.7) color[3] = 0.7;
+//                if (color[3] < 0.0) color[3] = 0.0;
+//            }
 
-            std_3d_color_draw(hkl_indices.data(), hkl_indices.size(), color.data(), &unitcell_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
-        }
+//            std_3d_color_draw(hkl_indices.data(), hkl_indices.size(), color.data(), &unitcell_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+//        }
 
-        // Draw bounding boxes
-        GLuint elements[24] = {0,1, 1,2, 2,3, 3,0, 1,5, 2,6, 3,7, 0,4, 5,6, 6,7, 7,4, 4,5};
-        color.setDeep(4, clearInv.data());
-        color[3] = 0.4;//*(DATA_VIEW_EXTENT[1]-DATA_VIEW_EXTENT[0])/(DATA_EXTENT[1]-DATA_EXTENT[0]);
-        //~ if (color[3] > 0.4) color[3] = 0.4;
-        //~ if (color[3] < 0.0) color[3] = 0.0;
+//        // Draw bounding boxes
+//        GLuint elements[24] = {0,1, 1,2, 2,3, 3,0, 1,5, 2,6, 3,7, 0,4, 5,6, 6,7, 7,4, 4,5};
+//        color.setDeep(4, clearInv.data());
+//        color[3] = 0.4;//*(DATA_VIEW_EXTENT[1]-DATA_VIEW_EXTENT[0])/(DATA_EXTENT[1]-DATA_EXTENT[0]);
+//        //~ if (color[3] > 0.4) color[3] = 0.4;
+//        //~ if (color[3] < 0.0) color[3] = 0.0;
 
-        if (!isFunctionActive)
-        {
-            std_3d_color_draw(elements, 24, color.data(), &data_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
-        }
-        if (!isScalebarActive)
-        {
-            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
-        }
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    }
-
+//        if (!isFunctionActive)
+//        {
+//            std_3d_color_draw(elements, 24, color.data(), &data_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+//        }
+//        if (!isScalebarActive)
+//        {
+//            std_3d_color_draw(elements, 24, color.data(), &data_view_extent_vbo[0] , DATA_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+//        }
+//        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//    }
 
 
-    /*
-     *  Draw GL_LINES to mini_uc_tex
-     * */
-    {
-        glLineWidth(LINEWIDTH*16);
-        glViewport(0, 0, SMALL_WIDTH, SMALL_HEIGHT);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, SMALL_FBO);
-        GLenum buffers[] = {GL_COLOR_ATTACHMENT0};
-        glDrawBuffers(1, buffers);
 
-        //~ glClearColor(clearInv[0], clearInv[1], clearInv[2], clearInv[3]);
-        glClearColor(transparent[0], transparent[1], transparent[2], transparent[3]);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+//    /*
+//     *  Draw GL_LINES to mini_uc_tex
+//     * */
+//    {
+//        glLineWidth(LINEWIDTH*16);
+//        glViewport(0, 0, SMALL_WIDTH, SMALL_HEIGHT);
+//        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, SMALL_FBO);
+//        GLenum buffers[] = {GL_COLOR_ATTACHMENT0};
+//        glDrawBuffers(1, buffers);
 
-        if (isUnitcellValid)
-        {
-            MiniArray<float> bbox_min(3), bbox_max(3);
-            bbox_min[0] = -10000;
-            bbox_min[1] = -10000;
-            bbox_min[2] = -10000;
-            bbox_max[0] = 10000;
-            bbox_max[1] = 10000;
-            bbox_max[2] = 10000;
+//        //~ glClearColor(clearInv[0], clearInv[1], clearInv[2], clearInv[3]);
+//        glClearColor(transparent[0], transparent[1], transparent[2], transparent[3]);
+//        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-            int hkl_low[3] = {0,0,0};
-            int hkl_high[3] = {0,0,0};
+//        if (isUnitcellValid)
+//        {
+//            MiniArray<float> bbox_min(3), bbox_max(3);
+//            bbox_min[0] = -10000;
+//            bbox_min[1] = -10000;
+//            bbox_min[2] = -10000;
+//            bbox_max[0] = 10000;
+//            bbox_max[1] = 10000;
+//            bbox_max[2] = 10000;
 
-            float len_a = std::sqrt(this->a[0]*this->a[0]+ this->a[1]*this->a[1]+ this->a[2]*this->a[2]);
-            float len_b = std::sqrt(this->b[0]*this->b[0]+ this->b[1]*this->b[1]+ this->b[2]*this->b[2]);
-            float len_c = std::sqrt(this->c[0]*this->c[0]+ this->c[1]*this->c[1]+ this->c[2]*this->c[2]);
+//            int hkl_low[3] = {0,0,0};
+//            int hkl_high[3] = {0,0,0};
 
-            float len_max = std::max(len_a,(std::max(len_b, len_c)));
+//            float len_a = std::sqrt(this->a[0]*this->a[0]+ this->a[1]*this->a[1]+ this->a[2]*this->a[2]);
+//            float len_b = std::sqrt(this->b[0]*this->b[0]+ this->b[1]*this->b[1]+ this->b[2]*this->b[2]);
+//            float len_c = std::sqrt(this->c[0]*this->c[0]+ this->c[1]*this->c[1]+ this->c[2]*this->c[2]);
 
-            getUnitcellVBO(&unitcell_vbo[1], hkl_low, hkl_high, (this->a*(0.4/len_max)).data(), (this->b*(0.4/len_max)).data(), (this->c*(0.4/len_max)).data());
+//            float len_max = std::max(len_a,(std::max(len_b, len_c)));
 
-            /* Reciprocal unitcell vectors*/
-            std_3d_color_draw(hkl_indices.data(), 2, red.data(), &unitcell_vbo[1]  , MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+//            getUnitcellVBO(&unitcell_vbo[1], hkl_low, hkl_high, (this->a*(0.4/len_max)).data(), (this->b*(0.4/len_max)).data(), (this->c*(0.4/len_max)).data());
 
-            std_3d_color_draw(hkl_indices.data()+2, 2, green.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+//            /* Reciprocal unitcell vectors*/
+//            std_3d_color_draw(hkl_indices.data(), 2, red.data(), &unitcell_vbo[1]  , MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
 
-            std_3d_color_draw(hkl_indices.data()+4, 2, blue.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
+//            std_3d_color_draw(hkl_indices.data()+2, 2, green.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
 
-            /* text for h k l*/
-            Matrix<float> xy(2,1);
-            Matrix<float> MINI_CELL_VIEW_MATRIX_U(4,4);
-            MINI_CELL_VIEW_MATRIX_U = MINI_CELL_VIEW_MATRIX*U;
+//            std_3d_color_draw(hkl_indices.data()+4, 2, blue.data(), &unitcell_vbo[1], MINI_CELL_VIEW_MATRIX.getColMajor().data(),  bbox_min.data(), bbox_max.data() );
 
-            getScreenPosition(xy.data(), (this->a*(0.4/len_max)).data(), MINI_CELL_VIEW_MATRIX_U.data());
-            std_text_draw("h", fontLarge, clearInv.data(), xy.data(), 1.0, this->SMALL_WIDTH, this->SMALL_HEIGHT);
-            getScreenPosition(xy.data(), (this->b*(0.4/len_max)).data(), MINI_CELL_VIEW_MATRIX_U.data());
-            std_text_draw("k", fontLarge, clearInv.data(), xy.data(), 1.0, this->SMALL_WIDTH, this->SMALL_HEIGHT);
-            getScreenPosition(xy.data(), (this->c*(0.4/len_max)).data(), MINI_CELL_VIEW_MATRIX_U.data());
-            std_text_draw("l", fontLarge, clearInv.data(), xy.data(), 1.0, this->SMALL_WIDTH, this->SMALL_HEIGHT);
-        }
+//            /* text for h k l*/
+//            Matrix<float> xy(2,1);
+//            Matrix<float> MINI_CELL_VIEW_MATRIX_U(4,4);
+//            MINI_CELL_VIEW_MATRIX_U = MINI_CELL_VIEW_MATRIX*U;
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glViewport(0, 0, WIDTH, HEIGHT);
-    }
+//            getScreenPosition(xy.data(), (this->a*(0.4/len_max)).data(), MINI_CELL_VIEW_MATRIX_U.data());
+//            std_text_draw("h", fontLarge, clearInv.data(), xy.data(), 1.0, this->SMALL_WIDTH, this->SMALL_HEIGHT);
+//            getScreenPosition(xy.data(), (this->b*(0.4/len_max)).data(), MINI_CELL_VIEW_MATRIX_U.data());
+//            std_text_draw("k", fontLarge, clearInv.data(), xy.data(), 1.0, this->SMALL_WIDTH, this->SMALL_HEIGHT);
+//            getScreenPosition(xy.data(), (this->c*(0.4/len_max)).data(), MINI_CELL_VIEW_MATRIX_U.data());
+//            std_text_draw("l", fontLarge, clearInv.data(), xy.data(), 1.0, this->SMALL_WIDTH, this->SMALL_HEIGHT);
+//        }
 
-    /*
-     *  Draw Textures and HUD to std_2d_tex
-     * */
-    {
-        glLineWidth(LINEWIDTH);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, STD_FBO);
-        GLenum buffers[] = {GL_COLOR_ATTACHMENT1};
-        glDrawBuffers(1, buffers);
+//        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//        glViewport(0, 0, WIDTH, HEIGHT);
+//    }
 
-        glClearColor(transparent[0], transparent[1], transparent[2], transparent[3]);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        GLuint indices[6] = {0,1,3,1,2,3};
-        GLuint indices_side_backdrop[24] = { 8,9,11,9,10,11, 10,11,12, 11,13,12};
+//    /*
+//     *  Draw Textures and HUD to std_2d_tex
+//     * */
+//    {
+//        glLineWidth(LINEWIDTH);
+//        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, STD_FBO);
+//        GLenum buffers[] = {GL_COLOR_ATTACHMENT1};
+//        glDrawBuffers(1, buffers);
 
-
-        backDropTexPos(&position_vbo[7], 6);
-        backDropTexPos(&position_vbo[8], 4);
-        backDropTexPos(&position_vbo[9], 2);
+//        glClearColor(transparent[0], transparent[1], transparent[2], transparent[3]);
+//        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+//        GLuint indices[6] = {0,1,3,1,2,3};
+//        GLuint indices_side_backdrop[24] = { 8,9,11,9,10,11, 10,11,12, 11,13,12};
 
 
-        {
-            if (bricks_cl && oct_index_cl && oct_brick_cl && !isFunctionActive) this->raytrace(K_SVO_RAYTRACE);
-            else this->raytrace(K_FUNCTION_RAYTRACE);
+//        backDropTexPos(&position_vbo[7], 6);
+//        backDropTexPos(&position_vbo[8], 4);
+//        backDropTexPos(&position_vbo[9], 2);
 
-            std_2d_tex_draw(indices, 6, 0, ray_tex, &position_vbo[1], &tex_coord_vbo[1]);
 
-            glBlendFunc(GL_ONE, GL_ZERO);
-            std_2d_color_draw(indices_side_backdrop, 12, black.data(),  &position_vbo[7]);
-            std_2d_color_draw(indices_side_backdrop, 12, white.data(),  &position_vbo[8]);
-            std_2d_color_draw(indices_side_backdrop, 12, black.data(),  &position_vbo[9]);
-            std_2d_color_draw(indices, 6, white.data(),  &position_vbo[10]);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//        {
+//            if (bricks_cl && oct_index_cl && oct_brick_cl && !isFunctionActive) this->raytrace(K_SVO_RAYTRACE);
+//            else this->raytrace(K_FUNCTION_RAYTRACE);
 
-            std_2d_tex_draw(indices, 6, 0, tsf_tex, &position_vbo[2], &tex_coord_vbo[2]);
+//            std_2d_tex_draw(indices, 6, 0, ray_tex, &position_vbo[1], &tex_coord_vbo[1]);
 
-            if (isBrickPoolInitialized)
-            {
-                histTexPos(isLog, (float) MINMAX[0], (float) MINMAX[1], TSF_PARAMETERS[2], TSF_PARAMETERS[3]);
-                if (isLog) std_2d_tex_draw(indices, 6, 0, hist_tex_log, &position_vbo[3], &tex_coord_vbo[3]);
-                else std_2d_tex_draw(indices, 6, 0, hist_tex_norm, &position_vbo[3], &tex_coord_vbo[3]);
-            }
-            if (isUnitcellValid && isUnitcellActive)
-            {
-                // Draw hkl text
-                Matrix<float> xy(2,1);
-                MiniArray<int> hkl(4*4*4);
-                size_t iter = 0;
-                bool isIterFat = false;
+//            glBlendFunc(GL_ONE, GL_ZERO);
+//            std_2d_color_draw(indices_side_backdrop, 12, black.data(),  &position_vbo[7]);
+//            std_2d_color_draw(indices_side_backdrop, 12, white.data(),  &position_vbo[8]);
+//            std_2d_color_draw(indices_side_backdrop, 12, black.data(),  &position_vbo[9]);
+//            std_2d_color_draw(indices, 6, white.data(),  &position_vbo[10]);
+//            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-                for (size_t i = 0; i < hkl_indices.size()/6; i++)
-                {
-                    if (
-                    ((hkl_text_pos[i*3+0] > DATA_VIEW_EXTENT[0]) && (hkl_text_pos[i*3+0] < DATA_VIEW_EXTENT[1])) &&
-                    ((hkl_text_pos[i*3+1] > DATA_VIEW_EXTENT[2]) && (hkl_text_pos[i*3+1] < DATA_VIEW_EXTENT[3])) &&
-                    ((hkl_text_pos[i*3+2] > DATA_VIEW_EXTENT[4]) && (hkl_text_pos[i*3+2] < DATA_VIEW_EXTENT[5])))
-                    {
-                        if (iter >= 4*4*4)
-                        {
-                            isIterFat = true;
-                            break;
-                        }
-                        hkl[iter] = i;
-                        iter++;
-                    }
-                }
-                if (!isIterFat)
-                {
-                    for (size_t i = 0; i < iter; i++)
-                    {
+//            std_2d_tex_draw(indices, 6, 0, tsf_tex, &position_vbo[2], &tex_coord_vbo[2]);
 
-                        std::stringstream ss;
-                        ss << hkl_text_index[hkl[i]*3+0] << hkl_text_index[hkl[i]*3+1] << hkl_text_index[hkl[i]*3+2];
+//            if (isBrickPoolInitialized)
+//            {
+//                histTexPos(isLog, (float) MINMAX[0], (float) MINMAX[1], TSF_PARAMETERS[2], TSF_PARAMETERS[3]);
+//                if (isLog) std_2d_tex_draw(indices, 6, 0, hist_tex_log, &position_vbo[3], &tex_coord_vbo[3]);
+//                else std_2d_tex_draw(indices, 6, 0, hist_tex_norm, &position_vbo[3], &tex_coord_vbo[3]);
+//            }
+//            if (isUnitcellValid && isUnitcellActive)
+//            {
+//                // Draw hkl text
+//                Matrix<float> xy(2,1);
+//                MiniArray<int> hkl(4*4*4);
+//                size_t iter = 0;
+//                bool isIterFat = false;
 
-                        getScreenPosition(xy.data(), hkl_text_pos.data() + hkl[i]*3 , DATA_VIEW_MATRIX.data());
-                        std_text_draw(ss.str().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-                    }
-                }
-            }
-        }
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    }
+//                for (size_t i = 0; i < hkl_indices.size()/6; i++)
+//                {
+//                    if (
+//                    ((hkl_text_pos[i*3+0] > DATA_VIEW_EXTENT[0]) && (hkl_text_pos[i*3+0] < DATA_VIEW_EXTENT[1])) &&
+//                    ((hkl_text_pos[i*3+1] > DATA_VIEW_EXTENT[2]) && (hkl_text_pos[i*3+1] < DATA_VIEW_EXTENT[3])) &&
+//                    ((hkl_text_pos[i*3+2] > DATA_VIEW_EXTENT[4]) && (hkl_text_pos[i*3+2] < DATA_VIEW_EXTENT[5])))
+//                    {
+//                        if (iter >= 4*4*4)
+//                        {
+//                            isIterFat = true;
+//                            break;
+//                        }
+//                        hkl[iter] = i;
+//                        iter++;
+//                    }
+//                }
+//                if (!isIterFat)
+//                {
+//                    for (size_t i = 0; i < iter; i++)
+//                    {
 
-    // Set resolution seamlessly in accordance with requirements
-    if (ray_res != 100) this->isRefreshRequired = true;
-    if (timerLastAction->elapsed() >= timeLastActionMin)
-    {
-        this->setResolutionf(ray_res + 10);
-    }
-    else if (isBadCall)
-    {
-        this->setResolutionf(ray_res - 10);
-    }
-    if (!isBadCall)
-    {
-        glClearColor(clear[0], clear[0], clear[0], clear[0]);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+//                        std::stringstream ss;
+//                        ss << hkl_text_index[hkl[i]*3+0] << hkl_text_index[hkl[i]*3+1] << hkl_text_index[hkl[i]*3+2];
 
-        std_2d_tex_draw(indices, 6, 0, std_3d_tex, &screen_vbo[4], &tex_coord_vbo[1]);
-        std_2d_tex_draw(indices, 6, 0, std_2d_tex, &screen_vbo[4], &tex_coord_vbo[1]);
-        std_2d_tex_draw(indices, 6, 0, mini_uc_tex, &screen_vbo[0], &tex_coord_vbo[1]);
+//                        getScreenPosition(xy.data(), hkl_text_pos.data() + hkl[i]*3 , DATA_VIEW_MATRIX.data());
+//                        std_text_draw(ss.str().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+//                    }
+//                }
+//            }
+//        }
+//        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//    }
 
-        float xy[2] = {-0.99,-0.99};
-        QString str("(Resolution: "+QString::number(ray_res)+"%, Max FPS: "+QString::number(fps)+")");
-        std_text_draw(str.toStdString().c_str(), fontSmall, clearInv.data(), xy, 1.0, this->WIDTH, this->HEIGHT);
-    }
-}
+//    // Set resolution seamlessly in accordance with requirements
+//    if (ray_res != 100) this->isRefreshRequired = true;
+//    if (timerLastAction->elapsed() >= timeLastActionMin)
+//    {
+//        this->setResolutionf(ray_res + 10);
+//    }
+//    else if (isBadCall)
+//    {
+//        this->setResolutionf(ray_res - 10);
+//    }
+//    if (!isBadCall)
+//    {
+//        glClearColor(clear[0], clear[0], clear[0], clear[0]);
+//        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-void VolumeRenderGLWidget::setHklFocus(const QString str)
+//        std_2d_tex_draw(indices, 6, 0, std_3d_tex, &screen_vbo[4], &tex_coord_vbo[1]);
+//        std_2d_tex_draw(indices, 6, 0, std_2d_tex, &screen_vbo[4], &tex_coord_vbo[1]);
+//        std_2d_tex_draw(indices, 6, 0, mini_uc_tex, &screen_vbo[0], &tex_coord_vbo[1]);
+
+//        float xy[2] = {-0.99,-0.99};
+//        QString str("(Resolution: "+QString::number(ray_res)+"%, Max FPS: "+QString::number(minimum_fps)+")");
+//        std_text_draw(str.toStdString().c_str(), fontSmall, clearInv.data(), xy, 1.0, this->WIDTH, this->HEIGHT);
+//    }
+//}
+
+void VolumeRenderWindow::setHklFocus(const QString str)
 {
     QRegExp regExp("(?:\\D+)?([-+]?\\d+)(?:\\D+)?([-+]?\\d+)(?:\\D+)?([-+]?\\d+)");
 
@@ -1491,109 +1487,109 @@ void VolumeRenderGLWidget::setHklFocus(const QString str)
 
 }
 
-void VolumeRenderGLWidget::std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * transform, float * bbox_min, float * bbox_max )
-{
-        glUseProgram(std_3d_program);
-        glEnableVertexAttribArray(std_3d_attribute_position);
+//void VolumeRenderWindow::std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * transform, float * bbox_min, float * bbox_max )
+//{
+//        glUseProgram(std_3d_program);
+//        glEnableVertexAttribArray(std_3d_attribute_position);
 
-        // Set std_3d_attribute_position
-        glBindBuffer(GL_ARRAY_BUFFER, xyz_vbo[0]);
-        glVertexAttribPointer(std_3d_attribute_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//        // Set std_3d_attribute_position
+//        glBindBuffer(GL_ARRAY_BUFFER, xyz_vbo[0]);
+//        glVertexAttribPointer(std_3d_attribute_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        // Set std_3d_uniform_transform
-        glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, transform);
+//        // Set std_3d_uniform_transform
+//        glUniformMatrix4fv(std_3d_uniform_transform, 1, GL_FALSE, transform);
 
-        // Set color
-        glUniform4fv(std_3d_uniform_color, 1, color);
+//        // Set color
+//        glUniform4fv(std_3d_uniform_color, 1, color);
 
-        // Set bbox
-        glUniform3fv(std_3d_uniform_bbox_min, 1, bbox_min);
-        glUniform3fv(std_3d_uniform_bbox_max, 1, bbox_max);
+//        // Set bbox
+//        glUniform3fv(std_3d_uniform_bbox_min, 1, bbox_min);
+//        glUniform3fv(std_3d_uniform_bbox_max, 1, bbox_max);
 
-        // Draw verices
-        glDrawElements(GL_LINES,  num_elements,  GL_UNSIGNED_INT,  elements);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//        // Draw verices
+//        glDrawElements(GL_LINES,  num_elements,  GL_UNSIGNED_INT,  elements);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glDisableVertexAttribArray(std_3d_attribute_position);
-        glUseProgram(0);
-}
+//        glDisableVertexAttribArray(std_3d_attribute_position);
+//        glUseProgram(0);
+//}
 
-void VolumeRenderGLWidget::std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords)
-{
-    glUseProgram(std_2d_tex_program);
+//void VolumeRenderWindow::std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords)
+//{
+//    glUseProgram(std_2d_tex_program);
 
-    // Set std_2d_tex_uniform_texture
-    glActiveTexture(GL_TEXTURE0 + active_tex);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(std_2d_tex_uniform_texture, active_tex);
+//    // Set std_2d_tex_uniform_texture
+//    glActiveTexture(GL_TEXTURE0 + active_tex);
+//    glBindTexture(GL_TEXTURE_2D, texture);
+//    glUniform1i(std_2d_tex_uniform_texture, active_tex);
 
-    // Set std_2d_tex_attribute_position
-    glEnableVertexAttribArray(std_2d_tex_attribute_position);
-    glBindBuffer(GL_ARRAY_BUFFER, *xy_coords);
-    glVertexAttribPointer(std_2d_tex_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    // Set std_2d_tex_attribute_position
+//    glEnableVertexAttribArray(std_2d_tex_attribute_position);
+//    glBindBuffer(GL_ARRAY_BUFFER, *xy_coords);
+//    glVertexAttribPointer(std_2d_tex_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // Set std_2d_tex_attribute_texpos
-    glEnableVertexAttribArray(std_2d_tex_attribute_texpos);
-    glBindBuffer(GL_ARRAY_BUFFER, *tex_coords);
-    glVertexAttribPointer(std_2d_tex_attribute_texpos, 2, GL_FLOAT,  GL_FALSE,   0,  0 );
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    // Set std_2d_tex_attribute_texpos
+//    glEnableVertexAttribArray(std_2d_tex_attribute_texpos);
+//    glBindBuffer(GL_ARRAY_BUFFER, *tex_coords);
+//    glVertexAttribPointer(std_2d_tex_attribute_texpos, 2, GL_FLOAT,  GL_FALSE,   0,  0 );
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // Draw verices
-    glDrawElements(GL_TRIANGLES,  num_elements,  GL_UNSIGNED_INT,  elements);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+//    // Draw verices
+//    glDrawElements(GL_TRIANGLES,  num_elements,  GL_UNSIGNED_INT,  elements);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    glBindTexture(GL_TEXTURE_2D, 0);
 
-    glDisableVertexAttribArray(std_2d_tex_attribute_position);
-    glDisableVertexAttribArray(std_2d_tex_attribute_texpos);
-    glUseProgram(0);
-}
-
-
-void VolumeRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords)
-{
-    glUseProgram(std_2d_color_program);
+//    glDisableVertexAttribArray(std_2d_tex_attribute_position);
+//    glDisableVertexAttribArray(std_2d_tex_attribute_texpos);
+//    glUseProgram(0);
+//}
 
 
-    // Set std_2d_color_attribute_position
-    glEnableVertexAttribArray(std_2d_color_attribute_position);
-    glBindBuffer(GL_ARRAY_BUFFER, *xy_coords);
-    glVertexAttribPointer(std_2d_color_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Set std_2d_color_uniform_color
-    glUniform4fv(std_2d_color_uniform_color, 1, color);
-
-    // Draw verices
-    glDrawElements(GL_TRIANGLES,  num_elements,  GL_UNSIGNED_INT,  elements);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDisableVertexAttribArray(std_2d_color_attribute_position);
-    glUseProgram(0);
-}
+//void VolumeRenderWindow::std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords)
+//{
+//    glUseProgram(std_2d_color_program);
 
 
+//    // Set std_2d_color_attribute_position
+//    glEnableVertexAttribArray(std_2d_color_attribute_position);
+//    glBindBuffer(GL_ARRAY_BUFFER, *xy_coords);
+//    glVertexAttribPointer(std_2d_color_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-void VolumeRenderGLWidget::resizeGL(int w, int h)
-{
+//    // Set std_2d_color_uniform_color
+//    glUniform4fv(std_2d_color_uniform_color, 1, color);
+
+//    // Draw verices
+//    glDrawElements(GL_TRIANGLES,  num_elements,  GL_UNSIGNED_INT,  elements);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+
+//    glDisableVertexAttribArray(std_2d_color_attribute_position);
+//    glUseProgram(0);
+//}
 
 
-    this->WIDTH = w;
-    this->HEIGHT = h;
-    this->SMALL_WIDTH = w/2;
-    this->SMALL_HEIGHT = h/2;
-    this->setRaytracingTexture();
-    this->setTexturesVBO();
 
-    CTC_MATRIX.setWindow(WIDTH, HEIGHT);
-    glViewport(0, 0, w, h);
-    this->timerLastAction->start();
-    this->isRefreshRequired = true;
-}
+//void VolumeRenderWindow::resizeGL(int w, int h)
+//{
 
-void VolumeRenderGLWidget::setDataExtent()
+
+//    this->WIDTH = w;
+//    this->HEIGHT = h;
+//    this->SMALL_WIDTH = w/2;
+//    this->SMALL_HEIGHT = h/2;
+//    this->setRaytracingTexture();
+//    this->setTexturesVBO();
+
+//    CTC_MATRIX.setWindow(WIDTH, HEIGHT);
+//    glViewport(0, 0, w, h);
+//    this->timerLastAction->start();
+//    this->isRefreshRequired = true;
+//}
+
+void VolumeRenderWindow::setDataExtent()
 {
     err = clEnqueueWriteBuffer ( (*queue),
         data_extent_cl,
@@ -1604,7 +1600,7 @@ void VolumeRenderGLWidget::setDataExtent()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     err = clEnqueueWriteBuffer ( (*queue),
@@ -1616,7 +1612,7 @@ void VolumeRenderGLWidget::setDataExtent()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     err = clSetKernelArg(K_FUNCTION_RAYTRACE, 4, sizeof(cl_mem),  &data_extent_cl);
@@ -1626,12 +1622,12 @@ void VolumeRenderGLWidget::setDataExtent()
     err |= clSetKernelArg(K_SVO_RAYTRACE, 9, sizeof(cl_mem), &data_view_extent_cl);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 }
 
 
-void VolumeRenderGLWidget::setViewMatrix()
+void VolumeRenderWindow::setViewMatrix()
 {
 
     NORM_SCALING[0] = BBOX_SCALING[0] * PROJECTION_SCALING[0] * (BBOX_EXTENT[1] - BBOX_EXTENT[0]) / (DATA_EXTENT[1] - DATA_EXTENT[0]);
@@ -1658,7 +1654,7 @@ void VolumeRenderGLWidget::setViewMatrix()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     err = clEnqueueWriteBuffer ( (*queue),
@@ -1670,123 +1666,123 @@ void VolumeRenderGLWidget::setViewMatrix()
         0,0,0);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     err = clSetKernelArg(K_FUNCTION_RAYTRACE, 3, sizeof(cl_mem), (void *) &function_view_matrix_inv_cl);
     err |= clSetKernelArg(K_SVO_RAYTRACE, 7, sizeof(cl_mem), (void *) &view_matrix_inv_cl);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     this->setDataExtent();
 }
 
 
-void VolumeRenderGLWidget::setMessageString(QString str)
+void VolumeRenderWindow::setMessageString(QString str)
 {
         emit changedMessageString(str);
 }
 
-void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
-{
-    rotationTimer->restart();
-    float move_scaling = 1.0;
-    if(event->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
+//void VolumeRenderWindow::mouseMoveEvent(QMouseEvent *event)
+//{
+//    rotationTimer->restart();
+//    float move_scaling = 1.0;
+//    if(event->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
 
 
-    if ((event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton))
-    {
-        /* Rotation happens multiplicatively around a rolling axis given
-         * by the mouse move direction and magnitude.
-         * Moving the mouse alters rotation.
-         * */
+//    if ((event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton))
+//    {
+//        /* Rotation happens multiplicatively around a rolling axis given
+//         * by the mouse move direction and magnitude.
+//         * Moving the mouse alters rotation.
+//         * */
 
-        double eta = std::atan2(event->x() - lastPos_x, event->y() - lastPos_y) - pi*1.0;
-        double roll = move_scaling * pi/((float) HEIGHT) * std::sqrt((event->x() - lastPos_x)*(event->x() - lastPos_x) + (event->y() - lastPos_y)*(event->y() - lastPos_y));
+//        double eta = std::atan2(event->x() - lastPos_x, event->y() - lastPos_y) - pi*1.0;
+//        double roll = move_scaling * pi/((float) HEIGHT) * std::sqrt((event->x() - lastPos_x)*(event->x() - lastPos_x) + (event->y() - lastPos_y)*(event->y() - lastPos_y));
 
-        ROLL_ROTATION.setArbRotation(-0.5*pi, eta, roll);
+//        ROLL_ROTATION.setArbRotation(-0.5*pi, eta, roll);
 
-        if(event->modifiers() & Qt::ShiftModifier) SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
-        else
-        {
-            ROTATION = ROLL_ROTATION * ROTATION;
-            SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
-        }
+//        if(event->modifiers() & Qt::ShiftModifier) SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+//        else
+//        {
+//            ROTATION = ROLL_ROTATION * ROTATION;
+//            SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+//        }
 
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
-    }
-    if ((event->buttons() & Qt::LeftButton) && (event->buttons() & Qt::RightButton))
-    {
-        /* Rotation happens multiplicatively around a rolling axis given
-         * by the mouse move direction and magnitude.
-         * Moving the mouse alters rotation.
-         * */
+//        this->timerLastAction->start();
+//        this->isRefreshRequired = true;
+//    }
+//    if ((event->buttons() & Qt::LeftButton) && (event->buttons() & Qt::RightButton))
+//    {
+//        /* Rotation happens multiplicatively around a rolling axis given
+//         * by the mouse move direction and magnitude.
+//         * Moving the mouse alters rotation.
+//         * */
 
-        //~ double eta = std::atan2(event->x() - lastPos_x, event->y() - lastPos_y) - pi*1.0;
-        double roll = move_scaling * pi/((float) HEIGHT) * (event->y() - lastPos_y);
+//        //~ double eta = std::atan2(mouseEvent->x() - lastPos_x, mouseEvent->y() - lastPos_y) - pi*1.0;
+//        double roll = move_scaling * pi/((float) HEIGHT) * (event->y() - lastPos_y);
 
-        ROLL_ROTATION.setArbRotation(0, 0, roll);
+//        ROLL_ROTATION.setArbRotation(0, 0, roll);
 
-        if(event->modifiers() & Qt::ShiftModifier) SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
-        else
-        {
-            ROTATION = ROLL_ROTATION * ROTATION;
-            SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
-        }
+//        if(event->modifiers() & Qt::ShiftModifier) SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+//        else
+//        {
+//            ROTATION = ROLL_ROTATION * ROTATION;
+//            SCALEBAR_ROTATION = ROLL_ROTATION * SCALEBAR_ROTATION;
+//        }
 
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
-    }
-    else if (event->buttons() & Qt::MiddleButton)
-    {
-        /* X/Y translation happens multiplicatively. Here it is
-         * important to retain the bounding box accordingly  */
-        float dx = move_scaling * 2.0*(DATA_VIEW_EXTENT[1]-DATA_VIEW_EXTENT[0])/((float) HEIGHT) * (event->x() - lastPos_x);
-        float dy = move_scaling * -2.0*(DATA_VIEW_EXTENT[3]-DATA_VIEW_EXTENT[2])/((float) HEIGHT) * (event->y() - lastPos_y);
+//        this->timerLastAction->start();
+//        this->isRefreshRequired = true;
+//    }
+//    else if (event->buttons() & Qt::MiddleButton)
+//    {
+//        /* X/Y translation happens multiplicatively. Here it is
+//         * important to retain the bounding box accordingly  */
+//        float dx = move_scaling * 2.0*(DATA_VIEW_EXTENT[1]-DATA_VIEW_EXTENT[0])/((float) HEIGHT) * (event->x() - lastPos_x);
+//        float dy = move_scaling * -2.0*(DATA_VIEW_EXTENT[3]-DATA_VIEW_EXTENT[2])/((float) HEIGHT) * (event->y() - lastPos_y);
 
-        Matrix<float> DATA_TRANSLATION_PREV;
-        DATA_TRANSLATION_PREV.setIdentity(4);
-        DATA_TRANSLATION_PREV = DATA_TRANSLATION;
+//        Matrix<float> DATA_TRANSLATION_PREV;
+//        DATA_TRANSLATION_PREV.setIdentity(4);
+//        DATA_TRANSLATION_PREV = DATA_TRANSLATION;
 
-        DATA_TRANSLATION.setIdentity(4);
-        DATA_TRANSLATION[3] = dx;
-        DATA_TRANSLATION[7] = dy;
+//        DATA_TRANSLATION.setIdentity(4);
+//        DATA_TRANSLATION[3] = dx;
+//        DATA_TRANSLATION[7] = dy;
 
-        DATA_TRANSLATION = ( ROTATION.getInverse() * DATA_TRANSLATION * ROTATION) * DATA_TRANSLATION_PREV;
+//        DATA_TRANSLATION = ( ROTATION.getInverse() * DATA_TRANSLATION * ROTATION) * DATA_TRANSLATION_PREV;
 
-        this->DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
-//        this->scalebar_coord_count = getScaleBar();
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
-    }
-    else if (!(event->buttons() & Qt::LeftButton) && (event->buttons() & Qt::RightButton))
-    {
-        /* Z translation happens multiplicatively */
-        float dz = move_scaling * 2.0*(DATA_VIEW_EXTENT[5]-DATA_VIEW_EXTENT[4])/((float) HEIGHT) * (event->y() - lastPos_y);
+//        this->DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
+////        this->scalebar_coord_count = getScaleBar();
+//        this->timerLastAction->start();
+//        this->isRefreshRequired = true;
+//    }
+//    else if (!(event->buttons() & Qt::LeftButton) && (event->buttons() & Qt::RightButton))
+//    {
+//        /* Z translation happens multiplicatively */
+//        float dz = move_scaling * 2.0*(DATA_VIEW_EXTENT[5]-DATA_VIEW_EXTENT[4])/((float) HEIGHT) * (event->y() - lastPos_y);
 
-        Matrix<float> DATA_TRANSLATION_PREV;
-        DATA_TRANSLATION_PREV.setIdentity(4);
-        DATA_TRANSLATION_PREV = DATA_TRANSLATION;
+//        Matrix<float> DATA_TRANSLATION_PREV;
+//        DATA_TRANSLATION_PREV.setIdentity(4);
+//        DATA_TRANSLATION_PREV = DATA_TRANSLATION;
 
-        DATA_TRANSLATION.setIdentity(4);
-        DATA_TRANSLATION[11] = dz;
+//        DATA_TRANSLATION.setIdentity(4);
+//        DATA_TRANSLATION[11] = dz;
 
-        DATA_TRANSLATION = ( ROTATION.getInverse() * DATA_TRANSLATION * ROTATION) * DATA_TRANSLATION_PREV;
+//        DATA_TRANSLATION = ( ROTATION.getInverse() * DATA_TRANSLATION * ROTATION) * DATA_TRANSLATION_PREV;
 
-        this->DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
-//        this->scalebar_coord_count = getScaleBar();
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
-    }
-    lastPos_x = event->x();
-    lastPos_y = event->y();
-}
+//        this->DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
+////        this->scalebar_coord_count = getScaleBar();
+//        this->timerLastAction->start();
+//        this->isRefreshRequired = true;
+//    }
+//    lastPos_x = event->x();
+//    lastPos_y = event->y();
+//}
 
 
-//~void VolumeRenderGLWidget::keyPressEvent(QKeyEvent *event)
+//~void VolumeRenderWindow::keyPressEvent(QKeyEvent *event)
 //~{
      //~std::cout << "Key event!" << std::endl;
     //~float sign_modifier = 1.0;
@@ -1869,46 +1865,46 @@ void VolumeRenderGLWidget::mouseMoveEvent(QMouseEvent *event)
     //~this->isRefreshRequired = true;
 //~}
 
-void VolumeRenderGLWidget::wheelEvent(QWheelEvent *event)
-{
-    float move_scaling = 1.0;
-    if(event->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
-    else if(event->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
+//void VolumeRenderWindow::wheelEvent(QWheelEvent *event)
+//{
+//    float move_scaling = 1.0;
+//    if(event->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
+//    else if(event->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
 
 
-    double delta = move_scaling*((double)event->delta())*0.0008;
+//    double delta = move_scaling*((double)event->delta())*0.0008;
 
-    if (!(event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton))
-    {
-        if ((DATA_SCALING[0] > 0.0001) || (delta > 0))
-        {
-            DATA_SCALING[0] += DATA_SCALING[0]*delta;
-            DATA_SCALING[5] += DATA_SCALING[5]*delta;
-            DATA_SCALING[10] += DATA_SCALING[10]*delta;
+//    if (!(event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton))
+//    {
+//        if ((DATA_SCALING[0] > 0.0001) || (delta > 0))
+//        {
+//            DATA_SCALING[0] += DATA_SCALING[0]*delta;
+//            DATA_SCALING[5] += DATA_SCALING[5]*delta;
+//            DATA_SCALING[10] += DATA_SCALING[10]*delta;
 
-            DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
-            this->timerLastAction->start();
-            this->isRefreshRequired = true;
-        }
-    }
-    else
-    {
-        if ((BBOX_SCALING[0] > 0.0001) || (delta > 0))
-        {
-            BBOX_SCALING[0] += BBOX_SCALING[0]*delta;
-            BBOX_SCALING[5] += BBOX_SCALING[5]*delta;
-            BBOX_SCALING[10] += BBOX_SCALING[10]*delta;
+//            DATA_VIEW_EXTENT =  (DATA_SCALING * DATA_TRANSLATION).getInverse() * DATA_EXTENT;
+//            this->timerLastAction->start();
+//            this->isRefreshRequired = true;
+//        }
+//    }
+//    else
+//    {
+//        if ((BBOX_SCALING[0] > 0.0001) || (delta > 0))
+//        {
+//            BBOX_SCALING[0] += BBOX_SCALING[0]*delta;
+//            BBOX_SCALING[5] += BBOX_SCALING[5]*delta;
+//            BBOX_SCALING[10] += BBOX_SCALING[10]*delta;
 
-            this->timerLastAction->start();
-            this->isRefreshRequired = true;
-        }
-    }
-//    this->scalebar_coord_count = getScaleBar();
-    rotationTimer->restart();
-}
+//            this->timerLastAction->start();
+//            this->isRefreshRequired = true;
+//        }
+//    }
+////    this->scalebar_coord_count = getScaleBar();
+//    rotationTimer->restart();
+//}
 
 
-int VolumeRenderGLWidget::initResourcesGL()
+int VolumeRenderWindow::initResourcesGL()
 {
 
 
@@ -1941,231 +1937,238 @@ int VolumeRenderGLWidget::initResourcesGL()
     this->setTexturesVBO();
 
     // Shader programs
-    initializeProgramsGL();
+//    initializeProgramsGL();
 
     // Vertice buffer objects
-    glGenBuffers(1, &text_texpos_vbo);
-    glGenBuffers(1, &text_position_vbo);
-    glGenBuffers(10, tex_coord_vbo);
-    glGenBuffers(20, position_vbo);
-    glGenBuffers(5, lab_reference_vbo);
-    glGenBuffers(5, data_extent_vbo);
-    glGenBuffers(5, data_view_extent_vbo);
-    glGenBuffers(5, unitcell_vbo);
-    glGenBuffers(1, &scalebar_vbo);
-    glGenBuffers(5, screen_vbo);
-    glGenBuffers(1, &sampleWeightBuf);
+//    glGenBuffers(1, &text_texpos_vbo);
+//    glGenBuffers(1, &text_position_vbo);
+//    glGenBuffers(10, tex_coord_vbo);
+//    glGenBuffers(20, position_vbo);
+//    glGenBuffers(5, lab_reference_vbo);
+//    glGenBuffers(5, data_extent_vbo);
+//    glGenBuffers(5, data_view_extent_vbo);
+//    glGenBuffers(5, unitcell_vbo);
+//    glGenBuffers(1, &scalebar_vbo);
+//    glGenBuffers(5, screen_vbo);
+//    glGenBuffers(1, &sampleWeightBuf);
 
-    this->setDataViewExtent();
+//    this->setDataViewExtent();
 
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            -1.0, 0.0, 0.0,-1.0,
-            -1.0,-1.0, 0.0, 0.0};
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            -1.0, 0.0, 0.0,-1.0,
+//            -1.0,-1.0, 0.0, 0.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&screen_vbo[0], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            0.0, 1.0, 1.0, 0.0,
-            -1.0,-1.0, 0.0, 0.0};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&screen_vbo[0], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            0.0, 1.0, 1.0, 0.0,
+//            -1.0,-1.0, 0.0, 0.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&screen_vbo[1], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            0.0, 1.0, 1.0, 0.0,
-            0.0, 0.0, 1.0, 1.0};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&screen_vbo[1], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            0.0, 1.0, 1.0, 0.0,
+//            0.0, 0.0, 1.0, 1.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&screen_vbo[2], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            -1.0, -1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 1.0};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&screen_vbo[2], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            -1.0, -1.0, 0.0, 0.0,
+//            0.0, 0.0, 1.0, 1.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&screen_vbo[3], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            -1.0, 1.0, 1.0,-1.0,
-            -1.0,-1.0, 1.0, 1.0};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&screen_vbo[3], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            -1.0, 1.0, 1.0,-1.0,
+//            -1.0,-1.0, 1.0, 1.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&screen_vbo[4], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            -1.0, -0.5, -0.5,-1.0,
-            -1.0,-1.0, -0.5, -0.5};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&screen_vbo[4], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            -1.0, -0.5, -0.5,-1.0,
+//            -1.0,-1.0, -0.5, -0.5};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&screen_vbo[0], tex_position.getColMajor().data(), tex_position.size());
-    }
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&screen_vbo[0], tex_position.getColMajor().data(), tex_position.size());
+//    }
 
 
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            -1.0, 1.0, 1.0,-1.0,
-            1.0,1.0, 0.7, 0.7};
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            -1.0, 1.0, 1.0,-1.0,
+//            1.0,1.0, 0.7, 0.7};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[0], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            -1.0, 1.0, 1.0,-1.0,
-            -1.0,-1.0, 1.0, 1.0};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[0], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            -1.0, 1.0, 1.0,-1.0,
+//            -1.0,-1.0, 1.0, 1.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[1], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            0.94, 0.94, 0.99, 0.99,
-            -0.9, 0.9, 0.9, -0.9};
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[2], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            0.935, 0.935, 0.84, 0.84,
-            -0.9, 0.9, 0.9, -0.9};
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[3], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            0.9, 0.9, 0.8, 0.8,
-            -0.9, 0.9, 0.9, -0.9};
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[4], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            -1.0, 0.0, 0.0, -1.0,
-            -1.0, -1.0, 0.0, 0.0};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[1], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            0.94, 0.94, 0.99, 0.99,
+//            -0.9, 0.9, 0.9, -0.9};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[2], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            0.935, 0.935, 0.84, 0.84,
+//            -0.9, 0.9, 0.9, -0.9};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[3], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            0.9, 0.9, 0.8, 0.8,
+//            -0.9, 0.9, 0.9, -0.9};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[4], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            -1.0, 0.0, 0.0, -1.0,
+//            -1.0, -1.0, 0.0, 0.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[5], tex_position.getColMajor().data(), tex_position.size());
-    }
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            0.0, 1.0, 1.0, 0.0,
-            -1.0, -1.0, 0.0, 0.0};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[5], tex_position.getColMajor().data(), tex_position.size());
+//    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            0.0, 1.0, 1.0, 0.0,
+//            -1.0, -1.0, 0.0, 0.0};
 
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[6], tex_position.getColMajor().data(), tex_position.size());
-    }
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[6], tex_position.getColMajor().data(), tex_position.size());
+//    }
 
-    {
-        Matrix<float> tex_position;
-        float buf[] = {
-            0.935, 0.935, 0.995, 0.995,
-            -0.9, 0.9, 0.9, -0.9};
-        tex_position.setDeep(2, 4, buf);
-        setVbo(&position_vbo[10], tex_position.getColMajor().data(), tex_position.size());
-    }
+//    {
+//        Matrix<float> tex_position;
+//        float buf[] = {
+//            0.935, 0.935, 0.995, 0.995,
+//            -0.9, 0.9, 0.9, -0.9};
+//        tex_position.setDeep(2, 4, buf);
+//        setVbo(&position_vbo[10], tex_position.getColMajor().data(), tex_position.size());
+//    }
 
-    {
-        Matrix<float> mat;
-        float buf[8] = {
-            0.0,1.0,1.0,0.0,
-            0.0,0.0,1.0,1.0};
+//    {
+//        Matrix<float> mat;
+//        float buf[8] = {
+//            0.0,1.0,1.0,0.0,
+//            0.0,0.0,1.0,1.0};
 
-        mat.setDeep(2, 4, buf);
-        setVbo(&tex_coord_vbo[0], mat.getColMajor().data(), mat.size());
-        setVbo(&tex_coord_vbo[1], mat.getColMajor().data(), mat.size());
-        setVbo(&tex_coord_vbo[2], mat.getColMajor().data(), mat.size());
-        setVbo(&tex_coord_vbo[3], mat.getColMajor().data(), mat.size());
-    }
+//        mat.setDeep(2, 4, buf);
+//        setVbo(&tex_coord_vbo[0], mat.getColMajor().data(), mat.size());
+//        setVbo(&tex_coord_vbo[1], mat.getColMajor().data(), mat.size());
+//        setVbo(&tex_coord_vbo[2], mat.getColMajor().data(), mat.size());
+//        setVbo(&tex_coord_vbo[3], mat.getColMajor().data(), mat.size());
+//    }
 
     /* Framebuffer objects */
-    GLenum status;
-    glGenFramebuffers(1, &STD_FBO);
-    glGenFramebuffers(1, &MSAA_FBO);
-    glGenFramebuffers(1, &SMALL_FBO);
+//    GLenum status;
+//    glGenFramebuffers(1, &STD_FBO);
+//    glGenFramebuffers(1, &MSAA_FBO);
+//    glGenFramebuffers(1, &SMALL_FBO);
+    QOpenGLFramebufferObjectFormat fbo_std_format;
+    fbo_std_format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    fbo_std_format.setTextureTarget(GL_TEXTURE_2D);
+    fbo_std_format.setInternalTextureFormat(GL_RGBA32F);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, STD_FBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, std_3d_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, std_2d_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, blend_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, storage_tex, 0);
+
+    fbo_std = new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_std_format);
+    if (fbo_std->isValid() != true) qDebug() << "Invalid framebuffer";
+
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, std_3d_tex, 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, std_2d_tex, 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, blend_tex, 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, storage_tex, 0);
     //~ glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT0, GL_TEXTURE_2D, small_depth_tex, 0);
-    if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "STD_FBO: Error in framebuffer: " << gl_framebuffer_error_cstring(status) << std::endl;
-        return 0;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
+//        std::cout << "STD_FBO: Error in framebuffer: " << gl_framebuffer_error_cstring(status) << std::endl;
+//        return 0;
+//    }
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, SMALL_FBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mini_uc_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, glow_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, small_storage_tex, 0);
-    if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "SMALL_FBO: Error in framebuffer: " << gl_framebuffer_error_cstring(status) << std::endl;
-        return 0;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    glBindFramebuffer(GL_FRAMEBUFFER, SMALL_FBO);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mini_uc_tex, 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, glow_tex, 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, small_storage_tex, 0);
+//    if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
+//        std::cout << "SMALL_FBO: Error in framebuffer: " << gl_framebuffer_error_cstring(status) << std::endl;
+//        return 0;
+//    }
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, MSAA_FBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msaa_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, msaa_depth_tex, 0);
-    if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "MSAA_FBO: Error in framebuffer: " << gl_framebuffer_error_cstring(status) << std::endl;
-        return 0;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    glBindFramebuffer(GL_FRAMEBUFFER, MSAA_FBO);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msaa_tex, 0);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, msaa_depth_tex, 0);
+//    if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
+//        std::cout << "MSAA_FBO: Error in framebuffer: " << gl_framebuffer_error_cstring(status) << std::endl;
+//        return 0;
+//    }
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);s
 
     return 1;
 }
 
-void VolumeRenderGLWidget::setDataViewExtent()
-{
-    {
-        Matrix<float> data_extent_position;
-        float buf[] = {
-            DATA_EXTENT[0], DATA_EXTENT[1], DATA_EXTENT[1], DATA_EXTENT[0], DATA_EXTENT[0], DATA_EXTENT[1], DATA_EXTENT[1], DATA_EXTENT[0],
-            DATA_EXTENT[2], DATA_EXTENT[2], DATA_EXTENT[3], DATA_EXTENT[3], DATA_EXTENT[2], DATA_EXTENT[2], DATA_EXTENT[3], DATA_EXTENT[3],
-            DATA_EXTENT[5], DATA_EXTENT[5], DATA_EXTENT[5], DATA_EXTENT[5], DATA_EXTENT[4], DATA_EXTENT[4], DATA_EXTENT[4], DATA_EXTENT[4]};
+//void VolumeRenderWindow::setDataViewExtent()
+//{
+//    {
+//        Matrix<float> data_extent_position;
+//        float buf[] = {
+//            DATA_EXTENT[0], DATA_EXTENT[1], DATA_EXTENT[1], DATA_EXTENT[0], DATA_EXTENT[0], DATA_EXTENT[1], DATA_EXTENT[1], DATA_EXTENT[0],
+//            DATA_EXTENT[2], DATA_EXTENT[2], DATA_EXTENT[3], DATA_EXTENT[3], DATA_EXTENT[2], DATA_EXTENT[2], DATA_EXTENT[3], DATA_EXTENT[3],
+//            DATA_EXTENT[5], DATA_EXTENT[5], DATA_EXTENT[5], DATA_EXTENT[5], DATA_EXTENT[4], DATA_EXTENT[4], DATA_EXTENT[4], DATA_EXTENT[4]};
 
-        data_extent_position.setDeep(3, 8, buf);
-        glBindBuffer(GL_ARRAY_BUFFER, data_extent_vbo[0]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*data_extent_position.size(), data_extent_position.getColMajor().data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-    {
-        Matrix<float> data_view_extent_position;
-        float buf[] = {
-            DATA_VIEW_EXTENT[0], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[0], DATA_VIEW_EXTENT[0], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[0],
-            DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[3], DATA_VIEW_EXTENT[3], DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[3], DATA_VIEW_EXTENT[3],
-            DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[4], DATA_VIEW_EXTENT[4], DATA_VIEW_EXTENT[4], DATA_VIEW_EXTENT[4]};
+//        data_extent_position.setDeep(3, 8, buf);
+//        glBindBuffer(GL_ARRAY_BUFFER, data_extent_vbo[0]);
+//        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*data_extent_position.size(), data_extent_position.getColMajor().data(), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    }
+//    {
+//        Matrix<float> data_view_extent_position;
+//        float buf[] = {
+//            DATA_VIEW_EXTENT[0], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[0], DATA_VIEW_EXTENT[0], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[1], DATA_VIEW_EXTENT[0],
+//            DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[3], DATA_VIEW_EXTENT[3], DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[2], DATA_VIEW_EXTENT[3], DATA_VIEW_EXTENT[3],
+//            DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[5], DATA_VIEW_EXTENT[4], DATA_VIEW_EXTENT[4], DATA_VIEW_EXTENT[4], DATA_VIEW_EXTENT[4]};
 
-        data_view_extent_position.setDeep(3, 8, buf);
-        glBindBuffer(GL_ARRAY_BUFFER, data_view_extent_vbo[0]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*data_view_extent_position.size(), data_view_extent_position.getColMajor().data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-}
+//        data_view_extent_position.setDeep(3, 8, buf);
+//        glBindBuffer(GL_ARRAY_BUFFER, data_view_extent_vbo[0]);
+//        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*data_view_extent_position.size(), data_view_extent_position.getColMajor().data(), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    }
+//}
 
-void VolumeRenderGLWidget::setTexturesVBO()
+void VolumeRenderWindow::setTexturesVBO()
 {
     /* std_3d_tex */
     glActiveTexture(GL_TEXTURE0);
@@ -2228,34 +2231,34 @@ void VolumeRenderGLWidget::setTexturesVBO()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     /* glow_tex */
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glow_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->SMALL_WIDTH, this->SMALL_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
-    glBindTexture(GL_TEXTURE_2D, 0);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, glow_tex);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, this->SMALL_WIDTH, this->SMALL_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+//    glBindTexture(GL_TEXTURE_2D, 0);
 
     /* msaa_tex */
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_RGBA32F, this->WIDTH, this->HEIGHT, false );
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_tex);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_RGBA32F, this->WIDTH, this->HEIGHT, false );
+//    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
     /* msaa_depth_tex */
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_depth_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_DEPTH_COMPONENT32, this->WIDTH, this->HEIGHT, 0);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_depth_tex);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_DEPTH_COMPONENT32, this->WIDTH, this->HEIGHT, 0);
+//    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
 
     //~ /* msaa_intermediate_storage_tex */
@@ -2273,7 +2276,7 @@ void VolumeRenderGLWidget::setTexturesVBO()
 }
 
 
-void VolumeRenderGLWidget::setTsfMin(double value)
+void VolumeRenderWindow::setTsfMin(double value)
 {
     TSF_PARAMETERS[2] = value;
 //    this->setTsfParameters();
@@ -2281,7 +2284,7 @@ void VolumeRenderGLWidget::setTsfMin(double value)
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::setTsfMax(double value)
+void VolumeRenderWindow::setTsfMax(double value)
 {
     TSF_PARAMETERS[3] = value;
 //    this->setTsfParameters();
@@ -2289,7 +2292,7 @@ void VolumeRenderGLWidget::setTsfMax(double value)
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::setTsfAlpha(double value)
+void VolumeRenderWindow::setTsfAlpha(double value)
 {
     TSF_PARAMETERS[4] = value;
 //    this->setTsfParameters();
@@ -2297,7 +2300,7 @@ void VolumeRenderGLWidget::setTsfAlpha(double value)
     this->timerLastAction->start();
     this->isRefreshRequired = true;
 }
-void VolumeRenderGLWidget::setTsfBrightness(double value)
+void VolumeRenderWindow::setTsfBrightness(double value)
 {
     TSF_PARAMETERS[5] = value;
 //    this->setTsfParameters();
@@ -2306,7 +2309,7 @@ void VolumeRenderGLWidget::setTsfBrightness(double value)
     this->isRefreshRequired = true;
 }
 
-void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
+void VolumeRenderWindow::raytrace(cl_kernel kernel)
 {
     if (isRefreshRequired)
     {
@@ -2318,13 +2321,13 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
         err = clEnqueueAcquireGLObjects((*queue), 1, &ray_tex_cl, 0, 0, 0);
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
 
         // Launch rendering kernel
         size_t area_per_call[2] = {128, 128};
         size_t call_offset[2] = {0,0};
-        callTimeMax = 1000/fps; // Dividend is FPS
+        callTimeMax = 1000/minimum_fps; // Dividend is FPS
         timeLastActionMin = 1000;
         isBadCall = false;
 
@@ -2345,7 +2348,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
                 err = clEnqueueNDRangeKernel((*queue), kernel, 2, call_offset, area_per_call, ray_loc_ws, 0, NULL, NULL);
                 if (err != CL_SUCCESS)
                 {
-                    writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+                    if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
                 }
                 clFinish((*queue));
             }
@@ -2356,7 +2359,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
         clFinish((*queue));
         if (err != CL_SUCCESS)
         {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+            if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         }
 
 
@@ -2364,7 +2367,7 @@ void VolumeRenderGLWidget::raytrace(cl_kernel kernel)
     }
 }
 
-void VolumeRenderGLWidget::getScreenPosition(float * screen_pos, float * space_pos, float * transform)
+void VolumeRenderWindow::getScreenPosition(float * screen_pos, float * space_pos, float * transform)
 {
     Matrix<float> TRANSFORM;
     TRANSFORM.setDeep(4, 4, transform);
@@ -2379,593 +2382,593 @@ void VolumeRenderGLWidget::getScreenPosition(float * screen_pos, float * space_p
     screen_pos[1] = SCREEN[1]/SCREEN[3];
 }
 
-void VolumeRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h)
-{
-    const uint8_t *p;
-
-    MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
-    MiniArray<float> texpos(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
-    MiniArray<unsigned int> indices(6 * strlen(text)); // 6 indices per character
-
-    int c = 0;
-    float sx = scale*2.0/w;
-    float sy = scale*2.0/h;
-    float x = xy[0];
-    float y = xy[1];
-
-    x -= std::fmod(x,sx);
-    y -= std::fmod(y,sy);
-
-    /* Loop through all characters */
-    for(p = (const uint8_t *)text; *p; p++)
-    {
-        /* Calculate the vertex and texture coordinates */
-        float x2 = x + a->c[*p].bl * sx;
-        float y2 = y + a->c[*p].bt * sy;
-        float foo_w = a->c[*p].bw * sx;
-        float foo_h = a->c[*p].bh * sy;
-
-        /* Advance the cursor to the start of the next character */
-        x += a->c[*p].ax * sx;
-        y += a->c[*p].ay * sy;
-
-        /* Skip glyphs that have no pixels */
-        if(!foo_w || !foo_h)
-            continue;
-
-        position[c*8+0] = x2;
-        position[c*8+1] = y2;
-        position[c*8+2] = x2 + foo_w;
-        position[c*8+3] = y2;
-        position[c*8+4] = x2;
-        position[c*8+5] = y2 - foo_h;
-        position[c*8+6] = x2 + foo_w;
-        position[c*8+7] = y2 - foo_h;
-
-        texpos[c*8+0] = a->c[*p].tx;
-        texpos[c*8+1] = a->c[*p].ty;
-        texpos[c*8+2] = a->c[*p].tx + a->c[*p].bw / a->tex_w;
-        texpos[c*8+3] = a->c[*p].ty;
-        texpos[c*8+4] = a->c[*p].tx;
-        texpos[c*8+5] = a->c[*p].ty + a->c[*p].bh / a->tex_h;
-        texpos[c*8+6] = a->c[*p].tx + a->c[*p].bw / a->tex_w;
-        texpos[c*8+7] = a->c[*p].ty + a->c[*p].bh / a->tex_h;
-
-        indices[c*6+0] = c*4 + 0;
-        indices[c*6+1] = c*4 + 2;
-        indices[c*6+2] = c*4 + 3;
-        indices[c*6+3] = c*4 + 0;
-        indices[c*6+4] = c*4 + 1;
-        indices[c*6+5] = c*4 + 3;
-
-        c++;
-    }
-
-    glUseProgram(std_text_program);
-
-    // Set std_text_uniform_texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, a->tex);
-    glUniform1i(std_text_uniform_tex, 0);
-
-    // Set std_text_uniform_color
-     glUniform4fv(std_text_uniform_color, 1, color);
-
-    // Set std_2d_tex_attribute_position
-    glEnableVertexAttribArray(std_text_attribute_position);
-    glBindBuffer(GL_ARRAY_BUFFER, text_position_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * position.size(), position.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(std_text_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Set std_2d_tex_attribute_texpos
-    glEnableVertexAttribArray(std_text_attribute_texpos);
-    glBindBuffer(GL_ARRAY_BUFFER, text_texpos_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texpos.size(), texpos.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(std_text_attribute_texpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    /* Draw all the character on the screen in one go */
-    glDrawElements(GL_TRIANGLES,  c*6,  GL_UNSIGNED_INT,  indices.data());
-
-    glDisableVertexAttribArray(std_text_attribute_position);
-    glDisableVertexAttribArray(std_text_attribute_texpos);
-    glUseProgram(0);
-}
-
-void VolumeRenderGLWidget::initializeProgramsGL()
-{
-
-
-    GLint link_ok = GL_FALSE;
-    GLuint vertice_shader, fragment_shader; // Delete these after use?
-
-    // Standard 3D Program
-    {
-        vertice_shader = create_shader(":/src/shaders/std_3d_tex.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/std_3d_tex.f.glsl", GL_FRAGMENT_SHADER);
-
-        std_3d_program = glCreateProgram();
-        glAttachShader(std_3d_program, vertice_shader);
-        glAttachShader(std_3d_program, fragment_shader);
-        glLinkProgram(std_3d_program);
-
-        glGetProgramiv(std_3d_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(std_3d_program))
-            {
-                glGetProgramiv(std_3d_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(std_3d_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(std_3d_program);
-            }
-            else
-            {
-                std::cout << "std_3d: Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        std_3d_attribute_position = glGetAttribLocation(std_3d_program, "position");
-        if (std_3d_attribute_position == -1) {
-            std::cout << "std_3d: Could not bind attribute: position" << std::endl;
-        }
-
-        std_3d_attribute_texpos = glGetAttribLocation(std_3d_program, "texpos");
-        if (std_3d_attribute_texpos == -1) {
-            std::cout << "std_3d: Could not bind attribute: texpos" << std::endl;
-        }
-
-        std_3d_uniform_transform = glGetUniformLocation(std_3d_program, "transform");
-        if (std_3d_uniform_transform == -1) {
-            std::cout << "std_3d: Could not bind uniform: transform" << std::endl;
-        }
-
-        std_3d_uniform_u = glGetUniformLocation(std_3d_program, "U");
-        if (std_3d_uniform_u == -1) {
-            std::cout << "std_3d: Could not bind uniform: U" << std::endl;
-        }
-
-        std_3d_uniform_color = glGetUniformLocation(std_3d_program, "color");
-        if (std_3d_uniform_color == -1) {
-            std::cout << "std_3d: Could not bind uniform: color" << std::endl;
-        }
-
-        std_3d_uniform_bbox_max = glGetUniformLocation(std_3d_program, "bbox_max");
-        if (std_3d_uniform_bbox_max == -1) {
-            std::cout << "std_3d: Could not bind uniform: bbox_max" << std::endl;
-        }
-
-        std_3d_uniform_bbox_min = glGetUniformLocation(std_3d_program, "bbox_min");
-        if (std_3d_uniform_bbox_min == -1) {
-            std::cout << "std_3d: Could not bind uniform: bbox_min" << std::endl;
-        }
-
-        std_3d_uniform_texture = glGetUniformLocation(std_3d_program, "texy");
-        if (std_3d_uniform_texture == -1) {
-            std::cout << "std_3d: Could not bind uniform: texy" << std::endl;
-        }
-
-        std_3d_uniform_time = glGetUniformLocation(std_3d_program, "time");
-        if (std_3d_uniform_time == -1) {
-            std::cout << "std_3d: Could not bind uniform: time" << std::endl;
-        }
-    }
-
-    // Program for standard font texture rendering
-    {
-        vertice_shader = create_shader(":/src/shaders/text.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/text.f.glsl", GL_FRAGMENT_SHADER);
-
-        std_text_program = glCreateProgram();
-        glAttachShader(std_text_program, vertice_shader);
-        glAttachShader(std_text_program, fragment_shader);
-        glLinkProgram(std_text_program);
-
-        glGetProgramiv(std_text_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(std_text_program))
-            {
-                glGetProgramiv(std_text_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(std_text_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(std_text_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        std_text_attribute_position = glGetAttribLocation(std_text_program, "position");
-        if (std_text_attribute_position == -1) {
-            std::cout << "std_text: Could not bind attribute: position" << std::endl;
-        }
-
-        std_text_attribute_texpos = glGetAttribLocation(std_text_program, "texpos");
-        if (std_text_attribute_texpos == -1) {
-            std::cout << "std_text: Could not bind attribute: texpos" << std::endl;
-        }
-
-        std_text_uniform_tex = glGetUniformLocation(std_text_program, "tex");
-        if (std_text_uniform_tex == -1) {
-            std::cout << "std_text: Could not bind attribute: tex" << std::endl;
-        }
-
-        std_text_uniform_color = glGetUniformLocation(std_text_program, "color");
-        if (std_text_uniform_color == -1) {
-            std::cout << "std_text: Could not bind uniform: color" << std::endl;
-        }
-    }
-
-
-    // Program for standard 2D texture rendering
-    {
-        vertice_shader = create_shader(":/src/shaders/std_2d_tex.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/std_2d_tex.f.glsl", GL_FRAGMENT_SHADER);
-
-        std_2d_tex_program = glCreateProgram();
-        glAttachShader(std_2d_tex_program, vertice_shader);
-        glAttachShader(std_2d_tex_program, fragment_shader);
-        glLinkProgram(std_2d_tex_program);
-
-        glGetProgramiv(std_2d_tex_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(std_2d_tex_program))
-            {
-                glGetProgramiv(std_2d_tex_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(std_2d_tex_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(std_2d_tex_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        std_2d_tex_attribute_position = glGetAttribLocation(std_2d_tex_program, "position");
-        if (std_2d_tex_attribute_position == -1) {
-            std::cout << "std_2d_tex: Could not bind attribute: position" << std::endl;
-        }
-
-        std_2d_tex_attribute_texpos = glGetAttribLocation(std_2d_tex_program, "texpos");
-        if (std_2d_tex_attribute_texpos == -1) {
-            std::cout << "std_2d_tex: Could not bind attribute: texpos" << std::endl;
-        }
-
-        std_2d_tex_uniform_texture = glGetUniformLocation(std_2d_tex_program, "texy");
-        if (std_2d_tex_uniform_texture == -1) {
-            std::cout << "std_2d_tex: Could not bind uniform: texy" << std::endl;
-        }
-    }
-
-    // Program for standard 2D colored vertice rendering
-    {
-        vertice_shader = create_shader(":/src/shaders/std_2d_color.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/std_2d_color.f.glsl", GL_FRAGMENT_SHADER);
-
-        std_2d_color_program = glCreateProgram();
-        glAttachShader(std_2d_color_program, vertice_shader);
-        glAttachShader(std_2d_color_program, fragment_shader);
-        glLinkProgram(std_2d_color_program);
-
-        glGetProgramiv(std_2d_color_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(std_2d_color_program))
-            {
-                glGetProgramiv(std_2d_color_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(std_2d_color_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(std_2d_color_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        std_2d_color_attribute_position = glGetAttribLocation(std_2d_color_program, "position");
-        if (std_2d_color_attribute_position == -1) {
-            std::cout << "std_2d_color: Could not bind attribute: position" << std::endl;
-        }
-
-        std_2d_color_uniform_color = glGetUniformLocation(std_2d_color_program, "color");
-        if (std_2d_color_uniform_color == -1) {
-            std::cout << "std_2d_color: Could not bind uniform: color" << std::endl;
-        }
-    }
-
-
-    // Post processing (pp) program to apply glow
-    {
-        vertice_shader = create_shader(":/src/shaders/pp_glow.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/pp_glow.f.glsl", GL_FRAGMENT_SHADER);
-
-        pp_glow_program = glCreateProgram();
-        glAttachShader(pp_glow_program, vertice_shader);
-        glAttachShader(pp_glow_program, fragment_shader);
-        glLinkProgram(pp_glow_program);
-
-        glGetProgramiv(pp_glow_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(pp_glow_program))
-            {
-                glGetProgramiv(pp_glow_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(pp_glow_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(pp_glow_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        pp_glow_attribute_position = glGetAttribLocation(pp_glow_program, "position");
-        if (pp_glow_attribute_position == -1) {
-            std::cout << "pp_glow: Could not bind attribute: position" << std::endl;
-        }
-
-        pp_glow_attribute_texpos = glGetAttribLocation(pp_glow_program, "texpos");
-        if (pp_glow_attribute_texpos == -1) {
-            std::cout << "pp_glow: Could not bind attribute: texpos" << std::endl;
-        }
-
-        pp_glow_uniform_scale = glGetUniformLocation(pp_glow_program, "scale");
-        if (pp_glow_uniform_scale == -1) {
-            std::cout << "pp_glow: Could not bind uniform: scale" << std::endl;
-        }
-
-        pp_glow_uniform_deviation = glGetUniformLocation(pp_glow_program, "deviation");
-        if (pp_glow_uniform_deviation == -1) {
-            std::cout << "pp_glow: Could not bind uniform: deviation" << std::endl;
-        }
-
-        pp_glow_uniform_samples = glGetUniformLocation(pp_glow_program, "samples");
-        if (pp_glow_uniform_samples == -1) {
-            std::cout << "pp_glow: Could not bind uniform: samples" << std::endl;
-        }
-
-        pp_glow_uniform_color = glGetUniformLocation(pp_glow_program, "color");
-        if (pp_glow_uniform_color == -1) {
-            std::cout << "pp_glow: Could not bind uniform: color" << std::endl;
-        }
-
-        pp_glow_uniform_pixel_size = glGetUniformLocation(pp_glow_program, "pixel_size");
-        if (pp_glow_uniform_pixel_size == -1) {
-            std::cout << "pp_glow: Could not bind uniform: pixel_size" << std::endl;
-        }
-
-        pp_glow_uniform_texture = glGetUniformLocation(pp_glow_program, "texy");
-        if (pp_glow_uniform_texture == -1) {
-            std::cout << "pp_glow: Could not bind uniform: texy" << std::endl;
-        }
-
-        pp_glow_uniform_time = glGetUniformLocation(pp_glow_program, "time");
-        if (pp_glow_uniform_texture == -1) {
-            std::cout << "pp_glow: Could not bind uniform: time" << std::endl;
-        }
-
-        pp_glow_uniform_orientation = glGetUniformLocation(pp_glow_program, "orientation");
-        if (pp_glow_uniform_orientation == -1) {
-            std::cout << "pp_glow: Could not bind uniform: orientation" << std::endl;
-        }
-    }
-    // Blend program to combine textures
-    {
-        vertice_shader = create_shader(":/src/shaders/blend.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/blend.f.glsl", GL_FRAGMENT_SHADER);
-
-        blend_program = glCreateProgram();
-        glAttachShader(blend_program, vertice_shader);
-        glAttachShader(blend_program, fragment_shader);
-        glLinkProgram(blend_program);
-
-        glGetProgramiv(blend_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(blend_program))
-            {
-                glGetProgramiv(blend_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(blend_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(blend_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        blend_attribute_position = glGetAttribLocation(blend_program, "position");
-        if (blend_attribute_position == -1) {
-            std::cout << "blend: Could not bind attribute: position" << std::endl;
-        }
-
-        blend_attribute_texpos = glGetAttribLocation(blend_program, "texpos");
-        if (blend_attribute_texpos == -1) {
-            std::cout << "blend: Could not bind attribute: texpos" << std::endl;
-        }
-
-        blend_uniform_top_tex = glGetUniformLocation(blend_program, "top_texture");
-        if (blend_uniform_top_tex == -1) {
-            std::cout << "blend: Could not bind uniform: top_texture" << std::endl;
-        }
-
-        blend_uniform_bot_tex = glGetUniformLocation(blend_program, "bot_texture");
-        if (blend_uniform_bot_tex == -1) {
-            std::cout << "blend: Could not bind uniform: bot_texture" << std::endl;
-        }
-    }
-    // MSAA_SAMPLES for multisampling
-    {
-        vertice_shader = create_shader(":/src/shaders/msaa.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/msaa.f.glsl", GL_FRAGMENT_SHADER);
-
-        msaa_program = glCreateProgram();
-        glAttachShader(msaa_program, vertice_shader);
-        glAttachShader(msaa_program, fragment_shader);
-        glLinkProgram(msaa_program);
-
-        glGetProgramiv(msaa_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(msaa_program))
-            {
-                glGetProgramiv(msaa_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(msaa_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(msaa_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        msaa_attribute_position = glGetAttribLocation(msaa_program, "position");
-        if (msaa_attribute_position == -1) {
-            std::cout << "msaa: Could not bind attribute: position" << std::endl;
-        }
-
-        msaa_attribute_texpos = glGetAttribLocation(msaa_program, "texpos");
-        if (msaa_attribute_texpos == -1) {
-            std::cout << "msaa: Could not bind attribute: texpos" << std::endl;
-        }
-
-        msaa_uniform_samples = glGetUniformLocation(msaa_program, "samples");
-        if (msaa_uniform_samples == -1) {
-            std::cout << "msaa: Could not bind uniform: samples" << std::endl;
-        }
-
-        msaa_uniform_texture = glGetUniformLocation(msaa_program, "texy");
-        if (msaa_uniform_texture == -1) {
-            std::cout << "msaa: Could not bind uniform: texy" << std::endl;
-        }
-
-        msaa_uniform_weight = glGetUniformLocation(msaa_program, "sampleWeightSampler");
-        if (msaa_uniform_weight == -1) {
-            std::cout << "msaa: Could not bind uniform: sampleWeightSampler" << std::endl;
-        }
-    }
-
-    // MSAA_SAMPLES for HDR multisampling
-    {
-        vertice_shader = create_shader(":/src/shaders/msaa_hdr.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/msaa_hdr.f.glsl", GL_FRAGMENT_SHADER);
-
-        msaa_hdr_program = glCreateProgram();
-        glAttachShader(msaa_hdr_program, vertice_shader);
-        glAttachShader(msaa_hdr_program, fragment_shader);
-        glLinkProgram(msaa_hdr_program);
-
-        glGetProgramiv(msaa_hdr_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(msaa_hdr_program))
-            {
-                glGetProgramiv(msaa_hdr_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(msaa_hdr_program, log_length, NULL, log);
-                std::cout << log << std::endl;
-
-                delete[] log;
-                glDeleteProgram(msaa_hdr_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        msaa_hdr_attribute_position = glGetAttribLocation(msaa_hdr_program, "position");
-        if (msaa_hdr_attribute_position == -1) {
-            std::cout << "msaa_hdr: Could not bind attribute: position" << std::endl;
-        }
-
-        msaa_hdr_attribute_texpos = glGetAttribLocation(msaa_hdr_program, "texpos");
-        if (msaa_hdr_attribute_texpos == -1) {
-            std::cout << "msaa_hdr: Could not bind attribute: texpos" << std::endl;
-        }
-
-        msaa_hdr_uniform_samples = glGetUniformLocation(msaa_hdr_program, "sampleCount");
-        if (msaa_hdr_uniform_samples == -1) {
-            std::cout << "msaa_hdr: Could not bind uniform: sampleCount" << std::endl;
-        }
-
-        msaa_hdr_uniform_method = glGetUniformLocation(msaa_hdr_program, "useWeightedResolve");
-        if (msaa_hdr_uniform_method == -1) {
-            std::cout << "msaa_hdr: Could not bind uniform: useWeightedResolve" << std::endl;
-        }
-
-        msaa_hdr_uniform_exposure = glGetUniformLocation(msaa_hdr_program, "exposure");
-        if (msaa_hdr_uniform_exposure == -1) {
-            std::cout << "msaa_hdr: Could not bind uniform: exposure" << std::endl;
-        }
-
-        msaa_hdr_uniform_texture = glGetUniformLocation(msaa_hdr_program, "origImage");
-        if (msaa_hdr_uniform_texture == -1) {
-            std::cout << "msaa_hdr: Could not bind uniform: origImage" << std::endl;
-        }
-
-        msaa_hdr_uniform_weight = glGetUniformLocation(msaa_hdr_program, "sampleWeightSampler");
-        if (msaa_hdr_uniform_weight == -1) {
-            std::cout << "msaa_hdr: Could not bind uniform: sampleWeightSampler" << std::endl;
-        }
-    }
-}
-
-void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
+//void VolumeRenderWindow::std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h)
+//{
+//    const uint8_t *p;
+
+//    MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
+//    MiniArray<float> texpos(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
+//    MiniArray<unsigned int> indices(6 * strlen(text)); // 6 indices per character
+
+//    int c = 0;
+//    float sx = scale*2.0/w;
+//    float sy = scale*2.0/h;
+//    float x = xy[0];
+//    float y = xy[1];
+
+//    x -= std::fmod(x,sx);
+//    y -= std::fmod(y,sy);
+
+//    /* Loop through all characters */
+//    for(p = (const uint8_t *)text; *p; p++)
+//    {
+//        /* Calculate the vertex and texture coordinates */
+//        float x2 = x + a->c[*p].bl * sx;
+//        float y2 = y + a->c[*p].bt * sy;
+//        float foo_w = a->c[*p].bw * sx;
+//        float foo_h = a->c[*p].bh * sy;
+
+//        /* Advance the cursor to the start of the next character */
+//        x += a->c[*p].ax * sx;
+//        y += a->c[*p].ay * sy;
+
+//        /* Skip glyphs that have no pixels */
+//        if(!foo_w || !foo_h)
+//            continue;
+
+//        position[c*8+0] = x2;
+//        position[c*8+1] = y2;
+//        position[c*8+2] = x2 + foo_w;
+//        position[c*8+3] = y2;
+//        position[c*8+4] = x2;
+//        position[c*8+5] = y2 - foo_h;
+//        position[c*8+6] = x2 + foo_w;
+//        position[c*8+7] = y2 - foo_h;
+
+//        texpos[c*8+0] = a->c[*p].tx;
+//        texpos[c*8+1] = a->c[*p].ty;
+//        texpos[c*8+2] = a->c[*p].tx + a->c[*p].bw / a->tex_w;
+//        texpos[c*8+3] = a->c[*p].ty;
+//        texpos[c*8+4] = a->c[*p].tx;
+//        texpos[c*8+5] = a->c[*p].ty + a->c[*p].bh / a->tex_h;
+//        texpos[c*8+6] = a->c[*p].tx + a->c[*p].bw / a->tex_w;
+//        texpos[c*8+7] = a->c[*p].ty + a->c[*p].bh / a->tex_h;
+
+//        indices[c*6+0] = c*4 + 0;
+//        indices[c*6+1] = c*4 + 2;
+//        indices[c*6+2] = c*4 + 3;
+//        indices[c*6+3] = c*4 + 0;
+//        indices[c*6+4] = c*4 + 1;
+//        indices[c*6+5] = c*4 + 3;
+
+//        c++;
+//    }
+
+//    glUseProgram(std_text_program);
+
+//    // Set std_text_uniform_texture
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, a->tex);
+//    glUniform1i(std_text_uniform_tex, 0);
+
+//    // Set std_text_uniform_color
+//     glUniform4fv(std_text_uniform_color, 1, color);
+
+//    // Set std_2d_tex_attribute_position
+//    glEnableVertexAttribArray(std_text_attribute_position);
+//    glBindBuffer(GL_ARRAY_BUFFER, text_position_vbo);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * position.size(), position.data(), GL_DYNAMIC_DRAW);
+//    glVertexAttribPointer(std_text_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+//    // Set std_2d_tex_attribute_texpos
+//    glEnableVertexAttribArray(std_text_attribute_texpos);
+//    glBindBuffer(GL_ARRAY_BUFFER, text_texpos_vbo);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texpos.size(), texpos.data(), GL_DYNAMIC_DRAW);
+//    glVertexAttribPointer(std_text_attribute_texpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+//    /* Draw all the character on the screen in one go */
+//    glDrawElements(GL_TRIANGLES,  c*6,  GL_UNSIGNED_INT,  indices.data());
+
+//    glDisableVertexAttribArray(std_text_attribute_position);
+//    glDisableVertexAttribArray(std_text_attribute_texpos);
+//    glUseProgram(0);
+//}
+
+//void VolumeRenderWindow::initializeProgramsGL()
+//{
+
+
+//    GLint link_ok = GL_FALSE;
+//    GLuint vertice_shader, fragment_shader; // Delete these after use?
+
+//    // Standard 3D Program
+//    {
+//        vertice_shader = create_shader(":/src/shaders/std_3d_tex.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/std_3d_tex.f.glsl", GL_FRAGMENT_SHADER);
+
+//        std_3d_program = glCreateProgram();
+//        glAttachShader(std_3d_program, vertice_shader);
+//        glAttachShader(std_3d_program, fragment_shader);
+//        glLinkProgram(std_3d_program);
+
+//        glGetProgramiv(std_3d_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(std_3d_program))
+//            {
+//                glGetProgramiv(std_3d_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(std_3d_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(std_3d_program);
+//            }
+//            else
+//            {
+//                std::cout << "std_3d: Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        std_3d_attribute_position = glGetAttribLocation(std_3d_program, "position");
+//        if (std_3d_attribute_position == -1) {
+//            std::cout << "std_3d: Could not bind attribute: position" << std::endl;
+//        }
+
+//        std_3d_attribute_texpos = glGetAttribLocation(std_3d_program, "texpos");
+//        if (std_3d_attribute_texpos == -1) {
+//            std::cout << "std_3d: Could not bind attribute: texpos" << std::endl;
+//        }
+
+//        std_3d_uniform_transform = glGetUniformLocation(std_3d_program, "transform");
+//        if (std_3d_uniform_transform == -1) {
+//            std::cout << "std_3d: Could not bind uniform: transform" << std::endl;
+//        }
+
+//        std_3d_uniform_u = glGetUniformLocation(std_3d_program, "U");
+//        if (std_3d_uniform_u == -1) {
+//            std::cout << "std_3d: Could not bind uniform: U" << std::endl;
+//        }
+
+//        std_3d_uniform_color = glGetUniformLocation(std_3d_program, "color");
+//        if (std_3d_uniform_color == -1) {
+//            std::cout << "std_3d: Could not bind uniform: color" << std::endl;
+//        }
+
+//        std_3d_uniform_bbox_max = glGetUniformLocation(std_3d_program, "bbox_max");
+//        if (std_3d_uniform_bbox_max == -1) {
+//            std::cout << "std_3d: Could not bind uniform: bbox_max" << std::endl;
+//        }
+
+//        std_3d_uniform_bbox_min = glGetUniformLocation(std_3d_program, "bbox_min");
+//        if (std_3d_uniform_bbox_min == -1) {
+//            std::cout << "std_3d: Could not bind uniform: bbox_min" << std::endl;
+//        }
+
+//        std_3d_uniform_texture = glGetUniformLocation(std_3d_program, "texy");
+//        if (std_3d_uniform_texture == -1) {
+//            std::cout << "std_3d: Could not bind uniform: texy" << std::endl;
+//        }
+
+//        std_3d_uniform_time = glGetUniformLocation(std_3d_program, "time");
+//        if (std_3d_uniform_time == -1) {
+//            std::cout << "std_3d: Could not bind uniform: time" << std::endl;
+//        }
+//    }
+
+//    // Program for standard font texture rendering
+//    {
+//        vertice_shader = create_shader(":/src/shaders/text.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/text.f.glsl", GL_FRAGMENT_SHADER);
+
+//        std_text_program = glCreateProgram();
+//        glAttachShader(std_text_program, vertice_shader);
+//        glAttachShader(std_text_program, fragment_shader);
+//        glLinkProgram(std_text_program);
+
+//        glGetProgramiv(std_text_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(std_text_program))
+//            {
+//                glGetProgramiv(std_text_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(std_text_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(std_text_program);
+//            }
+//            else
+//            {
+//                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        std_text_attribute_position = glGetAttribLocation(std_text_program, "position");
+//        if (std_text_attribute_position == -1) {
+//            std::cout << "std_text: Could not bind attribute: position" << std::endl;
+//        }
+
+//        std_text_attribute_texpos = glGetAttribLocation(std_text_program, "texpos");
+//        if (std_text_attribute_texpos == -1) {
+//            std::cout << "std_text: Could not bind attribute: texpos" << std::endl;
+//        }
+
+//        std_text_uniform_tex = glGetUniformLocation(std_text_program, "tex");
+//        if (std_text_uniform_tex == -1) {
+//            std::cout << "std_text: Could not bind attribute: tex" << std::endl;
+//        }
+
+//        std_text_uniform_color = glGetUniformLocation(std_text_program, "color");
+//        if (std_text_uniform_color == -1) {
+//            std::cout << "std_text: Could not bind uniform: color" << std::endl;
+//        }
+//    }
+
+
+//    // Program for standard 2D texture rendering
+//    {
+//        vertice_shader = create_shader(":/src/shaders/std_2d_tex.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/std_2d_tex.f.glsl", GL_FRAGMENT_SHADER);
+
+//        std_2d_tex_program = glCreateProgram();
+//        glAttachShader(std_2d_tex_program, vertice_shader);
+//        glAttachShader(std_2d_tex_program, fragment_shader);
+//        glLinkProgram(std_2d_tex_program);
+
+//        glGetProgramiv(std_2d_tex_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(std_2d_tex_program))
+//            {
+//                glGetProgramiv(std_2d_tex_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(std_2d_tex_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(std_2d_tex_program);
+//            }
+//            else
+//            {
+//                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        std_2d_tex_attribute_position = glGetAttribLocation(std_2d_tex_program, "position");
+//        if (std_2d_tex_attribute_position == -1) {
+//            std::cout << "std_2d_tex: Could not bind attribute: position" << std::endl;
+//        }
+
+//        std_2d_tex_attribute_texpos = glGetAttribLocation(std_2d_tex_program, "texpos");
+//        if (std_2d_tex_attribute_texpos == -1) {
+//            std::cout << "std_2d_tex: Could not bind attribute: texpos" << std::endl;
+//        }
+
+//        std_2d_tex_uniform_texture = glGetUniformLocation(std_2d_tex_program, "texy");
+//        if (std_2d_tex_uniform_texture == -1) {
+//            std::cout << "std_2d_tex: Could not bind uniform: texy" << std::endl;
+//        }
+//    }
+
+//    // Program for standard 2D colored vertice rendering
+//    {
+//        vertice_shader = create_shader(":/src/shaders/std_2d_color.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/std_2d_color.f.glsl", GL_FRAGMENT_SHADER);
+
+//        std_2d_color_program = glCreateProgram();
+//        glAttachShader(std_2d_color_program, vertice_shader);
+//        glAttachShader(std_2d_color_program, fragment_shader);
+//        glLinkProgram(std_2d_color_program);
+
+//        glGetProgramiv(std_2d_color_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(std_2d_color_program))
+//            {
+//                glGetProgramiv(std_2d_color_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(std_2d_color_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(std_2d_color_program);
+//            }
+//            else
+//            {
+//                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        std_2d_color_attribute_position = glGetAttribLocation(std_2d_color_program, "position");
+//        if (std_2d_color_attribute_position == -1) {
+//            std::cout << "std_2d_color: Could not bind attribute: position" << std::endl;
+//        }
+
+//        std_2d_color_uniform_color = glGetUniformLocation(std_2d_color_program, "color");
+//        if (std_2d_color_uniform_color == -1) {
+//            std::cout << "std_2d_color: Could not bind uniform: color" << std::endl;
+//        }
+//    }
+
+
+//    // Post processing (pp) program to apply glow
+//    {
+//        vertice_shader = create_shader(":/src/shaders/pp_glow.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/pp_glow.f.glsl", GL_FRAGMENT_SHADER);
+
+//        pp_glow_program = glCreateProgram();
+//        glAttachShader(pp_glow_program, vertice_shader);
+//        glAttachShader(pp_glow_program, fragment_shader);
+//        glLinkProgram(pp_glow_program);
+
+//        glGetProgramiv(pp_glow_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(pp_glow_program))
+//            {
+//                glGetProgramiv(pp_glow_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(pp_glow_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(pp_glow_program);
+//            }
+//            else
+//            {
+//                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        pp_glow_attribute_position = glGetAttribLocation(pp_glow_program, "position");
+//        if (pp_glow_attribute_position == -1) {
+//            std::cout << "pp_glow: Could not bind attribute: position" << std::endl;
+//        }
+
+//        pp_glow_attribute_texpos = glGetAttribLocation(pp_glow_program, "texpos");
+//        if (pp_glow_attribute_texpos == -1) {
+//            std::cout << "pp_glow: Could not bind attribute: texpos" << std::endl;
+//        }
+
+//        pp_glow_uniform_scale = glGetUniformLocation(pp_glow_program, "scale");
+//        if (pp_glow_uniform_scale == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: scale" << std::endl;
+//        }
+
+//        pp_glow_uniform_deviation = glGetUniformLocation(pp_glow_program, "deviation");
+//        if (pp_glow_uniform_deviation == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: deviation" << std::endl;
+//        }
+
+//        pp_glow_uniform_samples = glGetUniformLocation(pp_glow_program, "samples");
+//        if (pp_glow_uniform_samples == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: samples" << std::endl;
+//        }
+
+//        pp_glow_uniform_color = glGetUniformLocation(pp_glow_program, "color");
+//        if (pp_glow_uniform_color == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: color" << std::endl;
+//        }
+
+//        pp_glow_uniform_pixel_size = glGetUniformLocation(pp_glow_program, "pixel_size");
+//        if (pp_glow_uniform_pixel_size == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: pixel_size" << std::endl;
+//        }
+
+//        pp_glow_uniform_texture = glGetUniformLocation(pp_glow_program, "texy");
+//        if (pp_glow_uniform_texture == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: texy" << std::endl;
+//        }
+
+//        pp_glow_uniform_time = glGetUniformLocation(pp_glow_program, "time");
+//        if (pp_glow_uniform_texture == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: time" << std::endl;
+//        }
+
+//        pp_glow_uniform_orientation = glGetUniformLocation(pp_glow_program, "orientation");
+//        if (pp_glow_uniform_orientation == -1) {
+//            std::cout << "pp_glow: Could not bind uniform: orientation" << std::endl;
+//        }
+//    }
+//    // Blend program to combine textures
+//    {
+//        vertice_shader = create_shader(":/src/shaders/blend.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/blend.f.glsl", GL_FRAGMENT_SHADER);
+
+//        blend_program = glCreateProgram();
+//        glAttachShader(blend_program, vertice_shader);
+//        glAttachShader(blend_program, fragment_shader);
+//        glLinkProgram(blend_program);
+
+//        glGetProgramiv(blend_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(blend_program))
+//            {
+//                glGetProgramiv(blend_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(blend_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(blend_program);
+//            }
+//            else
+//            {
+//                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        blend_attribute_position = glGetAttribLocation(blend_program, "position");
+//        if (blend_attribute_position == -1) {
+//            std::cout << "blend: Could not bind attribute: position" << std::endl;
+//        }
+
+//        blend_attribute_texpos = glGetAttribLocation(blend_program, "texpos");
+//        if (blend_attribute_texpos == -1) {
+//            std::cout << "blend: Could not bind attribute: texpos" << std::endl;
+//        }
+
+//        blend_uniform_top_tex = glGetUniformLocation(blend_program, "top_texture");
+//        if (blend_uniform_top_tex == -1) {
+//            std::cout << "blend: Could not bind uniform: top_texture" << std::endl;
+//        }
+
+//        blend_uniform_bot_tex = glGetUniformLocation(blend_program, "bot_texture");
+//        if (blend_uniform_bot_tex == -1) {
+//            std::cout << "blend: Could not bind uniform: bot_texture" << std::endl;
+//        }
+//    }
+//    // MSAA_SAMPLES for multisampling
+//    {
+//        vertice_shader = create_shader(":/src/shaders/msaa.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/msaa.f.glsl", GL_FRAGMENT_SHADER);
+
+//        msaa_program = glCreateProgram();
+//        glAttachShader(msaa_program, vertice_shader);
+//        glAttachShader(msaa_program, fragment_shader);
+//        glLinkProgram(msaa_program);
+
+//        glGetProgramiv(msaa_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(msaa_program))
+//            {
+//                glGetProgramiv(msaa_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(msaa_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(msaa_program);
+//            }
+//            else
+//            {
+//                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        msaa_attribute_position = glGetAttribLocation(msaa_program, "position");
+//        if (msaa_attribute_position == -1) {
+//            std::cout << "msaa: Could not bind attribute: position" << std::endl;
+//        }
+
+//        msaa_attribute_texpos = glGetAttribLocation(msaa_program, "texpos");
+//        if (msaa_attribute_texpos == -1) {
+//            std::cout << "msaa: Could not bind attribute: texpos" << std::endl;
+//        }
+
+//        msaa_uniform_samples = glGetUniformLocation(msaa_program, "samples");
+//        if (msaa_uniform_samples == -1) {
+//            std::cout << "msaa: Could not bind uniform: samples" << std::endl;
+//        }
+
+//        msaa_uniform_texture = glGetUniformLocation(msaa_program, "texy");
+//        if (msaa_uniform_texture == -1) {
+//            std::cout << "msaa: Could not bind uniform: texy" << std::endl;
+//        }
+
+//        msaa_uniform_weight = glGetUniformLocation(msaa_program, "sampleWeightSampler");
+//        if (msaa_uniform_weight == -1) {
+//            std::cout << "msaa: Could not bind uniform: sampleWeightSampler" << std::endl;
+//        }
+//    }
+
+//    // MSAA_SAMPLES for HDR multisampling
+//    {
+//        vertice_shader = create_shader(":/src/shaders/msaa_hdr.v.glsl", GL_VERTEX_SHADER);
+//        fragment_shader = create_shader(":/src/shaders/msaa_hdr.f.glsl", GL_FRAGMENT_SHADER);
+
+//        msaa_hdr_program = glCreateProgram();
+//        glAttachShader(msaa_hdr_program, vertice_shader);
+//        glAttachShader(msaa_hdr_program, fragment_shader);
+//        glLinkProgram(msaa_hdr_program);
+
+//        glGetProgramiv(msaa_hdr_program, GL_LINK_STATUS, &link_ok);
+//        if (!link_ok) {
+//            std::cout << "glLinkProgram: ";
+//            GLint log_length = 0;
+
+//            if (glIsProgram(msaa_hdr_program))
+//            {
+//                glGetProgramiv(msaa_hdr_program, GL_INFO_LOG_LENGTH, &log_length);
+//                char* log = new char[log_length];
+
+//                glGetProgramInfoLog(msaa_hdr_program, log_length, NULL, log);
+//                std::cout << log << std::endl;
+
+//                delete[] log;
+//                glDeleteProgram(msaa_hdr_program);
+//            }
+//            else
+//            {
+//                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
+//            }
+//        }
+
+//        msaa_hdr_attribute_position = glGetAttribLocation(msaa_hdr_program, "position");
+//        if (msaa_hdr_attribute_position == -1) {
+//            std::cout << "msaa_hdr: Could not bind attribute: position" << std::endl;
+//        }
+
+//        msaa_hdr_attribute_texpos = glGetAttribLocation(msaa_hdr_program, "texpos");
+//        if (msaa_hdr_attribute_texpos == -1) {
+//            std::cout << "msaa_hdr: Could not bind attribute: texpos" << std::endl;
+//        }
+
+//        msaa_hdr_uniform_samples = glGetUniformLocation(msaa_hdr_program, "sampleCount");
+//        if (msaa_hdr_uniform_samples == -1) {
+//            std::cout << "msaa_hdr: Could not bind uniform: sampleCount" << std::endl;
+//        }
+
+//        msaa_hdr_uniform_method = glGetUniformLocation(msaa_hdr_program, "useWeightedResolve");
+//        if (msaa_hdr_uniform_method == -1) {
+//            std::cout << "msaa_hdr: Could not bind uniform: useWeightedResolve" << std::endl;
+//        }
+
+//        msaa_hdr_uniform_exposure = glGetUniformLocation(msaa_hdr_program, "exposure");
+//        if (msaa_hdr_uniform_exposure == -1) {
+//            std::cout << "msaa_hdr: Could not bind uniform: exposure" << std::endl;
+//        }
+
+//        msaa_hdr_uniform_texture = glGetUniformLocation(msaa_hdr_program, "origImage");
+//        if (msaa_hdr_uniform_texture == -1) {
+//            std::cout << "msaa_hdr: Could not bind uniform: origImage" << std::endl;
+//        }
+
+//        msaa_hdr_uniform_weight = glGetUniformLocation(msaa_hdr_program, "sampleWeightSampler");
+//        if (msaa_hdr_uniform_weight == -1) {
+//            std::cout << "msaa_hdr: Could not bind uniform: sampleWeightSampler" << std::endl;
+//        }
+//    }
+//}
+
+void VolumeRenderWindow::setTsfTexture(TsfMatrix<double> * tsf)
 {
 
 
@@ -3011,7 +3014,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
     isTsfTexInitialized = true;
 
@@ -3019,7 +3022,7 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     tsf_tex_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
     // SET KERNEL ARGS
     err = clSetKernelArg(K_SVO_RAYTRACE, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
@@ -3028,11 +3031,11 @@ void VolumeRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
     err |= clSetKernelArg(K_FUNCTION_RAYTRACE, 2, sizeof(cl_sampler), &tsf_tex_sampler);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 }
 
-int VolumeRenderGLWidget::setRaytracingTexture()
+int VolumeRenderWindow::setRaytracingTexture()
 {
     /* Set a usable texture for thevolume rendering kernel */
     // Set dimensions
@@ -3074,7 +3077,7 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     ray_tex_cl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         return 0;
     }
 
@@ -3085,7 +3088,7 @@ int VolumeRenderGLWidget::setRaytracingTexture()
     err |= clSetKernelArg(K_FUNCTION_RAYTRACE, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         return 0;
     }
 
@@ -3093,7 +3096,7 @@ int VolumeRenderGLWidget::setRaytracingTexture()
 }
 
 
-int VolumeRenderGLWidget::initResourcesCL()
+int VolumeRenderWindow::initResourcesCL()
 {
 
 
@@ -3106,7 +3109,7 @@ int VolumeRenderGLWidget::initResourcesCL()
     program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         return 0;
     }
 
@@ -3116,7 +3119,7 @@ int VolumeRenderGLWidget::initResourcesCL()
     if (err != CL_SUCCESS)
     {
         // Compile log
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         std::cout << "--- START KERNEL COMPILE LOG ---" << std::endl;
         char* build_log;
         size_t log_size;
@@ -3134,14 +3137,14 @@ int VolumeRenderGLWidget::initResourcesCL()
     K_SVO_RAYTRACE = clCreateKernel(program, "svoRayTrace", &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         return 0;
     }
 
     K_FUNCTION_RAYTRACE = clCreateKernel(program, "modelRayTrace", &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
         return 0;
     }
 
@@ -3153,7 +3156,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     function_view_matrix_inv_cl = clCreateBuffer((*context),
@@ -3163,7 +3166,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     data_extent_cl = clCreateBuffer((*context),
@@ -3173,7 +3176,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     data_view_extent_cl = clCreateBuffer((*context),
@@ -3183,7 +3186,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     tsf_parameters_cl = clCreateBuffer((*context),
@@ -3193,7 +3196,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     misc_float_cl = clCreateBuffer((*context),
@@ -3203,7 +3206,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     misc_int_cl = clCreateBuffer((*context),
@@ -3213,7 +3216,7 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     misc_float_k_raytrace_cl = clCreateBuffer((*context),
@@ -3223,9 +3226,101 @@ int VolumeRenderGLWidget::initResourcesCL()
         &err);
     if (err != CL_SUCCESS)
     {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
+        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
     }
 
     return 1;
 }
 
+static const char *vertexShaderSource =
+    "attribute highp vec4 posAttr;\n"
+    "attribute lowp vec4 colAttr;\n"
+    "varying lowp vec4 col;\n"
+    "uniform highp mat4 matrix;\n"
+    "void main() {\n"
+    "   col = colAttr;\n"
+    "   gl_Position = matrix * posAttr;\n"
+    "}\n";
+
+static const char *fragmentShaderSource =
+    "varying lowp vec4 col;\n"
+    "void main() {\n"
+    "   gl_FragColor = col;\n"
+    "}\n";
+GLuint VolumeRenderWindow::loadShader(GLenum type, const char *source)
+{
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, 0);
+    glCompileShader(shader);
+    return shader;
+}
+
+void VolumeRenderWindow::initialize()
+{
+    m_program = new QOpenGLShaderProgram(this);
+    m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+    m_program->link();
+    m_posAttr = m_program->attributeLocation("posAttr");
+    m_colAttr = m_program->attributeLocation("colAttr");
+    m_matrixUniform = m_program->uniformLocation("matrix");
+}
+
+void VolumeRenderWindow::render(QPainter *painter)
+{
+    painter->beginNativePainting();
+
+//    glEnable(GL_BLEND);
+    glEnable(GL_MULTISAMPLE);
+
+    const qreal retinaScale = devicePixelRatio();
+    glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    m_program->bind();
+
+    QMatrix4x4 matrix;
+    matrix.perspective(60, 4.0/3.0, 0.1, 100.0);
+    matrix.translate(0, 0, -2);
+    matrix.rotate(20.0f * m_frame / screen()->refreshRate(), 0, 1, 0);
+
+    m_program->setUniformValue(m_matrixUniform, matrix);
+
+    GLfloat vertices[] = {
+        0.0f, 0.707f,
+        -0.5f, -0.5f,
+        0.5f, -0.5f
+    };
+
+    GLfloat colors[] = {
+        1.0f, 0.0f, 0.0f, 1.0,
+        0.0f, 1.0f, 0.0f, 0.0,
+        0.0f, 0.0f, 1.0f, 0.5
+    };
+
+    glVertexAttribPointer(m_posAttr, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+    glVertexAttribPointer(m_colAttr, 4, GL_FLOAT, GL_FALSE, 0, colors);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(0);
+
+    m_program->release();
+
+    ++m_frame;
+
+//    glDisable(GL_BLEND);
+    glDisable(GL_MULTISAMPLE);
+
+    painter->endNativePainting();
+
+    painter->drawText(50, 50, QString("Qt is a cross-platform application and UI framework for developers using C++ or QML, a CSS & JavaScript like language. Qt Creator is the supporting Qt IDE."));
+
+    painter->drawText(50, 100, QString::number(getFps()));
+
+}

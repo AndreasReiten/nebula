@@ -40,15 +40,16 @@
 #include <QSlider>
 #include <QList>
 
+#include "utils/contextcl.h"
 #include "utils/contextgl.h"
 #include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
 #include "utils/volumerender.h"
-#include "utils/imagerender.h"
-#include "utils/worker.h"
+//#include "utils/imagerender.h"
+//#include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
-#include "utils/contextcl.h"
+
 
 class MainWindow : public QMainWindow
 {
@@ -107,7 +108,7 @@ signals:
     void changedPaths(QStringList strlist);
 
 private:
-    ContextCL * contexto;
+    ContextCL * context_cl;
 
     int current_svo;
 
@@ -125,6 +126,7 @@ private:
     void initializeMenus();
 
     void initializeEmit();
+
     void readSettings();
     void writeSettings();
     bool maybeSave();
@@ -210,9 +212,10 @@ private:
     QWidget *viewWidget;
 
 protected:
-    ContextGLWidget * contextGLWidget;
-    VolumeRenderGLWidget *volumeRenderWidget;
-    ImageRenderGLWidget *imageRenderWidget;
+    SharedContextWindow *sharedContextWindow;
+    VolumeRenderWindow *volumeRenderWindow;
+    QWidget *volumeRenderWidget;
+//    ImageRenderGLWidget *imageRenderWidget;
 
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;
@@ -271,8 +274,8 @@ protected:
 
     // Main resources
     QStringList file_paths;
-    QList<PilatusFile> files;
-    QList<PilatusFile> background_files;
+//    QList<PilatusFile> files;
+//    QList<PilatusFile> background_files;
     MiniArray<float> reduced_pixels;
 
     // Related to file treatment
@@ -296,11 +299,11 @@ protected:
 
     int display_file;
 
-    SetFileWorker * setFileWorker;
-    ReadFileWorker * readFileWorker;
-    ProjectFileWorker * projectFileWorker;
-    AllInOneWorker * allInOneWorker;
-    VoxelizeWorker * voxelizeWorker;
-    DisplayFileWorker * displayFileWorker;
+//    SetFileWorker * setFileWorker;
+//    ReadFileWorker * readFileWorker;
+//    ProjectFileWorker * projectFileWorker;
+//    AllInOneWorker * allInOneWorker;
+//    VoxelizeWorker * voxelizeWorker;
+//    DisplayFileWorker * displayFileWorker;
 };
 #endif

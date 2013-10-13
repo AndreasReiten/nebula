@@ -10,13 +10,15 @@
 #include <ctime>
 #include <algorithm>
 
+
 #include <QtGlobal>
+//#include <QDebug>
 
 /* GL and CL*/
-#ifdef Q_OS_WIN
-    #define GLEW_STATIC
-#endif
-#include <GL/glew.h>
+//#ifdef Q_OS_WIN
+//    #define GLEW_STATIC
+//#endif
+//#include <GL/glew.h>
 #include <CL/opencl.h>
 
 /* QT */
@@ -25,26 +27,38 @@
 #include <QString>
 #include <QByteArray>
 #include <QDateTime>
-#include <QGLWidget>
+//#include <QGLWidget>
 #include <QMouseEvent>
+#include <QOpenGLFramebufferObject>
+#include <QGLShaderProgram>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+
+//#include <ft2build.h>
+//#include FT_FREETYPE_H
 
 
 #include "tools.h"
 #include "miniarray.h"
 #include "matrix.h"
-#include "atlas.h"
+//#include "atlas.h"
 #include "sparsevoxelocttree.h"
+#include "openglwindow.h"
 
-class VolumeRenderGLWidget : public QGLWidget
+#include <QMatrix4x4>
+#include <QOpenGLShaderProgram>
+#include <QScreen>
+#include <QPainter>
+
+#include <QtCore/qmath.h>
+
+
+class VolumeRenderWindow : public OpenGLWindow
 {
     Q_OBJECT
 
 public:
-    explicit VolumeRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
-    ~VolumeRenderGLWidget();
+    explicit VolumeRenderWindow();
+    ~VolumeRenderWindow();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
     void setMatrixU(float * buf);
@@ -54,7 +68,7 @@ public:
 public slots:
     void toggleScalebar();
     //~void open();
-    void takeScreenshot();
+//    void takeScreenshot();
     void setResolutionf(double value);
 //    void setResolutioni(int value);
     void togglePerspective();
@@ -91,28 +105,45 @@ signals:
     //~void changedFuncParamD(double value);
 
 protected:
-    int verbosity;
-    void initializeGL();
-    void paintGL();
-    void resizeGL(int w, int h);
-    void mouseMoveEvent(QMouseEvent *event);
+    void initialize();
+    void render(QPainter *painter);
+
+
+//    void
+//    int verbosity;
+//    void initializeGL();
+//    void paintGL();
+//    void resizeGL(int w, int h);
+//    void mouseMoveEvent(QMouseEvent *event);
     //~void keyPressEvent(QKeyEvent *event);
-    void wheelEvent(QWheelEvent *event);
-    void writeLog(QString str);
+//    void wheelEvent(QWheelEvent *event);
+//    void writeLog(QString str);
 
 private:
-    Atlas * fontSmall;
-    Atlas * fontMedium;
-    Atlas * fontLarge;
+    GLuint loadShader(GLenum type, const char *source);
 
-    float fps;
+    GLuint m_posAttr;
+    GLuint m_colAttr;
+    GLuint m_matrixUniform;
+
+    QOpenGLShaderProgram *m_program;
+    int m_frame;
+
+    QOpenGLFramebufferObject * fbo_std, * fbo_small;
+
+
+//    Atlas * fontSmall;
+//    Atlas * fontMedium;
+//    Atlas * fontLarge;
+
+    float minimum_fps;
     bool isDSViewForced;
 
     //~void setEmit();
     size_t getScaleBar();
     void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
-    void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
-    void initFreetype();
+//    void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
+//    void initFreetype();
     void setConeWidthMultiplier(float level);
     int getUnitcellVBO(GLuint * xyz_coords, int * hkl_low, int * hkl_high, float * a, float * b, float * c);
     void getUnitcellBasis(float * buf, int * hkl_offset, float * a, float * b, float * c);
@@ -138,21 +169,21 @@ private:
     //~ void paint_texture_2d(GLuint texture, double * coordinates, double * vertices);
     void getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color);
 
-    GLint msaa_hdr_attribute_position , msaa_hdr_attribute_texpos , msaa_hdr_uniform_samples , msaa_hdr_uniform_method , msaa_hdr_uniform_exposure , msaa_hdr_uniform_texture , msaa_hdr_uniform_weight;
+//    GLint msaa_hdr_attribute_position , msaa_hdr_attribute_texpos , msaa_hdr_uniform_samples , msaa_hdr_uniform_method , msaa_hdr_uniform_exposure , msaa_hdr_uniform_texture , msaa_hdr_uniform_weight;
     GLuint hist_tex_norm, hist_tex_log;
-    GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
-    GLuint MSAA_FBO, STD_FBO, SMALL_FBO;
+//    GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
+//    GLuint MSAA_FBO, STD_FBO, SMALL_FBO;
     GLuint std_3d_tex, std_2d_tex, msaa_tex, msaa_depth_tex, glow_tex, blend_tex, small_storage_tex, storage_tex, mini_uc_tex, msaa_intermediate_storage_tex;
-    GLuint tex_coord_vbo[10], position_vbo[10], lab_reference_vbo[5], data_extent_vbo[5], data_view_extent_vbo[5], text_position_vbo, text_texpos_vbo;
-    GLuint unitcell_vbo[5], screen_vbo[5], scalebar_vbo;
-    GLuint sampleWeightBuf;
-    GLint std_3d_attribute_position, std_3d_attribute_texpos, std_3d_uniform_transform, std_3d_uniform_color, std_3d_uniform_texture, std_3d_uniform_time, std_3d_uniform_bbox_min, std_3d_uniform_bbox_max, std_3d_uniform_u;
-    GLint pp_glow_attribute_position, pp_glow_attribute_texpos, pp_glow_uniform_color, pp_glow_uniform_texture, pp_glow_uniform_time, pp_glow_uniform_pixel_size, pp_glow_uniform_orientation, pp_glow_uniform_scale, pp_glow_uniform_deviation, pp_glow_uniform_samples;
-    GLint blend_attribute_position, blend_attribute_texpos, blend_uniform_top_tex, blend_uniform_bot_tex;
-    GLint msaa_attribute_position, msaa_attribute_texpos, msaa_uniform_texture, msaa_uniform_samples, msaa_uniform_weight;
-    GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
-    GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
-    GLuint std_2d_tex_program, std_2d_color_program, std_3d_program, pp_glow_program, blend_program, msaa_program, msaa_hdr_program, std_text_program;
+//    GLuint tex_coord_vbo[10], position_vbo[10], lab_reference_vbo[5], data_extent_vbo[5], data_view_extent_vbo[5], text_position_vbo, text_texpos_vbo;
+//    GLuint unitcell_vbo[5], screen_vbo[5], scalebar_vbo;
+//    GLuint sampleWeightBuf;
+//    GLint std_3d_attribute_position, std_3d_attribute_texpos, std_3d_uniform_transform, std_3d_uniform_color, std_3d_uniform_texture, std_3d_uniform_time, std_3d_uniform_bbox_min, std_3d_uniform_bbox_max, std_3d_uniform_u;
+//    GLint pp_glow_attribute_position, pp_glow_attribute_texpos, pp_glow_uniform_color, pp_glow_uniform_texture, pp_glow_uniform_time, pp_glow_uniform_pixel_size, pp_glow_uniform_orientation, pp_glow_uniform_scale, pp_glow_uniform_deviation, pp_glow_uniform_samples;
+//    GLint blend_attribute_position, blend_attribute_texpos, blend_uniform_top_tex, blend_uniform_bot_tex;
+//    GLint msaa_attribute_position, msaa_attribute_texpos, msaa_uniform_texture, msaa_uniform_samples, msaa_uniform_weight;
+//    GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
+//    GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
+//    GLuint std_2d_tex_program, std_2d_color_program, std_3d_program, pp_glow_program, blend_program, msaa_program, msaa_hdr_program, std_text_program;
     GLuint ray_tex, tsf_tex, hist_tex, static_texture[5];
 
     cl_image_format bricks_format;

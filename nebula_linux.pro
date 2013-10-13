@@ -1,37 +1,37 @@
 # QMAKE PROJECT FILE
-LIBS += -lm -lGLEW -lGL -lOpenCL -lfreetype
+LIBS += -lOpenCL -lfreetype
 
 HEADERS       = src/mainwindow.h \
+                src/utils/openglwindow.h \
                 src/utils/contextgl.h \
                 src/utils/volumerender.h \
-                src/utils/imagerender.h \
-                src/utils/fileformat.h \
-                src/utils/worker.h \
+#                src/utils/imagerender.h \
+#                src/utils/fileformat.h \
+#                src/utils/worker.h \
                 src/utils/miniarray.h \
                 src/utils/texthighlighter.h \
                 src/utils/tools.h \
                 src/utils/matrix.h \
                 src/utils/searchnode.h \
                 src/utils/bricknode.h \
-                src/utils/atlas.h \
                 src/utils/sparsevoxelocttree.h \
                 src/utils/contextcl.h \
                 src/utils/devicecl.h
 
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
+                src/utils/openglwindow.cpp \
                 src/utils/contextgl.cpp \
                 src/utils/volumerender.cpp \
-                src/utils/imagerender.cpp \
-                src/utils/fileformat.cpp \
-                src/utils/worker.cpp \
+#                src/utils/imagerender.cpp \
+#                src/utils/fileformat.cpp \
+#                src/utils/worker.cpp \
                 src/utils/miniarray.cpp \
                 src/utils/texthighlighter.cpp \
                 src/utils/tools.cpp \
                 src/utils/matrix.cpp \
                 src/utils/searchnode.cpp \
                 src/utils/bricknode.cpp \
-                src/utils/atlas.cpp \
                 src/utils/sparsevoxelocttree.cpp \
                 src/utils/contextcl.cpp \
                 src/utils/devicecl.cpp

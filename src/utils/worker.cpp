@@ -30,12 +30,9 @@ void BaseWorker::writeLog(QString str)
     writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
 }
 
-void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue)
+void BaseWorker::setOpenCLContext(ContextCL * context)
 {
-
-    this->device = device;
-    this->context = context;
-    this->queue = queue;
+    this->context_cl = context;
 }
 
 void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)

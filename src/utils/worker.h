@@ -14,9 +14,9 @@
 
 
 /* GL and CL */
-#ifdef Q_OS_WIN
-    #define GLEW_STATIC
-#endif
+//#ifdef Q_OS_WIN
+//    #define GLEW_STATIC
+//#endif
 #include <CL/opencl.h>
 
 /* QT */
@@ -30,6 +30,7 @@
 #include <QDateTime>
 
 /* Project files */
+#include "contextcl.h"
 #include "tools.h"
 #include "miniarray.h"
 #include "matrix.h"
@@ -51,7 +52,7 @@ class BaseWorker : public QObject
         void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
         void setFiles(QList<PilatusFile> * files);
         void setReducedPixels(MiniArray<float> * reduced_pixels);
-        void setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue);
+        void setOpenCLContext(ContextCL * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
 
@@ -86,13 +87,11 @@ class BaseWorker : public QObject
         void writeLog(QString str);
 
         // Related to OpenCL
+        ContextCL * context_cl;
         cl_mem * alpha_img_clgl;
         cl_mem * beta_img_clgl;
         cl_mem * gamma_img_clgl;
         cl_mem * tsf_img_clgl;
-        cl_device * device;
-        cl_context * context;
-        cl_command_queue * queue;
         cl_int err;
         cl_program program;
         bool isCLInitialized;

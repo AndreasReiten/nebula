@@ -1,24 +1,36 @@
 #ifndef CONTEXTCL_H
 #define CONTEXTCL_H
 
+#include <iostream>
+#include <sstream>
+#include <string>
+
 #include <CL/opencl.h>
+
+#include <QString>
+#include <QList>
+#include <QOpenGLContext>
 
 #include "devicecl.h"
 #include "tools.h"
 #include "miniarray.h"
 
-#include <QString>
-#include <QList>
-
-#include <iostream>
-#include <sstream>
-#include <string>
+#ifdef Q_OS_WIN
+    #include <windows.h>
+#elif defined Q_OS_LINUX
+    #include <GL/glx.h>
+#endif
 
 class ContextCL
 {
 public:
     ContextCL();
-    void initialize();
+    void initDevices();
+    void initSharedContext();
+    void initCommandQueue();
+    cl_command_queue * getCommanQueue();
+    cl_context * getContext();
+    QList<DeviceCL> * getDeviceList();
 
 private:
     MiniArray<cl_platform_id> platforms;

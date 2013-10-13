@@ -13,10 +13,10 @@
 #include <QtGlobal>
 
 /* GL and CL*/
-#ifdef Q_OS_WIN
-    #define GLEW_STATIC
-#endif
-#include <GL/glew.h>
+//#ifdef Q_OS_WIN
+//    #define GLEW_STATIC
+//#endif
+//#include <GL/glew.h>
 #include <CL/opencl.h>
 
 /* QT */
@@ -25,8 +25,9 @@
 #include <QString>
 #include <QByteArray>
 #include <QMutex>
-#include <QGLWidget>
-
+//#include <QGLWidget>
+#include <QOpenGLFramebufferObject>
+#include <QGLShaderProgram>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -36,7 +37,8 @@
 #include "tools.h"
 #include "miniarray.h"
 #include "matrix.h"
-#include "atlas.h"
+//#include "openglwindow.h"
+//#include "atlas.h"
 
 class ImageRenderGLWidget : public QGLWidget
 {
@@ -96,22 +98,22 @@ private:
     int initResourcesGL();
     void initializeProgramsGL();
     void setTexturesVBO();
-    void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
-    void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
-    void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
+//    void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
+//    void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
+//    void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
     void setTexturePositions();
 
-    Atlas * fontSmall;
-    Atlas * fontMedium;
-    Atlas * fontLarge;
+//    Atlas * fontSmall;
+//    Atlas * fontMedium;
+//    Atlas * fontLarge;
 
-    GLuint screen_texpos_vbo[5], screen_coord_vbo[5];
-    GLuint text_coord_vbo, text_texpos_vbo;
-    GLuint std_2d_tex_program, std_2d_color_program, std_text_program;
+//    GLuint screen_texpos_vbo[5], screen_coord_vbo[5];
+//    GLuint text_coord_vbo, text_texpos_vbo;
+//    GLuint std_2d_tex_program, std_2d_color_program, std_text_program;
     GLuint image_tex[5];
-    GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
-    GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
-    GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
+//    GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
+//    GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
+//    GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
 
 
 
