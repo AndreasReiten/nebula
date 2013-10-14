@@ -41,7 +41,7 @@
 #include <QList>
 
 #include "utils/contextcl.h"
-#include "utils/contextgl.h"
+#include "utils/sharedcontext.h"
 #include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
 #include "utils/volumerender.h"
@@ -86,7 +86,7 @@ private slots:
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
     void initializeThreads();
-    void writeLog(QString str);
+//    void writeLog(QString str);
 
     void setReduceThresholdLow(double value);
     void setReduceThresholdHigh(double value);

@@ -1,13 +1,13 @@
 #include "openglwindow.h"
 
-OpenGLWindow::OpenGLWindow(QWindow *parent, OpenGLWindow * shareWindow)
+OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     : QWindow(parent)
     , isUpdatePending(false)
     , isAnimating(false)
     , context_gl(0)
     , paint_device_gl(0)
 {
-    this->shared_window = shareWindow;
+    this->shared_context = shareContext;
 
     setSurfaceType(QWindow::OpenGLSurface);
 
@@ -21,17 +21,13 @@ OpenGLWindow::OpenGLWindow(QWindow *parent, OpenGLWindow * shareWindow)
 
 OpenGLWindow::~OpenGLWindow()
 {
+    std::cout << Q_FUNC_INFO << std::endl;
     delete paint_device_gl;
 }
 
 QOpenGLContext * OpenGLWindow::getGLContext()
 {
     return context_gl;
-}
-
-void OpenGLWindow::setSharedWindow(OpenGLWindow * window)
-{
-    this->shared_window = window;
 }
 
 void OpenGLWindow::setContextCL(ContextCL * context)
@@ -111,17 +107,28 @@ void OpenGLWindow::preInitialize()
     {
         context_gl = new QOpenGLContext(this);
         context_gl->setFormat(requestedFormat());
-        if (shared_window != 0)
+        if (shared_context != 0)
         {
             std::cout << "Sharing context" << std::endl;
-            context_gl->setShareContext(shared_window->getGLContext());
+            context_gl->setShareContext(shared_context);
         }
         context_gl->create();
 
-        std::cout << "OpenGL " << context_gl->format().majorVersion() << " " << context_gl->format().minorVersion() << std::endl;
-        std::cout << "Samples " << context_gl->format().samples() << std::endl;
-        std::cout << "Alpha " << context_gl->format().hasAlpha() << std::endl;
-        std::cout << "RGBA " << context_gl->format().redBufferSize() << " " << context_gl->format().greenBufferSize() << " " << context_gl->format().blueBufferSize() << " " << context_gl->format().alphaBufferSize() << std::endl;
+        std::stringstream ss;
+
+        ss << std::endl << "_____ OpenGL Context Info _____" << std::endl;
+        ss << "OpenGL version:   " << context_gl->format().version().first << "." << context_gl->format().version().second << std::endl;
+        ss << "MSAA Samples:     " << context_gl->format().samples() << std::endl;
+        ss << "Alpha:            " << context_gl->format().hasAlpha() << std::endl;
+        ss << "RGBA bits:        " << context_gl->format().redBufferSize() << " " << context_gl->format().greenBufferSize() << " " << context_gl->format().blueBufferSize() << " " << context_gl->format().alphaBufferSize() << std::endl;
+        ss << "Depth bits:       " << context_gl->format().depthBufferSize() << std::endl;
+        ss << "Stencil bits:     " << context_gl->format().stencilBufferSize() << std::endl;
+        ss << "Stereo buffering: " << context_gl->format().stereo() << std::endl;
+        ss << "Renderable type:  " << context_gl->format().renderableType() << std::endl;
+        ss << "Swap behaviour:   " << context_gl->format().swapBehavior() << std::endl;
+        ss << "_______________________________" << std::endl;
+
+        qDebug() << ss.str().c_str();
 
         needsInitialize = true;
     }

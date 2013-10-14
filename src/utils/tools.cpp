@@ -164,19 +164,15 @@ const char * cl_error_cstring(cl_int error)
 //    glBindBuffer(GL_ARRAY_BUFFER, 0);
 //}
 
-QByteArray open_resource(const char * path)
+QString openResource(const char * path)
 {
-//    std::cout << "OPENING RESOURCE: " << path << std::endl;
-
     QFile file( path );
     file.open( QFile::ReadOnly );
     QString qsrc(file.readAll());
     file.close();
+//    QByteArray ba = qsrc.toUtf8();
 
-//    std::cout << qsrc.toStdString().c_str() << std::endl;
-    QByteArray ba = qsrc.toUtf8();
-
-    return ba;
+    return qsrc;
 }
 
 QByteArray openFile(const char * path)
@@ -201,7 +197,7 @@ QByteArray openFile(const char * path)
 //GLuint create_shader(const char* resource, GLenum type)
 //{
 
-//    QByteArray qsrc = open_resource(resource);
+//    QByteArray qsrc = openResource(resource);
 //    const char * source = qsrc.data();
 
 //    if (source == NULL)

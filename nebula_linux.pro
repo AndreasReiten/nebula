@@ -3,7 +3,6 @@ LIBS += -lOpenCL -lfreetype
 
 HEADERS       = src/mainwindow.h \
                 src/utils/openglwindow.h \
-                src/utils/contextgl.h \
                 src/utils/volumerender.h \
 #                src/utils/imagerender.h \
 #                src/utils/fileformat.h \
@@ -16,12 +15,12 @@ HEADERS       = src/mainwindow.h \
                 src/utils/bricknode.h \
                 src/utils/sparsevoxelocttree.h \
                 src/utils/contextcl.h \
-                src/utils/devicecl.h
+                src/utils/devicecl.h \
+                src/utils/sharedcontext.h
 
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
                 src/utils/openglwindow.cpp \
-                src/utils/contextgl.cpp \
                 src/utils/volumerender.cpp \
 #                src/utils/imagerender.cpp \
 #                src/utils/fileformat.cpp \
@@ -34,7 +33,8 @@ SOURCES       = src/main.cpp \
                 src/utils/bricknode.cpp \
                 src/utils/sparsevoxelocttree.cpp \
                 src/utils/contextcl.cpp \
-                src/utils/devicecl.cpp
+                src/utils/devicecl.cpp \
+                src/utils/sharedcontext.cpp
 
 RESOURCES     = nebula.qrc
 

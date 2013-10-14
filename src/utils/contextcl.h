@@ -6,10 +6,12 @@
 #include <string>
 
 #include <CL/opencl.h>
+#include <CL/cl_gl.h>
 
 #include <QString>
 #include <QList>
 #include <QOpenGLContext>
+#include <QDebug>
 
 #include "devicecl.h"
 #include "tools.h"

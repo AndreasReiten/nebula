@@ -1,5 +1,5 @@
 # QMAKE PROJECT FILE
-LIBS += -lm -lglew32 -lOpenCL -lfreetype -Lwin32_lib
+LIBS += -lOpenCL -Lwin32_lib
 INCLUDEPATH += win32_inc
 
 HEADERS       = src/mainwindow.h \

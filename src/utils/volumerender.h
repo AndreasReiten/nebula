@@ -23,8 +23,9 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QMouseEvent>
-#include <QOpenGLFramebufferObject>
-#include <QGLShaderProgram>
+//#include <QOpenGLFramebufferObject>
+#include <QOpenGLShaderProgram>
+//#include <QGLShaderProgram>
 
 
 #include "tools.h"
@@ -32,9 +33,10 @@
 #include "matrix.h"
 #include "sparsevoxelocttree.h"
 #include "openglwindow.h"
+#include "sharedcontext.h"
 
 #include <QMatrix4x4>
-#include <QOpenGLShaderProgram>
+
 #include <QScreen>
 #include <QPainter>
 
@@ -49,18 +51,17 @@ public:
     VolumeRenderWindow();
     ~VolumeRenderWindow();
 
+    void setSharedWindow(SharedContextWindow * window);
+
 protected:
     void initialize();
     void render(QPainter *painter);
+    void mouseMoveEvent(QMouseEvent* ev);
+    void wheelEvent(QWheelEvent* ev);
 
 private:
-    GLuint loadShader(GLenum type, const char *source);
+    SharedContextWindow * shared_window;
 
-    GLuint m_posAttr;
-    GLuint m_colAttr;
-    GLuint m_matrixUniform;
-
-    QOpenGLShaderProgram *m_program;
     int m_frame;
 };
 #endif

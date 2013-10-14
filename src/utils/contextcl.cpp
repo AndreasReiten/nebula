@@ -28,7 +28,7 @@ void ContextCL::initDevices()
 
     // Get platforms
     err = clGetPlatformIDs(max_platforms, platforms.data(), &num_platforms);
-    if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     cl_uint max_devices = 10; // Max number of devices per platform
     cl_uint nupaint_device_gls = 0;
@@ -39,12 +39,12 @@ void ContextCL::initDevices()
     for (size_t i = 0; i < num_platforms; i++)
     {
         err = clGetDeviceIDs( platforms[i], CL_DEVICE_TYPE_ALL, max_devices, devices.data(), &nupaint_device_gls);
-        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         for (size_t j = 0; j < nupaint_device_gls; j++)
         {
             device_list.append (DeviceCL(platforms[i], devices[j]));
-            writeToLogAndPrint(QString(device_list.last().getDeviceInfoString().c_str()), "riv.log", 1);
+            qDebug() << device_list.last().getDeviceInfoString().c_str();
             nupaint_device_gls_total++;
         }
     }
@@ -92,7 +92,7 @@ void ContextCL::initSharedContext()
     context = clCreateContext(properties, devices.size(), devices.data(), NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 }
 
@@ -102,7 +102,7 @@ void ContextCL::initCommandQueue()
     queue = clCreateCommandQueue(context, device_list[0].getDeviceId(), 0, &err);
     if (err != CL_SUCCESS)
     {
-        if ( err != CL_SUCCESS) writeToLogAndPrint("Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)), "riv.log", 1);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 }
 

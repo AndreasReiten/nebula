@@ -30,8 +30,7 @@ MainWindow::MainWindow()
 //    gl_context_format.setStencil(true);
 //    gl_context_format.setDirectRendering(true);
     QSurfaceFormat format_gl;
-    format_gl.setMajorVersion(4);
-    format_gl.setMinorVersion(0);
+    format_gl.setVersion(4, 0);
     format_gl.setSamples(8);
     format_gl.setRedBufferSize(8);
     format_gl.setGreenBufferSize(8);
@@ -971,8 +970,7 @@ void MainWindow::initializeInteractives()
     /*      3D View widget      */
     {
         QSurfaceFormat format_gl;
-        format_gl.setMajorVersion(4);
-        format_gl.setMinorVersion(0);
+        format_gl.setVersion(4, 0);
         format_gl.setSamples(8);
         format_gl.setRedBufferSize(8);
         format_gl.setGreenBufferSize(8);
@@ -1368,10 +1366,10 @@ void MainWindow::initializeInteractives()
 }
 
 
-void MainWindow::writeLog(QString str)
-{
-    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
-}
+//void MainWindow::writeLog(QString str)
+//{
+//    writeToLogAndPrint(str.toStdString().c_str(), "nebula.log", 1);
+//}
 
 void MainWindow::print(QString str)
 {

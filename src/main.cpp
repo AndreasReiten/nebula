@@ -19,7 +19,41 @@
 #include "mainwindow.h"
 #include "utils/tools.h"
 
-//const int verbosity = 1;
+void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    QByteArray localMsg = msg.toLocal8Bit();
+    switch (type) {
+    case QtDebugMsg:
+        writeToLogAndPrint("Debug: "+
+                    QString(localMsg.constData())+" ("+
+                    QString(context.file)+":"+
+                    QString::number(context.line)+", " +
+                    QString(context.function)+")", "nebula.log", 1);
+        break;
+    case QtWarningMsg:
+        writeToLogAndPrint("Warning: "+
+                           QString(localMsg.constData())+" ("+
+                           QString(context.file)+":"+
+                           QString::number(context.line)+", " +
+                           QString(context.function)+")", "nebula.log", 1);
+        break;
+    case QtCriticalMsg:
+        writeToLogAndPrint("Critical: "+
+                           QString(localMsg.constData())+" ("+
+                           QString(context.file)+":"+
+                           QString::number(context.line)+", " +
+                           QString(context.function)+")", "nebula.log", 1);
+        break;
+    case QtFatalMsg:
+        writeToLogAndPrint("Fatal: "+
+                           QString(localMsg.constData())+" ("+
+                           QString(context.file)+":"+
+                           QString::number(context.line)+", " +
+                           QString(context.function)+")", "nebula.log", 1);
+        abort();
+    }
+}
+
 
 /* This is the top level GUI implementation */
 int main(int argc, char **argv)
@@ -27,8 +61,10 @@ int main(int argc, char **argv)
     // Initialize the log file
     QDateTime dateTime = dateTime.currentDateTime();
     QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
-    writeToLogAndPrint("### RIV LOG "+dateTimeString+" ###", "riv.log", 0);
-//    if (verbosity == 1) writeToLogAndPrint(Q_FUNC_INFO, "riv.log", 1);
+    writeToLogAndPrint("### NEBULA LOG "+dateTimeString+" ###", "nebula.log", 0);
+
+    // Handle Qt messages
+    qInstallMessageHandler(myMessageOutput);
 
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));
@@ -41,6 +77,3 @@ int main(int argc, char **argv)
 
     return app.exec();
 }
-
-// if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO);
-// if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__));

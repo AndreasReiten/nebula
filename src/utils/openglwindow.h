@@ -2,6 +2,8 @@
 #define OPENGLWINDOW_H
 
 #include <iostream>
+#include <sstream>
+
 #include <QWindow>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
@@ -17,15 +19,13 @@ class OpenGLWindow : public QWindow, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
-    explicit OpenGLWindow(QWindow *parent = 0, OpenGLWindow * shareWindow = 0);
+    explicit OpenGLWindow(QWindow *parent = 0, QOpenGLContext * shareContext = 0);
     ~OpenGLWindow();
 
     void setContextCL();
     void setAnimating(bool animating);
     void preInitialize(); // The idea was to call this instead of show(), but it didnt work
     void setContextCL(ContextCL * context);
-    void setSharedWindow(OpenGLWindow * window);
-
     QOpenGLContext * getGLContext();
     int getFps();
 
@@ -42,7 +42,7 @@ protected:
     bool event(QEvent *event);
 
     void exposeEvent(QExposeEvent *event);
-    OpenGLWindow *shared_window;
+    QOpenGLContext *shared_context;
     ContextCL * context_cl;
 
 private slots:

@@ -7,6 +7,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QDebug>
 
 #include <CL/opencl.h>
 
@@ -58,7 +59,7 @@ class SearchNode {
         MiniArray<double> extent;
 
         float distance(float * a, float * b);
-        void writeLog(QString str);
+//        void writeLog(QString str);
 
         unsigned int level;
         unsigned int n_children;

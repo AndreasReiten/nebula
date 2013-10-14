@@ -26,55 +26,7 @@
 #include "miniarray.h"
 #include "matrix.h"
 
-#pragma pack(2)
-struct BMPHeader {
-    unsigned short type;
-    unsigned int file_size;
-    unsigned short reserved1;
-    unsigned short reserved2;
-    unsigned int raw_offset;
-    unsigned int self_size;
-    int pixel_width;
-    int pixel_height;
-    unsigned short color_planes;
-    unsigned short pixel_bits;
-    unsigned int comperssion;
-    unsigned int image_size;
-    int resolution_w;
-    int resolution_h;
-    unsigned int colors_used;
-    unsigned int colors_important;
-};
-#pragma pack()
-
-struct cl_device{
-    cl_platform_id platform_id;
-    cl_device_id device_id;
-
-    char cl_device_name[64];
-    char cl_device_version[64];
-    char cl_driver_version[64];
-    cl_uint gpu_clock_max;
-    cl_uint gpu_max_mem_alloc_size;
-    cl_uint gpu_global_mem_cache_line;
-    cl_ulong gpu_global_mem;
-    cl_ulong gpu_local_mem;
-    cl_uint gpu_compute_units;
-    cl_ulong gpu_work_group_size;
-    cl_uint gpu_work_item_dim;
-    cl_bool gpu_image_support;
-    size_t gpu_work_item_sizes[3];
-    cl_uint max_read_image_args;
-    cl_uint max_write_image_args;
-    cl_uint max_samplers;
-    cl_ulong max_constant_buffer_size;
-    char vendor[64];
-    cl_device_type type;
-    cl_uint vendor_id;
-    char extensions[2048];
-};
-
-QByteArray open_resource(const char * path);
+QString openResource(const char * path);
 QByteArray openFile(const char * path);
 //GLuint create_shader(const char* resource, GLenum type);s
 

@@ -259,7 +259,7 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsig
                         0, NULL, NULL);
                     if (err != CL_SUCCESS)
                     {
-                        writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
+                        qCritical() << cl_error_cstring(err);
                         return;
                     }
                     tmp++;
@@ -280,10 +280,10 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsig
     }
 }
 
-void SearchNode::writeLog(QString str)
-{
-    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
-}
+//void SearchNode::writeLog(QString str)
+//{
+//    writeToLogAndPrint(str.toStdString().c_str(), "nebula.log", 1);
+//}
 
 int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * pool_cl, cl_kernel * voxelize_kernel, cl_command_queue * queue, int * method, cl_context * context, unsigned int brick_counter, unsigned int brick_pool_power)
 {
@@ -315,10 +315,8 @@ int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, 
             sizeof(cl_int),
             NULL,
             &err);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
 
 
         // Set kernel arguments
@@ -327,19 +325,15 @@ int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, 
         err |= clSetKernelArg(*voxelize_kernel, 4, sizeof(cl_int), &item_counter);
         err |= clSetKernelArg(*voxelize_kernel, 5, sizeof(cl_float), &search_radius);
         err |= clSetKernelArg(*voxelize_kernel, 6, brick_outer_dimension*brick_outer_dimension*brick_outer_dimension*sizeof(cl_float), NULL);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
 
         // Launch kernel
         size_t loc_ws[3] = {8,8,8};
         size_t glb_ws[3] = {8,8,8};
         err = clEnqueueNDRangeKernel(*queue, *voxelize_kernel, 3, NULL, glb_ws, loc_ws, 0, NULL, NULL);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
 
         clFinish(*queue);
 
@@ -352,10 +346,8 @@ int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, 
             sizeof(cl_int),
             tmp,
             0, NULL, NULL);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
 
         isEmptyBrick = tmp[0];
 
@@ -400,10 +392,7 @@ int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, 
                         sizeof(cl_float),
                         idw,
                         0, NULL, NULL);
-                    if (err != CL_SUCCESS)
-                    {
-                        writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
-                    }
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
                     if (idw[0] > 0) isEmptyBrick = 0;
                 }

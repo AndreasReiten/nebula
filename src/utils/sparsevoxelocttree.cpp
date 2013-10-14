@@ -33,7 +33,7 @@ void SparseVoxelOcttree::print()
     ss << "data_histogram.size() "<< data_histogram.size() << "\n";
     ss << "data_histogram_log.size() "<< data_histogram_log.size() << "\n";
 
-    writeToLogAndPrint(QString(ss.str().c_str()), "riv.log", 1);
+    std::cout << ss.str().c_str() << std::endl;
 
     minmax.print(2, "minmax");
     extent.print(2, "extent");
