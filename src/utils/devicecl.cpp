@@ -66,7 +66,7 @@ std::string DeviceCL::getDeviceInfoString()
 {
     std::stringstream ss;
     ss << std::endl;
-    ss << "____________________ CL DEVICE INFO ______________________" << std::endl;
+    ss << "__________________ OpenCL Device Info ____________________" << std::endl;
     ss << "CL_DEVICE_NAME:                      " << name << std::endl;
     ss << "CL_DEVICE_VERSION:                   " << version << std::endl;
 //    ss << "CL_DEVICE_TYPE:                      " << type << std::endl;

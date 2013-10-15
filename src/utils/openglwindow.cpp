@@ -117,8 +117,10 @@ void OpenGLWindow::preInitialize()
         std::stringstream ss;
 
         ss << std::endl << "_____ OpenGL Context Info _____" << std::endl;
+        ss << "Context:          " << context_gl << std::endl;
+        ss << "Shared context:   " << context_gl->shareContext() << std::endl;
         ss << "OpenGL version:   " << context_gl->format().version().first << "." << context_gl->format().version().second << std::endl;
-        ss << "MSAA Samples:     " << context_gl->format().samples() << std::endl;
+        ss << "MSAA samples:     " << context_gl->format().samples() << std::endl;
         ss << "Alpha:            " << context_gl->format().hasAlpha() << std::endl;
         ss << "RGBA bits:        " << context_gl->format().redBufferSize() << " " << context_gl->format().greenBufferSize() << " " << context_gl->format().blueBufferSize() << " " << context_gl->format().alphaBufferSize() << std::endl;
         ss << "Depth bits:       " << context_gl->format().depthBufferSize() << std::endl;

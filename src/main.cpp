@@ -19,7 +19,7 @@
 #include "mainwindow.h"
 #include "utils/tools.h"
 
-void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+void appOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     QByteArray localMsg = msg.toLocal8Bit();
     switch (type) {
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     writeToLogAndPrint("### NEBULA LOG "+dateTimeString+" ###", "nebula.log", 0);
 
     // Handle Qt messages
-    qInstallMessageHandler(myMessageOutput);
+    qInstallMessageHandler(appOutput);
 
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));

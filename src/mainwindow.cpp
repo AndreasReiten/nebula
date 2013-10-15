@@ -1056,14 +1056,11 @@ void MainWindow::initializeInteractives()
         tsfComboBox->addItem(trUtf8("Yranib"));
         tsfComboBox->addItem(trUtf8("Winter"));
         tsfComboBox->addItem(trUtf8("Ice"));
-//        tsfComboBox->addItem(trUtf8("White"));
-//        tsfComboBox->addItem(trUtf8("Black"));
 
         tsfAlphaComboBox = new QComboBox;
         tsfAlphaComboBox->addItem(trUtf8("Linear"));
         tsfAlphaComboBox->addItem(trUtf8("Exponential"));
         tsfAlphaComboBox->addItem(trUtf8("Uniform"));
-//        tsfAlphaComboBox->addItem(trUtf8("Opaque"));
 
 
         graphicsDockWidget = new QDockWidget(tr("View Settings"), this);
