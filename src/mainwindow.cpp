@@ -21,14 +21,7 @@ MainWindow::MainWindow()
     // Set the OpenCL context
     context_cl = new ContextCL;
 
-    // Set the OpenGL rendering context. Multisampling can be enabled here.
-//    QGLFormat gl_context_format;
-//    gl_context_format.setVersion(4,0);
-//    gl_context_format.setDoubleBuffer(true);
-//    gl_context_format.setRgba(true);
-//    gl_context_format.setAlpha(true);
-//    gl_context_format.setStencil(true);
-//    gl_context_format.setDirectRendering(true);
+    // Set the format of the rendering context
     QSurfaceFormat format_gl;
     format_gl.setVersion(4, 0);
     format_gl.setSamples(8);
@@ -47,9 +40,6 @@ MainWindow::MainWindow()
 
 
 
-
-//    sharedContextWindow->updateGL();
-//    sharedContextWindow->hide();
 
     this->initializeActions();
     this->initializeMenus();
@@ -981,9 +971,9 @@ void MainWindow::initializeInteractives()
         volumeRenderWindow = new VolumeRenderWindow();
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);
-//        volumeRenderWidget->resize(640, 480);
-//        volumeRenderWidget->show();
+        volumeRenderWindow->setContextCL(context_cl);
         volumeRenderWindow->setAnimating(true);
+
 
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
         volumeRenderWidget->setMinimumSize(200, 200);

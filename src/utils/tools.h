@@ -5,6 +5,7 @@
 /* QT */
 #include <QtGlobal>
 #include <QByteArray>
+#include <QDebug>
 #include <QFile>
 #include <QDateTime>
 #include <QString>
@@ -36,6 +37,6 @@ const char * cl_error_cstring(cl_int error);
 //void glGetErrorMessage(const char * context);
 //void screenshot(int w, int h, const char* path);
 //void setVbo(GLuint * vbo, float * buf, size_t length);
-void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function);
+//void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function);
 void writeToLogAndPrint(QString text, QString file, bool append);
 #endif

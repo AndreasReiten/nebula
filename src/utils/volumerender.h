@@ -25,7 +25,7 @@
 #include <QMouseEvent>
 //#include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
-//#include <QGLShaderProgram>
+#include <QResizeEvent>
 
 
 #include "tools.h"
@@ -34,6 +34,7 @@
 #include "sparsevoxelocttree.h"
 #include "openglwindow.h"
 #include "sharedcontext.h"
+#include "transferfunction.h"
 
 #include <QMatrix4x4>
 
@@ -58,10 +59,65 @@ protected:
     void render(QPainter *painter);
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
+    void resizeEvent(QResizeEvent * ev);
 
 private:
     SharedContextWindow * shared_window;
 
-    int m_frame;
+    // Boolean checks
+    bool isInitialized;
+
+    // Ray texture
+    Matrix<int> ray_tex_dim;
+    Matrix<size_t> ray_glb_ws;
+    Matrix<size_t> ray_loc_ws;
+    float ray_tex_resolution;
+    cl_mem ray_tex_cl;
+    GLuint ray_tex_gl;
+    bool isRayTexInitialized;
+    void setRayTexture();
+    void raytrace(cl_kernel kernel);
+
+    // Transfer function texture
+    void setTsfTexture();
+    cl_mem tsf_tex_cl;
+    cl_sampler tsf_tex_sampler;
+    GLuint tsf_tex_gl;
+    bool isTsfTexInitialized;
+    TransferFunction tsf;
+
+    // Ray texture timing
+    bool isBadCall;
+    bool isRefreshRequired;
+    float callTimeMax;
+    float timeLastActionMin;
+    float fps_required;
+    QElapsedTimer *timerLastAction;
+    QElapsedTimer *callTimer;
+
+    // Matrices
+    Matrix<double> view_matrix;
+    Matrix<double> data_extent;
+    Matrix<double> data_view_extent;
+    Matrix<double> tsf_parameters;
+    Matrix<int> misc_ints;
+    Matrix<double> svo_misc_floats;
+    Matrix<double> model_misc_floats;
+
+    // OpenCL
+    cl_int err;
+    cl_program program;
+    cl_kernel cl_svo_raytrace;
+    cl_kernel cl_model_raytrace;
+
+    cl_mem cl_view_matrix_inverse;
+    cl_mem cl_data_extent;
+    cl_mem cl_data_view_extent;
+    cl_mem cl_tsf_parameters;
+    cl_mem cl_misc_ints;
+    cl_mem cl_svo_misc_floats;
+    cl_mem cl_model_misc_floats;
+
+    void initResourcesCL();
 };
 #endif

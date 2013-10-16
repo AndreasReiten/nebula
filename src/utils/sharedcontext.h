@@ -31,11 +31,6 @@ public:
     explicit SharedContextWindow();
     ~SharedContextWindow();
 
-    GLint m_posAttr;
-    GLint m_colAttr;
-    GLint m_matrixUniform;
-    QOpenGLShaderProgram *m_program;
-
     GLint std_2d_fragpos;
     GLint std_2d_texpos;
     GLint std_2d_texture;

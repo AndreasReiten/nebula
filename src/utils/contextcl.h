@@ -33,11 +33,16 @@ public:
     cl_command_queue * getCommanQueue();
     cl_context * getContext();
     QList<DeviceCL> * getDeviceList();
+    DeviceCL * getMainDevice();
+
+    cl_program createProgram(const char * path, cl_int * error);
+    void buildProgram(cl_program * program, const char * options);
 
 private:
     MiniArray<cl_platform_id> platforms;
     MiniArray<cl_device_id> devices;
 
+    DeviceCL *main_device;
     QList<DeviceCL> device_list;
 
     cl_command_queue queue;

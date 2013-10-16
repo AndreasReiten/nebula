@@ -21,7 +21,6 @@ OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
 
 OpenGLWindow::~OpenGLWindow()
 {
-    std::cout << Q_FUNC_INFO << std::endl;
     delete paint_device_gl;
 }
 
@@ -65,8 +64,6 @@ void OpenGLWindow::render()
     paint_device_gl->setSize(size());
 
     QPainter painter(paint_device_gl);
-    painter.setPen(Qt::yellow);
-    painter.setFont(QFont("Monospace"));
 
     render(&painter);
 }

@@ -19,6 +19,51 @@ QList<DeviceCL> * ContextCL::getDeviceList()
     return &device_list;
 }
 
+DeviceCL * ContextCL::getMainDevice()
+{
+    return main_device;
+}
+
+cl_program ContextCL::createProgram(const char * path, cl_int * error)
+{
+    // Program
+    QByteArray qsrc = openFile(path);
+    const char * src = qsrc.data();
+    size_t src_length = strlen(src);
+
+    return clCreateProgramWithSource(context, 1, (const char **)&src, &src_length, error);
+}
+
+void ContextCL::buildProgram(cl_program * program, const char * options)
+{
+    // Compile kernel
+    cl_device_id tmp = main_device->getDeviceId();
+    err = clBuildProgram(*program, 1, &tmp, options, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        // Compile log
+        qDebug() << "Error compiling kernel: "+QString(cl_error_cstring(err));
+        std::stringstream ss;
+
+        char* build_log;
+        size_t log_size;
+
+        clGetProgramBuildInfo(*program, main_device->getDeviceId(), CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+        build_log = new char[log_size+1];
+
+        clGetProgramBuildInfo(*program, main_device->getDeviceId(), CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
+        build_log[log_size] = '\0';
+
+        ss << "___ START KERNEL COMPILE LOG ___" << std::endl;
+        ss << build_log << std::endl;
+        ss << "___  END KERNEL COMPILE LOG  ___" << std::endl;
+        delete[] build_log;
+
+        qDebug(ss.str().c_str());
+    }
+}
+
+
 void ContextCL::initDevices()
 {
     // Platforms and Devices
@@ -65,6 +110,9 @@ void ContextCL::initDevices()
     {
         devices[i] = device_list[i].getDeviceId();
     }
+
+    // Pick a preferred device
+    main_device = &device_list[0];
 }
 
 void ContextCL::initSharedContext()
@@ -75,7 +123,7 @@ void ContextCL::initSharedContext()
     cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) glXGetCurrentContext(),
         CL_GLX_DISPLAY_KHR, (cl_context_properties) glXGetCurrentDisplay(),
-        CL_CONTEXT_PLATFORM, (cl_context_properties) device_list[0].getPlatformId(),
+        CL_CONTEXT_PLATFORM, (cl_context_properties) main_device->getPlatformId(),
         0};
 
 //        std::cout << glXGetCurrentContext() << std::endl;
@@ -85,7 +133,7 @@ void ContextCL::initSharedContext()
     cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(),
         CL_WGL_HDC_KHR, (cl_context_properties) wglGetCurrentDC(),
-        CL_CONTEXT_PLATFORM, (cl_context_properties) device_list[0].getPlatformId(),
+        CL_CONTEXT_PLATFORM, (cl_context_properties) main_device->getPlatformId(),
         0};
     #endif
 
@@ -99,7 +147,7 @@ void ContextCL::initSharedContext()
 void ContextCL::initCommandQueue()
 {
     // Command queue
-    queue = clCreateCommandQueue(context, device_list[0].getDeviceId(), 0, &err);
+    queue = clCreateCommandQueue(context, main_device->getDeviceId(), 0, &err);
     if (err != CL_SUCCESS)
     {
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));

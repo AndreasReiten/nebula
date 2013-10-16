@@ -20,12 +20,12 @@ class MiniArray{
         MiniArray(MiniArray && other);
         ~MiniArray();
 
-        /* Operators */
+        // Operators
         T& operator[] (const size_t index);
         const T& operator[] (const size_t index) const;
         MiniArray& operator = (MiniArray other);
 
-        /* Management */
+        // Utility
         MiniArray<float> toFloat() const;
         QVector<T> toQVector() const;
         void setShallow(size_t length, T * buffer);
@@ -37,8 +37,6 @@ class MiniArray{
         void clear();
         T * data();
         T * data() const;
-
-        /* Utility */
         void print(int precision = 0, const char * id = "", size_t cap = 0) const;
         size_t bytes() const;
         size_t size() const;

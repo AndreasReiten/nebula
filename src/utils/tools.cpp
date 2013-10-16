@@ -188,6 +188,10 @@ QByteArray openFile(const char * path)
         in.read(&contents[0], contents.size());
         in.close();
     }
+    else
+    {
+        qWarning() << "Could not open file: " << path;
+    }
 
     QByteArray ba = QString(contents.c_str()).toUtf8();
 
@@ -240,218 +244,218 @@ QByteArray openFile(const char * path)
 //    return shader;
 //}
 
-void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function)
-{
-    /* Some hand crafted transfer functions. Only the RGB part is used. The alpha (A) is computed later */
+//void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function)
+//{
+//    /* Some hand crafted transfer functions. Only the RGB part is used. The alpha (A) is computed later */
 
-    double buf_hot[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
-        0.7f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.5f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.5f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_hot[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 1.0f,
+//        0.7f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.5f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.5f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_galaxy[32] = {
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.5f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.5f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_galaxy[32] = {
+//        0.0f, 0.0f, 1.0f, 0.0f,
+//        0.0f, 0.0f, 1.0f, 1.0f,
+//        1.0f, 0.0f, 1.0f, 1.0f,
+//        1.0f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.5f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.5f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_hsv[32] = {
-        1.f, 0.f, 0.f, 0.f,
-        1.f, 0.f, 0.f, 1.f,
-        1.f, 0.f, 1.f, 1.f,
-        0.f, 0.f, 1.f, 1.f,
-        0.f, 1.f, 1.f, 1.f,
-        0.f, 1.f, 0.f, 1.f,
-        1.f, 1.f, 0.f, 1.f,
-        1.f, 0.f, 0.f, 1.f,
-        };
+//    double buf_hsv[32] = {
+//        1.f, 0.f, 0.f, 0.f,
+//        1.f, 0.f, 0.f, 1.f,
+//        1.f, 0.f, 1.f, 1.f,
+//        0.f, 0.f, 1.f, 1.f,
+//        0.f, 1.f, 1.f, 1.f,
+//        0.f, 1.f, 0.f, 1.f,
+//        1.f, 1.f, 0.f, 1.f,
+//        1.f, 0.f, 0.f, 1.f,
+//        };
 
-    double buf_binary[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.143f, 0.143f, 0.143f, 1.0f,
-        0.286f, 0.286f, 0.286f, 1.0f,
-        0.429f, 0.429f, 0.429f, 1.0f,
-        0.571f, 0.571f, 0.571f, 1.0f,
-        0.714f, 0.714f, 0.714f, 1.0f,
-        0.857f, 0.857f, 0.857f, 1.0f,
-        1.f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_binary[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.143f, 0.143f, 0.143f, 1.0f,
+//        0.286f, 0.286f, 0.286f, 1.0f,
+//        0.429f, 0.429f, 0.429f, 1.0f,
+//        0.571f, 0.571f, 0.571f, 1.0f,
+//        0.714f, 0.714f, 0.714f, 1.0f,
+//        0.857f, 0.857f, 0.857f, 1.0f,
+//        1.f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_yranib[32] = {
-        1.f, 1.0f, 1.0f, 0.0f,
-        0.857f, 0.857f, 0.857f, 1.0f,
-        0.714f, 0.714f, 0.714f, 1.0f,
-        0.571f, 0.571f, 0.571f, 1.0f,
-        0.429f, 0.429f, 0.429f, 1.0f,
-        0.286f, 0.286f, 0.286f, 1.0f,
-        0.143f, 0.143f, 0.143f, 1.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
-        };
+//    double buf_yranib[32] = {
+//        1.f, 1.0f, 1.0f, 0.0f,
+//        0.857f, 0.857f, 0.857f, 1.0f,
+//        0.714f, 0.714f, 0.714f, 1.0f,
+//        0.571f, 0.571f, 0.571f, 1.0f,
+//        0.429f, 0.429f, 0.429f, 1.0f,
+//        0.286f, 0.286f, 0.286f, 1.0f,
+//        0.143f, 0.143f, 0.143f, 1.0f,
+//        0.0f, 0.0f, 0.0f, 1.0f,
+//        };
 
-    double buf_winter[32] = {
-        0.0f, 1.f, 0.4f, 0.f,
-        0.0f, 1.f, 0.6f, 1.f,
-        0.0f, 0.8f, 0.8f, 1.f,
-        0.0f, 0.6f, 1.f, 1.f,
-        0.0f, 0.4f, 1.f, 1.f,
-        0.0f, 0.2f, 1.f, 1.f,
-        0.0f, 0.1f, 1.f, 1.f,
-        0.0f, 0.0f, 1.f, 1.f,
-        };
+//    double buf_winter[32] = {
+//        0.0f, 1.f, 0.4f, 0.f,
+//        0.0f, 1.f, 0.6f, 1.f,
+//        0.0f, 0.8f, 0.8f, 1.f,
+//        0.0f, 0.6f, 1.f, 1.f,
+//        0.0f, 0.4f, 1.f, 1.f,
+//        0.0f, 0.2f, 1.f, 1.f,
+//        0.0f, 0.1f, 1.f, 1.f,
+//        0.0f, 0.0f, 1.f, 1.f,
+//        };
 
-    double buf_ice[32] = {
-        1.f, 1.f, 1.f, 0.f,
-        1.f, 1.0f, 1.f, 1.f,
-        0.f, 0.9f, 1.f, 1.f,
-        0.f, 0.75f, 1.f, 1.f,
-        0.f, 0.65f, 1.f, 1.f,
-        0.f, 0.525f, 1.f, 1.f,
-        0.f, 0.4f, 1.f, 1.f,
-        0.f, 0.3f, 1.f, 1.f,
-        };
+//    double buf_ice[32] = {
+//        1.f, 1.f, 1.f, 0.f,
+//        1.f, 1.0f, 1.f, 1.f,
+//        0.f, 0.9f, 1.f, 1.f,
+//        0.f, 0.75f, 1.f, 1.f,
+//        0.f, 0.65f, 1.f, 1.f,
+//        0.f, 0.525f, 1.f, 1.f,
+//        0.f, 0.4f, 1.f, 1.f,
+//        0.f, 0.3f, 1.f, 1.f,
+//        };
 
-    double buf_rainbow[32] = {
-        1.f, 0.f, 0.f, 0.f,
-        1.f, 0.f, 0.f, 1.f,
-        1.f, 0.5f, 0.f, 1.f,
-        1.f, 1.f, 0.f, 1.f,
-        0.f, 1.f, 0.f, 1.f,
-        0.f, 0.f, 1.f, 1.f,
-        0.3f, 0.f, 0.6f, 1.f,
-        0.7f, 0.f, 1.0f, 1.f,
-        };
+//    double buf_rainbow[32] = {
+//        1.f, 0.f, 0.f, 0.f,
+//        1.f, 0.f, 0.f, 1.f,
+//        1.f, 0.5f, 0.f, 1.f,
+//        1.f, 1.f, 0.f, 1.f,
+//        0.f, 1.f, 0.f, 1.f,
+//        0.f, 0.f, 1.f, 1.f,
+//        0.3f, 0.f, 0.6f, 1.f,
+//        0.7f, 0.f, 1.0f, 1.f,
+//        };
 
-    double buf_white_contrast[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
-        0.7f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 0.2f, 1.0f,
-        1.0f, 0.0f, 0.7f, 1.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        0.5f, 0.0f, 1.0f, 1.0f,
-        };
+//    double buf_white_contrast[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 1.0f,
+//        0.7f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.0f, 0.2f, 1.0f,
+//        1.0f, 0.0f, 0.7f, 1.0f,
+//        1.0f, 0.0f, 1.0f, 1.0f,
+//        0.5f, 0.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_white[32] = {
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_white[32] = {
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_black[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        };
+//    double buf_black[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        };
 
-    Matrix<double> tmp;
-    switch (color_style)
-    {
-        case 0:
-            tmp.setDeep(8, 4, buf_rainbow);
-            break;
-        case 1:
-            tmp.setDeep(8, 4, buf_hot);
-            break;
-        case 2:
-            tmp.setDeep(8, 4, buf_hsv);
-            break;
-        case 3:
-            tmp.setDeep(8, 4, buf_galaxy);
-            break;
-        case 4:
-            tmp.setDeep(8, 4, buf_binary);
-            break;
-        case 5:
-            tmp.setDeep(8, 4, buf_yranib);
-            break;
-        case 6:
-            tmp.setDeep(8, 4, buf_winter);
-            break;
-        case 7:
-            tmp.setDeep(8, 4, buf_ice);
-            break;
-        case 8:
-            tmp.setDeep(8, 4, buf_white);
-            break;
-        case 9:
-            tmp.setDeep(8, 4, buf_black);
-            break;
-        case 42:
-            tmp.setDeep(8, 4, buf_white_contrast);
-            break;
-        default:
-            tmp.setDeep(8, 4, buf_hot);
-            break;
-    }
+//    Matrix<double> tmp;
+//    switch (color_style)
+//    {
+//        case 0:
+//            tmp.setDeep(8, 4, buf_rainbow);
+//            break;
+//        case 1:
+//            tmp.setDeep(8, 4, buf_hot);
+//            break;
+//        case 2:
+//            tmp.setDeep(8, 4, buf_hsv);
+//            break;
+//        case 3:
+//            tmp.setDeep(8, 4, buf_galaxy);
+//            break;
+//        case 4:
+//            tmp.setDeep(8, 4, buf_binary);
+//            break;
+//        case 5:
+//            tmp.setDeep(8, 4, buf_yranib);
+//            break;
+//        case 6:
+//            tmp.setDeep(8, 4, buf_winter);
+//            break;
+//        case 7:
+//            tmp.setDeep(8, 4, buf_ice);
+//            break;
+//        case 8:
+//            tmp.setDeep(8, 4, buf_white);
+//            break;
+//        case 9:
+//            tmp.setDeep(8, 4, buf_black);
+//            break;
+//        case 42:
+//            tmp.setDeep(8, 4, buf_white_contrast);
+//            break;
+//        default:
+//            tmp.setDeep(8, 4, buf_hot);
+//            break;
+//    }
 
-    // Compute the alpha
-    switch (alpha_style)
-    {
-        case 2:
-            // Uniform alpha except for the first vertex
-            tmp[3] = 0.0;
-            for (int i = 4; i < 32; i+=4)
-            {
-                tmp[i+3] = 1.0;
-            }
-            break;
-        case 0:
-            // Linearly increasing alpha
-            for (int i = 0; i < 32; i+=4)
-            {
-                tmp[i+3] = ((float)i/4)/7.0;
-            }
-            break;
-        case 1:
-            // Exponentially increasing data
-            tmp[3] = 0.0;
-            for (int i = 4; i < 32; i+=4)
-            {
-                tmp[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
-            }
-            break;
-        case 3:
-            // Opaque
-            for (int i = 0; i < 32; i+=4)
-            {
-                tmp[i+3] = 1.0;
-            }
-            break;
-        default:
-            for (int i = 0; i < 32; i+=4)
-            {
-                tmp[i+3] = 1.0;
-            }
-            break;
-    }
+//    // Compute the alpha
+//    switch (alpha_style)
+//    {
+//        case 2:
+//            // Uniform alpha except for the first vertex
+//            tmp[3] = 0.0;
+//            for (int i = 4; i < 32; i+=4)
+//            {
+//                tmp[i+3] = 1.0;
+//            }
+//            break;
+//        case 0:
+//            // Linearly increasing alpha
+//            for (int i = 0; i < 32; i+=4)
+//            {
+//                tmp[i+3] = ((float)i/4)/7.0;
+//            }
+//            break;
+//        case 1:
+//            // Exponentially increasing data
+//            tmp[3] = 0.0;
+//            for (int i = 4; i < 32; i+=4)
+//            {
+//                tmp[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
+//            }
+//            break;
+//        case 3:
+//            // Opaque
+//            for (int i = 0; i < 32; i+=4)
+//            {
+//                tmp[i+3] = 1.0;
+//            }
+//            break;
+//        default:
+//            for (int i = 0; i < 32; i+=4)
+//            {
+//                tmp[i+3] = 1.0;
+//            }
+//            break;
+//    }
 
-    transfer_function->setDeep(4, 8, tmp.getColMajor().data());
-    transfer_function->setSpline(256);
-    transfer_function->setPreIntegrated();
+//    transfer_function->setDeep(4, 8, tmp.getColMajor().data());
+//    transfer_function->setSpline(256);
+//    transfer_function->setPreIntegrated();
 
-    //~ tmp.getColMajor().print(2, "The matrix sent to be splined:");
-    //~ transfer_function->getSpline().print(2,"Splined");
-    //~ transfer_function->getPreIntegrated().print(2,"Integrated");
-}
+//    //~ tmp.getColMajor().print(2, "The matrix sent to be splined:");
+//    //~ transfer_function->getSpline().print(2,"Splined");
+//    //~ transfer_function->getPreIntegrated().print(2,"Integrated");
+//}

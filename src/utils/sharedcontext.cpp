@@ -1,8 +1,7 @@
 #include "sharedcontext.h"
 
 SharedContextWindow::SharedContextWindow()
-    : m_program(0),
-    std_2d_tex_program(0),
+    : std_2d_tex_program(0),
     std_3d_color_program(0),
     std_blend_program(0)
 {
@@ -12,22 +11,6 @@ SharedContextWindow::SharedContextWindow()
 SharedContextWindow::~SharedContextWindow()
 {
 }
-
-static const char *vertexShaderSource =
-    "attribute highp vec4 posAttr;\n"
-    "attribute lowp vec4 colAttr;\n"
-    "varying lowp vec4 col;\n"
-    "uniform highp mat4 matrix;\n"
-    "void main() {\n"
-    "   col = colAttr;\n"
-    "   gl_Position = matrix * posAttr;\n"
-    "}\n";
-
-static const char *fragmentShaderSource =
-    "varying lowp vec4 col;\n"
-    "void main() {\n"
-    "   gl_FragColor = col;\n"
-    "}\n";
 
 GLuint SharedContextWindow::loadShader(GLenum type, const char *source)
 {
@@ -39,14 +22,6 @@ GLuint SharedContextWindow::loadShader(GLenum type, const char *source)
 
 void SharedContextWindow::initialize()
 {
-    m_program = new QOpenGLShaderProgram(this);
-    m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    m_program->link();
-    m_posAttr = m_program->attributeLocation("posAttr");
-    m_colAttr = m_program->attributeLocation("colAttr");
-    m_matrixUniform = m_program->uniformLocation("matrix");
-
     // Shader for drawing textures in 2D
     std_2d_tex_program = new QOpenGLShaderProgram(this);
     std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "://src/shaders/std_2d_tex.v.glsl");

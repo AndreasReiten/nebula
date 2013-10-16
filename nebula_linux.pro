@@ -16,7 +16,8 @@ HEADERS       = src/mainwindow.h \
                 src/utils/sparsevoxelocttree.h \
                 src/utils/contextcl.h \
                 src/utils/devicecl.h \
-                src/utils/sharedcontext.h
+                src/utils/sharedcontext.h \
+    src/utils/transferfunction.h
 
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
@@ -34,7 +35,8 @@ SOURCES       = src/main.cpp \
                 src/utils/sparsevoxelocttree.cpp \
                 src/utils/contextcl.cpp \
                 src/utils/devicecl.cpp \
-                src/utils/sharedcontext.cpp
+                src/utils/sharedcontext.cpp \
+    src/utils/transferfunction.cpp
 
 RESOURCES     = nebula.qrc
 
