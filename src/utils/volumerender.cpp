@@ -55,12 +55,8 @@ VolumeRenderWindow::VolumeRenderWindow()
     callTimer = new QElapsedTimer;
 
     // Color
-    float white_buf[] = {1,1,1,1};
-    float black_buf[] = {0,0,0,1};
-    white.setDeep(1,4,white_buf);
-    black.setDeep(1,4,black_buf);
-    clear_color = white;
-    clear_color_inverse = black;
+    clear_color = Qt::white;
+    clear_color_inverse = Qt::black;
 
     // Scalebar
     scalebar_coords.reserve(20000,3);
@@ -297,12 +293,14 @@ void VolumeRenderWindow::setViewMatrix()
     view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * scalebar_rotation * data_translation;
 
-    view_matrix.print(2, "view_matrix");
+//    view_matrix.print(2, "view_matrix");
+    scalebar_view_matrix.print(2, "scalebar_view_matrix");
     ctc_matrix.print(2, "ctc_matrix");
     bbox_translation.print(2, "bbox_tranlation");
     normalization_scaling.print(2, "normalization_scaling");
     data_scaling.print(2, "data_scaling");
-    rotation.print(2, "rotation");
+    scalebar_rotation.print(2, "scalebar_rotation");
+//    rotation.print(2, "rotation");
     data_translation.print(2, "data_translation");
 
 //    view_matrix.getInverse().print(2, "view_matrix_inverse");
@@ -532,10 +530,10 @@ void VolumeRenderWindow::render(QPainter *painter)
     setDataExtent();
     setViewMatrix();
 
-    glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
+    glClearColor(clear_color.redF(), clear_color.greenF(), clear_color.blueF(), 0.0f);
 
-    painter->setPen(Qt::yellow);
-    painter->setFont(QFont("Monospace"));
+    painter->setPen(clear_color_inverse);
+    painter->setFont(QFont("Courier"));
 
     painter->beginNativePainting();
 
@@ -550,10 +548,10 @@ void VolumeRenderWindow::render(QPainter *painter)
     if (1)
     {
         scalebar_coord_count = setScaleBars();
-
+//        std::cout << scalebar_coord_count << std::endl;
         shared_window->std_3d_color_program->bind();
 
-        shared_window->std_3d_color_program->setUniformValueArray(shared_window->std_3d_color, clear_color_inverse.data(), clear_color_inverse.size(),1);
+        shared_window->std_3d_color_program->setUniformValue(shared_window->std_3d_color, clear_color.redF(), clear_color.greenF(), clear_color.blueF(), clear_color.alphaF());
         shared_window->std_3d_color_program->setUniformValueArray(shared_window->std_3d_transform, scalebar_view_matrix.getColMajor().toFloat().data(), scalebar_view_matrix.size(), 1);
 
         glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, scalebar_coords.data()); // This one maps to vec4 but is 3 long

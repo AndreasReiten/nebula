@@ -147,9 +147,7 @@ private:
     void initResourcesCL();
 
     // Colors
-    Matrix<float> clear_color;
-    Matrix<float> clear_color_inverse;
-    Matrix<float> white;
-    Matrix<float> black;
+    QColor clear_color;
+    QColor clear_color_inverse;
 };
 #endif
