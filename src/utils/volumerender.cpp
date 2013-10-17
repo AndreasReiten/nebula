@@ -1,5 +1,7 @@
 #include "volumerender.h"
 
+
+
 VolumeRenderWindow::VolumeRenderWindow()
     : isInitialized(false),
       isRayTexInitialized(false),
@@ -8,9 +10,9 @@ VolumeRenderWindow::VolumeRenderWindow()
 {
     // Matrices
     double extent[8] = {
-        -1.0,1.0,
-        -1.0,1.0,
-        -1.0,1.0,
+        -2.0*pi,2.0*pi,
+        -2.0*pi,2.0*pi,
+        -2.0*pi,2.0*pi,
          1.0,1.0};
     data_extent.setDeep(4, 2, extent);
     data_view_extent.setDeep(4, 2, extent);
@@ -54,16 +56,21 @@ VolumeRenderWindow::VolumeRenderWindow()
     timerLastAction = new QElapsedTimer;
     callTimer = new QElapsedTimer;
 
-    // Color
-    clear_color = Qt::white;
-    clear_color_inverse = Qt::black;
-
     // Scalebar
-    scalebar_coords.reserve(20000,3);
+    scalebar_ticks.reserve(100,3);
+
+    // Color
+    GLfloat white_buf[] = {1,1,1,0.4};
+    GLfloat black_buf[] = {0,0,0,0.4};
+    white.setDeep(1,4,white_buf);
+    black.setDeep(1,4,black_buf);
+    clear_color = white;
+    clear_color_inverse = black;
 }
 
 VolumeRenderWindow::~VolumeRenderWindow()
 {
+    if (isInitialized) glDeleteBuffers(1, &scalebar_vbo);
 }
 
 void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
@@ -79,7 +86,7 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
          * */
 
         double eta = std::atan2(ev->x() - last_mouse_pos_x, ev->y() - last_mouse_pos_y) - pi*1.0;
-        double roll = move_scaling * pi/((float) size().height()) * std::sqrt((ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
+        double roll = move_scaling * pi/((float) height()) * std::sqrt((ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
 
         RotationMatrix<double> roll_rotation;
         roll_rotation.setArbRotation(-0.5*pi, eta, roll);
@@ -102,7 +109,7 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
          * */
 
         RotationMatrix<double> roll_rotation;
-        double roll = move_scaling * pi/((float) size().height()) * (ev->y() - last_mouse_pos_y);
+        double roll = move_scaling * pi/((float) height()) * (ev->y() - last_mouse_pos_y);
 
         roll_rotation.setArbRotation(0, 0, roll);
 
@@ -120,8 +127,8 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
     {
         /* X/Y translation happens multiplicatively. Here it is
          * important to retain the bounding box accordingly  */
-        float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) size().height()) * (ev->x() - last_mouse_pos_x);
-        float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) size().height()) * (ev->y() - last_mouse_pos_y);
+        float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) height()) * (ev->x() - last_mouse_pos_x);
+        float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) height()) * (ev->y() - last_mouse_pos_y);
 
         Matrix<double> data_translation_prev;
         data_translation_prev.setIdentity(4);
@@ -140,7 +147,7 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
     else if (!(ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
     {
         /* Z translation happens multiplicatively */
-        float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) size().height()) * (ev->y() - last_mouse_pos_y);
+        float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) height()) * (ev->y() - last_mouse_pos_y);
 
         Matrix<double> data_translation_prev;
         data_translation_prev.setIdentity(4);
@@ -201,6 +208,7 @@ void VolumeRenderWindow::wheelEvent(QWheelEvent* ev)
 void VolumeRenderWindow::initialize()
 {
     initResourcesCL();
+    initResourcesGL();
 
     // Textures
     setRayTexture();
@@ -213,6 +221,11 @@ void VolumeRenderWindow::initialize()
     setMiscArrays();
 
     isInitialized = true;
+}
+
+void VolumeRenderWindow::initResourcesGL()
+{
+    glGenBuffers(1, &scalebar_vbo);
 }
 
 void VolumeRenderWindow::initResourcesCL()
@@ -294,14 +307,14 @@ void VolumeRenderWindow::setViewMatrix()
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * scalebar_rotation * data_translation;
 
 //    view_matrix.print(2, "view_matrix");
-    scalebar_view_matrix.print(2, "scalebar_view_matrix");
-    ctc_matrix.print(2, "ctc_matrix");
-    bbox_translation.print(2, "bbox_tranlation");
-    normalization_scaling.print(2, "normalization_scaling");
-    data_scaling.print(2, "data_scaling");
-    scalebar_rotation.print(2, "scalebar_rotation");
+//    scalebar_view_matrix.print(2, "scalebar_view_matrix");
+//    ctc_matrix.print(2, "ctc_matrix");
+//    bbox_translation.print(2, "bbox_tranlation");
+//    normalization_scaling.print(2, "normalization_scaling");
+//    data_scaling.print(2, "data_scaling");
+//    scalebar_rotation.print(2, "scalebar_rotation");
 //    rotation.print(2, "rotation");
-    data_translation.print(2, "data_translation");
+//    data_translation.print(2, "data_translation");
 
 //    view_matrix.getInverse().print(2, "view_matrix_inverse");
 
@@ -403,15 +416,16 @@ void VolumeRenderWindow::setMiscArrays()
 
 void VolumeRenderWindow::resizeEvent(QResizeEvent * ev)
 {
-    ctc_matrix.setWindow(size().width(), size().height());
+    if (paint_device_gl) paint_device_gl->setSize(size());
+    ctc_matrix.setWindow(width(), height());
     setRayTexture();
 }
 
 void VolumeRenderWindow::setRayTexture()
 {
     // Set a texture for the volume rendering kernel
-    ray_tex_dim[0] = (int)((float)this->size().width()*ray_tex_resolution*0.01f);
-    ray_tex_dim[1] = (int)((float)this->size().height()*ray_tex_resolution*0.01f);
+    ray_tex_dim[0] = (int)((float)this->width()*ray_tex_resolution*0.01f);
+    ray_tex_dim[1] = (int)((float)this->height()*ray_tex_resolution*0.01f);
 
     // Clamp
     if (ray_tex_dim[0] < 32) ray_tex_dim[0] = 32;
@@ -527,45 +541,83 @@ void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWindow::render(QPainter *painter)
 {
+
+
+//    QElapsedTimer stopwatch;
+//    stopwatch.start();
+//    glFinish();
+
     setDataExtent();
     setViewMatrix();
 
-    glClearColor(clear_color.redF(), clear_color.greenF(), clear_color.blueF(), 0.0f);
+    glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    painter->setPen(clear_color_inverse);
-    painter->setFont(QFont("Courier"));
+    painter->setPen(Qt::black);
+//    painter->setFont(QFont("Courier"));
+
+//    glFinish();
+//    qDebug() << "painter took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
 
     painter->beginNativePainting();
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
+    glLineWidth(1.5);
 
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
 
     // Draw relative scalebar
-    if (1)
-    {
-        scalebar_coord_count = setScaleBars();
-//        std::cout << scalebar_coord_count << std::endl;
-        shared_window->std_3d_color_program->bind();
-
-        shared_window->std_3d_color_program->setUniformValue(shared_window->std_3d_color, clear_color.redF(), clear_color.greenF(), clear_color.blueF(), clear_color.alphaF());
-        shared_window->std_3d_color_program->setUniformValueArray(shared_window->std_3d_transform, scalebar_view_matrix.getColMajor().toFloat().data(), scalebar_view_matrix.size(), 1);
-
-        glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, scalebar_coords.data()); // This one maps to vec4 but is 3 long
-
-        glEnableVertexAttribArray(shared_window->std_3d_fragpos);
-
-        glDrawArrays(GL_LINES,  0, scalebar_coord_count);
-
-        glDisableVertexAttribArray(shared_window->std_3d_fragpos);
-
-        shared_window->std_3d_color_program->release();
-    }
+    drawScalebars();
 
     // Draw raytracing texture
+    drawRayTex();
+
+    glDisable(GL_BLEND);
+    glDisable(GL_MULTISAMPLE);
+    painter->endNativePainting();
+
+
+    for (int i = 0; i < n_scalebar_ticks; i++)
+    {
+        painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));
+    }
+
+//    painter->drawText(50, 50, QString("Qt is a cross-platform application and UI framework for developers using C++ or QML, a CSS & JavaScript like language. Qt Creator is the supporting Qt IDE."));
+
+    painter->drawText(50, 100, QString::number(getFps()));
+
+//    glFinish();
+
+//    qDebug() << "painter drawing took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
+
+}
+
+void VolumeRenderWindow::drawScalebars()
+{
+    scalebar_coord_count = setScaleBars();
+
+    shared_window->std_3d_color_program->bind();
+    glEnableVertexAttribArray(shared_window->std_3d_fragpos);
+
+    glBindBuffer(GL_ARRAY_BUFFER, scalebar_vbo);
+    glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
+
+    glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
+
+    glDrawArrays(GL_LINES,  0, scalebar_coord_count);
+
+    glDisableVertexAttribArray(shared_window->std_3d_fragpos);
+
+    shared_window->std_3d_color_program->release();
+}
+
+void VolumeRenderWindow::drawRayTex()
+{
     shared_window->std_2d_tex_program->bind();
 
     glActiveTexture(GL_TEXTURE0);
@@ -575,8 +627,8 @@ void VolumeRenderWindow::render(QPainter *painter)
     GLfloat fragpos[] = {
         -1.0, -1.0,
         1.0, -1.0,
-        1.0, 0.0,
-        -1.0, 0.0
+        1.0, 1.0,
+        -1.0, 1.0
     };
 
     GLfloat texpos[] = {
@@ -601,16 +653,6 @@ void VolumeRenderWindow::render(QPainter *painter)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     shared_window->std_2d_tex_program->release();
-
-    glDisable(GL_BLEND);
-    glDisable(GL_MULTISAMPLE);
-
-    painter->endNativePainting();
-
-    painter->drawText(50, 50, QString("Qt is a cross-platform application and UI framework for developers using C++ or QML, a CSS & JavaScript like language. Qt Creator is the supporting Qt IDE."));
-
-    painter->drawText(50, 100, QString::number(getFps()));
-
 }
 
 void VolumeRenderWindow::raytrace(cl_kernel kernel)
@@ -676,6 +718,10 @@ size_t VolumeRenderWindow::setScaleBars()
     int tick_levels_max = 2;
 
     size_t coord_counter = 0;
+
+    Matrix<GLfloat> scalebar_coords(20000,3);
+
+    n_scalebar_ticks = 0;
 
     // Draw ticks
     for (int i = 5; i >= -5; i--)
@@ -749,27 +795,30 @@ size_t VolumeRenderWindow::setScaleBars()
 
 
                     // Text
-//                    if(tick_levels == tick_levels_max - 1)
-//                    {
-//                        Matrix<float> xy(2,1);
-//                        getScreenPosition(xy.data(), scalebar_coords.data() + (coord_counter+0)*3, SCALEBAR_MATRIX.data());
-//                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+                    if (tick_levels == tick_levels_max - 1)
+                    {
+                        if (n_scalebar_ticks+3 < scalebar_ticks.getM())
+                        {
+                            getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
+                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *width();
+                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *height();
+                            scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
+                            n_scalebar_ticks++;
 
-//                        getScreenPosition(xy.data(), scalebar_coords.data() + (coord_counter+4)*3, SCALEBAR_MATRIX.data());
-//                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
+                            getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+4)*3, &scalebar_view_matrix);
+                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *width();
+                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *height();
+                            scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
+                            n_scalebar_ticks++;
 
-//                        getScreenPosition(xy.data(), scalebar_coords.data() + (coord_counter+8)*3, SCALEBAR_MATRIX.data());
-//                        std_text_draw(QString::number(j * 0.1).toStdString().c_str(), fontSmall, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-
-//                        if(!isMultiplierDrawn)
-//                        {
-//                            Matrix<float> xy(2,1);
-//                            xy[0] = 0.5;
-//                            xy[1] = -0.5;
-//                            std_text_draw(QString("x "+QString::number(tick_interdistance * 10.0, 'e', 0)).toStdString().c_str(), fontMedium, clearInv.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-//                            isMultiplierDrawn = true;
-//                        }
-//                    }
+                            getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+8)*3, &scalebar_view_matrix);
+                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *width();
+                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *height();
+                            scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
+                            n_scalebar_ticks++;
+                        }
+                        scalebar_multiplier = tick_interdistance * 10.0;
+                    }
                     coord_counter += 12;
                 }
             }
@@ -803,5 +852,8 @@ size_t VolumeRenderWindow::setScaleBars()
     scalebar_coords[(coord_counter+5)*3+2] = data_view_extent[5];
 
     coord_counter += 6;
+
+    setVbo(scalebar_vbo, scalebar_coords.data(), coord_counter*3, GL_STATIC_DRAW);
+
     return coord_counter;
 }

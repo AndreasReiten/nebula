@@ -77,6 +77,10 @@ private:
     void setRayTexture();
     void raytrace(cl_kernel kernel);
 
+    // Drawing functions
+    void drawRayTex();
+    void drawScalebars();
+
     // Core set functions
     void setDataExtent();
     void setViewMatrix();
@@ -85,8 +89,11 @@ private:
 
     // Scalebars
     size_t setScaleBars();
-    Matrix<GLfloat> scalebar_coords;
     size_t scalebar_coord_count;
+    GLuint scalebar_vbo;
+    Matrix<float> scalebar_ticks;
+    int n_scalebar_ticks;
+    double scalebar_multiplier;
 
     // Transfer function texture
     void setTsfTexture();
@@ -130,6 +137,9 @@ private:
     Matrix<double> svo_misc_floats;
     Matrix<double> model_misc_floats;
 
+    // OpenGL
+    void initResourcesGL();
+
     // OpenCL
     cl_int err;
     cl_program program;
@@ -147,7 +157,9 @@ private:
     void initResourcesCL();
 
     // Colors
-    QColor clear_color;
-    QColor clear_color_inverse;
+    Matrix<GLfloat> white;
+    Matrix<GLfloat> black;
+    Matrix<GLfloat> clear_color;
+    Matrix<GLfloat> clear_color_inverse;
 };
 #endif

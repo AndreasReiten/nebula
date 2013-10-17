@@ -14,6 +14,7 @@
 #include <QCoreApplication>
 
 #include "contextcl.h"
+#include "matrix.h"
 
 class OpenGLWindow : public QWindow, protected QOpenGLFunctions
 {
@@ -27,6 +28,11 @@ public:
     void preInitialize(); // The idea was to call this instead of show(), but it didnt work
     void setContextCL(ContextCL * context);
     QOpenGLContext * getGLContext();
+
+
+    // Convenience functions
+    void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
+    void getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform);
     int getFps();
 
 public slots:
@@ -45,6 +51,8 @@ protected:
     QOpenGLContext *shared_context;
     ContextCL * context_cl;
 
+    QOpenGLPaintDevice *paint_device_gl;
+
 private slots:
     void setFps();
 
@@ -53,7 +61,6 @@ private:
     bool isAnimating;
 
     QOpenGLContext *context_gl;
-    QOpenGLPaintDevice *paint_device_gl;
 
     QTimer fps_timer;
     QElapsedTimer fps_elapsed_timer;

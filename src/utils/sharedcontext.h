@@ -31,6 +31,7 @@ public:
     explicit SharedContextWindow();
     ~SharedContextWindow();
 
+    // Shaders
     GLint std_2d_fragpos;
     GLint std_2d_texpos;
     GLint std_2d_texture;

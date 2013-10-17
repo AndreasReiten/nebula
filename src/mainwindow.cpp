@@ -24,7 +24,7 @@ MainWindow::MainWindow()
     // Set the format of the rendering context
     QSurfaceFormat format_gl;
     format_gl.setVersion(4, 0);
-    format_gl.setSamples(8);
+    format_gl.setSamples(16);
     format_gl.setRedBufferSize(8);
     format_gl.setGreenBufferSize(8);
     format_gl.setBlueBufferSize(8);
@@ -961,7 +961,7 @@ void MainWindow::initializeInteractives()
     {
         QSurfaceFormat format_gl;
         format_gl.setVersion(4, 0);
-        format_gl.setSamples(8);
+        format_gl.setSamples(16);
         format_gl.setRedBufferSize(8);
         format_gl.setGreenBufferSize(8);
         format_gl.setBlueBufferSize(8);

@@ -24,6 +24,13 @@ OpenGLWindow::~OpenGLWindow()
     delete paint_device_gl;
 }
 
+void OpenGLWindow::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, usage);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 QOpenGLContext * OpenGLWindow::getGLContext()
 {
     return context_gl;
@@ -56,15 +63,7 @@ void OpenGLWindow::initialize()
 
 void OpenGLWindow::render()
 {
-    if (!paint_device_gl)
-        paint_device_gl = new QOpenGLPaintDevice;
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    paint_device_gl->setSize(size());
-
     QPainter painter(paint_device_gl);
-
     render(&painter);
 }
 
@@ -137,6 +136,7 @@ void OpenGLWindow::preInitialize()
     if (needsInitialize)
     {
         initializeOpenGLFunctions();
+        if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
         initialize();
     }
 }
@@ -152,7 +152,7 @@ void OpenGLWindow::renderNow()
 
     frames++;
 
-    context_gl->swapBuffers(this);
+    context_gl->swapBuffers(this); // Swapping buffers appears to be compute heavy (15 ms)
 
     if (isAnimating)
         renderLater();
@@ -166,3 +166,16 @@ void OpenGLWindow::setAnimating(bool animating)
         renderLater();
 }
 
+void OpenGLWindow::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)
+{
+    Matrix<float> pos_3d_matrix;
+    Matrix<float> pos_2d_matrix(4, 1);
+
+    pos_3d_matrix.setDeep(4, 1, pos_3d);
+    pos_3d_matrix[3] = 1.0;
+
+    pos_2d_matrix = transform->toFloat() * pos_3d_matrix;
+
+    pos_2d[0] = pos_2d_matrix[0]/pos_2d_matrix[3];
+    pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
+}

@@ -86,14 +86,13 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
     double buf_rainbow[] = {
         0.00,  1.00,  0.00,  0.00,  0.00,
         1.00,  1.00,  0.00,  0.00,  1.00,
-        2.00,  1.00,  0.50,  0.00,  1.00,
-        3.00,  1.00,  1.00,  0.00,  1.00,
-        4.00,  0.00,  1.00,  0.00,  1.00,
-        5.00,  0.00,  1.00,  1.00,  1.00,
-        6.00,  0.00,  0.00,  1.00,  1.00,
-        7.00,  1.00,  0.00,  1.00,  1.00};
+        2.00,  1.00,  1.00,  0.00,  1.00,
+        3.00,  0.00,  1.00,  0.00,  1.00,
+        4.00,  0.00,  1.00,  1.00,  1.00,
+        5.00,  0.00,  0.00,  1.00,  1.00,
+        6.00,  1.00,  0.00,  1.00,  1.00};
     Matrix<double> rainbow;
-    rainbow.setDeep(8, 5, buf_rainbow);
+    rainbow.setDeep(7, 5, buf_rainbow);
 
     Matrix<double> choice;
     switch (color_style)

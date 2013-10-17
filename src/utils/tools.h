@@ -9,7 +9,6 @@
 #include <QFile>
 #include <QDateTime>
 #include <QString>
-
 /* GL and CL*/
 //#ifdef Q_OS_WIN
 //    #define GLEW_STATIC
