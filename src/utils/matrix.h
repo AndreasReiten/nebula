@@ -2,11 +2,14 @@
 #define MATRIX_H
 
 #include <cassert>
+#include <sstream>
 #include <iostream>
 #include <cmath>
 #include <iomanip>
 #include <limits>
 #include <cstring>
+#include <QDebug>
+
 const double pi = 4.0*std::atan(1.0);
 
 template <class T>
@@ -182,7 +185,7 @@ const Matrix<T> Matrix<T>::getColMajor()  const
 template <class T>
 const Matrix<T> Matrix<T>::getInverse()  const
 {
-    if(m != n) std::cout << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")" << std::endl;
+    if(m != n) qDebug() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
     Matrix<double> L;
     L.reserve(m, n);
 
@@ -219,7 +222,7 @@ const Matrix<T> Matrix<T>::getInverse()  const
                 }
                 if(L[j*n+j] == 0)
                 {
-                    std::cout << "det(L) close to 0!\n Can't divide by 0...\n" << std::endl;
+                    qFatal("Determinant close to zeros");
                 }
                 U[j*n+i]=(double)(buffer[j*n+i]-sum)/(double)L[j*n+j];
             }
@@ -286,7 +289,7 @@ const Matrix<T> Matrix<T>::operator + (const Matrix& M) const
 
     if ((this->n != M.getN()) || (this->m != M.getM()))
     {
-        std::cout << "Warning: Matrix dimesions do not agree!" << std::endl;
+        qWarning("Matrix dimesions do not agree!");
         return c;
     }
 
@@ -328,7 +331,7 @@ const Matrix<T> Matrix<T>::operator - (const Matrix& M) const
 
     if ((this->n != M.getN()) || (this->m != M.getM()))
     {
-        std::cout << "Warning: Matrix dimesions do not agree!" << std::endl;
+        qWarning("Matrix dimesions do not agree!");
         return c;
     }
 
@@ -383,7 +386,7 @@ const Matrix<T> Matrix<T>::operator * (const Matrix& M) const
 
     if (this->n != M.getM())
     {
-        std::cout << "Warning: Matrix dimesions do not agree!" << std::endl;
+        qWarning("Matrix dimesions do not agree!");
         return c;
     }
 
@@ -406,22 +409,27 @@ const Matrix<T> Matrix<T>::operator * (const Matrix& M) const
 template <class T>
 void Matrix<T>::print(int precision, const char * id) const
 {
-    if (strlen(id) > 0) std::cout << id << "("<< this->m << ", " << this->n << "):"<<std::endl;
+    std::stringstream ss;
+    ss << std::endl;
+
+    if (strlen(id) > 0) ss << id << "("<< this->m << ", " << this->n << "):"<<std::endl;
     for (int i = 0; i < m; i++)
     {
-        if (i == 0) std::cout << "{{ ";
-        else std::cout << " { ";
+        if (i == 0) ss << "{{ ";
+        else ss << " { ";
 
         for (int j = 0; j < n; j++)
         {
-            if (this->buffer[i*n+j] >= 0) std::cout << " "<< std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
-            else std::cout << std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
-            if (j != n-1) std::cout << ", ";
+            if (this->buffer[i*n+j] >= 0) ss << " "<< std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
+            else ss << std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
+            if (j != n-1) ss << ", ";
         }
 
-        if (i == m-1) std::cout << " }}" << std::endl;
-        else std::cout << " }," << std::endl;
+        if (i == m-1) ss << " }}" << std::endl;
+        else ss << " }," << std::endl;
     }
+
+    qDebug() << ss.str().c_str();
 }
 
 //~ template <class T>
@@ -663,6 +671,7 @@ void CameraToClipMatrix<T>::setProjection(bool value)
 
     if (this->projection == true)
     {
+        // Perspective
         this->data()[0] = 1.0 / std::tan(0.5*fov * pi / 180.0) * (double) h / (double) w;
         this->data()[5] = 1.0 / std::tan(0.5*fov * pi / 180.0);
         this->data()[10] = (F + N)/(N - F);
@@ -672,6 +681,7 @@ void CameraToClipMatrix<T>::setProjection(bool value)
     }
     else
     {
+        // Orthonormal
         this->data()[0] = (double) h / (double) w;
         this->data()[5] = 1.0;
         this->data()[10] = 2.0/(N - F);

@@ -23,7 +23,6 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QMouseEvent>
-//#include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
 #include <QResizeEvent>
 
@@ -78,6 +77,17 @@ private:
     void setRayTexture();
     void raytrace(cl_kernel kernel);
 
+    // Core set functions
+    void setDataExtent();
+    void setViewMatrix();
+    void setTsfParameters();
+    void setMiscArrays();
+
+    // Scalebars
+    size_t setScaleBars();
+    Matrix<GLfloat> scalebar_coords;
+    size_t scalebar_coord_count;
+
     // Transfer function texture
     void setTsfTexture();
     cl_mem tsf_tex_cl;
@@ -95,8 +105,24 @@ private:
     QElapsedTimer *timerLastAction;
     QElapsedTimer *callTimer;
 
-    // Matrices
+    // Mouse
+    int last_mouse_pos_x;
+    int last_mouse_pos_y;
+
+    // View matrices
     Matrix<double> view_matrix;
+    CameraToClipMatrix<double> ctc_matrix;
+    RotationMatrix<double> rotation;
+    Matrix<double> data_translation;
+    Matrix<double> data_scaling;
+    Matrix<double> bbox_scaling;
+    Matrix<double> bbox_translation;
+    Matrix<double> normalization_scaling;
+    Matrix<double> scalebar_view_matrix;
+    RotationMatrix<double> scalebar_rotation;
+    Matrix<double> projection_scaling;
+
+    // Other matrices
     Matrix<double> data_extent;
     Matrix<double> data_view_extent;
     Matrix<double> tsf_parameters;
@@ -119,5 +145,11 @@ private:
     cl_mem cl_model_misc_floats;
 
     void initResourcesCL();
+
+    // Colors
+    Matrix<float> clear_color;
+    Matrix<float> clear_color_inverse;
+    Matrix<float> white;
+    Matrix<float> black;
 };
 #endif

@@ -36,7 +36,6 @@ public:
     GLint std_2d_texture;
     QOpenGLShaderProgram *std_2d_tex_program;
 
-    GLint std_3d_texpos;
     GLint std_3d_color;
     GLint std_3d_transform;
     GLint std_3d_fragpos;

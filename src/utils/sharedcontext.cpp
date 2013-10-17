@@ -39,7 +39,6 @@ void SharedContextWindow::initialize()
     if (!std_3d_color_program->link()) qFatal(std_2d_tex_program->log().toStdString().c_str());
 
     if ((std_3d_fragpos = std_3d_color_program->attributeLocation("fragpos")) == -1) qCritical("Invalid attribute");
-    if ((std_3d_texpos = std_3d_color_program->attributeLocation("texpos")) == -1) qCritical("Invalid attribute");
     if ((std_3d_color = std_3d_color_program->uniformLocation("color")) == -1) qCritical("Invalid uniform");
     if ((std_3d_transform = std_3d_color_program->uniformLocation("transform")) == -1) qCritical("Invalid uniform");
 
