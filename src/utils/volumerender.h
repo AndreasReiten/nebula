@@ -154,7 +154,10 @@ private:
     cl_program program;
     cl_kernel cl_svo_raytrace;
     cl_kernel cl_model_raytrace;
+    cl_kernel cl_svo_workload;
+    cl_kernel cl_model_workload;
 
+    cl_mem cl_glb_work;
     cl_mem cl_view_matrix_inverse;
     cl_mem cl_data_extent;
     cl_mem cl_data_view_extent;

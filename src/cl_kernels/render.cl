@@ -121,14 +121,14 @@ __kernel void svoRayTrace(
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
-    float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
+//    float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
 
     if (isLogActive)
     {
-        if (dataLimits.x <= 0.0f) dataLimits.x = 0.01f;
-        if (dataLimits.y <= 0.0f) dataLimits.y = 0.01f;
-        dataLimits.x = log10(dataLimits.x);
-        dataLimits.y = log10(dataLimits.y);
+        if (dataOffsetLow <= 0.0f) dataOffsetLow = 0.01f;
+        if (dataOffsetHigh <= 0.0f) dataOffsetHigh = 0.01f;
+        dataOffsetLow = log10(dataOffsetLow);
+        dataOffsetHigh = log10(dataOffsetHigh);
     }
 
     // If the global id corresponds to a texel, then check if its associated ray hits our cubic bounding box. If it does - traverse along the intersecing ray segment and accumulate color
@@ -350,7 +350,7 @@ __kernel void svoRayTrace(
                             intensity = log10(intensity);
                         }
 
-                        tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - dataLimits.x)/(dataLimits.y - dataLimits.x)), 0.5f);
+                        tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
 
                         sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
@@ -419,13 +419,13 @@ __kernel void modelRayTrace(
 
     int isLogActive = misc_int[2];
 
-    float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
+//    float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
     if (isLogActive)
     {
-        if (dataLimits.x <= 0) dataLimits.x = 0.01f;
-        if (dataLimits.y <= 0) dataLimits.y = 0.01f;
-        dataLimits.x = log10(dataLimits.x);
-        dataLimits.y = log10(dataLimits.y);
+        if (dataOffsetLow <= 0) dataOffsetLow = 0.01f;
+        if (dataOffsetHigh <= 0) dataOffsetHigh = 0.01f;
+        dataOffsetLow = log10(dataOffsetLow);
+        dataOffsetHigh = log10(dataOffsetHigh);
     }
 
     // If the global id corresponds to a texel
@@ -472,9 +472,6 @@ __kernel void modelRayTrace(
 
         float4 color = (float4)(0.0f);
         float4 sample = (float4)(0.0f);
-        //~ float4 sFront = (float4)(0.0f);
-        //~ float4 sBack = (float4)(0.0f);
-        //~ float4 rgba = (float4)(0.0f);
 
         if(hit)
         {
@@ -484,8 +481,6 @@ __kernel void modelRayTrace(
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float3 rayBoxAdd = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-
             data_view_extent[0], 400.0f);
-            //~ float d = length(rayBoxAdd);
-            //~ float intBack = 0.0f, intFront = 0.0f;
             float rayBoxLength = fast_length(rayBoxDelta);
 
             float3 rayBoxXyz = rayBoxOrigin;
@@ -497,40 +492,116 @@ __kernel void modelRayTrace(
 
                 val = model(rayBoxXyz, parameters);
 
-                if(isLogActive)
-                {
-                    if (val < 1.f) val = 1.f;
-                    val = log10(val);
-                }
+//                if ((val >= dataOffsetLow) && (val <= dataOffsetHigh))
+//                {
+                    if(isLogActive)
+                    {
+                        if (val < 1.f) val = 1.f;
+                        val = log10(val);
+                    }
 
-                float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataLimits.x)/(dataLimits.y - dataLimits.x)), 0.5f);
+                    float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
 
-                //~ intBack = tsfPosition.x;
-                //~ intBack = clamp(intFront, 0.0f, 1.0f);
-                //~ sBack = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                //~ rgba.w = 1.0f - exp(-d*native_divide(fabs(sBack.w  - sFront.w), fabs(intBack - intFront) + 1e-10));
-                //~ rgba.xyz = native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(sBack.w  - sFront.w) + 1e-10)*rgba.w;
-                //~ rgba.xyz = d*native_divide(fabs(sBack.xyz  - sFront.xyz), fabs(intBack - intFront) + 1e-10);
-                //~ rgba.w *=alpha;
-                //~ rgba = clamp(rgba, 0.0f, 1.0f);
-//~
-                //~ color.xyz += (1 - color.w)*rgba.xyz;
-                //~ color.w += (1 - color.w)*rgba.w;
-                sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                sample.w *= alpha*intensity_scaling;
-                //~clamp(sample, 0.0,1.0);
+                    sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                    sample.w *= alpha*intensity_scaling;
 
-                color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-                color.w += (1.0f - color.w)*sample.w;
+                    color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                    color.w += (1.0f - color.w)*sample.w;
+//                }
 
-                //~ sFront = sBack;
-                //~ intFront = intBack;
                 rayBoxXyz += rayBoxAdd;
                 if (color.w > 0.999f) break;
+
             }
             color *= brightness;
         }
-//        color = (float4)(1.0,0.0,0.0,0.5);
         write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+    }
+}
+
+
+__kernel void modelWorkload(
+    int2 ray_tex_dim,
+    __global int * glb_work,
+    __local int * loc_work,
+    __constant float * data_view_matrix,
+    __constant float * data_extent,
+    __constant float * data_view_extent)
+{
+    int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
+    int2 id_loc = (int2)(get_local_id(0),get_local_id(1));
+    int2 size_loc = (int2)(get_local_size(0),get_local_size(1));
+
+    int id = id_loc.x + id_loc.y * size_loc.x;
+
+    // If the global id corresponds to a texel
+    if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
+    {
+        float4 rayNear, rayFar;
+        float3 rayDelta;
+        {
+            // Normalized device coordinates (ndc) of the pixel and its edge (in screen coordinates)
+            float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f)/convert_float2(ray_tex_dim)) - 1.0f);
+
+            // Ray origin and exit point (screen coordinates)
+            float4 rayNearNdc = (float4)(ndc, -1.0f, 1.0f);
+            float4 rayFarNdc = (float4)(ndc, 1.0f, 1.0f);
+
+            // Ray entry point at near and far plane
+            rayNear = sc2xyz(data_view_matrix, rayNearNdc);
+            rayFar = sc2xyz(data_view_matrix, rayFarNdc);
+
+            rayDelta = rayFar.xyz - rayNear.xyz;
+        }
+
+        int hit;
+        float t_near, t_far;
+        {
+            // Construct a bounding box from the intersect between data_view_extent and data_extent
+            float bbox[6];
+
+            bbox[0] = data_view_extent[0];
+            bbox[1] = data_view_extent[1];
+            bbox[2] = data_view_extent[2];
+            bbox[3] = data_view_extent[3];
+            bbox[4] = data_view_extent[4];
+            bbox[5] = data_view_extent[5];
+
+            // Does the ray for this pixel intersect bbox?
+            if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
+            {
+                hit = boundingBoxIntersect(rayNear.xyz, rayDelta.xyz, bbox, &t_near, &t_far);
+            }
+        }
+
+        loc_work[id] = 0;
+
+        if(hit)
+        {
+            // The geometry of the intersecting part of the ray
+            float3 rayBoxOrigin = rayNear.xyz + t_near * rayDelta.xyz;
+            float3 rayBoxEnd = rayNear.xyz + t_far * rayDelta.xyz;
+            float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
+            float3 rayBoxAdd = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-
+            data_view_extent[0], 400.0f);
+
+            loc_work[id] = (int) native_divide(fast_length(rayBoxDelta), fast_length(rayBoxAdd));
+        }
+
+        // Parallel reduction to sum up the work
+        barrier(CLK_LOCAL_MEM_FENCE);
+        for (unsigned int i = (size_loc.x * size_loc.y)/2; i > 0; i >>= 1)
+        {
+            if (id < i)
+            {
+                loc_work[id] += loc_work[i + id];
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+        }
+
+        if (id == 0)
+        {
+            glb_work[get_group_id(0) +  get_group_id(1) * get_num_groups(0)] = loc_work[0];
+        }
     }
 }

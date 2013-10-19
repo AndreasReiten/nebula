@@ -276,6 +276,9 @@ void VolumeRenderWindow::initResourcesCL()
     cl_model_raytrace = clCreateKernel(program, "modelRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
+    cl_model_workload = clCreateKernel(program, "modelWorkload", &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
 
     // Buffers
     cl_view_matrix_inverse = clCreateBuffer(*context_cl->getContext(),
@@ -323,6 +326,13 @@ void VolumeRenderWindow::initResourcesCL()
     cl_model_misc_floats = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         model_misc_floats.toFloat().bytes(),
+        NULL, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Enough for a 20000 x 20000 pixel texture. I mean, hell... why not
+    cl_glb_work = clCreateBuffer(*context_cl->getContext(),
+        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        (20000*20000)/(ray_loc_ws[0]*ray_loc_ws[1])*sizeof(cl_int),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
