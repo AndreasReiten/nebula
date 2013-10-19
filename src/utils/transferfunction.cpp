@@ -6,15 +6,15 @@ TransferFunction::TransferFunction()
 
 
 
-Matrix<double> TransferFunction::getSplined()
+Matrix<double> *TransferFunction::getSplined()
 {
-    return tsf_splined;
+    return &tsf_splined;
 }
 
 
-Matrix<double> TransferFunction::getPreIntegrated()
+Matrix<double> *TransferFunction::getPreIntegrated()
 {
-    return tsf_preintegrated;
+    return &tsf_preintegrated;
 }
 
 
@@ -150,10 +150,13 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     x_position.setDeep(1, choice.getN(), choice.data());
     tsf_base.setDeep(choice.getM()-1, choice.getN(), choice.data() + choice.getN());
-
-//    tsf_base.print(2);
+    tsf_thumb.setDeep(choice.getM()-2, choice.getN(), choice.data() + choice.getN());
 }
 
+Matrix<double> *TransferFunction::getThumb()
+{
+    return &tsf_thumb;
+}
 
 void TransferFunction::setSpline(size_t resolution)
 {
@@ -226,8 +229,6 @@ void TransferFunction::setSpline(size_t resolution)
             }
             if ( k >= tsf_base.getN()) k = tsf_base.getN() - 1;
             if (k <= 0) k = 1;
-
-//            std::cout << "x = " << x << " x_position[" << k << "] = " << x_position[k] << std::endl;
 
             double x_k = x_position[k-1];//(k) * stepLength;
             double x_k_next = x_position[k];// (k + 1) * stepLength;

@@ -6,6 +6,10 @@ VolumeRenderWindow::VolumeRenderWindow()
     : isInitialized(false),
       isRayTexInitialized(false),
       isTsfTexInitialized(false),
+      isDSViewForced(false),
+      isDSActive(false),
+      isOrthonormal(true),
+      isLogarithmic(true),
       ray_tex_resolution(100)
 {
     // Matrices
@@ -42,7 +46,7 @@ VolumeRenderWindow::VolumeRenderWindow()
     ctc_matrix.setN(N);
     ctc_matrix.setF(F);
     ctc_matrix.setFov(fov);
-    ctc_matrix.setProjection(0);
+    ctc_matrix.setProjection(isOrthonormal);
 
     // Ray tex
     ray_tex_dim.reserve(1, 2);
@@ -210,6 +214,8 @@ void VolumeRenderWindow::initialize()
     initResourcesCL();
     initResourcesGL();
 
+    isInitialized = true;
+
     // Textures
     setRayTexture();
     setTsfTexture();
@@ -220,7 +226,32 @@ void VolumeRenderWindow::initialize()
     setTsfParameters();
     setMiscArrays();
 
-    isInitialized = true;
+    // Pens
+    initializePaintTools();
+}
+
+void VolumeRenderWindow::initializePaintTools()
+{
+    normal_pen = new QPen;
+    border_pen = new QPen;
+    border_pen->setWidth(2);
+
+    normal_font = new QFont;
+    emph_font = new QFont;
+    emph_font->setBold(true);
+
+    normal_fontmetric = new QFontMetrics(*normal_font, paint_device_gl);
+    emph_fontmetric = new QFontMetrics(*emph_font, paint_device_gl);
+
+    fill_brush = new QBrush;
+    fill_brush->setStyle(Qt::SolidPattern);
+    fill_brush->setColor(QColor(255,255,255,150));
+
+    normal_brush = new QBrush;
+
+    dark_fill_brush = new QBrush;
+    dark_fill_brush->setStyle(Qt::SolidPattern);
+    dark_fill_brush->setColor(QColor(0,0,0,255));
 }
 
 void VolumeRenderWindow::initResourcesGL()
@@ -364,6 +395,13 @@ void VolumeRenderWindow::setDataExtent()
 
 void VolumeRenderWindow::setTsfParameters()
 {
+    tsf_parameters[0] = 0.0; // texture min
+    tsf_parameters[1] = 1.0; // texture max
+    tsf_parameters[2] = 10.0; // data min
+    tsf_parameters[3] = 1000.0; // data max
+    tsf_parameters[4] = 0.5; // alpha
+    tsf_parameters[5] = 2.0; // brightness
+
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
         cl_tsf_parameters,
         CL_TRUE,
@@ -372,6 +410,7 @@ void VolumeRenderWindow::setTsfParameters()
         tsf_parameters.toFloat().data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    tsf_parameters.print(2,"tsf_parameters");
 
     err = clSetKernelArg(cl_model_raytrace, 6, sizeof(cl_mem), &cl_tsf_parameters);
     err |= clSetKernelArg(cl_svo_raytrace, 10, sizeof(cl_mem), &cl_tsf_parameters);
@@ -380,6 +419,10 @@ void VolumeRenderWindow::setTsfParameters()
 
 void VolumeRenderWindow::setMiscArrays()
 {
+    misc_ints[0] = 0; // svo levels
+    misc_ints[1] = 0; // brick size
+    misc_ints[2] = isLogarithmic;
+    misc_ints[3] = isDSActive;
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
         cl_misc_ints,
         CL_TRUE,
@@ -388,7 +431,13 @@ void VolumeRenderWindow::setMiscArrays()
         misc_ints.data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    misc_ints.print(2,"misc_ints");
 
+
+    model_misc_floats[0] = 13.5;
+    model_misc_floats[1] = 10.5;
+    model_misc_floats[2] = 10.0;
+    model_misc_floats[3] = 0.005;
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
         cl_model_misc_floats,
         CL_TRUE,
@@ -397,6 +446,7 @@ void VolumeRenderWindow::setMiscArrays()
         model_misc_floats.toFloat().data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    model_misc_floats.print(2,"model_misc_floats");
 
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
         cl_svo_misc_floats,
@@ -480,7 +530,6 @@ void VolumeRenderWindow::setTsfTexture()
 
     tsf.setColorScheme(0,0);
     tsf.setSpline(256);
-//    tsf.getSplined().print(2);
 
     // Buffer for tsf_tex_gl
     glDeleteTextures(1, &tsf_tex_gl);
@@ -494,12 +543,32 @@ void VolumeRenderWindow::setTsfTexture()
         GL_TEXTURE_2D,
         0,
         GL_RGBA32F,
-        tsf.getSplined().getN(),
+        tsf.getSplined()->getN(),
         1,
         0,
         GL_RGBA,
         GL_FLOAT,
-        tsf.getSplined().getColMajor().toFloat().data());
+        tsf.getSplined()->getColMajor().toFloat().data());
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Buffer for tsf_tex_gl
+    glDeleteTextures(1, &tsf_tex_gl_thumb);
+    glGenTextures(1, &tsf_tex_gl_thumb);
+    glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGB,
+        tsf.getThumb()->getN(),
+        1,
+        0,
+        GL_RGB,
+        GL_FLOAT,
+        tsf.getThumb()->getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Buffer for tsf_tex_cl
@@ -511,10 +580,10 @@ void VolumeRenderWindow::setTsfTexture()
     tsf_tex_cl = clCreateImage2D ( *context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &tsf_format,
-        tsf.getSplined().getN(),
+        tsf.getSplined()->getN(),
         1,
         0,
-        tsf.getSplined().getColMajor().toFloat().data(),
+        tsf.getSplined()->getColMajor().toFloat().data(),
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -541,11 +610,12 @@ void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWindow::render(QPainter *painter)
 {
-
-
 //    QElapsedTimer stopwatch;
 //    stopwatch.start();
 //    glFinish();
+//    painter->setFont(QFont("Courier"));
+//    glFinish();
+//    qDebug() << "painter took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
 
     setDataExtent();
     setViewMatrix();
@@ -553,18 +623,9 @@ void VolumeRenderWindow::render(QPainter *painter)
     glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    painter->setPen(Qt::black);
-//    painter->setFont(QFont("Courier"));
 
-//    glFinish();
-//    qDebug() << "painter took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
-
-    painter->beginNativePainting();
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_MULTISAMPLE);
+    beginRawGLCalls(painter);
     glLineWidth(1.5);
-
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
 
@@ -573,25 +634,115 @@ void VolumeRenderWindow::render(QPainter *painter)
 
     // Draw raytracing texture
     drawRayTex();
+    endRawGLCalls(painter);
 
+    // Draw overlay
+    drawOverlay(painter);
+
+}
+
+
+void VolumeRenderWindow::beginRawGLCalls(QPainter * painter)
+{
+    painter->beginNativePainting();
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_MULTISAMPLE);
+}
+
+void VolumeRenderWindow::endRawGLCalls(QPainter * painter)
+{
     glDisable(GL_BLEND);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
+}
 
+void VolumeRenderWindow::drawOverlay(QPainter * painter)
+{
+    // Tick labels
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setBrush(*fill_brush);
 
     for (int i = 0; i < n_scalebar_ticks; i++)
     {
         painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));
     }
+    painter->drawText(width(), height(), QString::number(scalebar_multiplier));
 
-//    painter->drawText(50, 50, QString("Qt is a cross-platform application and UI framework for developers using C++ or QML, a CSS & JavaScript like language. Qt Creator is the supporting Qt IDE."));
+    // Fps
+    QString fps_string("Fps: "+QString::number(getFps(), 'f', 1));
+    QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);
+    fps_string_rect += QMargins(5,5,5,5);
+    fps_string_rect.moveTopRight(QPoint(width()-5,5));
 
-    painter->drawText(50, 100, QString::number(getFps()));
+    painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
+    painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
 
-//    glFinish();
+    // Texture resolution
+    QString resolution_string("(Resolution: "+QString::number(ray_tex_resolution)+"%, Volume Rendering Fps: "+QString::number(fps_required)+")");
+    QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
+    resolution_string_rect += QMargins(5,5,5,5);
+    resolution_string_rect.moveBottomLeft(QPoint(5, height() - 5));
 
-//    qDebug() << "painter drawing took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
+    painter->drawRoundedRect(resolution_string_rect, 5, 5, Qt::AbsoluteSize);
+    painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
 
+    // Scalebar multiplier
+    QString multiplier_string("x"+QString::number(scalebar_multiplier)+" Å");
+    QRect multiplier_string_rect = emph_fontmetric->boundingRect(multiplier_string);
+    multiplier_string_rect += QMargins(5,5,5,5);
+    multiplier_string_rect.moveTopRight(QPoint(width()-5, fps_string_rect.bottom() + 5));
+
+    painter->drawRoundedRect(multiplier_string_rect, 5, 5, Qt::AbsoluteSize);
+    painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);
+
+    // Transfer function
+    painter->setBrush(*fill_brush);
+
+    QRect tsf_rect(0, 0, 20, height() - (multiplier_string_rect.bottom() + 5) - 50);
+    tsf_rect += QMargins(5,5,5,5);
+    tsf_rect.moveTopRight(QPoint(width()-5, multiplier_string_rect.bottom() + 5));
+    painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
+
+    tsf_rect -= QMargins(5,5,5,5);
+    Matrix<GLfloat> gl_tsf_rect(4,2);
+    glRect(&gl_tsf_rect, &tsf_rect);
+
+    beginRawGLCalls(painter);
+
+    shared_window->std_2d_tex_program->bind();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
+    shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+
+    GLfloat texpos[] = {
+        0.0, 1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0
+    };
+
+    GLuint indices[] = {0,1,3,1,2,3};
+
+    glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
+    glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+
+    glEnableVertexAttribArray(shared_window->std_2d_fragpos);
+    glEnableVertexAttribArray(shared_window->std_2d_texpos);
+
+    glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
+
+    glDisableVertexAttribArray(shared_window->std_2d_texpos);
+    glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    shared_window->std_2d_tex_program->release();
+
+    endRawGLCalls(painter);
+
+    painter->setBrush(*normal_brush);
+    painter->drawRect(tsf_rect);
 }
 
 void VolumeRenderWindow::drawScalebars()
@@ -616,43 +767,97 @@ void VolumeRenderWindow::drawScalebars()
     shared_window->std_3d_color_program->release();
 }
 
+void VolumeRenderWindow::setQuality(double value)
+{
+    if (value < 20) value = 20;
+    if (value > 100) value = 100;
+    if ((ray_tex_resolution != value))
+    {
+        // Limit the deepest SVO descent level
+        if (value <= 20)
+        {
+            if (isDSActive != true)
+            {
+                isDSViewForced = true;
+                isDSActive = true;
+
+            }
+            fps_required = 60;
+        }
+        else
+        {
+            if (value <= 30) fps_required = 10;
+            else if (value <= 40) fps_required = 15;
+            else if (value <= 50) fps_required = 20;
+            else if (value <= 60) fps_required = 25;
+            else if (value <= 70) fps_required = 30;
+            else if (value <= 80) fps_required = 40;
+            else if (value <= 90) fps_required = 50;
+            else fps_required = 60;
+
+            if (isDSViewForced) isDSActive = 0;
+            isDSViewForced = false;
+        }
+
+        // Set resolution
+        ray_tex_resolution = value;
+
+        this->setMiscArrays();
+        this->setRayTexture();
+    }
+}
+
 void VolumeRenderWindow::drawRayTex()
 {
-    shared_window->std_2d_tex_program->bind();
+    raytrace(cl_model_raytrace);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tsf_tex_gl);
-    shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+    // Set resolution in accordance with requirements
+    if (ray_tex_resolution != 100) this->isRefreshRequired = true;
+    if (timerLastAction->elapsed() >= timeLastActionMin)
+    {
+        this->setQuality(ray_tex_resolution + 10);
+    }
+    else if (isBadCall)
+    {
+        this->setQuality(ray_tex_resolution - 10);
+    }
+    if (!isBadCall)
+    {
+        shared_window->std_2d_tex_program->bind();
 
-    GLfloat fragpos[] = {
-        -1.0, -1.0,
-        1.0, -1.0,
-        1.0, 1.0,
-        -1.0, 1.0
-    };
+        glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
 
-    GLfloat texpos[] = {
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0
-    };
+        GLfloat fragpos[] = {
+            -1.0, -1.0,
+            1.0, -1.0,
+            1.0, 1.0,
+            -1.0, 1.0
+        };
 
-    GLuint indices[] = {0,1,3,1,2,3};
+        GLfloat texpos[] = {
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0
+        };
 
-    glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
-    glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        GLuint indices[] = {0,1,3,1,2,3};
 
-    glEnableVertexAttribArray(shared_window->std_2d_fragpos);
-    glEnableVertexAttribArray(shared_window->std_2d_texpos);
+        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
+        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
-    glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
+        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
+        glEnableVertexAttribArray(shared_window->std_2d_texpos);
 
-    glDisableVertexAttribArray(shared_window->std_2d_texpos);
-    glDisableVertexAttribArray(shared_window->std_2d_fragpos);
-    glBindTexture(GL_TEXTURE_2D, 0);
+        glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-    shared_window->std_2d_tex_program->release();
+        glDisableVertexAttribArray(shared_window->std_2d_texpos);
+        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        shared_window->std_2d_tex_program->release();
+    }
 }
 
 void VolumeRenderWindow::raytrace(cl_kernel kernel)
@@ -670,8 +875,12 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel)
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         // Launch rendering kernel
-        size_t area_per_call[2] = {128, 128};
-        size_t call_offset[2] = {0,0};
+        Matrix<size_t> area_per_call(1,2);
+        area_per_call[0] = 128;
+        area_per_call[1] = 128;
+        Matrix<size_t> call_offset(1,2);
+        call_offset[0] = 0;
+        call_offset[1] = 0;
         callTimeMax = 1000/fps_required; // Dividend is FPS
         timeLastActionMin = 1000;
         isBadCall = false;
@@ -690,7 +899,10 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel)
                 call_offset[0] = glb_x;
                 call_offset[1] = glb_y;
 
-                err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), kernel, 2, call_offset, area_per_call, ray_loc_ws.data(), 0, NULL, NULL);
+//                ray_loc_ws.print(2,"ray_loc_ws");
+//                call_offset.print(2,"call_offset");
+//                area_per_call.print(2,"area_per_call");
+                err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
                 if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
                 err = clFinish(*context_cl->getCommanQueue());

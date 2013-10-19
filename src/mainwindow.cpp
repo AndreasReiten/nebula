@@ -29,6 +29,7 @@ MainWindow::MainWindow()
     format_gl.setGreenBufferSize(8);
     format_gl.setBlueBufferSize(8);
     format_gl.setAlphaBufferSize(8);
+//    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 
     sharedContextWindow = new SharedContextWindow();
     sharedContextWindow->setFormat(format_gl);
@@ -966,6 +967,7 @@ void MainWindow::initializeInteractives()
         format_gl.setGreenBufferSize(8);
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
+//        format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 
         viewWidget = new QWidget;
         volumeRenderWindow = new VolumeRenderWindow();

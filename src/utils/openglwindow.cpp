@@ -24,6 +24,36 @@ OpenGLWindow::~OpenGLWindow()
     delete paint_device_gl;
 }
 
+QPointF OpenGLWindow::coordQttoGL(QPointF coord)
+{
+    QPointF GLPoint;
+    GLPoint.setX((coord.x()/(float) width())*2.0-1.0);
+    GLPoint.setY((1.0 - coord.y()/(float) height())*2.0-1.0);
+    return GLPoint;
+}
+
+void OpenGLWindow::glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect)
+{
+    int x,y,w,h;
+    float xf,yf,wf,hf;
+    qt_rect->getRect(&x, &y, &w, &h);
+//    std::cout << x << " " << y << " " << w << " " << h << std::endl;
+    xf = (x / (float) width()) * 2.0 - 1.0;
+    yf = (1.0 - (y + h)/ (float) height()) * 2.0 - 1.0;
+    wf = (w / (float) width()) * 2.0;
+    hf = (h / (float) height()) * 2.0;
+//    std::cout << xf << " " << yf << " " << wf << " " << hf << std::endl;
+    (*gl_rect)[0] = xf;
+    (*gl_rect)[1] = yf;
+    (*gl_rect)[2] = xf + wf;
+    (*gl_rect)[3] = yf;
+    (*gl_rect)[4] = xf + wf;
+    (*gl_rect)[5] = yf + hf;
+    (*gl_rect)[6] = xf;
+    (*gl_rect)[7] = yf + hf;
+//    gl_rect->print(2,"gl_rect");
+}
+
 void OpenGLWindow::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
 {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);

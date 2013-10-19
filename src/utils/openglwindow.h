@@ -33,6 +33,8 @@ public:
     // Convenience functions
     void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
     void getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform);
+    QPointF coordQttoGL(QPointF coord);
+    void glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect);
     int getFps();
 
 public slots:

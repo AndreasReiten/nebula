@@ -1,5 +1,5 @@
 # QMAKE PROJECT FILE
-LIBS += -lOpenCL -lfreetype
+LIBS += -lOpenCL
 
 HEADERS       = src/mainwindow.h \
                 src/utils/openglwindow.h \
@@ -40,7 +40,7 @@ SOURCES       = src/main.cpp \
 
 RESOURCES     = nebula.qrc
 
-QMAKE_CXXFLAGS += -std=c++0x -I/usr/include/freetype2
+QMAKE_CXXFLAGS += -std=c++0x
 QT += core gui opengl widgets script # Use for Qt5
 #QT += opengl script # Use for Qt4
 TARGET = nebula
@@ -50,3 +50,8 @@ OBJECTS_DIR = .obj
 MOC_DIR = .moc
 RCC_DIR = .rcc
 UI_DIR = .ui
+
+OTHER_FILES += \
+    src/cl_kernels/render.cl \
+    src/cl_kernels/project.cl \
+    src/cl_kernels/voxelize.cl

@@ -65,6 +65,10 @@ private:
 
     // Boolean checks
     bool isInitialized;
+    bool isDSViewForced;
+    bool isDSActive;
+    bool isOrthonormal;
+    bool isLogarithmic;
 
     // Ray texture
     Matrix<int> ray_tex_dim;
@@ -76,10 +80,14 @@ private:
     bool isRayTexInitialized;
     void setRayTexture();
     void raytrace(cl_kernel kernel);
+    void setQuality(double value);
 
     // Drawing functions
     void drawRayTex();
     void drawScalebars();
+    void drawOverlay(QPainter *painter);
+    void beginRawGLCalls(QPainter * painter);
+    void endRawGLCalls(QPainter * painter);
 
     // Core set functions
     void setDataExtent();
@@ -100,6 +108,7 @@ private:
     cl_mem tsf_tex_cl;
     cl_sampler tsf_tex_sampler;
     GLuint tsf_tex_gl;
+    GLuint tsf_tex_gl_thumb;
     bool isTsfTexInitialized;
     TransferFunction tsf;
 
@@ -161,5 +170,17 @@ private:
     Matrix<GLfloat> black;
     Matrix<GLfloat> clear_color;
     Matrix<GLfloat> clear_color_inverse;
+
+    // Pens
+    void initializePaintTools();
+    QPen * normal_pen;
+    QPen * border_pen;
+    QBrush * fill_brush;
+    QBrush * normal_brush;
+    QBrush * dark_fill_brush;
+    QFont * normal_font;
+    QFont * emph_font;
+    QFontMetrics * normal_fontmetric;
+    QFontMetrics * emph_fontmetric;
 };
 #endif

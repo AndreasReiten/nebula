@@ -530,6 +530,7 @@ __kernel void modelRayTrace(
             }
             color *= brightness;
         }
+//        color = (float4)(1.0,0.0,0.0,0.5);
         write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
     }
 }

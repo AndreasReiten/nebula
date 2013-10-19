@@ -126,9 +126,6 @@ void ContextCL::initSharedContext()
         CL_CONTEXT_PLATFORM, (cl_context_properties) main_device->getPlatformId(),
         0};
 
-//        std::cout << glXGetCurrentContext() << std::endl;
-//        std::cout << glXGetCurrentDisplay() << std::endl;
-
     #elif defined Q_OS_WIN
     cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(),

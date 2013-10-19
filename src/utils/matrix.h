@@ -585,7 +585,7 @@ class CameraToClipMatrix : public Matrix<T>{
         private:
             double N, F, fov;
             size_t w, h;
-            bool projection;
+            int projection;
 };
 
 template <class T>
@@ -669,7 +669,7 @@ void CameraToClipMatrix<T>::setProjection(bool value)
 {
     this->projection = value;
 
-    if (this->projection == true)
+    if (this->projection == 0)
     {
         // Perspective
         this->data()[0] = 1.0 / std::tan(0.5*fov * pi / 180.0) * (double) h / (double) w;
