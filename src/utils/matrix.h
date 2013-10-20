@@ -9,6 +9,7 @@
 #include <limits>
 #include <cstring>
 #include <QDebug>
+//#include <vector>
 
 const double pi = 4.0*std::atan(1.0);
 
@@ -39,6 +40,7 @@ class Matrix {
         const Matrix<T> getColMajor() const;
         Matrix<float> toFloat() const;
 
+        T sum();
         void setIdentity(size_t n);
         void set(size_t m, size_t n, T value);
         void setShallow(size_t m, size_t n, T * buffer);
@@ -123,8 +125,26 @@ Matrix<T>::~Matrix()
     if (m*n > 0)
     {
         delete[] this->buffer;
+        m = 0;
+        n = 0;
     }
 }
+
+template <class T>
+T Matrix<T>::sum()
+{
+    T sum = 0;
+    for (size_t i = 0; i < n; i++)
+    {
+        for (size_t j = 0; j < m; j++)
+        {
+            sum += buffer[i*m + j];
+        }
+    }
+
+    return sum;
+}
+
 
 template <class T>
 void Matrix<T>::swap(Matrix& first, Matrix& second)

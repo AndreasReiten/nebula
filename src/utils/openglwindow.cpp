@@ -11,11 +11,11 @@ OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
 
     setSurfaceType(QWindow::OpenGLSurface);
 
-    fps_timer.setInterval(200);
-    connect(&fps_timer, SIGNAL(timeout()), this, SLOT(setFps()));
+//    fps_timer.setInterval(200);
+//    connect(&fps_timer, SIGNAL(timeout()), this, SLOT(setFps()));
 
-    frames = 0;
-    fps_timer.start();
+//    frames = 0;
+//    fps_timer.start();
     fps_elapsed_timer.start();
 }
 
@@ -73,11 +73,12 @@ void OpenGLWindow::setContextCL(ContextCL * context)
 
 void OpenGLWindow::setFps()
 {
-    fps = (float) frames * 1000.0 / (float) fps_elapsed_timer.restart();
-    frames = 0;
+    fps = 1.0 / ((float) fps_elapsed_timer.nsecsElapsed() * 1.0e-9);
+    fps_elapsed_timer.restart();
+//    frames = 0;
 }
 
-int OpenGLWindow::getFps()
+double OpenGLWindow::getFps()
 {
     return fps;
 }
@@ -179,8 +180,8 @@ void OpenGLWindow::renderNow()
     preInitialize();
 
     render();
-
-    frames++;
+    setFps();
+//    frames++;
 
     context_gl->swapBuffers(this); // Swapping buffers appears to be compute heavy (15 ms)
 

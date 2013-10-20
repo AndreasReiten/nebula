@@ -79,8 +79,9 @@ private:
     GLuint ray_tex_gl;
     bool isRayTexInitialized;
     void setRayTexture();
-    void raytrace(cl_kernel kernel);
+    void raytrace(cl_kernel kernel, cl_kernel workload);
     void setQuality(double value);
+    double work, work_time, quality_factor;
 
     // Drawing functions
     void drawRayTex();
@@ -120,6 +121,7 @@ private:
     float fps_required;
     QElapsedTimer *timerLastAction;
     QElapsedTimer *callTimer;
+    QElapsedTimer ray_kernel_timer;
 
     // Mouse
     int last_mouse_pos_x;

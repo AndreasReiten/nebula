@@ -52,6 +52,8 @@ VolumeRenderWindow::VolumeRenderWindow()
     ray_tex_dim.reserve(1, 2);
     ray_glb_ws.reserve(1,2);
     ray_loc_ws.reserve(1,2);
+    ray_loc_ws[0] = 16;
+    ray_loc_ws[1] = 16;
 
     // Ray texture timing
     isBadCall = true;
@@ -59,6 +61,9 @@ VolumeRenderWindow::VolumeRenderWindow()
     fps_required = 60;
     timerLastAction = new QElapsedTimer;
     callTimer = new QElapsedTimer;
+    work = 1.0;
+    work_time = 0.0;
+    quality_factor = 1.0;
 
     // Scalebar
     scalebar_ticks.reserve(100,3);
@@ -236,7 +241,8 @@ void VolumeRenderWindow::initializePaintTools()
     border_pen = new QPen;
     border_pen->setWidth(2);
 
-    normal_font = new QFont;
+    normal_font = new QFont("");
+    normal_font->setStyleHint(QFont::Monospace);
     emph_font = new QFont;
     emph_font->setBold(true);
 
@@ -329,10 +335,10 @@ void VolumeRenderWindow::initResourcesCL()
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    // Enough for a 20000 x 20000 pixel texture. I mean, hell... why not
+    // Enough for a 6000 x 6000 pixel texture
     cl_glb_work = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        (20000*20000)/(ray_loc_ws[0]*ray_loc_ws[1])*sizeof(cl_int),
+        (6000*6000)/(ray_loc_ws[0]*ray_loc_ws[1])*sizeof(cl_float),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
@@ -347,18 +353,6 @@ void VolumeRenderWindow::setViewMatrix()
     view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * scalebar_rotation * data_translation;
 
-//    view_matrix.print(2, "view_matrix");
-//    scalebar_view_matrix.print(2, "scalebar_view_matrix");
-//    ctc_matrix.print(2, "ctc_matrix");
-//    bbox_translation.print(2, "bbox_tranlation");
-//    normalization_scaling.print(2, "normalization_scaling");
-//    data_scaling.print(2, "data_scaling");
-//    scalebar_rotation.print(2, "scalebar_rotation");
-//    rotation.print(2, "rotation");
-//    data_translation.print(2, "data_translation");
-
-//    view_matrix.getInverse().print(2, "view_matrix_inverse");
-
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
         cl_view_matrix_inverse,
         CL_TRUE,
@@ -369,6 +363,8 @@ void VolumeRenderWindow::setViewMatrix()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     err = clSetKernelArg(cl_model_raytrace, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err = clSetKernelArg(cl_model_workload, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
@@ -395,6 +391,8 @@ void VolumeRenderWindow::setDataExtent()
 
     err = clSetKernelArg(cl_model_raytrace, 4, sizeof(cl_mem),  &cl_data_extent);
     err |= clSetKernelArg(cl_model_raytrace, 5, sizeof(cl_mem), &cl_data_view_extent);
+    err |= clSetKernelArg(cl_model_workload, 4, sizeof(cl_mem), &cl_data_view_extent);
+    err |= clSetKernelArg(cl_model_workload, 5, sizeof(cl_mem), &cl_data_view_extent);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
@@ -476,6 +474,8 @@ void VolumeRenderWindow::setMiscArrays()
 
 void VolumeRenderWindow::resizeEvent(QResizeEvent * ev)
 {
+    Q_UNUSED(ev);
+
     if (paint_device_gl) paint_device_gl->setSize(size());
     ctc_matrix.setWindow(width(), height());
     setRayTexture();
@@ -484,53 +484,68 @@ void VolumeRenderWindow::resizeEvent(QResizeEvent * ev)
 void VolumeRenderWindow::setRayTexture()
 {
     // Set a texture for the volume rendering kernel
-    ray_tex_dim[0] = (int)((float)this->width()*ray_tex_resolution*0.01f);
-    ray_tex_dim[1] = (int)((float)this->height()*ray_tex_resolution*0.01f);
+    Matrix<int> ray_tex_new(1, 2);
+    ray_tex_new[0] = (int)((float)this->width()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
+    ray_tex_new[1] = (int)((float)this->height()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
 
     // Clamp
-    if (ray_tex_dim[0] < 32) ray_tex_dim[0] = 32;
-    if (ray_tex_dim[1] < 32) ray_tex_dim[1] = 32;
+    if (ray_tex_new[0] < 32) ray_tex_new[0] = 32;
+    if (ray_tex_new[1] < 32) ray_tex_new[1] = 32;
 
-    // Local work size
-    ray_loc_ws[0] = 16;
-    ray_loc_ws[1] = 16;
+    if (ray_tex_new[0] > width()) ray_tex_new[0] = width();
+    if (ray_tex_new[1] > height()) ray_tex_new[1] = height();
 
-    // Global work size
-    if (ray_tex_dim[0] % ray_loc_ws[0]) ray_glb_ws[0] = ray_loc_ws[0]*(1 + (ray_tex_dim[0] / ray_loc_ws[0]));
-    else ray_glb_ws[0] = ray_tex_dim[0];
-    if (ray_tex_dim[1] % ray_loc_ws[1]) ray_glb_ws[1] = ray_loc_ws[1]*(1 + (ray_tex_dim[1] / ray_loc_ws[1]));
-    else ray_glb_ws[1] = ray_tex_dim[1];
+//    ray_tex_new.print(2, "ray_tex_new");
+//    ray_tex_dim.print(2, "ray_tex_dim");
+    // Only resize the texture if the change is somewhat significant (in area cahnged)
+    double new_area = ray_tex_new[0]*ray_tex_new[1];
+    double area = ray_tex_dim[0]*ray_tex_dim[1];
+//    std::cout << isInitialized << " " << !isRayTexInitialized << " " << std::abs(new_area - area) / area <<  std::endl;
+    if (isInitialized && ((!isRayTexInitialized) || ((std::abs(new_area - area) / area) > 0.1)))
+    {
+        ray_tex_resolution *= std::sqrt(quality_factor);
+//        qDebug() << "We got in!";
+        ray_tex_dim = ray_tex_new;
+//        ray_tex_dim.print(2, "ray_tex_dim(2)");
 
-    if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl);
+        // Global work size
+        if (ray_tex_dim[0] % ray_loc_ws[0]) ray_glb_ws[0] = ray_loc_ws[0]*(1 + (ray_tex_dim[0] / ray_loc_ws[0]));
+        else ray_glb_ws[0] = ray_tex_dim[0];
+        if (ray_tex_dim[1] % ray_loc_ws[1]) ray_glb_ws[1] = ray_loc_ws[1]*(1 + (ray_tex_dim[1] / ray_loc_ws[1]));
+        else ray_glb_ws[1] = ray_tex_dim[1];
 
-    // Update GL texture
-    glDeleteTextures(1, &ray_tex_gl);
-    glGenTextures(1, &ray_tex_gl);
-    glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RGBA32F,
-        ray_tex_dim[0],
-        ray_tex_dim[1],
-        0,
-        GL_RGBA,
-        GL_FLOAT,
-        NULL);
-    glBindTexture(GL_TEXTURE_2D, 0);
+//        ray_glb_ws.print(2,"ray_glb_ws");
+        if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl);
 
-    // Convert to CL texture
-    ray_tex_cl = clCreateFromGLTexture2D(*context_cl->getContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex_gl, &err);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        // Update GL texture
+        glDeleteTextures(1, &ray_tex_gl);
+        glGenTextures(1, &ray_tex_gl);
+        glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA32F,
+            ray_tex_dim[0],
+            ray_tex_dim[1],
+            0,
+            GL_RGBA,
+            GL_FLOAT,
+            NULL);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-    isRayTexInitialized = true;
+        // Convert to CL texture
+        ray_tex_cl = clCreateFromGLTexture2D(*context_cl->getContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex_gl, &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    // Pass texture to CL kernel
-    if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-    if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        isRayTexInitialized = true;
+
+        // Pass texture to CL kernel
+        if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 }
 
 void VolumeRenderWindow::setTsfTexture()
@@ -623,7 +638,6 @@ void VolumeRenderWindow::render(QPainter *painter)
 //    QElapsedTimer stopwatch;
 //    stopwatch.start();
 //    glFinish();
-//    painter->setFont(QFont("Courier"));
 //    glFinish();
 //    qDebug() << "painter took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
 
@@ -689,7 +703,7 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
 
     // Texture resolution
-    QString resolution_string("(Resolution: "+QString::number(ray_tex_resolution)+"%, Volume Rendering Fps: "+QString::number(fps_required)+")");
+    QString resolution_string("Resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%, Volume Rendering Fps: "+QString::number(fps_required));
     QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
     resolution_string_rect += QMargins(5,5,5,5);
     resolution_string_rect.moveBottomLeft(QPoint(5, height() - 5));
@@ -819,114 +833,144 @@ void VolumeRenderWindow::setQuality(double value)
 
 void VolumeRenderWindow::drawRayTex()
 {
-    raytrace(cl_model_raytrace);
+    raytrace(cl_model_raytrace, cl_model_workload);
 
-    // Set resolution in accordance with requirements
-    if (ray_tex_resolution != 100) this->isRefreshRequired = true;
-    if (timerLastAction->elapsed() >= timeLastActionMin)
-    {
-        this->setQuality(ray_tex_resolution + 10);
-    }
-    else if (isBadCall)
-    {
-        this->setQuality(ray_tex_resolution - 10);
-    }
-    if (!isBadCall)
-    {
-        shared_window->std_2d_tex_program->bind();
+    shared_window->std_2d_tex_program->bind();
 
-        glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+    glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
+    shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
 
-        GLfloat fragpos[] = {
-            -1.0, -1.0,
-            1.0, -1.0,
-            1.0, 1.0,
-            -1.0, 1.0
-        };
+    GLfloat fragpos[] = {
+        -1.0, -1.0,
+        1.0, -1.0,
+        1.0, 1.0,
+        -1.0, 1.0
+    };
 
-        GLfloat texpos[] = {
-            0.0, 0.0,
-            1.0, 0.0,
-            1.0, 1.0,
-            0.0, 1.0
-        };
+    GLfloat texpos[] = {
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0
+    };
 
-        GLuint indices[] = {0,1,3,1,2,3};
+    GLuint indices[] = {0,1,3,1,2,3};
 
-        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
-        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+    glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
+    glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
-        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
-        glEnableVertexAttribArray(shared_window->std_2d_texpos);
+    glEnableVertexAttribArray(shared_window->std_2d_fragpos);
+    glEnableVertexAttribArray(shared_window->std_2d_texpos);
 
-        glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
+    glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-        glDisableVertexAttribArray(shared_window->std_2d_texpos);
-        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
-        glBindTexture(GL_TEXTURE_2D, 0);
+    glDisableVertexAttribArray(shared_window->std_2d_texpos);
+    glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-        shared_window->std_2d_tex_program->release();
-    }
+    shared_window->std_2d_tex_program->release();
 }
 
-void VolumeRenderWindow::raytrace(cl_kernel kernel)
+void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
 {
     //TODO: This should be done in a separate, non-blocking, thread. Could also use a much less costly kernel to measure processing cost (number of texture fetches) and adjust resolution and update time requirement accordingly. Separate threading would make the rendering appear quite fast, but the ray texture might in fact lag behind a bit. Still a vast improvement over UI blocking.
 
-    if (isRefreshRequired)
+//    err = clFinish(*context_cl->getCommanQueue());
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    // Estimate workload and and adjust rendering quality accordingly
+//    QElapsedTimer stopwatch;
+//    stopwatch.start();
+    //    stopwatch.start();
+    setRayTexture();
+
+    err = clSetKernelArg(cl_model_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
+    err |= clSetKernelArg(cl_model_workload, 1, sizeof(cl_mem), &cl_glb_work);
+    err |= clSetKernelArg(cl_model_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+//    qDebug() << "A It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
+//    stopwatch.start();
+
+
+    err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    err = clFinish(*context_cl->getCommanQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+//    qDebug() << "B It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
+//    stopwatch.start();
+
+    Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
+    err = clEnqueueReadBuffer ( *context_cl->getCommanQueue(),
+        cl_glb_work,
+        CL_TRUE, 0,
+        glb_work.bytes(),
+        glb_work.data(),
+        0, NULL, NULL);
+
+    work = (double) glb_work.sum();
+
+//    qDebug() << "C It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
+//    stopwatch.start();
+//    glb_work.print(0,"glb_work");
+//    ray_glb_ws.print();
+//    ray_loc_ws.print();
+
+    //    QElapsedTimer stopwatch;
+    //    stopwatch.start();
+    //    glFinish();
+    //    glFinish();
+    //    qDebug() << "It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
+    // Aquire shared CL/GL objects
+    glFinish();
+    err = clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Launch rendering kernel
+    Matrix<size_t> area_per_call(1,2);
+    area_per_call[0] = 128;
+    area_per_call[1] = 128;
+    Matrix<size_t> call_offset(1,2);
+    call_offset[0] = 0;
+    call_offset[1] = 0;
+
+    // Launch the kernel and take the time
+    ray_kernel_timer.start();
+
+    for (size_t glb_x = 0; glb_x < ray_glb_ws[0]; glb_x += area_per_call[0])
     {
-        callTimer->start();
-        glFinish();
-        this->isRefreshRequired = false;
-
-        // Aquire shared CL/GL objects
-        err = clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-        // Launch rendering kernel
-        Matrix<size_t> area_per_call(1,2);
-        area_per_call[0] = 128;
-        area_per_call[1] = 128;
-        Matrix<size_t> call_offset(1,2);
-        call_offset[0] = 0;
-        call_offset[1] = 0;
-        callTimeMax = 1000/fps_required; // Dividend is FPS
-        timeLastActionMin = 1000;
-        isBadCall = false;
-
-        for (size_t glb_x = 0; glb_x < ray_glb_ws[0]; glb_x += area_per_call[0])
+        for (size_t glb_y = 0; glb_y < ray_glb_ws[1]; glb_y += area_per_call[1])
         {
-            if (isBadCall) break;
+            call_offset[0] = glb_x;
+            call_offset[1] = glb_y;
 
-            for (size_t glb_y = 0; glb_y < ray_glb_ws[1]; glb_y += area_per_call[1])
-            {
-                if ((timerLastAction->elapsed() < timeLastActionMin) && (callTimer->elapsed() > callTimeMax))
-                {
-                    isBadCall = true;
-                    break;
-                }
-                call_offset[0] = glb_x;
-                call_offset[1] = glb_y;
-
-//                ray_loc_ws.print(2,"ray_loc_ws");
-//                call_offset.print(2,"call_offset");
-//                area_per_call.print(2,"area_per_call");
-                err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
-                if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-                err = clFinish(*context_cl->getCommanQueue());
-                if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-            }
+            err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
-
-        // Release shared CL/GL objects
-        err = clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-        err = clFinish(*context_cl->getCommanQueue());
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
+
+    err = clFinish(*context_cl->getCommanQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    work_time = (double) ray_kernel_timer.nsecsElapsed();
+
+    // Calculate how much the quality must be reduced (if any) in order to achieve fps_requested
+    fps_required = 120.0;
+    double time_per_work = (work_time / work) * 1.0e-9;
+    double max_work = (1.0 / fps_required) / time_per_work;
+    quality_factor = max_work / work;
+//    std::cout << quality_factor * 100.0 << std::endl;
+
+    // Release shared CL/GL objects
+    err = clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    err = clFinish(*context_cl->getCommanQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Based on actual time spent rendering, set the time cost per work
+
 }
 
 size_t VolumeRenderWindow::setScaleBars()

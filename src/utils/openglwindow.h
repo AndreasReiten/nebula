@@ -35,7 +35,7 @@ public:
     void getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform);
     QPointF coordQttoGL(QPointF coord);
     void glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect);
-    int getFps();
+    double getFps();
 
 public slots:
     void renderLater();
@@ -64,10 +64,10 @@ private:
 
     QOpenGLContext *context_gl;
 
-    QTimer fps_timer;
+//    QTimer fps_timer;
     QElapsedTimer fps_elapsed_timer;
 
-    int frames;
-    int fps;
+//    int frames;
+    double fps;
 };
 #endif

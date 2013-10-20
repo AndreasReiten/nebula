@@ -22,6 +22,30 @@ int boundingBoxIntersect(float3 r_origin, float3 r_delta, float * bbox, float * 
     return smallest_t_max > largest_t_min;
 }
 
+int boundingBoxIntersect2(float3 r_origin, float3 r_delta, __constant float * bbox, float * t_near, float * t_far)
+{
+    // This is simple ray-box intersection: http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
+
+    // Compute relative intersects
+    float3 r_delta_inv = native_divide((float3)(1.0f),r_delta);
+    float3 T1 = ((float3)(bbox[0], bbox[2], bbox[4]) - r_origin)*r_delta_inv;
+    float3 T2 = ((float3)(bbox[1], bbox[3], bbox[5]) - r_origin)*r_delta_inv;
+
+    // Swap
+    float3 t_min = min(T2, T1);
+    float3 t_max = max(T2, T1);
+
+    // Find largest Tmin and smallest Tmax
+    float largest_t_min = max(max(t_min.x, t_min.y), max(t_min.x, t_min.z));
+    float smallest_t_max = min(min(t_max.x, t_max.y), min(t_max.x, t_max.z));
+
+    // Pass along and clamp to get correct start and stop factors
+    *t_near = clamp(largest_t_min, 0.0f, 1.0f);
+    *t_far = clamp(smallest_t_max, 0.0f, 1.0f);
+    if (smallest_t_max < 0) return 0;
+    return smallest_t_max > largest_t_min;
+}
+
 int boundingBoxIntersectNorm(float3 r_origin, float3 r_delta, float * t_near, float * t_far)
 {
     // This is simple ray-box intersection: http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -522,8 +546,8 @@ __kernel void modelRayTrace(
 
 __kernel void modelWorkload(
     int2 ray_tex_dim,
-    __global int * glb_work,
-    __local int * loc_work,
+    __global float * glb_work,
+    __local float * loc_work,
     __constant float * data_view_matrix,
     __constant float * data_extent,
     __constant float * data_view_extent)
@@ -533,6 +557,7 @@ __kernel void modelWorkload(
     int2 size_loc = (int2)(get_local_size(0),get_local_size(1));
 
     int id = id_loc.x + id_loc.y * size_loc.x;
+    loc_work[id] = 0.0f;
 
     // If the global id corresponds to a texel
     if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
@@ -557,24 +582,12 @@ __kernel void modelWorkload(
         int hit;
         float t_near, t_far;
         {
-            // Construct a bounding box from the intersect between data_view_extent and data_extent
-            float bbox[6];
-
-            bbox[0] = data_view_extent[0];
-            bbox[1] = data_view_extent[1];
-            bbox[2] = data_view_extent[2];
-            bbox[3] = data_view_extent[3];
-            bbox[4] = data_view_extent[4];
-            bbox[5] = data_view_extent[5];
-
             // Does the ray for this pixel intersect bbox?
-            if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
+            if (!((data_view_extent[0] >= data_view_extent[1]) || (data_view_extent[2] >= data_view_extent[3]) || (data_view_extent[4] >= data_view_extent[5])))
             {
-                hit = boundingBoxIntersect(rayNear.xyz, rayDelta.xyz, bbox, &t_near, &t_far);
+                hit = boundingBoxIntersect2(rayNear.xyz, rayDelta.xyz, data_view_extent, &t_near, &t_far);
             }
         }
-
-        loc_work[id] = 0;
 
         if(hit)
         {
@@ -585,23 +598,23 @@ __kernel void modelWorkload(
             float3 rayBoxAdd = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-
             data_view_extent[0], 400.0f);
 
-            loc_work[id] = (int) native_divide(fast_length(rayBoxDelta), fast_length(rayBoxAdd));
+            loc_work[id] = native_divide(fast_length(rayBoxDelta), fast_length(rayBoxAdd));
         }
+    }
 
-        // Parallel reduction to sum up the work
+    // Parallel reduction to sum up the work
+    barrier(CLK_LOCAL_MEM_FENCE);
+    for (unsigned int i = (size_loc.x * size_loc.y)/2; i > 0; i >>= 1)
+    {
+        if (id < i)
+        {
+            loc_work[id] += loc_work[i + id];
+        }
         barrier(CLK_LOCAL_MEM_FENCE);
-        for (unsigned int i = (size_loc.x * size_loc.y)/2; i > 0; i >>= 1)
-        {
-            if (id < i)
-            {
-                loc_work[id] += loc_work[i + id];
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-        }
+    }
 
-        if (id == 0)
-        {
-            glb_work[get_group_id(0) +  get_group_id(1) * get_num_groups(0)] = loc_work[0];
-        }
+    if (id == 0)
+    {
+        glb_work[get_group_id(0) +  get_group_id(1) * get_num_groups(0)] = loc_work[0];
     }
 }
