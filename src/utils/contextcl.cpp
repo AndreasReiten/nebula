@@ -24,14 +24,20 @@ DeviceCL * ContextCL::getMainDevice()
     return main_device;
 }
 
-cl_program ContextCL::createProgram(const char * path, cl_int * error)
+cl_program ContextCL::createProgram(Matrix<const char *> * paths, cl_int * error)
 {
     // Program
-    QByteArray qsrc = openFile(path);
-    const char * src = qsrc.data();
-    size_t src_length = strlen(src);
+    Matrix<size_t> lengths(1, paths->size());
+    Matrix<const char *> sources(1, paths->size());
+    Matrix<QByteArray> qsources(1, paths->size());
 
-    return clCreateProgramWithSource(context, 1, (const char **)&src, &src_length, error);
+    for (int i = 0; i < paths->size(); i++)
+    {
+        qsources[i] = openFile(paths->at(i));
+        sources[i] = qsources[i].data();
+        lengths[i] = strlen(sources[i]);
+    }
+    return clCreateProgramWithSource(context, paths->size(), sources.data(), lengths.data(), error);
 }
 
 void ContextCL::buildProgram(cl_program * program, const char * options)

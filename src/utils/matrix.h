@@ -440,8 +440,9 @@ void Matrix<T>::print(int precision, const char * id) const
 
         for (int j = 0; j < n; j++)
         {
-            if (this->buffer[i*n+j] >= 0) ss << " "<< std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
-            else ss << std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
+//            if (this->buffer[i*n+j] >= 0) ss << " "<< std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
+//            else
+            ss << std::setprecision(precision) << std::fixed << this->buffer[i*n+j];
             if (j != n-1) ss << ", ";
         }
 

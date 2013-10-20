@@ -268,7 +268,12 @@ void VolumeRenderWindow::initResourcesGL()
 void VolumeRenderWindow::initResourcesCL()
 {
     // Build program from OpenCL kernel source
-    program = context_cl->createProgram("cl_kernels/render.cl", &err);
+    Matrix<const char *> paths(1,2);
+    paths[0] = "cl_kernels/render_shared.cl";
+    paths[1] = "cl_kernels/render_svo.cl";
+    paths[1] = "cl_kernels/render_model.cl";
+
+    program = context_cl->createProgram(&paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     context_cl->buildProgram(&program, "-Werror");
@@ -277,7 +282,6 @@ void VolumeRenderWindow::initResourcesCL()
     // Kernel handles
     cl_svo_raytrace = clCreateKernel(program, "svoRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
 
     cl_model_raytrace = clCreateKernel(program, "modelRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -694,7 +698,7 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     painter->drawText(width(), height(), QString::number(scalebar_multiplier));
 
     // Fps
-    QString fps_string("Fps: "+QString::number(getFps(), 'f', 1));
+    QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
     QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);
     fps_string_rect += QMargins(5,5,5,5);
     fps_string_rect.moveTopRight(QPoint(width()-5,5));

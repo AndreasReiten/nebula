@@ -35,7 +35,7 @@ public:
     QList<DeviceCL> * getDeviceList();
     DeviceCL * getMainDevice();
 
-    cl_program createProgram(const char * path, cl_int * error);
+    cl_program createProgram(Matrix<const char *> * paths, cl_int * error);
     void buildProgram(cl_program * program, const char * options);
 
 private:
