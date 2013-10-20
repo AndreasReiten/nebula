@@ -75,6 +75,9 @@ VolumeRenderWindow::VolumeRenderWindow()
     black.setDeep(1,4,black_buf);
     clear_color = white;
     clear_color_inverse = black;
+
+    // Fps
+    fps_string_width_prev = 0;
 }
 
 VolumeRenderWindow::~VolumeRenderWindow()
@@ -268,10 +271,10 @@ void VolumeRenderWindow::initResourcesGL()
 void VolumeRenderWindow::initResourcesCL()
 {
     // Build program from OpenCL kernel source
-    Matrix<const char *> paths(1,2);
+    Matrix<const char *> paths(1,3);
     paths[0] = "cl_kernels/render_shared.cl";
     paths[1] = "cl_kernels/render_svo.cl";
-    paths[1] = "cl_kernels/render_model.cl";
+    paths[2] = "cl_kernels/render_model.cl";
 
     program = context_cl->createProgram(&paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -324,14 +327,6 @@ void VolumeRenderWindow::initResourcesCL()
         misc_ints.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-
-    cl_svo_misc_floats = clCreateBuffer(*context_cl->getContext(),
-        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        svo_misc_floats.toFloat().bytes(),
-        NULL, &err);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
 
     cl_model_misc_floats = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -460,19 +455,9 @@ void VolumeRenderWindow::setMiscArrays()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 //    model_misc_floats.print(2,"model_misc_floats");
 
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
-        cl_svo_misc_floats,
-        CL_TRUE,
-        0,
-        svo_misc_floats.bytes()/2,
-        svo_misc_floats.toFloat().data(),
-        0,0,0);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
     err = clSetKernelArg(cl_model_raytrace, 7, sizeof(cl_mem), &cl_model_misc_floats);
     err |= clSetKernelArg(cl_model_raytrace, 8, sizeof(cl_mem), &cl_misc_ints);
-    err |= clSetKernelArg(cl_svo_raytrace, 11, sizeof(cl_mem), &cl_svo_misc_floats);
-    err |= clSetKernelArg(cl_svo_raytrace, 12, sizeof(cl_mem), &cl_misc_ints);
+    err |= clSetKernelArg(cl_svo_raytrace, 11, sizeof(cl_mem), &cl_misc_ints);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -504,9 +489,16 @@ void VolumeRenderWindow::setRayTexture()
     // Only resize the texture if the change is somewhat significant (in area cahnged)
     double new_area = ray_tex_new[0]*ray_tex_new[1];
     double area = ray_tex_dim[0]*ray_tex_dim[1];
+
+//    std::cout << "Suggested: " << quality_factor << std::endl;
 //    std::cout << isInitialized << " " << !isRayTexInitialized << " " << std::abs(new_area - area) / area <<  std::endl;
-    if (isInitialized && ((!isRayTexInitialized) || ((std::abs(new_area - area) / area) > 0.1)))
+    if (isInitialized && ((!isRayTexInitialized) || ((std::abs(new_area - area) / area) > 0.15)))
     {
+
+        // Calculate the actula quality factor multiplier
+        quality_factor = std::pow((double) ray_tex_new[0] / ((double)this->width()*(ray_tex_resolution*0.01)), 2.0);
+//        std::cout << "Actual: " << quality_factor << std::endl;
+
         ray_tex_resolution *= std::sqrt(quality_factor);
 //        qDebug() << "We got in!";
         ray_tex_dim = ray_tex_new;
@@ -700,11 +692,15 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
     QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);
+    fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
+    fps_string_width_prev = fps_string_rect.width();
     fps_string_rect += QMargins(5,5,5,5);
     fps_string_rect.moveTopRight(QPoint(width()-5,5));
 
     painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
+
+
 
     // Texture resolution
     QString resolution_string("Resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%, Volume Rendering Fps: "+QString::number(fps_required));
@@ -914,6 +910,7 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
         0, NULL, NULL);
 
     work = (double) glb_work.sum();
+//    std::cout << work << std::endl;
 
 //    qDebug() << "C It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
 //    stopwatch.start();
@@ -921,7 +918,7 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
 //    ray_glb_ws.print();
 //    ray_loc_ws.print();
 
-    //    QElapsedTimer stopwatch;
+//        QElapsedTimer stopwatch;
     //    stopwatch.start();
     //    glFinish();
     //    glFinish();
@@ -960,7 +957,6 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
     work_time = (double) ray_kernel_timer.nsecsElapsed();
 
     // Calculate how much the quality must be reduced (if any) in order to achieve fps_requested
-    fps_required = 120.0;
     double time_per_work = (work_time / work) * 1.0e-9;
     double max_work = (1.0 / fps_required) / time_per_work;
     quality_factor = max_work / work;
@@ -1126,4 +1122,9 @@ size_t VolumeRenderWindow::setScaleBars()
     setVbo(scalebar_vbo, scalebar_coords.data(), coord_counter*3, GL_STATIC_DRAW);
 
     return coord_counter;
+}
+
+void VolumeRenderWindow::setQuality(int value)
+{
+   fps_required = (float) value;
 }

@@ -362,6 +362,8 @@ void MainWindow::initializeEmit()
     funcParamBSpinBox->setValue(10.5);
     funcParamCSpinBox->setValue(10.0);
     funcParamDSpinBox->setValue(0.005);
+
+    qualitySlider->setValue(100);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -678,6 +680,7 @@ void MainWindow::initializeConnects()
 
 
     /* this <-> volumeRenderWidget */
+    connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow, SLOT(setQuality(int)));
 //    connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWidget, SLOT(setTsfAlphaStyle(int)));
 //    connect(dataStructureAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleDataStructure()));
 //    connect(backgroundAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleBackground()));
@@ -1014,6 +1017,7 @@ void MainWindow::initializeInteractives()
         QLabel * label_data_max= new QLabel(QString("Max: "));
         QLabel * label_alpha= new QLabel(QString("Alpha: "));
         QLabel * label_brightness = new QLabel(QString("Brightness: "));
+        QLabel * label_quality = new QLabel(QString("Performance: "));
 
         dataMinSpinBox = new QDoubleSpinBox;
         dataMinSpinBox->setDecimals(2);
@@ -1054,6 +1058,10 @@ void MainWindow::initializeInteractives()
         tsfAlphaComboBox->addItem(trUtf8("Exponential"));
         tsfAlphaComboBox->addItem(trUtf8("Uniform"));
 
+        qualitySlider = new QSlider(Qt::Horizontal);
+        qualitySlider->setRange(1,100);
+        qualitySlider->setToolTip("Set quality versus performance");
+        qualitySlider->setTickPosition(QSlider::NoTicks);
 
         graphicsDockWidget = new QDockWidget(tr("View Settings"), this);
         graphicsDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
@@ -1075,6 +1083,8 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(alphaSpinBox,3,2,1,2);
         graphicsLayout->addWidget(label_brightness,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(brightnessSpinBox,4,2,1,2);
+        graphicsLayout->addWidget(label_quality,5,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(qualitySlider,5,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
 ////        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);

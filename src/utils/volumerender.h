@@ -60,6 +60,9 @@ protected:
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
 
+public slots:
+    void setQuality(int value);
+
 private:
     SharedContextWindow * shared_window;
 
@@ -89,6 +92,7 @@ private:
     void drawOverlay(QPainter *painter);
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
+    int fps_string_width_prev;
 
     // Core set functions
     void setDataExtent();
@@ -165,7 +169,6 @@ private:
     cl_mem cl_data_view_extent;
     cl_mem cl_tsf_parameters;
     cl_mem cl_misc_ints;
-    cl_mem cl_svo_misc_floats;
     cl_mem cl_model_misc_floats;
 
     void initResourcesCL();

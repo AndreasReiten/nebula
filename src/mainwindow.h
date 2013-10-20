@@ -182,6 +182,7 @@ private:
     QComboBox * tsfComboBox;
     QComboBox * tsfAlphaComboBox;
 
+    QSlider * qualitySlider;
 
     QElapsedTimer timer;
     Highlighter *script_highlighter;

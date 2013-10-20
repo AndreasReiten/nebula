@@ -41,8 +41,7 @@ SOURCES       = src/main.cpp \
 RESOURCES     = nebula.qrc
 
 QMAKE_CXXFLAGS += -std=c++0x
-QT += core gui opengl widgets script # Use for Qt5
-#QT += opengl script # Use for Qt4
+QT += core gui opengl widgets script
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
 
@@ -52,6 +51,8 @@ RCC_DIR = .rcc
 UI_DIR = .ui
 
 OTHER_FILES += \
-    src/cl_kernels/render.cl \
     src/cl_kernels/project.cl \
-    src/cl_kernels/voxelize.cl
+    src/cl_kernels/voxelize.cl \
+    src/cl_kernels/render_svo.cl \
+    src/cl_kernels/render_shared.cl \
+    src/cl_kernels/render_model.cl
