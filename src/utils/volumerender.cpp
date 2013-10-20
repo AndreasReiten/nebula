@@ -1,16 +1,17 @@
 #include "volumerender.h"
 
-
-
 VolumeRenderWindow::VolumeRenderWindow()
     : isInitialized(false),
       isRayTexInitialized(false),
       isTsfTexInitialized(false),
-      isDSViewForced(false),
       isDSActive(false),
       isOrthonormal(true),
       isLogarithmic(true),
-      ray_tex_resolution(100)
+      isModelActive(true),
+      isUnitcellActive(false),
+      isSvoInitialized(false),
+      isScalebarActive(true),
+      ray_tex_resolution(20)
 {
     // Matrices
     double extent[8] = {
@@ -20,10 +21,10 @@ VolumeRenderWindow::VolumeRenderWindow()
          1.0,1.0};
     data_extent.setDeep(4, 2, extent);
     data_view_extent.setDeep(4, 2, extent);
-    tsf_parameters.reserve(1,6);
-    misc_ints.reserve(1,16);
-    svo_misc_floats.reserve(1,16);
-    model_misc_floats.reserve(1,16);
+    tsf_parameters_svo.set(1,6, 0.0);
+    tsf_parameters_model.set(1,6, 0.0);
+    misc_ints.set(1,16, 0.0);
+    model_misc_floats.set(1,16, 0.0);
 
     // View matrices
     view_matrix.setIdentity(4);
@@ -55,12 +56,22 @@ VolumeRenderWindow::VolumeRenderWindow()
     ray_loc_ws[0] = 16;
     ray_loc_ws[1] = 16;
 
+    // Transfer texture
+    tsf_color_scheme = 0;
+    tsf_alpha_scheme = 0;
+
+    tsf_parameters_model[0] = 0.0; // texture min
+    tsf_parameters_model[1] = 1.0; // texture max
+//    tsf_parameters_model[4] = 0.5; // alpha
+//    tsf_parameters_model[5] = 2.0; // brightness
+
+    tsf_parameters_svo[0] = 0.0; // texture min
+    tsf_parameters_svo[1] = 1.0; // texture max
+    tsf_parameters_svo[4] = 0.5; // alpha
+    tsf_parameters_svo[5] = 2.0; // brightness
+
     // Ray texture timing
-    isBadCall = true;
-    isRefreshRequired = true;
     fps_required = 60;
-    timerLastAction = new QElapsedTimer;
-    callTimer = new QElapsedTimer;
     work = 1.0;
     work_time = 0.0;
     quality_factor = 1.0;
@@ -109,9 +120,6 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
             rotation = roll_rotation * rotation;
             scalebar_rotation = roll_rotation * scalebar_rotation;
         }
-
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
     }
     if ((ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
     {
@@ -131,9 +139,6 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
             rotation = roll_rotation * rotation;
             scalebar_rotation = roll_rotation * scalebar_rotation;
         }
-
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
     }
     else if (ev->buttons() & Qt::MiddleButton)
     {
@@ -153,8 +158,6 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
         data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
 
         this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
     }
     else if (!(ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
     {
@@ -171,10 +174,8 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
         data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
 
         this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
-
-        this->timerLastAction->start();
-        this->isRefreshRequired = true;
     }
+
     last_mouse_pos_x = ev->x();
     last_mouse_pos_y = ev->y();
 }
@@ -197,8 +198,6 @@ void VolumeRenderWindow::wheelEvent(QWheelEvent* ev)
             data_scaling[10] += data_scaling[10]*delta;
 
             data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
-            this->timerLastAction->start();
-            this->isRefreshRequired = true;
         }
     }
     else
@@ -208,9 +207,6 @@ void VolumeRenderWindow::wheelEvent(QWheelEvent* ev)
             bbox_scaling[0] += bbox_scaling[0]*delta;
             bbox_scaling[5] += bbox_scaling[5]*delta;
             bbox_scaling[10] += bbox_scaling[10]*delta;
-
-            this->timerLastAction->start();
-            this->isRefreshRequired = true;
         }
     }
 }
@@ -241,11 +237,12 @@ void VolumeRenderWindow::initialize()
 void VolumeRenderWindow::initializePaintTools()
 {
     normal_pen = new QPen;
+    normal_pen->setWidth(1);
     border_pen = new QPen;
-    border_pen->setWidth(2);
+    border_pen->setWidth(1);
 
-    normal_font = new QFont("");
-    normal_font->setStyleHint(QFont::Monospace);
+    normal_font = new QFont();
+//    normal_font->setStyleHint(QFont::Monospace);
     emph_font = new QFont;
     emph_font->setBold(true);
 
@@ -254,9 +251,10 @@ void VolumeRenderWindow::initializePaintTools()
 
     fill_brush = new QBrush;
     fill_brush->setStyle(Qt::SolidPattern);
-    fill_brush->setColor(QColor(255,255,255,150));
+    fill_brush->setColor(QColor(255,255,255,155));
 
     normal_brush = new QBrush;
+    normal_brush->setStyle(Qt::NoBrush);
 
     dark_fill_brush = new QBrush;
     dark_fill_brush->setStyle(Qt::SolidPattern);
@@ -285,6 +283,10 @@ void VolumeRenderWindow::initResourcesCL()
     // Kernel handles
     cl_svo_raytrace = clCreateKernel(program, "svoRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    cl_svo_workload = clCreateKernel(program, "svoWorkload", &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
 
     cl_model_raytrace = clCreateKernel(program, "modelRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -315,12 +317,17 @@ void VolumeRenderWindow::initResourcesCL()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
-    cl_tsf_parameters = clCreateBuffer(*context_cl->getContext(),
+    cl_tsf_parameters_svo = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        tsf_parameters.toFloat().bytes(),
+        tsf_parameters_svo.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
+    cl_tsf_parameters_model = clCreateBuffer(*context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        tsf_parameters_model.toFloat().bytes(),
+        NULL, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     cl_misc_ints = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -365,6 +372,7 @@ void VolumeRenderWindow::setViewMatrix()
     err = clSetKernelArg(cl_model_workload, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
 
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err |= clSetKernelArg(cl_svo_workload, 5, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -397,37 +405,38 @@ void VolumeRenderWindow::setDataExtent()
 
     err = clSetKernelArg(cl_svo_raytrace, 8, sizeof(cl_mem),  &cl_data_extent);
     err |= clSetKernelArg(cl_svo_raytrace, 9, sizeof(cl_mem), &cl_data_view_extent);
+    err = clSetKernelArg(cl_svo_workload, 6, sizeof(cl_mem),  &cl_data_extent);
+    err |= clSetKernelArg(cl_svo_workload, 7, sizeof(cl_mem), &cl_data_view_extent);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
 void VolumeRenderWindow::setTsfParameters()
 {
-    tsf_parameters[0] = 0.0; // texture min
-    tsf_parameters[1] = 1.0; // texture max
-    tsf_parameters[2] = 10.0; // data min
-    tsf_parameters[3] = 1000.0; // data max
-    tsf_parameters[4] = 0.5; // alpha
-    tsf_parameters[5] = 2.0; // brightness
-
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
-        cl_tsf_parameters,
+        cl_tsf_parameters_model,
         CL_TRUE,
         0,
-        tsf_parameters.bytes()/2,
-        tsf_parameters.toFloat().data(),
+        tsf_parameters_model.bytes()/2,
+        tsf_parameters_model.toFloat().data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//    tsf_parameters.print(2,"tsf_parameters");
 
-    err = clSetKernelArg(cl_model_raytrace, 6, sizeof(cl_mem), &cl_tsf_parameters);
-    err |= clSetKernelArg(cl_svo_raytrace, 10, sizeof(cl_mem), &cl_tsf_parameters);
+    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+        cl_tsf_parameters_svo,
+        CL_TRUE,
+        0,
+        tsf_parameters_svo.bytes()/2,
+        tsf_parameters_svo.toFloat().data(),
+        0,0,0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    err = clSetKernelArg(cl_model_raytrace, 6, sizeof(cl_mem), &cl_tsf_parameters_model);
+    err |= clSetKernelArg(cl_svo_raytrace, 10, sizeof(cl_mem), &cl_tsf_parameters_svo);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
 void VolumeRenderWindow::setMiscArrays()
 {
-    misc_ints[0] = 0; // svo levels
-    misc_ints[1] = 0; // brick size
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
@@ -438,13 +447,7 @@ void VolumeRenderWindow::setMiscArrays()
         misc_ints.data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//    misc_ints.print(2,"misc_ints");
 
-
-    model_misc_floats[0] = 13.5;
-    model_misc_floats[1] = 10.5;
-    model_misc_floats[2] = 10.0;
-    model_misc_floats[3] = 0.005;
     err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
         cl_model_misc_floats,
         CL_TRUE,
@@ -453,11 +456,11 @@ void VolumeRenderWindow::setMiscArrays()
         model_misc_floats.toFloat().data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//    model_misc_floats.print(2,"model_misc_floats");
 
     err = clSetKernelArg(cl_model_raytrace, 7, sizeof(cl_mem), &cl_model_misc_floats);
     err |= clSetKernelArg(cl_model_raytrace, 8, sizeof(cl_mem), &cl_misc_ints);
     err |= clSetKernelArg(cl_svo_raytrace, 11, sizeof(cl_mem), &cl_misc_ints);
+    err |= clSetKernelArg(cl_svo_workload, 8, sizeof(cl_mem), &cl_misc_ints);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -484,25 +487,17 @@ void VolumeRenderWindow::setRayTexture()
     if (ray_tex_new[0] > width()) ray_tex_new[0] = width();
     if (ray_tex_new[1] > height()) ray_tex_new[1] = height();
 
-//    ray_tex_new.print(2, "ray_tex_new");
-//    ray_tex_dim.print(2, "ray_tex_dim");
     // Only resize the texture if the change is somewhat significant (in area cahnged)
     double new_area = ray_tex_new[0]*ray_tex_new[1];
     double area = ray_tex_dim[0]*ray_tex_dim[1];
 
-//    std::cout << "Suggested: " << quality_factor << std::endl;
-//    std::cout << isInitialized << " " << !isRayTexInitialized << " " << std::abs(new_area - area) / area <<  std::endl;
     if (isInitialized && ((!isRayTexInitialized) || ((std::abs(new_area - area) / area) > 0.15)))
     {
-
         // Calculate the actula quality factor multiplier
         quality_factor = std::pow((double) ray_tex_new[0] / ((double)this->width()*(ray_tex_resolution*0.01)), 2.0);
-//        std::cout << "Actual: " << quality_factor << std::endl;
 
         ray_tex_resolution *= std::sqrt(quality_factor);
-//        qDebug() << "We got in!";
         ray_tex_dim = ray_tex_new;
-//        ray_tex_dim.print(2, "ray_tex_dim(2)");
 
         // Global work size
         if (ray_tex_dim[0] % ray_loc_ws[0]) ray_glb_ws[0] = ray_loc_ws[0]*(1 + (ray_tex_dim[0] / ray_loc_ws[0]));
@@ -510,7 +505,6 @@ void VolumeRenderWindow::setRayTexture()
         if (ray_tex_dim[1] % ray_loc_ws[1]) ray_glb_ws[1] = ray_loc_ws[1]*(1 + (ray_tex_dim[1] / ray_loc_ws[1]));
         else ray_glb_ws[1] = ray_tex_dim[1];
 
-//        ray_glb_ws.print(2,"ray_glb_ws");
         if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl);
 
         // Update GL texture
@@ -549,7 +543,7 @@ void VolumeRenderWindow::setTsfTexture()
     if (isTsfTexInitialized) clReleaseSampler(tsf_tex_sampler);
     if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
 
-    tsf.setColorScheme(0,0);
+    tsf.setColorScheme(tsf_color_scheme, tsf_alpha_scheme);
     tsf.setSpline(256);
 
     // Buffer for tsf_tex_gl
@@ -593,7 +587,6 @@ void VolumeRenderWindow::setTsfTexture()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Buffer for tsf_tex_cl
-    //~ tsf->getPreIntegrated().getColMajor().toFloat().print(2, "preIntegrated");
     cl_image_format tsf_format;
     tsf_format.image_channel_order = CL_RGBA;
     tsf_format.image_channel_data_type = CL_FLOAT;
@@ -631,12 +624,6 @@ void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWindow::render(QPainter *painter)
 {
-//    QElapsedTimer stopwatch;
-//    stopwatch.start();
-//    glFinish();
-//    glFinish();
-//    qDebug() << "painter took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
-
     setDataExtent();
     setViewMatrix();
 
@@ -650,7 +637,7 @@ void VolumeRenderWindow::render(QPainter *painter)
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
 
     // Draw relative scalebar
-    drawScalebars();
+    if (isScalebarActive) drawScalebars();
 
     // Draw raytracing texture
     drawRayTex();
@@ -679,16 +666,19 @@ void VolumeRenderWindow::endRawGLCalls(QPainter * painter)
 
 void VolumeRenderWindow::drawOverlay(QPainter * painter)
 {
-    // Tick labels
     painter->setRenderHint(QPainter::Antialiasing);
-    painter->setBrush(*fill_brush);
 
-    for (int i = 0; i < n_scalebar_ticks; i++)
+    // Tick labels
+    if (isScalebarActive)
     {
-        painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));
-    }
-    painter->drawText(width(), height(), QString::number(scalebar_multiplier));
+        painter->setBrush(*normal_brush);
+        painter->setPen(*normal_pen);
 
+        for (int i = 0; i < n_scalebar_ticks; i++)
+        {
+            painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));
+        }
+    }
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
     QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);
@@ -697,10 +687,9 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     fps_string_rect += QMargins(5,5,5,5);
     fps_string_rect.moveTopRight(QPoint(width()-5,5));
 
+    painter->setBrush(*fill_brush);
     painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
-
-
 
     // Texture resolution
     QString resolution_string("Resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%, Volume Rendering Fps: "+QString::number(fps_required));
@@ -721,11 +710,11 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);
 
     // Transfer function
-    painter->setBrush(*fill_brush);
-
     QRect tsf_rect(0, 0, 20, height() - (multiplier_string_rect.bottom() + 5) - 50);
     tsf_rect += QMargins(5,5,5,5);
     tsf_rect.moveTopRight(QPoint(width()-5, multiplier_string_rect.bottom() + 5));
+
+    painter->setBrush(*fill_brush);
     painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
 
     tsf_rect -= QMargins(5,5,5,5);
@@ -791,96 +780,55 @@ void VolumeRenderWindow::drawScalebars()
     shared_window->std_3d_color_program->release();
 }
 
-void VolumeRenderWindow::setQuality(double value)
-{
-    if (value < 20) value = 20;
-    if (value > 100) value = 100;
-    if ((ray_tex_resolution != value))
-    {
-        // Limit the deepest SVO descent level
-        if (value <= 20)
-        {
-            if (isDSActive != true)
-            {
-                isDSViewForced = true;
-                isDSActive = true;
-
-            }
-            fps_required = 60;
-        }
-        else
-        {
-            if (value <= 30) fps_required = 10;
-            else if (value <= 40) fps_required = 15;
-            else if (value <= 50) fps_required = 20;
-            else if (value <= 60) fps_required = 25;
-            else if (value <= 70) fps_required = 30;
-            else if (value <= 80) fps_required = 40;
-            else if (value <= 90) fps_required = 50;
-            else fps_required = 60;
-
-            if (isDSViewForced) isDSActive = 0;
-            isDSViewForced = false;
-        }
-
-        // Set resolution
-        ray_tex_resolution = value;
-
-        this->setMiscArrays();
-        this->setRayTexture();
-    }
-}
-
 void VolumeRenderWindow::drawRayTex()
 {
-    raytrace(cl_model_raytrace, cl_model_workload);
+    // Volume rendering
+    if (isModelActive) raytrace(cl_model_raytrace, cl_model_workload);
+    else if(isSvoInitialized) raytrace(cl_svo_raytrace, cl_svo_workload);
 
-    shared_window->std_2d_tex_program->bind();
+    // Draw texture given one of the above is true
+    if (isModelActive || isSvoInitialized)
+    {
+        shared_window->std_2d_tex_program->bind();
 
-    glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
-    shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
 
-    GLfloat fragpos[] = {
-        -1.0, -1.0,
-        1.0, -1.0,
-        1.0, 1.0,
-        -1.0, 1.0
-    };
+        GLfloat fragpos[] = {
+            -1.0, -1.0,
+            1.0, -1.0,
+            1.0, 1.0,
+            -1.0, 1.0
+        };
 
-    GLfloat texpos[] = {
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0,
-        0.0, 1.0
-    };
+        GLfloat texpos[] = {
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0
+        };
 
-    GLuint indices[] = {0,1,3,1,2,3};
+        GLuint indices[] = {0,1,3,1,2,3};
 
-    glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
-    glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
+        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
-    glEnableVertexAttribArray(shared_window->std_2d_fragpos);
-    glEnableVertexAttribArray(shared_window->std_2d_texpos);
+        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
+        glEnableVertexAttribArray(shared_window->std_2d_texpos);
 
-    glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
+        glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-    glDisableVertexAttribArray(shared_window->std_2d_texpos);
-    glDisableVertexAttribArray(shared_window->std_2d_fragpos);
-    glBindTexture(GL_TEXTURE_2D, 0);
+        glDisableVertexAttribArray(shared_window->std_2d_texpos);
+        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-    shared_window->std_2d_tex_program->release();
+        shared_window->std_2d_tex_program->release();
+    }
 }
 
 void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
 {
-    //TODO: This should be done in a separate, non-blocking, thread. Could also use a much less costly kernel to measure processing cost (number of texture fetches) and adjust resolution and update time requirement accordingly. Separate threading would make the rendering appear quite fast, but the ray texture might in fact lag behind a bit. Still a vast improvement over UI blocking.
-
-//    err = clFinish(*context_cl->getCommanQueue());
-//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     // Estimate workload and and adjust rendering quality accordingly
-//    QElapsedTimer stopwatch;
-//    stopwatch.start();
-    //    stopwatch.start();
     setRayTexture();
 
     err = clSetKernelArg(cl_model_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
@@ -888,9 +836,10 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
     err |= clSetKernelArg(cl_model_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//    qDebug() << "A It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
-//    stopwatch.start();
-
+    err = clSetKernelArg(cl_svo_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
+    err |= clSetKernelArg(cl_svo_workload, 1, sizeof(cl_mem), &cl_glb_work);
+    err |= clSetKernelArg(cl_svo_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -898,31 +847,18 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
     err = clFinish(*context_cl->getCommanQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//    qDebug() << "B It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
-//    stopwatch.start();
-
     Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
+
     err = clEnqueueReadBuffer ( *context_cl->getCommanQueue(),
         cl_glb_work,
         CL_TRUE, 0,
         glb_work.bytes(),
         glb_work.data(),
         0, NULL, NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     work = (double) glb_work.sum();
-//    std::cout << work << std::endl;
 
-//    qDebug() << "C It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
-//    stopwatch.start();
-//    glb_work.print(0,"glb_work");
-//    ray_glb_ws.print();
-//    ray_loc_ws.print();
-
-//        QElapsedTimer stopwatch;
-    //    stopwatch.start();
-    //    glFinish();
-    //    glFinish();
-    //    qDebug() << "It took: " << stopwatch.nsecsElapsed() * 1.0e-6 << " ms";
     // Aquire shared CL/GL objects
     glFinish();
     err = clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -960,7 +896,6 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
     double time_per_work = (work_time / work) * 1.0e-9;
     double max_work = (1.0 / fps_required) / time_per_work;
     quality_factor = max_work / work;
-//    std::cout << quality_factor * 100.0 << std::endl;
 
     // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -968,9 +903,87 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
 
     err = clFinish(*context_cl->getCommanQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+}
 
-    // Based on actual time spent rendering, set the time cost per work
+void VolumeRenderWindow::setSvo(SparseVoxelOcttree * svo)
+{
+    data_extent.setDeep(4, 2, svo->getExtent()->data());
+    data_view_extent.setDeep(4, 2, svo->getExtent()->data());
 
+    misc_ints[0] = (int) svo->getLevels();;
+    misc_ints[1] = (int) svo->getBrickOuterDimension();
+    tsf_parameters_svo[2] = svo->getMinMax()->at(0);
+    tsf_parameters_svo[3] = svo->getMinMax()->at(1);
+
+    setDataExtent();
+    resetViewMatrix();
+    setMiscArrays();
+    setTsfParameters();
+    isModelActive = false;
+
+    size_t n_bricks = svo->pool.size()/(svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension());
+
+    MiniArray<size_t> pool_dim(3);
+    pool_dim[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
+    pool_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
+    pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())))*svo->getBrickOuterDimension();
+
+    // Load the contents into a CL texture
+    if (isSvoInitialized) clReleaseMemObject(cl_svo_brick);
+    if (isSvoInitialized) clReleaseMemObject(cl_svo_index);
+    if (isSvoInitialized) clReleaseMemObject(cl_svo_pool);
+
+    cl_svo_index = clCreateBuffer(*context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        svo->index.size()*sizeof(cl_uint),
+        svo->index.data(),
+        &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    cl_svo_brick = clCreateBuffer(*context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        svo->brick.size()*sizeof(cl_uint),
+        svo->brick.data(),
+        &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    cl_image_format cl_pool_format;
+    cl_pool_format.image_channel_order = CL_INTENSITY;
+    cl_pool_format.image_channel_data_type = CL_FLOAT;
+
+    cl_svo_pool = clCreateImage3D ( *context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        &cl_pool_format,
+        pool_dim[0],
+        pool_dim[1],
+        pool_dim[2],
+        0,
+        0,
+        svo->pool.data(),
+        &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    cl_svo_pool_sampler = clCreateSampler(*context_cl->getContext(), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Send stuff to the kernel
+    err = clSetKernelArg(cl_svo_raytrace, 2, sizeof(cl_mem), &cl_svo_pool);
+    err |= clSetKernelArg(cl_svo_raytrace, 3, sizeof(cl_mem), &cl_svo_index);
+    err |= clSetKernelArg(cl_svo_raytrace, 4, sizeof(cl_mem), &cl_svo_brick);
+    err |= clSetKernelArg(cl_svo_raytrace, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
+    err |= clSetKernelArg(cl_svo_workload, 3, sizeof(cl_mem), &cl_svo_index);
+    err |= clSetKernelArg(cl_svo_workload, 4, sizeof(cl_mem), &cl_svo_brick);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    isSvoInitialized = true;
+}
+
+void VolumeRenderWindow::resetViewMatrix()
+{
+    data_scaling.setIdentity(4);
+    rotation.setIdentity(4);
+    scalebar_rotation.setIdentity (4);
+    data_translation.setIdentity(4);
 }
 
 size_t VolumeRenderWindow::setScaleBars()
@@ -1127,4 +1140,149 @@ size_t VolumeRenderWindow::setScaleBars()
 void VolumeRenderWindow::setQuality(int value)
 {
    fps_required = (float) value;
+}
+
+void VolumeRenderWindow::setProjection()
+{
+    isOrthonormal = !isOrthonormal;
+    ctc_matrix.setProjection(isOrthonormal);
+
+    float f;
+    if (isOrthonormal) f = 1;
+    else f = 1.0/2.3;
+
+    projection_scaling[0] = f;
+    projection_scaling[5] = f;
+    projection_scaling[10] = f;
+}
+
+void VolumeRenderWindow::setBackground()
+{
+    Matrix<GLfloat> tmp;
+    tmp = clear_color;
+
+    // Swap color
+    clear_color = clear_color_inverse;
+    clear_color_inverse = tmp;
+
+    normal_pen->setColor(QColor(255.0*clear_color_inverse[0],
+                         255.0*clear_color_inverse[1],
+                         255.0*clear_color_inverse[2],
+                         255));
+    fill_brush->setColor(QColor(255.0*clear_color[0],
+                         255.0*clear_color[1],
+                         255.0*clear_color[2],
+                         255.0*0.7));
+    normal_pen->setWidth(1);
+}
+void VolumeRenderWindow::setLogarithmic()
+{
+    isLogarithmic = !isLogarithmic;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWindow::setDataStructure()
+{
+    isDSActive = !isDSActive;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWindow::setTsfColor(int value)
+{
+    tsf_color_scheme = value;
+    if (isInitialized) setTsfTexture();
+}
+void VolumeRenderWindow::setTsfAlpha(int value)
+{
+    tsf_alpha_scheme = value;
+    if (isInitialized) setTsfTexture();
+}
+void VolumeRenderWindow::setDataMin(double value)
+{
+    if (isModelActive)
+    {
+        tsf_parameters_model[2] = value;
+    }
+    else
+    {
+        tsf_parameters_svo[2] = value;
+    }
+    if (isInitialized) setTsfParameters();
+}
+void VolumeRenderWindow::setDataMax(double value)
+{
+    if (isModelActive)
+    {
+        tsf_parameters_model[3] = value;
+    }
+    else
+    {
+        tsf_parameters_svo[3] = value;
+    }
+    if (isInitialized) setTsfParameters();
+}
+void VolumeRenderWindow::setAlpha(double value)
+{
+    if (isModelActive)
+    {
+        tsf_parameters_model[4] = value;
+    }
+    else
+    {
+        tsf_parameters_svo[4] = value;
+    }
+    if (isInitialized) setTsfParameters();
+}
+void VolumeRenderWindow::setBrightness(double value)
+{
+    if (isModelActive)
+    {
+        tsf_parameters_model[5] = value;
+    }
+    else
+    {
+        tsf_parameters_svo[5] = value;
+    }
+    if (isInitialized) setTsfParameters();
+}
+void VolumeRenderWindow::setUnitcell()
+{
+    isUnitcellActive = !isUnitcellActive;
+}
+void VolumeRenderWindow::setModel()
+{
+    isModelActive = !isModelActive;
+}
+void VolumeRenderWindow::setModelParam0(double value)
+{
+    model_misc_floats[0] = value;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWindow::setModelParam1(double value)
+{
+    model_misc_floats[1] = value;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWindow::setModelParam2(double value)
+{
+    model_misc_floats[2] = value;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWindow::setModelParam3(double value)
+{
+    model_misc_floats[3] = value;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWindow::setModelParam4(double value)
+{
+    model_misc_floats[4] = value;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWindow::setModelParam5(double value)
+{
+    model_misc_floats[5] = value;
+    if (isInitialized) setMiscArrays();
+}
+
+void VolumeRenderWindow::setScalebar()
+{
+    isScalebarActive = !isScalebarActive;
 }

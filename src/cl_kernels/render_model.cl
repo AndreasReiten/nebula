@@ -216,6 +216,8 @@ __kernel void modelWorkload(
     __constant float * data_extent,
     __constant float * data_view_extent)
 {
+/* Estimate the number of intensity and color fetches that are needed for
+ * the given combination input parameters */
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
     int2 id_loc = (int2)(get_local_id(0),get_local_id(1));
     int2 size_loc = (int2)(get_local_size(0),get_local_size(1));
@@ -255,7 +257,7 @@ __kernel void modelWorkload(
             pixelRadiusNear = rayNearEdge.xyz - rayNear.xyz;
             pixelRadiusFar = rayFarEdge.xyz - rayFar.xyz;
 
-            // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central rayDelta vector
+            // The ray is treated as a cone of a certain diameter.
             float3 a1Near = native_divide(dot(pixelRadiusNear, rayDelta),dot(rayDelta,rayDelta))*rayDelta;
             float3 a2Near = pixelRadiusNear - a1Near;
 
@@ -280,35 +282,16 @@ __kernel void modelWorkload(
         if(hit)
         {
             // The geometry of the intersecting part of the ray
-//            float coneDiameter, stepLength;
-//            float coneDiameterLow = 0.05; // Only acts as a scaling factor
-
             float3 rayBoxOrigin = rayNear.xyz + t_near * rayDelta.xyz;
             float3 rayBoxEnd = rayNear.xyz + t_far * rayDelta.xyz;
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
-//            float3 direction = normalize(rayBoxDelta);
-//            float3 rayBoxAdd;// = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-data_view_extent[0], 400.0f);
             float rayBoxLength = fast_length(rayBoxDelta);
-
-//            float3 rayBoxXyz = rayBoxOrigin;
 
             float coneDiameterOrigin = (coneDiameterNear + length(rayBoxOrigin - rayNear.xyz) * coneDiameterIncrement);
             float coneDiameterEnd = (coneDiameterNear + length(rayBoxEnd - rayNear.xyz) * coneDiameterIncrement);
 
             float coneDiameterAvg = (coneDiameterOrigin + coneDiameterEnd) * 0.5;
             loc_work[id] = native_divide(rayBoxLength, coneDiameterAvg);
-
-//            while ( fast_length(rayBoxXyz - rayBoxOrigin) < rayBoxLength )
-//            {
-//                // Calculate the cone diameter at the current ray position
-//                coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement);
-
-//                stepLength = coneDiameter * 1.0;
-//                rayBoxAdd = direction * stepLength;
-
-//                loc_work[id] += 1.0f;
-//                rayBoxXyz += rayBoxAdd;
-//            }
         }
     }
 

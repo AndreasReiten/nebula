@@ -10,7 +10,6 @@ __kernel void svoRayTrace(
     __constant float * data_extent,
     __constant float * data_view_extent,
     __constant float * tsf_var,
-//    __constant float * misc_float,
     __constant int * misc_int)
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
@@ -23,7 +22,6 @@ __kernel void svoRayTrace(
     int brickSize = misc_int[1];
     int isLogActive = misc_int[2];
     int isDsActive = misc_int[3];
-//    float stepLengthFactor = misc_float[4];
 
     float tsfOffsetLow = tsf_var[0];
     float tsfOffsetHigh = tsf_var[1];
@@ -31,8 +29,6 @@ __kernel void svoRayTrace(
     float dataOffsetHigh = tsf_var[3];
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
-
-//    float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
 
     if (isLogActive)
     {
@@ -314,6 +310,8 @@ __kernel void svoWorkload(
     __constant float * data_view_extent,
     __constant int * misc_int)
 {
+/* Estimate the number of intensity and color fetches that are needed for
+ * the given combination input parameters */
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
     int2 id_loc = (int2)(get_local_id(0),get_local_id(1));
     int2 size_loc = (int2)(get_local_size(0),get_local_size(1));

@@ -10,7 +10,6 @@
 #include <ctime>
 #include <algorithm>
 
-
 #include <QtGlobal>
 
 /* GL and CL*/
@@ -52,6 +51,7 @@ public:
     ~VolumeRenderWindow();
 
     void setSharedWindow(SharedContextWindow * window);
+    void setSvo(SparseVoxelOcttree * svo);
 
 protected:
     void initialize();
@@ -62,16 +62,38 @@ protected:
 
 public slots:
     void setQuality(int value);
+    void setScalebar();
+    void setProjection();
+    void setBackground();
+    void setLogarithmic();
+    void setDataStructure();
+    void setTsfColor(int value);
+    void setTsfAlpha(int value);
+    void setDataMin(double value);
+    void setDataMax(double Value);
+    void setAlpha(double value);
+    void setBrightness(double value);
+    void setUnitcell();
+    void setModel();
+    void setModelParam0(double value);
+    void setModelParam1(double value);
+    void setModelParam2(double value);
+    void setModelParam3(double value);
+    void setModelParam4(double value);
+    void setModelParam5(double value);
 
 private:
     SharedContextWindow * shared_window;
 
     // Boolean checks
     bool isInitialized;
-    bool isDSViewForced;
     bool isDSActive;
     bool isOrthonormal;
     bool isLogarithmic;
+    bool isModelActive;
+    bool isSvoInitialized;
+    bool isUnitcellActive;
+    bool isScalebarActive;
 
     // Ray texture
     Matrix<int> ray_tex_dim;
@@ -83,7 +105,6 @@ private:
     bool isRayTexInitialized;
     void setRayTexture();
     void raytrace(cl_kernel kernel, cl_kernel workload);
-    void setQuality(double value);
     double work, work_time, quality_factor;
 
     // Drawing functions
@@ -97,6 +118,7 @@ private:
     // Core set functions
     void setDataExtent();
     void setViewMatrix();
+    void resetViewMatrix();
     void setTsfParameters();
     void setMiscArrays();
 
@@ -116,15 +138,11 @@ private:
     GLuint tsf_tex_gl_thumb;
     bool isTsfTexInitialized;
     TransferFunction tsf;
+    int tsf_color_scheme;
+    int tsf_alpha_scheme;
 
     // Ray texture timing
-    bool isBadCall;
-    bool isRefreshRequired;
-    float callTimeMax;
-    float timeLastActionMin;
     float fps_required;
-    QElapsedTimer *timerLastAction;
-    QElapsedTimer *callTimer;
     QElapsedTimer ray_kernel_timer;
 
     // Mouse
@@ -147,9 +165,9 @@ private:
     // Other matrices
     Matrix<double> data_extent;
     Matrix<double> data_view_extent;
-    Matrix<double> tsf_parameters;
+    Matrix<double> tsf_parameters_model;
+    Matrix<double> tsf_parameters_svo;
     Matrix<int> misc_ints;
-    Matrix<double> svo_misc_floats;
     Matrix<double> model_misc_floats;
 
     // OpenGL
@@ -167,11 +185,18 @@ private:
     cl_mem cl_view_matrix_inverse;
     cl_mem cl_data_extent;
     cl_mem cl_data_view_extent;
-    cl_mem cl_tsf_parameters;
+    cl_mem cl_tsf_parameters_model;
+    cl_mem cl_tsf_parameters_svo;
     cl_mem cl_misc_ints;
     cl_mem cl_model_misc_floats;
 
     void initResourcesCL();
+
+    // Svo
+    cl_mem cl_svo_pool;
+    cl_mem cl_svo_index;
+    cl_mem cl_svo_brick;
+    cl_sampler cl_svo_pool_sampler;
 
     // Colors
     Matrix<GLfloat> white;

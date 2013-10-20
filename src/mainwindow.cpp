@@ -340,13 +340,8 @@ void MainWindow::setProjectThresholdHigh(double value)
 
 void MainWindow::initializeEmit()
 {
-
-
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(9);
-
-//    tsfAlphaComboBox->setCurrentIndex(1);
-//    tsfComboBox->setCurrentIndex(3);
 
     treshLimA_DSB->setValue(10);
     treshLimB_DSB->setValue(1e9);
@@ -677,10 +672,28 @@ void MainWindow::setTab(int tab)
 
 void MainWindow::initializeConnects()
 {
-
-
     /* this <-> volumeRenderWidget */
     connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow, SLOT(setQuality(int)));
+    connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow, SLOT(setScalebar()));
+    connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow, SLOT(setProjection()));
+    connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow, SLOT(setBackground()));
+    connect(this->logAct, SIGNAL(triggered()), volumeRenderWindow, SLOT(setLogarithmic()));
+    connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow, SLOT(setDataStructure()));
+    connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow, SLOT(setTsfColor(int)));
+    connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow, SLOT(setTsfAlpha(int)));
+    connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setDataMin(double)));
+    connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setDataMax(double)));
+    connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setAlpha(double)));
+    connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setBrightness(double)));
+    connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWindow, SLOT(setUnitcell()));
+    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow, SLOT(setModel()));
+    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setModelParam0(double)));
+    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setModelParam1(double)));
+    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setModelParam2(double)));
+    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow, SLOT(setModelParam3(double)));
+//    connect(this->, SIGNAL(), volumeRenderWindow, SLOT(setModelParam4(double)));
+//    connect(this->, SIGNAL(), volumeRenderWindow, SLOT(setModelParam5(double)));
+
 //    connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWidget, SLOT(setTsfAlphaStyle(int)));
 //    connect(dataStructureAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleDataStructure()));
 //    connect(backgroundAct, SIGNAL(triggered()), volumeRenderWidget, SLOT(toggleBackground()));
@@ -705,6 +718,7 @@ void MainWindow::initializeConnects()
 
 
     /* this <-> this */
+    connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
     connect(this->treshLimA_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
     connect(this->treshLimB_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdHigh(double)));
     connect(this->treshLimC_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdLow(double)));
@@ -756,24 +770,22 @@ void MainWindow::saveSvo()
 
 void MainWindow::openSvo()
 {
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".svo (*.svo);; All Files (*)"));
 
+    if ((file_name != ""))
+    {
+        setWindowTitle(tr("Nebula[*] ")+file_name);
 
-//    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".svo (*.svo);; All Files (*)"));
+        svo_loaded[current_svo].open(file_name);
+        volumeRenderWindow->setSvo(&(svo_loaded[current_svo]));
 
-//    if ((file_name != ""))
-//    {
-//        setWindowTitle(tr("Nebula[*] ")+file_name);
+        alphaSpinBox->setValue(0.05);
+        brightnessSpinBox->setValue(2.0);
+        dataMinSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(0));
+        dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
 
-//        svo_loaded[current_svo].open(file_name);
-//        volumeRenderWidget->setSvo(&(svo_loaded[current_svo]));
-
-//        alphaSpinBox->setValue(0.05);
-//        brightnessSpinBox->setValue(2.0);
-//        dataMinSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(0));
-//        dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
-
-//        print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+file_name+"\"");
-//    }
+        print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+file_name+"\"");
+    }
 }
 
 
@@ -1050,8 +1062,6 @@ void MainWindow::initializeInteractives()
         tsfComboBox->addItem(trUtf8("Galaxy"));
         tsfComboBox->addItem(trUtf8("Binary"));
         tsfComboBox->addItem(trUtf8("Yranib"));
-        tsfComboBox->addItem(trUtf8("Winter"));
-        tsfComboBox->addItem(trUtf8("Ice"));
 
         tsfAlphaComboBox = new QComboBox;
         tsfAlphaComboBox->addItem(trUtf8("Linear"));
@@ -1552,7 +1562,22 @@ void MainWindow::setCurrentFile(const QString &fileName)
     setWindowFilePath(shownName);
 }
 
-//QString MainWindow::strippedName(const QString &fullFileName)
-//{
-//    return QFileInfo(fullFileName).fileName();
-//}
+void MainWindow::takeScreenshot()
+{
+    QScreen * screen = QGuiApplication::primaryScreen();
+    if (screen)
+    {
+        QPixmap screenshot = screen->grabWindow(volumeRenderWindow->winId());
+
+        QString format = "jpg";
+        QDateTime dateTime = dateTime.currentDateTime();
+        QString initialPath = QDir::currentPath() + QString("screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
+
+        QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), initialPath,
+                                                    tr("%1 Files (*.%2);;All Files (*)")
+                                                    .arg(format.toUpper())
+                                                    .arg(format));
+        if (!fileName.isEmpty()) screenshot.save(fileName, format.toLatin1().constData(), 100);
+        print(QString("\n Saved: "+fileName));
+    }
+}

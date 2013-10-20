@@ -63,6 +63,7 @@ public:
 protected:
 
 private slots:
+    void takeScreenshot();
     void saveScriptAs();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
@@ -86,7 +87,6 @@ private slots:
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
     void initializeThreads();
-//    void writeLog(QString str);
 
     void setReduceThresholdLow(double value);
     void setReduceThresholdHigh(double value);
