@@ -21,7 +21,7 @@
 #include <QFileInfo>
 
 
-//#include "imagerender.h"
+#include "imagerender.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
@@ -44,7 +44,7 @@ class PilatusFile
 
         int set(QString path, ContextCL * context);
         int readData();
-        void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
+        void setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex);
         int filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive = true);
         //~int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
 
@@ -64,10 +64,10 @@ class PilatusFile
 
     private:
         ContextCL * context_cl;
-        cl_mem * alpha_img_clgl;
-        cl_mem * beta_img_clgl;
-        cl_mem * gamma_img_clgl;
-        cl_mem * tsf_img_clgl;
+        cl_mem * cl_img_alpha;
+        cl_mem * cl_img_beta;
+        cl_mem * cl_img_gamma;
+        cl_mem * cl_tsf_tex;
 //        cl_command_queue * queue;
 //        cl_context * context;
         cl_kernel * project_kernel;

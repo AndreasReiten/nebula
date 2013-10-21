@@ -62,8 +62,6 @@ VolumeRenderWindow::VolumeRenderWindow()
 
     tsf_parameters_model[0] = 0.0; // texture min
     tsf_parameters_model[1] = 1.0; // texture max
-//    tsf_parameters_model[4] = 0.5; // alpha
-//    tsf_parameters_model[5] = 2.0; // brightness
 
     tsf_parameters_svo[0] = 0.0; // texture min
     tsf_parameters_svo[1] = 1.0; // texture max
@@ -688,6 +686,7 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
             painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));
         }
     }
+
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
     QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);

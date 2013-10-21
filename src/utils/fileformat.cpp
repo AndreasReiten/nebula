@@ -227,12 +227,12 @@ void PilatusFile::clearData()
 }
 
 
-void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
+void PilatusFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex)
 {
-    this->alpha_img_clgl = alpha_img_clgl;
-    this->beta_img_clgl = beta_img_clgl;
-    this->gamma_img_clgl = gamma_img_clgl;
-    this->tsf_img_clgl = tsf_img_clgl;
+    this->cl_img_alpha = cl_img_alpha;
+    this->cl_img_beta = cl_img_beta;
+    this->cl_img_gamma = cl_img_gamma;
+    this->cl_tsf_tex = cl_tsf_tex;
 }
 
 
@@ -314,16 +314,16 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    // The sampler for tsf_img_clgl
+    // The sampler for cl_tsf_tex
     cl_sampler tsf_sampler = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Set kernel arguments
     err = clSetKernelArg(*project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
-    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) beta_img_clgl);
-    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) gamma_img_clgl);
-    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) tsf_img_clgl);
+    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) cl_img_alpha);
+    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) cl_img_beta);
+    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) cl_img_gamma);
+    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) cl_tsf_tex);
     err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &background_cl);
     err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_mem), (void *) &source_cl);
     err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &tsf_sampler);

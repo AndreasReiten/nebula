@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #include <QtGlobal>
+#include <QDebug>
 
 /* GL and CL*/
 #include <CL/opencl.h>

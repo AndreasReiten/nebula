@@ -951,15 +951,34 @@ void MainWindow::initializeInteractives()
         imageNumberSpinBox->setAccelerated(true);
 
 
-//        imageRenderWidget = new ImageRenderGLWidget(sharedContextWindow->getCLDevice(), sharedContextWindow->getCLContext(), sharedContextWindow->getCLCommandQueue(), sharedContextWindow->format(), 0, sharedContextWindow);
+        QSurfaceFormat format_gl;
+        format_gl.setVersion(4, 0);
+        format_gl.setSamples(16);
+        format_gl.setRedBufferSize(8);
+        format_gl.setGreenBufferSize(8);
+        format_gl.setBlueBufferSize(8);
+        format_gl.setAlphaBufferSize(8);
+//        format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+
+        imageRenderWindow = new ImageRenderWindow();
+        imageRenderWindow->setSharedWindow(sharedContextWindow);
+        imageRenderWindow->setFormat(format_gl);
+        imageRenderWindow->setContextCL(context_cl);
+        imageRenderWindow->setAnimating(true);
+
+
+        imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
+//        imageRenderWidget->setMinimumSize(200, 200);
+        imageRenderWidget->setFocusPolicy(Qt::TabFocus);
 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setSpacing(0);
         imageLayout->setMargin(0);
         imageLayout->setContentsMargins(0,0,0,0);
+        imageLayout->setRowStretch(0,1);
         imageLayout->setColumnStretch(0,1);
         imageLayout->setColumnStretch(6,1);
-//        imageLayout->addWidget(imageRenderWidget,0,0,1,7);
+        imageLayout->addWidget(imageRenderWidget,0,0,1,7);
         imageLayout->addWidget(imageFastBackButton,1,1,1,1);
         imageLayout->addWidget(imageBackButton,1,2,1,1);
         imageLayout->addWidget(imageNumberSpinBox,1,3,1,1);
@@ -990,7 +1009,7 @@ void MainWindow::initializeInteractives()
 
 
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
-        volumeRenderWidget->setMinimumSize(200, 200);
+//        volumeRenderWidget->setMinimumSize(200, 200);
         volumeRenderWidget->setFocusPolicy(Qt::TabFocus);
 
         // Toolbar

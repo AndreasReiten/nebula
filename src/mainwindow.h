@@ -45,7 +45,7 @@
 #include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
 #include "utils/volumerender.h"
-//#include "utils/imagerender.h"
+#include "utils/imagerender.h"
 //#include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
@@ -216,7 +216,8 @@ protected:
     SharedContextWindow *sharedContextWindow;
     VolumeRenderWindow *volumeRenderWindow;
     QWidget *volumeRenderWidget;
-//    ImageRenderGLWidget *imageRenderWidget;
+    ImageRenderWindow *imageRenderWindow;
+    QWidget *imageRenderWidget;
 
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;

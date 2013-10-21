@@ -4,7 +4,7 @@ LIBS += -lOpenCL
 HEADERS       = src/mainwindow.h \
                 src/utils/openglwindow.h \
                 src/utils/volumerender.h \
-#                src/utils/imagerender.h \
+                src/utils/imagerender.h \
                 src/utils/fileformat.h \
 #                src/utils/worker.h \
                 src/utils/miniarray.h \
@@ -23,7 +23,7 @@ SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
                 src/utils/openglwindow.cpp \
                 src/utils/volumerender.cpp \
-#                src/utils/imagerender.cpp \
+                src/utils/imagerender.cpp \
                 src/utils/fileformat.cpp \
 #                src/utils/worker.cpp \
                 src/utils/miniarray.cpp \
