@@ -505,7 +505,10 @@ void VolumeRenderWindow::setRayTexture()
         if (ray_tex_dim[1] % ray_loc_ws[1]) ray_glb_ws[1] = ray_loc_ws[1]*(1 + (ray_tex_dim[1] / ray_loc_ws[1]));
         else ray_glb_ws[1] = ray_tex_dim[1];
 
-        if (isRayTexInitialized) clReleaseMemObject(ray_tex_cl);
+        if (isRayTexInitialized){
+            err = clReleaseMemObject(ray_tex_cl);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        }
 
         // Update GL texture
         glDeleteTextures(1, &ray_tex_gl);
@@ -540,8 +543,14 @@ void VolumeRenderWindow::setRayTexture()
 
 void VolumeRenderWindow::setTsfTexture()
 {
-    if (isTsfTexInitialized) clReleaseSampler(tsf_tex_sampler);
-    if (isTsfTexInitialized) clReleaseMemObject(tsf_tex_cl);
+    if (isTsfTexInitialized){
+        err = clReleaseSampler(tsf_tex_sampler);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (isTsfTexInitialized){
+        err = clReleaseMemObject(tsf_tex_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 
     tsf.setColorScheme(tsf_color_scheme, tsf_alpha_scheme);
     tsf.setSpline(256);
@@ -896,6 +905,7 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
     double time_per_work = (work_time / work) * 1.0e-9;
     double max_work = (1.0 / fps_required) / time_per_work;
     quality_factor = max_work / work;
+//    std::cout << quality_factor * 100.0 << std::endl;
 
     // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -929,9 +939,18 @@ void VolumeRenderWindow::setSvo(SparseVoxelOcttree * svo)
     pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())))*svo->getBrickOuterDimension();
 
     // Load the contents into a CL texture
-    if (isSvoInitialized) clReleaseMemObject(cl_svo_brick);
-    if (isSvoInitialized) clReleaseMemObject(cl_svo_index);
-    if (isSvoInitialized) clReleaseMemObject(cl_svo_pool);
+    if (isSvoInitialized){
+        err = clReleaseMemObject(cl_svo_brick);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (isSvoInitialized){
+        err = clReleaseMemObject(cl_svo_index);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (isSvoInitialized){
+        err = clReleaseMemObject(cl_svo_pool);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 
     cl_svo_index = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,

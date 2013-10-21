@@ -351,7 +351,8 @@ int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, 
 
         isEmptyBrick = tmp[0];
 
-        clReleaseMemObject(isEmpty_cl);
+        err = clReleaseMemObject(isEmpty_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         *method = 0;
     }

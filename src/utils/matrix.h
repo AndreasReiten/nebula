@@ -43,7 +43,6 @@ class Matrix {
         T sum();
         void setIdentity(size_t n);
         void set(size_t m, size_t n, T value);
-        void setShallow(size_t m, size_t n, T * buffer);
         void setDeep(size_t m, size_t n, T * buffer);
         void reserve(size_t m, size_t n);
         void clear();
@@ -125,7 +124,7 @@ Matrix<T>::~Matrix()
 {
     if (m*n > 0)
     {
-        this->buffer.clear(); // Not needed
+//        this->buffer.clear(); // Not needed
         m = 0;
         n = 0;
     }
@@ -492,15 +491,6 @@ void Matrix<T>::set(size_t m, size_t n, T value)
 }
 
 template <class T>
-void Matrix<T>::setShallow(size_t m, size_t n, T * buffer)
-{
-    this->clear();
-    this->m = m;
-    this->n = n;
-    this->buffer = buffer;
-}
-
-template <class T>
 void Matrix<T>::setDeep(size_t m, size_t n, T * buffer)
 {
     this->clear();
@@ -545,8 +535,9 @@ void Matrix<T>::clear()
 {
     if (m*n > 0)
     {
-//        delete[] this->buffer;
-        //        vector<T>().swap(buffer);
+        // Since C++ vectors are optimized for speed, calling clear will not always free up the associated memory. It will be freed if the destructor is called, though. Here we swap the vector data over to a decoy which is destroyed when the function returns.
+        std::vector<T> decoy;
+        std::vector<T> (decoy).swap(buffer);
         this->buffer.clear();
         this->m = 0;
         this->n = 0;

@@ -34,12 +34,9 @@
 #include "sharedcontext.h"
 #include "transferfunction.h"
 
-#include <QMatrix4x4>
-
 #include <QScreen>
 #include <QPainter>
 
-#include <QtCore/qmath.h>
 
 
 class VolumeRenderWindow : public OpenGLWindow
