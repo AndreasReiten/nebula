@@ -9,7 +9,7 @@
 #include <limits>
 #include <cstring>
 #include <QDebug>
-//#include <vector>
+#include <vector>
 
 const double pi = 4.0*std::atan(1.0);
 
@@ -48,7 +48,7 @@ class Matrix {
         void reserve(size_t m, size_t n);
         void clear();
 
-        T * data() const;
+        const T *data() const;
         T * data();
         T at(size_t index);
 
@@ -63,7 +63,7 @@ class Matrix {
     protected:
         size_t m;
         size_t n;
-        T * buffer;
+        std::vector<T> buffer;
 
         /* Swap function as per C++11 idiom */
         void swap(Matrix& first, Matrix& second);
@@ -97,7 +97,7 @@ Matrix<T>::Matrix()
 {
     this->m = 0;
     this->n = 0;
-    this->buffer = NULL;
+//    this->buffer = NULL;
 }
 
 template <class T>
@@ -105,7 +105,8 @@ Matrix<T>::Matrix(const Matrix & other)
 {
     this->m = other.getM();
     this->n = other.getN();
-    this->buffer = new T[m*n];
+//    this->buffer = new T[m*n];
+    this->buffer.resize(m*n);
     for (size_t i = 0; i < m*n; i++)
     {
         this->buffer[i] = other[i];
@@ -124,7 +125,7 @@ Matrix<T>::~Matrix()
 {
     if (m*n > 0)
     {
-        delete[] this->buffer;
+        this->buffer.clear(); // Not needed
         m = 0;
         n = 0;
     }
@@ -482,7 +483,8 @@ void Matrix<T>::set(size_t m, size_t n, T value)
     this->clear();
     this->m = m;
     this->n = n;
-    this->buffer = new T[m*n];
+//    this->buffer = new T[m*n];
+    this->buffer.resize(m*n);
     for (size_t i = 0; i < m*n; i++)
     {
         this->buffer[i] = value;
@@ -504,7 +506,8 @@ void Matrix<T>::setDeep(size_t m, size_t n, T * buffer)
     this->clear();
     this->m = m;
     this->n = n;
-    this->buffer = new T[m*n];
+//    this->buffer = new T[m*n];
+    this->buffer.resize(m*n);
     for (size_t i = 0; i < m*n; i++)
     {
         this->buffer[i] = buffer[i];
@@ -517,7 +520,8 @@ void Matrix<T>::reserve(size_t m, size_t n)
     this->clear();
     this->m = m;
     this->n = n;
-    this->buffer = new T[m*n];
+//    this->buffer = new T[m*n];
+    this->buffer.resize(m*n);
 }
 
 template <class T>
@@ -541,7 +545,9 @@ void Matrix<T>::clear()
 {
     if (m*n > 0)
     {
-        delete[] this->buffer;
+//        delete[] this->buffer;
+        //        vector<T>().swap(buffer);
+        this->buffer.clear();
         this->m = 0;
         this->n = 0;
     }
@@ -550,13 +556,13 @@ void Matrix<T>::clear()
 template <class T>
 T * Matrix<T>::data()
 {
-    return buffer;
+    return this->buffer.data();
 }
 
 template <class T>
-T * Matrix<T>::data() const
+const T * Matrix<T>::data() const
 {
-    return buffer;
+    return this->buffer.data();
 }
 
 template <class T>
@@ -626,18 +632,23 @@ CameraToClipMatrix<T>::~CameraToClipMatrix()
     this->clear();
 }
 
+
 template <class T>
 CameraToClipMatrix<T>& CameraToClipMatrix<T>::operator = (const CameraToClipMatrix & other)
 {
     this->m = other.getM();
     this->n = other.getN();
-    T * local_buffer = new T[this->m*this->n];
+//    T * local_buffer = new T[this->m*this->n];
+//    std::vector<T> local_buffer;
+//    local_buffer.resize(this->m*this->n);
+    this->buffer.resize(this->m*this->n);
     for (size_t i = 0; i < this->m*this->n; i++)
     {
-        local_buffer[i] = other[i];
+//        local_buffer[i] = other[i];
+        this->buffer[i] = other[i];
     }
-    delete[] this->buffer;
-    this->buffer = local_buffer;
+//    delete[] this->buffer;
+//    this->buffer = local_buffer;
     return * this;
 }
 
@@ -646,13 +657,11 @@ CameraToClipMatrix<T>& CameraToClipMatrix<T>::operator = (const Matrix<T> & othe
 {
     this->m = other.getM();
     this->n = other.getN();
-    T * local_buffer = new T[this->m*this->n];
+    this->buffer.resize(this->m*this->n);
     for (size_t i = 0; i < this->m*this->n; i++)
     {
-        local_buffer[i] = other[i];
+        this->buffer[i] = other[i];
     }
-    delete[] this->buffer;
-    this->buffer = local_buffer;
     return * this;
 }
 
@@ -778,13 +787,11 @@ RotationMatrix<T>& RotationMatrix<T>::operator = (const Matrix<T> & other)
 {
     this->m = other.getM();
     this->n = other.getN();
-    T * local_buffer = new T[this->m*this->n];
+    this->buffer.resize(this->m*this->n);
     for (size_t i = 0; i < this->m*this->n; i++)
     {
-        local_buffer[i] = other[i];
+        this->buffer[i] = other[i];
     }
-    delete[] this->buffer;
-    this->buffer = local_buffer;
     return * this;
 }
 
