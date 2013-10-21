@@ -108,8 +108,8 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
          * Moving the mouse alters rotation.
          * */
 
-        double eta = std::atan2(ev->x() - last_mouse_pos_x, ev->y() - last_mouse_pos_y) - pi*1.0;
-        double roll = move_scaling * pi/((float) height()) * std::sqrt((ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
+        double eta = std::atan2((double)ev->x() - last_mouse_pos_x, (double)ev->y() - last_mouse_pos_y) - pi*1.0;
+        double roll = move_scaling * pi/((float) height()) * std::sqrt((double)(ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
 
         RotationMatrix<double> roll_rotation;
         roll_rotation.setArbRotation(-0.5*pi, eta, roll);
