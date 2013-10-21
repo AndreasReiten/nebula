@@ -39,9 +39,6 @@ MainWindow::MainWindow()
     sharedContextWindow->preInitialize();
     sharedContextWindow->hide();
 
-
-
-
     this->initializeActions();
     this->initializeMenus();
     this->initializeInteractives();
@@ -1462,7 +1459,7 @@ void MainWindow::runReadScript()
 void MainWindow::readSettings()
 {
     QSettings settings("Norwegian University of Science and Technology", "Nebula");
-    QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
+    QPoint pos = settings.value("pos", QPoint(0, 0)).toPoint();
     QSize size = settings.value("size", QSize(400, 400)).toSize();
     svoDir = settings.value("svoDir", "").toString();
     svoDir = settings.value("scriptDir", "").toString();
@@ -1571,7 +1568,7 @@ void MainWindow::takeScreenshot()
 
         QString format = "jpg";
         QDateTime dateTime = dateTime.currentDateTime();
-        QString initialPath = QDir::currentPath() + QString("screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
+        QString initialPath = QDir::currentPath() + QString("/screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
 
         QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), initialPath,
                                                     tr("%1 Files (*.%2);;All Files (*)")
