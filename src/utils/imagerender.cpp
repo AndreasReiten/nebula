@@ -237,13 +237,13 @@ void ImageRenderWindow::resizeEvent(QResizeEvent * ev)
 void ImageRenderWindow::releaseSharedBuffers()
 {
      // Release shared CL/GL objects
-    err = clFinish(*context_cl->getCommanQueue());
+    err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &cl_img_alpha, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &cl_img_beta, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &cl_img_gamma, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &cl_tsf_tex, 0, 0, 0);
+    err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
+    err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -378,10 +378,10 @@ cl_mem * ImageRenderWindow::getBetaImgCLGL()
 void ImageRenderWindow::aquireSharedBuffers()
 {
     glFinish();
-    err = clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &cl_img_alpha, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &cl_img_beta, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &cl_img_gamma, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &cl_tsf_tex, 0, 0, 0);
+    err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
+    err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 

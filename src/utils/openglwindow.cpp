@@ -4,8 +4,8 @@ OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     : QWindow(parent)
     , isUpdatePending(false)
     , isAnimating(false)
-    , context_gl(0)
     , paint_device_gl(0)
+    , context_gl(0)
 {
     this->shared_context = shareContext;
 

@@ -89,8 +89,8 @@ private:
     bool isOrthonormal;
     bool isLogarithmic;
     bool isModelActive;
-    bool isSvoInitialized;
     bool isUnitcellActive;
+    bool isSvoInitialized;
     bool isScalebarActive;
 
     // Ray texture

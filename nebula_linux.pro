@@ -6,7 +6,7 @@ HEADERS       = src/mainwindow.h \
                 src/utils/volumerender.h \
                 src/utils/imagerender.h \
                 src/utils/fileformat.h \
-#                src/utils/worker.h \
+                src/utils/worker.h \
                 src/utils/miniarray.h \
                 src/utils/texthighlighter.h \
                 src/utils/tools.h \
@@ -17,7 +17,7 @@ HEADERS       = src/mainwindow.h \
                 src/utils/contextcl.h \
                 src/utils/devicecl.h \
                 src/utils/sharedcontext.h \
-    src/utils/transferfunction.h
+                src/utils/transferfunction.h
 
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
@@ -25,7 +25,7 @@ SOURCES       = src/main.cpp \
                 src/utils/volumerender.cpp \
                 src/utils/imagerender.cpp \
                 src/utils/fileformat.cpp \
-#                src/utils/worker.cpp \
+                src/utils/worker.cpp \
                 src/utils/miniarray.cpp \
                 src/utils/texthighlighter.cpp \
                 src/utils/tools.cpp \
@@ -36,7 +36,7 @@ SOURCES       = src/main.cpp \
                 src/utils/contextcl.cpp \
                 src/utils/devicecl.cpp \
                 src/utils/sharedcontext.cpp \
-    src/utils/transferfunction.cpp
+                src/utils/transferfunction.cpp
 
 RESOURCES     = nebula.qrc
 

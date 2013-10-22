@@ -13,6 +13,7 @@ PilatusFile::PilatusFile()
 }
 PilatusFile::PilatusFile(QString path, ContextCL *context)
 {
+    context_cl = context;
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
@@ -361,11 +362,11 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), *project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), *project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
-    clFinish(*context_cl->getCommanQueue());
+    clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Read the data
@@ -380,7 +381,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     region[2] = 1;
 
     MiniArray<float> projected_data_buf(fast_dimension*slow_dimension*4);
-    err = clEnqueueReadImage ( *context_cl->getCommanQueue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
+    err = clEnqueueReadImage ( *context_cl->getCommandQueue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     if (xyzi_target_cl){

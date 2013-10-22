@@ -357,7 +357,7 @@ void VolumeRenderWindow::setViewMatrix()
     view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * scalebar_rotation * data_translation;
 
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_view_matrix_inverse,
         CL_TRUE,
         0,
@@ -376,7 +376,7 @@ void VolumeRenderWindow::setViewMatrix()
 
 void VolumeRenderWindow::setDataExtent()
 {
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_data_extent,
         CL_TRUE,
         0,
@@ -385,7 +385,7 @@ void VolumeRenderWindow::setDataExtent()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_data_view_extent,
         CL_TRUE,
         0,
@@ -410,7 +410,7 @@ void VolumeRenderWindow::setDataExtent()
 
 void VolumeRenderWindow::setTsfParameters()
 {
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_tsf_parameters_model,
         CL_TRUE,
         0,
@@ -419,7 +419,7 @@ void VolumeRenderWindow::setTsfParameters()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_tsf_parameters_svo,
         CL_TRUE,
         0,
@@ -437,7 +437,7 @@ void VolumeRenderWindow::setMiscArrays()
 {
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_misc_ints,
         CL_TRUE,
         0,
@@ -446,7 +446,7 @@ void VolumeRenderWindow::setMiscArrays()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueWriteBuffer (*context_cl->getCommanQueue(),
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_model_misc_floats,
         CL_TRUE,
         0,
@@ -849,15 +849,15 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
     err |= clSetKernelArg(cl_svo_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clFinish(*context_cl->getCommanQueue());
+    err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
 
-    err = clEnqueueReadBuffer ( *context_cl->getCommanQueue(),
+    err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
         cl_glb_work,
         CL_TRUE, 0,
         glb_work.bytes(),
@@ -869,7 +869,7 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
 
     // Aquire shared CL/GL objects
     glFinish();
-    err = clEnqueueAcquireGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
+    err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Launch rendering kernel
@@ -890,12 +890,12 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = clEnqueueNDRangeKernel(*context_cl->getCommanQueue(), kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
+            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
 
-    err = clFinish(*context_cl->getCommanQueue());
+    err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     work_time = (double) ray_kernel_timer.nsecsElapsed();
@@ -907,10 +907,10 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
 //    std::cout << quality_factor * 100.0 << std::endl;
 
     // Release shared CL/GL objects
-    err = clEnqueueReleaseGLObjects(*context_cl->getCommanQueue(), 1, &ray_tex_cl, 0, 0, 0);
+    err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clFinish(*context_cl->getCommanQueue());
+    err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -1094,7 +1094,7 @@ size_t VolumeRenderWindow::setScaleBars()
                     // Text
                     if (tick_levels == tick_levels_max - 1)
                     {
-                        if (n_scalebar_ticks+3 < scalebar_ticks.getM())
+                        if ((size_t) n_scalebar_ticks+3 < scalebar_ticks.getM())
                         {
                             getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
                             scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *width();

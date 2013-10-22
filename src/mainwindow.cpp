@@ -1007,7 +1007,6 @@ void MainWindow::initializeInteractives()
         volumeRenderWindow->setContextCL(context_cl);
         volumeRenderWindow->setAnimating(true);
 
-
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
 //        volumeRenderWidget->setMinimumSize(200, 200);
         volumeRenderWidget->setFocusPolicy(Qt::TabFocus);

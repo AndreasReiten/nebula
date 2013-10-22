@@ -219,7 +219,7 @@ void TransferFunction::setSpline(size_t resolution)
 
             // k is the index of the data point succeeding the interpoaltion point in x
             size_t k = 0;
-            for (int l = 0; l < x_position.getN(); l++)
+            for (size_t l = 0; l < x_position.getN(); l++)
             {
                 if (x <= x_position[l])
                 {

@@ -4,7 +4,7 @@ ContextCL::ContextCL()
 {
 }
 
-cl_command_queue * ContextCL::getCommanQueue()
+cl_command_queue * ContextCL::getCommandQueue()
 {
     return &queue;
 }
@@ -31,7 +31,7 @@ cl_program ContextCL::createProgram(Matrix<const char *> * paths, cl_int * error
     Matrix<const char *> sources(1, paths->size());
     Matrix<QByteArray> qsources(1, paths->size());
 
-    for (int i = 0; i < paths->size(); i++)
+    for (size_t i = 0; i < paths->size(); i++)
     {
         qsources[i] = openFile(paths->at(i));
         sources[i] = qsources[i].data();

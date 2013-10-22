@@ -46,7 +46,7 @@
 #include "utils/miniarray.h"
 #include "utils/volumerender.h"
 #include "utils/imagerender.h"
-//#include "utils/worker.h"
+#include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
 
