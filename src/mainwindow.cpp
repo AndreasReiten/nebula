@@ -2,16 +2,12 @@
 
 MainWindow::MainWindow()
 {
-    verbosity = 1;
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" called");
-
     //     Set default values
     current_svo = 0;
     display_file = 0;
     svo_loaded.append(SparseVoxelOcttree());
 
     //     Set stylesheet
-//    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Initializing Style Sheet");
     QFile styleFile( ":/src/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
@@ -59,7 +55,6 @@ MainWindow::MainWindow()
     toolChainWidget->show();
     outputDockWidget->show();
 
-//    if (verbosity s== 1) writeLog("["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+" done");
 }
 
 MainWindow::~MainWindow()
@@ -74,187 +69,263 @@ void MainWindow::setCurrentSvoLevel(int value)
 
 void MainWindow::initializeThreads()
 {
+    readScriptThread = new QThread;
+    setFileThread = new QThread;
+    readFileThread = new QThread;
+    projectFileThread = new QThread;
+    voxelizeThread = new QThread;
+    allInOneThread = new QThread;
+    displayFileThread = new QThread;
 
-//    setFileThread = new QThread;
-//    readFileThread = new QThread;
-//    projectFileThread = new QThread;
-//    voxelizeThread = new QThread;
-//    allInOneThread = new QThread;
-//    displayFileThread = new QThread;
+    // readScriptWorker
+    readScriptWorker = new ReadScriptWorker();
+    readScriptWorker->setFilePaths(&file_paths);
+    readScriptWorker->setScriptEngine(&engine);
+    readScriptWorker->setInput(textEdit);
 
-//    //### setFileWorker ###
-//    setFileWorker = new SetFileWorker();
-//    setFileWorker->setFilePaths(&file_paths);
-//    setFileWorker->setFiles(&files);
-//    setFileWorker->setSVOFile(&svo_inprocess);
-//    setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
-//    setFileWorker->setOpenCLContext(context_cl);
-//    setFileWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
+    readScriptWorker->moveToThread(readScriptThread);
+    connect(readScriptThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+    connect(readScriptWorker, SIGNAL(finished()), this, SLOT(readScriptButtonFinish()));
+    connect(readScriptThread, SIGNAL(started()), readScriptWorker, SLOT(process()));
+    connect(readScriptWorker, SIGNAL(abort()), readScriptThread, SLOT(quit()));
+    connect(readScriptWorker, SIGNAL(finished()), readScriptThread, SLOT(quit()));
+    connect(readScriptWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
+    connect(readScriptWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(readScriptWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(readScriptWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(readScriptButton, SIGNAL(clicked()), readScriptThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), readScriptWorker, SLOT(killProcess()), Qt::DirectConnection);
 
-//    setFileWorker->moveToThread(setFileThread);
-//    connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
-//    connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
-//    connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
-//    connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
-//    connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(setFileWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
-//    connect(setFileWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
-//    connect(setFileWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
-//    connect(setFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
-//    connect(setFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
-//    connect(setFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-//    connect(setFilesButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
-//    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    //### setFileWorker ###
+    setFileWorker = new SetFileWorker();
+    setFileWorker->setFilePaths(&file_paths);
+    setFileWorker->setFiles(&files);
+    setFileWorker->setSVOFile(&svo_inprocess);
+    setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+    setFileWorker->setOpenCLContext(context_cl);
+    setFileWorker->setOpenCLBuffers(imageRenderWindow->getAlphaImgCLGL(), imageRenderWindow->getBetaImgCLGL(), imageRenderWindow->getGammaImgCLGL(), imageRenderWindow->getTsfImgCLGL());
 
-
-//    //### readFileWorker ###
-//    readFileWorker = new ReadFileWorker();
-//    readFileWorker->setFilePaths(&file_paths);
-//    readFileWorker->setFiles(&files);
-
-//    readFileWorker->moveToThread(readFileThread);
-//    connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
-//    connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
-//    connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
-//    connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
-//    connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(readFileWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
-//    connect(readFileWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
-//    connect(readFileWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
-//    connect(readFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
-//    connect(readFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
-//    connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-//    connect(readFilesButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
-//    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    setFileWorker->moveToThread(setFileThread);
+    connect(setFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+    connect(setFileWorker, SIGNAL(finished()), this, SLOT(setFileButtonFinish()));
+    connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
+    connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
+    connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
+    connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(setFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(setFileButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
-//    //### projectFileWorker ###
-//    projectFileWorker = new ProjectFileWorker();
-//    projectFileWorker->setOpenCLContext(context_cl);
-//    projectFileWorker->setFilePaths(&file_paths);
-//    projectFileWorker->setFiles(&files);
-//    projectFileWorker->setReducedPixels(&reduced_pixels);
-//    projectFileWorker->initializeCLKernel();
-//    projectFileWorker->setReduceThresholdLow(&threshold_reduce_low);
-//    projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
-//    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
-//    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
+    //### readFileWorker ###
+    readFileWorker = new ReadFileWorker();
+    readFileWorker->setFilePaths(&file_paths);
+    readFileWorker->setFiles(&files);
 
-//    projectFileWorker->moveToThread(projectFileThread);
-//    connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
-//    connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
-//    connect(projectFileWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
-//    connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
-//    connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(projectFileWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
-//    connect(projectFileWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
-//    connect(projectFileWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
-//    connect(projectFileWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
-//    connect(projectFileWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
-//    connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-//    connect(projectFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
-//    connect(projectFilesButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
-//    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    readFileWorker->moveToThread(readFileThread);
+    connect(readFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+    connect(readFileWorker, SIGNAL(finished()), this, SLOT(readFileButtonFinish()));
+    connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
+    connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
+    connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
+    connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(readFileButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+
+
+    //### projectFileWorker ###
+    projectFileWorker = new ProjectFileWorker();
+    projectFileWorker->setOpenCLContext(context_cl);
+    projectFileWorker->setFilePaths(&file_paths);
+    projectFileWorker->setFiles(&files);
+    projectFileWorker->setReducedPixels(&reduced_pixels);
+    projectFileWorker->initializeCLKernel();
+    projectFileWorker->setReduceThresholdLow(&threshold_reduce_low);
+    projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
+    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
+    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
+
+    projectFileWorker->moveToThread(projectFileThread);
+    connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+    connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
+    connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
+    connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
+    connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWindow, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWindow, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
+    connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
+    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 //    connect(projectFileWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWidget, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWidget, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
-//    //### allInOneWorker ###
-//    allInOneWorker = new AllInOneWorker();
-//    allInOneWorker->setFilePaths(&file_paths);
-//    allInOneWorker->setSVOFile(&svo_inprocess);
-//    allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
-//    allInOneWorker->setOpenCLContext(context_cl);
-//    allInOneWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
-//    allInOneWorker->setReducedPixels(&reduced_pixels);
-//    allInOneWorker->initializeCLKernel();
-//    allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
-//    allInOneWorker->setReduceThresholdHigh(&threshold_reduce_high);
-//    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
-//    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
+    connect(projectFileWorker, SIGNAL(testToMain()), imageRenderWindow, SLOT(test()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(testToWindow()), this, SLOT(test()), Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(testToWindow()), imageRenderWindow, SLOT(test()), Qt::DirectConnection);
 
-//    allInOneWorker->moveToThread(allInOneThread);
 
-//    connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
-//    connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
-//    connect(allInOneWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
-//    connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
-//    connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(allInOneWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
-//    connect(allInOneWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
-//    connect(allInOneWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
-//    connect(allInOneWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
-//    connect(allInOneWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
-//    connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-//    connect(allInOneWorker, SIGNAL(changedImageWidth(int)), imageRenderWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
-//    connect(allInOneWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
-//    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
-//    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
+    //### allInOneWorker ###
+    allInOneWorker = new AllInOneWorker();
+    allInOneWorker->setFilePaths(&file_paths);
+    allInOneWorker->setSVOFile(&svo_inprocess);
+    allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+    allInOneWorker->setOpenCLContext(context_cl);
+    allInOneWorker->setOpenCLBuffers(imageRenderWindow->getAlphaImgCLGL(), imageRenderWindow->getBetaImgCLGL(), imageRenderWindow->getGammaImgCLGL(), imageRenderWindow->getTsfImgCLGL());
+    allInOneWorker->setReducedPixels(&reduced_pixels);
+    allInOneWorker->initializeCLKernel();
+    allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
+    allInOneWorker->setReduceThresholdHigh(&threshold_reduce_high);
+    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
+    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
+
+    allInOneWorker->moveToThread(allInOneThread);
+    connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+    connect(allInOneWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
+    connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
+    connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
+    connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(changedImageWidth(int)), imageRenderWindow, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(changedImageHeight(int)), imageRenderWindow, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
+    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
+    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
 //    connect(allInOneWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
-//    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWidget, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWidget, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
 
-//    //### voxelizeWorker ###
-//    voxelizeWorker = new VoxelizeWorker();
-//    voxelizeWorker->setOpenCLContext(context_cl);
-//    voxelizeWorker->moveToThread(voxelizeThread);
-//    voxelizeWorker->setSVOFile(&svo_inprocess);
-//    voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
-//    voxelizeWorker->setReducedPixels(&reduced_pixels);
-//    voxelizeWorker->initializeCLKernel();
+    //### voxelizeWorker ###
+    voxelizeWorker = new VoxelizeWorker();
+    voxelizeWorker->setOpenCLContext(context_cl);
+    voxelizeWorker->moveToThread(voxelizeThread);
+    voxelizeWorker->setSVOFile(&svo_inprocess);
+    voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+    voxelizeWorker->setReducedPixels(&reduced_pixels);
+    voxelizeWorker->initializeCLKernel();
 
-//    voxelizeWorker->moveToThread(voxelizeThread);
-
-//    connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)), Qt::DirectConnection);
-//    connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
-//    connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
-//    connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(voxelizeWorker, SIGNAL(showGenericProgressBar(bool)), progressBar, SLOT(setVisible(bool)));
-//    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
-//    connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(voxelizeWorker, SIGNAL(enableSetFileButton(bool)), setFilesButton, SLOT(setEnabled(bool)));
-//    connect(voxelizeWorker, SIGNAL(enableReadFileButton(bool)), readFilesButton, SLOT(setEnabled(bool)));
-//    connect(voxelizeWorker, SIGNAL(enableProjectFileButton(bool)), projectFilesButton, SLOT(setEnabled(bool)));
-//    connect(voxelizeWorker, SIGNAL(enableVoxelizeButton(bool)), generateSvoButton, SLOT(setEnabled(bool)));
-//    connect(generateSvoButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
-//    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
+    voxelizeWorker->moveToThread(voxelizeThread);
+    connect(voxelizeThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+    connect(voxelizeWorker, SIGNAL(finished()), this, SLOT(voxelizeButtonFinish()));
+    connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)), Qt::DirectConnection);
+    connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
+    connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
+    connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
+    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
-//    //### displayFileWorker ###
-//    displayFileWorker = new DisplayFileWorker();
-//    displayFileWorker->setOpenCLContext(context_cl);
-//    displayFileWorker->setOpenCLBuffers(imageRenderWidget->getAlphaImgCLGL(), imageRenderWidget->getBetaImgCLGL(), imageRenderWidget->getGammaImgCLGL(), imageRenderWidget->getTsfImgCLGL());
-//    displayFileWorker->setFilePaths(&file_paths);
-//    displayFileWorker->setFiles(&files);
-//    displayFileWorker->initializeCLKernel();
-//    displayFileWorker->setReduceThresholdLow(&threshold_reduce_low);
-//    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
-//    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
-//    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
+    //### displayFileWorker ###
+    displayFileWorker = new DisplayFileWorker();
+    displayFileWorker->setOpenCLContext(context_cl);
+    displayFileWorker->setOpenCLBuffers(imageRenderWindow->getAlphaImgCLGL(), imageRenderWindow->getBetaImgCLGL(), imageRenderWindow->getGammaImgCLGL(), imageRenderWindow->getTsfImgCLGL());
+    displayFileWorker->setFilePaths(&file_paths);
+    displayFileWorker->setFiles(&files);
+    displayFileWorker->initializeCLKernel();
+    displayFileWorker->setReduceThresholdLow(&threshold_reduce_low);
+    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
+    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
+    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
 
-//    displayFileWorker->moveToThread(displayFileThread);
-//    connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
-//    connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
-//    connect(displayFileWorker, SIGNAL(finished()), volumeRenderWidget, SLOT(show()));
-//    connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(displayFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWidget, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
-//    connect(displayFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWidget, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
-//    connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(displayFileWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
-//    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWidget, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWidget, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
-//    // Qt5: connect(taxFileButton, &TaxFileButton::clicked, [this](bool arg) { doStuff(arg, "taxfile.txt");}  );
-//    connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
-//    connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
-//    connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
-//    connect(this->imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
-//    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
+    displayFileWorker->moveToThread(displayFileThread);
+    connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
+    connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
+    connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWindow, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWindow, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
+    connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(displayFileWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
+    connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
+    connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
+    connect(this->imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
+    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
+}
+
+void MainWindow::anyButtonStart()
+{
+    readScriptButton->setDisabled(true);
+    setFileButton->setDisabled(true);
+    allInOneButton->setDisabled(true);
+    readFileButton->setDisabled(true);
+    projectFileButton->setDisabled(true);
+    voxelizeButton->setDisabled(true);
+}
+
+void MainWindow::readScriptButtonFinish()
+{
+    readScriptButton->setDisabled(false);
+    setFileButton->setDisabled(false);
+    allInOneButton->setDisabled(false);
+    readFileButton->setDisabled(true);
+    projectFileButton->setDisabled(true);
+    voxelizeButton->setDisabled(true);
+}
+
+void MainWindow::setFileButtonFinish()
+{
+    readScriptButton->setDisabled(false);
+    setFileButton->setDisabled(false);
+    allInOneButton->setDisabled(false);
+    readFileButton->setDisabled(false);
+    projectFileButton->setDisabled(true);
+    voxelizeButton->setDisabled(true);
+}
+
+void MainWindow::allInOneButtonFinish()
+{
+    readScriptButton->setDisabled(false);
+    setFileButton->setDisabled(false);
+    allInOneButton->setDisabled(false);
+    readFileButton->setDisabled(true);
+    projectFileButton->setDisabled(true);
+    voxelizeButton->setDisabled(false);
+}
+
+void MainWindow::readFileButtonFinish()
+{
+    readScriptButton->setDisabled(false);
+    setFileButton->setDisabled(false);
+    allInOneButton->setDisabled(false);
+    readFileButton->setDisabled(false);
+    projectFileButton->setDisabled(false);
+    voxelizeButton->setDisabled(true);
+}
+
+void MainWindow::projectFileButtonFinish()
+{
+    readScriptButton->setDisabled(false);
+    setFileButton->setDisabled(false);
+    allInOneButton->setDisabled(false);
+    readFileButton->setDisabled(false);
+    projectFileButton->setDisabled(false);
+    voxelizeButton->setDisabled(false);
+}
+
+void MainWindow::voxelizeButtonFinish()
+{
+    readScriptButton->setDisabled(false);
+    setFileButton->setDisabled(false);
+    allInOneButton->setDisabled(false);
+    readFileButton->setDisabled(false);
+    projectFileButton->setDisabled(false);
+    voxelizeButton->setDisabled(false);
 }
 
 void MainWindow::incrementDisplayFile1()
@@ -284,55 +355,46 @@ void MainWindow::setDisplayFile(int value)
 
 void MainWindow::runDisplayFileThread(int value)
 {
-//    if (value < 0) value = 0;
-//    if (value >= file_paths.size()) value = file_paths.size() - 1;
+    if (value < 0) value = 0;
+    if (value >= file_paths.size()) value = file_paths.size() - 1;
 
-//    if ((file_paths.size() > 0 ) && (display_file != value))
-//    {
-//        display_file = value;
-//        imageNumberSpinBox->setValue(display_file);
-//        displayFileWorker->setDisplayFile(display_file);
+    if ((file_paths.size() > 0 ) && (display_file != value))
+    {
+        display_file = value;
+        imageNumberSpinBox->setValue(display_file);
+        displayFileWorker->setDisplayFile(display_file);
 
-//        volumeRenderWidget->hide();
-//        displayFileThread->start();
-//    }
+        displayFileThread->start();
+    }
 }
 
 void MainWindow::runProjectFileThread()
 {
-
-//    volumeRenderWidget->hide();
-//    tabWidget->setCurrentIndex(1);
-//    projectFileThread->start();
+    tabWidget->setCurrentIndex(1);
+    projectFileThread->start();
 }
 
 void MainWindow::runAllInOneThread()
 {
-
-//    volumeRenderWidget->hide();
-//    tabWidget->setCurrentIndex(1);
-//    allInOneThread->start();
+    tabWidget->setCurrentIndex(1);
+    allInOneThread->start();
 }
 
 void MainWindow::setReduceThresholdLow(double value)
 {
     this->threshold_reduce_low = (float) value;
-    //~std::cout << threshold_reduce_low <<  std::endl;
 }
 void MainWindow::setReduceThresholdHigh(double value)
 {
     this->threshold_reduce_high = (float) value;
-    //~std::cout << threshold_reduce_high <<  std::endl;
 }
 void MainWindow::setProjectThresholdLow(double value)
 {
     this->threshold_project_low = (float) value;
-    //~std::cout << threshold_project_low <<  std::endl;
 }
 void MainWindow::setProjectThresholdHigh(double value)
 {
     this->threshold_project_high = (float) value;
-    //~std::cout << threshold_project_high <<  std::endl;
 }
 
 void MainWindow::initializeEmit()
@@ -403,9 +465,9 @@ void MainWindow::initializeActions()
     // Actions
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
-    saveAct = new QAction(QIcon(":/art/saveScript.png"), tr("&Save script"), this);
+    saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
     runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
-    saveAsAct = new QAction(tr("Save script &As..."), this);
+    saveAsAct = new QAction(QIcon(":/art/save.png"), tr("Save script &As..."), this);
     exitAct = new QAction(tr("E&xit program"), this);
     aboutAct = new QAction(tr("&About Nebula"), this);
     aboutQtAct = new QAction(tr("About &Qt"), this);
@@ -493,139 +555,139 @@ void MainWindow::documentWasModified()
 
 void MainWindow::openUnitcellFile()
 {
-//    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".par (*.par);; All Files (*)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".par (*.par);; All Files (*)"));
 
-//    if ((fileName != ""))
-//    {
-//        // Regular expressions to match data in .par files
-//        QString wavelengthRegExp("CRYSTALLOGRAPHY\\sWAVELENGTH\\D+(\\d+\\.\\d+)");
+    if ((fileName != ""))
+    {
+        // Regular expressions to match data in .par files
+        QString wavelengthRegExp("CRYSTALLOGRAPHY\\sWAVELENGTH\\D+(\\d+\\.\\d+)");
 
-//        QStringList UBRegExp;
-//        UBRegExp.append("CRYSTALLOGRAPHY\\sUB\\D+([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
-//        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        QStringList UBRegExp;
+        UBRegExp.append("CRYSTALLOGRAPHY\\sUB\\D+([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
+        UBRegExp.append("([+-]?\\d+\\.\\d+E[+-]?\\d+)\\s+");
 
-//        QStringList unitcellRegExp;
-//        unitcellRegExp.append("CELL\\sINFORMATION\\D+(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
-//        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
-//        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
-//        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
-//        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
-//        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        QStringList unitcellRegExp;
+        unitcellRegExp.append("CELL\\sINFORMATION\\D+(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
+        unitcellRegExp.append("(\\d+\\.\\d+)\\D+\\d+\\.\\d+\\D+");
 
-//        // Open file
-//        QFile f(fileName);
-//        if(!f.open(QIODevice::ReadOnly)) qDebug() << "open FAILED";
-//        QByteArray contents(f.readAll());
+        // Open file
+        QFile f(fileName);
+        if(!f.open(QIODevice::ReadOnly)) qDebug() << "open FAILED";
+        QByteArray contents(f.readAll());
 
-//        // Find a, b, c, alpha, beta, gamma
-//        MiniArray<float> abc(6);
-//        int pos = 0;
-//        for(int i = 0; i < unitcellRegExp.size(); i++)
-//        {
-//            QRegExp tmp(unitcellRegExp.at(i));
-//            pos = tmp.indexIn(contents, pos);
-//            if (pos > -1)
-//            {
-//                pos += tmp.matchedLength();;
-//                QString value = tmp.cap(1);
-//                abc[i] = value.toFloat();
-//            }
-//        }
-//        float a = abc[0];
-//        float b = abc[1];
-//        float c = abc[2];
-//        float alpha = abc[3]*pi/180;
-//        float beta = abc[4]*pi/180;
-//        float gamma = abc[5]*pi/180;
+        // Find a, b, c, alpha, beta, gamma
+        MiniArray<float> abc(6);
+        int pos = 0;
+        for(int i = 0; i < unitcellRegExp.size(); i++)
+        {
+            QRegExp tmp(unitcellRegExp.at(i));
+            pos = tmp.indexIn(contents, pos);
+            if (pos > -1)
+            {
+                pos += tmp.matchedLength();;
+                QString value = tmp.cap(1);
+                abc[i] = value.toFloat();
+            }
+        }
+        float a = abc[0];
+        float b = abc[1];
+        float c = abc[2];
+        float alpha = abc[3]*pi/180;
+        float beta = abc[4]*pi/180;
+        float gamma = abc[5]*pi/180;
 
-//        // Set the values in the UI
+        // Set the values in the UI
 
-//        QString value;
-//        value = QString::number( a, 'g', 4 );
-//        this->a->setText(value);
-//        value = QString::number( b, 'g', 4 );
-//        this->b->setText(value);
-//        value = QString::number( c, 'g', 4 );
-//        this->c->setText(value);
-//        value = QString::number( 180/pi*alpha, 'g', 4 );
-//        this->alpha->setText(value);
-//        value = QString::number( 180/pi*beta, 'g', 4 );
-//        this->beta->setText(value);
-//        value = QString::number( 180/pi*gamma, 'g', 4 );
-//        this->gamma->setText(value);
+        QString value;
+        value = QString::number( a, 'g', 4 );
+        this->a->setText(value);
+        value = QString::number( b, 'g', 4 );
+        this->b->setText(value);
+        value = QString::number( c, 'g', 4 );
+        this->c->setText(value);
+        value = QString::number( 180/pi*alpha, 'g', 4 );
+        this->alpha->setText(value);
+        value = QString::number( 180/pi*beta, 'g', 4 );
+        this->beta->setText(value);
+        value = QString::number( 180/pi*gamma, 'g', 4 );
+        this->gamma->setText(value);
 
-//        value = QString::number( 1/a, 'g', 4 );
-//        this->aStar->setText(value);
-//        value = QString::number( 1/b, 'g', 4 );
-//        this->bStar->setText(value);
-//        value = QString::number( 1/c, 'g', 4 );
-//        this->cStar->setText(value);
-//        value = QString::number( 180/pi*std::acos((std::cos(beta)*std::cos(gamma) - std::cos(alpha))/(std::sin(beta)*std::sin(gamma))), 'g', 4 );
-//        this->alphaStar->setText(value);
-//        value = QString::number( 180/pi*std::acos((std::cos(alpha)*std::cos(gamma) - std::cos(beta))/(std::sin(alpha)*std::sin(gamma))), 'g', 4 );
-//        this->betaStar->setText(value);
-//        value = QString::number( 180/pi*std::acos((std::cos(alpha)*std::cos(beta) - std::cos(gamma))/(std::sin(alpha)*std::sin(beta))), 'g', 4 );
-//        this->gammaStar->setText(value);
+        value = QString::number( 1/a, 'g', 4 );
+        this->aStar->setText(value);
+        value = QString::number( 1/b, 'g', 4 );
+        this->bStar->setText(value);
+        value = QString::number( 1/c, 'g', 4 );
+        this->cStar->setText(value);
+        value = QString::number( 180/pi*std::acos((std::cos(beta)*std::cos(gamma) - std::cos(alpha))/(std::sin(beta)*std::sin(gamma))), 'g', 4 );
+        this->alphaStar->setText(value);
+        value = QString::number( 180/pi*std::acos((std::cos(alpha)*std::cos(gamma) - std::cos(beta))/(std::sin(alpha)*std::sin(gamma))), 'g', 4 );
+        this->betaStar->setText(value);
+        value = QString::number( 180/pi*std::acos((std::cos(alpha)*std::cos(beta) - std::cos(gamma))/(std::sin(alpha)*std::sin(beta))), 'g', 4 );
+        this->gammaStar->setText(value);
 
-//        // Find wavelength
-//        float wavelength = 0.0;
-//        pos = 0;
-//        QRegExp tmp(wavelengthRegExp);
-//        pos = tmp.indexIn(contents, pos);
-//        if (pos > -1)
-//        {
-//            QString value = tmp.cap(1);
-//            wavelength = value.toFloat();
-//        }
+        // Find wavelength
+        float wavelength = 0.0;
+        pos = 0;
+        QRegExp tmp(wavelengthRegExp);
+        pos = tmp.indexIn(contents, pos);
+        if (pos > -1)
+        {
+            QString value = tmp.cap(1);
+            wavelength = value.toFloat();
+        }
 
-//        // Find UB matrix
-//        Matrix<float> UB(3,3);
-//        pos = 0;
-//        for(int i = 0; i < UBRegExp.size(); i++)
-//        {
-//            QRegExp tmp(UBRegExp.at(i));
-//            pos = tmp.indexIn(contents, pos);
-//            if (pos > -1)
-//            {
-//                pos += tmp.matchedLength();;
-//                QString value = tmp.cap(1);
-//                UB[i] = value.toFloat()/wavelength;
-//            }
-//        }
+        // Find UB matrix
+        Matrix<float> UB(3,3);
+        pos = 0;
+        for(int i = 0; i < UBRegExp.size(); i++)
+        {
+            QRegExp tmp(UBRegExp.at(i));
+            pos = tmp.indexIn(contents, pos);
+            if (pos > -1)
+            {
+                pos += tmp.matchedLength();;
+                QString value = tmp.cap(1);
+                UB[i] = value.toFloat()/wavelength;
+            }
+        }
 
-//        // Math to find U
-//        float sa = std::sin(alpha);
-//        float ca = std::cos(alpha);
-//        float cb = std::cos(beta);
-//        float cg = std::cos(gamma);
-//        float V = (a*b*c) * std::sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2.0*ca*cb*cg);
+        // Math to find U
+        float sa = std::sin(alpha);
+        float ca = std::cos(alpha);
+        float cb = std::cos(beta);
+        float cg = std::cos(gamma);
+        float V = (a*b*c) * std::sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2.0*ca*cb*cg);
 
-//        Matrix<float> B(3,3);
-//        B[0] = b*c*sa/V;
-//        B[1] = a*c*(ca*cb-cg)/(V*sa);
-//        B[2] = a*b*(ca*cg-cb)/(V*sa);
-//        B[3] = 0;
-//        B[4] = 1.0/(b*sa);
-//        B[5] = -ca/(c*sa);
-//        B[6] = 0;
-//        B[7] = 0;
-//        B[8] = 1.0/c;
+        Matrix<float> B(3,3);
+        B[0] = b*c*sa/V;
+        B[1] = a*c*(ca*cb-cg)/(V*sa);
+        B[2] = a*b*(ca*cg-cb)/(V*sa);
+        B[3] = 0;
+        B[4] = 1.0/(b*sa);
+        B[5] = -ca/(c*sa);
+        B[6] = 0;
+        B[7] = 0;
+        B[8] = 1.0/c;
 
 
 
-//        Matrix<float> U(3,3);
-//        U = UB * B.getInverse();
+        Matrix<float> U(3,3);
+        U = UB * B.getInverse();
 
 //        volumeRenderWidget->setMatrixU(U.data());
 //        volumeRenderWidget->setMatrixB(B.data());
-//    }
+    }
 }
 
 
@@ -724,11 +786,10 @@ void MainWindow::initializeConnects()
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
-    connect(saveSVOButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
+    connect(saveSvoButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
     connect(newAct, SIGNAL(triggered()), this, SLOT(newScriptFile()));
     connect(openAct, SIGNAL(triggered()), this, SLOT(openScript()));
     connect(saveAct, SIGNAL(triggered()), this, SLOT(saveScript()));
-    connect(runScriptAct, SIGNAL(triggered()), this, SLOT(runReadScript()));
     connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveScriptAs()));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
@@ -736,7 +797,6 @@ void MainWindow::initializeConnects()
     connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
-    connect(readScriptButton, SIGNAL(clicked()), this, SLOT(runReadScript()));
 }
 
 void MainWindow::setGenericProgressFormat(QString str)
@@ -830,30 +890,30 @@ void MainWindow::initializeInteractives()
         readScriptButton->setText("Run Script ");
         readScriptButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
-        setFilesButton = new QPushButton;
-        setFilesButton->setIcon(QIcon(":/art/proceed.png"));
-        setFilesButton->setIconSize(QSize(24,24));
-        setFilesButton->setText("Set ");
-        setFilesButton->setEnabled(false);
+        setFileButton = new QPushButton;
+        setFileButton->setIcon(QIcon(":/art/proceed.png"));
+        setFileButton->setIconSize(QSize(24,24));
+        setFileButton->setText("Set ");
+        setFileButton->setEnabled(false);
 
-        readFilesButton = new QPushButton;
-        readFilesButton->setIcon(QIcon(":/art/proceed.png"));
-        readFilesButton->setIconSize(QSize(24,24));
-        readFilesButton->setText("Read ");
-        readFilesButton->setEnabled(false);
+        readFileButton = new QPushButton;
+        readFileButton->setIcon(QIcon(":/art/proceed.png"));
+        readFileButton->setIconSize(QSize(24,24));
+        readFileButton->setText("Read ");
+        readFileButton->setEnabled(false);
 
-        projectFilesButton = new QPushButton;
-        projectFilesButton->setIcon(QIcon(":/art/proceed.png"));
-        projectFilesButton->setIconSize(QSize(24,24));
-        projectFilesButton->setText("Correction and Projection ");
-        projectFilesButton->setEnabled(false);
+        projectFileButton = new QPushButton;
+        projectFileButton->setIcon(QIcon(":/art/proceed.png"));
+        projectFileButton->setIconSize(QSize(24,24));
+        projectFileButton->setText("Correction and Projection ");
+        projectFileButton->setEnabled(false);
 
-        generateSvoButton = new QPushButton;
-        generateSvoButton->setIcon(QIcon(":/art/proceed.png"));
-        generateSvoButton->setText("Voxelize ");
-        generateSvoButton->setIconSize(QSize(32,32));
-        generateSvoButton->setEnabled(false);
-        generateSvoButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+        voxelizeButton = new QPushButton;
+        voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
+        voxelizeButton->setText("Voxelize ");
+        voxelizeButton->setIconSize(QSize(32,32));
+        voxelizeButton->setEnabled(false);
+        voxelizeButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
         allInOneButton = new QPushButton;
         allInOneButton->setIcon(QIcon(":/art/fast_proceed.png"));
@@ -877,10 +937,10 @@ void MainWindow::initializeInteractives()
         toolChainLayout->setColumnStretch(3,1);
         toolChainLayout->setColumnStretch(4,1);
         toolChainLayout->addWidget(readScriptButton,0,0,2,1);
-        toolChainLayout->addWidget(setFilesButton,0,1,1,1);
-        toolChainLayout->addWidget(readFilesButton,0,2,1,1);
-        toolChainLayout->addWidget(projectFilesButton,0,3,1,1);
-        toolChainLayout->addWidget(generateSvoButton,0,4,2,1);
+        toolChainLayout->addWidget(setFileButton,0,1,1,1);
+        toolChainLayout->addWidget(readFileButton,0,2,1,1);
+        toolChainLayout->addWidget(projectFileButton,0,3,1,1);
+        toolChainLayout->addWidget(voxelizeButton,0,4,2,1);
         toolChainLayout->addWidget(killButton,0,5,2,1);
         toolChainLayout->addWidget(allInOneButton,1,1,1,3);
         toolChainWidget->setLayout(toolChainLayout);
@@ -1250,9 +1310,9 @@ void MainWindow::initializeInteractives()
         svoLevelSpinBox->setRange(1, 15);
 
         // Buttons
-        saveSVOButton = new QPushButton;
-        saveSVOButton->setIcon(QIcon(":/art/saveScript.png"));
-        saveSVOButton->setText("Save Octtree");
+        saveSvoButton = new QPushButton;
+        saveSvoButton->setIcon(QIcon(":/art/saveScript.png"));
+        saveSvoButton->setText("Save Octtree");
 
         QGridLayout * fileLayout = new QGridLayout;
         fileLayout->setSpacing(0);
@@ -1268,7 +1328,7 @@ void MainWindow::initializeInteractives()
         fileLayout->addWidget(treshLimD_DSB,2,6,1,2);
         fileLayout->addWidget(labelD,3,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         fileLayout->addWidget(svoLevelSpinBox,3,4,1,4);
-        fileLayout->addWidget(saveSVOButton,4,0,1,8);
+        fileLayout->addWidget(saveSvoButton,4,0,1,8);
         fileControlsWidget->setLayout(fileLayout);
 //        fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
@@ -1347,7 +1407,7 @@ void MainWindow::initializeInteractives()
         // Progress Bar
         progressBar = new QProgressBar;
         progressBar->setRange( 0, 100 );
-        progressBar->hide();
+//        progressBar->hide();
 
         // Text output
         errorTextEdit = new QPlainTextEdit;
@@ -1390,11 +1450,6 @@ void MainWindow::initializeInteractives()
 }
 
 
-//void MainWindow::writeLog(QString str)
-//{
-//    writeToLogAndPrint(str.toStdString().c_str(), "nebula.log", 1);
-//}
-
 void MainWindow::print(QString str)
 {
     info.append(str);
@@ -1408,71 +1463,7 @@ void MainWindow::print(QString str)
 }
 
 
-void MainWindow::runReadScript()
-{
 
-
-    // Set the corresponding tab
-    tabWidget->setCurrentIndex(0);
-
-    // Evaluate the script input
-    engine.evaluate("var files = [];");
-    engine.evaluate(textEdit->toPlainText());
-    if (engine.hasUncaughtException() == true)
-    {
-        // Exceptions
-        print( "\n["+QString(this->metaObject()->className())+"] Error: Uncaught exception in line " + QString::number(engine.uncaughtExceptionLineNumber()) + "\n["+QString(this->metaObject()->className())+"] " + engine.uncaughtException().toString());
-    }
-    else
-    {
-        // Store evaluated file paths in a list
-        #ifndef QT_NO_CURSOR
-            QApplication::setOverrideCursor(Qt::WaitCursor);
-        #endif
-
-        file_paths = engine.globalObject().property("files").toVariant().toStringList();
-        print( "\n["+QString(this->metaObject()->className())+"] Script ran successfully and could register "+QString::number(file_paths.size())+" files...");
-        int n = file_paths.removeDuplicates();
-        if (n > 0) print( "\n["+QString(this->metaObject()->className())+"] Removed "+QString::number(n)+" duplicates...");
-
-        size_t n_files = file_paths.size();
-
-        for (int i = 0; i < file_paths.size(); i++)
-        {
-            if(i >= file_paths.size()) break;
-
-            QString fileName = file_paths[i];
-
-            QFileInfo curFile(fileName);
-
-            if (!curFile.exists())
-            {
-                print( "\n["+QString(this->metaObject()->className())+"]  Warning: \"" + fileName + "\" - missing or no access!");
-                file_paths.removeAt(i);
-                i--;
-            }
-        }
-        emit changedPaths(file_paths);
-        print("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths.size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths.size())+"  missing or no access)");
-
-        if (file_paths.size() > 0)
-        {
-            setFilesButton->setEnabled(true);
-            allInOneButton->setEnabled(true);
-            readFilesButton->setEnabled(false);
-            projectFilesButton->setEnabled(false);
-            generateSvoButton->setEnabled(false);
-        }
-
-        #ifndef QT_NO_CURSOR
-            QApplication::restoreOverrideCursor();
-        #endif
-    }
-
-    imageNumberSpinBox->setMaximum(file_paths.size()-1);
-    imageNumberSpinBox->setMinimum(0);
-
-}
 
 void MainWindow::readSettings()
 {
@@ -1595,4 +1586,14 @@ void MainWindow::takeScreenshot()
         if (!fileName.isEmpty()) screenshot.save(fileName, format.toLatin1().constData(), 100);
         print(QString("\n Saved: "+fileName));
     }
+}
+
+
+void MainWindow::test()
+{
+    qDebug() << "Main test";
+    QElapsedTimer timer;
+    timer.start();
+    emit testToWindow();
+    qDebug() << timer.restart() << " A";
 }

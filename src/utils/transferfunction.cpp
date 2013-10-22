@@ -146,6 +146,13 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
             }
             choice[choice.getN()*4] = 0;
             break;
+        case 3:
+            // Opaque
+            for (size_t i = 0; i < choice.getN(); i++)
+            {
+                choice[i+choice.getN()*4] = 1.0;
+            }
+            break;
     }
 
     x_position.setDeep(1, choice.getN(), choice.data());

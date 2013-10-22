@@ -486,10 +486,7 @@ void VolumeRenderWindow::setRayTexture()
     if (ray_tex_new[1] > height()) ray_tex_new[1] = height();
 
     // Only resize the texture if the change is somewhat significant (in area cahnged)
-    double new_area = ray_tex_new[0]*ray_tex_new[1];
-    double area = ray_tex_dim[0]*ray_tex_dim[1];
-
-    if (isInitialized && ((!isRayTexInitialized) || ((std::abs(new_area - area) / area) > 0.15)))
+    if (isInitialized && ((!isRayTexInitialized) || (std::abs(1.0 - quality_factor) > 0.15)))
     {
         // Calculate the actula quality factor multiplier
         quality_factor = std::pow((double) ray_tex_new[0] / ((double)this->width()*(ray_tex_resolution*0.01)), 2.0);
@@ -1304,3 +1301,5 @@ void VolumeRenderWindow::setScalebar()
 {
     isScalebarActive = !isScalebarActive;
 }
+
+

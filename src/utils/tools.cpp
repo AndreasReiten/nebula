@@ -190,7 +190,7 @@ QByteArray openFile(const char * path)
     }
     else
     {
-        qWarning() << "Could not open file: " << path;
+        qDebug(QString("Could not open file: " + QString(path)).toStdString().c_str());
     }
 
     QByteArray ba = QString(contents.c_str()).toUtf8();

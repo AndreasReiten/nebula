@@ -24,6 +24,8 @@
 #include <QStringList>
 #include <QByteArray>
 #include <QDateTime>
+#include <QScriptEngine>
+#include <QPlainTextEdit>
 
 /* Project files */
 #include "tools.h"
@@ -46,11 +48,12 @@ class BaseWorker : public QObject
 
         void setFilePaths(QStringList * file_paths);
         void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
-            void setFiles(QList<PilatusFile> * files);
+        void setFiles(QList<PilatusFile> * files);
         void setReducedPixels(MiniArray<float> * reduced_pixels);
-            void setOpenCLContext(ContextCL * context);
+        void setOpenCLContext(ContextCL * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
+
     signals:
         void finished();
         void abort();
@@ -61,7 +64,6 @@ class BaseWorker : public QObject
         void repaintImageWidget();
         void aquireSharedBuffers();
         void releaseSharedBuffers();
-
 
     public slots:
         void killProcess();
@@ -99,6 +101,29 @@ class BaseWorker : public QObject
         QList<PilatusFile> * files;
         QList<PilatusFile> * background_files;
         MiniArray<float> * reduced_pixels;
+};
+
+class ReadScriptWorker : public BaseWorker
+{
+    Q_OBJECT
+
+    public:
+        ReadScriptWorker();
+        ~ReadScriptWorker();
+
+        void setScriptEngine(QScriptEngine * engine);
+        void setInput(QPlainTextEdit * widget);
+
+    signals:
+        void maxFramesChanged(int value);
+
+    private slots:
+        void process();
+
+    private:
+        QScriptEngine * engine;
+        QPlainTextEdit * inputWidget;
+        // add your variables here
 };
 
 
@@ -143,8 +168,11 @@ class ProjectFileWorker : public BaseWorker
         ~ProjectFileWorker();
 
     signals:
-        void changedImageWidth(int value);
-        void changedImageHeight(int value);
+//        void changedImageWidth(int value);
+//        void changedImageHeight(int value);
+        void changedImageSize(int w, int h);
+        void testToWindow();
+        void testToMain();
 
     public slots:
         void initializeCLKernel();

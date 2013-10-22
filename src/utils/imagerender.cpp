@@ -12,8 +12,8 @@ ImageRenderWindow::ImageRenderWindow()
     this->image_h = 1024;
 
     // Transfer texture
-    tsf_color_scheme = 0;
-    tsf_alpha_scheme = 0;
+    tsf_color_scheme = 1;
+    tsf_alpha_scheme = 3;
 
     // Color
     GLfloat white_buf[] = {1,1,1,0.4};
@@ -24,23 +24,23 @@ ImageRenderWindow::ImageRenderWindow()
     clear_color_inverse = black;
 }
 
-void ImageRenderWindow::setImageWidth(int value)
-{
-    if (value != image_w)
-    {
-        this->image_w = value;
-        this->setTarget();
-    }
-}
+//void ImageRenderWindow::setImageWidth(int value)
+//{
+//    if (value != image_w)
+//    {
+//        this->image_w = value;
+//        this->setTarget();
+//    }
+//}
 
-void ImageRenderWindow::setImageHeight(int value)
-{
-    if (value != image_h)
-    {
-        this->image_h = value;
-        this->setTarget();
-    }
-}
+//void ImageRenderWindow::setImageHeight(int value)
+//{
+//    if (value != image_h)
+//    {
+//        this->image_h = value;
+//        this->setTarget();
+//    }
+//}
 
 void ImageRenderWindow::setImageSize(int w, int h)
 {
@@ -195,7 +195,7 @@ void ImageRenderWindow::drawOverlay(QPainter * painter)
     painter->drawText(beta_string_rect, Qt::AlignCenter, beta_string);
 
     // gamma text
-    QString gamma_string("Lorentz-Polarization corrected");
+    QString gamma_string("Lorentz Polarization corrected");
     QRect gamma_string_rect(gamma_rect.x(),
                                  height() - 31,
                                  gamma_rect.width(),
@@ -240,10 +240,10 @@ void ImageRenderWindow::releaseSharedBuffers()
     err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
+    if (isAlphaImgInitialized) err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
+    if (isBetaImgInitialized) err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
+    if (isGammaImgInitialized) err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
+    if (isTsfImgInitialized) err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -285,7 +285,7 @@ void ImageRenderWindow::setTsfTexture()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     if (isTsfTexInitialized){
-        err = clReleaseMemObject(tsf_tex_cl);
+        err = clReleaseMemObject(cl_tsf_tex);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 
@@ -332,12 +332,12 @@ void ImageRenderWindow::setTsfTexture()
         tsf.getThumb()->getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Buffer for tsf_tex_cl
+    // Buffer for cl_tsf_tex
     cl_image_format tsf_format;
     tsf_format.image_channel_order = CL_RGBA;
     tsf_format.image_channel_data_type = CL_FLOAT;
 
-    tsf_tex_cl = clCreateImage2D ( *context_cl->getContext(),
+    cl_tsf_tex = clCreateImage2D ( *context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &tsf_format,
         tsf.getSplined()->getN(),
@@ -347,7 +347,7 @@ void ImageRenderWindow::setTsfTexture()
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    // The sampler for tsf_tex_cl
+    // The sampler for cl_tsf_tex
     tsf_tex_sampler = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -378,10 +378,10 @@ cl_mem * ImageRenderWindow::getBetaImgCLGL()
 void ImageRenderWindow::aquireSharedBuffers()
 {
     glFinish();
-    err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
+    if (isAlphaImgInitialized) err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
+    if (isBetaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
+    if (isGammaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
+    if (isTsfImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -471,3 +471,7 @@ void ImageRenderWindow::setTarget()
     isGammaImgInitialized = true;
 }
 
+void ImageRenderWindow::test()
+{
+    qDebug() << "Window test";
+}

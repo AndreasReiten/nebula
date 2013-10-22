@@ -46,7 +46,6 @@ public:
     ~ImageRenderWindow();
 
     void setSharedWindow(SharedContextWindow * window);
-    void setImageSize(int w, int h);
 
     cl_mem * getTsfImgCLGL();
     cl_mem * getAlphaImgCLGL();
@@ -64,8 +63,10 @@ signals:
     void changedMessageString(QString str);
 
 public slots:
-    void setImageWidth(int value);
-    void setImageHeight(int value);
+    void test();
+    void setImageSize(int w, int h);
+//    void setImageWidth(int value);
+//    void setImageHeight(int value);
     void aquireSharedBuffers();
     void releaseSharedBuffers();
 
@@ -80,13 +81,14 @@ private:
 
     // Boolean checks
     bool isInitialized;
+    bool isAlphaImgInitialized, isBetaImgInitialized, isGammaImgInitialized, isTsfImgInitialized;
 
     // OpenGL
     void initResourcesGL();
     GLuint image_tex[5];
 
     // OpenCL
-    cl_mem cl_img_alpha, cl_img_beta, cl_img_gamma, cl_tsf_tex;
+    cl_mem cl_img_alpha, cl_img_beta, cl_img_gamma;
     cl_int err;
     void setTarget();
 
@@ -98,7 +100,7 @@ private:
 
     // Transfer function texture
     void setTsfTexture();
-    cl_mem tsf_tex_cl;
+    cl_mem cl_tsf_tex;
     cl_sampler tsf_tex_sampler;
     GLuint tsf_tex_gl;
     GLuint tsf_tex_gl_thumb;
@@ -109,8 +111,6 @@ private:
 
     size_t glb_ws[2];
     size_t loc_ws[2];
-
-    bool isAlphaImgInitialized, isBetaImgInitialized, isGammaImgInitialized, isTsfImgInitialized;
 
     // Colors
     Matrix<GLfloat> white;

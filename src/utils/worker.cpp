@@ -3,6 +3,7 @@
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
 
+
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
 /***
  *        dBBBBb dBBBBBb  .dBBBBP   dBBBP     dBBBP  dBP dBBBBBb  .dBBBBP.dBBBBP
@@ -90,6 +91,89 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 {
 
     this->reduced_pixels = reduced_pixels;
+}
+
+
+
+ReadScriptWorker::ReadScriptWorker()
+{
+
+}
+
+ReadScriptWorker::~ReadScriptWorker()
+{
+
+}
+
+void ReadScriptWorker::setScriptEngine(QScriptEngine * engine)
+{
+    this->engine = engine;
+}
+
+void ReadScriptWorker::setInput(QPlainTextEdit * widget)
+{
+    this->inputWidget = widget;
+}
+
+void ReadScriptWorker::process()
+{
+    kill_flag = false;
+
+    // Set the corresponding tab
+    emit changedTabWidget(0);
+    emit changedFormatGenericProgress(QString("Progress: %p%"));
+
+    // Evaluate the script input
+    engine->evaluate("var files = [];");
+    engine->evaluate(inputWidget->toPlainText());
+
+    // Handle exceptions
+    if (engine->hasUncaughtException() == true)
+    {
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Script error: Uncaught exception in line " + QString::number(engine->uncaughtExceptionLineNumber()) + "\n["+QString(this->metaObject()->className())+"] " + engine->uncaughtException().toString());
+    }
+    else
+    {
+        // Store evaluated file paths in a list
+        *file_paths = engine->globalObject().property("files").toVariant().toStringList();
+        int n = file_paths->removeDuplicates();
+        emit changedMessageString( "\n["+QString(this->metaObject()->className())+"] Script ran successfully and could register "+QString::number(file_paths->size())+" files...");
+
+        if (n > 0) emit changedMessageString( "\n["+QString(this->metaObject()->className())+"] Removed "+QString::number(n)+" duplicates...");
+
+        size_t n_files = file_paths->size();
+
+        for (int i = 0; i < file_paths->size(); i++)
+        {
+            if (kill_flag)
+            {
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"]  Warning: process killed after finding "+QString::number(i)+" files");
+                file_paths->clear();
+                break;
+            }
+
+            if(i >= file_paths->size()) break;
+
+            QString fileName = file_paths->at(i);
+
+            QFileInfo curFile(fileName);
+
+            if (!curFile.exists())
+            {
+                emit changedMessageString( "\n["+QString(this->metaObject()->className())+"]  Warning: \"" + fileName + "\" - missing or no access!");
+                file_paths->removeAt(i);
+                i--;
+            }
+
+            // Update the progress bar
+            emit changedGenericProgress(100*(i+1)/file_paths->size());
+        }
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths->size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths->size())+"  missing or no access)");
+    }
+
+    emit maxFramesChanged(file_paths->size()-1);
+
+    emit finished();
 }
 
 
@@ -308,7 +392,7 @@ ProjectFileWorker::~ProjectFileWorker()
 
 void ProjectFileWorker::initializeCLKernel()
 {
-    Matrix<const char *> paths(1,3);
+    Matrix<const char *> paths(1,1);
     paths[0] = "cl_kernels/project.cl";
 
     program = context_cl->createProgram(&paths, &err);
@@ -342,12 +426,6 @@ void ProjectFileWorker::process()
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Correcting and Projecting "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
-//    emit enableSetFileButton(false);
-//    emit enableReadFileButton(false);
-//    emit enableProjectFileButton(false);
-//    emit enableVoxelizeButton(false);
-//    emit enableAllInOneButton(false);
-//    emit showGenericProgressBar(true);
 
     Matrix<float> test_background;
 
@@ -382,24 +460,35 @@ void ProjectFileWorker::process()
         }
         else
         {
+//            qDebug() << "New measurements ------";
+//            QElapsedTimer timer;
+//            timer.start();
+//            emit testToWindow();
+//            qDebug() << timer.restart() << " (this->main->window)";
+//            emit testToMain();
+//            qDebug() << timer.restart() << " (this->window)";
 
-            emit changedImageWidth(files->at(i).getWidth());
-            emit changedImageHeight(files->at(i).getHeight());
+            emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
+//            qDebug() << timer.restart() << " First signal sent";
 
             (*files)[i].setProjectionKernel(&project_kernel);
+//            qDebug() << timer.restart();
 
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
+//            qDebug() << timer.restart();
 
             emit aquireSharedBuffers();
+//            qDebug() << timer.restart()<< " (Before launch)" << " Second signal sent";
 
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
+//            qDebug() << timer.restart()<< " (After launch)";
 
             emit releaseSharedBuffers();
-
+//            qDebug() << timer.restart() << " Third signal sent";;
 
             if (STATUS_OK)
             {
-                emit repaintImageWidget();
+//                emit repaintImageWidget();
                 //--QCoreApplication::processEvents();
             }
             else
@@ -407,7 +496,7 @@ void ProjectFileWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
-
+//            qDebug() << timer.restart();
         }
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/files->size());
@@ -571,8 +660,9 @@ void AllInOneWorker::process()
                 }
                 else
                 {
-                    emit changedImageWidth(file.getWidth());
-                    emit changedImageHeight(file.getHeight());
+//                    emit changedImageWidth(file.getWidth());
+//                    emit changedImageHeight(file.getHeight());
+                    emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
                     file.setProjectionKernel(&project_kernel);
                     file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 
@@ -661,9 +751,7 @@ VoxelizeWorker::VoxelizeWorker()
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-
-
-    if (isCLInitialized && voxelize_kernel) clReleaseKernel(voxelize_kernel);
+    if (isCLInitialized) clReleaseKernel(voxelize_kernel);
 }
 
 unsigned int VoxelizeWorker::getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child)
@@ -678,7 +766,7 @@ unsigned int VoxelizeWorker::getOctBrick(unsigned int poolX, unsigned int poolY,
 
 void VoxelizeWorker::initializeCLKernel()
 {
-    Matrix<const char *> paths(1,3);
+    Matrix<const char *> paths(1,1);
     paths[0] = "cl_kernels/voxelize.cl";
 
     program = context_cl->createProgram(&paths, &err);
@@ -940,7 +1028,6 @@ void VoxelizeWorker::process()
                 }
 
                 // Round up to the lowest number of bricks that is multiple of the brick pool dimensions. Use this value to reserve data for the data pool
-
                 unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
 
                 // Read results
@@ -1016,8 +1103,9 @@ void DisplayFileWorker::process()
         STATUS_OK = file.readData();
         if (STATUS_OK)
         {
-            emit changedImageWidth(file.getWidth());
-            emit changedImageHeight(file.getHeight());
+//            emit changedImageWidth(file.getWidth());
+//            emit changedImageHeight(file.getHeight());
+            emit changedImageSize(file.getWidth(), file.getHeight());
             file.setProjectionKernel(&project_kernel);
             file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 

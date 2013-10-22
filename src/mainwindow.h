@@ -60,9 +60,20 @@ public:
     ~MainWindow();
 
 
-protected:
-
 private slots:
+    void test();
+
+
+    // Toolchain button stuff
+    void anyButtonStart();
+
+    void readScriptButtonFinish();
+    void setFileButtonFinish();
+    void allInOneButtonFinish();
+    void readFileButtonFinish();
+    void projectFileButtonFinish();
+    void voxelizeButtonFinish();
+
     void takeScreenshot();
     void saveScriptAs();
     void setCurrentSvoLevel(int value);
@@ -81,7 +92,7 @@ private slots:
     void aboutOpenCL();
     void aboutOpenGL();
 
-    void runReadScript();
+//    void runReadScript();
 
     void print(QString str);
     void setGenericProgressFormat(QString str);
@@ -102,13 +113,54 @@ private slots:
     void setDisplayFile(int value);
 
 signals:
+    void testToWindow();
+
     void changedDetector(int value);
     void changedFormat(int value);
     void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
 
 private:
+    // Buttons
+    QPushButton *allInOneButton;
+    QPushButton *imageForwardButton;
+    QPushButton *imageFastForwardButton;
+    QPushButton *imageBackButton;
+    QPushButton *imageFastBackButton;
+    QPushButton *readScriptButton;
+    QPushButton *setFileButton;
+    QPushButton *readFileButton;
+    QPushButton *projectFileButton;
+    QPushButton *voxelizeButton;
+    QPushButton *saveSvoButton;
+    QPushButton *killButton;
+    QPushButton *functionToggleButton;
+    QPushButton * loadParButton;
+    QPushButton * unitcellButton;
+
+
+    // OpenCL
     ContextCL * context_cl;
+
+    // QThreads
+    QThread * readScriptThread;
+    QThread * setFileThread;
+    QThread * readFileThread;
+    QThread * projectFileThread;
+    QThread * voxelizeThread;
+    QThread * allInOneThread;
+    QThread * displayFileThread;
+
+    // Workers
+    ReadScriptWorker * readScriptWorker;
+    SetFileWorker * setFileWorker;
+    ReadFileWorker * readFileWorker;
+    ProjectFileWorker * projectFileWorker;
+    AllInOneWorker * allInOneWorker;
+    VoxelizeWorker * voxelizeWorker;
+    DisplayFileWorker * displayFileWorker;
+
+
 
     int current_svo;
 
@@ -142,8 +194,8 @@ private:
 
     QLineEdit * hklEdit;
 
-    QPushButton * loadParButton;
-    QPushButton * unitcellButton;
+
+
 
     QLabel * alpha;
     QLabel * beta;
@@ -191,11 +243,6 @@ private:
     QTabWidget *tabWidget;
 
     QAction *scalebarAct;
-    QPushButton *allInOneButton;
-    QPushButton *imageForwardButton;
-    QPushButton *imageFastForwardButton;
-    QPushButton *imageBackButton;
-    QPushButton *imageFastBackButton;
     QSpinBox *imageNumberSpinBox;
     QDockWidget *fileDockWidget;
     QWidget *fileControlsWidget;
@@ -231,14 +278,7 @@ protected:
     QPlainTextEdit *errorTextEdit;
     QProgressBar *progressBar;
 
-    QPushButton *readScriptButton;
-    QPushButton *setFilesButton;
-    QPushButton *readFilesButton;
-    QPushButton *projectFilesButton;
-    QPushButton *generateSvoButton;
-    QPushButton *saveSVOButton;
-    QPushButton *killButton;
-    QPushButton *functionToggleButton;
+
 
     QMenuBar * mainMenu;
     QMenu *reduceMenu;
@@ -267,16 +307,15 @@ protected:
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
 
-    QScriptValue rawFilesValue;
+//    QScriptValue rawFilesValue;
     QScriptEngine engine;
     QScriptValue rawFilesQs;
 
     // Utility
-    int verbosity;
 
     // Main resources
     QStringList file_paths;
-//    QList<PilatusFile> files;
+    QList<PilatusFile> files;
 //    QList<PilatusFile> background_files;
     MiniArray<float> reduced_pixels;
 
@@ -290,22 +329,8 @@ protected:
     int brick_inner_dimension;
     int brick_outer_dimension;
 
-    QThread * setFileThread;
-    QThread * readFileThread;
-    QThread * projectFileThread;
-    QThread * voxelizeThread;
-    QThread * allInOneThread;
-    QThread * displayFileThread;
-
     QGridLayout * mainLayout;
 
     int display_file;
-
-//    SetFileWorker * setFileWorker;
-//    ReadFileWorker * readFileWorker;
-//    ProjectFileWorker * projectFileWorker;
-//    AllInOneWorker * allInOneWorker;
-//    VoxelizeWorker * voxelizeWorker;
-//    DisplayFileWorker * displayFileWorker;
 };
 #endif
