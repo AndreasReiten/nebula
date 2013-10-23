@@ -1024,7 +1024,7 @@ void MainWindow::initializeInteractives()
         imageRenderWindow->setSharedWindow(sharedContextWindow);
         imageRenderWindow->setFormat(format_gl);
         imageRenderWindow->setContextCL(context_cl);
-        imageRenderWindow->setAnimating(true);
+//        imageRenderWindow->setAnimating(true);
 
 
         imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);

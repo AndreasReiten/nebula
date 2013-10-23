@@ -193,7 +193,7 @@ void OpenGLWindow::setAnimating(bool animating)
 {
     isAnimating = animating;
 
-    if (animating)
+    if (isAnimating)
         renderLater();
 }
 
