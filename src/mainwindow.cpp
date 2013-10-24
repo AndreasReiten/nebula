@@ -151,10 +151,14 @@ void MainWindow::initializeThreads()
     projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
 
     projectFileWorker->moveToThread(projectFileThread);
+    connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+            connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
     connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
+    connect(projectFileWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -1024,7 +1028,7 @@ void MainWindow::initializeInteractives()
         imageRenderWindow->setSharedWindow(sharedContextWindow);
         imageRenderWindow->setFormat(format_gl);
         imageRenderWindow->setContextCL(context_cl);
-//        imageRenderWindow->setAnimating(true);
+        imageRenderWindow->setAnimating(true);
 
 
         imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);

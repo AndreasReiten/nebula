@@ -66,6 +66,8 @@ public:
 public slots:
     void renderLater();
     void renderNow();
+    void startAnimating();
+    void stopAnimating();
 
 protected:
     virtual void render(QPainter *painter);

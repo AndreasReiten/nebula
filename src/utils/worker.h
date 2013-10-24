@@ -173,6 +173,7 @@ class ProjectFileWorker : public BaseWorker
         void changedImageSize(int w, int h);
         void testToWindow();
         void testToMain();
+        void updateRequest();
 
     public slots:
         void initializeCLKernel();

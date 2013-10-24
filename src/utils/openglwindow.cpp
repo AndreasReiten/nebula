@@ -183,7 +183,7 @@ void OpenGLWindow::renderNow()
     setFps();
 //    frames++;
 
-    context_gl->swapBuffers(this); // Swapping buffers appears to be compute heavy (15 ms)
+    context_gl->swapBuffers(this);
 
     if (isAnimating)
         renderLater();
@@ -195,6 +195,18 @@ void OpenGLWindow::setAnimating(bool animating)
 
     if (isAnimating)
         renderLater();
+}
+
+void OpenGLWindow::startAnimating()
+{
+    qDebug() << "start animating";
+    setAnimating(true);
+}
+
+void OpenGLWindow::stopAnimating()
+{
+    qDebug() << "stop animating";
+    setAnimating(false);
 }
 
 void OpenGLWindow::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)

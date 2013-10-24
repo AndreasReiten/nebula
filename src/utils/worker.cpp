@@ -460,31 +460,35 @@ void ProjectFileWorker::process()
         }
         else
         {
-            qDebug() << "New measurements ------";
-            QElapsedTimer timer;
-            timer.start();
+//            qDebug() << "New measurements ------";
+//            QElapsedTimer timer;
+//            timer.start();
 //            emit testToWindow();
 //            qDebug() << timer.restart() << " (this->main->window)";
 //            emit testToMain();
 //            qDebug() << timer.restart() << " (this->window)";
 
             emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
-            qDebug() << timer.restart() << " First signal sent";
+//            qDebug() << timer.restart() << " First signal sent";
 
             (*files)[i].setProjectionKernel(&project_kernel);
-            qDebug() << timer.restart();
+//            qDebug() << timer.restart();
 
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
-            qDebug() << timer.restart();
+//            qDebug() << timer.restart();
 
             emit aquireSharedBuffers();
-            qDebug() << timer.restart()<< " (Before launch)" << " Second signal sent";
+//            qDebug() << timer.restart()<< " (Before launch)" << " Second signal sent";
 
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
-            qDebug() << timer.restart()<< " (After launch)";
+//            qDebug() << timer.restart()<< " (After launch)";
 
             emit releaseSharedBuffers();
-            qDebug() << timer.restart() << " Third signal sent";;
+//            qDebug() << timer.restart() << " Third signal sent";
+
+            emit updateRequest();
+//            qDebug() << timer.restart() << " Update signal sent";
+
 
             if (STATUS_OK)
             {
@@ -496,7 +500,7 @@ void ProjectFileWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
-            qDebug() << timer.restart();
+//            qDebug() << timer.restart();
         }
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/files->size());

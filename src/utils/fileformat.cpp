@@ -140,18 +140,28 @@ int PilatusFile::readHeader()
         return 0;
     }
     // Read file
-    std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
-    if (!in)
+//    std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
+//    if (!in)
+//    {
+//        std::cout << "Error reading file: " << path.toStdString().c_str() << std::endl;
+//        return 0;
+//    }
+
+//    std::string contents;
+//    contents.reserve(4096);
+//    in.read(&contents[0], 4096);
+//    in.close();
+//    QString header(contents.c_str());
+
+    QFile file(path.toStdString().c_str());
+    if (!file.open(QIODevice::ReadOnly))
     {
-        std::cout << "Error reading file: " << path.toStdString().c_str() << std::endl;
+        qDebug() << "Error reading file: " << path.toStdString().c_str();
         return 0;
     }
+    QString header = file.read(4096);
+    file.close();
 
-    std::string contents;
-    contents.reserve(4096);
-    in.read(&contents[0], 4096);
-    in.close();
-    QString header(contents.c_str());
 
     // Fetch keywords!
     /* Non-optional keywords */

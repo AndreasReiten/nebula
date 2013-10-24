@@ -377,7 +377,10 @@ cl_mem * ImageRenderWindow::getBetaImgCLGL()
 
 void ImageRenderWindow::aquireSharedBuffers()
 {
+    QElapsedTimer timer;
+    timer.start();
     glFinish();
+    qDebug() << "glFinish took " << timer.restart();
     if (isAlphaImgInitialized) err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
     if (isBetaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
     if (isGammaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
