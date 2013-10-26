@@ -19,7 +19,7 @@ MainWindow::MainWindow()
 
     // Set the format of the rendering context
     QSurfaceFormat format_gl;
-    format_gl.setVersion(4, 0);
+//    format_gl.setVersion(4, 3);
     format_gl.setSamples(16);
     format_gl.setRedBufferSize(8);
     format_gl.setGreenBufferSize(8);
@@ -153,7 +153,7 @@ void MainWindow::initializeThreads()
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-            connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
 //    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
     connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
@@ -192,10 +192,13 @@ void MainWindow::initializeThreads()
     allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
 
     allInOneWorker->moveToThread(allInOneThread);
+    connect(allInOneThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+    connect(allInOneWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
     connect(allInOneWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
+    connect(allInOneWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -252,7 +255,7 @@ void MainWindow::initializeThreads()
 //    connect(displayFileWorker, SIGNAL(changedImageWidth(int)), imageRenderWindow, SLOT(setImageWidth(int)), Qt::BlockingQueuedConnection);
 //    connect(displayFileWorker, SIGNAL(changedImageHeight(int)), imageRenderWindow, SLOT(setImageHeight(int)), Qt::BlockingQueuedConnection);
     connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(displayFileWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(repaintImageWidget()), imageRenderWidget, SLOT(repaint()), Qt::BlockingQueuedConnection);
     connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
     connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
     connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
@@ -451,11 +454,11 @@ void MainWindow::openScript()
 {
     if (maybeSave())
     {
-        QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".txt (*.txt);; All Files (*)"));
-        if (!fileName.isEmpty())
+        current_script_path = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".txt (*.txt);; All Files (*)"));
+        if (!current_script_path.isEmpty())
         {
-            QFileInfo fileInfo = QFileInfo(fileName);
-            if (fileInfo.size() < 5000000) loadFile(fileName);
+            QFileInfo fileInfo = QFileInfo(current_script_path);
+            if (fileInfo.size() < 5000000) loadFile(current_script_path);
             else print("\nFile is too large!");
 
         }
@@ -707,6 +710,7 @@ void MainWindow::setTab(int tab)
             fileDockWidget->hide();
             toolChainWidget->show();
             outputDockWidget->show();
+            setWindowTitle(tr("Nebula[*] @ SCRIPT: ")+current_script_path);
             break;
 
         case 1:
@@ -716,6 +720,7 @@ void MainWindow::setTab(int tab)
             toolChainWidget->show();
             fileDockWidget->show();
             outputDockWidget->show();
+            setWindowTitle(tr("Nebula[*] @ SCRIPT:")+current_script_path);
             break;
 
         case 2:
@@ -725,6 +730,7 @@ void MainWindow::setTab(int tab)
             graphicsDockWidget->show();
             unitcellDockWidget->show();
             functionDockWidget->show();
+            setWindowTitle(tr("Nebula[*] @ SVO:")+current_svo_path);
             break;
 
         default:
@@ -831,13 +837,11 @@ void MainWindow::saveSvo()
 
 void MainWindow::openSvo()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".svo (*.svo);; All Files (*)"));
+    current_svo_path = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".svo (*.svo);; All Files (*)"));
 
-    if ((file_name != ""))
+    if ((current_svo_path != ""))
     {
-        setWindowTitle(tr("Nebula[*] ")+file_name);
-
-        svo_loaded[current_svo].open(file_name);
+        svo_loaded[current_svo].open(current_svo_path);
         volumeRenderWindow->setSvo(&(svo_loaded[current_svo]));
 
         alphaSpinBox->setValue(0.05);
@@ -845,7 +849,7 @@ void MainWindow::openSvo()
         dataMinSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(0));
         dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
 
-        print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+file_name+"\"");
+        print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+current_svo_path+"\"");
     }
 }
 
@@ -1016,7 +1020,7 @@ void MainWindow::initializeInteractives()
 
 
         QSurfaceFormat format_gl;
-        format_gl.setVersion(4, 0);
+//        format_gl.setVersion(4, 3);
         format_gl.setSamples(16);
         format_gl.setRedBufferSize(8);
         format_gl.setGreenBufferSize(8);
@@ -1056,7 +1060,7 @@ void MainWindow::initializeInteractives()
     /*      3D View widget      */
     {
         QSurfaceFormat format_gl;
-        format_gl.setVersion(4, 0);
+//        format_gl.setVersion(4, 3);
         format_gl.setSamples(16);
         format_gl.setRedBufferSize(8);
         format_gl.setGreenBufferSize(8);

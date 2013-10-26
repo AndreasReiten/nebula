@@ -199,13 +199,13 @@ void OpenGLWindow::setAnimating(bool animating)
 
 void OpenGLWindow::startAnimating()
 {
-    qDebug() << "start animating";
+//    qDebug() << "start animating";
     setAnimating(true);
 }
 
 void OpenGLWindow::stopAnimating()
 {
-    qDebug() << "stop animating";
+//    qDebug() << "stop animating";
     setAnimating(false);
 }
 

@@ -61,7 +61,7 @@ class BaseWorker : public QObject
         void changedGenericProgress(int value);
         void changedFormatGenericProgress(QString str);
         void changedTabWidget(int value);
-        void repaintImageWidget();
+//        void repaintImageWidget();
         void aquireSharedBuffers();
         void releaseSharedBuffers();
 

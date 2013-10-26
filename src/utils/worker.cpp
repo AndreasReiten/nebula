@@ -636,7 +636,7 @@ void AllInOneWorker::process()
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
 
             emit changedMessageString(str);
-            std::cout << "CLEARING for reduced_pixels" << std::endl;
+//            std::cout << "CLEARING for reduced_pixels" << std::endl;
             reduced_pixels->clear();
 
             break;
@@ -664,18 +664,19 @@ void AllInOneWorker::process()
                 }
                 else
                 {
-//                    emit changedImageWidth(file.getWidth());
-//                    emit changedImageHeight(file.getHeight());
-                    emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
+                    emit changedImageSize(file.getWidth(), file.getHeight());
+
                     file.setProjectionKernel(&project_kernel);
                     file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 
                     emit aquireSharedBuffers();
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
                     emit releaseSharedBuffers();
+                    emit updateRequest();
+
                     if (STATUS_OK)
                     {
-                        emit repaintImageWidget();
+//                        emit repaintImageWidget();
 
                         // Get suggestions on the minimum search radius that can safely be applied during interpolation
                         if ((*suggested_search_radius_low) > file.getSearchRadiusLowSuggestion()) (*suggested_search_radius_low) = file.getSearchRadiusLowSuggestion();
@@ -860,6 +861,7 @@ void VoxelizeWorker::process()
 
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
+        root.setContextCL(context_cl);
 
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
@@ -891,6 +893,10 @@ void VoxelizeWorker::process()
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
 
+
+                qDebug() << "Level " << lvl;
+
+
                 size_t cpu_counter = 0;
                 size_t gpu_counter = 0;
 
@@ -904,13 +910,10 @@ void VoxelizeWorker::process()
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
                 double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
-
                 // For each node
                 size_t iter = 0;
                 for (size_t i = 0; i < nodes[lvl]; i++)
                 {
-
-
                     if((non_empty_node_counter+1) >= n_max_bricks)
                     {
                         QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed due to memory overflow. The dataset has grown too large! ("+QString::number(non_empty_node_counter*n_points_brick*sizeof(cl_float)/1e6, 'g', 3)+" MB)");
@@ -951,7 +954,9 @@ void VoxelizeWorker::process()
                     err = clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), (void *) &non_empty_node_counter );
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-                    // Calculate the brick data
+                    // Calculate the brick data // Next step really slow on Windows
+
+                    qDebug() << context_cl->getContext();
                     int isEmpty = root.getBrick(
                         &brick_extent,
                         search_radius,
@@ -960,12 +965,9 @@ void VoxelizeWorker::process()
                         &items_cl,
                         &pool_cl,
                         &voxelize_kernel,
-                        context_cl->getCommandQueue(),
                         &method,
-                        context_cl->getContext(),
                         non_empty_node_counter,
                         svo->getBrickPoolPower());
-
 
                     if (method == 0) gpu_counter++;
                     if (method == 1) cpu_counter++;
@@ -998,7 +1000,6 @@ void VoxelizeWorker::process()
                     }
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
                 }
-
                 if (kill_flag)
                 {
 
@@ -1012,7 +1013,6 @@ void VoxelizeWorker::process()
 
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
-
                 //~if (cpu_counter+gpu_counter > 0) std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
@@ -1117,10 +1117,10 @@ void DisplayFileWorker::process()
             emit aquireSharedBuffers();
             STATUS_OK = file.filterData( &n, NULL, *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high, 0);
             emit releaseSharedBuffers();
-            if (STATUS_OK)
-            {
-                emit repaintImageWidget();
-            }
+//            if (STATUS_OK)
+//            {
+////                semit repaintImageWidget();
+//            }
         }
     }
     emit finished();

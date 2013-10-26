@@ -4,7 +4,7 @@ ContextCL::ContextCL()
 {
 }
 
-cl_command_queue * ContextCL::getCommandQueue()
+const cl_command_queue * ContextCL::getCommandQueue()
 {
     return &queue;
 }

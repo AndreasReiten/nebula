@@ -30,7 +30,7 @@ public:
     void initDevices();
     void initSharedContext();
     void initCommandQueue();
-    cl_command_queue * getCommandQueue();
+    const cl_command_queue *getCommandQueue();
     cl_context * getContext();
     QList<DeviceCL> * getDeviceList();
     DeviceCL * getMainDevice();

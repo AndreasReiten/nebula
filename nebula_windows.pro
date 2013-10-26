@@ -1,14 +1,14 @@
 # QMAKE PROJECT FILE
-# Current issues in windows (VS10 64 bit): Cluttered text with QOpenGLPaintDevice. Can not set GL version explicitly for QSurfaceFormat. Can not delete matrix resource.
+# Current issues in windows (VS10 64 bit): Cluttered text with QOpenGLPaintDevice. Can not set GL version explicitly for QSurfaceFormat.
 LIBS += -lOpenCL -Llib_win64VS10
 INCLUDEPATH += inc
 
 HEADERS       = src/mainwindow.h \
                 src/utils/openglwindow.h \
                 src/utils/volumerender.h \
-#                src/utils/imagerender.h \
-#                src/utils/fileformat.h \
-#                src/utils/worker.h \
+                src/utils/imagerender.h \
+                src/utils/fileformat.h \
+                src/utils/worker.h \
                 src/utils/miniarray.h \
                 src/utils/texthighlighter.h \
                 src/utils/tools.h \
@@ -25,9 +25,9 @@ SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
                 src/utils/openglwindow.cpp \
                 src/utils/volumerender.cpp \
-#                src/utils/imagerender.cpp \
-#                src/utils/fileformat.cpp \
-#                src/utils/worker.cpp \
+                src/utils/imagerender.cpp \
+                src/utils/fileformat.cpp \
+                src/utils/worker.cpp \
                 src/utils/miniarray.cpp \
                 src/utils/texthighlighter.cpp \
                 src/utils/tools.cpp \
@@ -41,10 +41,9 @@ SOURCES       = src/main.cpp \
                 src/utils/transferfunction.cpp
 RESOURCES     = nebula.qrc
 
-QT += core gui opengl widgets script # Use for Qt5
-#QT += opengl script # Use for Qt4
+QT += core gui opengl widgets script
 CONFIG       += c++11
-CONFIG       += static # Use for static building
+#CONFIG       += static
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
 

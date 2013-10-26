@@ -26,6 +26,7 @@ int PilatusFile::set(QString path, ContextCL *context)
 
     this->path = path;
     if (!this->readHeader()) return 0;
+
     if (detector == "PILATUS 1M")
     {
         fast_dimension = 981;
@@ -131,12 +132,12 @@ int PilatusFile::readHeader()
     QFileInfo file_info(path);
     if (!file_info.exists())
     {
-        std::cout << "File does not exist: " << path.toStdString().c_str() << std::endl;
+        qDebug() << "File does not exist: " << path.toStdString().c_str();
         return 0;
     }
     else if (file_info.size() <= 0)
     {
-        std::cout << "File is zero bytes: " << path.toStdString().c_str() << std::endl;
+        qDebug() << "File does not exist: " << path.toStdString().c_str();
         return 0;
     }
     // Read file
@@ -208,6 +209,8 @@ int PilatusFile::readHeader()
     //~ start_position = regExp(&, &header, 0, 1).toFloat();
     //~ position_increment = regExp(&, &header, 0, 1).toFloat();
     //~ shutter_time = regExp(&, &header, 0, 1).toFloat();
+
+
 
     return 1;
 }

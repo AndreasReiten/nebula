@@ -121,6 +121,10 @@ signals:
     void changedPaths(QStringList strlist);
 
 private:
+    // Header strings
+    QString current_svo_path;
+    QString current_script_path;
+
     // Buttons
     QPushButton *allInOneButton;
     QPushButton *imageForwardButton;
