@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 
-MainWindow::MainWindow()
+MainWindow::MainWindow() :
+    isInScriptMode(true)
 {
     //     Set default values
     current_svo = 0;
@@ -81,7 +82,7 @@ void MainWindow::initializeThreads()
     readScriptWorker = new ReadScriptWorker();
     readScriptWorker->setFilePaths(&file_paths);
     readScriptWorker->setScriptEngine(&engine);
-    readScriptWorker->setInput(textEdit);
+    readScriptWorker->setInput(scriptTextEdit);
 
     readScriptWorker->moveToThread(readScriptThread);
     connect(readScriptThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -445,7 +446,7 @@ void MainWindow::newScriptFile()
 {
     if (maybeSave())
     {
-        textEdit->clear();
+        scriptTextEdit->clear();
         setCurrentFile("");
     }
 }
@@ -470,6 +471,7 @@ void MainWindow::initializeActions()
 
 
     // Actions
+    scriptingAct = new QAction(QIcon(":/art/fast_proceed.png"), tr("&Toggle scripting mode"), this);
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
     saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
@@ -556,7 +558,7 @@ void MainWindow::aboutOpenGL()
 
 void MainWindow::documentWasModified()
 {
-    setWindowModified(textEdit->document()->isModified());
+    setWindowModified(scriptTextEdit->document()->isModified());
 }
 
 
@@ -739,6 +741,25 @@ void MainWindow::setTab(int tab)
     }
 }
 
+
+void MainWindow::toggleScriptView()
+{
+    isInScriptMode = !isInScriptMode;
+
+    if (isInScriptMode)
+    {
+        scriptTextEdit->show();
+        readScriptButton->show();
+        fileBrowserWidget->hide();
+    }
+    else
+    {
+        scriptTextEdit->hide();
+        readScriptButton->hide();
+        fileBrowserWidget->show();
+    }
+}
+
 void MainWindow::initializeConnects()
 {
     /* this <-> volumeRenderWidget */
@@ -787,12 +808,13 @@ void MainWindow::initializeConnects()
 
 
     /* this <-> this */
+    connect(this->scriptingAct, SIGNAL(triggered()), this, SLOT(toggleScriptView()));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
     connect(this->treshLimA_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
     connect(this->treshLimB_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdHigh(double)));
     connect(this->treshLimC_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdLow(double)));
     connect(this->treshLimD_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdHigh(double)));
-    connect(textEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
+    connect(scriptTextEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
@@ -902,7 +924,7 @@ void MainWindow::initializeInteractives()
         setFileButton->setIcon(QIcon(":/art/proceed.png"));
         setFileButton->setIconSize(QSize(24,24));
         setFileButton->setText("Set ");
-        setFileButton->setEnabled(false);
+//        setFileButton->setEnabled(false);
 
         readFileButton = new QPushButton;
         readFileButton->setIcon(QIcon(":/art/proceed.png"));
@@ -927,7 +949,7 @@ void MainWindow::initializeInteractives()
         allInOneButton->setIcon(QIcon(":/art/fast_proceed.png"));
         allInOneButton->setText("All of Above (reduced memory consumption) ");
         allInOneButton->setIconSize(QSize(24,24));
-        allInOneButton->setEnabled(false);
+//        allInOneButton->setEnabled(false);
 
         killButton = new QPushButton;
         killButton->setIcon(QIcon(":/art/kill.png"));
@@ -966,20 +988,43 @@ void MainWindow::initializeInteractives()
 
     /*      Script Widget       */
     {
-        scriptWidget = new QWidget;
-        scriptWidget->setObjectName("scriptWidget");
+        setFilesWidget = new QWidget;
 
         // Script text edit
-        textEdit = new QPlainTextEdit;
-        script_highlighter = new Highlighter(textEdit->document());
+        scriptTextEdit = new QPlainTextEdit;
+        script_highlighter = new Highlighter(scriptTextEdit->document());
         scriptHelp = "/* Add file paths using this Javascript window. \nDo this by appedning paths to the variable 'files'. */ \n\n files = ";
-        textEdit->setPlainText(scriptHelp);
+        scriptTextEdit->setPlainText(scriptHelp);
 
         // Toolbar
         scriptToolBar = new QToolBar(tr("Script"));
         scriptToolBar->addAction(newAct);
         scriptToolBar->addAction(openAct);
         scriptToolBar->addAction(saveAct);
+        scriptToolBar->addAction(scriptingAct);
+
+        // File browser
+        fileBrowserWidget = new QWidget;
+        fileSystemModel  = new QFileSystemModel;
+        fileSelectedModel = new QStandardItemModel;
+        fileSystemTree = new QTreeView;
+        fileSelectedTree = new QTreeView;
+
+        fileSystemModel->setRootPath(QDir::rootPath());
+//        fileSelectedModel->setRootPath(QDir::rootPath());
+        fileSystemTree->setModel(fileSystemModel);
+        fileSelectedTree->setModel(fileSelectedModel);
+
+        QGridLayout * fileBrowserLayout = new QGridLayout;
+        fileBrowserLayout->setSpacing(0);
+        fileBrowserLayout->setMargin(0);
+        fileBrowserLayout->setContentsMargins(0,0,0,0);
+        fileBrowserLayout->addWidget(fileSystemTree,0,0,1,1);
+        fileBrowserLayout->addWidget(fileSelectedTree,0,1,1,1);
+
+        fileBrowserWidget->setLayout(fileBrowserLayout);
+
+        toggleScriptView();
 
         // Layout
         QGridLayout * scriptLayout = new QGridLayout;
@@ -987,9 +1032,10 @@ void MainWindow::initializeInteractives()
         scriptLayout->setMargin(0);
         scriptLayout->setContentsMargins(0,0,0,0);
         scriptLayout->addWidget(scriptToolBar,0,0,1,2);
-        scriptLayout->addWidget(textEdit,1,0,1,2);
+        scriptLayout->addWidget(scriptTextEdit,1,0,1,2);
+        scriptLayout->addWidget(fileBrowserWidget,2,0,1,2);
 
-        scriptWidget->setLayout(scriptLayout);
+        setFilesWidget->setLayout(scriptLayout);
     }
 
 
@@ -1441,7 +1487,7 @@ void MainWindow::initializeInteractives()
     tabWidget = new QTabWidget(mainWidget);
 
     // Add tabs
-    tabWidget->addTab(scriptWidget, tr("Script Editor"));
+    tabWidget->addTab(setFilesWidget, tr("Script Editor"));
     tabWidget->addTab(imageWidget, tr("Ewald's Projection"));
     tabWidget->addTab(viewWidget, tr("3D View"));
 
@@ -1495,7 +1541,7 @@ void MainWindow::writeSettings()
 
 bool MainWindow::maybeSave()
 {
-    if (textEdit->document()->isModified())
+    if (scriptTextEdit->document()->isModified())
     {
         QMessageBox::StandardButton ret;
         ret = QMessageBox::warning(this, tr("Nebula"),
@@ -1529,7 +1575,7 @@ void MainWindow::loadFile(const QString &fileName)
     #ifndef QT_NO_CURSOR
         QApplication::setOverrideCursor(Qt::WaitCursor);
     #endif
-        textEdit->setPlainText(in.readAll());
+        scriptTextEdit->setPlainText(in.readAll());
     #ifndef QT_NO_CURSOR
         QApplication::restoreOverrideCursor();
     #endif
@@ -1553,7 +1599,7 @@ bool MainWindow::saveFile(const QString &fileName)
     #ifndef QT_NO_CURSOR
         QApplication::setOverrideCursor(Qt::WaitCursor);
     #endif
-        out << textEdit->toPlainText();
+        out << scriptTextEdit->toPlainText();
     #ifndef QT_NO_CURSOR
         QApplication::restoreOverrideCursor();
     #endif
@@ -1567,7 +1613,7 @@ bool MainWindow::saveFile(const QString &fileName)
 void MainWindow::setCurrentFile(const QString &fileName)
 {
     curFile = fileName;
-    textEdit->document()->setModified(false);
+    scriptTextEdit->document()->setModified(false);
     setWindowModified(false);
 
     QString shownName = curFile;

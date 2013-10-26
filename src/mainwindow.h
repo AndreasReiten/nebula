@@ -39,6 +39,9 @@
 #include <QCheckBox>
 #include <QSlider>
 #include <QList>
+#include <QFileSystemModel>
+#include <QStandardItemModel>
+#include <QTreeView>
 
 #include "utils/contextcl.h"
 #include "utils/sharedcontext.h"
@@ -61,6 +64,8 @@ public:
 
 
 private slots:
+    void toggleScriptView();
+
     void test();
 
 
@@ -164,6 +169,16 @@ private:
     VoxelizeWorker * voxelizeWorker;
     DisplayFileWorker * displayFileWorker;
 
+    // Boolean checks
+    bool isInScriptMode;
+
+
+    // File browser
+    QWidget * fileBrowserWidget;
+    QFileSystemModel * fileSystemModel;
+    QStandardItemModel * fileSelectedModel;
+    QTreeView *fileSystemTree;
+    QTreeView *fileSelectedTree;
 
 
     int current_svo;
@@ -260,7 +275,7 @@ private:
     QWidget *graphicsWidget;
     QWidget *functionWidget;
     QWidget *unitcellWidget;
-    QWidget *scriptWidget;
+    QWidget *setFilesWidget;
     QWidget *viewWidget;
 
 protected:
@@ -278,7 +293,7 @@ protected:
     QString svoDir;
 //    QString scriptDir;
 
-    QPlainTextEdit *textEdit;
+    QPlainTextEdit *scriptTextEdit;
     QPlainTextEdit *errorTextEdit;
     QProgressBar *progressBar;
 
@@ -303,6 +318,7 @@ protected:
     QAction *newAct;
     QAction *openAct;
     QAction *saveAct;
+    QAction *scriptingAct;
     QAction *runScriptAct;
     QAction *saveAsAct;
     QAction *exitAct;
