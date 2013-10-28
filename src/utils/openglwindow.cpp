@@ -1,5 +1,30 @@
 #include "openglwindow.h"
 
+OpenGLSwapThread::OpenGLSwapThread(QOpenGLContext * context, QWindow *parent)
+    : QWindow(parent)
+{
+    this->shared_context = context;
+}
+
+OpenGLSwapThread::~OpenGLSwapThread()
+{
+
+}
+
+void OpenGLSwapThread::initialize()
+{
+
+}
+
+void OpenGLSwapThread::swapBuffers()
+{
+//    shared_context->makeCurrent(this);
+//    shared_context->swapBuffers(this);
+//    shared_context->doneCurrent();
+    shared_context->moveToThread(qApp->thread());
+}
+
+
 OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     : QWindow(parent)
     , isUpdatePending(false)
@@ -160,6 +185,13 @@ void OpenGLWindow::preInitialize()
         qDebug() << ss.str().c_str();
 
         needsInitialize = true;
+
+        swap_surface = new OpenGLSwapThread(context_gl);
+        swap_thread = new QThread;
+        swap_thread->start();
+        swap_surface->moveToThread(swap_thread);
+
+        connect(this, SIGNAL(swappy()), swap_surface, SLOT(swapBuffers()), Qt::BlockingQueuedConnection);
     }
 
     context_gl->makeCurrent(this);
@@ -182,8 +214,10 @@ void OpenGLWindow::renderNow()
     render();
     setFps();
 //    frames++;
-
-    context_gl->swapBuffers(this);
+    context_gl->doneCurrent();
+    context_gl->moveToThread(swap_thread);
+    emit swappy();
+    context_gl->makeCurrent(this);
 
     if (isAnimating)
         renderLater();

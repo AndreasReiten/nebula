@@ -1007,8 +1007,18 @@ void MainWindow::initializeInteractives()
         fileBrowserWidget = new QWidget;
         fileSystemModel  = new QFileSystemModel;
         fileSelectedModel = new QStandardItemModel;
-        fileSystemTree = new QTreeView;
-        fileSelectedTree = new QTreeView;
+
+        fileSystemTree = new FileTreeView;
+        fileSystemTree->setDragEnabled(1);
+        fileSystemTree->setAcceptDrops(0);
+        fileSystemTree->setDropIndicatorShown(1);
+        fileSystemTree->setSortingEnabled(1);
+
+        fileSelectedTree = new FileTreeView;
+        fileSelectedTree->setDragEnabled(0);
+        fileSelectedTree->setAcceptDrops(1);
+        fileSelectedTree->setDropIndicatorShown(1);
+        fileSelectedTree->setSortingEnabled(1);
 
         fileSystemModel->setRootPath(QDir::rootPath());
 //        fileSelectedModel->setRootPath(QDir::rootPath());

@@ -17,7 +17,8 @@ HEADERS       = src/mainwindow.h \
                 src/utils/contextcl.h \
                 src/utils/devicecl.h \
                 src/utils/sharedcontext.h \
-                src/utils/transferfunction.h
+                src/utils/transferfunction.h \
+    src/utils/filetreeview.h
 
 SOURCES       = src/main.cpp \
                 src/mainwindow.cpp \
@@ -36,7 +37,8 @@ SOURCES       = src/main.cpp \
                 src/utils/contextcl.cpp \
                 src/utils/devicecl.cpp \
                 src/utils/sharedcontext.cpp \
-                src/utils/transferfunction.cpp
+                src/utils/transferfunction.cpp \
+    src/utils/filetreeview.cpp
 
 RESOURCES     = nebula.qrc
 

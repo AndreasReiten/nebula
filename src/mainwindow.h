@@ -41,7 +41,7 @@
 #include <QList>
 #include <QFileSystemModel>
 #include <QStandardItemModel>
-#include <QTreeView>
+//#include <QTreeView>
 
 #include "utils/contextcl.h"
 #include "utils/sharedcontext.h"
@@ -52,6 +52,7 @@
 #include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
+#include "utils/filetreeview.h"
 
 
 class MainWindow : public QMainWindow
@@ -177,8 +178,8 @@ private:
     QWidget * fileBrowserWidget;
     QFileSystemModel * fileSystemModel;
     QStandardItemModel * fileSelectedModel;
-    QTreeView *fileSystemTree;
-    QTreeView *fileSelectedTree;
+    FileTreeView *fileSystemTree;
+    FileTreeView *fileSelectedTree;
 
 
     int current_svo;

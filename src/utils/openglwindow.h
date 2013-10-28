@@ -12,35 +12,26 @@
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QCoreApplication>
+#include <QThread>
 
 #include "contextcl.h"
 #include "matrix.h"
 
-//class OpenGLRenderThread : public QWindow, protected QOpenGLFunctions
-//{
-//    Q_OBJECT
-//public:
-//    explicit OpenGLWindow(QWindow *parent = 0, QOpenGLContext * shareContext = 0);
-//    ~OpenGLWindow();
+class OpenGLSwapThread : public QWindow, protected QOpenGLFunctions
+{
+    Q_OBJECT
+public:
+    explicit OpenGLSwapThread(QOpenGLContext * context, QWindow *parent = 0);
+    ~OpenGLSwapThread();
 
-//    void setContextCL(ContextCL * context);
+public slots:
+    void swapBuffers();
 
-//    // Convenience functions
-//    void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
-//    void getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform);
-//    QPointF coordQttoGL(QPointF coord);
-//    void glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect);
+protected:
+    virtual void initialize();
 
-//protected:
-//    virtual void render(QPainter *painter);
-
-//    QOpenGLContext *shared_context;
-//    ContextCL * context_cl;
-//    QOpenGLPaintDevice *paint_device_gl;
-
-//private:
-//    QOpenGLContext *context_gl;
-//};
+    QOpenGLContext *shared_context;
+};
 
 
 class OpenGLWindow : public QWindow, protected QOpenGLFunctions
@@ -62,6 +53,9 @@ public:
     QPointF coordQttoGL(QPointF coord);
     void glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect);
     double getFps();
+
+signals:
+    void swappy();
 
 public slots:
     void renderLater();
@@ -87,6 +81,10 @@ private slots:
     void setFps();
 
 private:
+    OpenGLSwapThread * swap_surface;
+    QThread * swap_thread;
+
+
     bool isUpdatePending;
     bool isAnimating;
 
