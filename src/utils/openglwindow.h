@@ -81,8 +81,8 @@ private slots:
     void setFps();
 
 private:
-    OpenGLSwapThread * swap_surface;
-    QThread * swap_thread;
+//    OpenGLSwapThread * swap_surface;
+//    QThread * swap_thread;
 
 
     bool isUpdatePending;
