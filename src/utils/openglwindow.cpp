@@ -1,9 +1,9 @@
 #include "openglwindow.h"
 
-OpenGLSwapThread::OpenGLSwapThread(QOpenGLContext * context, QWindow *parent)
-    : QWindow(parent)
+//OpenGLSwapThread::OpenGLSwapThread(QOpenGLContext * context, QWindow *parent)
+OpenGLSwapThread::OpenGLSwapThread(QWindow *parent)
 {
-    this->shared_context = context;
+//    this->shared_context = context;
 }
 
 OpenGLSwapThread::~OpenGLSwapThread()
@@ -16,18 +16,34 @@ void OpenGLSwapThread::initialize()
 
 }
 
-void OpenGLSwapThread::swapBuffers()
+void OpenGLSwapThread::process()
 {
-    shared_context->makeCurrent(this);
-    shared_context->swapBuffers(this);
-    shared_context->doneCurrent();
-    shared_context->moveToThread(qApp->thread());
+//    qDebug() << "swap: make current" << context_gl;
+    context_gl->makeCurrent(render_surface);
+//    qDebug() << "swap: swap";
+    context_gl->swapBuffers(render_surface);
+//    qDebug() << "swap: done current";
+    context_gl->doneCurrent();
+//    qDebug() << "swap: move back context to main";
+    context_gl->moveToThread(qApp->thread());
+//    qDebug() << "swap: done";
+    emit finished();
 }
 
+void OpenGLSwapThread::setGLContext(QOpenGLContext *context)
+{
+    context_gl = context;
+}
+
+void OpenGLSwapThread::setRenderSurface(QSurface *surface)
+{
+    render_surface = surface;
+}
 
 OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     : QWindow(parent)
     , isUpdatePending(false)
+    , isBufferBeingSwapped(false)
     , isAnimating(false)
     , paint_device_gl(0)
     , context_gl(0)
@@ -155,13 +171,15 @@ void OpenGLWindow::preInitialize()
 {
     bool needsInitialize = false;
 
+//    qDebug() << context_gl;
+
     if (!context_gl)
     {
-        context_gl = new QOpenGLContext(this);
+        context_gl = new QOpenGLContext(); // Maybe not set pareent here
         context_gl->setFormat(requestedFormat());
         if (shared_context != 0)
         {
-            std::cout << "Sharing context" << std::endl;
+//            std::cout << "Sharing context" << std::endl;
             context_gl->setShareContext(shared_context);
         }
         context_gl->create();
@@ -186,12 +204,19 @@ void OpenGLWindow::preInitialize()
 
         needsInitialize = true;
 
-//        swap_surface = new OpenGLSwapThread(context_gl);
-//        swap_thread = new QThread;
-//        swap_thread->start();
-//        swap_surface->moveToThread(swap_thread);
+        swap_thread = new QThread;
+        swap_surface = new OpenGLSwapThread();
+        swap_surface->setGLContext(context_gl);
+        swap_surface->setRenderSurface(this);
 
-//        connect(this, SIGNAL(swappy()), swap_surface, SLOT(swapBuffers()), Qt::BlockingQueuedConnection);
+        swap_surface->moveToThread(swap_thread);
+//        connect(this, SIGNAL(swappy()), swap_surface, SLOT(process()), Qt::BlockingQueuedConnection);
+        connect(swap_thread, SIGNAL(started()), swap_surface, SLOT(process()));
+        connect(swap_surface, SIGNAL(finished()), swap_thread, SLOT(quit()));
+        connect(swap_surface, SIGNAL(finished()), this, SLOT(setSwapState()));
+//        connect(swap_surfacev, SIGNAL(finished()), swap_surface, SLOT(deleteLater()));
+//        connect(swap_thread, SIGNAL(finished()), swap_thread, SLOT(deleteLater()));
+
     }
 
     context_gl->makeCurrent(this);
@@ -204,24 +229,61 @@ void OpenGLWindow::preInitialize()
     }
 }
 
+void OpenGLWindow::setSwapState()
+{
+    isBufferBeingSwapped = false;
+//    qDebug() << isBufferBeingSwapped;
+}
+
 void OpenGLWindow::renderNow()
 {
     if (!isExposed())
         return;
+//    qDebug() << "I want to render and" << isBufferBeingSwapped;
+//    qDebug() << context_gl->thread() << qApp->thread() << swap_thread;
+    if (isBufferBeingSwapped)
+    {
+        if (isAnimating)
+            renderLater();
+        return;
+    }
+    else
+    {
+        preInitialize();
+//        qDebug() << context_gl->thread() << qApp->thread() << swap_thread;
 
-    preInitialize();
+        context_gl->makeCurrent(this);
 
-    render();
-    setFps();
-//    frames++;
-//    context_gl->doneCurrent();
-//    context_gl->moveToThread(swap_thread);
-//    emit swappy();
-    context_gl->makeCurrent(this);
-    context_gl->swapBuffers(this);
+        render();
+        setFps();
+
+        context_gl->doneCurrent();
+        isBufferBeingSwapped = true;
+
+        context_gl->moveToThread(swap_thread);
+        swap_thread->start();
+
+    }
 
     if (isAnimating)
         renderLater();
+//    frames++;
+//    swap_thread->start();
+//    qDebug() << "main: done current";
+//    if (context_gl->thread() == qApp->thread()) context_gl->doneCurrent();
+//    qDebug() << "main: moving context to swap thread";
+//    context_gl->moveToThread(swap_thread);
+//    qDebug() << "main: emitting swap signal";
+//    emit swappy();
+//    swap_thread->start();
+//    if (context_gl->thread() != qApp->thread())
+//        return;
+//    qDebug() << "main: moved out of swap thread";
+//    context_gl->makeCurrent(this);
+//    context_gl->swapBuffers(this);
+
+//    if (isAnimating)
+//        renderLater();
 }
 
 void OpenGLWindow::setAnimating(bool animating)

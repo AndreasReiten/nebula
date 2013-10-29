@@ -17,20 +17,27 @@
 #include "contextcl.h"
 #include "matrix.h"
 
-class OpenGLSwapThread : public QWindow, protected QOpenGLFunctions
+class OpenGLSwapThread  : public QObject
 {
     Q_OBJECT
 public:
-    explicit OpenGLSwapThread(QOpenGLContext * context, QWindow *parent = 0);
+//    explicit OpenGLSwapThread(QOpenGLContext * context, QWindow *parent = 0);
+    explicit OpenGLSwapThread(QWindow *parent = 0);
     ~OpenGLSwapThread();
 
+signals:
+    void finished();
+
 public slots:
-    void swapBuffers();
+    void process();
+    void setGLContext(QOpenGLContext *context);
+    void setRenderSurface(QSurface *surface);
 
 protected:
     virtual void initialize();
-
-    QOpenGLContext *shared_context;
+    QOpenGLContext *context_gl;
+    QSurface *render_surface;
+//    QOpenGLContext *shared_context;
 };
 
 
@@ -62,6 +69,7 @@ public slots:
     void renderNow();
     void startAnimating();
     void stopAnimating();
+    void setSwapState();
 
 protected:
     virtual void render(QPainter *painter);
@@ -77,23 +85,21 @@ protected:
 
     QOpenGLPaintDevice *paint_device_gl;
 
+
 private slots:
     void setFps();
 
 private:
-//    OpenGLSwapThread * swap_surface;
-//    QThread * swap_thread;
+    OpenGLSwapThread * swap_surface;
+    QThread * swap_thread;
+    QOpenGLContext *context_gl;
 
-
+    bool isBufferBeingSwapped;
     bool isUpdatePending;
     bool isAnimating;
 
-    QOpenGLContext *context_gl;
-
-//    QTimer fps_timer;
     QElapsedTimer fps_elapsed_timer;
 
-//    int frames;
     double fps;
 };
 #endif
