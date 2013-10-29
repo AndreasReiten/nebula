@@ -24,24 +24,6 @@ ImageRenderWindow::ImageRenderWindow()
     clear_color_inverse = black;
 }
 
-//void ImageRenderWindow::setImageWidth(int value)
-//{
-//    if (value != image_w)
-//    {
-//        this->image_w = value;
-//        this->setTarget();
-//    }
-//}
-
-//void ImageRenderWindow::setImageHeight(int value)
-//{
-//    if (value != image_h)
-//    {
-//        this->image_h = value;
-//        this->setTarget();
-//    }
-//}
-
 void ImageRenderWindow::setImageSize(int w, int h)
 {
     if ((w != image_w) || (h != image_h))

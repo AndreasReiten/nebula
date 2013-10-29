@@ -634,17 +634,6 @@ void VolumeRenderWindow::render(QPainter *painter)
     glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    SCALEBAR_MATRIX.print(2,"SCALEBAR_MATRIX");
-    CTC_MATRIX.print(2,"CTC_MATRIX");
-    BBOX_TRANSLATION.print(2,"BBOX_TRANSLATION");
-    NORM_SCALING.print(2,"NORM_SCALING");
-    DATA_SCALING.print(2,"DATA_SCALING");
-    AUTO_ROTATION.print(2,"AUTO_ROTATION");
-    SCALEBAR_ROTATION.print(2,"SCALEBAR_ROTATION");
-    DATA_TRANSLATION.print(2,"DATA_TRANSLATION");
-
-
-
     beginRawGLCalls(painter);
     glLineWidth(1.5);
     const qreal retinaScale = devicePixelRatio();

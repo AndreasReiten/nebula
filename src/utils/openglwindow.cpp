@@ -216,7 +216,6 @@ void OpenGLWindow::setSwapState()
 
 void OpenGLWindow::renderNow()
 {
-    setFps();
     if (!isExposed()) return;
     if (isBufferBeingSwapped)
     {
@@ -236,6 +235,7 @@ void OpenGLWindow::renderNow()
 
         context_gl->moveToThread(swap_thread);
         swap_thread->start();
+        setFps();
     }
     if (isAnimating) renderLater();
 }
