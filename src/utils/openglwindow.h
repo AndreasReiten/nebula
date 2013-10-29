@@ -17,13 +17,12 @@
 #include "contextcl.h"
 #include "matrix.h"
 
-class OpenGLSwapThread  : public QObject
+class OpenGLWorker  : public QObject
 {
     Q_OBJECT
 public:
-//    explicit OpenGLSwapThread(QOpenGLContext * context, QWindow *parent = 0);
-    explicit OpenGLSwapThread(QWindow *parent = 0);
-    ~OpenGLSwapThread();
+    explicit OpenGLWorker(QWindow *parent = 0);
+    ~OpenGLWorker();
 
 signals:
     void finished();
@@ -34,10 +33,9 @@ public slots:
     void setRenderSurface(QSurface *surface);
 
 protected:
-    virtual void initialize();
+    virtual void compute();
     QOpenGLContext *context_gl;
     QSurface *render_surface;
-//    QOpenGLContext *shared_context;
 };
 
 
@@ -90,7 +88,7 @@ private slots:
     void setFps();
 
 private:
-    OpenGLSwapThread * swap_surface;
+    OpenGLWorker * swap_surface;
     QThread * swap_thread;
     QOpenGLContext *context_gl;
 
