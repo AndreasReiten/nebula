@@ -11,12 +11,10 @@
 #include <string>
 
 #include <QtGlobal>
+#include <QDebug>
+#include <QRect>
 
 /* GL and CL*/
-#ifdef Q_OS_WIN
-    #define GLEW_STATIC
-#endif
-#include <GL/glew.h>
 #include <CL/opencl.h>
 
 /* QT */
@@ -25,111 +23,112 @@
 #include <QString>
 #include <QByteArray>
 #include <QMutex>
-#include <QGLWidget>
-
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-
+#include <QMouseEvent>
+#include <QOpenGLShaderProgram>
+#include <QResizeEvent>
 
 #include "tools.h"
 #include "miniarray.h"
 #include "matrix.h"
-#include "atlas.h"
+#include "openglwindow.h"
+#include "transferfunction.h"
+#include "sharedcontext.h"
 
-class ImageRenderGLWidget : public QGLWidget
+#include <QScreen>
+#include <QPainter>
+
+class ImageRenderWindow : public OpenGLWindow
 {
     Q_OBJECT
 
 public:
-    explicit ImageRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
-    ~ImageRenderGLWidget();
-    QSize minimumSizeHint() const;
-    QSize sizeHint() const;
+    ImageRenderWindow();
+    ~ImageRenderWindow();
+
+    void setSharedWindow(SharedContextWindow * window);
+
     cl_mem * getTsfImgCLGL();
     cl_mem * getAlphaImgCLGL();
     cl_mem * getGammaImgCLGL();
     cl_mem * getBetaImgCLGL();
-    void setImageSize(int w, int h);
+
+protected:
+    void initialize();
+    void render(QPainter *painter);
+    void mouseMoveEvent(QMouseEvent* ev);
+    void wheelEvent(QWheelEvent* ev);
+    void resizeEvent(QResizeEvent * ev);
 
 signals:
     void changedMessageString(QString str);
 
 public slots:
-    void setImageWidth(int value);
-    void setImageHeight(int value);
+    void test();
+    void setImageSize(int w, int h);
+//    void setImageWidth(int value);
+//    void setImageHeight(int value);
     void aquireSharedBuffers();
     void releaseSharedBuffers();
 
-
-protected:
-    void initializeGL();
-    void paintGL();
-    void resizeGL(int w, int h);
-
-
 private:
-    void initFreetype();
-    void setMessageString(QString str);
-    void writeLog(QString str);
+    SharedContextWindow * shared_window;
+    QRect alpha_rect;
+    QRect beta_rect;
+    QRect gamma_rect;
 
-    QTimer * timer;
-    QElapsedTimer * time;
+    // Image frames
     int image_w, image_h;
-    int WIDTH, HEIGHT;
-    int verbosity;
 
-    TsfMatrix<double> transferFunction;
+    // Boolean checks
+    bool isInitialized;
+    bool isAlphaImgInitialized, isBetaImgInitialized, isGammaImgInitialized, isTsfImgInitialized;
 
-    MiniArray<float> white;
-    MiniArray<float> transparent;
-    MiniArray<float> black;
-    MiniArray<float> blue;
-    MiniArray<float> red;
-    MiniArray<float> green;
-    MiniArray<float> clear;
-    MiniArray<float> clearInv;
-
-    // OpenGL Related
-    bool isGLIntitialized;
-    int initResourcesGL();
-    void initializeProgramsGL();
-    void setTexturesVBO();
-    void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
-    void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
-    void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
-    void setTexturePositions();
-
-    Atlas * fontSmall;
-    Atlas * fontMedium;
-    Atlas * fontLarge;
-
-    GLuint screen_texpos_vbo[5], screen_coord_vbo[5];
-    GLuint text_coord_vbo, text_texpos_vbo;
-    GLuint std_2d_tex_program, std_2d_color_program, std_text_program;
+    // OpenGL
+    void initResourcesGL();
     GLuint image_tex[5];
-    GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
-    GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
-    GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
 
-
-
-    // OpenCL Related
-    cl_mem alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl;
-    cl_device * device;
-    cl_program program;
-    cl_context * context;
-    cl_command_queue * queue;
+    // OpenCL
+    cl_mem cl_img_alpha, cl_img_beta, cl_img_gamma;
     cl_int err;
+    void setTarget();
 
-    int setTarget();
-    void setTsfTexture(TsfMatrix<double> * tsf);
+    // Drawing functions
+    void drawImages();
+    void drawOverlay(QPainter * painter);
+    void beginRawGLCalls(QPainter * painter);
+    void endRawGLCalls(QPainter * painter);
+
+    // Transfer function texture
+    void setTsfTexture();
+    cl_mem cl_tsf_tex;
+    cl_sampler tsf_tex_sampler;
+    GLuint tsf_tex_gl;
+    GLuint tsf_tex_gl_thumb;
+    bool isTsfTexInitialized;
+    TransferFunction tsf;
+    int tsf_color_scheme;
+    int tsf_alpha_scheme;
 
     size_t glb_ws[2];
     size_t loc_ws[2];
 
-    bool isAlphaImgInitialized, isBetaImgInitialized, isGammaImgInitialized, isTsfImgInitialized;
+    // Colors
+    Matrix<GLfloat> white;
+    Matrix<GLfloat> black;
+    Matrix<GLfloat> clear_color;
+    Matrix<GLfloat> clear_color_inverse;
+
+    // Pens
+    void initializePaintTools();
+    QPen * normal_pen;
+    QPen * border_pen;
+    QBrush * fill_brush;
+    QBrush * normal_brush;
+    QBrush * dark_fill_brush;
+    QFont * normal_font;
+    QFont * emph_font;
+    QFontMetrics * normal_fontmetric;
+    QFontMetrics * emph_fontmetric;
 };
 
 #endif

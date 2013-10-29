@@ -8,37 +8,35 @@
 #include <iomanip>
 #include <cmath>
 #include <cstring>
+#include <vector>
 
 template <class T>
 class MiniArray{
     public:
         MiniArray();
-        MiniArray(size_t length, T * buffer);
+//        MiniArray(size_t length, T * buffer);
         MiniArray(size_t length, T value);
         MiniArray(size_t length);
         MiniArray(const MiniArray & other);
         MiniArray(MiniArray && other);
         ~MiniArray();
 
-        /* Operators */
+        // Operators
         T& operator[] (const size_t index);
         const T& operator[] (const size_t index) const;
         MiniArray& operator = (MiniArray other);
 
-        /* Management */
+        // Utility
         MiniArray<float> toFloat() const;
         QVector<T> toQVector() const;
-        void setShallow(size_t length, T * buffer);
         void setDeep(size_t length, T * buffer);
         void set(size_t length, T value);
-        void resize(size_t new_length);
+        void resize(size_t length);
         void reserve(size_t length);
         T at(size_t index);
         void clear();
         T * data();
         T * data() const;
-
-        /* Utility */
         void print(int precision = 0, const char * id = "", size_t cap = 0) const;
         size_t bytes() const;
         size_t size() const;
@@ -47,7 +45,7 @@ class MiniArray{
         T max();
 
     protected:
-        T * buffer;
+        std::vector<T> buffer;
         size_t length;
 
         /* Swap function as per C++11 idiom */
@@ -61,14 +59,14 @@ template <class T>
 MiniArray<T>::MiniArray()
 {
     this->length = 0;
-    this->buffer = NULL;
+//    this->buffer = NULL;
 }
 
 template <class T>
 MiniArray<T>::MiniArray(const MiniArray & other)
 {
     this->length = other.size();
-    this->buffer = new T[this->length];
+    this->buffer.resize(this->length);
     for (size_t i = 0; i < this->length; i++)
     {
         this->buffer[i] = other[i];
@@ -82,18 +80,18 @@ MiniArray<T>::MiniArray(MiniArray && other)
 }
 
 
-template <class T>
-MiniArray<T>::MiniArray(size_t length, T * buffer)
-{
-    this->length = length;
-    this->buffer = buffer;
-}
+//template <class T>
+//MiniArray<T>::MiniArray(size_t length, T * buffer)
+//{
+//    this->length = length;
+//    this->buffer = buffer;
+//}
 
 template <class T>
 MiniArray<T>::MiniArray(size_t length, T value)
 {
     this->length = length;
-    this->buffer = new T[length];
+    this->buffer.resize(length);
     for (size_t i = 0; i < this->length; i++)
     {
         this->buffer[i] = value;
@@ -104,7 +102,7 @@ template <class T>
 MiniArray<T>::MiniArray(size_t length)
 {
     this->length = length;
-    this->buffer = new T[length];
+    this->buffer.resize(length);
 }
 
 template <class T>
@@ -112,7 +110,8 @@ MiniArray<T>::~MiniArray()
 {
     if (this->length > 0)
     {
-        delete[] this->buffer;
+        length = 0;
+//        delete[] this->buffer;
     }
 }
 
@@ -216,36 +215,38 @@ void MiniArray<T>::print(int precision, const char * id, size_t cap) const
 }
 
 template <class T>
-void MiniArray<T>::resize(size_t new_length)
+void MiniArray<T>::resize(size_t length)
 {
-    if(this->length == 0)
-    {
-        this->set(new_length, 0);
-    }
-    else if(this->length > new_length)
-    {
-        T * temp = new T[new_length];
-        for (size_t i = 0; i < new_length; i++)
-        {
-            temp[i] =  buffer[i];
-        }
-        this->clear();
-        this->setShallow(new_length, temp);
-    }
-    else if(this->length < new_length)
-    {
-        T * temp = new T[new_length];
-        for (size_t i = 0; i < this->length; i++)
-        {
-            temp[i] =  buffer[i];
-        }
-        for (size_t i = this->length; i < new_length; i++)
-        {
-            temp[i] =  0;
-        }
-        this->clear();
-        this->setShallow(new_length, temp);
-    }
+    buffer.resize(length);
+    this->length = length;
+//    if(this->length == 0)
+//    {
+//        this->set(new_length, 0);
+//    }
+//    else if(this->length > new_length)
+//    {
+//        T * temp = new T[new_length];
+//        for (size_t i = 0; i < new_length; i++)
+//        {
+//            temp[i] =  buffer[i];
+//        }
+//        this->clear();
+//        this->setShallow(new_length, temp);
+//    }
+//    else if(this->length < new_length)
+//    {
+//        T * temp = new T[new_length];
+//        for (size_t i = 0; i < this->length; i++)
+//        {
+//            temp[i] =  buffer[i];
+//        }
+//        for (size_t i = this->length; i < new_length; i++)
+//        {
+//            temp[i] =  0;
+//        }
+//        this->clear();
+//        this->setShallow(new_length, temp);
+//    }
 }
 
 template <class T>
@@ -253,7 +254,7 @@ void MiniArray<T>::reserve(size_t length)
 {
     this->clear();
     this->length = length;
-    this->buffer = new T[length];
+    this->buffer.resize(length);
 }
 
 template <class T>
@@ -272,20 +273,13 @@ const T& MiniArray<T>::operator[] (const size_t index) const
     return buffer[index];
 }
 
-template <class T>
-void MiniArray<T>::setShallow(size_t length, T * buffer)
-{
-    this->clear();
-    this->length = length;
-    this->buffer = buffer;
-}
 
 template <class T>
 void MiniArray<T>::setDeep(size_t length, T * buffer)
 {
     this->clear();
     this->length = length;
-    this->buffer = new T[length];
+    this->buffer.resize(length);
     for (size_t i = 0; i < this->length; i++)
     {
         this->buffer[i] = buffer[i];
@@ -297,7 +291,7 @@ void MiniArray<T>::set(size_t length, T value)
 {
     this->clear();
     this->length = length;
-    this->buffer = new T[length];
+    this->buffer.resize(length);
     for (size_t i = 0; i < this->length; i++)
     {
         this->buffer[i] = value;
@@ -309,7 +303,10 @@ void MiniArray<T>::clear()
 {
     if (this->length > 0)
     {
-        delete[] this->buffer;
+        // Since C++ vectors are optimized for speed, calling clear will not always free up the associated memory. It will be freed if the destructor is called, though. Here we swap the vector data over to a decoy which is destroyed when the function returns.
+        std::vector<T> decoy;
+        std::vector<T> (decoy).swap(buffer);
+        this->buffer.clear();
         this->length = 0;
     }
 }
@@ -317,13 +314,13 @@ void MiniArray<T>::clear()
 template <class T>
 T * MiniArray<T>::data()
 {
-    return buffer;
+    return buffer.data();
 }
 
 template <class T>
 T * MiniArray<T>::data() const
 {
-    return buffer;
+    return buffer.data();
 }
 
 template <class T>

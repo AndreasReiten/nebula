@@ -1,640 +1,301 @@
 #include "imagerender.h"
 
-ImageRenderGLWidget::ImageRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent, const QGLWidget * shareWidget) :
-    QGLWidget(format, parent, shareWidget)
+ImageRenderWindow::ImageRenderWindow()
+    : isInitialized(false),
+    isAlphaImgInitialized(false),
+    isBetaImgInitialized(false),
+    isGammaImgInitialized(false),
+    isTsfImgInitialized(false),
+    isTsfTexInitialized(false)
 {
-    verbosity = 1;
+    this->image_w = 640;
+    this->image_h = 1024;
 
-    isGLIntitialized = false;
-    isAlphaImgInitialized = false;
-    isBetaImgInitialized = false;
-    isGammaImgInitialized = false;
-    isTsfImgInitialized= false;;
+    // Transfer texture
+    tsf_color_scheme = 1;
+    tsf_alpha_scheme = 3;
 
-    this->device = device;
-    this->queue = queue;
-    this->context = context;
-
-    /* colors */
-    float c_white[4] = {1,1,1,1};
-    float c_transparent[4] = {0,0,0,0};
-    float c_black[4] = {0,0,0,1};
-    float c_blue[4] = {0,0,1,1};
-    float c_red[4] = {1,0,0,1};
-    float c_green[4] = {0,1,0,1};
-
-    clear.setDeep(4, c_white);
-    clearInv.setDeep(4, c_black);
-    white.setDeep(4, c_white);
-    transparent.setDeep(4, c_transparent);
-    black.setDeep(4, c_black);
-    blue.setDeep(4, c_blue);
-    red.setDeep(4, c_red);
-    green.setDeep(4, c_green);
-
-    this->image_w = 32;
-    this->image_h = 32;
-    this->WIDTH = 32;
-    this->HEIGHT = 32;
-
-    this->setFocusPolicy(Qt::StrongFocus);
-
-
-    /* This timer keeps track of the time since this constructor was
-     * called */
-    time = new QElapsedTimer();
-    time->start();
+    // Color
+    GLfloat white_buf[] = {1,1,1,0.4};
+    GLfloat black_buf[] = {0,0,0,0.4};
+    white.setDeep(1,4,white_buf);
+    black.setDeep(1,4,black_buf);
+    clear_color = white;
+    clear_color_inverse = black;
 }
 
-void ImageRenderGLWidget::setImageWidth(int value)
-{
-    if (value != image_w)
-    {
-        this->image_w = value;
-        this->setTarget();
-        this->setTexturePositions();
-    }
-}
+//void ImageRenderWindow::setImageWidth(int value)
+//{
+//    if (value != image_w)
+//    {
+//        this->image_w = value;
+//        this->setTarget();
+//    }
+//}
 
-void ImageRenderGLWidget::setImageHeight(int value)
-{
-    if (value != image_h)
-    {
-        this->image_h = value;
-        this->setTarget();
-        this->setTexturePositions();
-    }
-}
+//void ImageRenderWindow::setImageHeight(int value)
+//{
+//    if (value != image_h)
+//    {
+//        this->image_h = value;
+//        this->setTarget();
+//    }
+//}
 
-void ImageRenderGLWidget::setImageSize(int w, int h)
+void ImageRenderWindow::setImageSize(int w, int h)
 {
     if ((w != image_w) || (h != image_h))
     {
         this->image_w = w;
         this->image_h = h;
         this->setTarget();
-        this->setTexturePositions();
     }
 }
 
-ImageRenderGLWidget::~ImageRenderGLWidget()
+ImageRenderWindow::~ImageRenderWindow()
 {
-
-
-    if (isGLIntitialized)
-    {
-
-        if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
-
-        if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
-
-        if (isGammaImgInitialized) clReleaseMemObject(gamma_img_clgl);
-
-        glDeleteTextures(5, image_tex);
-
-        glDeleteBuffers(1, &text_coord_vbo);
-
-        glDeleteBuffers(1, &text_texpos_vbo);
-
-        glDeleteBuffers(5, screen_texpos_vbo);
-
-        glDeleteBuffers(5, screen_coord_vbo);
-
-        glDeleteProgram(std_text_program);
-
-        glDeleteProgram(std_2d_tex_program);
-
-        glDeleteProgram(std_2d_color_program);
-
-    }
-}
-
-void ImageRenderGLWidget::initFreetype()
-{
-
-
-    /* Initialize the FreeType2 library */
-    FT_Library ft;
-    FT_Face face;
-    FT_Error error;
-
-    const char * fontfilename = "fonts/FreeMonoOblique.ttf";
-
-    error = FT_Init_FreeType(&ft);
-    if(error)
-    {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"][!] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
-        if (verbosity == 1) writeLog("Could not init freetype library");
-    }
-
-    /* Load a font */
-    if(FT_New_Face(ft, fontfilename, 0, &face))
-    {
-        if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"][!] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__));
-        if (verbosity == 1) writeLog("Could not open font: "+QString(fontfilename));
-    }
-
-    fontSmall = new Atlas(face, 16);
-    fontMedium = new Atlas(face, 24);
-    fontLarge = new Atlas(face, 48);
-}
-
-
-QSize ImageRenderGLWidget::minimumSizeHint() const
-{
-    return QSize(100, 100);
-}
-
-QSize ImageRenderGLWidget::sizeHint() const
-{
-    return QSize(2000, 2000);
-}
-
-void ImageRenderGLWidget::initializeGL()
-{
-
-
-    if (!isGLIntitialized)
-    {
-        if (!this->initResourcesGL()) std::cout << "Error initializing OpenGL" << std::endl;
-
-        /* Initialize and set the other stuff */
-        this->initFreetype();
-        this->setTarget();
-        this->setTsfTexture(&transferFunction);
-
-        isGLIntitialized = true;
-    }
-}
-
-void ImageRenderGLWidget::writeLog(QString str)
-{
-    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
-}
-
-void ImageRenderGLWidget::paintGL()
-{
-    glClearColor(clear[0], clear[0], clear[0], clear[0]);
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
-    GLuint indices[6] = {0,1,3,1,2,3};
-    std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[0]);
-    std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[1]);
-    std_2d_color_draw(indices, 6, black.data(),  &screen_coord_vbo[2]);
-
-    std_2d_tex_draw(indices, 6, 0, image_tex[0], &screen_coord_vbo[0], &screen_texpos_vbo[0]);
-    std_2d_tex_draw(indices, 6, 0, image_tex[1], &screen_coord_vbo[1], &screen_texpos_vbo[1]);
-    std_2d_tex_draw(indices, 6, 0, image_tex[2], &screen_coord_vbo[2], &screen_texpos_vbo[2]);
-
-    Matrix<float> xy(2,1);
-    xy[0] = -1.0;
-    xy[1] = -1.0;
-
-    std_text_draw("Raw Data", fontSmall, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-
-    float IMAGE_WIDTH = 2*((float)image_w/(float)image_h)*((float)HEIGHT/(float)WIDTH);
-    xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
-    std_text_draw("BG Subtracted, Threshold One", fontSmall, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-
-    xy[0] = xy[0] + IMAGE_WIDTH+ 0.02;
-    std_text_draw("LP Correction, Threshold Two", fontSmall, white.data(), xy.data(), 1.0, this->WIDTH, this->HEIGHT);
-}
-
-
-void ImageRenderGLWidget::std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords)
-{
-    glUseProgram(std_2d_tex_program);
-
-    // Set std_2d_tex_uniform_texture
-    glActiveTexture(GL_TEXTURE0 + active_tex);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(std_2d_tex_uniform_texture, active_tex);
-
-    // Set std_2d_tex_attribute_position
-    glEnableVertexAttribArray(std_2d_tex_attribute_position);
-    glBindBuffer(GL_ARRAY_BUFFER, *xy_coords);
-    glVertexAttribPointer(std_2d_tex_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Set std_2d_tex_attribute_texpos
-    glEnableVertexAttribArray(std_2d_tex_attribute_texpos);
-    glBindBuffer(GL_ARRAY_BUFFER, *tex_coords);
-    glVertexAttribPointer(std_2d_tex_attribute_texpos, 2, GL_FLOAT,  GL_FALSE,   0,  0 );
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Draw verices
-    glDrawElements(GL_TRIANGLES,  num_elements,  GL_UNSIGNED_INT,  elements);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDisableVertexAttribArray(std_2d_tex_attribute_position);
-    glDisableVertexAttribArray(std_2d_tex_attribute_texpos);
-    glUseProgram(0);
-}
-
-
-void ImageRenderGLWidget::std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords)
-{
-    glUseProgram(std_2d_color_program);
-
-    // Set std_2d_color_attribute_position
-    glEnableVertexAttribArray(std_2d_color_attribute_position);
-    glBindBuffer(GL_ARRAY_BUFFER, *xy_coords);
-    glVertexAttribPointer(std_2d_color_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Set std_2d_color_uniform_color
-    glUniform4fv(std_2d_color_uniform_color, 1, color);
-
-    // Draw verices
-    glDrawElements(GL_TRIANGLES,  num_elements,  GL_UNSIGNED_INT,  elements);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDisableVertexAttribArray(std_2d_color_attribute_position);
-    glUseProgram(0);
+    if (isAlphaImgInitialized) clReleaseMemObject(cl_img_alpha);
+    if (isBetaImgInitialized) clReleaseMemObject(cl_img_beta);
+    if (isGammaImgInitialized) clReleaseMemObject(cl_img_gamma);
 }
 
 
 
-void ImageRenderGLWidget::resizeGL(int w, int h)
+void ImageRenderWindow::initialize()
 {
+    initializePaintTools();
+    setTsfTexture();
 
-    this->WIDTH = w;
-    this->HEIGHT = h;
-    this->setTexturePositions();
-    glViewport(0, 0, w, h);
+    paint_device_gl->setSize(size());
+    isInitialized = true;
 }
 
-void ImageRenderGLWidget::releaseSharedBuffers()
+void ImageRenderWindow::beginRawGLCalls(QPainter * painter)
 {
-     // Release shared CL/GL objects
-    err = clEnqueueReleaseGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
-    err |= clEnqueueReleaseGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-    }
-}
-void ImageRenderGLWidget::setMessageString(QString str)
-{
-        emit changedMessageString(str);
-}
-
-
-
-void ImageRenderGLWidget::setTexturePositions()
-{
-    /* Set the positions of the textures */
-
-    Matrix<float> imgAlphaCoord(2,4);
-    Matrix<float> imgBetaCoord(2,4);
-    Matrix<float> imgGammaCoord(2,4);
-
-    float IMAGE_WIDTH = 2*((float)image_w/(float)image_h)*((float)HEIGHT/(float)WIDTH);
-    float X0 = -1;
-    float X1 = X0 + IMAGE_WIDTH;
-    float X2 = X1 + 0.02;
-    float X3 = X2 + IMAGE_WIDTH;
-    float X4 = X3 + 0.02;
-    float X5 = X4 + IMAGE_WIDTH;
-
-    float Y0 = -1;
-    float Y1 = 1;
-
-    {
-        float buf[8] = {
-            X0, X1, X1, X0,
-            Y0, Y0, Y1, Y1};
-        imgAlphaCoord.setDeep(2, 4, buf);
-    }
-    {
-        float buf[8] = {
-            X2, X3, X3, X2,
-            Y0, Y0, Y1, Y1};
-        imgBetaCoord.setDeep(2, 4, buf);
-    }
-    {
-        float buf[8] = {
-            X4, X5, X5, X4,
-            Y0, Y0, Y1, Y1};
-        imgGammaCoord.setDeep(2, 4, buf);
-    }
-    setVbo(&screen_coord_vbo[0], imgAlphaCoord.getColMajor().data(), imgAlphaCoord.size());
-    setVbo(&screen_coord_vbo[1], imgBetaCoord.getColMajor().data(), imgBetaCoord.size());
-    setVbo(&screen_coord_vbo[2], imgGammaCoord.getColMajor().data(), imgGammaCoord.size());
-}
-
-
-int ImageRenderGLWidget::initResourcesGL()
-{
-
-
-    isGLIntitialized = true;
-
-    // BLEND
+    painter->beginNativePainting();
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Generate Textures
-    glGenTextures(5, image_tex);
-
-    // Shader programs
-    initializeProgramsGL();
-
-    // Vertice buffer objects
-    glGenBuffers(5, screen_texpos_vbo);
-    glGenBuffers(5, screen_coord_vbo);
-    glGenBuffers(1, &text_coord_vbo);
-    glGenBuffers(1, &text_texpos_vbo);
-
-    {
-        Matrix<float> mat;
-        float buf[8] = {
-            1.0,0.0,0.0,1.0,
-            0.0,0.0,1.0,1.0};
-
-        mat.setDeep(2, 4, buf);
-        setVbo(&screen_texpos_vbo[0], mat.getColMajor().data(), mat.size());
-        setVbo(&screen_texpos_vbo[1], mat.getColMajor().data(), mat.size());
-        setVbo(&screen_texpos_vbo[2], mat.getColMajor().data(), mat.size());
-        setVbo(&screen_texpos_vbo[3], mat.getColMajor().data(), mat.size());
-        setVbo(&screen_texpos_vbo[4], mat.getColMajor().data(), mat.size());
-    }
-
-    init_tsf(3, 0, &transferFunction);
-
-    return 1;
+    glEnable(GL_MULTISAMPLE);
 }
 
-
-void ImageRenderGLWidget::std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h)
+void ImageRenderWindow::endRawGLCalls(QPainter * painter)
 {
-
-    const uint8_t *p;
-
-    MiniArray<float> position(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
-    MiniArray<float> texpos(2 * 4 * strlen(text)); // 2 triangles and 4 verts per character
-    MiniArray<unsigned int> indices(6 * strlen(text)); // 6 indices per character
-
-    int c = 0;
-    float sx = scale*2.0/w;
-    float sy = scale*2.0/h;
-    float x = xy[0];
-    float y = xy[1];
-
-    x -= std::fmod(x,sx);
-    y -= std::fmod(y,sy);
-
-    /* Loop through all characters */
-    //~ for(p = (const char *)text; *p; p++)
-    for (p = (const uint8_t *)text; *p; p++)
-    {
-        /* Calculate the vertex and texture coordinates */
-        float x2 = x + a->c[*p].bl * sx;
-        float y2 = y + a->c[*p].bt * sy;
-        float foo_w = a->c[*p].bw * sx;
-        float foo_h = a->c[*p].bh * sy;
-
-        /* Advance the cursor to the start of the next character */
-        x += a->c[*p].ax * sx;
-        y += a->c[*p].ay * sy;
-
-        /* Skip glyphs that have no pixels */
-        if(!foo_w || !foo_h)
-            continue;
-
-        position[c*8+0] = x2;
-        position[c*8+1] = y2;
-        position[c*8+2] = x2 + foo_w;
-        position[c*8+3] = y2;
-        position[c*8+4] = x2;
-        position[c*8+5] = y2 - foo_h;
-        position[c*8+6] = x2 + foo_w;
-        position[c*8+7] = y2 - foo_h;
-
-        texpos[c*8+0] = a->c[*p].tx;
-        texpos[c*8+1] = a->c[*p].ty;
-        texpos[c*8+2] = a->c[*p].tx + a->c[*p].bw / a->tex_w;
-        texpos[c*8+3] = a->c[*p].ty;
-        texpos[c*8+4] = a->c[*p].tx;
-        texpos[c*8+5] = a->c[*p].ty + a->c[*p].bh / a->tex_h;
-        texpos[c*8+6] = a->c[*p].tx + a->c[*p].bw / a->tex_w;
-        texpos[c*8+7] = a->c[*p].ty + a->c[*p].bh / a->tex_h;
-
-        indices[c*6+0] = c*4 + 0;
-        indices[c*6+1] = c*4 + 2;
-        indices[c*6+2] = c*4 + 3;
-        indices[c*6+3] = c*4 + 0;
-        indices[c*6+4] = c*4 + 1;
-        indices[c*6+5] = c*4 + 3;
-
-        c++;
-    }
-
-    glUseProgram(std_text_program);
-
-    // Set std_text_uniform_texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, a->tex);
-    glUniform1i(std_text_uniform_tex, 0);
-
-    // Set std_text_uniform_color
-     glUniform4fv(std_text_uniform_color, 1, color);
-
-    // Set std_2d_tex_attribute_position
-    glEnableVertexAttribArray(std_text_attribute_position);
-    glBindBuffer(GL_ARRAY_BUFFER, text_coord_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * position.size(), position.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(std_text_attribute_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Set std_2d_tex_attribute_texpos
-    glEnableVertexAttribArray(std_text_attribute_texpos);
-    glBindBuffer(GL_ARRAY_BUFFER, text_texpos_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * texpos.size(), texpos.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(std_text_attribute_texpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    /* Draw all the character on the screen in one go */
-    glDrawElements(GL_TRIANGLES,  c*6,  GL_UNSIGNED_INT,  indices.data());
-
-    glDisableVertexAttribArray(std_text_attribute_position);
-    glDisableVertexAttribArray(std_text_attribute_texpos);
-    glUseProgram(0);
+    glDisable(GL_BLEND);
+    glDisable(GL_MULTISAMPLE);
+    painter->endNativePainting();
 }
 
-
-
-void ImageRenderGLWidget::initializeProgramsGL()
+void ImageRenderWindow::render(QPainter *painter)
 {
+    glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+    beginRawGLCalls(painter);
+    const qreal retinaScale = devicePixelRatio();
+    glViewport(0, 0, width() * retinaScale, height() * retinaScale);
 
-    GLint link_ok = GL_FALSE;
-    GLuint vertice_shader, fragment_shader; // Delete these after use?
+    // Draw raytracing texture
+    drawImages();
+    endRawGLCalls(painter);
 
-    // Program for standard font texture rendering
+    // Draw overlay
+    drawOverlay(painter);
+}
+
+void ImageRenderWindow::drawImages()
+{
+    alpha_rect.setRect(0, 0, height()*image_w/image_h, height());
+    beta_rect.setRect(alpha_rect.x() + alpha_rect.width(), 0, height()*image_w/image_h, height());
+    gamma_rect.setRect(beta_rect.x() + beta_rect.width(), 0, height()*image_w/image_h, height());
+
+    alpha_rect -= QMargins(5,5,5,31);
+    beta_rect -= QMargins(5,5,5,31);
+    gamma_rect -= QMargins(5,5,5,31);
+
+    if (isAlphaImgInitialized && isBetaImgInitialized && isGammaImgInitialized)
     {
-        vertice_shader = create_shader(":/src/shaders/text.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/text.f.glsl", GL_FRAGMENT_SHADER);
+        shared_window->std_2d_tex_program->bind();
 
-        std_text_program = glCreateProgram();
-        glAttachShader(std_text_program, vertice_shader);
-        glAttachShader(std_text_program, fragment_shader);
-        glLinkProgram(std_text_program);
+        GLuint indices[] = {0,1,3,1,2,3};
 
-        glGetProgramiv(std_text_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
+        GLfloat texpos[] = {
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0
+        };
+        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
-            if (glIsProgram(std_text_program))
-            {
-                glGetProgramiv(std_text_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
+        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
+        glEnableVertexAttribArray(shared_window->std_2d_texpos);
 
-                glGetProgramInfoLog(std_text_program, log_length, NULL, log);
-                if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"]\n"+QString(log));
+        // Alpha
+        Matrix<GLfloat> gl_alpha_rect(4,2);
+        glRect(&gl_alpha_rect, &alpha_rect);
+        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_alpha_rect.data());
 
-                delete[] log;
-                glDeleteProgram(std_text_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
+        glBindTexture(GL_TEXTURE_2D, image_tex[0]);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-        std_text_attribute_position = glGetAttribLocation(std_text_program, "position");
-        if (std_text_attribute_position == -1) {
-            std::cout << "std_text: Could not bind attribute: position" << std::endl;
-        }
+        // Beta
+        Matrix<GLfloat> gl_beta_rect(4,2);
+        glRect(&gl_beta_rect, &beta_rect);
+        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_beta_rect.data());
 
-        std_text_attribute_texpos = glGetAttribLocation(std_text_program, "texpos");
-        if (std_text_attribute_texpos == -1) {
-            std::cout << "std_text: Could not bind attribute: texpos" << std::endl;
-        }
+        glBindTexture(GL_TEXTURE_2D, image_tex[1]);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-        std_text_uniform_tex = glGetUniformLocation(std_text_program, "tex");
-        if (std_text_uniform_tex == -1) {
-            std::cout << "std_text: Could not bind attribute: tex" << std::endl;
-        }
+        // Gamma
+        Matrix<GLfloat> gl_gamma_rect(4,2);
+        glRect(&gl_gamma_rect, &gamma_rect);
+        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_gamma_rect.data());
 
-        std_text_uniform_color = glGetUniformLocation(std_text_program, "color");
-        if (std_text_uniform_color == -1) {
-            std::cout << "std_text: Could not bind uniform: color" << std::endl;
-        }
-    }
+        glBindTexture(GL_TEXTURE_2D, image_tex[2]);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
 
-    // Program for standard 2D texture rendering
-    {
-        vertice_shader = create_shader(":/src/shaders/std_2d_tex.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/std_2d_tex.f.glsl", GL_FRAGMENT_SHADER);
+        glDisableVertexAttribArray(shared_window->std_2d_texpos);
+        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-        std_2d_tex_program = glCreateProgram();
-        glAttachShader(std_2d_tex_program, vertice_shader);
-        glAttachShader(std_2d_tex_program, fragment_shader);
-        glLinkProgram(std_2d_tex_program);
-
-        glGetProgramiv(std_2d_tex_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(std_2d_tex_program))
-            {
-                glGetProgramiv(std_2d_tex_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(std_2d_tex_program, log_length, NULL, log);
-                if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"]\n"+QString(log));
-
-                delete[] log;
-                glDeleteProgram(std_2d_tex_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        std_2d_tex_attribute_position = glGetAttribLocation(std_2d_tex_program, "position");
-        if (std_2d_tex_attribute_position == -1) {
-            std::cout << "std_2d_tex: Could not bind attribute: position" << std::endl;
-        }
-
-        std_2d_tex_attribute_texpos = glGetAttribLocation(std_2d_tex_program, "texpos");
-        if (std_2d_tex_attribute_texpos == -1) {
-            std::cout << "std_2d_tex: Could not bind attribute: texpos" << std::endl;
-        }
-
-        std_2d_tex_uniform_texture = glGetUniformLocation(std_2d_tex_program, "texy");
-        if (std_2d_tex_uniform_texture == -1) {
-            std::cout << "std_2d_tex: Could not bind uniform: texy" << std::endl;
-        }
-    }
-
-    // Program for standard 2D colored vertice rendering
-    {
-        vertice_shader = create_shader(":/src/shaders/std_2d_color.v.glsl", GL_VERTEX_SHADER);
-        fragment_shader = create_shader(":/src/shaders/std_2d_color.f.glsl", GL_FRAGMENT_SHADER);
-
-        std_2d_color_program = glCreateProgram();
-        glAttachShader(std_2d_color_program, vertice_shader);
-        glAttachShader(std_2d_color_program, fragment_shader);
-        glLinkProgram(std_2d_color_program);
-
-        glGetProgramiv(std_2d_color_program, GL_LINK_STATUS, &link_ok);
-        if (!link_ok) {
-            std::cout << "glLinkProgram: ";
-            GLint log_length = 0;
-
-            if (glIsProgram(std_2d_color_program))
-            {
-                glGetProgramiv(std_2d_color_program, GL_INFO_LOG_LENGTH, &log_length);
-                char* log = new char[log_length];
-
-                glGetProgramInfoLog(std_2d_color_program, log_length, NULL, log);
-                if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"]\n"+QString(log));
-
-                delete[] log;
-                glDeleteProgram(std_2d_color_program);
-            }
-            else
-            {
-                std::cout << "Could not create GL program: Supplied argument is not a program!" << std::endl;
-            }
-        }
-
-        std_2d_color_attribute_position = glGetAttribLocation(std_2d_color_program, "position");
-        if (std_2d_color_attribute_position == -1) {
-            std::cout << "std_2d_color: Could not bind attribute: position" << std::endl;
-        }
-
-        std_2d_color_uniform_color = glGetUniformLocation(std_2d_color_program, "color");
-        if (std_2d_color_uniform_color == -1) {
-            std::cout << "std_2d_color: Could not bind uniform: color" << std::endl;
-        }
+        shared_window->std_2d_tex_program->release();
     }
 }
 
-
-void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
+void ImageRenderWindow::drawOverlay(QPainter * painter)
 {
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setBrush(*fill_brush);
+    painter->setPen(*normal_pen);
 
-    /* Generate a transfer function CL texture */
 
-    if (isTsfImgInitialized) clReleaseMemObject(tsf_img_clgl);
+    // Alpha text
+    QString alpha_string("Raw data");
+    QRect alpha_string_rect(alpha_rect.x(),
+                                 height() - 31,
+                                 alpha_rect.width(),
+                                 31);
+    alpha_string_rect -= QMargins(0,2,0,2);
 
-    // Buffer for tsf_tex
-    glActiveTexture(GL_TEXTURE0);
-    glDeleteTextures(1, &image_tex[3]);
-    glGenTextures(1, &image_tex[3]);
+    painter->drawRect(alpha_string_rect);
+    painter->drawText(alpha_string_rect, Qt::AlignCenter, alpha_string);
 
-    glBindTexture(GL_TEXTURE_2D, image_tex[3]);
+    // beta text
+    QString beta_string("Background subtracted");
+    QRect beta_string_rect(beta_rect.x(),
+                                 height() - 31,
+                                 beta_rect.width(),
+                                 31);
+    beta_string_rect -= QMargins(0,2,0,2);
+
+    painter->drawRect(beta_string_rect);
+    painter->drawText(beta_string_rect, Qt::AlignCenter, beta_string);
+
+    // gamma text
+    QString gamma_string("Lorentz Polarization corrected");
+    QRect gamma_string_rect(gamma_rect.x(),
+                                 height() - 31,
+                                 gamma_rect.width(),
+                                 31);
+    gamma_string_rect -= QMargins(0,2,0,2);
+
+    painter->drawRect(gamma_string_rect);
+    painter->drawText(gamma_string_rect, Qt::AlignCenter, gamma_string);
+
+    // Alpha frame
+    painter->setBrush(*normal_brush);
+    painter->drawRect(alpha_rect);
+
+    // Beta frame
+    painter->drawRect(beta_rect);
+
+    // Gamma frame
+    painter->drawRect(gamma_rect);
+}
+
+void ImageRenderWindow::mouseMoveEvent(QMouseEvent* ev)
+{
+    Q_UNUSED(ev);
+}
+
+void ImageRenderWindow::wheelEvent(QWheelEvent* ev)
+{
+    Q_UNUSED(ev);
+}
+
+void ImageRenderWindow::resizeEvent(QResizeEvent * ev)
+{
+    Q_UNUSED(ev);
+
+    if (paint_device_gl) paint_device_gl->setSize(size());
+}
+
+
+void ImageRenderWindow::releaseSharedBuffers()
+{
+     // Release shared CL/GL objects
+    err = clFinish(*context_cl->getCommandQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    if (isAlphaImgInitialized) err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
+    if (isBetaImgInitialized) err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
+    if (isGammaImgInitialized) err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
+    if (isTsfImgInitialized) err |= clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+}
+
+void ImageRenderWindow::initResourcesGL()
+{
+}
+
+void ImageRenderWindow::initializePaintTools()
+{
+    normal_pen = new QPen;
+    normal_pen->setWidth(1);
+    border_pen = new QPen;
+    border_pen->setWidth(1);
+
+    normal_font = new QFont();
+//    normal_font->setStyleHint(QFont::Monospace);
+    emph_font = new QFont;
+    emph_font->setBold(true);
+
+    normal_fontmetric = new QFontMetrics(*normal_font, paint_device_gl);
+    emph_fontmetric = new QFontMetrics(*emph_font, paint_device_gl);
+
+    fill_brush = new QBrush;
+    fill_brush->setStyle(Qt::SolidPattern);
+    fill_brush->setColor(QColor(255,255,255,155));
+
+    normal_brush = new QBrush;
+    normal_brush->setStyle(Qt::NoBrush);
+
+    dark_fill_brush = new QBrush;
+    dark_fill_brush->setStyle(Qt::SolidPattern);
+    dark_fill_brush->setColor(QColor(0,0,0,255));
+}
+
+void ImageRenderWindow::setTsfTexture()
+{
+    if (isTsfTexInitialized){
+        err = clReleaseSampler(tsf_tex_sampler);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (isTsfTexInitialized){
+        err = clReleaseMemObject(cl_tsf_tex);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+
+    tsf.setColorScheme(tsf_color_scheme, tsf_alpha_scheme);
+    tsf.setSpline(256);
+
+    // Buffer for tsf_tex_gl
+    glDeleteTextures(1, &tsf_tex_gl);
+    glGenTextures(1, &tsf_tex_gl);
+    glBindTexture(GL_TEXTURE_2D, tsf_tex_gl);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -643,64 +304,101 @@ void ImageRenderGLWidget::setTsfTexture(TsfMatrix<double> * tsf)
         GL_TEXTURE_2D,
         0,
         GL_RGBA32F,
-        tsf->getSpline().getN(),
+        tsf.getSplined()->getN(),
         1,
         0,
         GL_RGBA,
         GL_FLOAT,
-        tsf->getSpline().getColMajor().toFloat().data());
+        tsf.getSplined()->getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Buffer for tsf_img_clgl
-    tsf_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, image_tex[3], &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-    }
-    isTsfImgInitialized = true;
+    // Buffer for tsf_tex_gl
+    glDeleteTextures(1, &tsf_tex_gl_thumb);
+    glGenTextures(1, &tsf_tex_gl_thumb);
+    glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGB,
+        tsf.getThumb()->getN(),
+        1,
+        0,
+        GL_RGB,
+        GL_FLOAT,
+        tsf.getThumb()->getColMajor().toFloat().data());
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Buffer for cl_tsf_tex
+    cl_image_format tsf_format;
+    tsf_format.image_channel_order = CL_RGBA;
+    tsf_format.image_channel_data_type = CL_FLOAT;
+
+    cl_tsf_tex = clCreateImage2D ( *context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        &tsf_format,
+        tsf.getSplined()->getN(),
+        1,
+        0,
+        tsf.getSplined()->getColMajor().toFloat().data(),
+        &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // The sampler for cl_tsf_tex
+    tsf_tex_sampler = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    isTsfTexInitialized = true;
 }
 
-cl_mem * ImageRenderGLWidget::getTsfImgCLGL()
+cl_mem * ImageRenderWindow::getTsfImgCLGL()
 {
-    return &tsf_img_clgl;
+    return &cl_tsf_tex;
 }
 
-cl_mem * ImageRenderGLWidget::getAlphaImgCLGL()
+cl_mem * ImageRenderWindow::getAlphaImgCLGL()
 {
-    return &alpha_img_clgl;
+    return &cl_img_alpha;
 }
 
-cl_mem * ImageRenderGLWidget::getGammaImgCLGL()
+cl_mem * ImageRenderWindow::getGammaImgCLGL()
 {
-    return &gamma_img_clgl;
+    return &cl_img_gamma;
 }
 
-cl_mem * ImageRenderGLWidget::getBetaImgCLGL()
+cl_mem * ImageRenderWindow::getBetaImgCLGL()
 {
-    return &beta_img_clgl;
+    return &cl_img_beta;
 }
 
 
-void ImageRenderGLWidget::aquireSharedBuffers()
+void ImageRenderWindow::aquireSharedBuffers()
 {
+    QElapsedTimer timer;
+    timer.start();
     glFinish();
-    err = clEnqueueAcquireGLObjects((*queue), 1, &alpha_img_clgl, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &beta_img_clgl, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &gamma_img_clgl, 0, 0, 0);
-    err |= clEnqueueAcquireGLObjects((*queue), 1, &tsf_img_clgl, 0, 0, 0);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-    }
+//    qDebug() << "glFinish took " << timer.restart();
+    if (isAlphaImgInitialized) err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
+    if (isBetaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
+    if (isGammaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);
+    if (isTsfImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_tsf_tex, 0, 0, 0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-int ImageRenderGLWidget::setTarget()
+void ImageRenderWindow::setSharedWindow(SharedContextWindow * window)
 {
+    this->shared_window = window;
+    shared_context = window->getGLContext();
+}
 
-
-    if (isAlphaImgInitialized) clReleaseMemObject(alpha_img_clgl);
-    if (isBetaImgInitialized) clReleaseMemObject(beta_img_clgl);
-    if (isGammaImgInitialized) clReleaseMemObject(gamma_img_clgl);
+void ImageRenderWindow::setTarget()
+{
+    if (isAlphaImgInitialized) clReleaseMemObject(cl_img_alpha);
+    if (isBetaImgInitialized) clReleaseMemObject(cl_img_beta);
+    if (isGammaImgInitialized) clReleaseMemObject(cl_img_gamma);
 
     // Set GL texture
     glDeleteTextures(1, &image_tex[0]);
@@ -722,12 +420,8 @@ int ImageRenderGLWidget::setTarget()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Convert to CL texture
-    alpha_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-        return 0;
-    }
+    cl_img_alpha = clCreateFromGLTexture2D(*context_cl->getContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[0], &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     isAlphaImgInitialized = true;
 
     // Set GL texture
@@ -750,12 +444,8 @@ int ImageRenderGLWidget::setTarget()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Convert to CL texture
-    beta_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-        return 0;
-    }
+    cl_img_beta = clCreateFromGLTexture2D(*context_cl->getContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[1], &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     isBetaImgInitialized = true;
 
     // Set GL texture
@@ -777,16 +467,14 @@ int ImageRenderGLWidget::setTarget()
         NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-
     // Convert to CL texture
-    gamma_img_clgl = clCreateFromGLTexture2D((*context), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-        return 0;
-    }
+    cl_img_gamma = clCreateFromGLTexture2D(*context_cl->getContext(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex[2], &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isGammaImgInitialized = true;
-    return 1;
 }
 
+void ImageRenderWindow::test()
+{
+    qDebug() << "Window test";
+}

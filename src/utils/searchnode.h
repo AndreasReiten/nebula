@@ -7,9 +7,12 @@
 
 #include <QObject>
 #include <QString>
+#include <QDebug>
+#include <QElapsedTimer>
 
 #include <CL/opencl.h>
 
+#include "contextcl.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
@@ -21,6 +24,7 @@ class SearchNode {
         SearchNode(SearchNode * parent, double * extent);
         ~SearchNode();
 
+        void setContextCL(ContextCL *context);
         void clearChildren();
         void clearPoints();
         void insert(float * point);
@@ -40,9 +44,7 @@ class SearchNode {
             cl_mem * items_cl,
             cl_mem * pool_cl,
             cl_kernel * voxelize_kernel,
-            cl_command_queue * queue,
             int * method,
-            cl_context * context,
             unsigned int brick_counter,
             unsigned int brick_pool_power);
         float getIDW(float * sample, float p, float search_radius);
@@ -51,14 +53,14 @@ class SearchNode {
         double * getExtent();
 
     private:
-        void getIntersectedItems(MiniArray<double> * effective_extent, unsigned int * item_counter, cl_mem * items, cl_command_queue * queue);
+        void getIntersectedItems(MiniArray<double> * effective_extent, unsigned int * item_counter, cl_mem * items);
         SearchNode * parent;
         SearchNode ** children;
         float * points;
         MiniArray<double> extent;
 
         float distance(float * a, float * b);
-        void writeLog(QString str);
+//        void writeLog(QString str);
 
         unsigned int level;
         unsigned int n_children;
@@ -67,6 +69,7 @@ class SearchNode {
         bool isEmpty;
         bool isMsd;
         cl_int err;
-        int verbosity;
+
+        ContextCL * context;
 };
 #endif

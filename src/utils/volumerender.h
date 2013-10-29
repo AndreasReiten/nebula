@@ -11,12 +11,9 @@
 #include <algorithm>
 
 #include <QtGlobal>
+#include <QDebug>
 
 /* GL and CL*/
-#ifdef Q_OS_WIN
-    #define GLEW_STATIC
-#endif
-#include <GL/glew.h>
 #include <CL/opencl.h>
 
 /* QT */
@@ -25,267 +22,196 @@
 #include <QString>
 #include <QByteArray>
 #include <QDateTime>
-#include <QGLWidget>
 #include <QMouseEvent>
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
+#include <QOpenGLShaderProgram>
+#include <QResizeEvent>
 
 
 #include "tools.h"
 #include "miniarray.h"
 #include "matrix.h"
-#include "atlas.h"
 #include "sparsevoxelocttree.h"
+#include "openglwindow.h"
+#include "sharedcontext.h"
+#include "transferfunction.h"
 
-class VolumeRenderGLWidget : public QGLWidget
+#include <QScreen>
+#include <QPainter>
+
+
+
+class VolumeRenderWindow : public OpenGLWindow
 {
     Q_OBJECT
 
 public:
-    explicit VolumeRenderGLWidget(cl_device * device, cl_context * context, cl_command_queue * queue, const QGLFormat & format, QWidget *parent = 0, const QGLWidget * shareWidget = 0);
-    ~VolumeRenderGLWidget();
-    QSize minimumSizeHint() const;
-    QSize sizeHint() const;
-    void setMatrixU(float * buf);
-    void setMatrixB(float * buf);
+    VolumeRenderWindow();
+    ~VolumeRenderWindow();
+
+    void setSharedWindow(SharedContextWindow * window);
     void setSvo(SparseVoxelOcttree * svo);
 
-public slots:
-    void toggleScalebar();
-    //~void open();
-    void takeScreenshot();
-    void setResolutionf(double value);
-//    void setResolutioni(int value);
-    void togglePerspective();
-    void toggleBackground();
-    //~ void toggleFastMove(bool value);
-    void setTsf(int value);
-    void setTsfMin(double value);
-    void setTsfMax(double value);
-    void setTsfAlpha(double value);
-    void setTsfBrightness(double value);
-    void toggleLog();
-    void toggleDataStructure();
-    void toggleFunctionView();
-    void setFuncParamA(double value);
-    void setFuncParamB(double value);
-    void setFuncParamC(double value);
-    void setFuncParamD(double value);
-    void toggleUnitcellView();
-    void setHklFocus(const QString str);
-    void setTsfAlphaStyle(int value);
-
-
-signals:
-    void changedMessageString(QString str);
-    //~void changedResolutioni(int value);
-    //~void changedResolutionf(double value);
-    //~void changedAlphaValue(double value);
-    //~void changedBrightnessValue(double value);
-    //~void changedDataMinValue(double value);
-    //~void changedDataMaxValue(double value);
-    //~void changedFuncParamA(double value);
-    //~void changedFuncParamB(double value);
-    //~void changedFuncParamC(double value);
-    //~void changedFuncParamD(double value);
-
 protected:
-    int verbosity;
-    void initializeGL();
-    void paintGL();
-    void resizeGL(int w, int h);
-    void mouseMoveEvent(QMouseEvent *event);
-    //~void keyPressEvent(QKeyEvent *event);
-    void wheelEvent(QWheelEvent *event);
-    void writeLog(QString str);
+    void initialize();
+    void render(QPainter *painter);
+    void mouseMoveEvent(QMouseEvent* ev);
+    void wheelEvent(QWheelEvent* ev);
+    void resizeEvent(QResizeEvent * ev);
+
+public slots:
+    void setQuality(int value);
+    void setScalebar();
+    void setProjection();
+    void setBackground();
+    void setLogarithmic();
+    void setDataStructure();
+    void setTsfColor(int value);
+    void setTsfAlpha(int value);
+    void setDataMin(double value);
+    void setDataMax(double Value);
+    void setAlpha(double value);
+    void setBrightness(double value);
+    void setUnitcell();
+    void setModel();
+    void setModelParam0(double value);
+    void setModelParam1(double value);
+    void setModelParam2(double value);
+    void setModelParam3(double value);
+    void setModelParam4(double value);
+    void setModelParam5(double value);
 
 private:
-    Atlas * fontSmall;
-    Atlas * fontMedium;
-    Atlas * fontLarge;
+    SharedContextWindow * shared_window;
 
-    float fps;
-    bool isDSViewForced;
-
-    //~void setEmit();
-    size_t getScaleBar();
-    void getScreenPosition(float * screen_pos, float * space_pos, float * transform);
-    void std_text_draw(const char *text, Atlas *a, float * color, float * xy, float scale, int w, int h);
-    void initFreetype();
-    void setConeWidthMultiplier(float level);
-    int getUnitcellVBO(GLuint * xyz_coords, int * hkl_low, int * hkl_high, float * a, float * b, float * c);
-    void getUnitcellBasis(float * buf, int * hkl_offset, float * a, float * b, float * c);
-    void setProjection(double F, double N, double fov, bool isPerspectiveRequired);
-    void pixPos(GLuint * vbo, float x, float y, float w, float h);
-    void backDropTexPos(GLuint * vbo, int border_pixel_offset);
-    void histTexPos(int log, float hist_min, float hist_max, float data_min, float data_max);
-    void setTexturesVBO();
-    void setDataViewExtent();
-    void resetViewMatrix();
-    void setViewMatrix();
-    void setDataExtent();
-    void setTsfParameters();
-    void setMiscArrays();
-    void std_2d_tex_draw(GLuint * elements, int num_elements, int active_tex, GLuint texture, GLuint * xy_coords, GLuint * tex_coords);
-    void std_3d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xyz_vbo, float * transform, float * bbox_min, float * bbox_max );
-    void setTsfTexture(TsfMatrix<double> * tsf);
-    void autoRotate(int time, int threshold);
-    void initializeProgramsGL();
-    void setMessageString(QString str);
-    void raytrace(cl_kernel kernel);
-    void std_2d_color_draw(GLuint * elements, int num_elements, GLfloat * color, GLuint * xy_coords);
-    //~ void paint_texture_2d(GLuint texture, double * coordinates, double * vertices);
-    void getHistogramTexture(GLuint * tex, MiniArray<double> * buf, size_t height, float * color);
-
-    GLint msaa_hdr_attribute_position , msaa_hdr_attribute_texpos , msaa_hdr_uniform_samples , msaa_hdr_uniform_method , msaa_hdr_uniform_exposure , msaa_hdr_uniform_texture , msaa_hdr_uniform_weight;
-    GLuint hist_tex_norm, hist_tex_log;
-    GLint std_text_attribute_position, std_text_uniform_color, std_text_uniform_tex, std_text_attribute_texpos;
-    GLuint MSAA_FBO, STD_FBO, SMALL_FBO;
-    GLuint std_3d_tex, std_2d_tex, msaa_tex, msaa_depth_tex, glow_tex, blend_tex, small_storage_tex, storage_tex, mini_uc_tex, msaa_intermediate_storage_tex;
-    GLuint tex_coord_vbo[10], position_vbo[10], lab_reference_vbo[5], data_extent_vbo[5], data_view_extent_vbo[5], text_position_vbo, text_texpos_vbo;
-    GLuint unitcell_vbo[5], screen_vbo[5], scalebar_vbo;
-    GLuint sampleWeightBuf;
-    GLint std_3d_attribute_position, std_3d_attribute_texpos, std_3d_uniform_transform, std_3d_uniform_color, std_3d_uniform_texture, std_3d_uniform_time, std_3d_uniform_bbox_min, std_3d_uniform_bbox_max, std_3d_uniform_u;
-    GLint pp_glow_attribute_position, pp_glow_attribute_texpos, pp_glow_uniform_color, pp_glow_uniform_texture, pp_glow_uniform_time, pp_glow_uniform_pixel_size, pp_glow_uniform_orientation, pp_glow_uniform_scale, pp_glow_uniform_deviation, pp_glow_uniform_samples;
-    GLint blend_attribute_position, blend_attribute_texpos, blend_uniform_top_tex, blend_uniform_bot_tex;
-    GLint msaa_attribute_position, msaa_attribute_texpos, msaa_uniform_texture, msaa_uniform_samples, msaa_uniform_weight;
-    GLint std_2d_tex_attribute_position, std_2d_tex_attribute_texpos, std_2d_tex_uniform_color, std_2d_tex_uniform_texture, std_2d_tex_uniform_time, std_2d_tex_uniform_pixel_size;
-    GLint std_2d_color_attribute_position, std_2d_color_uniform_color;
-    GLuint std_2d_tex_program, std_2d_color_program, std_3d_program, pp_glow_program, blend_program, msaa_program, msaa_hdr_program, std_text_program;
-    GLuint ray_tex, tsf_tex, hist_tex, static_texture[5];
-
-    cl_image_format bricks_format;
-    cl_sampler bricks_sampler, tsf_tex_sampler;
-    cl_mem ray_tex_cl, tsf_tex_cl;
-    cl_mem view_matrix_inv_cl, function_view_matrix_inv_cl;
-    cl_mem data_extent_cl, data_view_extent_cl, tsf_parameters_cl, misc_float_cl, misc_int_cl, misc_float_k_raytrace_cl;
-    cl_mem bricks_cl, oct_index_cl, oct_brick_cl;
-    cl_kernel K_SVO_RAYTRACE, K_FUNCTION_RAYTRACE;
-    cl_device * device;
-    cl_program program;
-    cl_context * context;
-    cl_command_queue * queue;
-    cl_int err;
-
-    int pp_samples;
-    float pp_deviation;
-    float pp_scale;
-    size_t scalebar_coord_count;
-
-    unsigned int levels;
-    unsigned int brick_pool_power;
-    unsigned int brick_inner_dimension;
-    unsigned int brick_outer_dimension;
-
-    RotationMatrix<float> SCALEBAR_MATRIX;
-    RotationMatrix<float> SCALEBAR_ROTATION;
-    RotationMatrix<float> ROTATION;
-    RotationMatrix<float> ROLL_ROTATION;
-    RotationMatrix<float> AUTO_ROTATION;
-
-    CameraToClipMatrix<float> CTC_MATRIX;
-
-    Matrix<float> origo;
-    Matrix<float> pixel_size;
-    //~ Matrix<float> std_texcoords;
-    Matrix<float> MISC_FLOAT_K_FUNCTION;
-    Matrix<float> MISC_FLOAT_K_RAYTRACE;
-    Matrix<int> MISC_INT;
-    Matrix<float> TSF_PARAMETERS;
-    Matrix<float> BBOX_SCALING;
-    Matrix<float> BBOX_EXTENT;
-    Matrix<float> BBOX_TRANSLATION;
-    Matrix<float> BBOX_VIEW_MATRIX;
-    Matrix<float> DATA_EXTENT;
-    Matrix<float> DATA_SCALING;
-    Matrix<float> DATA_TRANSLATION;
-    Matrix<float> NORM_SCALING;
-    Matrix<float> DATA_VIEW_EXTENT;
-    Matrix<float> DATA_VIEW_MATRIX;
-    Matrix<float> MINI_CELL_VIEW_MATRIX;
-    Matrix<float> PROJECTION_SCALING;
-    Matrix<float> U;
-    Matrix<float> U3x3;
-    Matrix<float> I;
-    Matrix<float> a;
-    Matrix<float> b;
-    Matrix<float> c;
-
-    TsfMatrix<double> transferFunction;
-
-    MiniArray<double> MINMAX;
-    MiniArray<GLuint> hkl_indices;
-    MiniArray<float> color;
-    MiniArray<float> * BRICKS;
-    MiniArray<unsigned int> * OCT_INDEX;
-    MiniArray<unsigned int> * OCT_BRICK;
-    MiniArray<double> HIST_MINMAX;
-    MiniArray<double> * HIST_NORM;
-    MiniArray<double> * HIST_LOG;
-    Matrix<float> hkl_text_pos;
-    Matrix<float> hkl_text_index;
-
-    QTimer *timer;
-    QElapsedTimer *time;
-    QElapsedTimer *rotationTimer;
-    QElapsedTimer *timerLastAction;
-    QElapsedTimer *callTimer;
-
-    float LINEWIDTH;
+    // Boolean checks
+    bool isInitialized;
+    bool isDSActive;
+    bool isOrthonormal;
+    bool isLogarithmic;
+    bool isModelActive;
     bool isUnitcellActive;
-    bool isFunctionActive;
-    bool isBadCall;
-    bool isRefreshRequired;
-    bool isPerspectiveRequired;
-    bool isUnitcellValid;
+    bool isSvoInitialized;
     bool isScalebarActive;
 
-    int isLog;
-    int callTimeMax;
-    int timeLastActionMin;
-    int auto_rotation_delay;
-    int MSAA_SAMPLES, MSAA_METHOD;
-    float MSAA_EXPOSURE;
-    int WIDTH, HEIGHT, SMALL_WIDTH, SMALL_HEIGHT;
-    int ray_tex_dim[2];
-    int setRaytracingTexture();
-    int initResourcesGL();
-    int initResourcesCL();
-
-    size_t ray_glb_ws[2];
-    size_t ray_loc_ws[2];
-    size_t LEVELS, BPP, N_BRICKS, DIM_BRICKS;
-
-    float ray_res;
-
-    double N, F, fov;
-    double zeta, eta;
-    double X_rotation, Y_rotation;
-    double lastPos_x, lastPos_y;
-
-
-    char tsf_alpha_style;
-    char tsf_style;
-
-    MiniArray<float> white;
-    MiniArray<float> transparent;
-    MiniArray<float> black;
-    MiniArray<float> blue;
-    MiniArray<float> red;
-    MiniArray<float> green;
-    MiniArray<float> clear;
-    MiniArray<float> clearInv;
-    MiniArray<float> colorBackDropA;
-    MiniArray<float> colorBackDropB;
-    MiniArray<float> colorBackDropC;
-
-    bool isGLIntitialized;
+    // Ray texture
+    Matrix<int> ray_tex_dim;
+    Matrix<size_t> ray_glb_ws;
+    Matrix<size_t> ray_loc_ws;
+    float ray_tex_resolution;
+    cl_mem ray_tex_cl;
+    GLuint ray_tex_gl;
     bool isRayTexInitialized;
-    bool isTsfTexInitialized;
-    bool isOcttreeIndicesInitialized;
-    bool isOcttreeBricksInitialized;
-    bool isBrickPoolInitialized;
-};
+    void setRayTexture();
+    void raytrace(cl_kernel kernel, cl_kernel workload);
+    double work, work_time, quality_factor;
 
+    // Drawing functions
+    void drawRayTex();
+    void drawScalebars();
+    void drawOverlay(QPainter *painter);
+    void beginRawGLCalls(QPainter * painter);
+    void endRawGLCalls(QPainter * painter);
+    int fps_string_width_prev;
+
+    // Core set functions
+    void setDataExtent();
+    void setViewMatrix();
+    void resetViewMatrix();
+    void setTsfParameters();
+    void setMiscArrays();
+
+    // Scalebars
+    size_t setScaleBars();
+    size_t scalebar_coord_count;
+    GLuint scalebar_vbo;
+    Matrix<float> scalebar_ticks;
+    int n_scalebar_ticks;
+    double scalebar_multiplier;
+
+    // Transfer function texture
+    void setTsfTexture();
+    cl_mem tsf_tex_cl;
+    cl_sampler tsf_tex_sampler;
+    GLuint tsf_tex_gl;
+    GLuint tsf_tex_gl_thumb;
+    bool isTsfTexInitialized;
+    TransferFunction tsf;
+    int tsf_color_scheme;
+    int tsf_alpha_scheme;
+
+    // Ray texture timing
+    float fps_required;
+    QElapsedTimer ray_kernel_timer;
+
+    // Mouse
+    int last_mouse_pos_x;
+    int last_mouse_pos_y;
+
+    // View matrices
+    Matrix<double> view_matrix;
+    CameraToClipMatrix<double> ctc_matrix;
+    RotationMatrix<double> rotation;
+    Matrix<double> data_translation;
+    Matrix<double> data_scaling;
+    Matrix<double> bbox_scaling;
+    Matrix<double> bbox_translation;
+    Matrix<double> normalization_scaling;
+    Matrix<double> scalebar_view_matrix;
+    RotationMatrix<double> scalebar_rotation;
+    Matrix<double> projection_scaling;
+
+    // Other matrices
+    Matrix<double> data_extent;
+    Matrix<double> data_view_extent;
+    Matrix<double> tsf_parameters_model;
+    Matrix<double> tsf_parameters_svo;
+    Matrix<int> misc_ints;
+    Matrix<double> model_misc_floats;
+
+    // OpenGL
+    void initResourcesGL();
+
+    // OpenCL
+    cl_int err;
+    cl_program program;
+    cl_kernel cl_svo_raytrace;
+    cl_kernel cl_model_raytrace;
+    cl_kernel cl_svo_workload;
+    cl_kernel cl_model_workload;
+
+    cl_mem cl_glb_work;
+    cl_mem cl_view_matrix_inverse;
+    cl_mem cl_data_extent;
+    cl_mem cl_data_view_extent;
+    cl_mem cl_tsf_parameters_model;
+    cl_mem cl_tsf_parameters_svo;
+    cl_mem cl_misc_ints;
+    cl_mem cl_model_misc_floats;
+
+    void initResourcesCL();
+
+    // Svo
+    cl_mem cl_svo_pool;
+    cl_mem cl_svo_index;
+    cl_mem cl_svo_brick;
+    cl_sampler cl_svo_pool_sampler;
+
+    // Colors
+    Matrix<GLfloat> white;
+    Matrix<GLfloat> black;
+    Matrix<GLfloat> clear_color;
+    Matrix<GLfloat> clear_color_inverse;
+
+    // Pens
+    void initializePaintTools();
+    QPen * normal_pen;
+    QPen * border_pen;
+    QBrush * fill_brush;
+    QBrush * normal_brush;
+    QBrush * dark_fill_brush;
+    QFont * normal_font;
+    QFont * emph_font;
+    QFontMetrics * normal_fontmetric;
+    QFontMetrics * emph_fontmetric;
+};
 #endif

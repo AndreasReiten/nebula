@@ -11,26 +11,22 @@ PilatusFile::PilatusFile()
     max_counts = 0;
     STATUS_OK = 0;
 }
-PilatusFile::PilatusFile(QString path, cl_context * context, cl_command_queue * queue)
+PilatusFile::PilatusFile(QString path, ContextCL *context)
 {
+    context_cl = context;
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
-    STATUS_OK = this->set(path, context, queue);
+    STATUS_OK = this->set(path, context_cl);
 }
 
-void PilatusFile::writeLog(QString str)
+int PilatusFile::set(QString path, ContextCL *context)
 {
-    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
-}
-
-int PilatusFile::set(QString path, cl_context * context, cl_command_queue * queue)
-{
-    this->context = context;
-    this->queue = queue;
+    this->context_cl = context;
 
     this->path = path;
     if (!this->readHeader()) return 0;
+
     if (detector == "PILATUS 1M")
     {
         fast_dimension = 981;
@@ -136,27 +132,37 @@ int PilatusFile::readHeader()
     QFileInfo file_info(path);
     if (!file_info.exists())
     {
-        std::cout << "File does not exist: " << path.toStdString().c_str() << std::endl;
+        qDebug() << "File does not exist: " << path.toStdString().c_str();
         return 0;
     }
     else if (file_info.size() <= 0)
     {
-        std::cout << "File is zero bytes: " << path.toStdString().c_str() << std::endl;
+        qDebug() << "File does not exist: " << path.toStdString().c_str();
         return 0;
     }
     // Read file
-    std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
-    if (!in)
+//    std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
+//    if (!in)
+//    {
+//        std::cout << "Error reading file: " << path.toStdString().c_str() << std::endl;
+//        return 0;
+//    }
+
+//    std::string contents;
+//    contents.reserve(4096);
+//    in.read(&contents[0], 4096);
+//    in.close();
+//    QString header(contents.c_str());
+
+    QFile file(path.toStdString().c_str());
+    if (!file.open(QIODevice::ReadOnly))
     {
-        std::cout << "Error reading file: " << path.toStdString().c_str() << std::endl;
+        qDebug() << "Error reading file: " << path.toStdString().c_str();
         return 0;
     }
+    QString header = file.read(4096);
+    file.close();
 
-    std::string contents;
-    contents.reserve(4096);
-    in.read(&contents[0], 4096);
-    in.close();
-    QString header(contents.c_str());
 
     // Fetch keywords!
     /* Non-optional keywords */
@@ -204,6 +210,8 @@ int PilatusFile::readHeader()
     //~ position_increment = regExp(&, &header, 0, 1).toFloat();
     //~ shutter_time = regExp(&, &header, 0, 1).toFloat();
 
+
+
     return 1;
 }
 
@@ -233,12 +241,12 @@ void PilatusFile::clearData()
 }
 
 
-void PilatusFile::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
+void PilatusFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex)
 {
-    this->alpha_img_clgl = alpha_img_clgl;
-    this->beta_img_clgl = beta_img_clgl;
-    this->gamma_img_clgl = gamma_img_clgl;
-    this->tsf_img_clgl = tsf_img_clgl;
+    this->cl_img_alpha = cl_img_alpha;
+    this->cl_img_beta = cl_img_beta;
+    this->cl_img_gamma = cl_img_gamma;
+    this->cl_tsf_tex = cl_tsf_tex;
 }
 
 
@@ -253,7 +261,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     target_format.image_channel_data_type = CL_FLOAT;
 
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
-    cl_mem xyzi_target_cl = clCreateImage2D ( (*context),
+    cl_mem xyzi_target_cl = clCreateImage2D ( *context_cl->getContext(),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
         &target_format,
         fast_dimension,
@@ -261,17 +269,14 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         0,
         NULL,
         &err);
-    if (err != CL_SUCCESS)
-    {
-        //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-    }
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Load data into a CL texture
     cl_image_format source_format;
     source_format.image_channel_order = CL_INTENSITY;
     source_format.image_channel_data_type = CL_FLOAT;
 
-    cl_mem source_cl = clCreateImage2D ( (*context),
+    cl_mem source_cl = clCreateImage2D ( *context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
         fast_dimension,
@@ -279,12 +284,9 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         fast_dimension*sizeof(cl_float),
         data_buf.data(),
         &err);
-    if (err != CL_SUCCESS)
-    {
-        //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-    }
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_mem background_cl = clCreateImage2D ( (*context),
+    cl_mem background_cl = clCreateImage2D ( *context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
         fast_dimension,
@@ -292,17 +294,11 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         fast_dimension*sizeof(cl_float),
         background->data(),
         &err);
-    if (err != CL_SUCCESS)
-    {
-        //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-    }
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
-    cl_sampler intensity_sampler = clCreateSampler((*context), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
-    if (err != CL_SUCCESS)
-    {
-        //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-    }
+    cl_sampler intensity_sampler = clCreateSampler(*context_cl->getContext(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
     int active_angle = 2;
@@ -325,29 +321,23 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
 
     sampleRotMat = PHI*KAPPA*OMEGA;
 
-    cl_mem sample_rotation_matrix_cl = clCreateBuffer((*context),
+    cl_mem sample_rotation_matrix_cl = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         sampleRotMat.bytes(),
         sampleRotMat.data(),
         &err);
-    if (err != CL_SUCCESS)
-    {
-        //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-    }
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    // The sampler for tsf_img_clgl
-    cl_sampler tsf_sampler = clCreateSampler((*context), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
-    if (err != CL_SUCCESS)
-    {
-        //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-    }
+    // The sampler for cl_tsf_tex
+    cl_sampler tsf_sampler = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Set kernel arguments
     err = clSetKernelArg(*project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) alpha_img_clgl);
-    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) beta_img_clgl);
-    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) gamma_img_clgl);
-    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) tsf_img_clgl);
+    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) cl_img_alpha);
+    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) cl_img_beta);
+    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) cl_img_gamma);
+    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) cl_tsf_tex);
     err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &background_cl);
     err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_mem), (void *) &source_cl);
     err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &tsf_sampler);
@@ -373,10 +363,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     err |= clSetKernelArg(*project_kernel, 25, sizeof(cl_float), &phi);
     err |= clSetKernelArg(*project_kernel, 26, sizeof(cl_float), &omega);
     err |= clSetKernelArg(*project_kernel, 27, sizeof(cl_float), &max_counts);
-    if (err != CL_SUCCESS)
-    {
-        //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-    }
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Launch rendering kernel */
     size_t area_per_call[2] = {128, 128};
@@ -388,14 +375,12 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = clEnqueueNDRangeKernel((*queue), *project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
-            if (err != CL_SUCCESS)
-            {
-                //writeLog("[!][PilatusFile][filterData]: Error before line "+QString::number(__LINE__)+QString(cl_error_cstring(err)));
-            }
+            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), *project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
-    clFinish((*queue));
+    clFinish(*context_cl->getCommandQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Read the data
     size_t origin[3];
@@ -409,14 +394,33 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     region[2] = 1;
 
     MiniArray<float> projected_data_buf(fast_dimension*slow_dimension*4);
-    clEnqueueReadImage ( *queue, xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
+    err = clEnqueueReadImage ( *context_cl->getCommandQueue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    if (xyzi_target_cl) clReleaseMemObject(xyzi_target_cl);
-    if (source_cl) clReleaseMemObject(source_cl);
-    if (background_cl) clReleaseMemObject(background_cl);
-    if (sample_rotation_matrix_cl) clReleaseMemObject(sample_rotation_matrix_cl);
-    if (intensity_sampler) clReleaseSampler(intensity_sampler);
-    if (tsf_sampler) clReleaseSampler(tsf_sampler);
+    if (xyzi_target_cl){
+        err = clReleaseMemObject(xyzi_target_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (source_cl){
+        err = clReleaseMemObject(source_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (background_cl){
+        err = clReleaseMemObject(background_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (sample_rotation_matrix_cl){
+        err = clReleaseMemObject(sample_rotation_matrix_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (intensity_sampler){
+        err = clReleaseSampler(intensity_sampler);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (tsf_sampler){
+        err = clReleaseSampler(tsf_sampler);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 
     if (isProjectionActive)
     {

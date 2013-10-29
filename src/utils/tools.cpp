@@ -83,100 +83,96 @@ const char * cl_error_cstring(cl_int error)
     }
 }
 
-const char * gl_framebuffer_error_cstring(GLint error)
+//const char * gl_framebuffer_error_cstring(GLint error)
+//{
+//    switch (error) {
+//        case GL_FRAMEBUFFER_COMPLETE:                       return "Success!";
+//        case GL_FRAMEBUFFER_UNDEFINED:                      return "GL_FRAMEBUFFER_UNDEFINED";
+//        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+//        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+//        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
+//        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
+//        case GL_FRAMEBUFFER_UNSUPPORTED:                    return "GL_FRAMEBUFFER_UNSUPPORTED";
+//        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
+//        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
+//        default:                                            return "Unknown";
+//    }
+//}
+
+//void glGetErrorMessage(const char * context)
+//{
+//    GLint error = glGetError();
+//    while (error != GL_NO_ERROR)
+//    {
+//        switch (error)
+//        {
+//            case GL_INVALID_FRAMEBUFFER_OPERATION:      std::cout << "GL Error in " << context <<  ": GL_INVALID_FRAMEBUFFER_OPERATION";
+//            case GL_OUT_OF_MEMORY:                      std::cout << "GL Error in " << context <<  ": GL_OUT_OF_MEMORY";
+//            case GL_STACK_UNDERFLOW:                    std::cout << "GL Error in " << context <<  ": GL_STACK_UNDERFLOW";
+//            case GL_STACK_OVERFLOW:                     std::cout << "GL Error in " << context <<  ": GL_STACK_OVERFLOW";
+//            case GL_INVALID_ENUM:                       std::cout << "GL Error in " << context <<  ": GL_INVALID_ENUM";
+//            case GL_INVALID_VALUE:                      std::cout << "GL Error in " << context <<  ": GL_INVALID_VALUE";
+//            case GL_INVALID_OPERATION:                  std::cout << "GL Error in " << context <<  ": GL_INVALID_OPERATION";
+//            case GL_NO_ERROR:                           std::cout << "GL Error in " << context <<  ": GL_NO_ERROR";
+//            default:                                    std::cout << "GL Error in " << context <<  ": Unknown";
+//        }
+//        error = glGetError();
+//    }
+//}
+
+//void screenshot(int w, int h, const char* path)
+//{
+//    // HEADER
+//    BMPHeader bmp_header;
+
+//    bmp_header.type = 19778;
+//    bmp_header.file_size = w*h*4+54;
+//    bmp_header.reserved1 = 0;
+//    bmp_header.reserved2 = 0;
+//    bmp_header.raw_offset = 54;
+
+//    bmp_header.self_size = 40;
+//    bmp_header.pixel_width = w;
+//    bmp_header.pixel_height = h;
+//    bmp_header.color_planes = 1;
+//    bmp_header.pixel_bits = 32;
+//    bmp_header.comperssion = 0;
+//    bmp_header.image_size = w*h*4;
+//    bmp_header.resolution_w = 2835;
+//    bmp_header.resolution_h = 2835;
+//    bmp_header.colors_used = 0;
+//    bmp_header.colors_important = 0;
+
+//    // DATA
+//    unsigned char* buf = new unsigned char[w*h*4];
+//    glReadPixels(0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, buf);
+
+//    // FILE:  OPEN, WRITE, CLOSE
+//    std::ofstream file (path, std::ios::out | std::ios::trunc | std::ios::binary);
+//    file.write(reinterpret_cast<char *>(&bmp_header), 54);
+//    file.write(reinterpret_cast<char *>(buf), w*h*4);
+//    file.close();
+
+//    // CLEAN UP
+//    delete[] buf;
+//}
+
+//void setVbo(GLuint * vbo, float * buf, size_t length)
+//{
+//    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, GL_STATIC_DRAW);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//}
+
+QString openResource(const char * path)
 {
-    switch (error) {
-        case GL_FRAMEBUFFER_COMPLETE:                       return "Success!";
-        case GL_FRAMEBUFFER_UNDEFINED:                      return "GL_FRAMEBUFFER_UNDEFINED";
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
-        case GL_FRAMEBUFFER_UNSUPPORTED:                    return "GL_FRAMEBUFFER_UNSUPPORTED";
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         return "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
-        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       return "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
-        default:                                            return "Unknown";
-    }
-}
-
-void glGetErrorMessage(const char * context)
-{
-    GLint error = glGetError();
-    while (error != GL_NO_ERROR)
-    {
-        switch (error)
-        {
-            case GL_INVALID_FRAMEBUFFER_OPERATION:      std::cout << "GL Error in " << context <<  ": GL_INVALID_FRAMEBUFFER_OPERATION";
-            case GL_OUT_OF_MEMORY:                      std::cout << "GL Error in " << context <<  ": GL_OUT_OF_MEMORY";
-            case GL_STACK_UNDERFLOW:                    std::cout << "GL Error in " << context <<  ": GL_STACK_UNDERFLOW";
-            case GL_STACK_OVERFLOW:                     std::cout << "GL Error in " << context <<  ": GL_STACK_OVERFLOW";
-            case GL_INVALID_ENUM:                       std::cout << "GL Error in " << context <<  ": GL_INVALID_ENUM";
-            case GL_INVALID_VALUE:                      std::cout << "GL Error in " << context <<  ": GL_INVALID_VALUE";
-            case GL_INVALID_OPERATION:                  std::cout << "GL Error in " << context <<  ": GL_INVALID_OPERATION";
-            case GL_NO_ERROR:                           std::cout << "GL Error in " << context <<  ": GL_NO_ERROR";
-            default:                                    std::cout << "GL Error in " << context <<  ": Unknown";
-        }
-        error = glGetError();
-    }
-}
-
-void screenshot(int w, int h, const char* path)
-{
-    // HEADER
-    BMPHeader bmp_header;
-
-    bmp_header.type = 19778;
-    bmp_header.file_size = w*h*4+54;
-    bmp_header.reserved1 = 0;
-    bmp_header.reserved2 = 0;
-    bmp_header.raw_offset = 54;
-
-    bmp_header.self_size = 40;
-    bmp_header.pixel_width = w;
-    bmp_header.pixel_height = h;
-    bmp_header.color_planes = 1;
-    bmp_header.pixel_bits = 32;
-    bmp_header.comperssion = 0;
-    bmp_header.image_size = w*h*4;
-    bmp_header.resolution_w = 2835;
-    bmp_header.resolution_h = 2835;
-    bmp_header.colors_used = 0;
-    bmp_header.colors_important = 0;
-
-    // DATA
-    unsigned char* buf = new unsigned char[w*h*4];
-    glReadPixels(0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, buf);
-
-    // FILE:  OPEN, WRITE, CLOSE
-    std::ofstream file (path, std::ios::out | std::ios::trunc | std::ios::binary);
-    file.write(reinterpret_cast<char *>(&bmp_header), 54);
-    file.write(reinterpret_cast<char *>(buf), w*h*4);
-    file.close();
-
-    // CLEAN UP
-    delete[] buf;
-}
-
-void setVbo(GLuint * vbo, float * buf, size_t length)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-QByteArray open_resource(const char * path)
-{
-//    std::cout << "OPENING RESOURCE: " << path << std::endl;
-
     QFile file( path );
     file.open( QFile::ReadOnly );
     QString qsrc(file.readAll());
     file.close();
+//    QByteArray ba = qsrc.toUtf8();
 
-//    std::cout << qsrc.toStdString().c_str() << std::endl;
-    QByteArray ba = qsrc.toUtf8();
-
-    return ba;
+    return qsrc;
 }
 
 QByteArray openFile(const char * path)
@@ -192,270 +188,274 @@ QByteArray openFile(const char * path)
         in.read(&contents[0], contents.size());
         in.close();
     }
+    else
+    {
+        qDebug(QString("Could not open file: " + QString(path)).toStdString().c_str());
+    }
 
     QByteArray ba = QString(contents.c_str()).toUtf8();
 
     return ba;
 }
 
-GLuint create_shader(const char* resource, GLenum type)
-{
+//GLuint create_shader(const char* resource, GLenum type)
+//{
 
-    QByteArray qsrc = open_resource(resource);
-    const char * source = qsrc.data();
+//    QByteArray qsrc = openResource(resource);
+//    const char * source = qsrc.data();
 
-    if (source == NULL)
-    {
-        std::cout <<  "Error opening: " << resource << std::endl;
-        return 0;
-    }
-    GLuint shader = glCreateShader(type);
-    const GLchar* sources[] = {"#version 330\n", source };
-    glShaderSource(shader, 2, sources, NULL);
+//    if (source == NULL)
+//    {
+//        std::cout <<  "Error opening: " << resource << std::endl;
+//        return 0;
+//    }
+//    GLuint shader = glCreateShader(type);
+//    const GLchar* sources[] = {"#version 330\n", source };
+//    glShaderSource(shader, 2, sources, NULL);
 
 
-    glCompileShader(shader);
-    GLint compile_ok = GL_FALSE;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_ok);
-    if (compile_ok == GL_FALSE)
-    {
-        std::cout << "Error building GL shader: " << resource << std::endl;
+//    glCompileShader(shader);
+//    GLint compile_ok = GL_FALSE;
+//    glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_ok);
+//    if (compile_ok == GL_FALSE)
+//    {
+//        std::cout << "Error building GL shader: " << resource << std::endl;
 
-        GLint log_length = 0;
+//        GLint log_length = 0;
 
-        if (glIsShader(shader))
-        {
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
-            char* log = new char[log_length];
+//        if (glIsShader(shader))
+//        {
+//            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
+//            char* log = new char[log_length];
 
-            glGetShaderInfoLog(shader, log_length, NULL, log);
-            std::cout << log << std::endl;
+//            glGetShaderInfoLog(shader, log_length, NULL, log);
+//            std::cout << log << std::endl;
 
-            delete[] log;
-            glDeleteShader(shader);
-        }
-        else
-        {
-            std::cout << "Could not create GL shader: Supplied argument is not a shader!" << std::endl;
-            return 0;
-        }
-        return 0;
-    }
-    return shader;
-}
+//            delete[] log;
+//            glDeleteShader(shader);
+//        }
+//        else
+//        {
+//            std::cout << "Could not create GL shader: Supplied argument is not a shader!" << std::endl;
+//            return 0;
+//        }
+//        return 0;
+//    }
+//    return shader;
+//}
 
-void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function)
-{
-    /* Some hand crafted transfer functions. Only the RGB part is used. The alpha (A) is computed later */
+//void init_tsf(int color_style, int alpha_style, TsfMatrix<double> * transfer_function)
+//{
+//    /* Some hand crafted transfer functions. Only the RGB part is used. The alpha (A) is computed later */
 
-    double buf_hot[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
-        0.7f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.5f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.5f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_hot[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 1.0f,
+//        0.7f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.5f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.5f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_galaxy[32] = {
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.5f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.5f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_galaxy[32] = {
+//        0.0f, 0.0f, 1.0f, 0.0f,
+//        0.0f, 0.0f, 1.0f, 1.0f,
+//        1.0f, 0.0f, 1.0f, 1.0f,
+//        1.0f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.5f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.0f, 1.0f,
+//        1.0f, 1.0f, 0.5f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_hsv[32] = {
-        1.f, 0.f, 0.f, 0.f,
-        1.f, 0.f, 0.f, 1.f,
-        1.f, 0.f, 1.f, 1.f,
-        0.f, 0.f, 1.f, 1.f,
-        0.f, 1.f, 1.f, 1.f,
-        0.f, 1.f, 0.f, 1.f,
-        1.f, 1.f, 0.f, 1.f,
-        1.f, 0.f, 0.f, 1.f,
-        };
+//    double buf_hsv[32] = {
+//        1.f, 0.f, 0.f, 0.f,
+//        1.f, 0.f, 0.f, 1.f,
+//        1.f, 0.f, 1.f, 1.f,
+//        0.f, 0.f, 1.f, 1.f,
+//        0.f, 1.f, 1.f, 1.f,
+//        0.f, 1.f, 0.f, 1.f,
+//        1.f, 1.f, 0.f, 1.f,
+//        1.f, 0.f, 0.f, 1.f,
+//        };
 
-    double buf_binary[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.143f, 0.143f, 0.143f, 1.0f,
-        0.286f, 0.286f, 0.286f, 1.0f,
-        0.429f, 0.429f, 0.429f, 1.0f,
-        0.571f, 0.571f, 0.571f, 1.0f,
-        0.714f, 0.714f, 0.714f, 1.0f,
-        0.857f, 0.857f, 0.857f, 1.0f,
-        1.f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_binary[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.143f, 0.143f, 0.143f, 1.0f,
+//        0.286f, 0.286f, 0.286f, 1.0f,
+//        0.429f, 0.429f, 0.429f, 1.0f,
+//        0.571f, 0.571f, 0.571f, 1.0f,
+//        0.714f, 0.714f, 0.714f, 1.0f,
+//        0.857f, 0.857f, 0.857f, 1.0f,
+//        1.f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_yranib[32] = {
-        1.f, 1.0f, 1.0f, 0.0f,
-        0.857f, 0.857f, 0.857f, 1.0f,
-        0.714f, 0.714f, 0.714f, 1.0f,
-        0.571f, 0.571f, 0.571f, 1.0f,
-        0.429f, 0.429f, 0.429f, 1.0f,
-        0.286f, 0.286f, 0.286f, 1.0f,
-        0.143f, 0.143f, 0.143f, 1.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
-        };
+//    double buf_yranib[32] = {
+//        1.f, 1.0f, 1.0f, 0.0f,
+//        0.857f, 0.857f, 0.857f, 1.0f,
+//        0.714f, 0.714f, 0.714f, 1.0f,
+//        0.571f, 0.571f, 0.571f, 1.0f,
+//        0.429f, 0.429f, 0.429f, 1.0f,
+//        0.286f, 0.286f, 0.286f, 1.0f,
+//        0.143f, 0.143f, 0.143f, 1.0f,
+//        0.0f, 0.0f, 0.0f, 1.0f,
+//        };
 
-    double buf_winter[32] = {
-        0.0f, 1.f, 0.4f, 0.f,
-        0.0f, 1.f, 0.6f, 1.f,
-        0.0f, 0.8f, 0.8f, 1.f,
-        0.0f, 0.6f, 1.f, 1.f,
-        0.0f, 0.4f, 1.f, 1.f,
-        0.0f, 0.2f, 1.f, 1.f,
-        0.0f, 0.1f, 1.f, 1.f,
-        0.0f, 0.0f, 1.f, 1.f,
-        };
+//    double buf_winter[32] = {
+//        0.0f, 1.f, 0.4f, 0.f,
+//        0.0f, 1.f, 0.6f, 1.f,
+//        0.0f, 0.8f, 0.8f, 1.f,
+//        0.0f, 0.6f, 1.f, 1.f,
+//        0.0f, 0.4f, 1.f, 1.f,
+//        0.0f, 0.2f, 1.f, 1.f,
+//        0.0f, 0.1f, 1.f, 1.f,
+//        0.0f, 0.0f, 1.f, 1.f,
+//        };
 
-    double buf_ice[32] = {
-        1.f, 1.f, 1.f, 0.f,
-        1.f, 1.0f, 1.f, 1.f,
-        0.f, 0.9f, 1.f, 1.f,
-        0.f, 0.75f, 1.f, 1.f,
-        0.f, 0.65f, 1.f, 1.f,
-        0.f, 0.525f, 1.f, 1.f,
-        0.f, 0.4f, 1.f, 1.f,
-        0.f, 0.3f, 1.f, 1.f,
-        };
+//    double buf_ice[32] = {
+//        1.f, 1.f, 1.f, 0.f,
+//        1.f, 1.0f, 1.f, 1.f,
+//        0.f, 0.9f, 1.f, 1.f,
+//        0.f, 0.75f, 1.f, 1.f,
+//        0.f, 0.65f, 1.f, 1.f,
+//        0.f, 0.525f, 1.f, 1.f,
+//        0.f, 0.4f, 1.f, 1.f,
+//        0.f, 0.3f, 1.f, 1.f,
+//        };
 
-    double buf_rainbow[32] = {
-        1.f, 0.f, 0.f, 0.f,
-        1.f, 0.f, 0.f, 1.f,
-        1.f, 0.5f, 0.f, 1.f,
-        1.f, 1.f, 0.f, 1.f,
-        0.f, 1.f, 0.f, 1.f,
-        0.f, 0.f, 1.f, 1.f,
-        0.3f, 0.f, 0.6f, 1.f,
-        0.7f, 0.f, 1.0f, 1.f,
-        };
+//    double buf_rainbow[32] = {
+//        1.f, 0.f, 0.f, 0.f,
+//        1.f, 0.f, 0.f, 1.f,
+//        1.f, 0.5f, 0.f, 1.f,
+//        1.f, 1.f, 0.f, 1.f,
+//        0.f, 1.f, 0.f, 1.f,
+//        0.f, 0.f, 1.f, 1.f,
+//        0.3f, 0.f, 0.6f, 1.f,
+//        0.7f, 0.f, 1.0f, 1.f,
+//        };
 
-    double buf_white_contrast[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
-        0.7f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 0.0f, 0.2f, 1.0f,
-        1.0f, 0.0f, 0.7f, 1.0f,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        0.5f, 0.0f, 1.0f, 1.0f,
-        };
+//    double buf_white_contrast[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 1.0f,
+//        0.7f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.0f, 0.0f, 1.0f,
+//        1.0f, 0.0f, 0.2f, 1.0f,
+//        1.0f, 0.0f, 0.7f, 1.0f,
+//        1.0f, 0.0f, 1.0f, 1.0f,
+//        0.5f, 0.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_white[32] = {
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        };
+//    double buf_white[32] = {
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        1.0f, 1.0f, 1.0f, 1.0f,
+//        };
 
-    double buf_black[32] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f,
-        };
+//    double buf_black[32] = {
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        0.0f, 0.0f, 0.0f, 0.0f,
+//        };
 
-    Matrix<double> tmp;
-    switch (color_style)
-    {
-        case 0:
-            tmp.setDeep(8, 4, buf_rainbow);
-            break;
-        case 1:
-            tmp.setDeep(8, 4, buf_hot);
-            break;
-        case 2:
-            tmp.setDeep(8, 4, buf_hsv);
-            break;
-        case 3:
-            tmp.setDeep(8, 4, buf_galaxy);
-            break;
-        case 4:
-            tmp.setDeep(8, 4, buf_binary);
-            break;
-        case 5:
-            tmp.setDeep(8, 4, buf_yranib);
-            break;
-        case 6:
-            tmp.setDeep(8, 4, buf_winter);
-            break;
-        case 7:
-            tmp.setDeep(8, 4, buf_ice);
-            break;
-        case 8:
-            tmp.setDeep(8, 4, buf_white);
-            break;
-        case 9:
-            tmp.setDeep(8, 4, buf_black);
-            break;
-        case 42:
-            tmp.setDeep(8, 4, buf_white_contrast);
-            break;
-        default:
-            tmp.setDeep(8, 4, buf_hot);
-            break;
-    }
+//    Matrix<double> tmp;
+//    switch (color_style)
+//    {
+//        case 0:
+//            tmp.setDeep(8, 4, buf_rainbow);
+//            break;
+//        case 1:
+//            tmp.setDeep(8, 4, buf_hot);
+//            break;
+//        case 2:
+//            tmp.setDeep(8, 4, buf_hsv);
+//            break;
+//        case 3:
+//            tmp.setDeep(8, 4, buf_galaxy);
+//            break;
+//        case 4:
+//            tmp.setDeep(8, 4, buf_binary);
+//            break;
+//        case 5:
+//            tmp.setDeep(8, 4, buf_yranib);
+//            break;
+//        case 6:
+//            tmp.setDeep(8, 4, buf_winter);
+//            break;
+//        case 7:
+//            tmp.setDeep(8, 4, buf_ice);
+//            break;
+//        case 8:
+//            tmp.setDeep(8, 4, buf_white);
+//            break;
+//        case 9:
+//            tmp.setDeep(8, 4, buf_black);
+//            break;
+//        case 42:
+//            tmp.setDeep(8, 4, buf_white_contrast);
+//            break;
+//        default:
+//            tmp.setDeep(8, 4, buf_hot);
+//            break;
+//    }
 
-    // Compute the alpha
-    switch (alpha_style)
-    {
-        case 2:
-            // Uniform alpha except for the first vertex
-            tmp[3] = 0.0;
-            for (int i = 4; i < 32; i+=4)
-            {
-                tmp[i+3] = 1.0;
-            }
-            break;
-        case 0:
-            // Linearly increasing alpha
-            for (int i = 0; i < 32; i+=4)
-            {
-                tmp[i+3] = ((float)i/4)/7.0;
-            }
-            break;
-        case 1:
-            // Exponentially increasing data
-            tmp[3] = 0.0;
-            for (int i = 4; i < 32; i+=4)
-            {
-                tmp[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
-            }
-            break;
-        case 3:
-            // Opaque
-            for (int i = 0; i < 32; i+=4)
-            {
-                tmp[i+3] = 1.0;
-            }
-            break;
-        default:
-            for (int i = 0; i < 32; i+=4)
-            {
-                tmp[i+3] = 1.0;
-            }
-            break;
-    }
+//    // Compute the alpha
+//    switch (alpha_style)
+//    {
+//        case 2:
+//            // Uniform alpha except for the first vertex
+//            tmp[3] = 0.0;
+//            for (int i = 4; i < 32; i+=4)
+//            {
+//                tmp[i+3] = 1.0;
+//            }
+//            break;
+//        case 0:
+//            // Linearly increasing alpha
+//            for (int i = 0; i < 32; i+=4)
+//            {
+//                tmp[i+3] = ((float)i/4)/7.0;
+//            }
+//            break;
+//        case 1:
+//            // Exponentially increasing data
+//            tmp[3] = 0.0;
+//            for (int i = 4; i < 32; i+=4)
+//            {
+//                tmp[i+3] = std::exp(-(1.0 - (float)i/4/7.0)*3.0);
+//            }
+//            break;
+//        case 3:
+//            // Opaque
+//            for (int i = 0; i < 32; i+=4)
+//            {
+//                tmp[i+3] = 1.0;
+//            }
+//            break;
+//        default:
+//            for (int i = 0; i < 32; i+=4)
+//            {
+//                tmp[i+3] = 1.0;
+//            }
+//            break;
+//    }
 
-    transfer_function->setDeep(4, 8, tmp.getColMajor().data());
-    transfer_function->setSpline(256);
-    transfer_function->setPreIntegrated();
+//    transfer_function->setDeep(4, 8, tmp.getColMajor().data());
+//    transfer_function->setSpline(256);
+//    transfer_function->setPreIntegrated();
 
-    //~ tmp.getColMajor().print(2, "The matrix sent to be splined:");
-    //~ transfer_function->getSpline().print(2,"Splined");
-    //~ transfer_function->getPreIntegrated().print(2,"Integrated");
-}
+//    //~ tmp.getColMajor().print(2, "The matrix sent to be splined:");
+//    //~ transfer_function->getSpline().print(2,"Splined");
+//    //~ transfer_function->getPreIntegrated().print(2,"Integrated");
+//}

@@ -39,8 +39,12 @@
 #include <QCheckBox>
 #include <QSlider>
 #include <QList>
+#include <QFileSystemModel>
+#include <QStandardItemModel>
+//#include <QTreeView>
 
-#include "utils/contextgl.h"
+#include "utils/contextcl.h"
+#include "utils/sharedcontext.h"
 #include "utils/texthighlighter.h"
 #include "utils/miniarray.h"
 #include "utils/volumerender.h"
@@ -48,7 +52,8 @@
 #include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
-#include "utils/contextcl.h"
+#include "utils/filetreeview.h"
+
 
 class MainWindow : public QMainWindow
 {
@@ -59,9 +64,23 @@ public:
     ~MainWindow();
 
 
-protected:
-
 private slots:
+    void toggleScriptView();
+
+    void test();
+
+
+    // Toolchain button stuff
+    void anyButtonStart();
+
+    void readScriptButtonFinish();
+    void setFileButtonFinish();
+    void allInOneButtonFinish();
+    void readFileButtonFinish();
+    void projectFileButtonFinish();
+    void voxelizeButtonFinish();
+
+    void takeScreenshot();
     void saveScriptAs();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
@@ -79,13 +98,12 @@ private slots:
     void aboutOpenCL();
     void aboutOpenGL();
 
-    void runReadScript();
+//    void runReadScript();
 
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
     void initializeThreads();
-    void writeLog(QString str);
 
     void setReduceThresholdLow(double value);
     void setReduceThresholdHigh(double value);
@@ -101,13 +119,68 @@ private slots:
     void setDisplayFile(int value);
 
 signals:
+    void testToWindow();
+
     void changedDetector(int value);
     void changedFormat(int value);
     void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
 
 private:
-    ContextCL * contexto;
+    // Header strings
+    QString current_svo_path;
+    QString current_script_path;
+
+    // Buttons
+    QPushButton *allInOneButton;
+    QPushButton *imageForwardButton;
+    QPushButton *imageFastForwardButton;
+    QPushButton *imageBackButton;
+    QPushButton *imageFastBackButton;
+    QPushButton *readScriptButton;
+    QPushButton *setFileButton;
+    QPushButton *readFileButton;
+    QPushButton *projectFileButton;
+    QPushButton *voxelizeButton;
+    QPushButton *saveSvoButton;
+    QPushButton *killButton;
+    QPushButton *functionToggleButton;
+    QPushButton * loadParButton;
+    QPushButton * unitcellButton;
+
+
+    // OpenCL
+    ContextCL * context_cl;
+
+    // QThreads
+    QThread * readScriptThread;
+    QThread * setFileThread;
+    QThread * readFileThread;
+    QThread * projectFileThread;
+    QThread * voxelizeThread;
+    QThread * allInOneThread;
+    QThread * displayFileThread;
+
+    // Workers
+    ReadScriptWorker * readScriptWorker;
+    SetFileWorker * setFileWorker;
+    ReadFileWorker * readFileWorker;
+    ProjectFileWorker * projectFileWorker;
+    AllInOneWorker * allInOneWorker;
+    VoxelizeWorker * voxelizeWorker;
+    DisplayFileWorker * displayFileWorker;
+
+    // Boolean checks
+    bool isInScriptMode;
+
+
+    // File browser
+    QWidget * fileBrowserWidget;
+    QFileSystemModel * fileSystemModel;
+    QStandardItemModel * fileSelectedModel;
+    FileTreeView *fileSystemTree;
+    FileTreeView *fileSelectedTree;
+
 
     int current_svo;
 
@@ -125,6 +198,7 @@ private:
     void initializeMenus();
 
     void initializeEmit();
+
     void readSettings();
     void writeSettings();
     bool maybeSave();
@@ -140,8 +214,8 @@ private:
 
     QLineEdit * hklEdit;
 
-    QPushButton * loadParButton;
-    QPushButton * unitcellButton;
+
+
 
     QLabel * alpha;
     QLabel * beta;
@@ -180,6 +254,7 @@ private:
     QComboBox * tsfComboBox;
     QComboBox * tsfAlphaComboBox;
 
+    QSlider * qualitySlider;
 
     QElapsedTimer timer;
     Highlighter *script_highlighter;
@@ -188,11 +263,6 @@ private:
     QTabWidget *tabWidget;
 
     QAction *scalebarAct;
-    QPushButton *allInOneButton;
-    QPushButton *imageForwardButton;
-    QPushButton *imageFastForwardButton;
-    QPushButton *imageBackButton;
-    QPushButton *imageFastBackButton;
     QSpinBox *imageNumberSpinBox;
     QDockWidget *fileDockWidget;
     QWidget *fileControlsWidget;
@@ -206,13 +276,15 @@ private:
     QWidget *graphicsWidget;
     QWidget *functionWidget;
     QWidget *unitcellWidget;
-    QWidget *scriptWidget;
+    QWidget *setFilesWidget;
     QWidget *viewWidget;
 
 protected:
-    ContextGLWidget * contextGLWidget;
-    VolumeRenderGLWidget *volumeRenderWidget;
-    ImageRenderGLWidget *imageRenderWidget;
+    SharedContextWindow *sharedContextWindow;
+    VolumeRenderWindow *volumeRenderWindow;
+    QWidget *volumeRenderWidget;
+    ImageRenderWindow *imageRenderWindow;
+    QWidget *imageRenderWidget;
 
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;
@@ -222,18 +294,11 @@ protected:
     QString svoDir;
 //    QString scriptDir;
 
-    QPlainTextEdit *textEdit;
+    QPlainTextEdit *scriptTextEdit;
     QPlainTextEdit *errorTextEdit;
     QProgressBar *progressBar;
 
-    QPushButton *readScriptButton;
-    QPushButton *setFilesButton;
-    QPushButton *readFilesButton;
-    QPushButton *projectFilesButton;
-    QPushButton *generateSvoButton;
-    QPushButton *saveSVOButton;
-    QPushButton *killButton;
-    QPushButton *functionToggleButton;
+
 
     QMenuBar * mainMenu;
     QMenu *reduceMenu;
@@ -254,6 +319,7 @@ protected:
     QAction *newAct;
     QAction *openAct;
     QAction *saveAct;
+    QAction *scriptingAct;
     QAction *runScriptAct;
     QAction *saveAsAct;
     QAction *exitAct;
@@ -262,17 +328,16 @@ protected:
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
 
-    QScriptValue rawFilesValue;
+//    QScriptValue rawFilesValue;
     QScriptEngine engine;
     QScriptValue rawFilesQs;
 
     // Utility
-    int verbosity;
 
     // Main resources
     QStringList file_paths;
     QList<PilatusFile> files;
-    QList<PilatusFile> background_files;
+//    QList<PilatusFile> background_files;
     MiniArray<float> reduced_pixels;
 
     // Related to file treatment
@@ -285,22 +350,8 @@ protected:
     int brick_inner_dimension;
     int brick_outer_dimension;
 
-    QThread * setFileThread;
-    QThread * readFileThread;
-    QThread * projectFileThread;
-    QThread * voxelizeThread;
-    QThread * allInOneThread;
-    QThread * displayFileThread;
-
     QGridLayout * mainLayout;
 
     int display_file;
-
-    SetFileWorker * setFileWorker;
-    ReadFileWorker * readFileWorker;
-    ProjectFileWorker * projectFileWorker;
-    AllInOneWorker * allInOneWorker;
-    VoxelizeWorker * voxelizeWorker;
-    DisplayFileWorker * displayFileWorker;
 };
 #endif

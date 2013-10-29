@@ -1,25 +1,11 @@
 <RCC>
     <qresource prefix="/">
-        <file>src/shaders/msaa_hdr.v.glsl</file>
-        <file>src/shaders/msaa_hdr.f.glsl</file>
-        <file>src/shaders/msaa.v.glsl</file>
-        <file>src/shaders/msaa.f.glsl</file>
-        <file>src/shaders/text.v.glsl</file>
-        <file>src/shaders/text.f.glsl</file>
-        <file>src/shaders/blend.v.glsl</file>
-        <file>src/shaders/blend.f.glsl</file>
-        <file>src/shaders/pp_glow.v.glsl</file>
-        <file>src/shaders/pp_glow.f.glsl</file>
+        <file>src/shaders/std_blend.v.glsl</file>
+        <file>src/shaders/std_blend.f.glsl</file>
         <file>src/shaders/std_2d_tex.v.glsl</file>
         <file>src/shaders/std_2d_tex.f.glsl</file>
-        <file>src/shaders/std_2d_color.v.glsl</file>
-        <file>src/shaders/std_2d_color.f.glsl</file>
-        <file>src/shaders/std_3d_tex.v.glsl</file>
-        <file>src/shaders/std_3d_tex.f.glsl</file>
         <file>src/shaders/std_3d_color.v.glsl</file>
         <file>src/shaders/std_3d_color.f.glsl</file>
-        <file>src/kernels/voxelize.cl</file>
-        <file>src/kernels/project.cl</file>
         <file>art/app.png</file>
         <file>src/stylesheets/gosutheme.qss</file>
         <file>art/placeholder.png</file>
@@ -44,6 +30,5 @@
         <file>art/projection.png</file>
         <file>src/stylesheets/plain.qss</file>
         <file>art/scalebar.png</file>
-        <file>src/kernels/render.cl</file>
     </qresource>
 </RCC>

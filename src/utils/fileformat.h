@@ -10,6 +10,7 @@
 #include <limits>
 
 #include <QtGlobal>
+#include <QDebug>
 
 /* GL and CL*/
 #include <CL/opencl.h>
@@ -20,10 +21,12 @@
 #include <QFileInfo>
 
 
-//#include "imagerender.h"
+#include "imagerender.h"
 #include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
+#include "sharedcontext.h"
+#include "contextcl.h"
 
 
 
@@ -35,13 +38,13 @@ class PilatusFile
     public:
         ~PilatusFile();
         PilatusFile();
-        PilatusFile(QString path, cl_context * context, cl_command_queue * queue);
+        PilatusFile(QString path, ContextCL * context);
 
         QString getPath() const;
 
-        int set(QString path, cl_context * context, cl_command_queue * queue);
+        int set(QString path, ContextCL * context);
         int readData();
-        void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
+        void setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex);
         int filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive = true);
         //~int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
 
@@ -60,14 +63,13 @@ class PilatusFile
         void setProjectionKernel(cl_kernel * kernel);
 
     private:
-        void writeLog(QString str);
-
-        cl_mem * alpha_img_clgl;
-        cl_mem * beta_img_clgl;
-        cl_mem * gamma_img_clgl;
-        cl_mem * tsf_img_clgl;
-        cl_command_queue * queue;
-        cl_context * context;
+        ContextCL * context_cl;
+        cl_mem * cl_img_alpha;
+        cl_mem * cl_img_beta;
+        cl_mem * cl_img_gamma;
+        cl_mem * cl_tsf_tex;
+//        cl_command_queue * queue;
+//        cl_context * context;
         cl_kernel * project_kernel;
         cl_int err;
 

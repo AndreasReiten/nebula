@@ -19,24 +19,19 @@ SparseVoxelOcttree::~SparseVoxelOcttree()
 void SparseVoxelOcttree::print()
 {
     std::stringstream ss;
-    ss << "### SparseVoxelOcttree ###\n";
-    ss << "brick_inner_dimension "<< brick_inner_dimension << "\n";
-    ss << "brick_outer_dimension "<< brick_outer_dimension << "\n";
-    ss << "brick_pool_power "<< brick_pool_power << "\n";
-    ss << "levels "<< levels << "\n";
-    ss << "version_major "<< version_major << "\n";
-    ss << "version_minor "<< version_minor << "\n";
-    ss << "filesize "<< filesize << "\n";
-    ss << "index.size() "<< index.size() << "\n";
-    ss << "brick.size() "<< brick.size() << "\n";
-    ss << "pool.size() "<< pool.size() << "\n";
-    ss << "data_histogram.size() "<< data_histogram.size() << "\n";
-    ss << "data_histogram_log.size() "<< data_histogram_log.size() << "\n";
+    ss << std::endl;
+    ss << "____ SparseVoxelOcttree ____" << std::endl;
+    ss << "Brick inner dimension:   "<< brick_inner_dimension << std::endl;
+    ss << "Brick outer dimension:   "<< brick_outer_dimension << std::endl;
+    ss << "Brick pool power:        "<< brick_pool_power << std::endl;
+    ss << "Levels:                  "<< levels << std::endl;
+    ss << "File version:            "<< version_major << "." << version_minor << std::endl;
+    ss << "Index elements:          "<< index.size() << std::endl;
+    ss << "Brick elements:          "<< brick.size() << std::endl;
+    ss << "Pool size:               "<< pool.size() << std::endl;
+    ss << "____________________________\n";
 
-    writeToLogAndPrint(QString(ss.str().c_str()), "riv.log", 1);
-
-    minmax.print(2, "minmax");
-    extent.print(2, "extent");
+    qDebug() << ss.str().c_str();
 }
 
 

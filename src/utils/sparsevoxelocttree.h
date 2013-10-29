@@ -9,6 +9,7 @@
 #include <QDataStream>
 #include <QVector>
 #include <QString>
+#include <QDebug>
 
 #include "miniarray.h"
 #include "tools.h"

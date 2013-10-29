@@ -3,6 +3,7 @@
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
 
+
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
 /***
  *        dBBBBb dBBBBBb  .dBBBBP   dBBBP     dBBBP  dBP dBBBBBb  .dBBBBP.dBBBBP
@@ -13,11 +14,9 @@ static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
  *
  */
 BaseWorker::BaseWorker()
+    : isCLInitialized(false)
 {
-    verbosity = 1;
-
     this->isCLInitialized = false;
-    this->verbosity = verbosity;
 }
 
 BaseWorker::~BaseWorker()
@@ -25,17 +24,9 @@ BaseWorker::~BaseWorker()
 
 }
 
-void BaseWorker::writeLog(QString str)
+void BaseWorker::setOpenCLContext(ContextCL * context)
 {
-    writeToLogAndPrint(str.toStdString().c_str(), "riv.log", 1);
-}
-
-void BaseWorker::setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue)
-{
-
-    this->device = device;
-    this->context = context;
-    this->queue = queue;
+    this->context_cl = context;
 }
 
 void BaseWorker::setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl)
@@ -103,6 +94,89 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 }
 
 
+
+ReadScriptWorker::ReadScriptWorker()
+{
+
+}
+
+ReadScriptWorker::~ReadScriptWorker()
+{
+
+}
+
+void ReadScriptWorker::setScriptEngine(QScriptEngine * engine)
+{
+    this->engine = engine;
+}
+
+void ReadScriptWorker::setInput(QPlainTextEdit * widget)
+{
+    this->inputWidget = widget;
+}
+
+void ReadScriptWorker::process()
+{
+    kill_flag = false;
+
+    // Set the corresponding tab
+    emit changedTabWidget(0);
+    emit changedFormatGenericProgress(QString("Progress: %p%"));
+
+    // Evaluate the script input
+    engine->evaluate("var files = [];");
+    engine->evaluate(inputWidget->toPlainText());
+
+    // Handle exceptions
+    if (engine->hasUncaughtException() == true)
+    {
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Script error: Uncaught exception in line " + QString::number(engine->uncaughtExceptionLineNumber()) + "\n["+QString(this->metaObject()->className())+"] " + engine->uncaughtException().toString());
+    }
+    else
+    {
+        // Store evaluated file paths in a list
+        *file_paths = engine->globalObject().property("files").toVariant().toStringList();
+        int n = file_paths->removeDuplicates();
+        emit changedMessageString( "\n["+QString(this->metaObject()->className())+"] Script ran successfully and could register "+QString::number(file_paths->size())+" files...");
+
+        if (n > 0) emit changedMessageString( "\n["+QString(this->metaObject()->className())+"] Removed "+QString::number(n)+" duplicates...");
+
+        size_t n_files = file_paths->size();
+
+        for (int i = 0; i < file_paths->size(); i++)
+        {
+            if (kill_flag)
+            {
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"]  Warning: process killed after finding "+QString::number(i)+" files");
+                file_paths->clear();
+                break;
+            }
+
+            if(i >= file_paths->size()) break;
+
+            QString fileName = file_paths->at(i);
+
+            QFileInfo curFile(fileName);
+
+            if (!curFile.exists())
+            {
+                emit changedMessageString( "\n["+QString(this->metaObject()->className())+"]  Warning: \"" + fileName + "\" - missing or no access!");
+                file_paths->removeAt(i);
+                i--;
+            }
+
+            // Update the progress bar
+            if (file_paths->size() > 0) emit changedGenericProgress(100*(i+1)/file_paths->size());
+        }
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths->size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths->size())+"  missing or no access)");
+    }
+
+    emit maxFramesChanged(file_paths->size()-1);
+
+    emit finished();
+}
+
+
 /***
  *      .dBBBBP   dBBBP dBBBBBBP
  *      BP
@@ -114,10 +188,7 @@ void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
 
 SetFileWorker::SetFileWorker()
 {
-    verbosity = 1;
-
     this->isCLInitialized = false;
-    this->verbosity = verbosity;
 }
 
 SetFileWorker::~SetFileWorker()
@@ -127,15 +198,13 @@ SetFileWorker::~SetFileWorker()
 
 void SetFileWorker::process()
 {
-
-
     QCoreApplication::processEvents();
     kill_flag = false;
 
     if (file_paths->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Error: No paths specified!");
-        emit writeLog(str);
+
         emit changedMessageString(str);
         kill_flag = true;
     }
@@ -143,12 +212,6 @@ void SetFileWorker::process()
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Setting "+QString::number(file_paths->size())+" files (headers etc.)...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
-    emit enableSetFileButton(false);
-    emit enableReadFileButton(false);
-    emit enableProjectFileButton(false);
-    emit enableVoxelizeButton(false);
-    emit enableAllInOneButton(false);
-    emit showGenericProgressBar(true);
     emit changedTabWidget(0);
 
     // Reset suggested values
@@ -166,11 +229,10 @@ void SetFileWorker::process()
     for (size_t i = 0; i < (size_t) file_paths->size(); i++)
     {
         // Kill process if requested
-        //--QCoreApplication::processEvents();
         if (kill_flag)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
-            emit writeLog(str);
+
             emit changedMessageString(str);
             files->clear();
 
@@ -179,7 +241,7 @@ void SetFileWorker::process()
 
         // Set file and get status
         files->append(PilatusFile());
-        int STATUS_OK = files->back().set(file_paths->at(i), context, queue);
+        int STATUS_OK = files->back().set(file_paths->at(i), context_cl);
         files->back().setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
         if (STATUS_OK)
         {
@@ -201,16 +263,8 @@ void SetFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-    emit enableSetFileButton(true);
-    emit enableAllInOneButton(true);
-    emit showGenericProgressBar(false);
-
     if (!kill_flag)
     {
-        emit enableReadFileButton(true);
-        emit enableProjectFileButton(false);
-        emit enableVoxelizeButton(false);
-
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
 
         // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
@@ -241,10 +295,7 @@ void SetFileWorker::process()
 
 ReadFileWorker::ReadFileWorker()
 {
-    verbosity = 1;
-
     this->isCLInitialized = false;
-    this->verbosity = verbosity;
 }
 
 ReadFileWorker::~ReadFileWorker()
@@ -260,8 +311,7 @@ void ReadFileWorker::process()
 
     if (files->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Error: No files specified!");
-        emit writeLog(str);
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No files specified!");
         emit changedMessageString(str);
         kill_flag = true;
     }
@@ -269,12 +319,12 @@ void ReadFileWorker::process()
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Reading "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
-    emit enableSetFileButton(false);
-    emit enableReadFileButton(false);
-    emit enableProjectFileButton(false);
-    emit enableVoxelizeButton(false);
-    emit enableAllInOneButton(false);
-    emit showGenericProgressBar(true);
+//    emit enableSetFileButton(false);
+//    emit enableReadFileButton(false);
+//    emit enableProjectFileButton(false);
+//    emit enableVoxelizeButton(false);
+//    emit enableAllInOneButton(false);
+//    emit showGenericProgressBar(true);
     emit changedTabWidget(1);
 
 
@@ -289,8 +339,7 @@ void ReadFileWorker::process()
         //--QCoreApplication::processEvents();
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
-            emit writeLog(str);
+            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
             emit changedMessageString(str);
             break;
         }
@@ -300,8 +349,8 @@ void ReadFileWorker::process()
         size_raw += (*files)[i].getBytes();
         if (!STATUS_OK)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Error: could not read \""+files->at(i).getPath()+"\"");
-            emit writeLog(str);
+            QString str("\n["+QString(this->metaObject()->className())+"] Warning: could not read \""+files->at(i).getPath()+"\"");
+
             emit changedMessageString(str);
 
             kill_flag = true;
@@ -312,17 +361,8 @@ void ReadFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-    emit enableSetFileButton(true);
-    emit enableReadFileButton(true);
-    emit enableAllInOneButton(true);
-    emit showGenericProgressBar(false);
-
     if (!kill_flag)
     {
-        emit enableProjectFileButton(true);
-        emit enableVoxelizeButton(false);
-        emit enableAllInOneButton(true);
-
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
     }
 
@@ -341,10 +381,7 @@ void ReadFileWorker::process()
 
 ProjectFileWorker::ProjectFileWorker()
 {
-    verbosity = 1;
-
     this->isCLInitialized = false;
-    this->verbosity = verbosity;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
@@ -355,54 +392,18 @@ ProjectFileWorker::~ProjectFileWorker()
 
 void ProjectFileWorker::initializeCLKernel()
 {
+    Matrix<const char *> paths(1,1);
+    paths[0] = "cl_kernels/project.cl";
 
-    // Program
-//    QByteArray qsrc = open_resource(":/src/kernels/project.cl");
-    QByteArray qsrc = openFile("kernels/project.cl");
-    const char * src = qsrc.data();
-    size_t src_length = strlen(src);
+    program = context_cl->createProgram(&paths, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
-    if (err != CL_SUCCESS)
-    {
-        QString str("Error in "+QString(this->metaObject()->className())+": Could not create program from source: "+QString(cl_error_cstring(err)));
-        //~std::cout << str.toStdString().c_str() << std::endl;
-        emit writeLog(str);
-        return;
-    }
-    // Compile kernel
-    const char * options = "-cl-mad-enable -Werror";
-    err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        // Compile log
-        char* build_log;
-        size_t log_size;
-        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-        build_log = new char[log_size+1];
-        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
-        build_log[log_size] = '\0';
+    context_cl->buildProgram(&program, "-Werror");
 
-        QString str("Error in "+QString(this->metaObject()->className())+
-            ": Could not compile/link program: "+
-            QString(cl_error_cstring(err))+
-            "\n--- START KERNEL COMPILE LOG ---\n"+
-            QString(build_log)+
-            "\n---  END KERNEL COMPILE LOG  ---");
-        emit writeLog(str);
-        delete[] build_log;
-        return;
-    }
 
-    // Entry point
+    // Kernel handles
     project_kernel = clCreateKernel(program, "FRAME_FILTER", &err);
-    if (err != CL_SUCCESS)
-    {
-        QString str("Error in "+QString(this->metaObject()->className())+": Could not create kernel object: "+QString(cl_error_cstring(err)));
-        //~std::cout << str.toStdString().c_str() << std::endl;
-        emit writeLog(str);
-        return;
-    }
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isCLInitialized = true;
 }
@@ -411,15 +412,12 @@ void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
 
-
-
-
     QCoreApplication::processEvents();
 
     if (files->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Error: No files specified!");
-        emit writeLog(str);
+
         emit changedMessageString(str);
 
         kill_flag = true;
@@ -428,12 +426,6 @@ void ProjectFileWorker::process()
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Correcting and Projecting "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
-    emit enableSetFileButton(false);
-    emit enableReadFileButton(false);
-    emit enableProjectFileButton(false);
-    emit enableVoxelizeButton(false);
-    emit enableAllInOneButton(false);
-    emit showGenericProgressBar(true);
 
     Matrix<float> test_background;
 
@@ -445,18 +437,15 @@ void ProjectFileWorker::process()
     kill_flag = false;
 
     size_t n = 0;
-    if (verbosity == 1) writeLog("["+QString(this->metaObject()->className())+"] Line "+QString::number(__LINE__)+"] Line "+QString::number((REDUCED_PIXELS_MAX_BYTES/sizeof(float))));
-    std::cout << "RESERVING for reduced_pixels: " << REDUCED_PIXELS_MAX_BYTES/sizeof(float) << std::endl;
     reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
-        //--QCoreApplication::processEvents();
         if (kill_flag)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
-            emit writeLog(str);
+
             emit changedMessageString(str);
             break;
         }
@@ -471,24 +460,39 @@ void ProjectFileWorker::process()
         }
         else
         {
+//            qDebug() << "New measurements ------";
+//            QElapsedTimer timer;
+//            timer.start();
+//            emit testToWindow();
+//            qDebug() << timer.restart() << " (this->main->window)";
+//            emit testToMain();
+//            qDebug() << timer.restart() << " (this->window)";
 
-            emit changedImageWidth(files->at(i).getWidth());
-            emit changedImageHeight(files->at(i).getHeight());
+            emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
+//            qDebug() << timer.restart() << " First signal sent";
 
             (*files)[i].setProjectionKernel(&project_kernel);
+//            qDebug() << timer.restart();
 
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
+//            qDebug() << timer.restart();
 
             emit aquireSharedBuffers();
+//            qDebug() << timer.restart()<< " (Before launch)" << " Second signal sent";
 
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
+//            qDebug() << timer.restart()<< " (After launch)";
 
             emit releaseSharedBuffers();
+//            qDebug() << timer.restart() << " Third signal sent";
+
+            emit updateRequest();
+//            qDebug() << timer.restart() << " Update signal sent";
 
 
             if (STATUS_OK)
             {
-                emit repaintImageWidget();
+//                emit repaintImageWidget();
                 //--QCoreApplication::processEvents();
             }
             else
@@ -496,7 +500,7 @@ void ProjectFileWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
-
+//            qDebug() << timer.restart();
         }
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/files->size());
@@ -554,17 +558,8 @@ void ProjectFileWorker::process()
         }
     }
 
-
-    emit enableSetFileButton(true);
-    emit enableReadFileButton(true);
-    emit enableAllInOneButton(true);
-    emit enableProjectFileButton(true);
-    emit showGenericProgressBar(false);
-
     if (!kill_flag)
     {
-        emit enableVoxelizeButton(true);
-
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
     }
 
@@ -585,10 +580,7 @@ void ProjectFileWorker::process()
 
 AllInOneWorker::AllInOneWorker()
 {
-    verbosity = 1;
-
     this->isCLInitialized = false;
-    this->verbosity = verbosity;
 }
 
 AllInOneWorker::~AllInOneWorker()
@@ -604,7 +596,7 @@ void AllInOneWorker::process()
     if (file_paths->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Error: No paths specified!");
-        emit writeLog(str);
+
         emit changedMessageString(str);
         kill_flag = true;
     }
@@ -612,12 +604,12 @@ void AllInOneWorker::process()
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Treating "+QString::number(file_paths->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
-    emit enableSetFileButton(false);
-    emit enableReadFileButton(false);
-    emit enableProjectFileButton(false);
-    emit enableVoxelizeButton(false);
-    emit enableAllInOneButton(false);
-    emit showGenericProgressBar(true);
+//    emit enableSetFileButton(false);
+//    emit enableReadFileButton(false);
+//    emit enableProjectFileButton(false);
+//    emit enableVoxelizeButton(false);
+//    emit enableAllInOneButton(false);
+//    emit showGenericProgressBar(true);
     emit changedTabWidget(1);
 
     // Parameters for Ewald's projection
@@ -642,9 +634,9 @@ void AllInOneWorker::process()
         if (kill_flag)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
-            emit writeLog(str);
+
             emit changedMessageString(str);
-            std::cout << "CLEARING for reduced_pixels" << std::endl;
+//            std::cout << "CLEARING for reduced_pixels" << std::endl;
             reduced_pixels->clear();
 
             break;
@@ -652,7 +644,7 @@ void AllInOneWorker::process()
 
         // Set file and get status
         PilatusFile file;
-        int STATUS_OK = file.set(file_paths->at(i), context, queue);
+        int STATUS_OK = file.set(file_paths->at(i), context_cl);
         file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
 
         if (STATUS_OK)
@@ -672,17 +664,19 @@ void AllInOneWorker::process()
                 }
                 else
                 {
-                    emit changedImageWidth(file.getWidth());
-                    emit changedImageHeight(file.getHeight());
+                    emit changedImageSize(file.getWidth(), file.getHeight());
+
                     file.setProjectionKernel(&project_kernel);
                     file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 
                     emit aquireSharedBuffers();
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
                     emit releaseSharedBuffers();
+                    emit updateRequest();
+
                     if (STATUS_OK)
                     {
-                        emit repaintImageWidget();
+//                        emit repaintImageWidget();
 
                         // Get suggestions on the minimum search radius that can safely be applied during interpolation
                         if ((*suggested_search_radius_low) > file.getSearchRadiusLowSuggestion()) (*suggested_search_radius_low) = file.getSearchRadiusLowSuggestion();
@@ -703,7 +697,7 @@ void AllInOneWorker::process()
             else if (!STATUS_OK)
             {
                 QString str("\n["+QString(this->metaObject()->className())+"] Error: could not read \""+files->at(i).getPath()+"\"");
-                emit writeLog(str);
+
                 emit changedMessageString(str);
 
                 kill_flag = true;
@@ -721,17 +715,8 @@ void AllInOneWorker::process()
 
     size_t t = stopwatch.restart();
 
-
-    emit enableSetFileButton(true);
-    emit enableAllInOneButton(true);
-    emit showGenericProgressBar(false);
-
     if (!kill_flag)
     {
-        emit enableReadFileButton(false);
-        emit enableProjectFileButton(false);
-        emit enableVoxelizeButton(true);
-
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
@@ -766,17 +751,12 @@ void AllInOneWorker::process()
 
 VoxelizeWorker::VoxelizeWorker()
 {
-    verbosity = 1;
-
     this->isCLInitialized = false;
-    this->verbosity = verbosity;
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-
-
-    if (isCLInitialized && voxelize_kernel) clReleaseKernel(voxelize_kernel);
+    if (isCLInitialized) clReleaseKernel(voxelize_kernel);
 }
 
 unsigned int VoxelizeWorker::getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child)
@@ -791,52 +771,18 @@ unsigned int VoxelizeWorker::getOctBrick(unsigned int poolX, unsigned int poolY,
 
 void VoxelizeWorker::initializeCLKernel()
 {
+    Matrix<const char *> paths(1,1);
+    paths[0] = "cl_kernels/voxelize.cl";
+
+    program = context_cl->createProgram(&paths, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    context_cl->buildProgram(&program, "-Werror");
 
 
-    // Crate the program
-//    QByteArray qsrc = open_resource(":/src/kernels/voxelize.cl");
-    QByteArray qsrc = openFile("kernels/voxelize.cl");
-    const char * src = qsrc.data();
-    size_t src_length = strlen(src);
-
-    program = clCreateProgramWithSource((*context), 1, (const char **)&src, &src_length, &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        return;
-    }
-
-    // Compile kernel
-    const char * options = "-cl-mad-enable -Werror";
-    err = clBuildProgram(program, 1, &device->device_id, options, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        // Compile log
-        char* build_log;
-        size_t log_size;
-        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-        build_log = new char[log_size+1];
-        clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
-        build_log[log_size] = '\0';
-
-        QString str("Error in "+QString(this->metaObject()->className())+
-            ": Could not compile/link program: "+
-            QString(cl_error_cstring(err))+
-            "\n--- START KERNEL COMPILE LOG ---\n"+
-            QString(build_log)+
-            "\n---  END KERNEL COMPILE LOG  ---");
-        emit writeLog(str);
-        delete[] build_log;
-        return;
-    }
-
-    // Entry point
+    // Kernel handles
     voxelize_kernel = clCreateKernel(program, "voxelize", &err);
-    if (err != CL_SUCCESS)
-    {
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        return;
-    }
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isCLInitialized = true;
 }
@@ -849,8 +795,7 @@ void VoxelizeWorker::process()
 
     if (reduced_pixels->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Error: No data available!");
-        emit writeLog(str);
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No data available!");
         emit changedMessageString(str);
         kill_flag = true;
     }
@@ -858,12 +803,6 @@ void VoxelizeWorker::process()
     {
         // Emit to appropriate slots
         emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"]"+QString(" Creating Interpolation Data Structure: %p%"));
-        emit enableSetFileButton(false);
-        emit enableReadFileButton(false);
-        emit enableProjectFileButton(false);
-        emit enableVoxelizeButton(false);
-        emit enableAllInOneButton(false);
-        emit showGenericProgressBar(true);
 
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Generating Sparse Voxel Octtree "+QString::number(svo->getLevels())+" levels deep.");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] The source data is "+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB");
@@ -888,60 +827,48 @@ void VoxelizeWorker::process()
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
-        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": svo->pool.bytes() "+QString::number(svo->pool.bytes())+" "+QString::number(pool_dimension[0])+" "+QString::number(pool_dimension[1])+" "+QString::number(pool_dimension[2]));
-        cl_mem pool_cl = clCreateBuffer((*context),
+        cl_mem pool_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
             svo->pool.bytes(),
             svo->pool.data(),
             &err);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         svo->pool.clear();
 
         // Other CL buffers
-        cl_mem items_cl =  clCreateBuffer((*context),
+        cl_mem items_cl =  clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             1024*2*2*2*2*2*2*2*16,
             NULL,
             &err);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
-        cl_mem brick_extent_cl =  clCreateBuffer((*context),
+        cl_mem brick_extent_cl =  clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             6*sizeof(float),
             NULL,
             &err);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
         err = clSetKernelArg( voxelize_kernel, 0, sizeof(cl_mem), (void *) &items_cl);
         err |= clSetKernelArg( voxelize_kernel, 1, sizeof(cl_mem), (void *) &brick_extent_cl);
         err |= clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int4), pool_dimension.data());
         err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_mem), (void *) &pool_cl);
-        if (err != CL_SUCCESS)
-        {
-            writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-        }
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
+        root.setContextCL(context_cl);
 
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
             if (kill_flag)
             {
                 QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(reduced_pixels->size()/4)+"!");
-                emit writeLog(str);
+
                 emit changedMessageString(str);
                 break;
             }
@@ -966,6 +893,10 @@ void VoxelizeWorker::process()
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
 
+
+                qDebug() << "Level " << lvl;
+
+
                 size_t cpu_counter = 0;
                 size_t gpu_counter = 0;
 
@@ -979,17 +910,13 @@ void VoxelizeWorker::process()
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
                 double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
-
                 // For each node
                 size_t iter = 0;
                 for (size_t i = 0; i < nodes[lvl]; i++)
                 {
-
-
                     if((non_empty_node_counter+1) >= n_max_bricks)
                     {
                         QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed due to memory overflow. The dataset has grown too large! ("+QString::number(non_empty_node_counter*n_points_brick*sizeof(cl_float)/1e6, 'g', 3)+" MB)");
-                        emit writeLog(str);
                         emit changedMessageString(str);
                         kill_flag = true;
                     }
@@ -1015,25 +942,21 @@ void VoxelizeWorker::process()
                     brick_extent[5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
 
                     // Set brick-specific arguments
-                    err = clEnqueueWriteBuffer((*queue),
+                    err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
                         brick_extent_cl ,
                         CL_TRUE,
                         0,
                         brick_extent.toFloat().bytes(),
                         brick_extent.toFloat().data(),
                         0, NULL, NULL);
-                    if (err != CL_SUCCESS)
-                    {
-                        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));
-                    }
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
                     err = clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), (void *) &non_empty_node_counter );
-                    if (err != CL_SUCCESS)
-                    {
-                        writeLog("[!]["+QString(this->metaObject()->className())+"] "+Q_FUNC_INFO+": Error before line "+QString::number(__LINE__)+": "+QString(cl_error_cstring(err)));;
-                    }
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-                    // Calculate the brick data
+                    // Calculate the brick data // Next step really slow on Windows
+
+                    qDebug() << context_cl->getContext();
                     int isEmpty = root.getBrick(
                         &brick_extent,
                         search_radius,
@@ -1042,12 +965,9 @@ void VoxelizeWorker::process()
                         &items_cl,
                         &pool_cl,
                         &voxelize_kernel,
-                        queue,
                         &method,
-                        context,
                         non_empty_node_counter,
                         svo->getBrickPoolPower());
-
 
                     if (method == 0) gpu_counter++;
                     if (method == 1) cpu_counter++;
@@ -1080,12 +1000,11 @@ void VoxelizeWorker::process()
                     }
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
                 }
-
                 if (kill_flag)
                 {
 
                     QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(lvl)+" of "+QString::number(svo->getLevels())+"!");
-                    emit writeLog(str);
+
                     emit changedMessageString(str);
                     break;
                 }
@@ -1094,7 +1013,6 @@ void VoxelizeWorker::process()
 
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
-
                 //~if (cpu_counter+gpu_counter > 0) std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
 
@@ -1114,23 +1032,19 @@ void VoxelizeWorker::process()
                 }
 
                 // Round up to the lowest number of bricks that is multiple of the brick pool dimensions. Use this value to reserve data for the data pool
-
                 unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
 
                 // Read results
                 svo->pool.reserve(non_empty_node_counter_rounded_up*n_points_brick);
 
-                err = clEnqueueReadBuffer ( *queue,
+                err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
                     pool_cl,
                     CL_TRUE,
                     0,
                     svo->pool.bytes(),
                     svo->pool.data(),
                     0, NULL, NULL);
-                if (err != CL_SUCCESS)
-                {
-                    writeLog("[!][SearchNode] Error before line "+QString::number(__LINE__)+":"+QString(cl_error_cstring(err)));
-                }
+                if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
             }
 
             //~std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
@@ -1149,14 +1063,6 @@ void VoxelizeWorker::process()
         clReleaseMemObject(pool_cl);
     }
 
-    emit enableSetFileButton(true);
-    emit enableReadFileButton(true);
-    emit enableAllInOneButton(true);
-    emit enableProjectFileButton(true);
-    emit enableVoxelizeButton(true);
-    emit enableAllInOneButton(true);
-    emit showGenericProgressBar(false);
-
     emit finished();
 }
 
@@ -1173,10 +1079,7 @@ void VoxelizeWorker::process()
 
 DisplayFileWorker::DisplayFileWorker()
 {
-    verbosity = 1;
-
     this->isCLInitialized = false;
-    this->verbosity = verbosity;
     test_background.set(1475, 1679, 0.0);
 }
 
@@ -1197,15 +1100,16 @@ void DisplayFileWorker::process()
 
     PilatusFile file;
 
-    int STATUS_OK = file.set(file_paths->at(display_file), context, queue);
+    int STATUS_OK = file.set(file_paths->at(display_file), context_cl);
     if (STATUS_OK)
     {
         file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
         STATUS_OK = file.readData();
         if (STATUS_OK)
         {
-            emit changedImageWidth(file.getWidth());
-            emit changedImageHeight(file.getHeight());
+//            emit changedImageWidth(file.getWidth());
+//            emit changedImageHeight(file.getHeight());
+            emit changedImageSize(file.getWidth(), file.getHeight());
             file.setProjectionKernel(&project_kernel);
             file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 
@@ -1213,10 +1117,10 @@ void DisplayFileWorker::process()
             emit aquireSharedBuffers();
             STATUS_OK = file.filterData( &n, NULL, *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high, 0);
             emit releaseSharedBuffers();
-            if (STATUS_OK)
-            {
-                emit repaintImageWidget();
-            }
+//            if (STATUS_OK)
+//            {
+////                semit repaintImageWidget();
+//            }
         }
     }
     emit finished();

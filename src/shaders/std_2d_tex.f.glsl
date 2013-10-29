@@ -1,8 +1,7 @@
-uniform sampler2D texy;
-in vec2 f_texpos;
-out vec4 fcolor;
+uniform highp sampler2D texture;
+varying highp vec2 f_texpos;
 
-void main(void) 
+void main(void)
 {
-    fcolor = texture2D(texy, f_texpos);
+    gl_FragColor = texture2D(texture, f_texpos);
 }

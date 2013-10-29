@@ -14,13 +14,9 @@
 
 
 /* GL and CL */
-#ifdef Q_OS_WIN
-    #define GLEW_STATIC
-#endif
 #include <CL/opencl.h>
 
 /* QT */
-#include <QCoreApplication>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QObject>
@@ -28,6 +24,8 @@
 #include <QStringList>
 #include <QByteArray>
 #include <QDateTime>
+#include <QScriptEngine>
+#include <QPlainTextEdit>
 
 /* Project files */
 #include "tools.h"
@@ -38,6 +36,7 @@
 #include "searchnode.h"
 #include "bricknode.h"
 #include "sparsevoxelocttree.h"
+#include "contextcl.h"
 
 class BaseWorker : public QObject
 {
@@ -51,9 +50,20 @@ class BaseWorker : public QObject
         void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
         void setFiles(QList<PilatusFile> * files);
         void setReducedPixels(MiniArray<float> * reduced_pixels);
-        void setOpenCLContext(cl_device * device, cl_context * context, cl_command_queue * queue);
+        void setOpenCLContext(ContextCL * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
+
+    signals:
+        void finished();
+        void abort();
+        void changedMessageString(QString str);
+        void changedGenericProgress(int value);
+        void changedFormatGenericProgress(QString str);
+        void changedTabWidget(int value);
+//        void repaintImageWidget();
+        void aquireSharedBuffers();
+        void releaseSharedBuffers();
 
     public slots:
         void killProcess();
@@ -62,48 +72,27 @@ class BaseWorker : public QObject
         void setProjectThresholdLow(float * value);
         void setProjectThresholdHigh(float * value);
 
-    signals:
-        void finished();
-        void abort();
-        void changedMessageString(QString str);
-        void changedGenericProgress(int value);
-        void changedFormatGenericProgress(QString str);
-        void enableSetFileButton(bool value);
-        void enableReadFileButton(bool value);
-        void enableProjectFileButton(bool value);
-        void enableVoxelizeButton(bool value);
-        void enableAllInOneButton(bool value);
-        void showGenericProgressBar(bool value);
-        void changedTabWidget(int value);
-        void repaintImageWidget();
-        void aquireSharedBuffers();
-        void releaseSharedBuffers();
-
     protected:
-        // Related to the runtime
+        // Runtime
         bool kill_flag;
-        int verbosity;
-        void writeLog(QString str);
 
-        // Related to OpenCL
+        // OpenCL
+        ContextCL * context_cl;
         cl_mem * alpha_img_clgl;
         cl_mem * beta_img_clgl;
         cl_mem * gamma_img_clgl;
         cl_mem * tsf_img_clgl;
-        cl_device * device;
-        cl_context * context;
-        cl_command_queue * queue;
         cl_int err;
         cl_program program;
         bool isCLInitialized;
 
-        // Related to Voxelize
+        // Voxelize
         SparseVoxelOcttree * svo;
         float * suggested_search_radius_low;
         float * suggested_search_radius_high;
         float * suggested_q;
 
-        // Related to file treatment
+        // File treatment
         float * threshold_reduce_low;
         float * threshold_reduce_high;
         float * threshold_project_low;
@@ -112,6 +101,29 @@ class BaseWorker : public QObject
         QList<PilatusFile> * files;
         QList<PilatusFile> * background_files;
         MiniArray<float> * reduced_pixels;
+};
+
+class ReadScriptWorker : public BaseWorker
+{
+    Q_OBJECT
+
+    public:
+        ReadScriptWorker();
+        ~ReadScriptWorker();
+
+        void setScriptEngine(QScriptEngine * engine);
+        void setInput(QPlainTextEdit * widget);
+
+    signals:
+        void maxFramesChanged(int value);
+
+    private slots:
+        void process();
+
+    private:
+        QScriptEngine * engine;
+        QPlainTextEdit * inputWidget;
+        // add your variables here
 };
 
 
@@ -156,8 +168,12 @@ class ProjectFileWorker : public BaseWorker
         ~ProjectFileWorker();
 
     signals:
-        void changedImageWidth(int value);
-        void changedImageHeight(int value);
+//        void changedImageWidth(int value);
+//        void changedImageHeight(int value);
+        void changedImageSize(int w, int h);
+        void testToWindow();
+        void testToMain();
+        void updateRequest();
 
     public slots:
         void initializeCLKernel();
