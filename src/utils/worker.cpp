@@ -24,7 +24,7 @@ BaseWorker::~BaseWorker()
 
 }
 
-void BaseWorker::setOpenCLContext(ContextCL * context)
+void BaseWorker::setOpenCLContext(OpenCLContext * context)
 {
     this->context_cl = context;
 }
@@ -411,7 +411,7 @@ void ProjectFileWorker::initializeCLKernel()
 void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
-
+    qDebug();
     QCoreApplication::processEvents();
 
     if (files->size() <= 0)
@@ -422,7 +422,7 @@ void ProjectFileWorker::process()
 
         kill_flag = true;
     }
-
+    qDebug();
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Correcting and Projecting "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
@@ -433,12 +433,12 @@ void ProjectFileWorker::process()
 
     QElapsedTimer stopwatch;
     stopwatch.start();
-
+    qDebug();
     kill_flag = false;
 
     size_t n = 0;
     reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
-
+    qDebug();
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
@@ -460,6 +460,7 @@ void ProjectFileWorker::process()
         }
         else
         {
+            qDebug();
 //            qDebug() << "New measurements ------";
 //            QElapsedTimer timer;
 //            timer.start();
@@ -467,28 +468,28 @@ void ProjectFileWorker::process()
 //            qDebug() << timer.restart() << " (this->main->window)";
 //            emit testToMain();
 //            qDebug() << timer.restart() << " (this->window)";
-
+            qDebug();
             emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
 //            qDebug() << timer.restart() << " First signal sent";
-
+            qDebug();
             (*files)[i].setProjectionKernel(&project_kernel);
 //            qDebug() << timer.restart();
-
+            qDebug();
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
 //            qDebug() << timer.restart();
-
-            emit aquireSharedBuffers();
+            qDebug();
+//            emit aquireSharedBuffers();
 //            qDebug() << timer.restart()<< " (Before launch)" << " Second signal sent";
-
+            qDebug();
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
 //            qDebug() << timer.restart()<< " (After launch)";
-
-            emit releaseSharedBuffers();
+            qDebug();
+//            emit releaseSharedBuffers();
 //            qDebug() << timer.restart() << " Third signal sent";
 
             emit updateRequest();
 //            qDebug() << timer.restart() << " Update signal sent";
-
+            qDebug();
 
             if (STATUS_OK)
             {
@@ -508,7 +509,7 @@ void ProjectFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-    std::cout << "RESIZING for reduced_pixels: " << n << std::endl;
+//    std::cout << "RESIZING for reduced_pixels: " << n << std::endl;
     reduced_pixels->resize(n);
 
     /* Create dummy dataset for debugging purposes.
@@ -669,9 +670,9 @@ void AllInOneWorker::process()
                     file.setProjectionKernel(&project_kernel);
                     file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 
-                    emit aquireSharedBuffers();
+//                    emit aquireSharedBuffers();
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
-                    emit releaseSharedBuffers();
+//                    emit releaseSharedBuffers();
                     emit updateRequest();
 
                     if (STATUS_OK)
@@ -861,7 +862,7 @@ void VoxelizeWorker::process()
 
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
-        root.setContextCL(context_cl);
+        root.setOpenCLContext(context_cl);
 
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
@@ -1114,12 +1115,12 @@ void DisplayFileWorker::process()
             file.setBackground(&test_background, file.getFlux(), file.getExpTime());
 
             size_t n;
-            emit aquireSharedBuffers();
+//            emit aquireSharedBuffers();
             STATUS_OK = file.filterData( &n, NULL, *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high, 0);
-            emit releaseSharedBuffers();
+//            emit releaseSharedBuffers();
 //            if (STATUS_OK)
 //            {
-////                semit repaintImageWidget();
+////                emit repaintImageWidget();
 //            }
         }
     }

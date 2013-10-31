@@ -16,7 +16,7 @@ MainWindow::MainWindow() :
     this->setStyleSheet(style);
 
     // Set the OpenCL context
-    context_cl = new ContextCL;
+    context_cl = new OpenCLContext;
 
     // Set the format of the rendering context
     QSurfaceFormat format_gl;
@@ -31,7 +31,7 @@ MainWindow::MainWindow() :
 
     sharedContextWindow = new SharedContextWindow();
     sharedContextWindow->setFormat(format_gl);
-    sharedContextWindow->setContextCL(context_cl);
+    sharedContextWindow->setOpenCLContext(context_cl);
     sharedContextWindow->resize(2, 2);
     sharedContextWindow->show();
     sharedContextWindow->preInitialize();
@@ -167,8 +167,8 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
     //### allInOneWorker ###
     allInOneWorker = new AllInOneWorker();
@@ -199,8 +199,8 @@ void MainWindow::initializeThreads()
     connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
     connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
 
     //### voxelizeWorker ###
@@ -243,8 +243,8 @@ void MainWindow::initializeThreads()
     connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
     connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
     connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
     connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
@@ -1045,14 +1045,14 @@ void MainWindow::initializeInteractives()
         format_gl.setAlphaBufferSize(8);
 
         imageRenderWorker = new ImageRenderWorker();
-        imageRenderWorker->setContextCL(context_cl);
+        imageRenderWorker->setOpenCLContext(context_cl);
         imageRenderWorker->setSharedWindow(sharedContextWindow);
 
         imageRenderWindow = new ImageRenderWindow();
         imageRenderWindow->setOpenGLWorker(imageRenderWorker);
         imageRenderWindow->setSharedWindow(sharedContextWindow);
         imageRenderWindow->setFormat(format_gl);
-        imageRenderWindow->setContextCL(context_cl);
+        imageRenderWindow->setOpenCLContext(context_cl);
         imageRenderWindow->setAnimating(true);
 
 
@@ -1089,13 +1089,14 @@ void MainWindow::initializeInteractives()
         format_gl.setAlphaBufferSize(8);
 
         volumeRenderWorker = new VolumeRenderWorker();
-        volumeRenderWorker->setContextCL(context_cl);
+        volumeRenderWorker->setOpenCLContext(context_cl);
         volumeRenderWorker->setSharedWindow(sharedContextWindow);
+
         volumeRenderWindow = new VolumeRenderWindow();
         volumeRenderWindow->setOpenGLWorker(volumeRenderWorker);
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);
-        volumeRenderWindow->setContextCL(context_cl);
+        volumeRenderWindow->setOpenCLContext(context_cl);
         volumeRenderWindow->setAnimating(true);
 
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);

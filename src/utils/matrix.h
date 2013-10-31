@@ -242,7 +242,7 @@ const Matrix<T> Matrix<T>::getInverse()  const
                 }
                 if(L[j*n+j] == 0)
                 {
-                    qFatal("Determinant close to zeros");
+                    qWarning("Encountered determinant close to zero");
                 }
                 U[j*n+i]=(double)(buffer[j*n+i]-sum)/(double)L[j*n+j];
             }

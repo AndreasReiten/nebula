@@ -11,7 +11,7 @@ PilatusFile::PilatusFile()
     max_counts = 0;
     STATUS_OK = 0;
 }
-PilatusFile::PilatusFile(QString path, ContextCL *context)
+PilatusFile::PilatusFile(QString path, OpenCLContext *context)
 {
     context_cl = context;
     srchrad_sugg_low = std::numeric_limits<float>::max();
@@ -20,7 +20,7 @@ PilatusFile::PilatusFile(QString path, ContextCL *context)
     STATUS_OK = this->set(path, context_cl);
 }
 
-int PilatusFile::set(QString path, ContextCL *context)
+int PilatusFile::set(QString path, OpenCLContext *context)
 {
     this->context_cl = context;
 

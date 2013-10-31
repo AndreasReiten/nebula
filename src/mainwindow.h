@@ -150,7 +150,7 @@ private:
 
 
     // OpenCL
-    ContextCL * context_cl;
+    OpenCLContext * context_cl;
 
     // QThreads
     QThread * readScriptThread;

@@ -50,7 +50,7 @@ class BaseWorker : public QObject
         void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
         void setFiles(QList<PilatusFile> * files);
         void setReducedPixels(MiniArray<float> * reduced_pixels);
-        void setOpenCLContext(ContextCL * context);
+        void setOpenCLContext(OpenCLContext * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
 
@@ -62,8 +62,8 @@ class BaseWorker : public QObject
         void changedFormatGenericProgress(QString str);
         void changedTabWidget(int value);
 //        void repaintImageWidget();
-        void aquireSharedBuffers();
-        void releaseSharedBuffers();
+//        void aquireSharedBuffers();
+//        void releaseSharedBuffers();
 
     public slots:
         void killProcess();
@@ -77,7 +77,7 @@ class BaseWorker : public QObject
         bool kill_flag;
 
         // OpenCL
-        ContextCL * context_cl;
+        OpenCLContext * context_cl;
         cl_mem * alpha_img_clgl;
         cl_mem * beta_img_clgl;
         cl_mem * gamma_img_clgl;

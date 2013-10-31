@@ -55,7 +55,7 @@ private:
 };
 
 
-class VolumeRenderWorker : public OpenGLRenderWorker
+class VolumeRenderWorker : public OpenGLWorker
 {
     Q_OBJECT
 public:

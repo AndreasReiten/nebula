@@ -38,11 +38,11 @@ class PilatusFile
     public:
         ~PilatusFile();
         PilatusFile();
-        PilatusFile(QString path, ContextCL * context);
+        PilatusFile(QString path, OpenCLContext * context);
 
         QString getPath() const;
 
-        int set(QString path, ContextCL * context);
+        int set(QString path, OpenCLContext * context);
         int readData();
         void setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex);
         int filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive = true);
@@ -63,7 +63,7 @@ class PilatusFile
         void setProjectionKernel(cl_kernel * kernel);
 
     private:
-        ContextCL * context_cl;
+        OpenCLContext * context_cl;
         cl_mem * cl_img_alpha;
         cl_mem * cl_img_beta;
         cl_mem * cl_img_gamma;

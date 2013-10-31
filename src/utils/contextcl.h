@@ -23,10 +23,10 @@
     #include <GL/glx.h>
 #endif
 
-class ContextCL
+class OpenCLContext
 {
 public:
-    ContextCL();
+    OpenCLContext();
     void initDevices();
     void initSharedContext();
     void initCommandQueue();

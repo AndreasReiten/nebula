@@ -16,7 +16,7 @@ void ImageRenderWindow::setSharedWindow(SharedContextWindow * window)
 }
 
 ImageRenderWorker::ImageRenderWorker(QObject *parent)
-    : OpenGLRenderWorker(parent)
+    : OpenGLWorker(parent)
     , isInitialized(false)
     , isAlphaImgInitialized(false)
     , isBetaImgInitialized(false)
@@ -116,6 +116,8 @@ void ImageRenderWorker::drawImages()
 
     if (isAlphaImgInitialized && isBetaImgInitialized && isGammaImgInitialized)
     {
+        releaseSharedBuffers();
+
         shared_window->std_2d_tex_program->bind();
         glBindTexture(GL_TEXTURE_2D, image_tex[0]);
 
@@ -164,6 +166,8 @@ void ImageRenderWorker::drawImages()
         glBindTexture(GL_TEXTURE_2D, 0);
 
         shared_window->std_2d_tex_program->release();
+
+        aquireSharedBuffers();
     }
 }
 
@@ -379,10 +383,7 @@ cl_mem * ImageRenderWorker::getBetaImgCLGL()
 
 void ImageRenderWorker::aquireSharedBuffers()
 {
-    QElapsedTimer timer;
-    timer.start();
     glFinish();
-//    qDebug() << "glFinish took " << timer.restart();
     if (isAlphaImgInitialized) err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_alpha, 0, 0, 0);
     if (isBetaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_beta, 0, 0, 0);
     if (isGammaImgInitialized) err |= clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &cl_img_gamma, 0, 0, 0);

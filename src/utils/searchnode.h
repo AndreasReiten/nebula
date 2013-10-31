@@ -24,7 +24,7 @@ class SearchNode {
         SearchNode(SearchNode * parent, double * extent);
         ~SearchNode();
 
-        void setContextCL(ContextCL *context);
+        void setOpenCLContext(OpenCLContext *context);
         void clearChildren();
         void clearPoints();
         void insert(float * point);
@@ -70,6 +70,6 @@ class SearchNode {
         bool isMsd;
         cl_int err;
 
-        ContextCL * context;
+        OpenCLContext * context;
 };
 #endif

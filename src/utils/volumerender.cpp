@@ -17,7 +17,7 @@ void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
 }
 
 VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
-    : OpenGLRenderWorker(parent),
+    : OpenGLWorker(parent),
       isInitialized(false),
       isRayTexInitialized(false),
       isTsfTexInitialized(false),

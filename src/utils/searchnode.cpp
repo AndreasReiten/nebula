@@ -104,7 +104,7 @@ void SearchNode::print()
     }
 }
 
-void SearchNode::setContextCL(ContextCL *context)
+void SearchNode::setOpenCLContext(OpenCLContext *context)
 {
     this->context = context;
 }
@@ -466,7 +466,7 @@ void SearchNode::split()
         child_extent[5] = extent[5] - half_side*(1-id_z);
 
         children[i] = new SearchNode(this, child_extent);
-        children[i]->setContextCL(context);
+        children[i]->setOpenCLContext(context);
     }
 
     // For each point

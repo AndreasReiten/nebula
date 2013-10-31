@@ -54,7 +54,7 @@ private:
     SharedContextWindow * shared_window;
 };
 
-class ImageRenderWorker : public OpenGLRenderWorker
+class ImageRenderWorker : public OpenGLWorker
 {
     Q_OBJECT
 public:

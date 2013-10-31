@@ -1,30 +1,30 @@
 #include "contextcl.h"
 
-ContextCL::ContextCL()
+OpenCLContext::OpenCLContext()
 {
 }
 
-const cl_command_queue * ContextCL::getCommandQueue()
+const cl_command_queue * OpenCLContext::getCommandQueue()
 {
     return &queue;
 }
 
-cl_context * ContextCL::getContext()
+cl_context * OpenCLContext::getContext()
 {
     return &context;
 }
 
-QList<DeviceCL> * ContextCL::getDeviceList()
+QList<DeviceCL> * OpenCLContext::getDeviceList()
 {
     return &device_list;
 }
 
-DeviceCL * ContextCL::getMainDevice()
+DeviceCL * OpenCLContext::getMainDevice()
 {
     return main_device;
 }
 
-cl_program ContextCL::createProgram(Matrix<const char *> * paths, cl_int * error)
+cl_program OpenCLContext::createProgram(Matrix<const char *> * paths, cl_int * error)
 {
     // Program
     Matrix<size_t> lengths(1, paths->size());
@@ -40,7 +40,7 @@ cl_program ContextCL::createProgram(Matrix<const char *> * paths, cl_int * error
     return clCreateProgramWithSource(context, paths->size(), sources.data(), lengths.data(), error);
 }
 
-void ContextCL::buildProgram(cl_program * program, const char * options)
+void OpenCLContext::buildProgram(cl_program * program, const char * options)
 {
     // Compile kernel
     cl_device_id tmp = main_device->getDeviceId();
@@ -70,7 +70,7 @@ void ContextCL::buildProgram(cl_program * program, const char * options)
 }
 
 
-void ContextCL::initDevices()
+void OpenCLContext::initDevices()
 {
     // Platforms and Devices
     cl_uint max_platforms = 10; // Max number of platforms
@@ -121,7 +121,7 @@ void ContextCL::initDevices()
     main_device = &device_list[0];
 }
 
-void ContextCL::initSharedContext()
+void OpenCLContext::initSharedContext()
 {
     // Context with GL interopability
 
@@ -147,7 +147,7 @@ void ContextCL::initSharedContext()
     }
 }
 
-void ContextCL::initCommandQueue()
+void OpenCLContext::initCommandQueue()
 {
     // Command queue
     queue = clCreateCommandQueue(context, main_device->getDeviceId(), 0, &err);
