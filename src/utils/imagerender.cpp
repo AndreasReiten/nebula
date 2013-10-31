@@ -1,12 +1,28 @@
 #include "imagerender.h"
 
 ImageRenderWindow::ImageRenderWindow()
-    : isInitialized(false),
-    isAlphaImgInitialized(false),
-    isBetaImgInitialized(false),
-    isGammaImgInitialized(false),
-    isTsfImgInitialized(false),
-    isTsfTexInitialized(false)
+{
+}
+
+ImageRenderWindow::~ImageRenderWindow()
+{
+    qDebug();
+}
+
+void ImageRenderWindow::setSharedWindow(SharedContextWindow * window)
+{
+    this->shared_window = window;
+    shared_context = window->getGLContext();
+}
+
+ImageRenderWorker::ImageRenderWorker(QObject *parent)
+    : OpenGLRenderWorker(parent)
+    , isInitialized(false)
+    , isAlphaImgInitialized(false)
+    , isBetaImgInitialized(false)
+    , isGammaImgInitialized(false)
+    , isTsfImgInitialized(false)
+    , isTsfTexInitialized(false)
 {
     this->image_w = 640;
     this->image_h = 1024;
@@ -24,7 +40,20 @@ ImageRenderWindow::ImageRenderWindow()
     clear_color_inverse = black;
 }
 
-void ImageRenderWindow::setImageSize(int w, int h)
+void ImageRenderWorker::setSharedWindow(SharedContextWindow * window)
+{
+    this->shared_window = window;
+}
+
+ImageRenderWorker::~ImageRenderWorker()
+{
+    qDebug();
+    if (isAlphaImgInitialized) clReleaseMemObject(cl_img_alpha);
+    if (isBetaImgInitialized) clReleaseMemObject(cl_img_beta);
+    if (isGammaImgInitialized) clReleaseMemObject(cl_img_gamma);
+}
+
+void ImageRenderWorker::setImageSize(int w, int h)
 {
     if ((w != image_w) || (h != image_h))
     {
@@ -34,25 +63,16 @@ void ImageRenderWindow::setImageSize(int w, int h)
     }
 }
 
-ImageRenderWindow::~ImageRenderWindow()
-{
-    if (isAlphaImgInitialized) clReleaseMemObject(cl_img_alpha);
-    if (isBetaImgInitialized) clReleaseMemObject(cl_img_beta);
-    if (isGammaImgInitialized) clReleaseMemObject(cl_img_gamma);
-}
-
-
-
-void ImageRenderWindow::initialize()
+void ImageRenderWorker::initialize()
 {
     initializePaintTools();
     setTsfTexture();
 
-    paint_device_gl->setSize(size());
+    paint_device_gl->setSize(render_surface->size());
     isInitialized = true;
 }
 
-void ImageRenderWindow::beginRawGLCalls(QPainter * painter)
+void ImageRenderWorker::beginRawGLCalls(QPainter * painter)
 {
     painter->beginNativePainting();
     glEnable(GL_BLEND);
@@ -60,21 +80,21 @@ void ImageRenderWindow::beginRawGLCalls(QPainter * painter)
     glEnable(GL_MULTISAMPLE);
 }
 
-void ImageRenderWindow::endRawGLCalls(QPainter * painter)
+void ImageRenderWorker::endRawGLCalls(QPainter * painter)
 {
     glDisable(GL_BLEND);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
 }
 
-void ImageRenderWindow::render(QPainter *painter)
+void ImageRenderWorker::render(QPainter *painter)
 {
     glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     beginRawGLCalls(painter);
-    const qreal retinaScale = devicePixelRatio();
-    glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+    const qreal retinaScale = render_surface->devicePixelRatio();
+    glViewport(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
 
     // Draw raytracing texture
     drawImages();
@@ -84,11 +104,11 @@ void ImageRenderWindow::render(QPainter *painter)
     drawOverlay(painter);
 }
 
-void ImageRenderWindow::drawImages()
+void ImageRenderWorker::drawImages()
 {
-    alpha_rect.setRect(0, 0, height()*image_w/image_h, height());
-    beta_rect.setRect(alpha_rect.x() + alpha_rect.width(), 0, height()*image_w/image_h, height());
-    gamma_rect.setRect(beta_rect.x() + beta_rect.width(), 0, height()*image_w/image_h, height());
+    alpha_rect.setRect(0, 0, render_surface->height()*image_w/image_h, render_surface->height());
+    beta_rect.setRect(alpha_rect.x() + alpha_rect.width(), 0, render_surface->height()*image_w/image_h, render_surface->height());
+    gamma_rect.setRect(beta_rect.x() + beta_rect.width(), 0, render_surface->height()*image_w/image_h, render_surface->height());
 
     alpha_rect -= QMargins(5,5,5,31);
     beta_rect -= QMargins(5,5,5,31);
@@ -97,6 +117,7 @@ void ImageRenderWindow::drawImages()
     if (isAlphaImgInitialized && isBetaImgInitialized && isGammaImgInitialized)
     {
         shared_window->std_2d_tex_program->bind();
+        glBindTexture(GL_TEXTURE_2D, image_tex[0]);
 
         GLuint indices[] = {0,1,3,1,2,3};
 
@@ -116,7 +137,6 @@ void ImageRenderWindow::drawImages()
         glRect(&gl_alpha_rect, &alpha_rect);
         glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_alpha_rect.data());
 
-        glBindTexture(GL_TEXTURE_2D, image_tex[0]);
         shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
@@ -147,7 +167,7 @@ void ImageRenderWindow::drawImages()
     }
 }
 
-void ImageRenderWindow::drawOverlay(QPainter * painter)
+void ImageRenderWorker::drawOverlay(QPainter * painter)
 {
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(*fill_brush);
@@ -157,7 +177,7 @@ void ImageRenderWindow::drawOverlay(QPainter * painter)
     // Alpha text
     QString alpha_string("Raw data");
     QRect alpha_string_rect(alpha_rect.x(),
-                                 height() - 31,
+                                 render_surface->height() - 31,
                                  alpha_rect.width(),
                                  31);
     alpha_string_rect -= QMargins(0,2,0,2);
@@ -168,7 +188,7 @@ void ImageRenderWindow::drawOverlay(QPainter * painter)
     // beta text
     QString beta_string("Background subtracted");
     QRect beta_string_rect(beta_rect.x(),
-                                 height() - 31,
+                                 render_surface->height() - 31,
                                  beta_rect.width(),
                                  31);
     beta_string_rect -= QMargins(0,2,0,2);
@@ -179,7 +199,7 @@ void ImageRenderWindow::drawOverlay(QPainter * painter)
     // gamma text
     QString gamma_string("Lorentz Polarization corrected");
     QRect gamma_string_rect(gamma_rect.x(),
-                                 height() - 31,
+                                 render_surface->height() - 31,
                                  gamma_rect.width(),
                                  31);
     gamma_string_rect -= QMargins(0,2,0,2);
@@ -198,25 +218,25 @@ void ImageRenderWindow::drawOverlay(QPainter * painter)
     painter->drawRect(gamma_rect);
 }
 
-void ImageRenderWindow::mouseMoveEvent(QMouseEvent* ev)
+void ImageRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 {
     Q_UNUSED(ev);
 }
 
-void ImageRenderWindow::wheelEvent(QWheelEvent* ev)
+void ImageRenderWorker::wheelEvent(QWheelEvent* ev)
 {
     Q_UNUSED(ev);
 }
 
-void ImageRenderWindow::resizeEvent(QResizeEvent * ev)
+void ImageRenderWorker::resizeEvent(QResizeEvent * ev)
 {
     Q_UNUSED(ev);
 
-    if (paint_device_gl) paint_device_gl->setSize(size());
+    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
 }
 
 
-void ImageRenderWindow::releaseSharedBuffers()
+void ImageRenderWorker::releaseSharedBuffers()
 {
      // Release shared CL/GL objects
     err = clFinish(*context_cl->getCommandQueue());
@@ -229,11 +249,11 @@ void ImageRenderWindow::releaseSharedBuffers()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImageRenderWindow::initResourcesGL()
+void ImageRenderWorker::initResourcesGL()
 {
 }
 
-void ImageRenderWindow::initializePaintTools()
+void ImageRenderWorker::initializePaintTools()
 {
     normal_pen = new QPen;
     normal_pen->setWidth(1);
@@ -260,7 +280,7 @@ void ImageRenderWindow::initializePaintTools()
     dark_fill_brush->setColor(QColor(0,0,0,255));
 }
 
-void ImageRenderWindow::setTsfTexture()
+void ImageRenderWorker::setTsfTexture()
 {
     if (isTsfTexInitialized){
         err = clReleaseSampler(tsf_tex_sampler);
@@ -336,28 +356,28 @@ void ImageRenderWindow::setTsfTexture()
     isTsfTexInitialized = true;
 }
 
-cl_mem * ImageRenderWindow::getTsfImgCLGL()
+cl_mem * ImageRenderWorker::getTsfImgCLGL()
 {
     return &cl_tsf_tex;
 }
 
-cl_mem * ImageRenderWindow::getAlphaImgCLGL()
+cl_mem * ImageRenderWorker::getAlphaImgCLGL()
 {
     return &cl_img_alpha;
 }
 
-cl_mem * ImageRenderWindow::getGammaImgCLGL()
+cl_mem * ImageRenderWorker::getGammaImgCLGL()
 {
     return &cl_img_gamma;
 }
 
-cl_mem * ImageRenderWindow::getBetaImgCLGL()
+cl_mem * ImageRenderWorker::getBetaImgCLGL()
 {
     return &cl_img_beta;
 }
 
 
-void ImageRenderWindow::aquireSharedBuffers()
+void ImageRenderWorker::aquireSharedBuffers()
 {
     QElapsedTimer timer;
     timer.start();
@@ -370,13 +390,7 @@ void ImageRenderWindow::aquireSharedBuffers()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImageRenderWindow::setSharedWindow(SharedContextWindow * window)
-{
-    this->shared_window = window;
-    shared_context = window->getGLContext();
-}
-
-void ImageRenderWindow::setTarget()
+void ImageRenderWorker::setTarget()
 {
     if (isAlphaImgInitialized) clReleaseMemObject(cl_img_alpha);
     if (isBetaImgInitialized) clReleaseMemObject(cl_img_beta);
@@ -454,9 +468,4 @@ void ImageRenderWindow::setTarget()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isGammaImgInitialized = true;
-}
-
-void ImageRenderWindow::test()
-{
-    qDebug() << "Window test";
 }

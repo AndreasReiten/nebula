@@ -1,77 +1,118 @@
 #include "openglwindow.h"
 
-OpenGLWorker::OpenGLWorker(QWindow *parent)
+OpenGLRenderWorker::OpenGLRenderWorker(QObject *parent)
+    : QObject(parent)
+    , isInitialized(false)
+    , paint_device_gl(0)
 {
+    fps_elapsed_timer.start();
 }
 
-OpenGLWorker::~OpenGLWorker()
+OpenGLRenderWorker::~OpenGLRenderWorker()
 {
-
+    qDebug();
+    if (paint_device_gl) delete paint_device_gl;
 }
 
-void OpenGLWorker::process()
+void OpenGLRenderWorker::mouseMoveEvent(QMouseEvent* ev)
+{
+    Q_UNUSED(ev);
+}
+
+void OpenGLRenderWorker::wheelEvent(QWheelEvent* ev)
+{
+    Q_UNUSED(ev);
+}
+
+void OpenGLRenderWorker::resizeEvent(QResizeEvent * ev)
+{
+    Q_UNUSED(ev);
+
+    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
+}
+
+void OpenGLRenderWorker::process()
 {
     context_gl->makeCurrent(render_surface);
-    compute();
+
+    if (!isInitialized)
+    {
+        initializeOpenGLFunctions();
+        if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
+        initialize();
+        isInitialized = true;
+    }
+    else
+    {
+        QPainter painter(paint_device_gl);
+        render(&painter);
+    }
     context_gl->swapBuffers(render_surface);
     context_gl->doneCurrent();
     context_gl->moveToThread(qApp->thread());
+
+    setFps();
+
     emit finished();
 }
 
-void OpenGLWorker::compute()
+void OpenGLRenderWorker::render(QPainter *painter)
+{
+    Q_UNUSED(painter);
+}
+
+void OpenGLRenderWorker::initialize()
 {
 
 }
 
-void OpenGLWorker::setGLContext(QOpenGLContext *context)
+//void OpenGLRenderWorker::render()
+//{
+
+//}
+
+void OpenGLRenderWorker::setGLContext(QOpenGLContext *context)
 {
     context_gl = context;
 }
 
-void OpenGLWorker::setRenderSurface(QSurface *surface)
+void OpenGLRenderWorker::setRenderSurface(QWindow *surface)
 {
     render_surface = surface;
 }
 
-OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
-    : QWindow(parent)
-    , isUpdatePending(false)
-    , isBufferBeingSwapped(false)
-    , isAnimating(false)
-    , paint_device_gl(0)
-    , context_gl(0)
+void OpenGLRenderWorker::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)
 {
-    this->shared_context = shareContext;
+    Matrix<float> pos_3d_matrix;
+    Matrix<float> pos_2d_matrix(4, 1);
 
-    setSurfaceType(QWindow::OpenGLSurface);
+    pos_3d_matrix.setDeep(4, 1, pos_3d);
+    pos_3d_matrix[3] = 1.0;
 
-    fps_elapsed_timer.start();
+    pos_2d_matrix = transform->toFloat() * pos_3d_matrix;
+
+    pos_2d[0] = pos_2d_matrix[0]/pos_2d_matrix[3];
+    pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
 }
 
-OpenGLWindow::~OpenGLWindow()
-{
-    delete paint_device_gl;
-}
-
-QPointF OpenGLWindow::coordQttoGL(QPointF coord)
+QPointF OpenGLRenderWorker::coordQttoGL(QPointF coord)
 {
     QPointF GLPoint;
-    GLPoint.setX((coord.x()/(float) width())*2.0-1.0);
-    GLPoint.setY((1.0 - coord.y()/(float) height())*2.0-1.0);
+    GLPoint.setX((coord.x()/(float) render_surface->width())*2.0-1.0);
+    GLPoint.setY((1.0 - coord.y()/(float) render_surface->height())*2.0-1.0);
     return GLPoint;
 }
 
-void OpenGLWindow::glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect)
+void OpenGLRenderWorker::glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect)
 {
     int x,y,w,h;
     float xf,yf,wf,hf;
     qt_rect->getRect(&x, &y, &w, &h);
 
-    xf = (x / (float) width()) * 2.0 - 1.0;
-    yf = (1.0 - (y + h)/ (float) height()) * 2.0 - 1.0;
-    wf = (w / (float) width()) * 2.0;
-    hf = (h / (float) height()) * 2.0;
+    xf = (x / (float) render_surface->width()) * 2.0 - 1.0;
+    yf = (1.0 - (y + h)/ (float) render_surface->height()) * 2.0 - 1.0;
+    wf = (w / (float) render_surface->width()) * 2.0;
+    hf = (h / (float) render_surface->height()) * 2.0;
 
     (*gl_rect)[0] = xf;
     (*gl_rect)[1] = yf;
@@ -83,11 +124,16 @@ void OpenGLWindow::glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect)
     (*gl_rect)[7] = yf + hf;
 }
 
-void OpenGLWindow::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
+void OpenGLRenderWorker::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
 {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, usage);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void OpenGLRenderWorker::setContextCL(ContextCL * context)
+{
+    this->context_cl = context;
 }
 
 QOpenGLContext * OpenGLWindow::getGLContext()
@@ -95,35 +141,64 @@ QOpenGLContext * OpenGLWindow::getGLContext()
     return context_gl;
 }
 
+ContextCL * OpenGLWindow::getCLContext()
+{
+    return context_cl;
+}
+
+OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
+    : QWindow(parent)
+    , isUpdatePending(false)
+    , isBufferBeingSwapped(false)
+    , isAnimating(false)
+    , context_gl(0)
+    , swap_surface(0)
+{
+    this->shared_context = shareContext;
+
+    setSurfaceType(QWindow::OpenGLSurface);
+}
+
 void OpenGLWindow::setContextCL(ContextCL * context)
 {
     this->context_cl = context;
 }
 
-void OpenGLWindow::setFps()
+OpenGLWindow::~OpenGLWindow()
+{
+    qDebug();
+}
+
+void OpenGLWindow::mouseMoveEvent(QMouseEvent* ev)
+{
+    emit mouseMoveEventCaught(ev);
+}
+
+void OpenGLWindow::wheelEvent(QWheelEvent* ev)
+{
+    emit wheelEventCaught(ev);
+}
+
+void OpenGLWindow::resizeEvent(QResizeEvent * ev)
+{
+    emit resizeEventCaught(ev);
+}
+
+void OpenGLWindow::setOpenGLWorker(OpenGLRenderWorker * worker)
+{
+    swap_surface = worker;
+    worker->setRenderSurface(this);
+}
+
+void OpenGLRenderWorker::setFps()
 {
     fps = 1.0 / ((float) fps_elapsed_timer.nsecsElapsed() * 1.0e-9);
     fps_elapsed_timer.restart();
 }
 
-double OpenGLWindow::getFps()
+double OpenGLRenderWorker::getFps()
 {
     return fps;
-}
-
-void OpenGLWindow::render(QPainter *painter)
-{
-    Q_UNUSED(painter);
-}
-
-void OpenGLWindow::initialize()
-{
-}
-
-void OpenGLWindow::render()
-{
-    QPainter painter(paint_device_gl);
-    render(&painter);
 }
 
 void OpenGLWindow::renderLater()
@@ -154,9 +229,14 @@ void OpenGLWindow::exposeEvent(QExposeEvent *event)
         renderNow();
 }
 
+void OpenGLWindow::initialize()
+{
+
+}
+
 void OpenGLWindow::preInitialize()
 {
-    bool needsInitialize = false;
+//    bool needsInitialize = false;
 
     if (!context_gl)
     {
@@ -186,27 +266,32 @@ void OpenGLWindow::preInitialize()
 
         qDebug() << ss.str().c_str();
 
-        needsInitialize = true;
-
-        swap_thread = new QThread;
-        swap_surface = new OpenGLWorker();
-        swap_surface->setGLContext(context_gl);
-        swap_surface->setRenderSurface(this);
-
-        swap_surface->moveToThread(swap_thread);
-        connect(swap_thread, SIGNAL(started()), swap_surface, SLOT(process()));
-        connect(swap_surface, SIGNAL(finished()), swap_thread, SLOT(quit()));
-        connect(swap_surface, SIGNAL(finished()), this, SLOT(setSwapState()));
-    }
-
-    context_gl->makeCurrent(this);
-
-    if (needsInitialize)
-    {
-        initializeOpenGLFunctions();
-        if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
+        // Intialize context depndtent stuff
+        context_gl->makeCurrent(this);
         initialize();
+        context_gl->doneCurrent();
+
+//        needsInitialize = true;
+        if (swap_surface)
+        {
+            // Set up worker thread
+            swap_thread = new QThread;
+    //        swap_surface = new OpenGLRenderWorker();
+            swap_surface->setGLContext(context_gl);
+    //        swap_surface->setRenderSurface(this);
+
+            swap_surface->moveToThread(swap_thread);
+            connect(swap_thread, SIGNAL(started()), swap_surface, SLOT(process()));
+            connect(swap_surface, SIGNAL(finished()), swap_thread, SLOT(quit()));
+            connect(swap_surface, SIGNAL(finished()), this, SLOT(setSwapState()));
+
+            // Transfering mouse events
+            connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), swap_surface, SLOT(mouseMoveEvent(QMouseEvent*)));
+            connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), swap_surface, SLOT(resizeEvent(QResizeEvent*)));
+            connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), swap_surface, SLOT(wheelEvent(QWheelEvent*)));
+        }
     }
+    context_gl->makeCurrent(this);
 }
 
 void OpenGLWindow::setSwapState()
@@ -226,16 +311,16 @@ void OpenGLWindow::renderNow()
     {
         preInitialize();
 
-        context_gl->makeCurrent(this);
+        if (swap_surface)
+        {
+//            context_gl->makeCurrent(this);
 
-        render();
+            context_gl->doneCurrent();
+            isBufferBeingSwapped = true;
 
-        context_gl->doneCurrent();
-        isBufferBeingSwapped = true;
-
-        context_gl->moveToThread(swap_thread);
-        swap_thread->start();
-        setFps();
+            context_gl->moveToThread(swap_thread);
+            swap_thread->start();
+        }
     }
     if (isAnimating) renderLater();
 }
@@ -258,16 +343,4 @@ void OpenGLWindow::stopAnimating()
     setAnimating(false);
 }
 
-void OpenGLWindow::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)
-{
-    Matrix<float> pos_3d_matrix;
-    Matrix<float> pos_2d_matrix(4, 1);
 
-    pos_3d_matrix.setDeep(4, 1, pos_3d);
-    pos_3d_matrix[3] = 1.0;
-
-    pos_2d_matrix = transform->toFloat() * pos_3d_matrix;
-
-    pos_2d[0] = pos_2d_matrix[0]/pos_2d_matrix[3];
-    pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
-}

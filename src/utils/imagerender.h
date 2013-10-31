@@ -37,6 +37,7 @@
 #include <QScreen>
 #include <QPainter>
 
+
 class ImageRenderWindow : public OpenGLWindow
 {
     Q_OBJECT
@@ -44,6 +45,21 @@ class ImageRenderWindow : public OpenGLWindow
 public:
     ImageRenderWindow();
     ~ImageRenderWindow();
+    void setSharedWindow(SharedContextWindow * window);
+
+signals:
+    void changedMessageString(QString str);
+
+private:
+    SharedContextWindow * shared_window;
+};
+
+class ImageRenderWorker : public OpenGLRenderWorker
+{
+    Q_OBJECT
+public:
+    explicit ImageRenderWorker(QObject *parent = 0);
+    ~ImageRenderWorker();
 
     void setSharedWindow(SharedContextWindow * window);
 
@@ -52,26 +68,21 @@ public:
     cl_mem * getGammaImgCLGL();
     cl_mem * getBetaImgCLGL();
 
-protected:
-    void initialize();
-    void render(QPainter *painter);
+public slots:
+    void setImageSize(int w, int h);
+    void aquireSharedBuffers();
+    void releaseSharedBuffers();
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
 
-signals:
-    void changedMessageString(QString str);
-
-public slots:
-    void test();
-    void setImageSize(int w, int h);
-//    void setImageWidth(int value);
-//    void setImageHeight(int value);
-    void aquireSharedBuffers();
-    void releaseSharedBuffers();
+protected:
+    void initialize();
+    void render(QPainter *painter);
 
 private:
     SharedContextWindow * shared_window;
+
     QRect alpha_rect;
     QRect beta_rect;
     QRect gamma_rect;

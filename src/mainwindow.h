@@ -280,9 +280,13 @@ private:
     QWidget *viewWidget;
 
 protected:
+    // OpenGL rendering widgets
     SharedContextWindow *sharedContextWindow;
+    VolumeRenderWorker *volumeRenderWorker;
     VolumeRenderWindow *volumeRenderWindow;
     QWidget *volumeRenderWidget;
+
+    ImageRenderWorker *imageRenderWorker;
     ImageRenderWindow *imageRenderWindow;
     QWidget *imageRenderWidget;
 

@@ -49,14 +49,21 @@ public:
     ~VolumeRenderWindow();
 
     void setSharedWindow(SharedContextWindow * window);
-    void setSvo(SparseVoxelOcttree * svo);
 
-protected:
-    void initialize();
-    void render(QPainter *painter);
-    void mouseMoveEvent(QMouseEvent* ev);
-    void wheelEvent(QWheelEvent* ev);
-    void resizeEvent(QResizeEvent * ev);
+private:
+    SharedContextWindow * shared_window;
+};
+
+
+class VolumeRenderWorker : public OpenGLRenderWorker
+{
+    Q_OBJECT
+public:
+    explicit VolumeRenderWorker(QObject *parent = 0);
+    ~VolumeRenderWorker();
+
+    void setSharedWindow(SharedContextWindow * window);
+    void setSvo(SparseVoxelOcttree * svo);
 
 public slots:
     void setQuality(int value);
@@ -79,6 +86,13 @@ public slots:
     void setModelParam3(double value);
     void setModelParam4(double value);
     void setModelParam5(double value);
+    void mouseMoveEvent(QMouseEvent* ev);
+    void wheelEvent(QWheelEvent* ev);
+    void resizeEvent(QResizeEvent * ev);
+
+protected:
+    void initialize();
+    void render(QPainter *painter);
 
 private:
     SharedContextWindow * shared_window;

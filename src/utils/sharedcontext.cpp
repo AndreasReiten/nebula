@@ -55,9 +55,9 @@ void SharedContextWindow::initialize()
     if ((std_blend_method = std_blend_program->uniformLocation("method")) == -1) qCritical("Invalid uniform");
 
     // Initialization of OpenCL/OpenGL interop context
-    context_cl->initDevices();
-    context_cl->initSharedContext();
-    context_cl->initCommandQueue();
+    this->getCLContext()->initDevices();
+    this->getCLContext()->initSharedContext();
+    this->getCLContext()->initCommandQueue();
 }
 
 

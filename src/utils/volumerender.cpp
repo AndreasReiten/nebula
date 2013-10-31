@@ -1,7 +1,24 @@
 #include "volumerender.h"
 
 VolumeRenderWindow::VolumeRenderWindow()
-    : isInitialized(false),
+{
+
+}
+
+VolumeRenderWindow::~VolumeRenderWindow()
+{
+    qDebug();
+}
+
+void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
+{
+    this->shared_window = window;
+    shared_context = window->getGLContext();
+}
+
+VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
+    : OpenGLRenderWorker(parent),
+      isInitialized(false),
       isRayTexInitialized(false),
       isTsfTexInitialized(false),
       isDSActive(false),
@@ -89,12 +106,12 @@ VolumeRenderWindow::VolumeRenderWindow()
     fps_string_width_prev = 0;
 }
 
-VolumeRenderWindow::~VolumeRenderWindow()
+VolumeRenderWorker::~VolumeRenderWorker()
 {
     if (isInitialized) glDeleteBuffers(1, &scalebar_vbo);
 }
 
-void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
+void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 {
     float move_scaling = 1.0;
     if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
@@ -107,7 +124,7 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
          * */
 
         double eta = std::atan2((double)ev->x() - last_mouse_pos_x, (double)ev->y() - last_mouse_pos_y) - pi*1.0;
-        double roll = move_scaling * pi/((float) height()) * std::sqrt((double)(ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
+        double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
 
         RotationMatrix<double> roll_rotation;
         roll_rotation.setArbRotation(-0.5*pi, eta, roll);
@@ -127,7 +144,7 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
          * */
 
         RotationMatrix<double> roll_rotation;
-        double roll = move_scaling * pi/((float) height()) * (ev->y() - last_mouse_pos_y);
+        double roll = move_scaling * pi/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
 
         roll_rotation.setArbRotation(0, 0, roll);
 
@@ -142,8 +159,8 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
     {
         /* X/Y translation happens multiplicatively. Here it is
          * important to retain the bounding box accordingly  */
-        float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) height()) * (ev->x() - last_mouse_pos_x);
-        float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) height()) * (ev->y() - last_mouse_pos_y);
+        float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) render_surface->height()) * (ev->x() - last_mouse_pos_x);
+        float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
 
         Matrix<double> data_translation_prev;
         data_translation_prev.setIdentity(4);
@@ -160,7 +177,7 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
     else if (!(ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
     {
         /* Z translation happens multiplicatively */
-        float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) height()) * (ev->y() - last_mouse_pos_y);
+        float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
 
         Matrix<double> data_translation_prev;
         data_translation_prev.setIdentity(4);
@@ -178,7 +195,7 @@ void VolumeRenderWindow::mouseMoveEvent(QMouseEvent* ev)
     last_mouse_pos_y = ev->y();
 }
 
-void VolumeRenderWindow::wheelEvent(QWheelEvent* ev)
+void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
 {
     float move_scaling = 1.0;
     if(ev->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
@@ -211,7 +228,7 @@ void VolumeRenderWindow::wheelEvent(QWheelEvent* ev)
 
 
 
-void VolumeRenderWindow::initialize()
+void VolumeRenderWorker::initialize()
 {
     initResourcesCL();
     initResourcesGL();
@@ -232,7 +249,7 @@ void VolumeRenderWindow::initialize()
     initializePaintTools();
 }
 
-void VolumeRenderWindow::initializePaintTools()
+void VolumeRenderWorker::initializePaintTools()
 {
     normal_pen = new QPen;
     normal_pen->setWidth(1);
@@ -259,12 +276,12 @@ void VolumeRenderWindow::initializePaintTools()
     dark_fill_brush->setColor(QColor(0,0,0,255));
 }
 
-void VolumeRenderWindow::initResourcesGL()
+void VolumeRenderWorker::initResourcesGL()
 {
     glGenBuffers(1, &scalebar_vbo);
 }
 
-void VolumeRenderWindow::initResourcesCL()
+void VolumeRenderWorker::initResourcesCL()
 {
     // Build program from OpenCL kernel source
     Matrix<const char *> paths(1,3);
@@ -347,7 +364,7 @@ void VolumeRenderWindow::initResourcesCL()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWindow::setViewMatrix()
+void VolumeRenderWorker::setViewMatrix()
 {
 
     normalization_scaling[0] = bbox_scaling[0] * projection_scaling[0] * 2.0 / (data_extent[1] - data_extent[0]);
@@ -374,7 +391,7 @@ void VolumeRenderWindow::setViewMatrix()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWindow::setDataExtent()
+void VolumeRenderWorker::setDataExtent()
 {
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_data_extent,
@@ -408,7 +425,7 @@ void VolumeRenderWindow::setDataExtent()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWindow::setTsfParameters()
+void VolumeRenderWorker::setTsfParameters()
 {
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_tsf_parameters_model,
@@ -433,7 +450,7 @@ void VolumeRenderWindow::setTsfParameters()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWindow::setMiscArrays()
+void VolumeRenderWorker::setMiscArrays()
 {
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
@@ -462,34 +479,34 @@ void VolumeRenderWindow::setMiscArrays()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWindow::resizeEvent(QResizeEvent * ev)
+void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 {
     Q_UNUSED(ev);
 
-    if (paint_device_gl) paint_device_gl->setSize(size());
-    ctc_matrix.setWindow(width(), height());
+    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
+    ctc_matrix.setWindow(render_surface->width(), render_surface->height());
     setRayTexture();
 }
 
-void VolumeRenderWindow::setRayTexture()
+void VolumeRenderWorker::setRayTexture()
 {
     // Set a texture for the volume rendering kernel
     Matrix<int> ray_tex_new(1, 2);
-    ray_tex_new[0] = (int)((float)this->width()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
-    ray_tex_new[1] = (int)((float)this->height()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
+    ray_tex_new[0] = (int)((float)render_surface->width()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
+    ray_tex_new[1] = (int)((float)render_surface->height()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
 
     // Clamp
     if (ray_tex_new[0] < 32) ray_tex_new[0] = 32;
     if (ray_tex_new[1] < 32) ray_tex_new[1] = 32;
 
-    if (ray_tex_new[0] > width()) ray_tex_new[0] = width();
-    if (ray_tex_new[1] > height()) ray_tex_new[1] = height();
+    if (ray_tex_new[0] > render_surface->width()) ray_tex_new[0] = render_surface->width();
+    if (ray_tex_new[1] > render_surface->height()) ray_tex_new[1] = render_surface->height();
 
     // Only resize the texture if the change is somewhat significant (in area cahnged)
     if (isInitialized && ((!isRayTexInitialized) || (std::abs(1.0 - quality_factor) > 0.15)))
     {
         // Calculate the actula quality factor multiplier
-        quality_factor = std::pow((double) ray_tex_new[0] / ((double)this->width()*(ray_tex_resolution*0.01)), 2.0);
+        quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(ray_tex_resolution*0.01)), 2.0);
 
         ray_tex_resolution *= std::sqrt(quality_factor);
         ray_tex_dim = ray_tex_new;
@@ -536,7 +553,7 @@ void VolumeRenderWindow::setRayTexture()
     }
 }
 
-void VolumeRenderWindow::setTsfTexture()
+void VolumeRenderWorker::setTsfTexture()
 {
     if (isTsfTexInitialized){
         err = clReleaseSampler(tsf_tex_sampler);
@@ -620,13 +637,12 @@ void VolumeRenderWindow::setTsfTexture()
 }
 
 
-void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
+void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
 {
     this->shared_window = window;
-    shared_context = window->getGLContext();
 }
 
-void VolumeRenderWindow::render(QPainter *painter)
+void VolumeRenderWorker::render(QPainter *painter)
 {
     setDataExtent();
     setViewMatrix();
@@ -636,8 +652,8 @@ void VolumeRenderWindow::render(QPainter *painter)
 
     beginRawGLCalls(painter);
     glLineWidth(1.5);
-    const qreal retinaScale = devicePixelRatio();
-    glViewport(0, 0, width() * retinaScale, height() * retinaScale);
+    const qreal retinaScale = render_surface->devicePixelRatio();
+    glViewport(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
 
     // Draw relative scalebar
     if (isScalebarActive) drawScalebars();
@@ -652,7 +668,7 @@ void VolumeRenderWindow::render(QPainter *painter)
 }
 
 
-void VolumeRenderWindow::beginRawGLCalls(QPainter * painter)
+void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
 {
     painter->beginNativePainting();
     glEnable(GL_BLEND);
@@ -660,14 +676,14 @@ void VolumeRenderWindow::beginRawGLCalls(QPainter * painter)
     glEnable(GL_MULTISAMPLE);
 }
 
-void VolumeRenderWindow::endRawGLCalls(QPainter * painter)
+void VolumeRenderWorker::endRawGLCalls(QPainter * painter)
 {
     glDisable(GL_BLEND);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
 }
 
-void VolumeRenderWindow::drawOverlay(QPainter * painter)
+void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
     painter->setRenderHint(QPainter::Antialiasing);
 
@@ -689,7 +705,7 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
     fps_string_width_prev = fps_string_rect.width();
     fps_string_rect += QMargins(5,5,5,5);
-    fps_string_rect.moveTopRight(QPoint(width()-5,5));
+    fps_string_rect.moveTopRight(QPoint(render_surface->width()-5,5));
 
     painter->setBrush(*fill_brush);
     painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
@@ -699,7 +715,7 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     QString resolution_string("Resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%, Volume Rendering Fps: "+QString::number(fps_required));
     QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
     resolution_string_rect += QMargins(5,5,5,5);
-    resolution_string_rect.moveBottomLeft(QPoint(5, height() - 5));
+    resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
 
     painter->drawRoundedRect(resolution_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
@@ -708,15 +724,15 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     QString multiplier_string("x"+QString::number(scalebar_multiplier)+" Å");
     QRect multiplier_string_rect = emph_fontmetric->boundingRect(multiplier_string);
     multiplier_string_rect += QMargins(5,5,5,5);
-    multiplier_string_rect.moveTopRight(QPoint(width()-5, fps_string_rect.bottom() + 5));
+    multiplier_string_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
 
     painter->drawRoundedRect(multiplier_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);
 
     // Transfer function
-    QRect tsf_rect(0, 0, 20, height() - (multiplier_string_rect.bottom() + 5) - 50);
+    QRect tsf_rect(0, 0, 20, render_surface->height() - (multiplier_string_rect.bottom() + 5) - 50);
     tsf_rect += QMargins(5,5,5,5);
-    tsf_rect.moveTopRight(QPoint(width()-5, multiplier_string_rect.bottom() + 5));
+    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, multiplier_string_rect.bottom() + 5));
 
     painter->setBrush(*fill_brush);
     painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
@@ -762,7 +778,7 @@ void VolumeRenderWindow::drawOverlay(QPainter * painter)
     painter->drawRect(tsf_rect);
 }
 
-void VolumeRenderWindow::drawScalebars()
+void VolumeRenderWorker::drawScalebars()
 {
     scalebar_coord_count = setScaleBars();
 
@@ -784,7 +800,7 @@ void VolumeRenderWindow::drawScalebars()
     shared_window->std_3d_color_program->release();
 }
 
-void VolumeRenderWindow::drawRayTex()
+void VolumeRenderWorker::drawRayTex()
 {
     // Volume rendering
     if (isModelActive) raytrace(cl_model_raytrace, cl_model_workload);
@@ -830,7 +846,7 @@ void VolumeRenderWindow::drawRayTex()
     }
 }
 
-void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
+void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
 {
     // Estimate workload and and adjust rendering quality accordingly
     setRayTexture();
@@ -910,7 +926,7 @@ void VolumeRenderWindow::raytrace(cl_kernel kernel, cl_kernel workload)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWindow::setSvo(SparseVoxelOcttree * svo)
+void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
 {
     data_extent.setDeep(4, 2, svo->getExtent()->data());
     data_view_extent.setDeep(4, 2, svo->getExtent()->data());
@@ -992,7 +1008,7 @@ void VolumeRenderWindow::setSvo(SparseVoxelOcttree * svo)
     isSvoInitialized = true;
 }
 
-void VolumeRenderWindow::resetViewMatrix()
+void VolumeRenderWorker::resetViewMatrix()
 {
     data_scaling.setIdentity(4);
     rotation.setIdentity(4);
@@ -1000,7 +1016,7 @@ void VolumeRenderWindow::resetViewMatrix()
     data_translation.setIdentity(4);
 }
 
-size_t VolumeRenderWindow::setScaleBars()
+size_t VolumeRenderWorker::setScaleBars()
 {
     // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
     double length = data_view_extent[1] - data_view_extent[0];
@@ -1093,20 +1109,20 @@ size_t VolumeRenderWindow::setScaleBars()
                         if ((size_t) n_scalebar_ticks+3 < scalebar_ticks.getM())
                         {
                             getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
-                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *width();
-                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *height();
+                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
+                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
                             scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
                             n_scalebar_ticks++;
 
                             getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+4)*3, &scalebar_view_matrix);
-                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *width();
-                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *height();
+                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
+                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
                             scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
                             n_scalebar_ticks++;
 
                             getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+8)*3, &scalebar_view_matrix);
-                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *width();
-                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *height();
+                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
+                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
                             scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
                             n_scalebar_ticks++;
                         }
@@ -1151,12 +1167,12 @@ size_t VolumeRenderWindow::setScaleBars()
     return coord_counter;
 }
 
-void VolumeRenderWindow::setQuality(int value)
+void VolumeRenderWorker::setQuality(int value)
 {
    fps_required = (float) value;
 }
 
-void VolumeRenderWindow::setProjection()
+void VolumeRenderWorker::setProjection()
 {
     isOrthonormal = !isOrthonormal;
     ctc_matrix.setProjection(isOrthonormal);
@@ -1170,7 +1186,7 @@ void VolumeRenderWindow::setProjection()
     projection_scaling[10] = f;
 }
 
-void VolumeRenderWindow::setBackground()
+void VolumeRenderWorker::setBackground()
 {
     Matrix<GLfloat> tmp;
     tmp = clear_color;
@@ -1189,27 +1205,27 @@ void VolumeRenderWindow::setBackground()
                          255.0*0.7));
     normal_pen->setWidth(1);
 }
-void VolumeRenderWindow::setLogarithmic()
+void VolumeRenderWorker::setLogarithmic()
 {
     isLogarithmic = !isLogarithmic;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWindow::setDataStructure()
+void VolumeRenderWorker::setDataStructure()
 {
     isDSActive = !isDSActive;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWindow::setTsfColor(int value)
+void VolumeRenderWorker::setTsfColor(int value)
 {
     tsf_color_scheme = value;
     if (isInitialized) setTsfTexture();
 }
-void VolumeRenderWindow::setTsfAlpha(int value)
+void VolumeRenderWorker::setTsfAlpha(int value)
 {
     tsf_alpha_scheme = value;
     if (isInitialized) setTsfTexture();
 }
-void VolumeRenderWindow::setDataMin(double value)
+void VolumeRenderWorker::setDataMin(double value)
 {
     if (isModelActive)
     {
@@ -1221,7 +1237,7 @@ void VolumeRenderWindow::setDataMin(double value)
     }
     if (isInitialized) setTsfParameters();
 }
-void VolumeRenderWindow::setDataMax(double value)
+void VolumeRenderWorker::setDataMax(double value)
 {
     if (isModelActive)
     {
@@ -1233,7 +1249,7 @@ void VolumeRenderWindow::setDataMax(double value)
     }
     if (isInitialized) setTsfParameters();
 }
-void VolumeRenderWindow::setAlpha(double value)
+void VolumeRenderWorker::setAlpha(double value)
 {
     if (isModelActive)
     {
@@ -1245,7 +1261,7 @@ void VolumeRenderWindow::setAlpha(double value)
     }
     if (isInitialized) setTsfParameters();
 }
-void VolumeRenderWindow::setBrightness(double value)
+void VolumeRenderWorker::setBrightness(double value)
 {
     if (isModelActive)
     {
@@ -1257,46 +1273,46 @@ void VolumeRenderWindow::setBrightness(double value)
     }
     if (isInitialized) setTsfParameters();
 }
-void VolumeRenderWindow::setUnitcell()
+void VolumeRenderWorker::setUnitcell()
 {
     isUnitcellActive = !isUnitcellActive;
 }
-void VolumeRenderWindow::setModel()
+void VolumeRenderWorker::setModel()
 {
     isModelActive = !isModelActive;
 }
-void VolumeRenderWindow::setModelParam0(double value)
+void VolumeRenderWorker::setModelParam0(double value)
 {
     model_misc_floats[0] = value;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWindow::setModelParam1(double value)
+void VolumeRenderWorker::setModelParam1(double value)
 {
     model_misc_floats[1] = value;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWindow::setModelParam2(double value)
+void VolumeRenderWorker::setModelParam2(double value)
 {
     model_misc_floats[2] = value;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWindow::setModelParam3(double value)
+void VolumeRenderWorker::setModelParam3(double value)
 {
     model_misc_floats[3] = value;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWindow::setModelParam4(double value)
+void VolumeRenderWorker::setModelParam4(double value)
 {
     model_misc_floats[4] = value;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWindow::setModelParam5(double value)
+void VolumeRenderWorker::setModelParam5(double value)
 {
     model_misc_floats[5] = value;
     if (isInitialized) setMiscArrays();
 }
 
-void VolumeRenderWindow::setScalebar()
+void VolumeRenderWorker::setScalebar()
 {
     isScalebarActive = !isScalebarActive;
 }
