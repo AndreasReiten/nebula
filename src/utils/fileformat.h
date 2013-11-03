@@ -57,7 +57,7 @@ class PilatusFile
         float getQSuggestion();
         float getMaxCount();
         void clearData();
-        void setBackground(Matrix<float> * buffer, float flux, float exposure_time);
+        void setBackground(float flux, float exposure_time);
         float getFlux();
         float getExpTime();
         void setProjectionKernel(cl_kernel * kernel);
@@ -77,7 +77,7 @@ class PilatusFile
         size_t glb_ws[2];
 
         MiniArray<float> data_buf;
-        Matrix<float> * background;
+//        Matrix<float> * background;
         float background_flux;
         float backgroundExpTime;
 

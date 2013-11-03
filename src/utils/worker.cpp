@@ -67,17 +67,6 @@ void BaseWorker::killProcess()
     kill_flag = true;
 }
 
-//void BaseWorker::setOpenGLContext(QOpenGLContext * context)
-//{
-//    context_gl = context;
-//}
-
-//void BaseWorker::enableOpenGLContext()
-//{
-//    context_gl->moveToThread(QThread::currentThread());
-////    context_gl->makeCurrent();
-//}
-
 void BaseWorker::setFilePaths(QStringList * file_paths)
 {
     this->file_paths = file_paths;
@@ -320,10 +309,6 @@ void ReadFileWorker::test()
 
 void ReadFileWorker::process()
 {
-
-
-    QCoreApplication::processEvents();
-
     if (files->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Warning: No files specified!");
@@ -334,12 +319,6 @@ void ReadFileWorker::process()
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Reading "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
-//    emit enableSetFileButton(false);
-//    emit enableReadFileButton(false);
-//    emit enableProjectFileButton(false);
-//    emit enableVoxelizeButton(false);
-//    emit enableAllInOneButton(false);
-//    emit showGenericProgressBar(true);
     emit changedTabWidget(1);
 
 
@@ -351,7 +330,6 @@ void ReadFileWorker::process()
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
-        //--QCoreApplication::processEvents();
         if (kill_flag)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
@@ -426,8 +404,6 @@ void ProjectFileWorker::initializeCLKernel()
 void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
-    qDebug();
-    QCoreApplication::processEvents();
 
     if (files->size() <= 0)
     {
@@ -437,23 +413,18 @@ void ProjectFileWorker::process()
 
         kill_flag = true;
     }
-    qDebug();
+
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Correcting and Projecting "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
 
-    Matrix<float> test_background;
-
-    test_background.set(1679, 1475, 0.0);
-
     QElapsedTimer stopwatch;
     stopwatch.start();
-    qDebug();
     kill_flag = false;
 
     size_t n = 0;
     reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
-    qDebug();
+
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
@@ -468,58 +439,29 @@ void ProjectFileWorker::process()
         // Project and correct file and get status
         if (n > reduced_pixels->size())
         {
-            std::cout << "TOO MUCH for reduced_pixels: " << n << " > " << reduced_pixels->size()<< std::endl;
             // Break if there is too much data.
             emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));
             kill_flag = true;
         }
         else
         {
-            qDebug();
-//            qDebug() << "New measurements ------";
-//            QElapsedTimer timer;
-//            timer.start();
-//            emit testToWindow();
-//            qDebug() << timer.restart() << " (this->main->window)";
-//            emit testToMain();
-//            qDebug() << timer.restart() << " (this->window)";
-            qDebug();
-            emit test();
-//            enableOpenGLContext();
-            qDebug();
             emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
-//            qDebug() << timer.restart() << " First signal sent";
-            qDebug();
             (*files)[i].setProjectionKernel(&project_kernel);
-//            qDebug() << timer.restart();
-            qDebug();
-            (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
-//            qDebug() << timer.restart();
-            qDebug();
+            (*files)[i].setBackground(files->front().getFlux(), files->front().getExpTime());
+
             emit aquireSharedBuffers();
-//            qDebug() << timer.restart()<< " (Before launch)" << " Second signal sent";
-            qDebug();
+
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
-//            qDebug() << timer.restart()<< " (After launch)";
-            qDebug();
+
             emit releaseSharedBuffers();
-//            qDebug() << timer.restart() << " Third signal sent";
 
             emit updateRequest();
-//            qDebug() << timer.restart() << " Update signal sent";
-            qDebug();
 
-            if (STATUS_OK)
-            {
-//                emit repaintImageWidget();
-                //--QCoreApplication::processEvents();
-            }
-            else
+            if (!STATUS_OK)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
-//            qDebug() << timer.restart();
         }
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/files->size());
@@ -527,7 +469,6 @@ void ProjectFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-//    std::cout << "RESIZING for reduced_pixels: " << n << std::endl;
     reduced_pixels->resize(n);
 
     /* Create dummy dataset for debugging purposes.
@@ -623,18 +564,10 @@ void AllInOneWorker::process()
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Treating "+QString::number(file_paths->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
-//    emit enableSetFileButton(false);
-//    emit enableReadFileButton(false);
-//    emit enableProjectFileButton(false);
-//    emit enableVoxelizeButton(false);
-//    emit enableAllInOneButton(false);
-//    emit showGenericProgressBar(true);
     emit changedTabWidget(1);
 
     // Parameters for Ewald's projection
-    Matrix<float> test_background;
-    test_background.set(1679, 1475, 0.0);
-    std::cout << "RESERVING for reduced_pixels: " << REDUCED_PIXELS_MAX_BYTES/sizeof(float) << std::endl;
+    //    std::cout << "RESERVING for reduced_pixels: " << REDUCED_PIXELS_MAX_BYTES/sizeof(float) << std::endl;
     reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
@@ -655,7 +588,6 @@ void AllInOneWorker::process()
             QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
 
             emit changedMessageString(str);
-//            std::cout << "CLEARING for reduced_pixels" << std::endl;
             reduced_pixels->clear();
 
             break;
@@ -686,11 +618,11 @@ void AllInOneWorker::process()
                     emit changedImageSize(file.getWidth(), file.getHeight());
 
                     file.setProjectionKernel(&project_kernel);
-                    file.setBackground(&test_background, file.getFlux(), file.getExpTime());
+                    file.setBackground(file.getFlux(), file.getExpTime());
 
-//                    emit aquireSharedBuffers();
+                    emit aquireSharedBuffers();
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
-//                    emit releaseSharedBuffers();
+                    emit releaseSharedBuffers();
                     emit updateRequest();
 
                     if (STATUS_OK)
@@ -1066,12 +998,6 @@ void VoxelizeWorker::process()
                 if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
             }
 
-            //~std::cout << "reduced_pixels.max() " << reduced_pixels->max() << std::endl;
-            //~std::cout << "reduced_pixels.min() " << reduced_pixels->min() << std::endl;
-//~
-            //~std::cout << "pool.max() " << svo->pool.max() << std::endl;
-            //~std::cout << "pool.min() " << svo->pool.min() << std::endl;
-
             if (!kill_flag)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Total size (uncompressed): "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB");
@@ -1099,7 +1025,6 @@ void VoxelizeWorker::process()
 DisplayFileWorker::DisplayFileWorker()
 {
     this->isCLInitialized = false;
-    test_background.set(1475, 1679, 0.0);
 }
 
 DisplayFileWorker::~DisplayFileWorker()
@@ -1126,16 +1051,14 @@ void DisplayFileWorker::process()
         STATUS_OK = file.readData();
         if (STATUS_OK)
         {
-//            emit changedImageWidth(file.getWidth());
-//            emit changedImageHeight(file.getHeight());
             emit changedImageSize(file.getWidth(), file.getHeight());
             file.setProjectionKernel(&project_kernel);
-            file.setBackground(&test_background, file.getFlux(), file.getExpTime());
+            file.setBackground(file.getFlux(), file.getExpTime());
 
             size_t n;
-//            emit aquireSharedBuffers();
+            emit aquireSharedBuffers();
             STATUS_OK = file.filterData( &n, NULL, *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high, 0);
-//            emit releaseSharedBuffers();
+            emit releaseSharedBuffers();
 //            if (STATUS_OK)
 //            {
 ////                emit repaintImageWidget();

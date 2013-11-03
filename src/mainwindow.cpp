@@ -156,7 +156,7 @@ void MainWindow::initializeThreads()
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::DirectConnection);
+    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
     connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
@@ -165,17 +165,17 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-
+    connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
+    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
     connect(projectFileWorker, SIGNAL(test()), this, SLOT(test()), Qt::BlockingQueuedConnection);
     connect(projectFileWorker, SIGNAL(test()), imageRenderWindow, SLOT(test()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(test()), readFileWorker, SLOT(test()),  Qt::DirectConnection);
-    connect(projectFileWorker, SIGNAL(test()), imageRenderWorker, SLOT(test()), Qt::DirectConnection);
+    connect(projectFileWorker, SIGNAL(test()), imageRenderWorker, SLOT(test()),  Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(test()), imageRenderWorker, SLOT(test()), Qt::BlockingQueuedConnection);
 
 
-    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::DirectConnection);
-    connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
-    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+
     connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
     connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
@@ -1059,10 +1059,12 @@ void MainWindow::initializeInteractives()
         format_gl.setAlphaBufferSize(8);
 
         imageRenderWorker = new ImageRenderWorker();
+        imageRenderWorker->setThreading(false);
         imageRenderWorker->setOpenCLContext(context_cl);
         imageRenderWorker->setSharedWindow(sharedContextWindow);
 
         imageRenderWindow = new ImageRenderWindow();
+        imageRenderWindow->setThreading(false);
         imageRenderWindow->setOpenGLWorker(imageRenderWorker);
         imageRenderWindow->setSharedWindow(sharedContextWindow);
         imageRenderWindow->setFormat(format_gl);
@@ -1103,10 +1105,12 @@ void MainWindow::initializeInteractives()
         format_gl.setAlphaBufferSize(8);
 
         volumeRenderWorker = new VolumeRenderWorker();
+        volumeRenderWorker->setThreading(true);
         volumeRenderWorker->setOpenCLContext(context_cl);
         volumeRenderWorker->setSharedWindow(sharedContextWindow);
 
         volumeRenderWindow = new VolumeRenderWindow();
+        volumeRenderWindow->setThreading(true);
         volumeRenderWindow->setOpenGLWorker(volumeRenderWorker);
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);

@@ -3,6 +3,7 @@
 OpenGLWorker::OpenGLWorker(QObject *parent)
     : QObject(parent)
     , isInitialized(false)
+    , isThreaded(false)
 //    , isRenderSurfaceActive(false)
     , paint_device_gl(0)
 {
@@ -32,7 +33,7 @@ void OpenGLWorker::resizeEvent(QResizeEvent * ev)
     if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
 }
 
-void OpenGLWorker::process()
+void OpenGLWorker::processUsingSeparateThread()
 {
 //    if (isRenderSurfaceActive)
 //    {
@@ -59,6 +60,27 @@ void OpenGLWorker::process()
         emit finished();
 //    }
 }
+
+void OpenGLWorker::processUsingMainThread()
+{
+        context_gl->makeCurrent(render_surface);
+
+        if (!isInitialized)
+        {
+            initializeOpenGLFunctions();
+            if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
+            initialize();
+            isInitialized = true;
+        }
+        else
+        {
+            QPainter painter(paint_device_gl);
+            render(&painter);
+        }
+        context_gl->swapBuffers(render_surface);
+        setFps();
+}
+
 
 void OpenGLWorker::render(QPainter *painter)
 {
@@ -162,8 +184,9 @@ OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     , isUpdatePending(false)
     , isBufferBeingSwapped(false)
     , isAnimating(false)
+    , isThreaded(false)
     , context_gl(0)
-    , gl_surface(0)
+    , gl_worker(0)
 {
     this->shared_context = shareContext;
 
@@ -186,6 +209,16 @@ void OpenGLWindow::mouseMoveEvent(QMouseEvent* ev)
     emit mouseMoveEventCaught(ev);
 }
 
+void OpenGLWindow::setThreading(bool value)
+{
+    isThreaded = value;
+}
+
+void OpenGLWorker::setThreading(bool value)
+{
+    isThreaded = value;
+}
+
 void OpenGLWindow::wheelEvent(QWheelEvent* ev)
 {
     emit wheelEventCaught(ev);
@@ -198,7 +231,7 @@ void OpenGLWindow::resizeEvent(QResizeEvent * ev)
 
 void OpenGLWindow::setOpenGLWorker(OpenGLWorker * worker)
 {
-    gl_surface = worker;
+    gl_worker = worker;
     worker->setRenderSurface(this);
 }
 
@@ -283,27 +316,33 @@ void OpenGLWindow::preInitialize()
         initialize();
         context_gl->doneCurrent();
 
-//        needsInitialize = true;
-        if (gl_surface)
+
+        if (gl_worker)
         {
-            // Set up worker thread
-            worker_thread = new QThread;
-    //        gl_surface = new OpenGLWorker();
-            gl_surface->setGLContext(context_gl);
-    //        gl_surface->setRenderSurface(this);
+            gl_worker->setGLContext(context_gl);
 
-            gl_surface->moveToThread(worker_thread);
-            connect(worker_thread, SIGNAL(started()), gl_surface, SLOT(process()));
-            connect(gl_surface, SIGNAL(finished()), worker_thread, SLOT(quit()));
-            connect(gl_surface, SIGNAL(finished()), this, SLOT(setSwapState()));
 
-            // Transfering mouse events
-            connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_surface, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::BlockingQueuedConnection);
-            connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_surface, SLOT(resizeEvent(QResizeEvent*)), Qt::BlockingQueuedConnection);
-            connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_surface, SLOT(wheelEvent(QWheelEvent*)), Qt::BlockingQueuedConnection);
+            if (isThreaded)
+            {
+                // Set up worker thread
+                worker_thread = new QThread;
 
-            // Ensure safe destruction
-//            connect(this, SIGNAL(destroyed()), worker_thread, SLOT(quit()));
+                gl_worker->moveToThread(worker_thread);
+                connect(worker_thread, SIGNAL(started()), gl_worker, SLOT(processUsingSeparateThread()));
+                connect(gl_worker, SIGNAL(finished()), worker_thread, SLOT(quit()));
+                connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
+
+                // Transfering mouse events
+                connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::BlockingQueuedConnection);
+                connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::BlockingQueuedConnection);
+                connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::BlockingQueuedConnection);
+            }
+            else
+            {
+                connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
+                connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::DirectConnection);
+                connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+            }
         }
     }
     context_gl->makeCurrent(this);
@@ -326,13 +365,21 @@ void OpenGLWindow::renderNow()
     {
         preInitialize();
 
-        if (gl_surface)
+        if (gl_worker)
         {
-            context_gl->doneCurrent();
-            isBufferBeingSwapped = true;
+            if (isThreaded)
+            {
+                context_gl->doneCurrent();
+                isBufferBeingSwapped = true;
 
-            context_gl->moveToThread(worker_thread);
-            worker_thread->start();
+                context_gl->moveToThread(worker_thread);
+                worker_thread->start();
+            }
+            else
+            {
+                gl_worker->processUsingMainThread();
+            }
+
         }
     }
     if (isAnimating) renderLater();

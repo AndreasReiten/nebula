@@ -65,7 +65,6 @@ void ImageRenderWindow::test()
 
 void ImageRenderWorker::setImageSize(int w, int h)
 {
-    qDebug();
     if ((w != image_w) || (h != image_h))
     {
         this->image_w = w;
@@ -127,7 +126,7 @@ void ImageRenderWorker::drawImages()
 
     if (isAlphaImgInitialized && isBetaImgInitialized && isGammaImgInitialized)
     {
-        releaseSharedBuffers();
+//        releaseSharedBuffers();
 
         shared_window->std_2d_tex_program->bind();
         glBindTexture(GL_TEXTURE_2D, image_tex[0]);
@@ -178,7 +177,7 @@ void ImageRenderWorker::drawImages()
 
         shared_window->std_2d_tex_program->release();
 
-        aquireSharedBuffers();
+//        aquireSharedBuffers();
     }
 }
 

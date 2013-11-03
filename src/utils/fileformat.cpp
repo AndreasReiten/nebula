@@ -286,15 +286,15 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_mem background_cl = clCreateImage2D ( *context_cl->getContext(),
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        &source_format,
-        fast_dimension,
-        slow_dimension,
-        fast_dimension*sizeof(cl_float),
-        background->data(),
-        &err);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    cl_mem background_cl = clCreateImage2D ( *context_cl->getContext(),
+//        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+//        &source_format,
+//        fast_dimension,
+//        slow_dimension,
+//        fast_dimension*sizeof(cl_float),
+//        background->data(),
+//        &err);
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
     cl_sampler intensity_sampler = clCreateSampler(*context_cl->getContext(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
@@ -338,31 +338,31 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) cl_img_beta);
     err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) cl_img_gamma);
     err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) cl_tsf_tex);
-    err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &background_cl);
-    err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &tsf_sampler);
-    err |= clSetKernelArg(*project_kernel, 8, sizeof(cl_sampler), &intensity_sampler);
-    err |= clSetKernelArg(*project_kernel, 9, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+//    err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &background_cl);
+    err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_sampler), &tsf_sampler);
+    err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &intensity_sampler);
+    err |= clSetKernelArg(*project_kernel, 8, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
     float threshold_one[2] = {(float)threshold_reduce_low, (float)threshold_reduce_high};
     float threshold_two[2] = {(float)threshold_project_low, (float)threshold_project_high};
-    err |= clSetKernelArg(*project_kernel, 10, 2*sizeof(cl_float), threshold_one);
-    err |= clSetKernelArg(*project_kernel, 11, 2*sizeof(cl_float), threshold_two);
-    err |= clSetKernelArg(*project_kernel, 12, sizeof(cl_float), &background_flux);
-    err |= clSetKernelArg(*project_kernel, 13, sizeof(cl_float), &backgroundExpTime);
-    err |= clSetKernelArg(*project_kernel, 14, sizeof(cl_float), &pixel_size_x);
-    err |= clSetKernelArg(*project_kernel, 15, sizeof(cl_float), &pixel_size_y);
-    err |= clSetKernelArg(*project_kernel, 16, sizeof(cl_float), &exposure_time);
-    err |= clSetKernelArg(*project_kernel, 17, sizeof(cl_float), &wavelength);
-    err |= clSetKernelArg(*project_kernel, 18, sizeof(cl_float), &detector_distance);
-    err |= clSetKernelArg(*project_kernel, 19, sizeof(cl_float), &beam_x);
-    err |= clSetKernelArg(*project_kernel, 20, sizeof(cl_float), &beam_y);
-    err |= clSetKernelArg(*project_kernel, 21, sizeof(cl_float), &flux);
-    err |= clSetKernelArg(*project_kernel, 22, sizeof(cl_float), &start_angle);
-    err |= clSetKernelArg(*project_kernel, 23, sizeof(cl_float), &angle_increment);
-    err |= clSetKernelArg(*project_kernel, 24, sizeof(cl_float), &kappa);
-    err |= clSetKernelArg(*project_kernel, 25, sizeof(cl_float), &phi);
-    err |= clSetKernelArg(*project_kernel, 26, sizeof(cl_float), &omega);
-    err |= clSetKernelArg(*project_kernel, 27, sizeof(cl_float), &max_counts);
+    err |= clSetKernelArg(*project_kernel, 9, 2*sizeof(cl_float), threshold_one);
+    err |= clSetKernelArg(*project_kernel, 10, 2*sizeof(cl_float), threshold_two);
+    err |= clSetKernelArg(*project_kernel, 11, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*project_kernel, 12, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*project_kernel, 13, sizeof(cl_float), &pixel_size_x);
+    err |= clSetKernelArg(*project_kernel, 14, sizeof(cl_float), &pixel_size_y);
+    err |= clSetKernelArg(*project_kernel, 15, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*project_kernel, 16, sizeof(cl_float), &wavelength);
+    err |= clSetKernelArg(*project_kernel, 17, sizeof(cl_float), &detector_distance);
+    err |= clSetKernelArg(*project_kernel, 18, sizeof(cl_float), &beam_x);
+    err |= clSetKernelArg(*project_kernel, 19, sizeof(cl_float), &beam_y);
+    err |= clSetKernelArg(*project_kernel, 20, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*project_kernel, 21, sizeof(cl_float), &start_angle);
+    err |= clSetKernelArg(*project_kernel, 22, sizeof(cl_float), &angle_increment);
+    err |= clSetKernelArg(*project_kernel, 23, sizeof(cl_float), &kappa);
+    err |= clSetKernelArg(*project_kernel, 24, sizeof(cl_float), &phi);
+    err |= clSetKernelArg(*project_kernel, 25, sizeof(cl_float), &omega);
+    err |= clSetKernelArg(*project_kernel, 26, sizeof(cl_float), &max_counts);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Launch rendering kernel */
@@ -405,10 +405,10 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
         err = clReleaseMemObject(source_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
-    if (background_cl){
-        err = clReleaseMemObject(background_cl);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-    }
+//    if (background_cl){
+//        err = clReleaseMemObject(background_cl);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    }
     if (sample_rotation_matrix_cl){
         err = clReleaseMemObject(sample_rotation_matrix_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -440,9 +440,9 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     return 1;
 }
 
-void PilatusFile::setBackground(Matrix<float>  * buffer, float flux, float exposure_time)
+void PilatusFile::setBackground(float flux, float exposure_time)
 {
-    this->background = buffer;
+//    this->background = buffer;
     this->background_flux = flux;
     this->backgroundExpTime = exposure_time;
 }

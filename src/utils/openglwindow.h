@@ -34,12 +34,14 @@ public:
     void getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform);
     QPointF coordQttoGL(QPointF coord);
     void glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect);
+    void setThreading(bool value);
 
 signals:
     void finished();
 
 public slots:
-    void process();
+    void processUsingSeparateThread();
+    void processUsingMainThread();
     virtual void mouseMoveEvent(QMouseEvent* ev);
     virtual void wheelEvent(QWheelEvent* ev);
     virtual void resizeEvent(QResizeEvent * ev);
@@ -60,6 +62,7 @@ protected:
 private:
     // Boolean checks
     bool isInitialized;
+    bool isThreaded;
 
     double fps;
     QElapsedTimer fps_elapsed_timer;
@@ -78,7 +81,7 @@ public:
     QOpenGLContext * getGLContext();
     OpenCLContext * getCLContext();
     void setOpenGLWorker(OpenGLWorker * worker);
-
+    void setThreading(bool value);
 
 signals:
     void mouseMoveEventCaught(QMouseEvent* ev);
@@ -105,7 +108,7 @@ protected:
 
 
 private:
-    OpenGLWorker * gl_surface;
+    OpenGLWorker * gl_worker;
     QThread * worker_thread;
     QOpenGLContext *context_gl;
     OpenCLContext *context_cl;
@@ -113,5 +116,6 @@ private:
     bool isBufferBeingSwapped;
     bool isUpdatePending;
     bool isAnimating;
+    bool isThreaded;
 };
 #endif

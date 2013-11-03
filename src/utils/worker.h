@@ -102,7 +102,7 @@ class BaseWorker : public QObject
         float * threshold_project_high;
         QStringList * file_paths;
         QList<PilatusFile> * files;
-        QList<PilatusFile> * background_files;
+//        QList<PilatusFile> * background_files;
         MiniArray<float> * reduced_pixels;
 
         // OpenGL
@@ -208,7 +208,7 @@ class DisplayFileWorker: public ProjectFileWorker
 
     private:
         int display_file;
-        Matrix<float> test_background;
+//        Matrix<float> test_background;
 };
 
 
