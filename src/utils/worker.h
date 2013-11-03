@@ -26,6 +26,7 @@
 #include <QDateTime>
 #include <QScriptEngine>
 #include <QPlainTextEdit>
+#include <QOpenGLContext>
 
 /* Project files */
 #include "tools.h"
@@ -53,6 +54,7 @@ class BaseWorker : public QObject
         void setOpenCLContext(OpenCLContext * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
+        void setOpenGLContext(QOpenGLContext *context);
 
     signals:
         void finished();
@@ -71,6 +73,7 @@ class BaseWorker : public QObject
         void setReduceThresholdHigh(float * value);
         void setProjectThresholdLow(float * value);
         void setProjectThresholdHigh(float * value);
+        void enableOpenGLContext();
 
     protected:
         // Runtime
@@ -101,6 +104,9 @@ class BaseWorker : public QObject
         QList<PilatusFile> * files;
         QList<PilatusFile> * background_files;
         MiniArray<float> * reduced_pixels;
+
+        // OpenGL
+        QOpenGLContext * context_gl;
 };
 
 class ReadScriptWorker : public BaseWorker
@@ -152,6 +158,7 @@ class ReadFileWorker : public BaseWorker
         ~ReadFileWorker();
 
     private slots:
+        void test();
         void process();
 
     private:
@@ -174,6 +181,7 @@ class ProjectFileWorker : public BaseWorker
         void testToWindow();
         void testToMain();
         void updateRequest();
+        void test();
 
     public slots:
         void initializeCLKernel();

@@ -47,6 +47,9 @@ public:
     ~ImageRenderWindow();
     void setSharedWindow(SharedContextWindow * window);
 
+public slots:
+    void test();
+
 signals:
     void changedMessageString(QString str);
 
@@ -75,6 +78,7 @@ public slots:
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
+    void test();
 
 protected:
     void initialize();

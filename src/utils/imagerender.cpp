@@ -53,8 +53,19 @@ ImageRenderWorker::~ImageRenderWorker()
     if (isGammaImgInitialized) clReleaseMemObject(cl_img_gamma);
 }
 
+void ImageRenderWorker::test()
+{
+    qDebug("Test");
+}
+
+void ImageRenderWindow::test()
+{
+    qDebug("Test");
+}
+
 void ImageRenderWorker::setImageSize(int w, int h)
 {
+    qDebug();
     if ((w != image_w) || (h != image_h))
     {
         this->image_w = w;

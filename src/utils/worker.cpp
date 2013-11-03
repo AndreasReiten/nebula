@@ -67,9 +67,19 @@ void BaseWorker::killProcess()
     kill_flag = true;
 }
 
+void BaseWorker::setOpenGLContext(QOpenGLContext * context)
+{
+    context_gl = context;
+}
+
+void BaseWorker::enableOpenGLContext()
+{
+    context_gl->moveToThread(QThread::currentThread());
+    context_gl->makeCurrent();
+}
+
 void BaseWorker::setFilePaths(QStringList * file_paths)
 {
-
     this->file_paths = file_paths;
 }
 
@@ -303,6 +313,11 @@ ReadFileWorker::~ReadFileWorker()
 
 }
 
+void ReadFileWorker::test()
+{
+    qDebug("Test");
+}
+
 void ReadFileWorker::process()
 {
 
@@ -468,6 +483,9 @@ void ProjectFileWorker::process()
 //            qDebug() << timer.restart() << " (this->main->window)";
 //            emit testToMain();
 //            qDebug() << timer.restart() << " (this->window)";
+            qDebug();
+            emit test();
+            enableOpenGLContext();
             qDebug();
             emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
 //            qDebug() << timer.restart() << " First signal sent";
