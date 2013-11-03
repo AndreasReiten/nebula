@@ -143,7 +143,7 @@ void MainWindow::initializeThreads()
     //### projectFileWorker ###
     projectFileWorker = new ProjectFileWorker();
     projectFileWorker->setOpenCLContext(context_cl);
-    projectFileWorker->setOpenGLContext(imageRenderWindow->getGLContext());
+//    projectFileWorker->setOpenGLContext(imageRenderWindow->getGLContext());
     projectFileWorker->setFilePaths(&file_paths);
     projectFileWorker->setFiles(&files);
     projectFileWorker->setReducedPixels(&reduced_pixels);
@@ -176,8 +176,8 @@ void MainWindow::initializeThreads()
     connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::DirectConnection);
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
     //### allInOneWorker ###
     allInOneWorker = new AllInOneWorker();
@@ -208,8 +208,8 @@ void MainWindow::initializeThreads()
     connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
     connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
 
     //### voxelizeWorker ###
@@ -252,8 +252,8 @@ void MainWindow::initializeThreads()
     connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
     connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
     connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
     connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));

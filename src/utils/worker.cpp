@@ -67,16 +67,16 @@ void BaseWorker::killProcess()
     kill_flag = true;
 }
 
-void BaseWorker::setOpenGLContext(QOpenGLContext * context)
-{
-    context_gl = context;
-}
+//void BaseWorker::setOpenGLContext(QOpenGLContext * context)
+//{
+//    context_gl = context;
+//}
 
-void BaseWorker::enableOpenGLContext()
-{
-    context_gl->moveToThread(QThread::currentThread());
-    context_gl->makeCurrent();
-}
+//void BaseWorker::enableOpenGLContext()
+//{
+//    context_gl->moveToThread(QThread::currentThread());
+////    context_gl->makeCurrent();
+//}
 
 void BaseWorker::setFilePaths(QStringList * file_paths)
 {
@@ -485,7 +485,7 @@ void ProjectFileWorker::process()
 //            qDebug() << timer.restart() << " (this->window)";
             qDebug();
             emit test();
-            enableOpenGLContext();
+//            enableOpenGLContext();
             qDebug();
             emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
 //            qDebug() << timer.restart() << " First signal sent";
@@ -496,13 +496,13 @@ void ProjectFileWorker::process()
             (*files)[i].setBackground(&test_background, files->front().getFlux(), files->front().getExpTime());
 //            qDebug() << timer.restart();
             qDebug();
-//            emit aquireSharedBuffers();
+            emit aquireSharedBuffers();
 //            qDebug() << timer.restart()<< " (Before launch)" << " Second signal sent";
             qDebug();
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
 //            qDebug() << timer.restart()<< " (After launch)";
             qDebug();
-//            emit releaseSharedBuffers();
+            emit releaseSharedBuffers();
 //            qDebug() << timer.restart() << " Third signal sent";
 
             emit updateRequest();

@@ -54,7 +54,7 @@ class BaseWorker : public QObject
         void setOpenCLContext(OpenCLContext * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
-        void setOpenGLContext(QOpenGLContext *context);
+//        void setOpenGLContext(QOpenGLContext *context);
 
     signals:
         void finished();
@@ -64,8 +64,8 @@ class BaseWorker : public QObject
         void changedFormatGenericProgress(QString str);
         void changedTabWidget(int value);
 //        void repaintImageWidget();
-//        void aquireSharedBuffers();
-//        void releaseSharedBuffers();
+        void aquireSharedBuffers();
+        void releaseSharedBuffers();
 
     public slots:
         void killProcess();
@@ -73,7 +73,7 @@ class BaseWorker : public QObject
         void setReduceThresholdHigh(float * value);
         void setProjectThresholdLow(float * value);
         void setProjectThresholdHigh(float * value);
-        void enableOpenGLContext();
+//        void enableOpenGLContext();
 
     protected:
         // Runtime
@@ -106,7 +106,7 @@ class BaseWorker : public QObject
         MiniArray<float> * reduced_pixels;
 
         // OpenGL
-        QOpenGLContext * context_gl;
+//        QOpenGLContext * context_gl;
 };
 
 class ReadScriptWorker : public BaseWorker
