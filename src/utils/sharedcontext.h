@@ -49,6 +49,9 @@ public:
     GLint std_blend_method;
     QOpenGLShaderProgram *std_blend_program;
 
+//    void renderNow();
+    void preInitialize();
+
 signals:
     void changedMessageString(QString str);
 
@@ -61,6 +64,8 @@ private:
     GLuint loadShader(GLenum type, const char *source);
 
     cl_int err;
+
+    OpenGLWorker * gl_worker;
 };
 
 #endif

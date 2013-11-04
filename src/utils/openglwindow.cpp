@@ -34,23 +34,23 @@ void OpenGLWorker::resizeEvent(QResizeEvent * ev)
 
 void OpenGLWorker::process()
 {
-        context_gl->makeCurrent(render_surface);
+    context_gl->makeCurrent(render_surface);
 
-        if (!isInitialized)
-        {
-            initializeOpenGLFunctions();
-            if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
-            initialize();
-            isInitialized = true;
-        }
-        else
-        {
-            QPainter painter(paint_device_gl);
-            render(&painter);
-        }
-        context_gl->swapBuffers(render_surface);
-        setFps();
-        emit finished();
+    if (!isInitialized)
+    {
+        initializeOpenGLFunctions();
+        if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
+        initialize();
+        isInitialized = true;
+    }
+    else
+    {
+        QPainter painter(paint_device_gl);
+        render(&painter);
+    }
+    context_gl->swapBuffers(render_surface);
+    setFps();
+    emit finished();
 }
 
 //void OpenGLWorker::process()
@@ -169,7 +169,6 @@ OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     , isAnimating(false)
     , isThreaded(false)
     , context_gl(0)
-    , gl_worker(0)
 {
     this->shared_context = shareContext;
 
@@ -212,10 +211,47 @@ void OpenGLWindow::resizeEvent(QResizeEvent * ev)
     emit resizeEventCaught(ev);
 }
 
-void OpenGLWindow::setOpenGLWorker(OpenGLWorker * worker)
+//void OpenGLWindow::setOpenGLWorker(OpenGLWorker * worker)
+//{
+//    gl_worker = worker;
+//    worker->setRenderSurface(this);
+//}
+
+void OpenGLWindow::initializeGLContext()
 {
-    gl_worker = worker;
-    worker->setRenderSurface(this);
+    if (!context_gl)
+    {
+        context_gl = new QOpenGLContext(); // Maybe not set pareent here
+        context_gl->setFormat(requestedFormat());
+        if (shared_context != 0)
+        {
+            context_gl->setShareContext(shared_context);
+        }
+        context_gl->create();
+
+        std::stringstream ss;
+
+        ss << std::endl << "_____ OpenGL Context Info _____" << std::endl;
+        ss << "Context:          " << context_gl << std::endl;
+        ss << "Shared context:   " << context_gl->shareContext() << std::endl;
+        ss << "OpenGL version:   " << context_gl->format().version().first << "." << context_gl->format().version().second << std::endl;
+        ss << "MSAA samples:     " << context_gl->format().samples() << std::endl;
+        ss << "Alpha:            " << context_gl->format().hasAlpha() << std::endl;
+        ss << "RGBA bits:        " << context_gl->format().redBufferSize() << " " << context_gl->format().greenBufferSize() << " " << context_gl->format().blueBufferSize() << " " << context_gl->format().alphaBufferSize() << std::endl;
+        ss << "Depth bits:       " << context_gl->format().depthBufferSize() << std::endl;
+        ss << "Stencil bits:     " << context_gl->format().stencilBufferSize() << std::endl;
+        ss << "Stereo buffering: " << context_gl->format().stereo() << std::endl;
+        ss << "Renderable type:  " << context_gl->format().renderableType() << std::endl;
+        ss << "Swap behaviour:   " << context_gl->format().swapBehavior() << std::endl;
+        ss << "_______________________________" << std::endl;
+
+        qDebug() << ss.str().c_str();
+
+        // Intialize context depndtent stuff
+        context_gl->makeCurrent(this);
+        initialize();
+        context_gl->doneCurrent();
+    }
 }
 
 void OpenGLWorker::setFps()
@@ -264,77 +300,7 @@ void OpenGLWindow::initialize()
 
 void OpenGLWindow::preInitialize()
 {
-    if (!context_gl)
-    {
-        context_gl = new QOpenGLContext(); // Maybe not set pareent here
-        context_gl->setFormat(requestedFormat());
-        if (shared_context != 0)
-        {
-            context_gl->setShareContext(shared_context);
-        }
-        context_gl->create();
 
-        std::stringstream ss;
-
-        ss << std::endl << "_____ OpenGL Context Info _____" << std::endl;
-        ss << "Context:          " << context_gl << std::endl;
-        ss << "Shared context:   " << context_gl->shareContext() << std::endl;
-        ss << "OpenGL version:   " << context_gl->format().version().first << "." << context_gl->format().version().second << std::endl;
-        ss << "MSAA samples:     " << context_gl->format().samples() << std::endl;
-        ss << "Alpha:            " << context_gl->format().hasAlpha() << std::endl;
-        ss << "RGBA bits:        " << context_gl->format().redBufferSize() << " " << context_gl->format().greenBufferSize() << " " << context_gl->format().blueBufferSize() << " " << context_gl->format().alphaBufferSize() << std::endl;
-        ss << "Depth bits:       " << context_gl->format().depthBufferSize() << std::endl;
-        ss << "Stencil bits:     " << context_gl->format().stencilBufferSize() << std::endl;
-        ss << "Stereo buffering: " << context_gl->format().stereo() << std::endl;
-        ss << "Renderable type:  " << context_gl->format().renderableType() << std::endl;
-        ss << "Swap behaviour:   " << context_gl->format().swapBehavior() << std::endl;
-        ss << "_______________________________" << std::endl;
-
-        qDebug() << ss.str().c_str();
-
-        // Intialize context depndtent stuff
-        context_gl->makeCurrent(this);
-        initialize();
-        context_gl->doneCurrent();
-
-
-        if (gl_worker)
-        {
-            gl_worker->setGLContext(context_gl);
-
-
-            if (isThreaded)
-            {
-                // Set up worker thread
-                worker_thread = new QThread;
-
-                gl_worker->moveToThread(worker_thread);
-//                connect(worker_thread, SIGNAL(started()), gl_worker, SLOT(process()));
-                connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-//                connect(gl_worker, SIGNAL(finished()), worker_thread, SLOT(quit()));
-                connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
-                connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
-
-                // Transfering mouse events
-                connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::BlockingQueuedConnection);
-                connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::BlockingQueuedConnection);
-                connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::BlockingQueuedConnection);
-
-                // Move the OpenGL context to the rendering thread
-                context_gl->moveToThread(worker_thread);
-            }
-            else
-            {
-                connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
-                connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::DirectConnection);
-                connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
-
-                connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-                context_gl->makeCurrent(this);
-            }
-        }
-    }
-//    context_gl->makeCurrent(this);
 }
 
 void OpenGLWindow::setSwapState()
@@ -344,39 +310,7 @@ void OpenGLWindow::setSwapState()
 
 void OpenGLWindow::renderNow()
 {
-    if (!isExposed())
-    {
-        emit stopRendering();
-        return;
-    }
-    if (isBufferBeingSwapped)
-    {
-        if (isAnimating) renderLater();
-        return;
-    }
-    else
-    {
-        preInitialize();
 
-        if (gl_worker)
-        {
-            if (isThreaded)
-            {
-                isBufferBeingSwapped = true;
-
-                worker_thread->start();
-                emit render();
-            }
-            else
-            {
-                context_gl->makeCurrent(this);
-                gl_worker->process();
-                emit render();
-            }
-
-        }
-    }
-    if (isAnimating) renderLater();
 }
 
 void OpenGLWindow::setAnimating(bool animating)

@@ -33,7 +33,8 @@ __kernel void modelRayTrace(
     __constant float * data_view_extent,
     __constant float * tsf_var,
     __constant float * parameters,
-    __constant int * misc_int)
+    __constant int * misc_int,
+    __constant float * scalebar_matrix)
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
 
@@ -48,6 +49,7 @@ __kernel void modelRayTrace(
     float brightness = tsf_var[5];
 
     int isLogActive = misc_int[2];
+    int isSlicingActive = misc_int[4];
 
 //    float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
     if (isLogActive)
@@ -214,7 +216,8 @@ __kernel void modelWorkload(
     __local float * loc_work,
     __constant float * data_view_matrix,
     __constant float * data_extent,
-    __constant float * data_view_extent)
+    __constant float * data_view_extent,
+    __constant float * scalebar_matrix)
 {
 /* Estimate the number of intensity and color fetches that are needed for
  * the given combination input parameters */

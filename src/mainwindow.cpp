@@ -105,7 +105,7 @@ void MainWindow::initializeThreads()
     setFileWorker->setSVOFile(&svo_inprocess);
     setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     setFileWorker->setOpenCLContext(context_cl);
-    setFileWorker->setOpenCLBuffers(imageRenderWorker->getAlphaImgCLGL(), imageRenderWorker->getBetaImgCLGL(), imageRenderWorker->getGammaImgCLGL(), imageRenderWorker->getTsfImgCLGL());
+    setFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -170,14 +170,14 @@ void MainWindow::initializeThreads()
 
     connect(projectFileWorker, SIGNAL(test()), this, SLOT(test()), Qt::BlockingQueuedConnection);
     connect(projectFileWorker, SIGNAL(test()), imageRenderWindow, SLOT(test()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(test()), imageRenderWorker, SLOT(test()),  Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(test()), imageRenderWorker, SLOT(test()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()),  Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()), Qt::BlockingQueuedConnection);
 
 
-    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
 
-    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
     //### allInOneWorker ###
     allInOneWorker = new AllInOneWorker();
@@ -185,7 +185,7 @@ void MainWindow::initializeThreads()
     allInOneWorker->setSVOFile(&svo_inprocess);
     allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     allInOneWorker->setOpenCLContext(context_cl);
-    allInOneWorker->setOpenCLBuffers(imageRenderWorker->getAlphaImgCLGL(), imageRenderWorker->getBetaImgCLGL(), imageRenderWorker->getGammaImgCLGL(), imageRenderWorker->getTsfImgCLGL());
+    allInOneWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
     allInOneWorker->setReducedPixels(&reduced_pixels);
     allInOneWorker->initializeCLKernel();
     allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
@@ -205,11 +205,11 @@ void MainWindow::initializeThreads()
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-    connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
     connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
 
     //### voxelizeWorker ###
@@ -237,7 +237,7 @@ void MainWindow::initializeThreads()
     //### displayFileWorker ###
     displayFileWorker = new DisplayFileWorker();
     displayFileWorker->setOpenCLContext(context_cl);
-    displayFileWorker->setOpenCLBuffers(imageRenderWorker->getAlphaImgCLGL(), imageRenderWorker->getBetaImgCLGL(), imageRenderWorker->getGammaImgCLGL(), imageRenderWorker->getTsfImgCLGL());
+    displayFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
     displayFileWorker->setFilePaths(&file_paths);
     displayFileWorker->setFiles(&files);
     displayFileWorker->initializeCLKernel();
@@ -250,10 +250,10 @@ void MainWindow::initializeThreads()
     connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
     connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
     connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWorker, SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWorker, SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWorker, SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
     connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
     connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
     connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
@@ -763,24 +763,24 @@ void MainWindow::toggleScriptView()
 void MainWindow::initializeConnects()
 {
     /* this <-> volumeRenderWidget */
-    connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWorker, SLOT(setQuality(int)));
-    connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWorker, SLOT(setScalebar()));
-    connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWorker, SLOT(setProjection()));
-    connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWorker, SLOT(setBackground()));
-    connect(this->logAct, SIGNAL(triggered()), volumeRenderWorker, SLOT(setLogarithmic()));
-    connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWorker, SLOT(setDataStructure()));
-    connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWorker, SLOT(setTsfColor(int)));
-    connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWorker, SLOT(setTsfAlpha(int)));
-    connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setDataMin(double)));
-    connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setDataMax(double)));
-    connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setAlpha(double)));
-    connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setBrightness(double)));
-    connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWorker, SLOT(setUnitcell()));
-    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWorker, SLOT(setModel()));
-    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setModelParam0(double)));
-    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setModelParam1(double)));
-    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setModelParam2(double)));
-    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWorker, SLOT(setModelParam3(double)));
+    connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setQuality(int)));
+    connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setScalebar()));
+    connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
+    connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
+    connect(this->logAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
+    connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setDataStructure()));
+    connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
+    connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
+    connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMin(double)));
+    connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
+    connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setAlpha(double)));
+    connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setBrightness(double)));
+    connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
+    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setModel()));
+    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam0(double)));
+    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam1(double)));
+    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam2(double)));
+    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam3(double)));
 
 
     /* this <-> this */
@@ -840,7 +840,7 @@ void MainWindow::openSvo()
     if ((current_svo_path != ""))
     {
         svo_loaded[current_svo].open(current_svo_path);
-        volumeRenderWorker->setSvo(&(svo_loaded[current_svo]));
+        volumeRenderWindow->getWorker()->setSvo(&(svo_loaded[current_svo]));
 
         alphaSpinBox->setValue(0.05);
         brightnessSpinBox->setValue(2.0);
@@ -1058,19 +1058,19 @@ void MainWindow::initializeInteractives()
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
 
-        imageRenderWorker = new ImageRenderWorker();
-        imageRenderWorker->setThreading(false);
-        imageRenderWorker->setOpenCLContext(context_cl);
-        imageRenderWorker->setSharedWindow(sharedContextWindow);
+//        imageRenderWorker = new ImageRenderWorker();
+//        imageRenderWorker->setThreading(false);
+//        imageRenderWorker->setOpenCLContext(context_cl);
+//        imageRenderWorker->setSharedWindow(sharedContextWindow);
 
         imageRenderWindow = new ImageRenderWindow();
         imageRenderWindow->setThreading(false);
-        imageRenderWindow->setOpenGLWorker(imageRenderWorker);
+//        imageRenderWindow->setOpenGLWorker(imageRenderWorker);
         imageRenderWindow->setSharedWindow(sharedContextWindow);
         imageRenderWindow->setFormat(format_gl);
         imageRenderWindow->setOpenCLContext(context_cl);
         imageRenderWindow->setAnimating(true);
-
+        imageRenderWindow->preInitialize();
 
         imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
         imageRenderWidget->setFocusPolicy(Qt::TabFocus);
@@ -1104,18 +1104,19 @@ void MainWindow::initializeInteractives()
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
 
-        volumeRenderWorker = new VolumeRenderWorker();
-        volumeRenderWorker->setThreading(true);
-        volumeRenderWorker->setOpenCLContext(context_cl);
-        volumeRenderWorker->setSharedWindow(sharedContextWindow);
+//        volumeRenderWorker = new VolumeRenderWorker();
+//        volumeRenderWorker->setThreading(true);
+//        volumeRenderWorker->setOpenCLContext(context_cl);
+//        volumeRenderWorker->setSharedWindow(sharedContextWindow);
 
         volumeRenderWindow = new VolumeRenderWindow();
         volumeRenderWindow->setThreading(true);
-        volumeRenderWindow->setOpenGLWorker(volumeRenderWorker);
+//        volumeRenderWindow->setOpenGLWorker(volumeRenderWorker);
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);
         volumeRenderWindow->setOpenCLContext(context_cl);
         volumeRenderWindow->setAnimating(true);
+        volumeRenderWindow->preInitialize();
 
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
         volumeRenderWidget->setFocusPolicy(Qt::TabFocus);

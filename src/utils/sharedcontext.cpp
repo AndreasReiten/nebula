@@ -3,13 +3,55 @@
 SharedContextWindow::SharedContextWindow()
     : std_2d_tex_program(0),
     std_3d_color_program(0),
-    std_blend_program(0)
+    std_blend_program(0),
+    gl_worker(0)
 {
 
 }
 
 SharedContextWindow::~SharedContextWindow()
 {
+}
+
+//void SharedContextWindow::renderNow()
+//{
+//    if (!isExposed())
+//    {
+//        emit stopRendering();
+//        return;
+//    }
+//    if (isBufferBeingSwapped)
+//    {
+//        if (isAnimating) renderLater();
+//        return;
+//    }
+//    else
+//    {
+//        preInitialize();
+
+//        if (gl_worker)
+//        {
+//            if (isThreaded)
+//            {
+//                isBufferBeingSwapped = true;
+//                worker_thread->start();
+//                emit render();
+//            }
+//            else
+//            {
+//                context_gl->makeCurrent(this);
+//                gl_worker->process();
+//                emit render();
+//            }
+
+//        }
+//    }
+//    if (isAnimating) renderLater();
+//}
+
+void SharedContextWindow::preInitialize()
+{
+    initializeGLContext();
 }
 
 GLuint SharedContextWindow::loadShader(GLenum type, const char *source)

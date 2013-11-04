@@ -10,7 +10,8 @@ __kernel void svoRayTrace(
     __constant float * data_extent,
     __constant float * data_view_extent,
     __constant float * tsf_var,
-    __constant int * misc_int)
+    __constant int * misc_int
+    )
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
 
@@ -244,7 +245,21 @@ __kernel void svoRayTrace(
 
                         if (isDsActive)
                         {
-                            sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+
+                            if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 1.00f);
+                            else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                            else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                            else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                            else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                            else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                            else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                            else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                            else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                            else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                            else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                            else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                            else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                            else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
                             color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
                             color.w = color.w +(1.f - color.w)*sample.w;
                             break;

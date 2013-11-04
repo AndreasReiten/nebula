@@ -75,12 +75,11 @@ class OpenGLWindow : public QWindow, protected QOpenGLFunctions
 public:
     explicit OpenGLWindow(QWindow *parent = 0, QOpenGLContext * shareContext = 0);
     ~OpenGLWindow();
-
+    virtual void preInitialize();
     void setAnimating(bool animating);
-    void preInitialize();   // The idea was to call this instead of show(), but it didnt work
     QOpenGLContext * getGLContext();
     OpenCLContext * getCLContext();
-    void setOpenGLWorker(OpenGLWorker * worker);
+//    void setOpenGLWorker(OpenGLWorker * worker);
     void setThreading(bool value);
 
 signals:
@@ -91,26 +90,25 @@ signals:
     void render();
 
 public slots:
-    void renderLater();
-    void renderNow();
     void startAnimating();
     void stopAnimating();
     void setSwapState();
     void setOpenCLContext(OpenCLContext * context);
+    virtual void renderNow();
 
 protected:
-    // Event handling
+    void renderLater();
     virtual void initialize();
+    void initializeGLContext();
+
+    // Event handling
     bool event(QEvent *event);
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
     void exposeEvent(QExposeEvent *event);
+
     QOpenGLContext *shared_context;
-
-
-private:
-    OpenGLWorker * gl_worker;
     QThread * worker_thread;
     QOpenGLContext *context_gl;
     OpenCLContext *context_cl;
@@ -119,5 +117,9 @@ private:
     bool isUpdatePending;
     bool isAnimating;
     bool isThreaded;
+
+private:
+//    OpenGLWorker * gl_worker;
+
 };
 #endif

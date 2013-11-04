@@ -1,6 +1,8 @@
 #include "volumerender.h"
 
 VolumeRenderWindow::VolumeRenderWindow()
+    : gl_worker(0),
+      isInitialized(false)
 {
 
 }
@@ -8,6 +10,89 @@ VolumeRenderWindow::VolumeRenderWindow()
 VolumeRenderWindow::~VolumeRenderWindow()
 {
     qDebug();
+}
+
+VolumeRenderWorker *  VolumeRenderWindow::getWorker()
+{
+    return gl_worker;
+}
+
+void VolumeRenderWindow::renderNow()
+{
+    if (!isExposed())
+    {
+        emit stopRendering();
+        return;
+    }
+    if (isBufferBeingSwapped)
+    {
+        if (isAnimating) renderLater();
+        return;
+    }
+    else
+    {
+        if (!isInitialized) preInitialize();
+
+        if (gl_worker)
+        {
+            if (isThreaded)
+            {
+                isBufferBeingSwapped = true;
+                worker_thread->start();
+                emit render();
+            }
+            else
+            {
+                context_gl->makeCurrent(this);
+                gl_worker->process();
+                emit render();
+            }
+
+        }
+    }
+    if (isAnimating) renderLater();
+}
+
+void VolumeRenderWindow::preInitialize()
+{
+    initializeGLContext();
+
+    gl_worker = new VolumeRenderWorker;
+    gl_worker->setRenderSurface(this);
+    gl_worker->setGLContext(context_gl);
+    gl_worker->setOpenCLContext(context_cl);
+    gl_worker->setSharedWindow(shared_window);
+    gl_worker->setThreading(isThreaded);
+
+    if (isThreaded)
+    {
+        // Set up worker thread
+        worker_thread = new QThread;
+
+        gl_worker->moveToThread(worker_thread);
+        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
+        connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
+        connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
+
+        // Transfering mouse events
+        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
+        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::DirectConnection);
+        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+
+        // Move the OpenGL context to the rendering thread
+        context_gl->moveToThread(worker_thread);
+    }
+    else
+    {
+        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
+        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::DirectConnection);
+        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+
+        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
+        context_gl->makeCurrent(this);
+    }
+
+    isInitialized = true;
 }
 
 void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
@@ -317,6 +402,12 @@ void VolumeRenderWorker::initResourcesCL()
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
+    cl_scalebar_matrix = clCreateBuffer(*context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        scalebar_view_matrix.toFloat().bytes(),
+        NULL, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
 
     cl_data_extent = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -383,8 +474,19 @@ void VolumeRenderWorker::setViewMatrix()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
+    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
+        cl_scalebar_matrix,
+        CL_TRUE,
+        0,
+        scalebar_view_matrix.bytes()/2,
+        scalebar_view_matrix.toFloat().data(),
+        0,0,0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
     err = clSetKernelArg(cl_model_raytrace, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err = clSetKernelArg(cl_model_workload, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err = clSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_matrix);
+    err |= clSetKernelArg(cl_model_workload, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err |= clSetKernelArg(cl_model_workload, 6, sizeof(cl_mem), (void *) &cl_scalebar_matrix);
 
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     err |= clSetKernelArg(cl_svo_workload, 5, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
@@ -809,8 +911,11 @@ void VolumeRenderWorker::drawRayTex()
     // Draw texture given one of the above is true
     if (isModelActive || isSvoInitialized)
     {
+//        glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA);
+
         shared_window->std_2d_tex_program->bind();
 
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
         shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
 
@@ -843,6 +948,8 @@ void VolumeRenderWorker::drawRayTex()
         glBindTexture(GL_TEXTURE_2D, 0);
 
         shared_window->std_2d_tex_program->release();
+
+//        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 }
 

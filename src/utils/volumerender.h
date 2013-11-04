@@ -40,21 +40,6 @@
 
 
 
-class VolumeRenderWindow : public OpenGLWindow
-{
-    Q_OBJECT
-
-public:
-    VolumeRenderWindow();
-    ~VolumeRenderWindow();
-
-    void setSharedWindow(SharedContextWindow * window);
-
-private:
-    SharedContextWindow * shared_window;
-};
-
-
 class VolumeRenderWorker : public OpenGLWorker
 {
     Q_OBJECT
@@ -195,6 +180,7 @@ private:
 
     cl_mem cl_glb_work;
     cl_mem cl_view_matrix_inverse;
+    cl_mem cl_scalebar_matrix;
     cl_mem cl_data_extent;
     cl_mem cl_data_view_extent;
     cl_mem cl_tsf_parameters_model;
@@ -228,4 +214,28 @@ private:
     QFontMetrics * normal_fontmetric;
     QFontMetrics * emph_fontmetric;
 };
+
+class VolumeRenderWindow : public OpenGLWindow
+{
+    Q_OBJECT
+
+public:
+    VolumeRenderWindow();
+    ~VolumeRenderWindow();
+
+    void setSharedWindow(SharedContextWindow * window);
+    VolumeRenderWorker *getWorker();
+
+    void preInitialize();
+
+public slots:
+    void renderNow();
+
+private:
+    bool isInitialized;
+
+    SharedContextWindow * shared_window;
+    VolumeRenderWorker * gl_worker;
+};
+
 #endif

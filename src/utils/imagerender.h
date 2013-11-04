@@ -38,25 +38,6 @@
 #include <QPainter>
 
 
-class ImageRenderWindow : public OpenGLWindow
-{
-    Q_OBJECT
-
-public:
-    ImageRenderWindow();
-    ~ImageRenderWindow();
-    void setSharedWindow(SharedContextWindow * window);
-
-public slots:
-    void test();
-
-signals:
-    void changedMessageString(QString str);
-
-private:
-    SharedContextWindow * shared_window;
-};
-
 class ImageRenderWorker : public OpenGLWorker
 {
     Q_OBJECT
@@ -144,6 +125,35 @@ private:
     QFont * emph_font;
     QFontMetrics * normal_fontmetric;
     QFontMetrics * emph_fontmetric;
+};
+
+class ImageRenderWindow : public OpenGLWindow
+{
+    Q_OBJECT
+
+public:
+    ImageRenderWindow();
+    ~ImageRenderWindow();
+
+    void setSharedWindow(SharedContextWindow * window);
+    ImageRenderWorker * getWorker();
+
+    void preInitialize();
+
+public slots:
+    void renderNow();
+
+public slots:
+    void test();
+
+signals:
+    void changedMessageString(QString str);
+
+private:
+    bool isInitialized;
+
+    SharedContextWindow * shared_window;
+    ImageRenderWorker * gl_worker;
 };
 
 #endif
