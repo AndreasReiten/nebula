@@ -111,6 +111,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isUnitcellActive(false),
       isSvoInitialized(false),
       isScalebarActive(true),
+      isSlicingActive(false),
       ray_tex_resolution(20)
 {
     // Matrices
@@ -554,6 +555,7 @@ void VolumeRenderWorker::setMiscArrays()
 {
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
+    misc_ints[4] = isSlicingActive;
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_misc_ints,
         CL_TRUE,
@@ -1317,6 +1319,11 @@ void VolumeRenderWorker::setLogarithmic()
 void VolumeRenderWorker::setDataStructure()
 {
     isDSActive = !isDSActive;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWorker::setSlicing()
+{
+    isSlicingActive = !isSlicingActive;
     if (isInitialized) setMiscArrays();
 }
 void VolumeRenderWorker::setTsfColor(int value)

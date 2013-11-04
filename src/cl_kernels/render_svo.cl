@@ -260,6 +260,7 @@ __kernel void svoRayTrace(
                             else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
                             else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
                             else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+
                             color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
                             color.w = color.w +(1.f - color.w)*sample.w;
                             break;

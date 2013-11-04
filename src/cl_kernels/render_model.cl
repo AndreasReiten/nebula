@@ -34,7 +34,7 @@ __kernel void modelRayTrace(
     __constant float * tsf_var,
     __constant float * parameters,
     __constant int * misc_int,
-    __constant float * scalebar_matrix)
+    __constant float * scalebar_rotation)
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
 
@@ -51,7 +51,6 @@ __kernel void modelRayTrace(
     int isLogActive = misc_int[2];
     int isSlicingActive = misc_int[4];
 
-//    float2 dataLimits = (float2)(dataOffsetLow, dataOffsetHigh);
     if (isLogActive)
     {
         if (dataOffsetLow <= 0) dataOffsetLow = 0.01f;
@@ -103,22 +102,6 @@ __kernel void modelRayTrace(
             coneDiameterIncrement = 2.0f*native_divide( length(a2Far - a2Near), length(rayDelta - a1Near + a1Far) );
             coneDiameterNear = 2.0f*length(a2Near); // small approximation
         }
-//        {
-//            // Normalized device coordinates (ndc) of the pixel and its edge (in screen coordinates)
-//            float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f)/convert_float2(ray_tex_dim)) - 1.0f);
-
-//            // Ray origin and exit point (screen coordinates)
-//            // z = 1 corresponds to far plane
-//            // z = -1 corresponds to near plane
-//            float4 rayNearNdc = (float4)(ndc, -1.0f, 1.0f);
-//            float4 rayFarNdc = (float4)(ndc, 1.0f, 1.0f);
-
-//            // Ray entry point at near and far plane
-//            rayNear = sc2xyz(data_view_matrix, rayNearNdc);
-//            rayFar = sc2xyz(data_view_matrix, rayFarNdc);
-
-//            rayDelta = rayFar.xyz - rayNear.xyz;
-//        }
 
         int hit;
         float t_near, t_far;
@@ -156,54 +139,78 @@ __kernel void modelRayTrace(
             float3 rayBoxEnd = rayNear.xyz + t_far * rayDelta.xyz;
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float3 direction = normalize(rayBoxDelta);
-            float3 rayBoxAdd;// = normalize(rayBoxDelta)*native_divide(data_view_extent[1]-data_view_extent[0], 400.0f);
+            float3 rayBoxAdd;
             float rayBoxLength = fast_length(rayBoxDelta);
 
             float3 rayBoxXyz = rayBoxOrigin;
             float val;
-//            float intensity_scaling = native_divide(data_view_extent[1] - data_view_extent[0], data_extent[1] - data_extent[0]);
 
-            while ( fast_length(rayBoxXyz - rayBoxOrigin) < rayBoxLength )
+            if (isSlicingActive)
             {
-                // Calculate the cone diameter at the current ray position
-                coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement);
+                // Ray-plane intersection
+                // Plane normals
+                float4 a = (float4)(1.0f, 0.0f, 0.0f, 0.0f);
+                float4 b = (float4)(0.0f, 1.0f, 0.0f, 0.0f);
+                float4 c = (float4)(0.0f, 0.0f, 1.0f, 0.0f);
 
-                // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
-                stepLength = coneDiameter;
-                rayBoxAdd = direction * stepLength;
+                // Rote plane normals in accordance with the relative scalebar
+                a = matrixMultiply4x4X1x4(scalebar_rotation, a);
+                b = matrixMultiply4x4X1x4(scalebar_rotation, b);
+                c = matrixMultiply4x4X1x4(scalebar_rotation, c);
 
-                val = model(rayBoxXyz, parameters);
+                float4 center = (float4)(
+                    data_view_extent[1] - data_view_extent[0],
+                    data_view_extent[3] - data_view_extent[2],
+                    data_view_extent[5] - data_view_extent[4],
+                    0);
 
-                if(isLogActive)
-                {
-                    if (val < 1.f) val = 1.f;
-                    val = log10(val);
-                }
-
-                if ((val >= dataOffsetLow) && (val <= dataOffsetHigh))
-                {
-                    float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
-
-                    sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                    sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);;
-
-                    color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-                    color.w += (1.0f - color.w)*sample.w;
-                }
-                else if (val > dataOffsetHigh)
-                {
-                    sample = max_sample;
-                    sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);;
-
-                    color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-                    color.w += (1.0f - color.w)*sample.w;
-                }
-
-                rayBoxXyz += rayBoxAdd;
-                if (color.w > 0.999f) break;
-
+                // Compute number of meaningful intersections (i.e. not parallel to plane, intersection, and within bounding box)
             }
-            color *= brightness;
+            else
+            {
+                // Ray-volume intersection
+                while ( fast_length(rayBoxXyz - rayBoxOrigin) < rayBoxLength )
+                {
+                    // Calculate the cone diameter at the current ray position
+                    coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement);
+
+                    // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
+                    stepLength = coneDiameter;
+                    rayBoxAdd = direction * stepLength;
+
+                    val = model(rayBoxXyz, parameters);
+
+                    if(isLogActive)
+                    {
+                        if (val < 1.f) val = 1.f;
+                        val = log10(val);
+                    }
+
+                    if ((val >= dataOffsetLow) && (val <= dataOffsetHigh))
+                    {
+                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
+
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                        sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);;
+
+                        color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                        color.w += (1.0f - color.w)*sample.w;
+                    }
+                    else if (val > dataOffsetHigh)
+                    {
+                        sample = max_sample;
+                        sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);;
+
+                        color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                        color.w += (1.0f - color.w)*sample.w;
+                    }
+
+                    rayBoxXyz += rayBoxAdd;
+                    if (color.w > 0.999f) break;
+
+                }
+                color *= brightness;
+            }
         }
         write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
     }

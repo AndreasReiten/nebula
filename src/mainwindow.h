@@ -262,6 +262,7 @@ private:
 
     QTabWidget *tabWidget;
 
+    QAction *sliceAct;
     QAction *scalebarAct;
     QSpinBox *imageNumberSpinBox;
     QDockWidget *fileDockWidget;

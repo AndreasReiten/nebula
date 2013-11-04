@@ -471,7 +471,7 @@ void MainWindow::initializeActions()
 
 
     // Actions
-    scriptingAct = new QAction(QIcon(":/art/fast_proceed.png"), tr("&Toggle scripting mode"), this);
+    scriptingAct = new QAction(QIcon(":/art/script.png"), tr("&Toggle scripting mode"), this);
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
     saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
@@ -491,6 +491,7 @@ void MainWindow::initializeActions()
     projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle Projection"), this);
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take Screenshot"), this);
     scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle Scalebars"), this);
+    sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle Slicing"), this);
 
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
@@ -765,6 +766,7 @@ void MainWindow::initializeConnects()
     /* this <-> volumeRenderWidget */
     connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setQuality(int)));
     connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setScalebar()));
+    connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setSlicing()));
     connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
     connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
     connect(this->logAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
@@ -1130,6 +1132,7 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(logAct);
         viewToolBar->addAction(dataStructureAct);
         viewToolBar->addAction(scalebarAct);
+        viewToolBar->addAction(sliceAct);
         viewToolBar->addAction(screenshotAct);
 
         // Layout
@@ -1622,6 +1625,8 @@ void MainWindow::setCurrentFile(const QString &fileName)
 
 void MainWindow::takeScreenshot()
 {
+    // NB: The only safe way to do this is to render to a framebuffer and grab the corresponding QPixMap
+
     QScreen * screen = QGuiApplication::primaryScreen();
     if (screen)
     {

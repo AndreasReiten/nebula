@@ -82,3 +82,16 @@ float4 sc2xyz( __constant float * A, float4 x)
 
     return b;
 }
+
+float4 matrixMultiply4x4X1x4( __constant float * A, float4 x)
+{
+    // Multiply two matrices of dimensions (m x n) 4x4 and 4x1
+    float4 result;
+
+    result.x = x.x*A[0] + x.y*A[1] + x.z*A[2] + x.w*A[3];
+    result.y = x.x*A[4] + x.y*A[5] + x.z*A[6] + x.w*A[7];
+    result.z = x.x*A[8] + x.y*A[9] + x.z*A[10] + x.w*A[11];
+    result.w = x.x*A[12] + x.y*A[13] + x.z*A[14] + x.w*A[15];
+
+    return result;
+}

@@ -71,6 +71,7 @@ public slots:
     void setModelParam3(double value);
     void setModelParam4(double value);
     void setModelParam5(double value);
+    void setSlicing();
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
@@ -91,6 +92,7 @@ private:
     bool isUnitcellActive;
     bool isSvoInitialized;
     bool isScalebarActive;
+    bool isSlicingActive;
 
     // Ray texture
     Matrix<int> ray_tex_dim;

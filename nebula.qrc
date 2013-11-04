@@ -30,5 +30,7 @@
         <file>art/projection.png</file>
         <file>src/stylesheets/plain.qss</file>
         <file>art/scalebar.png</file>
+        <file>art/script.png</file>
+        <file>art/slice.png</file>
     </qresource>
 </RCC>
