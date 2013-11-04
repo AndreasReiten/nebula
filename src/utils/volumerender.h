@@ -226,7 +226,7 @@ public:
     void setSharedWindow(SharedContextWindow * window);
     VolumeRenderWorker *getWorker();
 
-    void preInitialize();
+    void initializeWorker();
 
 public slots:
     void renderNow();

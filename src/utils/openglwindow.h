@@ -75,7 +75,7 @@ class OpenGLWindow : public QWindow, protected QOpenGLFunctions
 public:
     explicit OpenGLWindow(QWindow *parent = 0, QOpenGLContext * shareContext = 0);
     ~OpenGLWindow();
-    virtual void preInitialize();
+    virtual void initializeWorker();
     void setAnimating(bool animating);
     QOpenGLContext * getGLContext();
     OpenCLContext * getCLContext();
@@ -108,8 +108,11 @@ protected:
     void resizeEvent(QResizeEvent * ev);
     void exposeEvent(QExposeEvent *event);
 
+
+
+//private:
     QOpenGLContext *shared_context;
-    QThread * worker_thread;
+    QThread *worker_thread;
     QOpenGLContext *context_gl;
     OpenCLContext *context_cl;
 
@@ -117,8 +120,6 @@ protected:
     bool isUpdatePending;
     bool isAnimating;
     bool isThreaded;
-
-private:
 //    OpenGLWorker * gl_worker;
 
 };

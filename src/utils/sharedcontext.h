@@ -50,7 +50,7 @@ public:
     QOpenGLShaderProgram *std_blend_program;
 
 //    void renderNow();
-    void preInitialize();
+    void initializeWorker();
 
 signals:
     void changedMessageString(QString str);

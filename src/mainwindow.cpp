@@ -34,7 +34,7 @@ MainWindow::MainWindow() :
     sharedContextWindow->setOpenCLContext(context_cl);
     sharedContextWindow->resize(2, 2);
     sharedContextWindow->show();
-    sharedContextWindow->preInitialize();
+    sharedContextWindow->initializeWorker();
     sharedContextWindow->hide();
 
     this->initializeActions();
@@ -1070,7 +1070,7 @@ void MainWindow::initializeInteractives()
         imageRenderWindow->setFormat(format_gl);
         imageRenderWindow->setOpenCLContext(context_cl);
         imageRenderWindow->setAnimating(true);
-        imageRenderWindow->preInitialize();
+        imageRenderWindow->initializeWorker();
 
         imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
         imageRenderWidget->setFocusPolicy(Qt::TabFocus);
@@ -1116,7 +1116,7 @@ void MainWindow::initializeInteractives()
         volumeRenderWindow->setFormat(format_gl);
         volumeRenderWindow->setOpenCLContext(context_cl);
         volumeRenderWindow->setAnimating(true);
-        volumeRenderWindow->preInitialize();
+        volumeRenderWindow->initializeWorker();
 
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
         volumeRenderWidget->setFocusPolicy(Qt::TabFocus);

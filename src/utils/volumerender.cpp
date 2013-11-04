@@ -31,7 +31,7 @@ void VolumeRenderWindow::renderNow()
     }
     else
     {
-        if (!isInitialized) preInitialize();
+        if (!isInitialized) initializeWorker();
 
         if (gl_worker)
         {
@@ -53,7 +53,7 @@ void VolumeRenderWindow::renderNow()
     if (isAnimating) renderLater();
 }
 
-void VolumeRenderWindow::preInitialize()
+void VolumeRenderWindow::initializeWorker()
 {
     initializeGLContext();
 
@@ -67,8 +67,6 @@ void VolumeRenderWindow::preInitialize()
     if (isThreaded)
     {
         // Set up worker thread
-        worker_thread = new QThread;
-
         gl_worker->moveToThread(worker_thread);
         connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
         connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
@@ -80,7 +78,7 @@ void VolumeRenderWindow::preInitialize()
         connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
 
         // Move the OpenGL context to the rendering thread
-        context_gl->moveToThread(worker_thread);
+
     }
     else
     {
@@ -89,7 +87,7 @@ void VolumeRenderWindow::preInitialize()
         connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
 
         connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-        context_gl->makeCurrent(this);
+//        context_gl->makeCurrent(this);
     }
 
     isInitialized = true;

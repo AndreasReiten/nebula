@@ -26,7 +26,7 @@ void ImageRenderWindow::renderNow()
     }
     else
     {
-        if (!isInitialized) preInitialize();
+        if (!isInitialized) initializeWorker();
 
         if (gl_worker)
         {
@@ -48,7 +48,7 @@ void ImageRenderWindow::renderNow()
     if (isAnimating) renderLater();
 }
 
-void ImageRenderWindow::preInitialize()
+void ImageRenderWindow::initializeWorker()
 {
     initializeGLContext();
 
@@ -59,33 +59,11 @@ void ImageRenderWindow::preInitialize()
     gl_worker->setSharedWindow(shared_window);
     gl_worker->setThreading(isThreaded);
 
-    if (isThreaded)
-    {
-        // Set up worker thread
-        worker_thread = new QThread;
 
-        gl_worker->moveToThread(worker_thread);
-        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-        connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
-        connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
-
-        // Transfering mouse events
-        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::BlockingQueuedConnection);
-        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::BlockingQueuedConnection);
-        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::BlockingQueuedConnection);
-
-        // Move the OpenGL context to the rendering thread
-        context_gl->moveToThread(worker_thread);
-    }
-    else
-    {
-        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
-        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::DirectConnection);
-        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
-
-        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-        context_gl->makeCurrent(this);
-    }
+    connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
+    connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::DirectConnection);
+    connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+    connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
 
     isInitialized = true;
 }

@@ -251,6 +251,12 @@ void OpenGLWindow::initializeGLContext()
         context_gl->makeCurrent(this);
         initialize();
         context_gl->doneCurrent();
+
+        if(isThreaded)
+        {
+            worker_thread = new QThread;
+            context_gl->moveToThread(worker_thread);
+        }
     }
 }
 
@@ -298,7 +304,7 @@ void OpenGLWindow::initialize()
 
 }
 
-void OpenGLWindow::preInitialize()
+void OpenGLWindow::initializeWorker()
 {
 
 }

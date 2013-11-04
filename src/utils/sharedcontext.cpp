@@ -27,7 +27,7 @@ SharedContextWindow::~SharedContextWindow()
 //    }
 //    else
 //    {
-//        preInitialize();
+//        initializeWorker();
 
 //        if (gl_worker)
 //        {
@@ -49,7 +49,7 @@ SharedContextWindow::~SharedContextWindow()
 //    if (isAnimating) renderLater();
 //}
 
-void SharedContextWindow::preInitialize()
+void SharedContextWindow::initializeWorker()
 {
     initializeGLContext();
 }

@@ -138,7 +138,7 @@ public:
     void setSharedWindow(SharedContextWindow * window);
     ImageRenderWorker * getWorker();
 
-    void preInitialize();
+    void initializeWorker();
 
 public slots:
     void renderNow();
