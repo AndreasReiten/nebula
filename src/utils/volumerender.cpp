@@ -143,7 +143,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 
     double N = 0.1;
     double F = 10.0;
-    double fov = 10.0;
+    double fov = 20.0;
 
     bbox_translation[11] = -N -(F - N)*0.5;
     ctc_matrix.setN(N);
@@ -404,7 +404,7 @@ void VolumeRenderWorker::initResourcesCL()
 
     cl_scalebar_matrix = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-        scalebar_view_matrix.toFloat().bytes(),
+        scalebar_rotation.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -478,8 +478,8 @@ void VolumeRenderWorker::setViewMatrix()
         cl_scalebar_matrix,
         CL_TRUE,
         0,
-        scalebar_view_matrix.bytes()/2,
-        scalebar_view_matrix.toFloat().data(),
+        scalebar_rotation.bytes()/2,
+        scalebar_rotation.toFloat().data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -1286,7 +1286,7 @@ void VolumeRenderWorker::setProjection()
 
     float f;
     if (isOrthonormal) f = 1;
-    else f = 1.0/2.3;
+    else f = 1.0/1.1;
 
     projection_scaling[0] = f;
     projection_scaling[5] = f;
