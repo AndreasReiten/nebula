@@ -32,10 +32,8 @@ void OpenGLWorker::resizeEvent(QResizeEvent * ev)
     if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
 }
 
-void OpenGLWorker::processUsingSeparateThread()
+void OpenGLWorker::process()
 {
-//    if (isRenderSurfaceActive)
-//    {
         context_gl->makeCurrent(render_surface);
 
         if (!isInitialized)
@@ -51,34 +49,29 @@ void OpenGLWorker::processUsingSeparateThread()
             render(&painter);
         }
         context_gl->swapBuffers(render_surface);
-        context_gl->doneCurrent();
-        context_gl->moveToThread(qApp->thread());
-
         setFps();
-
         emit finished();
-//    }
 }
 
-void OpenGLWorker::processUsingMainThread()
-{
-        context_gl->makeCurrent(render_surface);
+//void OpenGLWorker::process()
+//{
+//        context_gl->makeCurrent(render_surface);
 
-        if (!isInitialized)
-        {
-            initializeOpenGLFunctions();
-            if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
-            initialize();
-            isInitialized = true;
-        }
-        else
-        {
-            QPainter painter(paint_device_gl);
-            render(&painter);
-        }
-        context_gl->swapBuffers(render_surface);
-        setFps();
-}
+//        if (!isInitialized)
+//        {
+//            initializeOpenGLFunctions();
+//            if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
+//            initialize();
+//            isInitialized = true;
+//        }
+//        else
+//        {
+//            QPainter painter(paint_device_gl);
+//            render(&painter);
+//        }
+//        context_gl->swapBuffers(render_surface);
+//        setFps();
+//}
 
 
 void OpenGLWorker::render(QPainter *painter)
@@ -271,8 +264,6 @@ void OpenGLWindow::initialize()
 
 void OpenGLWindow::preInitialize()
 {
-//    bool needsInitialize = false;
-
     if (!context_gl)
     {
         context_gl = new QOpenGLContext(); // Maybe not set pareent here
@@ -318,24 +309,32 @@ void OpenGLWindow::preInitialize()
                 worker_thread = new QThread;
 
                 gl_worker->moveToThread(worker_thread);
-                connect(worker_thread, SIGNAL(started()), gl_worker, SLOT(processUsingSeparateThread()));
-                connect(gl_worker, SIGNAL(finished()), worker_thread, SLOT(quit()));
+//                connect(worker_thread, SIGNAL(started()), gl_worker, SLOT(process()));
+                connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
+//                connect(gl_worker, SIGNAL(finished()), worker_thread, SLOT(quit()));
+                connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
                 connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
 
                 // Transfering mouse events
                 connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::BlockingQueuedConnection);
                 connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::BlockingQueuedConnection);
                 connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::BlockingQueuedConnection);
+
+                // Move the OpenGL context to the rendering thread
+                context_gl->moveToThread(worker_thread);
             }
             else
             {
                 connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
                 connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)), Qt::DirectConnection);
                 connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+
+                connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
+                context_gl->makeCurrent(this);
             }
         }
     }
-    context_gl->makeCurrent(this);
+//    context_gl->makeCurrent(this);
 }
 
 void OpenGLWindow::setSwapState()
@@ -345,7 +344,11 @@ void OpenGLWindow::setSwapState()
 
 void OpenGLWindow::renderNow()
 {
-    if (!isExposed()) return;
+    if (!isExposed())
+    {
+        emit stopRendering();
+        return;
+    }
     if (isBufferBeingSwapped)
     {
         if (isAnimating) renderLater();
@@ -359,15 +362,16 @@ void OpenGLWindow::renderNow()
         {
             if (isThreaded)
             {
-                context_gl->doneCurrent();
                 isBufferBeingSwapped = true;
 
-                context_gl->moveToThread(worker_thread);
                 worker_thread->start();
+                emit render();
             }
             else
             {
-                gl_worker->processUsingMainThread();
+                context_gl->makeCurrent(this);
+                gl_worker->process();
+                emit render();
             }
 
         }

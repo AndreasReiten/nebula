@@ -40,8 +40,8 @@ signals:
     void finished();
 
 public slots:
-    void processUsingSeparateThread();
-    void processUsingMainThread();
+    void process();
+//    void process();
     virtual void mouseMoveEvent(QMouseEvent* ev);
     virtual void wheelEvent(QWheelEvent* ev);
     virtual void resizeEvent(QResizeEvent * ev);
@@ -87,6 +87,8 @@ signals:
     void mouseMoveEventCaught(QMouseEvent* ev);
     void wheelEventCaught(QWheelEvent* ev);
     void resizeEventCaught(QResizeEvent* ev);
+    void stopRendering();
+    void render();
 
 public slots:
     void renderLater();
