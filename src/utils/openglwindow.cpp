@@ -4,7 +4,6 @@ OpenGLWorker::OpenGLWorker(QObject *parent)
     : QObject(parent)
     , isInitialized(false)
     , isThreaded(false)
-//    , isRenderSurfaceActive(false)
     , paint_device_gl(0)
 {
     fps_elapsed_timer.start();
@@ -92,11 +91,6 @@ void OpenGLWorker::initialize()
 
 }
 
-//void OpenGLWorker::render()
-//{
-
-//}
-
 void OpenGLWorker::setGLContext(QOpenGLContext *context)
 {
     context_gl = context;
@@ -105,13 +99,9 @@ void OpenGLWorker::setGLContext(QOpenGLContext *context)
 void OpenGLWorker::setRenderSurface(QWindow *surface)
 {
     render_surface = surface;
-//    isRenderSurfaceActive = true;
 }
 
-//void OpenGLWorker::stopRendering()
-//{
-//    isRenderSurfaceActive = false;
-//}
+
 
 
 void OpenGLWorker::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)

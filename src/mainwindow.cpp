@@ -1105,12 +1105,12 @@ void MainWindow::initializeInteractives()
         format_gl.setAlphaBufferSize(8);
 
         volumeRenderWorker = new VolumeRenderWorker();
-        volumeRenderWorker->setThreading(true);
+        volumeRenderWorker->setThreading(false);
         volumeRenderWorker->setOpenCLContext(context_cl);
         volumeRenderWorker->setSharedWindow(sharedContextWindow);
 
         volumeRenderWindow = new VolumeRenderWindow();
-        volumeRenderWindow->setThreading(true);
+        volumeRenderWindow->setThreading(false);
         volumeRenderWindow->setOpenGLWorker(volumeRenderWorker);
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);

@@ -13,14 +13,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
-// qopengl.h
-//~ #  ifndef GLdouble
-//~ typedef GLfloat GLdouble;
-//~ #  endif
-
-// qopengles2ext.h
-//~ typedef void (GL_APIENTRYP GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,GLvoid *userParam);
-
 #include <QCoreApplication>
 #include <QApplication>
 #include <QIcon>
