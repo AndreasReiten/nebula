@@ -19,7 +19,7 @@ void ImageRenderWindow::renderNow()
         emit stopRendering();
         return;
     }
-    if (isBufferBeingSwapped)
+    if (isWorkerBusy)
     {
         if (isAnimating) renderLater();
         return;
@@ -30,9 +30,9 @@ void ImageRenderWindow::renderNow()
 
         if (gl_worker)
         {
-            if (isThreaded)
+            if (isMultiThreaded)
             {
-                isBufferBeingSwapped = true;
+                isWorkerBusy = true;
                 worker_thread->start();
                 emit render();
             }
@@ -57,7 +57,7 @@ void ImageRenderWindow::initializeWorker()
     gl_worker->setGLContext(context_gl);
     gl_worker->setOpenCLContext(context_cl);
     gl_worker->setSharedWindow(shared_window);
-    gl_worker->setThreading(isThreaded);
+    gl_worker->setMultiThreading(isMultiThreaded);
 
 
     connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
@@ -171,14 +171,14 @@ void ImageRenderWorker::render(QPainter *painter)
     glViewport(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
 
     // Draw raytracing texture
-    drawImages();
+    drawData();
     endRawGLCalls(painter);
 
     // Draw overlay
     drawOverlay(painter);
 }
 
-void ImageRenderWorker::drawImages()
+void ImageRenderWorker::drawData()
 {
     alpha_rect.setRect(0, 0, render_surface->height()*image_w/image_h, render_surface->height());
     beta_rect.setRect(alpha_rect.x() + alpha_rect.width(), 0, render_surface->height()*image_w/image_h, render_surface->height());

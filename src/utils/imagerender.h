@@ -89,7 +89,7 @@ private:
     void setTarget();
 
     // Drawing functions
-    void drawImages();
+    void drawData();
     void drawOverlay(QPainter * painter);
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);

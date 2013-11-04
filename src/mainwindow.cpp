@@ -32,7 +32,7 @@ MainWindow::MainWindow() :
     sharedContextWindow = new SharedContextWindow();
     sharedContextWindow->setFormat(format_gl);
     sharedContextWindow->setOpenCLContext(context_cl);
-    sharedContextWindow->resize(2, 2);
+//    sharedContextWindow->resize(2, 2);
     sharedContextWindow->show();
     sharedContextWindow->initializeWorker();
     sharedContextWindow->hide();
@@ -1059,12 +1059,12 @@ void MainWindow::initializeInteractives()
         format_gl.setAlphaBufferSize(8);
 
 //        imageRenderWorker = new ImageRenderWorker();
-//        imageRenderWorker->setThreading(false);
+//        imageRenderWorker->setMultiThreading(false);
 //        imageRenderWorker->setOpenCLContext(context_cl);
 //        imageRenderWorker->setSharedWindow(sharedContextWindow);
 
         imageRenderWindow = new ImageRenderWindow();
-        imageRenderWindow->setThreading(false);
+        imageRenderWindow->setMultiThreading(false);
 //        imageRenderWindow->setOpenGLWorker(imageRenderWorker);
         imageRenderWindow->setSharedWindow(sharedContextWindow);
         imageRenderWindow->setFormat(format_gl);
@@ -1105,12 +1105,12 @@ void MainWindow::initializeInteractives()
         format_gl.setAlphaBufferSize(8);
 
 //        volumeRenderWorker = new VolumeRenderWorker();
-//        volumeRenderWorker->setThreading(true);
+//        volumeRenderWorker->setMultiThreading(true);
 //        volumeRenderWorker->setOpenCLContext(context_cl);
 //        volumeRenderWorker->setSharedWindow(sharedContextWindow);
 
         volumeRenderWindow = new VolumeRenderWindow();
-        volumeRenderWindow->setThreading(true);
+        volumeRenderWindow->setMultiThreading(true);
 //        volumeRenderWindow->setOpenGLWorker(volumeRenderWorker);
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);

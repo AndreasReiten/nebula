@@ -20,7 +20,7 @@ SharedContextWindow::~SharedContextWindow()
 //        emit stopRendering();
 //        return;
 //    }
-//    if (isBufferBeingSwapped)
+//    if (isWorkerBusy)
 //    {
 //        if (isAnimating) renderLater();
 //        return;
@@ -31,9 +31,9 @@ SharedContextWindow::~SharedContextWindow()
 
 //        if (gl_worker)
 //        {
-//            if (isThreaded)
+//            if (isMultiThreaded)
 //            {
-//                isBufferBeingSwapped = true;
+//                isWorkerBusy = true;
 //                worker_thread->start();
 //                emit render();
 //            }

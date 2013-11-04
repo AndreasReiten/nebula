@@ -24,7 +24,7 @@ void VolumeRenderWindow::renderNow()
         emit stopRendering();
         return;
     }
-    if (isBufferBeingSwapped)
+    if (isWorkerBusy)
     {
         if (isAnimating) renderLater();
         return;
@@ -35,9 +35,9 @@ void VolumeRenderWindow::renderNow()
 
         if (gl_worker)
         {
-            if (isThreaded)
+            if (isMultiThreaded)
             {
-                isBufferBeingSwapped = true;
+                isWorkerBusy = true;
                 worker_thread->start();
                 emit render();
             }
@@ -62,9 +62,9 @@ void VolumeRenderWindow::initializeWorker()
     gl_worker->setGLContext(context_gl);
     gl_worker->setOpenCLContext(context_cl);
     gl_worker->setSharedWindow(shared_window);
-    gl_worker->setThreading(isThreaded);
+    gl_worker->setMultiThreading(isMultiThreaded);
 
-    if (isThreaded)
+    if (isMultiThreaded)
     {
         // Set up worker thread
         gl_worker->moveToThread(worker_thread);
@@ -400,7 +400,7 @@ void VolumeRenderWorker::initResourcesCL()
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_scalebar_matrix = clCreateBuffer(*context_cl->getContext(),
+    cl_scalebar_rotation = clCreateBuffer(*context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         scalebar_rotation.toFloat().bytes(),
         NULL, &err);
@@ -473,7 +473,7 @@ void VolumeRenderWorker::setViewMatrix()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
-        cl_scalebar_matrix,
+        cl_scalebar_rotation,
         CL_TRUE,
         0,
         scalebar_rotation.bytes()/2,
@@ -482,9 +482,9 @@ void VolumeRenderWorker::setViewMatrix()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     err = clSetKernelArg(cl_model_raytrace, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err = clSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_matrix);
+    err = clSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     err |= clSetKernelArg(cl_model_workload, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err |= clSetKernelArg(cl_model_workload, 6, sizeof(cl_mem), (void *) &cl_scalebar_matrix);
+    err |= clSetKernelArg(cl_model_workload, 6, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
 
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     err |= clSetKernelArg(cl_svo_workload, 5, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
@@ -786,13 +786,12 @@ void VolumeRenderWorker::endRawGLCalls(QPainter * painter)
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
     painter->setRenderHint(QPainter::Antialiasing);
+    painter->setBrush(*normal_brush);
+    painter->setPen(*normal_pen);
 
     // Tick labels
     if (isScalebarActive)
     {
-        painter->setBrush(*normal_brush);
-        painter->setPen(*normal_pen);
-
         for (int i = 0; i < n_scalebar_ticks; i++)
         {
             painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));

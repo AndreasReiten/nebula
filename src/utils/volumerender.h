@@ -180,7 +180,7 @@ private:
 
     cl_mem cl_glb_work;
     cl_mem cl_view_matrix_inverse;
-    cl_mem cl_scalebar_matrix;
+    cl_mem cl_scalebar_rotation;
     cl_mem cl_data_extent;
     cl_mem cl_data_view_extent;
     cl_mem cl_tsf_parameters_model;

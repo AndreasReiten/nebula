@@ -34,7 +34,7 @@ public:
     void getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform);
     QPointF coordQttoGL(QPointF coord);
     void glRect(Matrix<GLfloat> * gl_rect, QRect * qt_rect);
-    void setThreading(bool value);
+    void setMultiThreading(bool value);
 
 signals:
     void finished();
@@ -62,7 +62,7 @@ protected:
 private:
     // Boolean checks
     bool isInitialized;
-    bool isThreaded;
+    bool isMultiThreaded;
 
     double fps;
     QElapsedTimer fps_elapsed_timer;
@@ -77,10 +77,10 @@ public:
     ~OpenGLWindow();
     virtual void initializeWorker();
     void setAnimating(bool animating);
+    void setMultiThreading(bool value);
     QOpenGLContext * getGLContext();
     OpenCLContext * getCLContext();
-//    void setOpenGLWorker(OpenGLWorker * worker);
-    void setThreading(bool value);
+
 
 signals:
     void mouseMoveEventCaught(QMouseEvent* ev);
@@ -116,11 +116,9 @@ protected:
     QOpenGLContext *context_gl;
     OpenCLContext *context_cl;
 
-    bool isBufferBeingSwapped;
+    bool isWorkerBusy;
     bool isUpdatePending;
     bool isAnimating;
-    bool isThreaded;
-//    OpenGLWorker * gl_worker;
-
+    bool isMultiThreaded;
 };
 #endif

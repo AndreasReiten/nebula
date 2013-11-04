@@ -3,7 +3,7 @@
 OpenGLWorker::OpenGLWorker(QObject *parent)
     : QObject(parent)
     , isInitialized(false)
-    , isThreaded(false)
+    , isMultiThreaded(false)
     , paint_device_gl(0)
 {
     fps_elapsed_timer.start();
@@ -165,9 +165,9 @@ OpenCLContext * OpenGLWindow::getCLContext()
 OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     : QWindow(parent)
     , isUpdatePending(false)
-    , isBufferBeingSwapped(false)
+    , isWorkerBusy(false)
     , isAnimating(false)
-    , isThreaded(false)
+    , isMultiThreaded(false)
     , context_gl(0)
 {
     this->shared_context = shareContext;
@@ -191,14 +191,14 @@ void OpenGLWindow::mouseMoveEvent(QMouseEvent* ev)
     emit mouseMoveEventCaught(ev);
 }
 
-void OpenGLWindow::setThreading(bool value)
+void OpenGLWindow::setMultiThreading(bool value)
 {
-    isThreaded = value;
+    isMultiThreaded = value;
 }
 
-void OpenGLWorker::setThreading(bool value)
+void OpenGLWorker::setMultiThreading(bool value)
 {
-    isThreaded = value;
+    isMultiThreaded = value;
 }
 
 void OpenGLWindow::wheelEvent(QWheelEvent* ev)
@@ -252,7 +252,7 @@ void OpenGLWindow::initializeGLContext()
         initialize();
         context_gl->doneCurrent();
 
-        if(isThreaded)
+        if(isMultiThreaded)
         {
             worker_thread = new QThread;
             context_gl->moveToThread(worker_thread);
@@ -311,7 +311,7 @@ void OpenGLWindow::initializeWorker()
 
 void OpenGLWindow::setSwapState()
 {
-    isBufferBeingSwapped = false;
+    isWorkerBusy = false;
 }
 
 void OpenGLWindow::renderNow()
