@@ -148,23 +148,46 @@ __kernel void modelRayTrace(
             if (isSlicingActive)
             {
                 // Ray-plane intersection
-                // Plane normals
-                float4 a = (float4)(1.0f, 0.0f, 0.0f, 0.0f);
-                float4 b = (float4)(0.0f, 1.0f, 0.0f, 0.0f);
-                float4 c = (float4)(0.0f, 0.0f, 1.0f, 0.0f);
-
-                // Rote plane normals in accordance with the relative scalebar
-                a = matrixMultiply4x4X1x4(scalebar_rotation, a);
-                b = matrixMultiply4x4X1x4(scalebar_rotation, b);
-                c = matrixMultiply4x4X1x4(scalebar_rotation, c);
-
                 float4 center = (float4)(
                     data_view_extent[1] - data_view_extent[0],
                     data_view_extent[3] - data_view_extent[2],
                     data_view_extent[5] - data_view_extent[4],
                     0);
 
-                // Compute number of meaningful intersections (i.e. not parallel to plane, intersection, and within bounding box)
+                // Plane normals
+                float4 normal[3];
+                normal[0] = (float4)(1.0f, 0.0f, 0.0f, 0.0f);
+                normal[1] = (float4)(0.0f, 1.0f, 0.0f, 0.0f);
+                normal[2] = (float4)(0.0f, 0.0f, 1.0f, 0.0f);
+
+                for (int i = 0; i < 3; i++)
+                {
+                    // Rote plane normals in accordance with the relative scalebar
+                    normal[i] = matrixMultiply4x4X1x4(scalebar_rotation, normal[i]);
+
+                    // Compute number of meaningful intersections (i.e. not parallel to plane, intersection, and within bounding box)
+                    float nominator = dot(center - (float4)(rayBoxOrigin, 0.0f), normal[i]);
+                    float denominator = dot((float4)(rayBoxDelta, 0.0f), normal[i]);
+
+                    if (denominator != 0.0f)
+                    {
+                        float d = nominator / denominator;
+
+                        rayBoxXyz = rayBoxOrigin + d * rayBoxDelta;
+
+                        val = model(rayBoxXyz, parameters);
+
+                        if(isLogActive)
+                        {
+                            if (val < 1.f) val = 1.f;
+                            val = log10(val);
+                        }
+
+                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
+                        color = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                    }
+
+                }
             }
             else
             {
