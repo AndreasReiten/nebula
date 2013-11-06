@@ -96,6 +96,7 @@ private:
     bool isSvoInitialized;
     bool isScalebarActive;
     bool isSlicingActive;
+    bool isRendering;
 
     // Ray texture
     Matrix<int> ray_tex_dim;
