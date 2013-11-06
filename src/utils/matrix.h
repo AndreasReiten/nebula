@@ -418,7 +418,7 @@ const Matrix<T> Matrix<T>::operator * (const Matrix& M) const
         {
             for (size_t k = 0; k < this->n; k++)
             {
-                c[i*c.getN()+j] += this->buffer[i*this->n+k] * M[k*c.getN()+j];
+                c[i*c.getN()+j] += this->buffer[i*this->n+k] * M[k*c.getN()+j]; // Got an error here =(, like suddenly
             }
         }
     }

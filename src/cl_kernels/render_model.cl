@@ -149,9 +149,9 @@ __kernel void modelRayTrace(
             {
                 // Ray-plane intersection
                 float4 center = (float4)(
-                    data_view_extent[1] - data_view_extent[0],
-                    data_view_extent[3] - data_view_extent[2],
-                    data_view_extent[5] - data_view_extent[4],
+                    data_view_extent[0] + 0.5*(data_view_extent[1] - data_view_extent[0]),
+                    data_view_extent[2] + 0.5*(data_view_extent[3] - data_view_extent[2]),
+                    data_view_extent[4] + 0.5*(data_view_extent[5] - data_view_extent[4]),
                     0);
 
                 // Plane normals
@@ -160,20 +160,32 @@ __kernel void modelRayTrace(
                 normal[1] = (float4)(0.0f, 1.0f, 0.0f, 0.0f);
                 normal[2] = (float4)(0.0f, 0.0f, 1.0f, 0.0f);
 
+                float d[3];
+
                 for (int i = 0; i < 3; i++)
                 {
-                    // Rote plane normals in accordance with the relative scalebar
+                    // Rotate plane normals in accordance with the relative scalebar
                     normal[i] = matrixMultiply4x4X1x4(scalebar_rotation, normal[i]);
 
                     // Compute number of meaningful intersections (i.e. not parallel to plane, intersection, and within bounding box)
                     float nominator = dot(center - (float4)(rayBoxOrigin, 0.0f), normal[i]);
                     float denominator = dot((float4)(rayBoxDelta, 0.0f), normal[i]);
 
-                    if (denominator != 0.0f)
-                    {
-                        float d = nominator / denominator;
+                    if (denominator != 0.0f)  d[i] = nominator / denominator;
+                    else d[i] = -1.0f;
+                }
 
-                        rayBoxXyz = rayBoxOrigin + d * rayBoxDelta;
+
+                // Sort intersections along ray
+                float d_sorted[3];
+                selectionSort(d, 3);
+
+                // Accumulate color
+                for (int i = 0; i < 3; i++)
+                {
+                    if ((d[i] >= 0.0f) && (d[i] <= 1.0f))
+                    {
+                        rayBoxXyz = rayBoxOrigin + d[i] * rayBoxDelta;
 
                         val = model(rayBoxXyz, parameters);
 
@@ -184,9 +196,11 @@ __kernel void modelRayTrace(
                         }
 
                         float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
-                        color = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                    }
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
+                        color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                        color.w += (1.0f - color.w)*sample.w;
+                    }
                 }
             }
             else

@@ -95,3 +95,38 @@ float4 matrixMultiply4x4X1x4( __constant float * A, float4 x)
 
     return result;
 }
+
+void selectionSort(float * a, int n)
+{
+    /* a[0] to a[n-1] is the array to sort */
+    int i,j;
+    int iMin;
+
+    /* advance the position through the entire array */
+    /*   (could do j < n-1 because single element is also min element) */
+    for (j = 0; j < n-1; j++)
+    {
+        /* find the min element in the unsorted a[j .. n-1] */
+
+        /* assume the min is the first element */
+        iMin = j;
+        /* test against elements after j to find the smallest */
+        for ( i = j+1; i < n; i++)
+        {
+            /* if this element is less, then it is the new minimum */
+            if (a[i] < a[iMin])
+            {
+                /* found new minimum; remember its index */
+                iMin = i;
+            }
+        }
+
+        /* iMin is the index of the minimum element. Swap it with the current position */
+        if ( iMin != j )
+        {
+            float tmp = a[j];
+            a[j] = a[iMin];
+            a[iMin] = tmp;
+        }
+    }
+}
