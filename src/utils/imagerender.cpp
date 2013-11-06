@@ -9,7 +9,6 @@ ImageRenderWindow::ImageRenderWindow()
 
 ImageRenderWindow::~ImageRenderWindow()
 {
-    qDebug();
 }
 
 void ImageRenderWindow::renderNow()
@@ -111,7 +110,6 @@ void ImageRenderWorker::setSharedWindow(SharedContextWindow * window)
 
 ImageRenderWorker::~ImageRenderWorker()
 {
-    qDebug();
     if (isAlphaImgInitialized) clReleaseMemObject(cl_img_alpha);
     if (isBetaImgInitialized) clReleaseMemObject(cl_img_beta);
     if (isGammaImgInitialized) clReleaseMemObject(cl_img_gamma);

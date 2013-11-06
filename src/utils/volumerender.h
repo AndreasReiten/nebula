@@ -50,6 +50,9 @@ public:
     void setSharedWindow(SharedContextWindow * window);
     void setSvo(SparseVoxelOcttree * svo);
 
+signals:
+    void renderState(int value);
+
 public slots:
     void setQuality(int value);
     void setScalebar();

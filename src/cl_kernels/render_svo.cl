@@ -10,7 +10,8 @@ __kernel void svoRayTrace(
     __constant float * data_extent,
     __constant float * data_view_extent,
     __constant float * tsf_var,
-    __constant int * misc_int
+    __constant int * misc_int,
+    __constant float * scalebar_rotation
     )
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
@@ -23,6 +24,7 @@ __kernel void svoRayTrace(
     int brickSize = misc_int[1];
     int isLogActive = misc_int[2];
     int isDsActive = misc_int[3];
+    int isSlicingActive = misc_int[4];
 
     float tsfOffsetLow = tsf_var[0];
     float tsfOffsetHigh = tsf_var[1];
@@ -149,165 +151,358 @@ __kernel void svoRayTrace(
 
             /* Traverse the octtree. For each step, descend into the octree until a) The resolution is appreciable or b) The final level of the octree is reached. During any descent, empty nodes might be found. In such case, the ray is advanced forward without sampling to the next sample that is not in said node. Stuff inside this while loop is what really takes time and therefore should be optimized
              * */
-            while ( fast_length(rayBoxXyz - rayBoxOrigin) < fast_length(rayBoxDelta) )
+
+            if (isSlicingActive)
             {
-                // Break off early if the accumulated alpha is high enough
-                if (color.w > 0.995f) break;
+                // Ray-plane intersection
+                float4 center = (float4)(
+                    data_view_extent[0] + 0.5*(data_view_extent[1] - data_view_extent[0]),
+                    data_view_extent[2] + 0.5*(data_view_extent[3] - data_view_extent[2]),
+                    data_view_extent[4] + 0.5*(data_view_extent[5] - data_view_extent[4]),
+                    0);
 
-                // Index trackers for the traversal.
-                index = 0;
-                index_prev = 0;
+                // Plane normals
+                float4 normal[3];
+                normal[0] = (float4)(1.0f, 0.0f, 0.0f, 0.0f);
+                normal[1] = (float4)(0.0f, 1.0f, 0.0f, 0.0f);
+                normal[2] = (float4)(0.0f, 0.0f, 1.0f, 0.0f);
 
-                // Calculate the cone diameter at the current ray position
-                coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement);
-                coneDiameter = clamp(coneDiameter, coneDiameterLow, cone_diameter_high);
+                float d[3];
 
-                // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
-                stepLength = coneDiameter * 0.25f;
-                rayBoxAdd = direction * stepLength;
-
-                 // We use a normalized convention during octtree traversal. The normalized convention makes it easier to think about the octtree traversal.
-                normXyz = native_divide( (float3)(rayBoxXyz.x - data_extent[0], rayBoxXyz.y - data_extent[2], rayBoxXyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
-
-                normIndex = convert_int3(normXyz);
-                normIndex = clamp(normIndex, 0, 1);
-
-                // Traverse the octtree
-                for (int j = 0; j < numOctLevels; j++)
+                for (int i = 0; i < 3; i++)
                 {
-                    voxelSize = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << j)));
-                    if (j > 0) voxelSizeUp = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (j-1))));
+                    // Rotate plane normals in accordance with the relative scalebar
+                    normal[i] = matrixMultiply4x4X1x4(scalebar_rotation, normal[i]);
 
-                    isMsd = (oct_index[index] & mask_msd_flag) >> 31;
-                    isEmpty = !((oct_index[index] & mask_data_flag) >> 30);
-                    isLowEnough = (coneDiameter > voxelSize);
+                    // Compute number of meaningful intersections (i.e. not parallel to plane, intersection, and within bounding box)
+                    float nominator = dot(center - (float4)(rayBoxOrigin, 0.0f), normal[i]);
+                    float denominator = dot((float4)(rayBoxDelta, 0.0f), normal[i]);
 
-                    if (isEmpty)
+                    if (denominator != 0.0f)  d[i] = nominator / denominator;
+                    else d[i] = -1.0f;
+                }
+
+
+                // Sort intersections along ray
+                float d_sorted[3];
+                selectionSort(d, 3);
+
+                // Accumulate color
+                for (int i = 0; i < 3; i++)
+                {
+                    if ((d[i] >= 0.0f) && (d[i] <= 1.0f))
                     {
-                        // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
+                        rayBoxXyz = rayBoxOrigin + d[i] * rayBoxDelta;
 
-                        if (isDsActive)
+                        // Descend into the octtree data structure
+                        // Index trackers for the traversal.
+                        index = 0;
+                        index_prev = 0;
+
+                        // Calculate the cone diameter at the current ray position
+                        coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement);
+                        coneDiameter = clamp(coneDiameter, coneDiameterLow, cone_diameter_high);
+
+                        // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
+                        stepLength = coneDiameter * 0.25f;
+                        rayBoxAdd = direction * stepLength;
+
+                         // We use a normalized convention during octtree traversal. The normalized convention makes it easier to think about the octtree traversal.
+                        normXyz = native_divide( (float3)(rayBoxXyz.x - data_extent[0], rayBoxXyz.y - data_extent[2], rayBoxXyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
+
+                        normIndex = convert_int3(normXyz);
+                        normIndex = clamp(normIndex, 0, 1);
+
+                        // Traverse the octtree
+                        for (int j = 0; j < numOctLevels; j++)
                         {
-                            sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
-                            color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1.0f - color.w)*sample.w;
-                        }
+                            voxelSize = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << j)));
+                            if (j > 0) voxelSizeUp = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (j-1))));
 
-                        // This ugly shit needs to go
-                        tmp_a = normXyz - 5.0f*direction;
-                        tmp_b = 15.0f*direction;
-                        hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
+                            isMsd = (oct_index[index] & mask_msd_flag) >> 31;
+                            isEmpty = !((oct_index[index] & mask_data_flag) >> 30);
+                            isLowEnough = (coneDiameter > voxelSize);
 
-                        if (hit)
-                        {
-                            skipLength = 0.01f * coneDiameterLow + 0.5f * fast_length((tmp_a + t_far*tmp_b) - normXyz) * voxelSize * (brickSize-1);
-                            rayBoxXyz += skipLength * direction;
-                            break;
+                            if (isEmpty)
+                            {
+                                // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
+
+                                if (isDsActive)
+                                {
+                                    sample = (float4)(1.0f,1.0f,1.0f, 0.5f);
+                                    color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
+                                    color.w = color.w +(1.0f - color.w)*sample.w;
+                                }
+
+                                // This ugly shit needs to go
+                                tmp_a = normXyz - 5.0f*direction;
+                                tmp_b = 15.0f*direction;
+                                hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
+
+                                if (hit)
+                                {
+                                    break;
+                                }
+                            }
+                            else if (isMsd || isLowEnough)
+                            {
+                                // Sample brick
+                                if (isLowEnough && (j >= 1))
+                                {
+                                    /* Quadrilinear interpolation between two bricks */
+
+                                    // The brick in the level above
+                                    brick = oct_brick[index_prev];
+                                    brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                                    lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyzPrev, 0.0f)*3.5f , convert_float4(bricks_dim));
+
+                                    float intensityPrev = read_imagef(bricks, brick_sampler, lookupPos).w;
+
+                                    // The brick in the current level
+                                    brick = oct_brick[index];
+                                    brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                                    lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+
+                                    float intensityHere = read_imagef(bricks, brick_sampler, lookupPos).w;
+
+                                    // Linear interpolation between the two intensities
+                                    intensity = intensityPrev + (intensityHere - intensityPrev)*native_divide(coneDiameter - voxelSizeUp, voxelSize - voxelSizeUp);
+                                }
+                                else
+                                {
+                                    /* Quadrilinear interpolation between two bricks. Shit!*/
+
+                                    brick = oct_brick[index];
+                                    brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                                    lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+
+                                    intensity = read_imagef(bricks, brick_sampler, lookupPos).w;
+                                }
+
+                                if (isDsActive)
+                                {
+
+                                    if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 1.00f);
+                                    else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                    else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                    else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                    else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                    else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                    else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                    else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                    else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                    else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                    else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                    else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                    else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                    else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+
+                                    color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
+                                    color.w = color.w +(1.f - color.w)*sample.w;
+                                    break;
+                                }
+
+
+                                // Sample color
+                                if(isLogActive)
+                                {
+                                    intensity = log10(intensity);
+                                }
+
+                                tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
+
+                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+
+                                color.xyz += (1.f - color.w)*sample.xyz*sample.w;
+                                color.w += (1.f - color.w)*sample.w;
+
+                                break;
+                            }
+                            else
+                            {
+                                // Save values from this level to enable quadrilinear interpolation between levels
+                                index_prev = index;
+                                normXyzPrev = normXyz;
+
+                                // Descend to the next level
+                                index = (oct_index[index] & mask_child_index);
+                                index += normIndex.x + normIndex.y*2 + normIndex.z*4;
+
+                                //normXyz = (normXyz - convert_float(normIndex))*2.0f;
+                    normXyz = (normXyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
+                                normIndex = convert_int3(normXyz);
+                                normIndex = clamp(normIndex, 0, 1);
+                            }
                         }
                     }
-                    else if (isMsd || isLowEnough)
+                }
+            }
+            else
+            {
+                // Ray-volume intersection
+                while ( fast_length(rayBoxXyz - rayBoxOrigin) < fast_length(rayBoxDelta) )
+                {
+                    // Break off early if the accumulated alpha is high enough
+                    if (color.w > 0.995f) break;
+
+                    // Index trackers for the traversal.
+                    index = 0;
+                    index_prev = 0;
+
+                    // Calculate the cone diameter at the current ray position
+                    coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement);
+                    coneDiameter = clamp(coneDiameter, coneDiameterLow, cone_diameter_high);
+
+                    // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
+                    stepLength = coneDiameter * 0.25f;
+                    rayBoxAdd = direction * stepLength;
+
+                     // We use a normalized convention during octtree traversal. The normalized convention makes it easier to think about the octtree traversal.
+                    normXyz = native_divide( (float3)(rayBoxXyz.x - data_extent[0], rayBoxXyz.y - data_extent[2], rayBoxXyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
+
+                    normIndex = convert_int3(normXyz);
+                    normIndex = clamp(normIndex, 0, 1);
+
+                    // Traverse the octtree
+                    for (int j = 0; j < numOctLevels; j++)
                     {
-                        // Sample brick
-                        if (isLowEnough && (j >= 1))
+                        voxelSize = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << j)));
+                        if (j > 0) voxelSizeUp = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (j-1))));
+
+                        isMsd = (oct_index[index] & mask_msd_flag) >> 31;
+                        isEmpty = !((oct_index[index] & mask_data_flag) >> 30);
+                        isLowEnough = (coneDiameter > voxelSize);
+
+                        if (isEmpty)
                         {
-                            /* Quadrilinear interpolation between two bricks */
+                            // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
 
-                            // The brick in the level above
-                            brick = oct_brick[index_prev];
-                            brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                            if (isDsActive)
+                            {
+                                sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
+                                color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
+                                color.w = color.w +(1.0f - color.w)*sample.w;
+                            }
 
-                            lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyzPrev, 0.0f)*3.5f , convert_float4(bricks_dim));
+                            // This ugly shit needs to go
+                            tmp_a = normXyz - 5.0f*direction;
+                            tmp_b = 15.0f*direction;
+                            hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
 
-                            float intensityPrev = read_imagef(bricks, brick_sampler, lookupPos).w;
+                            if (hit)
+                            {
+                                skipLength = 0.01f * coneDiameterLow + 0.5f * fast_length((tmp_a + t_far*tmp_b) - normXyz) * voxelSize * (brickSize-1);
+                                rayBoxXyz += skipLength * direction;
+                                break;
+                            }
+                        }
+                        else if (isMsd || isLowEnough)
+                        {
+                            // Sample brick
+                            if (isLowEnough && (j >= 1))
+                            {
+                                /* Quadrilinear interpolation between two bricks */
 
-                            // The brick in the current level
-                            brick = oct_brick[index];
-                            brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                // The brick in the level above
+                                brick = oct_brick[index_prev];
+                                brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                            lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyzPrev, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                            float intensityHere = read_imagef(bricks, brick_sampler, lookupPos).w;
+                                float intensityPrev = read_imagef(bricks, brick_sampler, lookupPos).w;
 
-                            // Linear interpolation between the two intensities
-                            intensity = intensityPrev + (intensityHere - intensityPrev)*native_divide(coneDiameter - voxelSizeUp, voxelSize - voxelSizeUp);
+                                // The brick in the current level
+                                brick = oct_brick[index];
+                                brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                                lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+
+                                float intensityHere = read_imagef(bricks, brick_sampler, lookupPos).w;
+
+                                // Linear interpolation between the two intensities
+                                intensity = intensityPrev + (intensityHere - intensityPrev)*native_divide(coneDiameter - voxelSizeUp, voxelSize - voxelSizeUp);
+                            }
+                            else
+                            {
+                                /* Quadrilinear interpolation between two bricks. Shit!*/
+
+                                brick = oct_brick[index];
+                                brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                                lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+
+                                intensity = read_imagef(bricks, brick_sampler, lookupPos).w;
+                            }
+
+                            if (isDsActive)
+                            {
+
+                                if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 1.00f);
+                                else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
+                                else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+
+                                color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
+                                color.w = color.w +(1.f - color.w)*sample.w;
+                                break;
+                            }
+
+
+                            // Sample color
+                            if(isLogActive)
+                            {
+                                intensity = log10(intensity);
+                            }
+
+                            tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
+
+                            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+
+                            sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);
+
+                            color.xyz += (1.f - color.w)*sample.xyz*sample.w;
+                            color.w += (1.f - color.w)*sample.w;
+
+                            rayBoxXyz += rayBoxAdd;
+                            break;
                         }
                         else
                         {
-                            /* Quadrilinear interpolation between two bricks. Shit!*/
+                            // Save values from this level to enable quadrilinear interpolation between levels
+                            index_prev = index;
+                            normXyzPrev = normXyz;
 
-                            brick = oct_brick[index];
-                            brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                            // Descend to the next level
+                            index = (oct_index[index] & mask_child_index);
+                            index += normIndex.x + normIndex.y*2 + normIndex.z*4;
 
-                            lookupPos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyz, 0.0f)*3.5f , convert_float4(bricks_dim));
-
-                            intensity = read_imagef(bricks, brick_sampler, lookupPos).w;
+                            //normXyz = (normXyz - convert_float(normIndex))*2.0f;
+                normXyz = (normXyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
+                            normIndex = convert_int3(normXyz);
+                            normIndex = clamp(normIndex, 0, 1);
                         }
-
-                        if (isDsActive)
-                        {
-
-                            if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 1.00f);
-                            else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                            else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                            else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                            else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                            else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                            else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                            else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                            else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                            else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                            else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                            else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                            else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                            else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-
-                            color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1.f - color.w)*sample.w;
-                            break;
-                        }
-
-
-                        // Sample color
-                        if(isLogActive)
-                        {
-                            intensity = log10(intensity);
-                        }
-
-                        tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
-
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-
-                        sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);
-
-                        color.xyz += (1.f - color.w)*sample.xyz*sample.w;
-                        color.w += (1.f - color.w)*sample.w;
-
-                        rayBoxXyz += rayBoxAdd;
-                        break;
                     }
-                    else
+
+                    // This shit shouldnt be needed
+                    if (fast_distance(rayBoxXyz, rayBoxXyzPrev) < stepLength*0.5f)
                     {
-                        // Save values from this level to enable quadrilinear interpolation between levels
-                        index_prev = index;
-                        normXyzPrev = normXyz;
-
-                        // Descend to the next level
-                        index = (oct_index[index] & mask_child_index);
-                        index += normIndex.x + normIndex.y*2 + normIndex.z*4;
-
-                        //normXyz = (normXyz - convert_float(normIndex))*2.0f;
-            normXyz = (normXyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
-                        normIndex = convert_int3(normXyz);
-                        normIndex = clamp(normIndex, 0, 1);
+                        rayBoxXyz += rayBoxAdd*0.5f;
                     }
+                    rayBoxXyzPrev = rayBoxXyz;
                 }
-
-                // This shit shouldnt be needed
-                if (fast_distance(rayBoxXyz, rayBoxXyzPrev) < stepLength*0.5f)
-                {
-                    rayBoxXyz += rayBoxAdd*0.5f;
-                }
-                rayBoxXyzPrev = rayBoxXyz;
             }
             if (!isDsActive)color *= brightness;
         }
@@ -324,7 +519,8 @@ __kernel void svoWorkload(
     __constant float * data_view_matrix,
     __constant float * data_extent,
     __constant float * data_view_extent,
-    __constant int * misc_int)
+    __constant int * misc_int,
+    __constant float * scalebar_rotation)
 {
 /* Estimate the number of intensity and color fetches that are needed for
  * the given combination input parameters */
@@ -340,6 +536,7 @@ __kernel void svoWorkload(
     int brickSize = misc_int[1];
     int isLogActive = misc_int[2];
     int isDsActive = misc_int[3];
+    int isSlicingActive = misc_int[4];
 
 
     // If the global id corresponds to a texel, then check if its associated ray hits our cubic bounding box. If it does - traverse along the intersecing ray segment and accumulate color

@@ -9,7 +9,6 @@ VolumeRenderWindow::VolumeRenderWindow()
 
 VolumeRenderWindow::~VolumeRenderWindow()
 {
-    qDebug();
 }
 
 VolumeRenderWorker *  VolumeRenderWindow::getWorker()
@@ -66,6 +65,8 @@ void VolumeRenderWindow::initializeWorker()
 
     if (isMultiThreaded)
     {
+        qDebug() << "Multithreading";
+
         // Set up worker thread
         gl_worker->moveToThread(worker_thread);
         connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
@@ -452,6 +453,7 @@ void VolumeRenderWorker::initResourcesCL()
 
 void VolumeRenderWorker::setViewMatrix()
 {
+    qDebug() << "Setting view matrix";
 
     normalization_scaling[0] = bbox_scaling[0] * projection_scaling[0] * 2.0 / (data_extent[1] - data_extent[0]);
     normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
@@ -479,13 +481,17 @@ void VolumeRenderWorker::setViewMatrix()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     err = clSetKernelArg(cl_model_raytrace, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err = clSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
+    err |= clSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     err |= clSetKernelArg(cl_model_workload, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     err |= clSetKernelArg(cl_model_workload, 6, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
 
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err |= clSetKernelArg(cl_svo_raytrace, 12, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     err |= clSetKernelArg(cl_svo_workload, 5, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err |= clSetKernelArg(cl_svo_workload, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    qDebug() << "Done setting view matrix";
 }
 
 void VolumeRenderWorker::setDataExtent()
@@ -742,6 +748,8 @@ void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWorker::render(QPainter *painter)
 {
+    emit renderState(1);
+//    this->blockSignals(true);
     setDataExtent();
     setViewMatrix();
 
@@ -762,7 +770,8 @@ void VolumeRenderWorker::render(QPainter *painter)
 
     // Draw overlay
     drawOverlay(painter);
-
+//    this->blockSignals(false);
+    emit renderState(0);
 }
 
 
@@ -877,6 +886,8 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
 
 void VolumeRenderWorker::drawScalebars()
 {
+//    Why not put entire QWindow into a thread? How to limit queued connections?
+
     scalebar_coord_count = setScaleBars();
 
     shared_window->std_3d_color_program->bind();
@@ -886,6 +897,7 @@ void VolumeRenderWorker::drawScalebars()
     glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+//    setViewMatrix();
     glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
 
     glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());

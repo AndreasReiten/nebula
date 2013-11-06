@@ -11,7 +11,6 @@ OpenGLWorker::OpenGLWorker(QObject *parent)
 
 OpenGLWorker::~OpenGLWorker()
 {
-    qDebug();
     if (paint_device_gl) delete paint_device_gl;
 }
 
@@ -182,8 +181,6 @@ void OpenGLWindow::setOpenCLContext(OpenCLContext * context)
 
 OpenGLWindow::~OpenGLWindow()
 {
-//    emit destroy();
-    qDebug();
 }
 
 void OpenGLWindow::mouseMoveEvent(QMouseEvent* ev)
@@ -221,7 +218,7 @@ void OpenGLWindow::initializeGLContext()
 {
     if (!context_gl)
     {
-        context_gl = new QOpenGLContext(); // Maybe not set pareent here
+        context_gl = new QOpenGLContext();
         context_gl->setFormat(requestedFormat());
         if (shared_context != 0)
         {
@@ -256,6 +253,7 @@ void OpenGLWindow::initializeGLContext()
         {
             worker_thread = new QThread;
             context_gl->moveToThread(worker_thread);
+            qDebug() << "Multithreading";
         }
     }
 }
