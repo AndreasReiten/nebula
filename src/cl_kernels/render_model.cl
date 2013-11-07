@@ -62,7 +62,7 @@ __kernel void modelRayTrace(
     // If the global id corresponds to a texel
     if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
     {
-        float4 rayNear, rayFar;
+        float4 ray_near, rayFar;
         float3 rayDelta;
         float coneDiameterIncrement;
         float coneDiameterNear;
@@ -82,13 +82,13 @@ __kernel void modelRayTrace(
             float4 rayFarNdcEdge = (float4)(ndcEdge, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            rayNear = sc2xyz(data_view_matrix, rayNearNdc);
+            ray_near = sc2xyz(data_view_matrix, rayNearNdc);
             rayFar = sc2xyz(data_view_matrix, rayFarNdc);
             rayNearEdge = sc2xyz(data_view_matrix, rayNearNdcEdge);
             rayFarEdge = sc2xyz(data_view_matrix, rayFarNdcEdge);
 
-            rayDelta = rayFar.xyz - rayNear.xyz;
-            pixelRadiusNear = rayNearEdge.xyz - rayNear.xyz;
+            rayDelta = rayFar.xyz - ray_near.xyz;
+            pixelRadiusNear = rayNearEdge.xyz - ray_near.xyz;
             pixelRadiusFar = rayFarEdge.xyz - rayFar.xyz;
 
             // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central rayDelta vector
@@ -119,7 +119,7 @@ __kernel void modelRayTrace(
             // Does the ray for this pixel intersect bbox?
             if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
             {
-                hit = boundingBoxIntersect(rayNear.xyz, rayDelta.xyz, bbox, &t_near, &t_far);
+                hit = boundingBoxIntersect(ray_near.xyz, rayDelta.xyz, bbox, &t_near, &t_far);
             }
         }
 
@@ -132,17 +132,17 @@ __kernel void modelRayTrace(
         if(hit)
         {
             // The geometry of the intersecting part of the ray
-            float coneDiameter, stepLength;
-            float coneDiameterLow = 0.05; // Only acts as a scaling factor
+            float cone_diameter, step_length;
+            float cone_diameter_low = 0.05; // Only acts as a scaling factor
 
-            float3 rayBoxOrigin = rayNear.xyz + t_near * rayDelta.xyz;
-            float3 rayBoxEnd = rayNear.xyz + t_far * rayDelta.xyz;
+            float3 rayBoxOrigin = ray_near.xyz + t_near * rayDelta.xyz;
+            float3 rayBoxEnd = ray_near.xyz + t_far * rayDelta.xyz;
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float3 direction = normalize(rayBoxDelta);
-            float3 rayBoxAdd;
+            float3 ray_add_box;
             float rayBoxLength = fast_length(rayBoxDelta);
 
-            float3 rayBoxXyz = rayBoxOrigin;
+            float3 ray_xyz_box = rayBoxOrigin;
             float val;
 
             if (isSlicingActive)
@@ -185,9 +185,9 @@ __kernel void modelRayTrace(
                 {
                     if ((d[i] >= 0.0f) && (d[i] <= 1.0f))
                     {
-                        rayBoxXyz = rayBoxOrigin + d[i] * rayBoxDelta;
+                        ray_xyz_box = rayBoxOrigin + d[i] * rayBoxDelta;
 
-                        val = model(rayBoxXyz, parameters);
+                        val = model(ray_xyz_box, parameters);
 
                         if(isLogActive)
                         {
@@ -206,16 +206,16 @@ __kernel void modelRayTrace(
             else
             {
                 // Ray-volume intersection
-                while ( fast_length(rayBoxXyz - rayBoxOrigin) < rayBoxLength )
+                while ( fast_length(ray_xyz_box - rayBoxOrigin) < rayBoxLength )
                 {
                     // Calculate the cone diameter at the current ray position
-                    coneDiameter = (coneDiameterNear + length(rayBoxXyz - rayNear.xyz) * coneDiameterIncrement);
+                    cone_diameter = (coneDiameterNear + length(ray_xyz_box - ray_near.xyz) * coneDiameterIncrement);
 
                     // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
-                    stepLength = coneDiameter;
-                    rayBoxAdd = direction * stepLength;
+                    step_length = cone_diameter;
+                    ray_add_box = direction * step_length;
 
-                    val = model(rayBoxXyz, parameters);
+                    val = model(ray_xyz_box, parameters);
 
                     if(isLogActive)
                     {
@@ -228,7 +228,7 @@ __kernel void modelRayTrace(
                         float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
 
                         sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                        sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);;
+                        sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
 
                         color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
                         color.w += (1.0f - color.w)*sample.w;
@@ -236,13 +236,13 @@ __kernel void modelRayTrace(
                     else if (val > dataOffsetHigh)
                     {
                         sample = max_sample;
-                        sample.w *= alpha*native_divide(coneDiameter, coneDiameterLow);;
+                        sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
 
                         color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
                         color.w += (1.0f - color.w)*sample.w;
                     }
 
-                    rayBoxXyz += rayBoxAdd;
+                    ray_xyz_box += ray_add_box;
                     if (color.w > 0.999f) break;
 
                 }
@@ -275,7 +275,7 @@ __kernel void modelWorkload(
     // If the global id corresponds to a texel
     if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
     {
-        float4 rayNear, rayFar;
+        float4 ray_near, rayFar;
         float3 rayDelta;
         float coneDiameterIncrement;
         float coneDiameterNear;
@@ -295,13 +295,13 @@ __kernel void modelWorkload(
             float4 rayFarNdcEdge = (float4)(ndcEdge, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            rayNear = sc2xyz(data_view_matrix, rayNearNdc);
+            ray_near = sc2xyz(data_view_matrix, rayNearNdc);
             rayFar = sc2xyz(data_view_matrix, rayFarNdc);
             rayNearEdge = sc2xyz(data_view_matrix, rayNearNdcEdge);
             rayFarEdge = sc2xyz(data_view_matrix, rayFarNdcEdge);
 
-            rayDelta = rayFar.xyz - rayNear.xyz;
-            pixelRadiusNear = rayNearEdge.xyz - rayNear.xyz;
+            rayDelta = rayFar.xyz - ray_near.xyz;
+            pixelRadiusNear = rayNearEdge.xyz - ray_near.xyz;
             pixelRadiusFar = rayFarEdge.xyz - rayFar.xyz;
 
             // The ray is treated as a cone of a certain diameter.
@@ -322,20 +322,20 @@ __kernel void modelWorkload(
             // Does the ray for this pixel intersect bbox?
             if (!((data_view_extent[0] >= data_view_extent[1]) || (data_view_extent[2] >= data_view_extent[3]) || (data_view_extent[4] >= data_view_extent[5])))
             {
-                hit = boundingBoxIntersect2(rayNear.xyz, rayDelta.xyz, data_view_extent, &t_near, &t_far);
+                hit = boundingBoxIntersect2(ray_near.xyz, rayDelta.xyz, data_view_extent, &t_near, &t_far);
             }
         }
 
         if(hit)
         {
             // The geometry of the intersecting part of the ray
-            float3 rayBoxOrigin = rayNear.xyz + t_near * rayDelta.xyz;
-            float3 rayBoxEnd = rayNear.xyz + t_far * rayDelta.xyz;
+            float3 rayBoxOrigin = ray_near.xyz + t_near * rayDelta.xyz;
+            float3 rayBoxEnd = ray_near.xyz + t_far * rayDelta.xyz;
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float rayBoxLength = fast_length(rayBoxDelta);
 
-            float coneDiameterOrigin = (coneDiameterNear + length(rayBoxOrigin - rayNear.xyz) * coneDiameterIncrement);
-            float coneDiameterEnd = (coneDiameterNear + length(rayBoxEnd - rayNear.xyz) * coneDiameterIncrement);
+            float coneDiameterOrigin = (coneDiameterNear + length(rayBoxOrigin - ray_near.xyz) * coneDiameterIncrement);
+            float coneDiameterEnd = (coneDiameterNear + length(rayBoxEnd - ray_near.xyz) * coneDiameterIncrement);
 
             float coneDiameterAvg = (coneDiameterOrigin + coneDiameterEnd) * 0.5;
             loc_work[id] = native_divide(rayBoxLength, coneDiameterAvg);

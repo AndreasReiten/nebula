@@ -174,7 +174,7 @@ void TransferFunction::setSpline(size_t resolution)
 
     // Calculate the second derivative for the function in all points
     Matrix<double> secondDerivatives(tsf_base.getM(), tsf_base.getN());
-//    double stepLength = 1.0/((double) (tsf_base.getN() - 1));
+//    double step_length = 1.0/((double) (tsf_base.getN() - 1));
 
     for (size_t i = 0; i < tsf_base.getM(); i++)
     {
@@ -189,9 +189,9 @@ void TransferFunction::setSpline(size_t resolution)
         B[tsf_base.getN()-1] = 0.0;
         for (size_t j = 1; j < tsf_base.getN() - 1; j++)
         {
-            double x_prev = x_position[j-1];//(j - 1) * stepLength;
-            double x = x_position[j];//j * stepLength;
-            double x_next = x_position[j+1];//(j + 1) * stepLength;
+            double x_prev = x_position[j-1];//(j - 1) * step_length;
+            double x = x_position[j];//j * step_length;
+            double x_next = x_position[j+1];//(j + 1) * step_length;
 
             double f_prev = tsf_base[i*tsf_base.getN()+j-1];
             double f = tsf_base[i*tsf_base.getN()+j];
@@ -237,8 +237,8 @@ void TransferFunction::setSpline(size_t resolution)
             if ( k >= tsf_base.getN()) k = tsf_base.getN() - 1;
             if (k <= 0) k = 1;
 
-            double x_k = x_position[k-1];//(k) * stepLength;
-            double x_k_next = x_position[k];// (k + 1) * stepLength;
+            double x_k = x_position[k-1];//(k) * step_length;
+            double x_k_next = x_position[k];// (k + 1) * step_length;
 
             double f_k = tsf_base[i*tsf_base.getN()+k-1];
             double f_k_next = tsf_base[i*tsf_base.getN()+k];
@@ -265,7 +265,7 @@ void TransferFunction::setPreIntegrated()
 
     tsf_preintegrated.set(tsf_splined.getM(), resolution, 0.0);
 
-    double stepLength = 1.0/((double) (resolution - 1));
+    double step_length = 1.0/((double) (resolution - 1));
 
     tsf_preintegrated[0*resolution] = 0;
     tsf_preintegrated[1*resolution] = 0;
@@ -284,9 +284,9 @@ void TransferFunction::setPreIntegrated()
         double B_prev = tsf_splined[2*resolution+j-1];
         double A_prev = tsf_splined[3*resolution+j-1];
 
-        tsf_preintegrated[0*resolution+j] = tsf_preintegrated[0*resolution+j-1] + stepLength*0.5*(R*A + R_prev*A_prev);
-        tsf_preintegrated[1*resolution+j] = tsf_preintegrated[1*resolution+j-1] + stepLength*0.5*(G*A + G_prev*A_prev);
-        tsf_preintegrated[2*resolution+j] = tsf_preintegrated[2*resolution+j-1] + stepLength*0.5*(B*A + B_prev*A_prev);
-        tsf_preintegrated[3*resolution+j] = tsf_preintegrated[3*resolution+j-1] + stepLength*0.5*(A + A_prev);
+        tsf_preintegrated[0*resolution+j] = tsf_preintegrated[0*resolution+j-1] + step_length*0.5*(R*A + R_prev*A_prev);
+        tsf_preintegrated[1*resolution+j] = tsf_preintegrated[1*resolution+j-1] + step_length*0.5*(G*A + G_prev*A_prev);
+        tsf_preintegrated[2*resolution+j] = tsf_preintegrated[2*resolution+j-1] + step_length*0.5*(B*A + B_prev*A_prev);
+        tsf_preintegrated[3*resolution+j] = tsf_preintegrated[3*resolution+j-1] + step_length*0.5*(A + A_prev);
     }
 }

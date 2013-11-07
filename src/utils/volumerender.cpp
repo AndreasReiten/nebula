@@ -277,6 +277,7 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
     }
     last_mouse_pos_x = ev->x();
     last_mouse_pos_y = ev->y();
+
 }
 
 void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
@@ -456,7 +457,7 @@ void VolumeRenderWorker::initResourcesCL()
 
 void VolumeRenderWorker::setViewMatrix()
 {
-    qDebug() << "Setting view matrix";
+//    qDebug() << "Setting view matrix";
 
     normalization_scaling[0] = bbox_scaling[0] * projection_scaling[0] * 2.0 / (data_extent[1] - data_extent[0]);
     normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
@@ -494,7 +495,7 @@ void VolumeRenderWorker::setViewMatrix()
     err |= clSetKernelArg(cl_svo_workload, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    qDebug() << "Done setting view matrix";
+//    qDebug() << "Done setting view matrix";
 }
 
 void VolumeRenderWorker::setDataExtent()
