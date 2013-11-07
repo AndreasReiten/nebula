@@ -28,17 +28,17 @@ __kernel void svoRayTrace(
 
     float tsfOffsetLow = tsf_var[0];
     float tsfOffsetHigh = tsf_var[1];
-    float dataOffsetLow = tsf_var[2];
-    float dataOffsetHigh = tsf_var[3];
+    float data_offset_low = tsf_var[2];
+    float data_offset_high = tsf_var[3];
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
     if (isLogActive)
     {
-        if (dataOffsetLow <= 0.0f) dataOffsetLow = 0.01f;
-        if (dataOffsetHigh <= 0.0f) dataOffsetHigh = 0.01f;
-        dataOffsetLow = log10(dataOffsetLow);
-        dataOffsetHigh = log10(dataOffsetHigh);
+        if (data_offset_low <= 0.0f) data_offset_low = 0.01f;
+        if (data_offset_high <= 0.0f) data_offset_high = 0.01f;
+        data_offset_low = log10(data_offset_low);
+        data_offset_high = log10(data_offset_high);
     }
 
     // If the global id corresponds to a texel, then check if its associated ray hits our cubic bounding box. If it does - traverse along the intersecing ray segment and accumulate color
@@ -47,47 +47,47 @@ __kernel void svoRayTrace(
         /*
          * Find the geometry of the ray
          * */
-        float4 ray_near, rayFar;
-        float3 rayDelta;
-        float coneDiameterIncrement;
-        float coneDiameterNear;
+        float4 ray_near, ray_far;
+        float3 ray_delta;
+        float cone_diameter_increment;
+        float cone_diameter_near;
         {
             float4 rayNearEdge, rayFarEdge;
-            float3 pixelRadiusNear, pixelRadiusFar;
+            float3 pixel_radius_near, pixel_radius_far;
 
             // Normalized device coordinates (ndc) of the pixel and its edge (in screen coordinates)
             float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f)/convert_float2(ray_tex_dim)) - 1.0f);
-            float2 ndcEdge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f))/convert_float2(ray_tex_dim)) - 1.0f);
+            float2 ndc_edge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f))/convert_float2(ray_tex_dim)) - 1.0f);
 
             // Ray origin and exit point (screen coordinates)
             // z = 1 corresponds to far plane
             // z = -1 corresponds to near plane
-            float4 rayNearNdc = (float4)(ndc, -1.0f, 1.0f);
-            float4 rayFarNdc = (float4)(ndc, 1.0f, 1.0f);
+            float4 ray_near_ndc = (float4)(ndc, -1.0f, 1.0f);
+            float4 ray_far_ndc = (float4)(ndc, 1.0f, 1.0f);
 
-            float4 rayNearNdcEdge = (float4)(ndcEdge, -1.0f, 1.0f);
-            float4 rayFarNdcEdge = (float4)(ndcEdge, 1.0f, 1.0f);
+            float4 ray_near_ndc_edge = (float4)(ndc_edge, -1.0f, 1.0f);
+            float4 ray_far_ndc_edge = (float4)(ndc_edge, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            ray_near = sc2xyz(data_view_matrix, rayNearNdc);
-            rayFar = sc2xyz(data_view_matrix, rayFarNdc);
-            rayNearEdge = sc2xyz(data_view_matrix, rayNearNdcEdge);
-            rayFarEdge = sc2xyz(data_view_matrix, rayFarNdcEdge);
+            ray_near = sc2xyz(data_view_matrix, ray_near_ndc);
+            ray_far = sc2xyz(data_view_matrix, ray_far_ndc);
+            rayNearEdge = sc2xyz(data_view_matrix, ray_near_ndc_edge);
+            rayFarEdge = sc2xyz(data_view_matrix, ray_far_ndc_edge);
 
-            rayDelta = rayFar.xyz - ray_near.xyz;
-            pixelRadiusNear = rayNearEdge.xyz - ray_near.xyz;
-            pixelRadiusFar = rayFarEdge.xyz - rayFar.xyz;
+            ray_delta = ray_far.xyz - ray_near.xyz;
+            pixel_radius_near = rayNearEdge.xyz - ray_near.xyz;
+            pixel_radius_far = rayFarEdge.xyz - ray_far.xyz;
 
-            // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central rayDelta vector
-            float3 a1Near = native_divide(dot(pixelRadiusNear, rayDelta),dot(rayDelta,rayDelta))*rayDelta;
-            float3 a2Near = pixelRadiusNear - a1Near;
+            // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central ray_delta vector
+            float3 a1Near = native_divide(dot(pixel_radius_near, ray_delta),dot(ray_delta,ray_delta))*ray_delta;
+            float3 a2Near = pixel_radius_near - a1Near;
 
-            float3 a1Far = native_divide(dot(pixelRadiusFar, rayDelta),dot(rayDelta,rayDelta))*rayDelta;
-            float3 a2Far = pixelRadiusFar - a1Far;
+            float3 a1Far = native_divide(dot(pixel_radius_far, ray_delta),dot(ray_delta,ray_delta))*ray_delta;
+            float3 a2Far = pixel_radius_far - a1Far;
 
             // The geometry of the cone
-            coneDiameterIncrement = 2.0f*native_divide( length(a2Far - a2Near), length(rayDelta - a1Near + a1Far) );
-            coneDiameterNear = 2.0f*length(a2Near); // small approximation
+            cone_diameter_increment = 2.0f*native_divide( length(a2Far - a2Near), length(ray_delta - a1Near + a1Far) );
+            cone_diameter_near = 2.0f*length(a2Near); // small approximation
         }
 
         // To limit resource spending we limit the ray to the intersection between itself and a bounding box
@@ -107,7 +107,7 @@ __kernel void svoRayTrace(
             // Does the ray intersect?
             if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
             {
-                hit = boundingBoxIntersect(ray_near.xyz, rayDelta.xyz, bbox, &t_near, &t_far);
+                hit = boundingBoxIntersect(ray_near.xyz, ray_delta.xyz, bbox, &t_near, &t_far);
             }
         }
         float4 sample = (float4)(0.0f);
@@ -117,8 +117,8 @@ __kernel void svoRayTrace(
         if(hit)
         {
             // The geometry of the intersecting part of the ray
-            float3 rayBoxOrigin = ray_near.xyz + t_near * rayDelta.xyz;
-            float3 rayBoxEnd = ray_near.xyz + t_far * rayDelta.xyz;
+            float3 rayBoxOrigin = ray_near.xyz + t_near * ray_delta.xyz;
+            float3 rayBoxEnd = ray_near.xyz + t_far * ray_delta.xyz;
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
 
             float3 direction = normalize(rayBoxDelta);
@@ -131,7 +131,7 @@ __kernel void svoRayTrace(
             uint index, index_prev, brick, isMsd, isLowEnough, isEmpty;
             float2 tsfPosition;
             float3 ray_xyz_box, rayBoxXyzPrev, ray_add_box;
-            float3 norm_xyz, normXyzPrev;
+            float3 norm_xyz, norm_xyz_prev;
             float3 tmp_a, tmp_b;
             float4 lookup_pos;
             uint4 brickId;
@@ -200,7 +200,7 @@ __kernel void svoRayTrace(
                         index_prev = 0;
 
                         // Calculate the cone diameter at the current ray position
-                        cone_diameter = (coneDiameterNear + length(ray_xyz_box - ray_near.xyz) * coneDiameterIncrement);
+                        cone_diameter = (cone_diameter_near + length(ray_xyz_box - ray_near.xyz) * cone_diameter_increment);
                         cone_diameter = clamp(cone_diameter, cone_diameter_low, cone_diameter_high);
 
                         // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
@@ -255,7 +255,7 @@ __kernel void svoRayTrace(
                                     brick = oct_brick[index_prev];
                                     brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyzPrev, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz_prev, 0.0f)*3.5f , convert_float4(bricks_dim));
 
                                     float intensity_prev = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
@@ -312,7 +312,7 @@ __kernel void svoRayTrace(
                                     intensity = log10(intensity);
                                 }
 
-                                tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
+                                tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
@@ -325,7 +325,7 @@ __kernel void svoRayTrace(
                             {
                                 // Save values from this level to enable quadrilinear interpolation between levels
                                 index_prev = index;
-                                normXyzPrev = norm_xyz;
+                                norm_xyz_prev = norm_xyz;
 
                                 // Descend to the next level
                                 index = (oct_index[index] & mask_child_index);
@@ -353,7 +353,7 @@ __kernel void svoRayTrace(
                     index_prev = 0;
 
                     // Calculate the cone diameter at the current ray position
-                    cone_diameter = (coneDiameterNear + length(ray_xyz_box - ray_near.xyz) * coneDiameterIncrement);
+                    cone_diameter = (cone_diameter_near + length(ray_xyz_box - ray_near.xyz) * cone_diameter_increment);
                     cone_diameter = clamp(cone_diameter, cone_diameter_low, cone_diameter_high);
 
                     // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
@@ -433,7 +433,7 @@ __kernel void svoRayTrace(
                                 brick = oct_brick[index_prev];
                                 brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(normXyzPrev, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz_prev, 0.0f)*3.5f , convert_float4(bricks_dim));
 
                                 float intensity_prev = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
@@ -465,7 +465,7 @@ __kernel void svoRayTrace(
                                 intensity = log10(intensity);
                             }
 
-                            tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - dataOffsetLow)/(dataOffsetHigh - dataOffsetLow)), 0.5f);
+                            tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
 
                             sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
@@ -481,7 +481,7 @@ __kernel void svoRayTrace(
                         {
                             // Save values from this level to enable quadrilinear interpolation between levels
                             index_prev = index;
-                            normXyzPrev = norm_xyz;
+                            norm_xyz_prev = norm_xyz;
 
                             // Descend to the next level
                             index = (oct_index[index] & mask_child_index);
@@ -541,45 +541,45 @@ __kernel void svoWorkload(
         /*
          * Find the geometry of the ray
          * */
-        float4 ray_near, rayFar;
-        float3 rayDelta;
-        float coneDiameterIncrement;
-        float coneDiameterNear;
+        float4 ray_near, ray_far;
+        float3 ray_delta;
+        float cone_diameter_increment;
+        float cone_diameter_near;
         {
             float4 rayNearEdge, rayFarEdge;
-            float3 pixelRadiusNear, pixelRadiusFar;
+            float3 pixel_radius_near, pixel_radius_far;
 
             // Normalized device coordinates (ndc) of the pixel and its edge (in screen coordinates)
             float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f)/convert_float2(ray_tex_dim)) - 1.0f);
-            float2 ndcEdge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f))/convert_float2(ray_tex_dim)) - 1.0f);
+            float2 ndc_edge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f))/convert_float2(ray_tex_dim)) - 1.0f);
 
             // Ray origin and exit point (screen coordinates)
-            float4 rayNearNdc = (float4)(ndc, -1.0f, 1.0f);
-            float4 rayFarNdc = (float4)(ndc, 1.0f, 1.0f);
+            float4 ray_near_ndc = (float4)(ndc, -1.0f, 1.0f);
+            float4 ray_far_ndc = (float4)(ndc, 1.0f, 1.0f);
 
-            float4 rayNearNdcEdge = (float4)(ndcEdge, -1.0f, 1.0f);
-            float4 rayFarNdcEdge = (float4)(ndcEdge, 1.0f, 1.0f);
+            float4 ray_near_ndc_edge = (float4)(ndc_edge, -1.0f, 1.0f);
+            float4 ray_far_ndc_edge = (float4)(ndc_edge, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            ray_near = sc2xyz(data_view_matrix, rayNearNdc);
-            rayFar = sc2xyz(data_view_matrix, rayFarNdc);
-            rayNearEdge = sc2xyz(data_view_matrix, rayNearNdcEdge);
-            rayFarEdge = sc2xyz(data_view_matrix, rayFarNdcEdge);
+            ray_near = sc2xyz(data_view_matrix, ray_near_ndc);
+            ray_far = sc2xyz(data_view_matrix, ray_far_ndc);
+            rayNearEdge = sc2xyz(data_view_matrix, ray_near_ndc_edge);
+            rayFarEdge = sc2xyz(data_view_matrix, ray_far_ndc_edge);
 
-            rayDelta = rayFar.xyz - ray_near.xyz;
-            pixelRadiusNear = rayNearEdge.xyz - ray_near.xyz;
-            pixelRadiusFar = rayFarEdge.xyz - rayFar.xyz;
+            ray_delta = ray_far.xyz - ray_near.xyz;
+            pixel_radius_near = rayNearEdge.xyz - ray_near.xyz;
+            pixel_radius_far = rayFarEdge.xyz - ray_far.xyz;
 
-            // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central rayDelta vector
-            float3 a1Near = native_divide(dot(pixelRadiusNear, rayDelta),dot(rayDelta,rayDelta))*rayDelta;
-            float3 a2Near = pixelRadiusNear - a1Near;
+            // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central ray_delta vector
+            float3 a1Near = native_divide(dot(pixel_radius_near, ray_delta),dot(ray_delta,ray_delta))*ray_delta;
+            float3 a2Near = pixel_radius_near - a1Near;
 
-            float3 a1Far = native_divide(dot(pixelRadiusFar, rayDelta),dot(rayDelta,rayDelta))*rayDelta;
-            float3 a2Far = pixelRadiusFar - a1Far;
+            float3 a1Far = native_divide(dot(pixel_radius_far, ray_delta),dot(ray_delta,ray_delta))*ray_delta;
+            float3 a2Far = pixel_radius_far - a1Far;
 
             // The geometry of the cone
-            coneDiameterIncrement = 2.0f*native_divide( length(a2Far - a2Near), length(rayDelta - a1Near + a1Far) );
-            coneDiameterNear = 2.0f*length(a2Near); // small approximation
+            cone_diameter_increment = 2.0f*native_divide( length(a2Far - a2Near), length(ray_delta - a1Near + a1Far) );
+            cone_diameter_near = 2.0f*length(a2Near); // small approximation
         }
 
         // To limit resource spending we limit the ray to the intersection between itself and a bounding box
@@ -599,7 +599,7 @@ __kernel void svoWorkload(
             // Does the ray intersect?
             if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
             {
-                hit = boundingBoxIntersect(ray_near.xyz, rayDelta.xyz, bbox, &t_near, &t_far);
+                hit = boundingBoxIntersect(ray_near.xyz, ray_delta.xyz, bbox, &t_near, &t_far);
             }
         }
         float4 sample = (float4)(0.0f);
@@ -609,8 +609,8 @@ __kernel void svoWorkload(
         if(hit)
         {
             // The geometry of the intersecting part of the ray
-            float3 rayBoxOrigin = ray_near.xyz + t_near * rayDelta.xyz;
-            float3 rayBoxEnd = ray_near.xyz + t_far * rayDelta.xyz;
+            float3 rayBoxOrigin = ray_near.xyz + t_near * ray_delta.xyz;
+            float3 rayBoxEnd = ray_near.xyz + t_far * ray_delta.xyz;
             float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
 
             float3 direction = normalize(rayBoxDelta);
@@ -622,7 +622,7 @@ __kernel void svoWorkload(
             float cone_diameter_high = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (0))));
             uint index, index_prev, brick, isMsd, isLowEnough, isEmpty;
             float3 ray_xyz_box, rayBoxXyzPrev, ray_add_box;
-            float3 norm_xyz, normXyzPrev;
+            float3 norm_xyz, norm_xyz_prev;
             float3 tmp_a, tmp_b;
             float4 lookup_pos;
             uint4 brickId;
@@ -652,7 +652,7 @@ __kernel void svoWorkload(
                 index_prev = 0;
 
                 // Calculate the cone diameter at the current ray position
-                cone_diameter = (coneDiameterNear + length(ray_xyz_box - ray_near.xyz) * coneDiameterIncrement);
+                cone_diameter = (cone_diameter_near + length(ray_xyz_box - ray_near.xyz) * cone_diameter_increment);
                 cone_diameter = clamp(cone_diameter, cone_diameter_low, cone_diameter_high);
 
                 // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
@@ -733,7 +733,7 @@ __kernel void svoWorkload(
                         {
                             // Save values from this level to enable quadrilinear interpolation between levels
                             index_prev = index;
-                            normXyzPrev = norm_xyz;
+                            norm_xyz_prev = norm_xyz;
 
                             // Descend to the next level
                             index = (oct_index[index] & mask_child_index);

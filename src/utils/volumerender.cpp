@@ -274,6 +274,8 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 
             this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
         }
+
+        qDebug() << ev->x() << ev->y();
     }
     last_mouse_pos_x = ev->x();
     last_mouse_pos_y = ev->y();
