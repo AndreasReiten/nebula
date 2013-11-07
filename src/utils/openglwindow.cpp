@@ -181,6 +181,11 @@ void OpenGLWindow::setOpenCLContext(OpenCLContext * context)
 
 OpenGLWindow::~OpenGLWindow()
 {
+    if (isMultiThreaded)
+    {
+        worker_thread->quit();
+        worker_thread->wait(1000);
+    }
 }
 
 void OpenGLWindow::mouseMoveEvent(QMouseEvent* ev)
@@ -253,7 +258,6 @@ void OpenGLWindow::initializeGLContext()
         {
             worker_thread = new QThread;
             context_gl->moveToThread(worker_thread);
-            qDebug() << "Multithreading";
         }
     }
 }

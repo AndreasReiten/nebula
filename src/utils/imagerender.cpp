@@ -11,6 +11,8 @@ ImageRenderWindow::~ImageRenderWindow()
 {
 }
 
+
+
 void ImageRenderWindow::renderNow()
 {
     if (!isExposed())

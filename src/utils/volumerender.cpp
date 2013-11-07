@@ -9,6 +9,7 @@ VolumeRenderWindow::VolumeRenderWindow()
 
 VolumeRenderWindow::~VolumeRenderWindow()
 {
+
 }
 
 VolumeRenderWorker *  VolumeRenderWindow::getWorker()
@@ -65,8 +66,6 @@ void VolumeRenderWindow::initializeWorker()
 
     if (isMultiThreaded)
     {
-        qDebug() << "Multithreading";
-
         // Set up worker thread
         gl_worker->moveToThread(worker_thread);
         connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
@@ -275,7 +274,7 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
             this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
         }
 
-        qDebug() << ev->x() << ev->y();
+//        qDebug() << ev->x() << ev->y();
     }
     last_mouse_pos_x = ev->x();
     last_mouse_pos_y = ev->y();

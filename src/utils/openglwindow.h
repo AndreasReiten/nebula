@@ -1,6 +1,13 @@
 #ifndef OPENGLWINDOW_H
 #define OPENGLWINDOW_H
 
+/*
+ * The motivation for having the rendering happen in a separate worker is to enable threading.
+ * A OpenGLWindow which does not reside on the main thread will not block GUI events. However,
+ * since explicit GUI calls must be done in the GUI (main) thread, it is unfeasible to simply
+ * allocate the entire OpenGLWindow on a separate thread.
+ */
+
 #include <iostream>
 #include <sstream>
 
@@ -80,7 +87,6 @@ public:
     void setMultiThreading(bool value);
     QOpenGLContext * getGLContext();
     OpenCLContext * getCLContext();
-
 
 signals:
     void mouseMoveEventCaught(QMouseEvent* ev);
