@@ -421,6 +421,7 @@ __kernel void svoRayTrace(
 
                                 color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
                                 color.w = color.w +(1.f - color.w)*sample.w;
+                                ray_xyz_box += ray_add_box;
                                 break;
                             }
 
@@ -699,39 +700,23 @@ __kernel void svoWorkload(
                     }
                     else if (isMsd || isLowEnough)
                     {
-                        // Sample brick
-                        if (isLowEnough && (j >= 1))
-                        {
-                            /* Quadrilinear interpolation between two bricks */
-
-                            // The brick in the level above
-                            brick = oct_brick[index_prev];
-                            brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
-
-
-
-                            // The brick in the current level
-                            brick = oct_brick[index];
-                            brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
-                        }
-                        else
-                        {
-                            /* Quadrilinear interpolation between two bricks. Shit!*/
-
-                            brick = oct_brick[index];
-                            brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
-                        }
-
                         if (isDsActive)
                         {
-                            sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                            color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1.f - color.w)*sample.w;
                             loc_work[id] += 1.0f;
+                            ray_xyz_box += ray_add_box;
                             break;
                         }
 
-                        loc_work[id] += 1.0f;
+                        // Sample brick
+                        if (isLowEnough && (j >= 1))
+                        {
+                            loc_work[id] += 2.0f;
+                        }
+                        else
+                        {
+                            loc_work[id] += 1.0f;
+                        }
+
                         ray_xyz_box += ray_add_box;
                         break;
                     }
