@@ -171,7 +171,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     fps_required = 60;
     work = 1.0;
     work_time = 0.0;
-    quality_factor = 1.0;
+    quality_factor = 0.5;
 
     // Scalebar
     scalebar_ticks.reserve(100,3);
@@ -970,36 +970,40 @@ void VolumeRenderWorker::drawRayTex()
 
 void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
 {
-    // Estimate workload and and adjust rendering quality accordingly
-    setRayTexture();
+    // Estimate workload and and adjust rendering quality accordingly. Only bother if there is ample incentive to do so, i.e. quality factor is off by too much
+    if (std::abs(1.0 - quality_factor) > 0.15)
+    {
+        setRayTexture();
 
-    err = clSetKernelArg(cl_model_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
-    err |= clSetKernelArg(cl_model_workload, 1, sizeof(cl_mem), &cl_glb_work);
-    err |= clSetKernelArg(cl_model_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        err = clSetKernelArg(cl_model_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
+        err |= clSetKernelArg(cl_model_workload, 1, sizeof(cl_mem), &cl_glb_work);
+        err |= clSetKernelArg(cl_model_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clSetKernelArg(cl_svo_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
-    err |= clSetKernelArg(cl_svo_workload, 1, sizeof(cl_mem), &cl_glb_work);
-    err |= clSetKernelArg(cl_svo_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        err = clSetKernelArg(cl_svo_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
+        err |= clSetKernelArg(cl_svo_workload, 1, sizeof(cl_mem), &cl_glb_work);
+        err |= clSetKernelArg(cl_svo_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        // Launch the workload kernel to estimate workload in current configuration of input parameters
+        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clFinish(*context_cl->getCommandQueue());
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        err = clFinish(*context_cl->getCommandQueue());
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
+        Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
 
-    err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-        cl_glb_work,
-        CL_TRUE, 0,
-        glb_work.bytes(),
-        glb_work.data(),
-        0, NULL, NULL);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+            cl_glb_work,
+            CL_TRUE, 0,
+            glb_work.bytes(),
+            glb_work.data(),
+            0, NULL, NULL);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    work = (double) glb_work.sum();
+        work = (double) glb_work.sum();
+    }
 
     // Aquire shared CL/GL objects
     glFinish();

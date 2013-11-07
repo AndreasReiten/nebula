@@ -665,84 +665,92 @@ __kernel void svoWorkload(
                 normIndex = convert_int3(norm_xyz);
                 normIndex = clamp(normIndex, 0, 1);
 
-                // Traverse the octtree
-                for (int j = 0; j < numOctLevels; j++)
+                if (isSlicingActive)
                 {
-                    voxelSize = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << j)));
-                    if (j > 0) voxelSizeUp = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (j-1))));
-
-                    isMsd = (oct_index[index] & mask_msd_flag) >> 31;
-                    isEmpty = !((oct_index[index] & mask_data_flag) >> 30);
-                    isLowEnough = (cone_diameter > voxelSize);
-
-                    if (isEmpty)
+                    loc_work[id] += 3.0f;
+                    break;
+                }
+                else
+                {
+                    // Traverse the octtree
+                    for (int j = 0; j < numOctLevels; j++)
                     {
-                        // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
+                        voxelSize = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << j)));
+                        if (j > 0) voxelSizeUp = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (j-1))));
 
-                        if (isDsActive)
+                        isMsd = (oct_index[index] & mask_msd_flag) >> 31;
+                        isEmpty = !((oct_index[index] & mask_data_flag) >> 30);
+                        isLowEnough = (cone_diameter > voxelSize);
+
+                        if (isEmpty)
                         {
-                            sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
-                            color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
-                            color.w = color.w +(1.0f - color.w)*sample.w;
+                            // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
+
+                            if (isDsActive)
+                            {
+                                sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
+                                color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
+                                color.w = color.w +(1.0f - color.w)*sample.w;
+                            }
+
+                            tmp_a = norm_xyz - 5.0f*direction;
+                            tmp_b = 15.0f*direction;
+                            hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
+
+                            if (hit)
+                            {
+                                skip_length =  ceil(native_divide(0.5f * fast_length((tmp_a + t_far*tmp_b) - norm_xyz) * (brickSize-1) * voxelSize, step_length))* step_length;
+                                ray_xyz_box += skip_length * direction;
+                                break;
+                            }
                         }
-
-                        // This ugly shit needs to go
-                        tmp_a = norm_xyz - 5.0f*direction;
-                        tmp_b = 15.0f*direction;
-                        hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
-
-                        if (hit)
+                        else if (isMsd || isLowEnough)
                         {
-                            skip_length = 0.01f * cone_diameter_low + 0.5f * fast_length((tmp_a + t_far*tmp_b) - norm_xyz) * voxelSize * (brickSize-1);
-                            ray_xyz_box += skip_length * direction;
-                            break;
-                        }
-                    }
-                    else if (isMsd || isLowEnough)
-                    {
-                        if (isDsActive)
-                        {
-                            loc_work[id] += 1.0f;
+                            if (isDsActive)
+                            {
+                                sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
+                                color.w = color.w +(1.f - color.w)*sample.w;
+                                loc_work[id] += 1.0f;
+                                ray_xyz_box += ray_add_box;
+                                break;
+                            }
+
+                            // Sample brick
+                            if (isLowEnough && (j >= 1))
+                            {
+                                loc_work[id] += 2.0f;
+                            }
+                            else
+                            {
+                                loc_work[id] += 1.0f;
+                            }
+
                             ray_xyz_box += ray_add_box;
                             break;
                         }
-
-                        // Sample brick
-                        if (isLowEnough && (j >= 1))
-                        {
-                            loc_work[id] += 2.0f;
-                        }
                         else
                         {
-                            loc_work[id] += 1.0f;
+                            // Save values from this level to enable quadrilinear interpolation between levels
+                            index_prev = index;
+                            normXyzPrev = norm_xyz;
+
+                            // Descend to the next level
+                            index = (oct_index[index] & mask_child_index);
+                            index += normIndex.x + normIndex.y*2 + normIndex.z*4;
+
+                            //norm_xyz = (norm_xyz - convert_float(normIndex))*2.0f;
+                norm_xyz = (norm_xyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
+                            normIndex = convert_int3(norm_xyz);
+                            normIndex = clamp(normIndex, 0, 1);
                         }
-
-                        ray_xyz_box += ray_add_box;
-                        break;
                     }
-                    else
-                    {
-                        // Save values from this level to enable quadrilinear interpolation between levels
-                        index_prev = index;
-                        normXyzPrev = norm_xyz;
 
-                        // Descend to the next level
-                        index = (oct_index[index] & mask_child_index);
-                        index += normIndex.x + normIndex.y*2 + normIndex.z*4;
+                    // Help the ray progress in case it gets stuck between two bricks
+                    if (fast_distance(ray_xyz_box, rayBoxXyzPrev) < step_length*0.5f) ray_xyz_box += ray_add_box;
 
-                        //norm_xyz = (norm_xyz - convert_float(normIndex))*2.0f;
-            norm_xyz = (norm_xyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
-                        normIndex = convert_int3(norm_xyz);
-                        normIndex = clamp(normIndex, 0, 1);
-                    }
+                    rayBoxXyzPrev = ray_xyz_box;
                 }
-
-                // This shit shouldnt be needed
-                if (fast_distance(ray_xyz_box, rayBoxXyzPrev) < step_length*0.5f)
-                {
-                    ray_xyz_box += ray_add_box*0.5f;
-                }
-                rayBoxXyzPrev = ray_xyz_box;
             }
         }
     }
