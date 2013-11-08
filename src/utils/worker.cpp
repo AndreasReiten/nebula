@@ -2,6 +2,7 @@
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
+static const size_t nodes_per_kernel_call = 16;
 
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
@@ -797,7 +798,7 @@ void VoxelizeWorker::process()
 
         cl_mem brick_extent_cl =  clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            6*sizeof(float),
+            nodes_per_kernel_call*6*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -837,7 +838,7 @@ void VoxelizeWorker::process()
             nodes[0] = 1;
 
             unsigned int confirmed_nodes = 0, non_empty_node_counter = 0;
-            int method;
+//            int method;
 
             // Cycle through the levels
             QElapsedTimer timer;
@@ -848,8 +849,8 @@ void VoxelizeWorker::process()
                 qDebug() << "Level " << lvl;
 
 
-                size_t cpu_counter = 0;
-                size_t gpu_counter = 0;
+//                size_t cpu_counter = 0;
+//                size_t gpu_counter = 0;
 
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
@@ -861,6 +862,7 @@ void VoxelizeWorker::process()
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
                 double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
+
                 // For each node
                 size_t iter = 0;
                 for (size_t i = 0; i < nodes[lvl]; i++)
@@ -873,55 +875,76 @@ void VoxelizeWorker::process()
                     }
 
                     if (kill_flag) break;
-                    // The id of the octnode in the octnode array
-                    unsigned int currentId = confirmed_nodes + i;
 
-                    // Set the level
-                    gpuHelpOcttree[currentId].setLevel(lvl);
+                    // First pass: find relevant data for cluster of nodes
+                    MiniArray<double> brick_extent(6*nodes_per_kernel_call);
+                    MiniArray<float> point_data(10e6);
+                    size_t accumulated_points = 0;
+                    for (int j = 0; j < nodes_per_kernel_call; j++)
+                    {
+                        // The id of the octnode in the octnode array
+                        unsigned int currentId = confirmed_nodes + i;
 
-                    // Set the brick id
-                    gpuHelpOcttree[currentId].calcBrickId(i%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
+                        // Set the level
+                        gpuHelpOcttree[currentId].setLevel(lvl);
 
-                    // Based on brick id calculate the brick extent and then calculate and set the brick data
-                    unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
-                    MiniArray<double> brick_extent(6);
-                    brick_extent[0] = svo->getExtent()->at(0) + tmp*brickId[0];
-                    brick_extent[1] = svo->getExtent()->at(0) + tmp*(brickId[0]+1);
-                    brick_extent[2] = svo->getExtent()->at(2) + tmp*brickId[1];
-                    brick_extent[3] = svo->getExtent()->at(2) + tmp*(brickId[1]+1);
-                    brick_extent[4] = svo->getExtent()->at(4) + tmp*brickId[2];
-                    brick_extent[5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
+                        // Set the brick id
+                        gpuHelpOcttree[currentId].calcBrickId(i%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
 
-                    // Set brick-specific arguments
-                    err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
-                        brick_extent_cl ,
-                        CL_TRUE,
-                        0,
-                        brick_extent.toFloat().bytes(),
-                        brick_extent.toFloat().data(),
-                        0, NULL, NULL);
-                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+                        // Based on brick id calculate the brick extent and then calculate and set the brick data
+                        unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
 
-                    err = clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), (void *) &non_empty_node_counter );
-                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+                        brick_extent[j*6 + 0] = svo->getExtent()->at(0) + tmp*brickId[0];
+                        brick_extent[j*6 + 1] = svo->getExtent()->at(0) + tmp*(brickId[0]+1);
+                        brick_extent[j*6 + 2] = svo->getExtent()->at(2) + tmp*brickId[1];
+                        brick_extent[j*6 + 3] = svo->getExtent()->at(2) + tmp*(brickId[1]+1);
+                        brick_extent[j*6 + 4] = svo->getExtent()->at(4) + tmp*brickId[2];
+                        brick_extent[j*6 + 5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
+                        
+                        // Set brick-specific arguments
+                        err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
+                            brick_extent_cl ,
+                            CL_TRUE,
+                            j*6,
+                            brick_extent.toFloat().bytes(),
+                            brick_extent.toFloat().data(),
+                            0, NULL, NULL);
+                        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+                        
+                        root.getData(brick_extent.data(),
+                                     point_data.data(),
+                                     &accumulated_points,
+                                     search_radius);
+
+                        // Increment node
+                        i++;
+                        if (i >= nodes[lvl]) break;
+                    }
+
+
+                    
+
+//                    err = clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), (void *) &non_empty_node_counter );
+//                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
                     // Calculate the brick data // Next step really slow on Windows
 
-                    qDebug() << context_cl->getContext();
-                    int isEmpty = root.getBrick(
-                        &brick_extent,
-                        search_radius,
-                        svo->getBrickOuterDimension(),
-                        lvl,
-                        &items_cl,
-                        &pool_cl,
-                        &voxelize_kernel,
-                        &method,
-                        non_empty_node_counter,
-                        svo->getBrickPoolPower());
 
-                    if (method == 0) gpu_counter++;
-                    if (method == 1) cpu_counter++;
+//                    int isEmpty = root.getBrick(
+//                        &brick_extent,
+//                        search_radius,
+//                        svo->getBrickOuterDimension(),
+//                        lvl,
+//                        &items_cl,
+//                        &pool_cl,
+//                        &voxelize_kernel,
+//                        &method,
+//                        non_empty_node_counter,
+//                        svo->getBrickPoolPower());
+
+//                    if (method == 0) gpu_counter++;
+//                    if (method == 1) cpu_counter++;
+
                     if (isEmpty)
                     {
                         gpuHelpOcttree[currentId].setDataFlag(0);

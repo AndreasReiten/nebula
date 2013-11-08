@@ -284,10 +284,59 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsig
     }
 }
 
+void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, size_t * accumulated_points, float * point_data)
+{
+    if ((this->isMsd) && (!this->isEmpty))
+    {
+        int tmp = 0;
+        for (unsigned int i = 0; i < n_points; i++)
+        {
+            if (
+            ((points[i*4+0] >= effective_extent->at(0)) && (points[i*4+0] <= effective_extent->at(1))) &&
+            ((points[i*4+1] >= effective_extent->at(2)) && (points[i*4+1] <= effective_extent->at(3))) &&
+            ((points[i*4+2] >= effective_extent->at(4)) && (points[i*4+2] <= effective_extent->at(5))))
+            {
+                point_data[*accumulated_points*4+0] = points[i*4+0];
+                point_data[*accumulated_points*4+1] = points[i*4+1];
+                point_data[*accumulated_points*4+2] = points[i*4+2];
+                point_data[*accumulated_points*4+3] = points[i*4+3];
+                (*accumulated_points)++;
+            }
+        }
+    }
+    else if ((n_children > 0))
+    {
+        for (unsigned int i = 0; i < 8; i++)
+        {
+            if(children[i]->isIntersected(effective_extent->data()))
+            {
+                children[i]->getIntersectedItems(effective_extent, accumulated_points, point_data);
+            }
+        }
+    }
+}
+
+
 //void SearchNode::writeLog(QString str)
 //{
 //    writeToLogAndPrint(str.toStdString().c_str(), "nebula.log", 1);
 //}
+
+void SearchNode::getData(double * brick_extent,
+    float * point_data,
+    size_t * accumulated_points,
+    float search_radius)
+{
+    MiniArray<double> effective_extent(6);
+    effective_extent[0] = brick_extent[0] - search_radius;
+    effective_extent[1] = brick_extent[1] + search_radius;
+    effective_extent[2] = brick_extent[2] - search_radius;
+    effective_extent[3] = brick_extent[3] + search_radius;
+    effective_extent[4] = brick_extent[4] - search_radius;
+    effective_extent[5] = brick_extent[5] + search_radius;
+    
+    getIntersectedItems(&effective_extent, accumulated_points, point_data);
+}
 
 int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * pool_cl, cl_kernel * voxelize_kernel, int * method, unsigned int brick_counter, unsigned int brick_pool_power)
 {

@@ -47,6 +47,13 @@ class SearchNode {
             int * method,
             unsigned int brick_counter,
             unsigned int brick_pool_power);
+        
+        void getData(double *brick_extent,
+                     float * point_data,
+                     size_t *accumulated_points,
+                     float search_radius);
+        
+        
         float getIDW(float * sample, float p, float search_radius);
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);
@@ -54,6 +61,7 @@ class SearchNode {
 
     private:
         void getIntersectedItems(MiniArray<double> * effective_extent, unsigned int * item_counter, cl_mem * items);
+        void getIntersectedItems(MiniArray<double> * effective_extent, size_t * accumulated_points, float * point_data);
         SearchNode * parent;
         SearchNode ** children;
         float * points;

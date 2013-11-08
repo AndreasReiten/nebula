@@ -194,7 +194,7 @@ VolumeRenderWorker::~VolumeRenderWorker()
 
 void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 {
-    if (!isRendering)
+    if (!isRendering && (std::abs(last_mouse_pos_x - ev->x()) < 10) && (std::abs(last_mouse_pos_y - ev->y()) < 10));
     {
         float move_scaling = 1.0;
         if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
