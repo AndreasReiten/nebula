@@ -145,7 +145,7 @@ private:
     int tsf_alpha_scheme;
 
     // Ray texture timing
-    float fps_required;
+    float fps_requested;
     QElapsedTimer ray_kernel_timer;
 
     // Mouse

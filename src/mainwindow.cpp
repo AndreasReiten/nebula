@@ -110,7 +110,7 @@ void MainWindow::initializeThreads()
     connect(readScriptThread, SIGNAL(started()), readScriptWorker, SLOT(process()));
     connect(readScriptWorker, SIGNAL(abort()), readScriptThread, SLOT(quit()));
     connect(readScriptWorker, SIGNAL(finished()), readScriptThread, SLOT(quit()));
-    connect(readScriptWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
+    connect(readScriptWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::DirectConnection);
     connect(readScriptWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(readScriptWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(readScriptWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
@@ -191,10 +191,10 @@ void MainWindow::initializeThreads()
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
-    connect(projectFileWorker, SIGNAL(test()), this, SLOT(test()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow, SLOT(test()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()),  Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(test()), this, SLOT(test()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow, SLOT(test()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()),  Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()), Qt::BlockingQueuedConnection);
 
 
     connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);

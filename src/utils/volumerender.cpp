@@ -167,7 +167,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     tsf_parameters_svo[5] = 2.0; // brightness
 
     // Ray texture timing
-    fps_required = 60;
+    fps_requested = 60;
     work = 1.0;
     work_time = 0.0;
     quality_factor = 0.5;
@@ -832,7 +832,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
 
     // Texture resolution
-    QString resolution_string("Resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%, Volume Rendering Fps: "+QString::number(fps_required));
+    QString resolution_string("Resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%, Volume Rendering Fps: "+QString::number(fps_requested));
     QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
     resolution_string_rect += QMargins(5,5,5,5);
     resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
@@ -977,40 +977,41 @@ void VolumeRenderWorker::drawRayTex()
 void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
 {
     // Estimate workload and and adjust rendering quality accordingly. Only bother if there is ample incentive to do so, i.e. quality factor is off by too much
-    if (std::abs(1.0 - quality_factor) > 0.15)
-    {
-        setRayTexture();
+//    if (std::abs(1.0 - quality_factor) > 0.15)
+//    {
+//        setRayTexture();
 
-        err = clSetKernelArg(cl_model_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
-        err |= clSetKernelArg(cl_model_workload, 1, sizeof(cl_mem), &cl_glb_work);
-        err |= clSetKernelArg(cl_model_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//        err = clSetKernelArg(cl_model_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
+//        err |= clSetKernelArg(cl_model_workload, 1, sizeof(cl_mem), &cl_glb_work);
+//        err |= clSetKernelArg(cl_model_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        err = clSetKernelArg(cl_svo_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
-        err |= clSetKernelArg(cl_svo_workload, 1, sizeof(cl_mem), &cl_glb_work);
-        err |= clSetKernelArg(cl_svo_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//        err = clSetKernelArg(cl_svo_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
+//        err |= clSetKernelArg(cl_svo_workload, 1, sizeof(cl_mem), &cl_glb_work);
+//        err |= clSetKernelArg(cl_svo_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        // Launch the workload kernel to estimate workload in current configuration of input parameters
-        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//        // Launch the workload kernel to estimate workload in current configuration of input parameters
+//        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        err = clFinish(*context_cl->getCommandQueue());
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//        err = clFinish(*context_cl->getCommandQueue());
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
+//        Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
 
-        err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-            cl_glb_work,
-            CL_TRUE, 0,
-            glb_work.bytes(),
-            glb_work.data(),
-            0, NULL, NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//        err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+//            cl_glb_work,
+//            CL_TRUE, 0,
+//            glb_work.bytes(),
+//            glb_work.data(),
+//            0, NULL, NULL);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        work = (double) glb_work.sum();
-    }
-
+//        work = (double) glb_work.sum();
+//        if (work)
+//    }
+    setRayTexture();
     // Aquire shared CL/GL objects
     glFinish();
     err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -1044,11 +1045,13 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
 
     work_time = (double) ray_kernel_timer.nsecsElapsed();
 
-    // Calculate how much the quality must be reduced (if any) in order to achieve fps_requested
-    double time_per_work = (work_time / work) * 1.0e-9;
-    double max_work = (1.0 / fps_required) / time_per_work;
-    quality_factor = max_work / work;
-//    std::cout << quality_factor * 100.0 << std::endl;
+    // Calculate how much the quality must be reduced (if any) in order to achieve the required "fps"
+    double actual_time = work_time * 1.0e-9;// / work) * 1.0e-9;
+    double requested_time = 1.0 / fps_requested;
+    quality_factor = requested_time / actual_time;// / work;
+//    qDebug() << quality_factor << requested_time << actual_time; 
+    
+    //    std::cout << quality_factor * 100.0 << std::endl;
 
     // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -1301,7 +1304,7 @@ size_t VolumeRenderWorker::setScaleBars()
 
 void VolumeRenderWorker::setQuality(int value)
 {
-   fps_required = (float) value;
+   fps_requested = (float) value;
 }
 
 void VolumeRenderWorker::setProjection()
