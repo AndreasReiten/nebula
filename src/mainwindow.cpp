@@ -61,7 +61,26 @@ MainWindow::MainWindow() :
 
 MainWindow::~MainWindow()
 {
-//
+    readScriptThread->quit();
+    readScriptThread->wait(1000);
+            
+    setFileThread->quit();
+    setFileThread->wait(1000);
+    
+    readFileThread->quit();
+    readFileThread->wait(1000);
+    
+    projectFileThread->quit();
+    projectFileThread->wait(1000);
+    
+    voxelizeThread->quit();
+    voxelizeThread->wait(1000);
+    
+    allInOneThread->quit();
+    allInOneThread->wait(1000);
+    
+    displayFileThread->quit();
+    displayFileThread->wait(1000);
 }
 
 void MainWindow::setCurrentSvoLevel(int value)
@@ -148,10 +167,14 @@ void MainWindow::initializeThreads()
     projectFileWorker->setFiles(&files);
     projectFileWorker->setReducedPixels(&reduced_pixels);
     projectFileWorker->initializeCLKernel();
-    projectFileWorker->setReduceThresholdLow(&threshold_reduce_low);
-    projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
-    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
-    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
+//    projectFileWorker->setReduceThresholdLow(&threshold_reduce_low);
+//    projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
+//    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
+//    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
+    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
@@ -188,10 +211,14 @@ void MainWindow::initializeThreads()
     allInOneWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
     allInOneWorker->setReducedPixels(&reduced_pixels);
     allInOneWorker->initializeCLKernel();
-    allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
-    allInOneWorker->setReduceThresholdHigh(&threshold_reduce_high);
-    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
-    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
+//    allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
+//    allInOneWorker->setReduceThresholdHigh(&threshold_reduce_high);
+//    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
+//    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
+    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     allInOneWorker->moveToThread(allInOneThread);
     connect(allInOneThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
@@ -241,11 +268,15 @@ void MainWindow::initializeThreads()
     displayFileWorker->setFilePaths(&file_paths);
     displayFileWorker->setFiles(&files);
     displayFileWorker->initializeCLKernel();
-    displayFileWorker->setReduceThresholdLow(&threshold_reduce_low);
-    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
-    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
-    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
-
+//    displayFileWorker->setReduceThresholdLow(&threshold_reduce_low);
+//    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
+//    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
+//    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
+    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
+    
     displayFileWorker->moveToThread(displayFileThread);
     connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
     connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
@@ -388,32 +419,32 @@ void MainWindow::runAllInOneThread()
     allInOneThread->start();
 }
 
-void MainWindow::setReduceThresholdLow(double value)
-{
-    this->threshold_reduce_low = (float) value;
-}
-void MainWindow::setReduceThresholdHigh(double value)
-{
-    this->threshold_reduce_high = (float) value;
-}
-void MainWindow::setProjectThresholdLow(double value)
-{
-    this->threshold_project_low = (float) value;
-}
-void MainWindow::setProjectThresholdHigh(double value)
-{
-    this->threshold_project_high = (float) value;
-}
+//void MainWindow::setReduceThresholdLow(double value)
+//{
+//    this->threshold_reduce_low = (float) value;
+//}
+//void MainWindow::setReduceThresholdHigh(double value)
+//{
+//    this->threshold_reduce_high = (float) value;
+//}
+//void MainWindow::setProjectThresholdLow(double value)
+//{
+//    this->threshold_project_low = (float) value;
+//}
+//void MainWindow::setProjectThresholdHigh(double value)
+//{
+//    this->threshold_project_high = (float) value;
+//}
 
 void MainWindow::initializeEmit()
 {
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(9);
 
-    treshLimA_DSB->setValue(10);
-    treshLimB_DSB->setValue(1e9);
-    treshLimC_DSB->setValue(10);
-    treshLimD_DSB->setValue(1e9);
+    reduceThresholdLow->setValue(10);
+    reduceThresholdHigh->setValue(1e9);
+    projectThresholdLow->setValue(10);
+    projectThresholdHigh->setValue(1e9);
 
     dataMinSpinBox->setValue(10);
     dataMaxSpinBox->setValue(1000);
@@ -788,10 +819,10 @@ void MainWindow::initializeConnects()
     /* this <-> this */
     connect(this->scriptingAct, SIGNAL(triggered()), this, SLOT(toggleScriptView()));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
-    connect(this->treshLimA_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
-    connect(this->treshLimB_DSB, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdHigh(double)));
-    connect(this->treshLimC_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdLow(double)));
-    connect(this->treshLimD_DSB, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdHigh(double)));
+//    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
+//    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdHigh(double)));
+//    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdLow(double)));
+//    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdHigh(double)));
     connect(scriptTextEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSvo()));
@@ -1333,33 +1364,33 @@ void MainWindow::initializeInteractives()
         formatComboBox->addItem("[ your file format here ]");
 
         // Spin Boxes
-        treshLimA_DSB = new QDoubleSpinBox;
-        treshLimA_DSB->setRange(0, 1e9);
-        treshLimA_DSB->setSingleStep(1);
-        treshLimA_DSB->setAccelerated(1);
-        treshLimA_DSB->setDecimals(2);
-        treshLimA_DSB->setFocusPolicy(Qt::ClickFocus);
+        reduceThresholdLow = new QDoubleSpinBox;
+        reduceThresholdLow->setRange(0, 1e9);
+        reduceThresholdLow->setSingleStep(1);
+        reduceThresholdLow->setAccelerated(1);
+        reduceThresholdLow->setDecimals(2);
+        reduceThresholdLow->setFocusPolicy(Qt::ClickFocus);
 
-        treshLimB_DSB = new QDoubleSpinBox;
-        treshLimB_DSB->setRange(0, 1e9);
-        treshLimB_DSB->setSingleStep(1);
-        treshLimB_DSB->setAccelerated(1);
-        treshLimB_DSB->setDecimals(2);
-        treshLimB_DSB->setFocusPolicy(Qt::ClickFocus);
+        reduceThresholdHigh = new QDoubleSpinBox;
+        reduceThresholdHigh->setRange(0, 1e9);
+        reduceThresholdHigh->setSingleStep(1);
+        reduceThresholdHigh->setAccelerated(1);
+        reduceThresholdHigh->setDecimals(2);
+        reduceThresholdHigh->setFocusPolicy(Qt::ClickFocus);
 
-        treshLimC_DSB = new QDoubleSpinBox;
-        treshLimC_DSB->setRange(0, 1e9);
-        treshLimC_DSB->setSingleStep(1);
-        treshLimC_DSB->setAccelerated(1);
-        treshLimC_DSB->setDecimals(2);
-        treshLimC_DSB->setFocusPolicy(Qt::ClickFocus);
+        projectThresholdLow = new QDoubleSpinBox;
+        projectThresholdLow->setRange(0, 1e9);
+        projectThresholdLow->setSingleStep(1);
+        projectThresholdLow->setAccelerated(1);
+        projectThresholdLow->setDecimals(2);
+        projectThresholdLow->setFocusPolicy(Qt::ClickFocus);
 
-        treshLimD_DSB = new QDoubleSpinBox;
-        treshLimD_DSB->setRange(0, 1e9);
-        treshLimD_DSB->setSingleStep(1);
-        treshLimD_DSB->setAccelerated(1);
-        treshLimD_DSB->setDecimals(2);
-        treshLimD_DSB->setFocusPolicy(Qt::ClickFocus);
+        projectThresholdHigh = new QDoubleSpinBox;
+        projectThresholdHigh->setRange(0, 1e9);
+        projectThresholdHigh->setSingleStep(1);
+        projectThresholdHigh->setAccelerated(1);
+        projectThresholdHigh->setDecimals(2);
+        projectThresholdHigh->setFocusPolicy(Qt::ClickFocus);
 
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
@@ -1376,11 +1407,11 @@ void MainWindow::initializeInteractives()
         fileLayout->addWidget(labelA,0,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         fileLayout->addWidget(formatComboBox,0,4,1,4);
         fileLayout->addWidget(labelB,1,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        fileLayout->addWidget(treshLimA_DSB,1,4,1,2);
-        fileLayout->addWidget(treshLimB_DSB,1,6,1,2);
+        fileLayout->addWidget(reduceThresholdLow,1,4,1,2);
+        fileLayout->addWidget(reduceThresholdHigh,1,6,1,2);
         fileLayout->addWidget(labelC,2,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        fileLayout->addWidget(treshLimC_DSB,2,4,1,2);
-        fileLayout->addWidget(treshLimD_DSB,2,6,1,2);
+        fileLayout->addWidget(projectThresholdLow,2,4,1,2);
+        fileLayout->addWidget(projectThresholdHigh,2,6,1,2);
         fileLayout->addWidget(labelD,3,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         fileLayout->addWidget(svoLevelSpinBox,3,4,1,4);
         fileLayout->addWidget(saveSvoButton,4,0,1,8);

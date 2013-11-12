@@ -23,7 +23,7 @@ BaseWorker::BaseWorker()
 
 BaseWorker::~BaseWorker()
 {
-
+    
 }
 
 void BaseWorker::setOpenCLContext(OpenCLContext * context)
@@ -46,21 +46,25 @@ void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
     this->svo = svo;
 }
 
-void BaseWorker::setReduceThresholdLow(float * value)
+void BaseWorker::setReduceThresholdLow(double value)
 {
-    this->threshold_reduce_low = value;
+    this->threshold_reduce_low = (float) value;
+    qDebug() << value;
 }
-void BaseWorker::setReduceThresholdHigh(float * value)
+void BaseWorker::setReduceThresholdHigh(double value)
 {
-    this->threshold_reduce_high = value;
+    this->threshold_reduce_high = (float) value;
+    qDebug() << value;
 }
-void BaseWorker::setProjectThresholdLow(float * value)
+void BaseWorker::setProjectThresholdLow(double value)
 {
-    this->threshold_project_low = value;
+    this->threshold_project_low = (float) value;
+    qDebug() << value;
 }
-void BaseWorker::setProjectThresholdHigh(float * value)
+void BaseWorker::setProjectThresholdHigh(double value)
 {
-    this->threshold_project_high = value;
+    this->threshold_project_high = (float) value;
+    qDebug() << value;
 }
 
 void BaseWorker::killProcess()
@@ -118,6 +122,8 @@ void ReadScriptWorker::setInput(QPlainTextEdit * widget)
 
 void ReadScriptWorker::process()
 {
+    QCoreApplication::processEvents();
+    
     kill_flag = false;
 
     // Set the corresponding tab
@@ -311,6 +317,8 @@ void ReadFileWorker::test()
 
 void ReadFileWorker::process()
 {
+    QCoreApplication::processEvents();
+    
     if (files->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Warning: No files specified!");
@@ -406,7 +414,8 @@ void ProjectFileWorker::initializeCLKernel()
 void ProjectFileWorker::process()
 {
     /* For each file, project the detector coordinate and corresponding intensity down onto the Ewald sphere. Intensity corrections are also carried out in this step. The header of each file should include all the required information to to the transformations. The result is stored in a seprate container. There are different file formats, and all files coming here should be of the same base type. */
-
+    QCoreApplication::processEvents();
+    
     if (files->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Error: No files specified!");
@@ -452,9 +461,13 @@ void ProjectFileWorker::process()
             (*files)[i].setBackground(files->front().getFlux(), files->front().getExpTime());
 
             emit aquireSharedBuffers();
-
-            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
-
+            
+//            std::cout << threshold_reduce_low << " " << threshold_reduce_high << " " << threshold_project_low << " " << threshold_project_high << std::endl;
+            
+            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
+            
+            (*files)[i].print();
+            
             emit releaseSharedBuffers();
 
             emit updateRequest();
@@ -552,7 +565,7 @@ AllInOneWorker::~AllInOneWorker()
 
 void AllInOneWorker::process()
 {
-
+    QCoreApplication::processEvents();
 
     kill_flag = false;
     if (file_paths->size() <= 0)
@@ -623,7 +636,7 @@ void AllInOneWorker::process()
                     file.setBackground(file.getFlux(), file.getExpTime());
 
                     emit aquireSharedBuffers();
-                    int STATUS_OK = file.filterData( &n, reduced_pixels->data(), *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high,1);
+                    int STATUS_OK = file.filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
                     emit releaseSharedBuffers();
                     emit updateRequest();
 
@@ -742,7 +755,7 @@ void VoxelizeWorker::initializeCLKernel()
 
 void VoxelizeWorker::process()
 {
-
+    QCoreApplication::processEvents();
 
     kill_flag = false;
 
@@ -780,14 +793,6 @@ void VoxelizeWorker::process()
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
-        cl_mem pool_cl = clCreateBuffer(*context_cl->getContext(),
-            CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-            svo->pool.bytes(),
-            svo->pool.data(),
-            &err);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-        svo->pool.clear();
-        
         cl_mem cluster_pool_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension(),
@@ -795,15 +800,6 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        // Other CL buffers
-//        cl_mem items_cl =  clCreateBuffer(*context_cl->getContext(),
-//            CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-//            1024*2*2*2*2*2*2*2*16,
-//            NULL,
-//            &err);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-
         cl_mem brick_extent_cl =  clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*6*sizeof(float),
@@ -839,13 +835,6 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-//        err = clSetKernelArg( voxelize_kernel, 0, sizeof(cl_mem), (void *) &items_cl);
-//        err |= clSetKernelArg( voxelize_kernel, 1, sizeof(cl_mem), (void *) &brick_extent_cl);
-//        err |= clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int4), pool_dimension.data());
-//        err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_mem), (void *) &pool_cl);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
         root.setOpenCLContext(context_cl);
@@ -910,7 +899,10 @@ void VoxelizeWorker::process()
                     }
 
                     if (kill_flag) break;
-
+                    
+                    // The id of the octnode in the octnode array
+                    unsigned int currentId = confirmed_nodes + i;
+                    
                     // First pass: find relevant data for cluster of nodes
                     MiniArray<double> brick_extent(6*nodes_per_kernel_call);
                     MiniArray<float> point_data(max_points_per_cluster);
@@ -919,9 +911,6 @@ void VoxelizeWorker::process()
                     size_t accumulated_points = 0;
                     for (int j = 0; j < nodes_per_kernel_call; j++)
                     {
-                        // The id of the octnode in the octnode array
-                        unsigned int currentId = confirmed_nodes + i;
-
                         // Set the level
                         gpuHelpOcttree[currentId].setLevel(lvl);
 
@@ -957,6 +946,8 @@ void VoxelizeWorker::process()
                                      point_data.data(),
                                      &accumulated_points,
                                      search_radius);
+                        
+                        qDebug() << accumulated_points;
                         
                         // Upload this point data to an OpenCL buffer
                         err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
@@ -1000,7 +991,8 @@ void VoxelizeWorker::process()
                     err |= clSetKernelArg( voxelize_kernel, 4, sizeof(cl_mem), (void *) &cluster_pool_cl);
                     err |= clSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &empty_check_cl);
                     err |= clSetKernelArg( voxelize_kernel, 6, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
-                    err |= clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int), &svo->getBrickOuterDimension());
+                    int tmp = svo->getBrickOuterDimension();
+                    err |= clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int), &tmp);
                     err |= clSetKernelArg( voxelize_kernel, 8, sizeof(cl_float), &search_radius);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
@@ -1015,9 +1007,9 @@ void VoxelizeWorker::process()
                         size_t glb_ws[3] = {8,8,8};
                         err = clEnqueueNDRangeKernel(
                                     *context_cl->getCommandQueue(), 
-                                    *voxelize_kernel, 
+                                    voxelize_kernel, 
                                     3, 
-                                    NULL, 
+                                    offset, 
                                     glb_ws, 
                                     loc_ws, 
                                     0, NULL, NULL);
@@ -1028,12 +1020,12 @@ void VoxelizeWorker::process()
                     clFinish(*context_cl->getCommandQueue());
                     
                     // Read currently relevant data
-                    MiniArray<int> empty_check(max_points_per_cluster);
+                    MiniArray<int> empty_check(nodes_per_kernel_call);
                     err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
                         empty_check_cl,
                         CL_TRUE,
                         0,
-                        max_points_per_cluster*sizeof(int),
+                        nodes_per_kernel_call*sizeof(int),
                         empty_check.data(),
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1069,7 +1061,9 @@ void VoxelizeWorker::process()
                             }
                             
                             // Transfer data to pool
-                            TODO
+                            
+                            
+//                            TODO
                             non_empty_node_counter++;
                             iter++;
                             
@@ -1120,14 +1114,14 @@ void VoxelizeWorker::process()
                 // Read results
                 svo->pool.reserve(non_empty_node_counter_rounded_up*n_points_brick);
 
-                err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-                    pool_cl,
-                    CL_TRUE,
-                    0,
-                    svo->pool.bytes(),
-                    svo->pool.data(),
-                    0, NULL, NULL);
-                if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//                err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+//                    pool_cl,
+//                    CL_TRUE,
+//                    0,
+//                    svo->pool.bytes(),
+//                    svo->pool.data(),
+//                    0, NULL, NULL);
+//                if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
             }
 
             if (!kill_flag)
@@ -1136,14 +1130,31 @@ void VoxelizeWorker::process()
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Number of bricks: "+QString::number(confirmed_nodes));
             }
         }
-        clReleaseMemObject(items_cl);
-        clReleaseMemObject(pool_cl);
+
+        clReleaseMemObject(point_data_cl);
+        clReleaseMemObject(point_data_offset_cl);
+        clReleaseMemObject(point_data_count_cl);
+        clReleaseMemObject(brick_extent_cl);
+        clReleaseMemObject(cluster_pool_cl);
+        clReleaseMemObject(empty_check_cl);
     }
 
     emit finished();
 }
 
+//uint getPoolIndex(int *pool_dimension, int4 id_loc ,uint brick_outer_dimension, uint brick_count)
+//{
+//    int4 target_brick_dimension = target_dimension/(int4)(brick_outer_dimension);
 
+//    int4 brick_offset;
+//    brick_offset.z = brick_count / (target_brick_dimension.x * target_brick_dimension.y);
+//    brick_offset.y = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) / target_brick_dimension.x;
+//    brick_offset.x = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) % target_brick_dimension.x;
+
+//    int4 index3d = brick_offset*(int4)(brick_outer_dimension) + id_loc;
+
+//    return index3d.x + index3d.y * target_dimension.x + index3d.z * target_dimension.x * target_dimension.y;
+//}
 
 /***
  *         dBBBBb  dBP.dBBBBP dBBBBBb  dBP dBBBBBb dBP dBP
@@ -1173,7 +1184,8 @@ void DisplayFileWorker::setDisplayFile(int value)
 
 void DisplayFileWorker::process()
 {
-
+    QCoreApplication::processEvents();
+    
     PilatusFile file;
 
     int STATUS_OK = file.set(file_paths->at(display_file), context_cl);
@@ -1189,7 +1201,7 @@ void DisplayFileWorker::process()
 
             size_t n;
             emit aquireSharedBuffers();
-            STATUS_OK = file.filterData( &n, NULL, *threshold_reduce_low, *threshold_reduce_high, *threshold_project_low, *threshold_project_high, 0);
+            STATUS_OK = file.filterData( &n, NULL, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high, 0);
             emit releaseSharedBuffers();
 //            if (STATUS_OK)
 //            {

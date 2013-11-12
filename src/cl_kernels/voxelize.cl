@@ -17,7 +17,7 @@ __kernel void voxelize(
     __constant int * point_data_offset,
     __constant int * point_data_count,
     __global float * brick_extent,
-    __global float * cluster_pool,
+    __global float * pool_cluster,
     __global int * empty_check,
     __local float * addition_array,
     uint brick_outer_dimension,
@@ -32,10 +32,10 @@ __kernel void voxelize(
 
     // Position of point
     float4 xyzw;
-    float step_length = (extent[id_wg*6 + 1] - extent[id_wg*6 + 0]) / ((float)brick_outer_dimension - 1.0f);
-    xyzw.x = extent[id_wg*6 + 0] + (float)id_loc.x * step_length;
-    xyzw.y = extent[id_wg*6 + 2] + (float)id_loc.y * step_length;
-    xyzw.z = extent[id_wg*6 + 4] + (float)id_loc.z * step_length;
+    float sample_interdistance = (brick_extent[id_wg*6 + 1] - brick_extent[id_wg*6 + 0]) / ((float)brick_outer_dimension - 1.0f);
+    xyzw.x = brick_extent[id_wg*6 + 0] + (float)id_loc.x * sample_interdistance;
+    xyzw.y = brick_extent[id_wg*6 + 2] + (float)id_loc.y * sample_interdistance;
+    xyzw.z = brick_extent[id_wg*6 + 4] + (float)id_loc.z * sample_interdistance;
     xyzw.w = 0.0f;
 
     // Interpolate around positions using invrese distance weighting
@@ -46,7 +46,7 @@ __kernel void voxelize(
 
     for (int i = 0; i < point_data_count[id_wg]; i++)
     {
-        point = point_data[point_data_offset[id_wg]i];
+        point = point_data[point_data_offset[id_wg] + i];
         dst = fast_distance(xyzw.xyz, point.xyz);
         if (dst <= 0.0f)
         {
@@ -106,10 +106,10 @@ __kernel void voxelize_old(
 
     // Position of point
     float4 xyzw;
-    float step_length = (extent[1] - extent[0]) / ((float)brick_outer_dimension - 1.0f);
-    xyzw.x = extent[0] + (float)id_loc.x * step_length;
-    xyzw.y = extent[2] + (float)id_loc.y * step_length;
-    xyzw.z = extent[4] + (float)id_loc.z * step_length;
+    float sample_interdistance = (extent[1] - extent[0]) / ((float)brick_outer_dimension - 1.0f);
+    xyzw.x = extent[0] + (float)id_loc.x * sample_interdistance;
+    xyzw.y = extent[2] + (float)id_loc.y * sample_interdistance;
+    xyzw.z = extent[4] + (float)id_loc.z * sample_interdistance;
     xyzw.w = 0.0f;
 
     // Interpolate around positions using invrese distance weighting

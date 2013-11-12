@@ -105,10 +105,10 @@ private slots:
     void openUnitcellFile();
     void initializeThreads();
 
-    void setReduceThresholdLow(double value);
-    void setReduceThresholdHigh(double value);
-    void setProjectThresholdLow(double value);
-    void setProjectThresholdHigh(double value);
+//    void setReduceThresholdLow(double value);
+//    void setReduceThresholdHigh(double value);
+//    void setProjectThresholdLow(double value);
+//    void setProjectThresholdHigh(double value);
     void runProjectFileThread();
     void runAllInOneThread();
     void runDisplayFileThread(int value);
@@ -235,10 +235,10 @@ private:
 
     QSpinBox * svoLevelSpinBox;
 
-    QDoubleSpinBox *treshLimA_DSB;
-    QDoubleSpinBox *treshLimB_DSB;
-    QDoubleSpinBox *treshLimC_DSB;
-    QDoubleSpinBox *treshLimD_DSB;
+    QDoubleSpinBox *reduceThresholdLow;
+    QDoubleSpinBox *reduceThresholdHigh;
+    QDoubleSpinBox *projectThresholdLow;
+    QDoubleSpinBox *projectThresholdHigh;
 
 
     QDoubleSpinBox * funcParamASpinBox;

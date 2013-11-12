@@ -69,10 +69,10 @@ class BaseWorker : public QObject
 
     public slots:
         void killProcess();
-        void setReduceThresholdLow(float * value);
-        void setReduceThresholdHigh(float * value);
-        void setProjectThresholdLow(float * value);
-        void setProjectThresholdHigh(float * value);
+        void setReduceThresholdLow(double value);
+        void setReduceThresholdHigh(double value);
+        void setProjectThresholdLow(double value);
+        void setProjectThresholdHigh(double value);
 //        void enableOpenGLContext();
 
     protected:
@@ -96,10 +96,10 @@ class BaseWorker : public QObject
         float * suggested_q;
 
         // File treatment
-        float * threshold_reduce_low;
-        float * threshold_reduce_high;
-        float * threshold_project_low;
-        float * threshold_project_high;
+        float threshold_reduce_low;
+        float threshold_reduce_high;
+        float threshold_project_low;
+        float threshold_project_high;
         QStringList * file_paths;
         QList<PilatusFile> * files;
 //        QList<PilatusFile> * background_files;

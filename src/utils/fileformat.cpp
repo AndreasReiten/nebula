@@ -51,8 +51,8 @@ int PilatusFile::set(QString path, OpenCLContext *context)
 
     loc_ws[0] = 16;
     loc_ws[1] = 16;
-    glb_ws[0] = fast_dimension + loc_ws[0]%fast_dimension;
-    glb_ws[1] = slow_dimension + loc_ws[1]%slow_dimension;
+    glb_ws[0] = fast_dimension + loc_ws[0] - (fast_dimension%loc_ws[0]);
+    glb_ws[1] = slow_dimension + loc_ws[1] - (slow_dimension%loc_ws[1]);
 
     return 1;
 }
@@ -196,7 +196,7 @@ int PilatusFile::readHeader()
     angle_increment = regExp(&optExpAngInc, &header, 0, 1).toFloat()*pi/180.0;
     //~ detector_2theta = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
     //~ polarization = regExp(&, &header, 0, 1).toFloat();
-    //~ alpha = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
+//    ~ alpha = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
     kappa = regExp(&optExpKappa, &header, 0, 1).toFloat()*pi/180.0;
     phi = regExp(&optExpPhi, &header, 0, 1).toFloat()*pi/180.0;
     //~ phi_increment = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
@@ -249,12 +249,57 @@ void PilatusFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, 
     this->cl_tsf_tex = cl_tsf_tex;
 }
 
+void PilatusFile::print()
+{
+    std::stringstream ss;
+    ss << "__________ PILATUS FILE __________" << std::endl;
+    ss << "Path: " << path.toStdString().c_str() << std::endl;
+    ss << "CL context: " << context_cl << std::endl;
+    ss << "CL image alpha: " << cl_img_alpha << std::endl;
+    ss << "CL image beta: " << cl_img_beta << std::endl;
+    ss << "CL image gamma: " << cl_img_gamma << std::endl;
+    ss << "CL kernel: " << project_kernel << std::endl;
+    ss << "CL local work dim: " << loc_ws[0] << " " << loc_ws[1] << std::endl;
+    ss << "CL global work dim: " << glb_ws[0] << " " << glb_ws[1] << std::endl;
+    ss << "Data elements: " << data_buf.size() << std::endl;
+    ss << "Dimensions: " << fast_dimension << " x " << slow_dimension << std::endl;
+    ss << "Max counts: " << max_counts << std::endl;
+    ss << "Reduction threshold: " << threshold_reduce_low << " " << threshold_reduce_high << std::endl;
+    ss << "Projection threshold: " << threshold_project_low << " "<< threshold_project_high << std::endl;
+    ss << "Search radius: " << srchrad_sugg_low << " " << srchrad_sugg_high << std::endl; 
+    ss << "..." << std::endl;
+    ss << "Detector: " << detector.toStdString().c_str() << std::endl;
+    ss << "Pixel size: " << pixel_size_x << " x " << pixel_size_y << std::endl;
+    ss << "Exposure time: " << exposure_time << std::endl;
+    ss << "Exposure period: " << exposure_period << std::endl;
+    ss << "Count cutoff: " << count_cutoff << std::endl;    
+    ss << "Wavelength: " << wavelength << std::endl;
+    ss << "Detector distance: " << detector_distance << std::endl;
+    ss << "Beam position: " << beam_x << " x " << beam_y << std::endl;
+    ss << "Flux: " << flux << std::endl;
+    ss << "Start angle: " << start_angle << std::endl;
+    ss << "Angle increment: " << angle_increment << std::endl;
+    ss << "Alpha: " << alpha << std::endl;
+    ss << "Beta: " << beta << std::endl;
+    ss << "Kappa: " << kappa << std::endl;
+    ss << "Phi: " << phi << std::endl;
+    ss << "Omega: " << omega << std::endl;
+    
+    qDebug() << ss.str().c_str();
+}
 
-int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive)
+int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive)
 {
 
     this->threshold_reduce_low = threshold_reduce_low;
     this->threshold_reduce_high = threshold_reduce_high;
+    this->threshold_project_low = threshold_project_low;
+    this->threshold_project_high = threshold_project_high;
+    
+//    qDebug() << threshold_reduce_low;
+//    qDebug() << threshold_reduce_high;
+//    qDebug() << threshold_project_low;
+//    qDebug() << threshold_project_high;
 
     cl_image_format target_format;
     target_format.image_channel_order = CL_RGBA;
@@ -312,8 +357,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     RotationMatrix<float> OMEGA;
     RotationMatrix<float> sampleRotMat;
 
-    float alpha =  0.8735582;
-    float beta =  0.000891863;
+    alpha =  0.8735582;
+    beta =  0.000891863;
 
     PHI.setArbRotation(-phi, beta, 0);
     KAPPA.setArbRotation(-kappa, alpha, 0);
@@ -343,8 +388,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, int threshold_reduce_low
     err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_sampler), &tsf_sampler);
     err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &intensity_sampler);
     err |= clSetKernelArg(*project_kernel, 8, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
-    float threshold_one[2] = {(float)threshold_reduce_low, (float)threshold_reduce_high};
-    float threshold_two[2] = {(float)threshold_project_low, (float)threshold_project_high};
+    float threshold_one[2] = {this->threshold_reduce_low, this->threshold_reduce_high};
+    float threshold_two[2] = {this->threshold_project_low, this->threshold_project_high};
     err |= clSetKernelArg(*project_kernel, 9, 2*sizeof(cl_float), threshold_one);
     err |= clSetKernelArg(*project_kernel, 10, 2*sizeof(cl_float), threshold_two);
     err |= clSetKernelArg(*project_kernel, 11, sizeof(cl_float), &background_flux);

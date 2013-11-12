@@ -163,6 +163,7 @@ void ImageRenderWorker::endRawGLCalls(QPainter * painter)
 
 void ImageRenderWorker::render(QPainter *painter)
 {
+//    qDebug() << "Render";
     glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 

@@ -45,7 +45,7 @@ class PilatusFile
         int set(QString path, OpenCLContext * context);
         int readData();
         void setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex);
-        int filterData(size_t * n, float * outBuf, int threshold_reduce_low, int threshold_reduce_high, int threshold_project_low, int threshold_project_high, bool isProjectionActive = true);
+        int filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive = true);
         //~int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
 
         MiniArray<float> getTest();
@@ -61,7 +61,8 @@ class PilatusFile
         float getFlux();
         float getExpTime();
         void setProjectionKernel(cl_kernel * kernel);
-
+        void print();
+        
     private:
         OpenCLContext * context_cl;
         cl_mem * cl_img_alpha;

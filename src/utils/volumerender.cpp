@@ -194,90 +194,94 @@ VolumeRenderWorker::~VolumeRenderWorker()
 
 void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 {
-    if (!isRendering && (std::abs(last_mouse_pos_x - ev->x()) < 10) && (std::abs(last_mouse_pos_y - ev->y()) < 10));
+    if ( (ev->x() >= 0) && (ev->x() <= render_surface->width()) && (ev->y() >= 0) && (ev->y() <= render_surface->height()))
     {
-        float move_scaling = 1.0;
-        if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
-
-        if ((ev->buttons() & Qt::LeftButton) && !(ev->buttons() & Qt::RightButton))
+//        qDebug() << ev->x() << render_surface->width() << ev->y() << render_surface->height();
+        if (!isRendering && (std::abs(last_mouse_pos_x - ev->x()) < 10) && (std::abs(last_mouse_pos_y - ev->y()) < 10));
         {
-            /* Rotation happens multiplicatively around a rolling axis given
-             * by the mouse move direction and magnitude.
-             * Moving the mouse alters rotation.
-             * */
-
-            double eta = std::atan2((double)ev->x() - last_mouse_pos_x, (double)ev->y() - last_mouse_pos_y) - pi*1.0;
-            double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
-
-            RotationMatrix<double> roll_rotation;
-            roll_rotation.setArbRotation(-0.5*pi, eta, roll);
-
-            if(ev->modifiers() & Qt::ShiftModifier) scalebar_rotation = roll_rotation * scalebar_rotation;
-            else
+            float move_scaling = 1.0;
+            if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
+    
+            if ((ev->buttons() & Qt::LeftButton) && !(ev->buttons() & Qt::RightButton))
             {
-                rotation = roll_rotation * rotation;
-                scalebar_rotation = roll_rotation * scalebar_rotation;
+                /* Rotation happens multiplicatively around a rolling axis given
+                 * by the mouse move direction and magnitude.
+                 * Moving the mouse alters rotation.
+                 * */
+    
+                double eta = std::atan2((double)ev->x() - last_mouse_pos_x, (double)ev->y() - last_mouse_pos_y) - pi*1.0;
+                double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(ev->x() - last_mouse_pos_x)*(ev->x() - last_mouse_pos_x) + (ev->y() - last_mouse_pos_y)*(ev->y() - last_mouse_pos_y));
+    
+                RotationMatrix<double> roll_rotation;
+                roll_rotation.setArbRotation(-0.5*pi, eta, roll);
+    
+                if(ev->modifiers() & Qt::ShiftModifier) scalebar_rotation = roll_rotation * scalebar_rotation;
+                else
+                {
+                    rotation = roll_rotation * rotation;
+                    scalebar_rotation = roll_rotation * scalebar_rotation;
+                }
             }
-        }
-        if ((ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
-        {
-            /* Rotation happens multiplicatively around a rolling axis given
-             * by the mouse move direction and magnitude.
-             * Moving the mouse alters rotation.
-             * */
-
-            RotationMatrix<double> roll_rotation;
-            double roll = move_scaling * pi/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
-
-            roll_rotation.setArbRotation(0, 0, roll);
-
-            if(ev->modifiers() & Qt::ShiftModifier) scalebar_rotation = roll_rotation * scalebar_rotation;
-            else
+            if ((ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
             {
-                rotation = roll_rotation * rotation;
-                scalebar_rotation = roll_rotation * scalebar_rotation;
+                /* Rotation happens multiplicatively around a rolling axis given
+                 * by the mouse move direction and magnitude.
+                 * Moving the mouse alters rotation.
+                 * */
+    
+                RotationMatrix<double> roll_rotation;
+                double roll = move_scaling * pi/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
+    
+                roll_rotation.setArbRotation(0, 0, roll);
+    
+                if(ev->modifiers() & Qt::ShiftModifier) scalebar_rotation = roll_rotation * scalebar_rotation;
+                else
+                {
+                    rotation = roll_rotation * rotation;
+                    scalebar_rotation = roll_rotation * scalebar_rotation;
+                }
             }
+            else if (ev->buttons() & Qt::MiddleButton)
+            {
+                /* X/Y translation happens multiplicatively. Here it is
+                 * important to retain the bounding box accordingly  */
+                float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) render_surface->height()) * (ev->x() - last_mouse_pos_x);
+                float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
+    
+                Matrix<double> data_translation_prev;
+                data_translation_prev.setIdentity(4);
+                data_translation_prev = data_translation;
+    
+                data_translation.setIdentity(4);
+                data_translation[3] = dx;
+                data_translation[7] = dy;
+    
+                data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
+    
+                this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            }
+            else if (!(ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
+            {
+                /* Z translation happens multiplicatively */
+                float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
+    
+                Matrix<double> data_translation_prev;
+                data_translation_prev.setIdentity(4);
+                data_translation_prev = data_translation;
+    
+                data_translation.setIdentity(4);
+                data_translation[11] = dz;
+    
+                data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
+    
+                this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            }
+    
+    //        qDebug() << ev->x() << ev->y();
         }
-        else if (ev->buttons() & Qt::MiddleButton)
-        {
-            /* X/Y translation happens multiplicatively. Here it is
-             * important to retain the bounding box accordingly  */
-            float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) render_surface->height()) * (ev->x() - last_mouse_pos_x);
-            float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
-
-            Matrix<double> data_translation_prev;
-            data_translation_prev.setIdentity(4);
-            data_translation_prev = data_translation;
-
-            data_translation.setIdentity(4);
-            data_translation[3] = dx;
-            data_translation[7] = dy;
-
-            data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
-
-            this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
-        }
-        else if (!(ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
-        {
-            /* Z translation happens multiplicatively */
-            float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
-
-            Matrix<double> data_translation_prev;
-            data_translation_prev.setIdentity(4);
-            data_translation_prev = data_translation;
-
-            data_translation.setIdentity(4);
-            data_translation[11] = dz;
-
-            data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
-
-            this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
-        }
-
-//        qDebug() << ev->x() << ev->y();
+        last_mouse_pos_x = ev->x();
+        last_mouse_pos_y = ev->y();
     }
-    last_mouse_pos_x = ev->x();
-    last_mouse_pos_y = ev->y();
 
 }
 
@@ -753,6 +757,7 @@ void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWorker::render(QPainter *painter)
 {
+//    qDebug() << "Render";
 //    QCoreApplication::processEvents();
     isRendering = true;
     emit renderState(1);
