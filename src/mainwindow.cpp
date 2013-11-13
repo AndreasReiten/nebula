@@ -110,7 +110,7 @@ void MainWindow::initializeThreads()
     connect(readScriptThread, SIGNAL(started()), readScriptWorker, SLOT(process()));
     connect(readScriptWorker, SIGNAL(abort()), readScriptThread, SLOT(quit()));
     connect(readScriptWorker, SIGNAL(finished()), readScriptThread, SLOT(quit()));
-    connect(readScriptWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::DirectConnection);
+    connect(readScriptWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
     connect(readScriptWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(readScriptWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(readScriptWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
@@ -1397,7 +1397,7 @@ void MainWindow::initializeInteractives()
 
         // Buttons
         saveSvoButton = new QPushButton;
-        saveSvoButton->setIcon(QIcon(":/art/saveScript.png"));
+        saveSvoButton->setIcon(QIcon(":/art/save.png"));
         saveSvoButton->setText("Save Octtree");
 
         QGridLayout * fileLayout = new QGridLayout;

@@ -1045,7 +1045,7 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
 
     work_time = (double) ray_kernel_timer.nsecsElapsed();
 
-    // Calculate how much the quality must be reduced (if any) in order to achieve the required "fps"
+    // Calculate how much the quality must be reduced (if any) in order to achieve the requested fps. This fps does not take into account the time spent on other rendering details.
     double actual_time = work_time * 1.0e-9;// / work) * 1.0e-9;
     double requested_time = 1.0 / fps_requested;
     quality_factor = requested_time / actual_time;// / work;

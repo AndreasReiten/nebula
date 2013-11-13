@@ -2,8 +2,8 @@
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
-static const size_t nodes_per_kernel_call = 16;
-static const size_t max_points_per_cluster = 50e6;
+static const size_t nodes_per_kernel_call = 1024;
+static const size_t max_points_per_cluster = 250e6;
 
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
@@ -49,22 +49,22 @@ void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
 void BaseWorker::setReduceThresholdLow(double value)
 {
     this->threshold_reduce_low = (float) value;
-    qDebug() << value;
+//    qDebug() << value;
 }
 void BaseWorker::setReduceThresholdHigh(double value)
 {
     this->threshold_reduce_high = (float) value;
-    qDebug() << value;
+//    qDebug() << value;
 }
 void BaseWorker::setProjectThresholdLow(double value)
 {
     this->threshold_project_low = (float) value;
-    qDebug() << value;
+//    qDebug() << value;
 }
 void BaseWorker::setProjectThresholdHigh(double value)
 {
     this->threshold_project_high = (float) value;
-    qDebug() << value;
+//    qDebug() << value;
 }
 
 void BaseWorker::killProcess()
@@ -466,7 +466,7 @@ void ProjectFileWorker::process()
             
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
             
-            (*files)[i].print();
+//            (*files)[i].print();
             
             emit releaseSharedBuffers();
 
@@ -827,18 +827,21 @@ void VoxelizeWorker::process()
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-                            
+                           
+        MiniArray<float> empty_check(nodes_per_kernel_call, 0);
         cl_mem empty_check_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            nodes_per_kernel_call*sizeof(int),
-            NULL,
+            nodes_per_kernel_call*sizeof(float),
+            empty_check.data(),
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
         root.setOpenCLContext(context_cl);
-
+        
+//        qDebug() << "reduced pixels: " << reduced_pixels->size()/4;
+        
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
             if (kill_flag)
@@ -862,20 +865,12 @@ void VoxelizeWorker::process()
             nodes[0] = 1;
 
             unsigned int confirmed_nodes = 0, non_empty_node_counter = 0;
-//            int method;
 
             // Cycle through the levels
             QElapsedTimer timer;
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
-
-
-//                qDebug() << "Level " << lvl;
-
-
-//                size_t cpu_counter = 0;
-//                size_t gpu_counter = 0;
-
+                qDebug() << "Level" << lvl;
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
@@ -885,11 +880,11 @@ void VoxelizeWorker::process()
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
                 if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
 
-                double tmp = (svo->getExtent()->at(1)-svo->getExtent()->at(0))/(1 << lvl);
+                double tmp = (svo->getExtent()->at(1) - svo->getExtent()->at(0)) / (1 << lvl);
 
                 // For each node
                 size_t iter = 0;
-                for (size_t i = 0; i < nodes[lvl]; i++)
+                for (size_t i = 0; i < nodes[lvl]; i += nodes_per_kernel_call)
                 {
                     if((non_empty_node_counter+1) >= n_max_bricks)
                     {
@@ -900,10 +895,9 @@ void VoxelizeWorker::process()
 
                     if (kill_flag) break;
                     
-                    // The id of the octnode in the octnode array
-                    unsigned int currentId = confirmed_nodes + i;
                     
                     // First pass: find relevant data for cluster of nodes
+                    unsigned int currentId;
                     MiniArray<double> brick_extent(6*nodes_per_kernel_call);
                     MiniArray<float> point_data(max_points_per_cluster);
                     MiniArray<int> point_data_offset(nodes_per_kernel_call);
@@ -911,13 +905,18 @@ void VoxelizeWorker::process()
                     size_t accumulated_points = 0;
                     for (int j = 0; j < nodes_per_kernel_call; j++)
                     {
+                        
+                        // The id of the octnode in the octnode array
+                        currentId = confirmed_nodes+i+j;
+                        qDebug() << "lvl" << lvl << "node" <<  currentId;
+                        
                         // Set the level
                         gpuHelpOcttree[currentId].setLevel(lvl);
 
                         // Set the brick id
                         gpuHelpOcttree[currentId].calcBrickId(i%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
 
-                        // Based on brick id calculate the brick extent and then calculate and set the brick data
+                        // Based on brick id calculate the brick extent 
                         unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
 
                         brick_extent[j*6 + 0] = svo->getExtent()->at(0) + tmp*brickId[0];
@@ -927,27 +926,19 @@ void VoxelizeWorker::process()
                         brick_extent[j*6 + 4] = svo->getExtent()->at(4) + tmp*brickId[2];
                         brick_extent[j*6 + 5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
                         
-                        // Upload this extent to an OpenCL buffer
-                        err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
-                            brick_extent_cl ,
-                            CL_FALSE,
-                            j*6*sizeof(cl_float),
-                            brick_extent.toFloat().bytes(),
-                            brick_extent.toFloat().data(),
-                            0, NULL, NULL);
-                        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-                        
-                        // Points accumulated thus far
+                        // Offset of points accumulated thus far
                         point_data_offset[j] = accumulated_points;
-                        point_data_count[j] = accumulated_points - point_data_offset[j];
                         
                         // Get point data needed for this brick 
-                        root.getData(brick_extent.data(),
+                        root.getData(brick_extent.data() + j*6,
                                      point_data.data(),
                                      &accumulated_points,
                                      search_radius);
                         
-                        qDebug() << accumulated_points;
+                        // Number of points accumulated thus far
+                        point_data_count[j] = accumulated_points - point_data_offset[j];
+                        
+//                        qDebug() << "Ac. pts. lvl" << lvl << ":" << accumulated_points;
                         
                         // Upload this point data to an OpenCL buffer
                         err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
@@ -961,9 +952,24 @@ void VoxelizeWorker::process()
                         
                         
                         // Increment node
-                        i++;
-                        if (i >= nodes[lvl]) break;
+                        if (i + j + 1 >= nodes[lvl]) break;
                     }
+                    
+//                    point_data.print(2,"point_data");
+//                    point_data_offset.print(2,"point_data_offset");
+//                    point_data_count.print(2,"point_data_count");
+//                    qDebug() << "search_radius" << search_radius;
+                    
+                    // Upload this extent to an OpenCL buffer
+                    err = clEnqueueWriteBuffer(
+                        *context_cl->getCommandQueue(),
+                        brick_extent_cl ,
+                        CL_FALSE,
+                        0,
+                        brick_extent.toFloat().bytes(),
+                        brick_extent.toFloat().data(),
+                        0, NULL, NULL);
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     // Upload other stuff before launcing the kernel
                     err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
@@ -1015,27 +1021,32 @@ void VoxelizeWorker::process()
                                     0, NULL, NULL);
                         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                         
-                        if (i >= nodes[lvl]) break;
+                        if (i + j + 1 >= nodes[lvl]) break;
                     }
                     clFinish(*context_cl->getCommandQueue());
                     
                     // Read currently relevant data
-                    MiniArray<int> empty_check(nodes_per_kernel_call);
                     err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
                         empty_check_cl,
                         CL_TRUE,
                         0,
-                        nodes_per_kernel_call*sizeof(int),
+                        nodes_per_kernel_call*sizeof(float),
                         empty_check.data(),
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     clFinish(*context_cl->getCommandQueue());
                     
+                    
                     // Third pass: transfer non-empty nodes to svo data structure (OpenCL)
                     for (int j = 0; j < nodes_per_kernel_call; j++)
                     {
-                        if (empty_check[j])
+//                        qDebug() << "Empty check " << j << ":" << empty_check[j];
+                        
+                        // The id of the octnode in the octnode array
+                        currentId = confirmed_nodes+i+j;
+                        
+                        if (empty_check[j] <= 0.0)
                         {
                             gpuHelpOcttree[currentId].setDataFlag(0);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
@@ -1061,16 +1072,14 @@ void VoxelizeWorker::process()
                             }
                             
                             // Transfer data to pool
-                            
-                            
 //                            TODO
+                            
                             non_empty_node_counter++;
                             iter++;
                             
                             
                         }
-                        
-                        if (i >= nodes[lvl]) break;
+                        if (i + j + 1 >= nodes[lvl]) break;
                     }
 
                     clFinish(*context_cl->getCommandQueue());

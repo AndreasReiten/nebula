@@ -288,7 +288,7 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, size_
 {
     if ((this->isMsd) && (!this->isEmpty))
     {
-        int tmp = 0;
+//        int tmp = 0;
         for (unsigned int i = 0; i < n_points; i++)
         {
             if (
@@ -301,6 +301,8 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, size_
                 point_data[*accumulated_points*4+2] = points[i*4+2];
                 point_data[*accumulated_points*4+3] = points[i*4+3];
                 (*accumulated_points)++;
+//                qDebug() << i << "/" << n_points << " (" << *accumulated_points << ")";
+                
             }
         }
     }
@@ -334,6 +336,12 @@ void SearchNode::getData(double * brick_extent,
     effective_extent[3] = brick_extent[3] + search_radius;
     effective_extent[4] = brick_extent[4] - search_radius;
     effective_extent[5] = brick_extent[5] + search_radius;
+    
+    
+//    for (int i = 0; i < 6; i++)
+//    {
+//        qDebug() << effective_extent[i];
+//    }
     
     getIntersectedItems(&effective_extent, accumulated_points, point_data);
 }

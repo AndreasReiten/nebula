@@ -18,7 +18,7 @@ __kernel void voxelize(
     __constant int * point_data_count,
     __global float * brick_extent,
     __global float * pool_cluster,
-    __global int * empty_check,
+    __global float * empty_check,
     __local float * addition_array,
     uint brick_outer_dimension,
     float search_radius
@@ -63,85 +63,10 @@ __kernel void voxelize(
     if (sum_distance > 0) xyzw.w = sum_intensity / sum_distance;
 
     // Pass result to output array
-    pool_cluster[id_output] = xyzw.w;
+    pool_cluster[id_wg*brick_outer_dimension*brick_outer_dimension*brick_outer_dimension + id_output] = xyzw.w;
 
     // Parallel reduction to find if there is nonzero data
-    if (xyzw.w != 0.0f) addition_array[id_output] = 1.0f;
-    else  addition_array[id_wg*brick_outer_dimension*brick_outer_dimension*brick_outer_dimension + id_output] = 0.0f;
-
-    barrier(CLK_LOCAL_MEM_FENCE);
-    for (unsigned int i = 256; i > 0; i >>= 1)
-    {
-        if (id_output < i)
-        {
-            addition_array[id_wg*brick_outer_dimension*brick_outer_dimension*brick_outer_dimension + id_output] += addition_array[i + id_output];
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
-
-    if (id_output == 0)
-    {
-        empty_check[id_wg] = !addition_array[0];
-    }
-}
-
-__kernel void voxelize_old(
-    __global float4 * items,
-    __constant float * extent,
-    __global float * isempty,
-    uint brick_outer_dimension,
-    uint item_count,
-    float search_radius,
-    __local float * addition_array,
-    int4 target_dimension,
-    uint brick_count,
-    __global float * pool
-    )
-{
-    // Each Work Group is one brick. Each Work Item is one interpolation point in the brick.
-    int4 id_loc = (int4)(get_local_id(0), get_local_id(1), get_local_id(2), 0);
-
-    int id_output = id_loc.x + id_loc.y*brick_outer_dimension + id_loc.z*brick_outer_dimension*brick_outer_dimension;
-
-
-    // Position of point
-    float4 xyzw;
-    float sample_interdistance = (extent[1] - extent[0]) / ((float)brick_outer_dimension - 1.0f);
-    xyzw.x = extent[0] + (float)id_loc.x * sample_interdistance;
-    xyzw.y = extent[2] + (float)id_loc.y * sample_interdistance;
-    xyzw.z = extent[4] + (float)id_loc.z * sample_interdistance;
-    xyzw.w = 0.0f;
-
-    // Interpolate around positions using invrese distance weighting
-    float4 point;
-    float sum_intensity = 0.0f;
-    float sum_distance = 0.0f;
-    float dst;
-
-    for (int i = 0; i < item_count; i++)
-    {
-        point = items[i];
-        dst = fast_distance(xyzw.xyz, point.xyz);
-        if (dst <= 0.0f)
-        {
-            sum_intensity = point.w;
-            sum_distance = 1.0f;
-            break;
-        }
-        if (dst <= search_radius)
-        {
-            sum_intensity += native_divide(point.w, dst);
-            sum_distance += native_divide(1.0f, dst);
-        }
-    }
-    if (sum_distance > 0) xyzw.w = sum_intensity / sum_distance;
-
-    // Pass result to output array
-    pool[target_index(target_dimension, id_loc, brick_outer_dimension, brick_count)] = xyzw.w;
-
-    // Parallel reduction to find if there is nonzero data
-    if (xyzw.w != 0.0f) addition_array[id_output] = 1.0f;
-    else  addition_array[id_output] = 0.0f;
+    addition_array[id_output] = xyzw.w;
 
     barrier(CLK_LOCAL_MEM_FENCE);
     for (unsigned int i = 256; i > 0; i >>= 1)
@@ -155,6 +80,6 @@ __kernel void voxelize_old(
 
     if (id_output == 0)
     {
-        isempty[0] = !addition_array[0];
+        empty_check[id_wg] = addition_array[0];
     }
 }
