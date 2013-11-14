@@ -300,9 +300,10 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, size_
                 point_data[*accumulated_points*4+1] = points[i*4+1];
                 point_data[*accumulated_points*4+2] = points[i*4+2];
                 point_data[*accumulated_points*4+3] = points[i*4+3];
-                (*accumulated_points)++;
-//                qDebug() << i << "/" << n_points << " (" << *accumulated_points << ")";
                 
+//                qDebug() << i << "/" << n_points << " (" << *accumulated_points << ")";
+                qDebug() << "   Point found: " << point_data[*accumulated_points*4+0] << point_data[*accumulated_points*4+1] << point_data[*accumulated_points*4+2] <<point_data[*accumulated_points*4+3];
+                (*accumulated_points)++;
             }
         }
     }
@@ -337,7 +338,7 @@ void SearchNode::getData(double * brick_extent,
     effective_extent[4] = brick_extent[4] - search_radius;
     effective_extent[5] = brick_extent[5] + search_radius;
     
-    
+    qDebug() << "In we go! Using eff. extent: " << "\n " <<  effective_extent[0] << "to" << effective_extent[1] << "\n " <<  effective_extent[2] << "to" << effective_extent[3] << "\n " <<  effective_extent[4] << "to" << effective_extent[5];
 //    for (int i = 0; i < 6; i++)
 //    {
 //        qDebug() << effective_extent[i];

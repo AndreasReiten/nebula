@@ -28,7 +28,8 @@ __kernel void voxelize(
     int4 id_loc = (int4)(get_local_id(0), get_local_id(1), get_local_id(2), 0);
 
     int id_output = id_loc.x + id_loc.y*brick_outer_dimension + id_loc.z*brick_outer_dimension*brick_outer_dimension;
-    int id_wg = get_group_id(2);
+
+    int id_wg = get_global_id(2) / brick_outer_dimension;
 
     // Position of point
     float4 xyzw;
