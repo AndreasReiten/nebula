@@ -3,7 +3,7 @@
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
 static const size_t nodes_per_kernel_call = 1024;
-static const size_t max_points_per_cluster = 250e6;
+static const size_t max_points_per_cluster = 50e6;
 
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
@@ -795,7 +795,7 @@ void VoxelizeWorker::process()
 
         cl_mem cluster_pool_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-            nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension(),
+                                                nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -809,7 +809,7 @@ void VoxelizeWorker::process()
 
         cl_mem point_data_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            max_points_per_cluster*sizeof(float),
+            max_points_per_cluster*sizeof(cl_float4),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -868,9 +868,16 @@ void VoxelizeWorker::process()
 
             // Cycle through the levels
             QElapsedTimer timer;
+            
+            // Containers 
+            MiniArray<double> brick_extent(6*nodes_per_kernel_call);
+            Matrix<float> point_data(max_points_per_cluster,4);
+            MiniArray<int> point_data_offset(nodes_per_kernel_call);
+            MiniArray<int> point_data_count(nodes_per_kernel_call);
+            
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
-                qDebug() << "Level" << lvl;
+                qDebug() << " ___ Level" << lvl << "___";
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
@@ -894,14 +901,11 @@ void VoxelizeWorker::process()
                     }
 
                     if (kill_flag) break;
-                    
+                        
+                    qDebug() << "i" << i;
                     
                     // First pass: find relevant data for cluster of nodes
                     unsigned int currentId;
-                    MiniArray<double> brick_extent(6*nodes_per_kernel_call);
-                    Matrix<float> point_data(120,4);
-                    MiniArray<int> point_data_offset(nodes_per_kernel_call);
-                    MiniArray<int> point_data_count(nodes_per_kernel_call);
                     size_t accumulated_points = 0;
                     for (int j = 0; j < nodes_per_kernel_call; j++)
                     {
@@ -963,7 +967,7 @@ void VoxelizeWorker::process()
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
                     
-                    point_data.print(2,"point data");
+//                    point_data.print(2,"point data");
                     
 //                    point_data.print(2,"point_data");
 //                    point_data_offset.print(2,"point_data_offset");
@@ -1045,6 +1049,7 @@ void VoxelizeWorker::process()
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
+                    
                     clFinish(*context_cl->getCommandQueue());
                     
                     
@@ -1053,9 +1058,9 @@ void VoxelizeWorker::process()
                     {
 //                        qDebug() << "Empty check " << j << ":" << empty_check[j];
 //                        if (point_data_count[j] > 0) 
-                            qDebug() << " lvl" << lvl << "node" <<  i+j << "sum" << empty_check[j] << "points" << point_data_count[j] << "offset" << point_data_offset[j] << "radius" << search_radius;
+//                            qDebug() << " lvl" << lvl << "node" <<  i+j << "sum" << empty_check[j] << "points" << point_data_count[j] << "offset" << point_data_offset[j] << "radius" << search_radius;
 //                        if (point_data_count[j] > 0) 
-                            qDebug() << "   -> " << brick_extent[j*6 + 0] << brick_extent[j*6 + 1] << brick_extent[j*6 + 2] << brick_extent[j*6 + 3] << brick_extent[j*6 + 4] << brick_extent[j*6 + 5];
+//                            qDebug() << "   -> " << brick_extent[j*6 + 0] << brick_extent[j*6 + 1] << brick_extent[j*6 + 2] << brick_extent[j*6 + 3] << brick_extent[j*6 + 4] << brick_extent[j*6 + 5];
                         
                         // The id of the octnode in the octnode array
                         currentId = confirmed_nodes+i+j;
@@ -1078,9 +1083,9 @@ void VoxelizeWorker::process()
                                 gpuHelpOcttree[currentId].setChild(childId);
     
                                 // For each child
-                                for (size_t j = 0; j < 8; j++)
+                                for (size_t k = 0; k < 8; k++)
                                 {
-                                    gpuHelpOcttree[childId+j].setParent(currentId);
+                                    gpuHelpOcttree[childId+k].setParent(currentId);
                                     nodes[lvl+1]++;
                                 }
                             }
@@ -1110,6 +1115,8 @@ void VoxelizeWorker::process()
                 }
 
                 confirmed_nodes += nodes[lvl];
+                
+                qDebug() << "nodes[" << lvl << "] =" << nodes[lvl]; 
 
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
