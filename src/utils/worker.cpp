@@ -1091,7 +1091,6 @@ void VoxelizeWorker::process()
                             }
                             
                             // Transfer data to pool
-//                            TODO
                             
                             non_empty_node_counter++;
                             iter++;
