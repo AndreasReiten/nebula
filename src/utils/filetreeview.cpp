@@ -15,6 +15,7 @@ void FileTreeView::dragEnterEvent(QDragEnterEvent *event)
 void FileTreeView::dragLeaveEvent(QDragLeaveEvent *event)
 {
     qDebug("Drag leave event");
+    event->accept();
 }
 
 void FileTreeView::dropEvent(QDropEvent *event)
