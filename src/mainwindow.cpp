@@ -995,7 +995,7 @@ void MainWindow::initializeInteractives()
     }
 
 
-    /*      Script Widget       */
+    /*      File Select Widget       */
     {
         setFilesWidget = new QWidget;
 
@@ -1014,17 +1014,22 @@ void MainWindow::initializeInteractives()
 
         // File browser
         fileBrowserWidget = new QWidget;
-        fileSystemModel  = new QFileSystemModel;
-        fileSelectedModel = new QStandardItemModel;
+        fileSystemModel  = new FileSourceModel;
+        fileSelectedModel = new FileDisplayModel;
 
         fileSystemTree = new FileTreeView;
+        fileSystemTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        fileSystemTree->setDragDropMode(QAbstractItemView::DragDrop);
         fileSystemTree->setDragEnabled(1);
-        fileSystemTree->setAcceptDrops(0);
+        fileSystemTree->setAcceptDrops(1);
         fileSystemTree->setDropIndicatorShown(1);
         fileSystemTree->setSortingEnabled(1);
+        
 
         fileSelectedTree = new FileTreeView;
-        fileSelectedTree->setDragEnabled(0);
+        fileSelectedTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        fileSelectedTree->setDragDropMode(QAbstractItemView::DragDrop);
+        fileSelectedTree->setDragEnabled(1);
         fileSelectedTree->setAcceptDrops(1);
         fileSelectedTree->setDropIndicatorShown(1);
         fileSelectedTree->setSortingEnabled(1);

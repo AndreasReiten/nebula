@@ -1,17 +1,3 @@
-uint target_index(int4 target_dimension, int4 id_loc ,uint brick_outer_dimension, uint brick_count)
-{
-    int4 target_brick_dimension = target_dimension/(int4)(brick_outer_dimension);
-
-    int4 brick_offset;
-    brick_offset.z = brick_count / (target_brick_dimension.x * target_brick_dimension.y);
-    brick_offset.y = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) / target_brick_dimension.x;
-    brick_offset.x = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) % target_brick_dimension.x;
-
-    int4 index3d = brick_offset*(int4)(brick_outer_dimension) + id_loc;
-
-    return index3d.x + index3d.y * target_dimension.x + index3d.z * target_dimension.x * target_dimension.y;
-}
-
 __kernel void voxelize(
     __global float4 * point_data,
     __constant int * point_data_offset,
@@ -83,4 +69,41 @@ __kernel void voxelize(
     {
         empty_check[id_wg] = addition_array[0];
     }
+}
+
+uint target_index(int4 target_dimension, int4 id_loc ,uint brick_outer_dimension, uint brick_count)
+{
+    int4 target_brick_dimension = target_dimension/(int4)(brick_outer_dimension);
+
+    int4 brick_offset;
+    brick_offset.z = brick_count / (target_brick_dimension.x * target_brick_dimension.y);
+    brick_offset.y = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) / target_brick_dimension.x;
+    brick_offset.x = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) % target_brick_dimension.x;
+
+    int4 index3d = brick_offset*(int4)(brick_outer_dimension) + id_loc;
+
+    return index3d.x + index3d.y * target_dimension.x + index3d.z * target_dimension.x * target_dimension.y;
+}
+
+__kernel void fill(
+    __global float * pool_cluster,
+    __global float * pool,
+    int4 pool_dimension,
+    uint brick_outer_dimension,
+    uint brick_count
+    )
+{
+    // Move relevant (nonzero) data from temporary storage to permanent storage 
+
+    int4 id_loc = (int4)(get_local_id(0), get_local_id(1), get_local_id(2), 0);
+    
+    int id_wg = get_global_id(2) / brick_outer_dimension;
+    
+    int id_output = id_loc.x + id_loc.y*brick_outer_dimension + id_loc.z*brick_outer_dimension*brick_outer_dimension;
+    
+    
+    uint i = target_index(pool_dimension, id_loc ,brick_outer_dimension, brick_count);
+    uint j = id_wg*brick_outer_dimension*brick_outer_dimension*brick_outer_dimension + id_output;
+    
+    pool[i] = pool_cluster[j];
 }

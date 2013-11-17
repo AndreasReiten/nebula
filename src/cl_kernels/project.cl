@@ -140,7 +140,7 @@ __kernel void FRAME_FILTER(
         
         if ((intensity < threshold_one.x) || (intensity > threshold_one.y))
         {
-            sample = (float4)(1.0,1.0,1.0,1.0);
+            sample = (float4)(0.1,0.0,1.0,0.7);
         }
         else
         {
@@ -155,7 +155,7 @@ __kernel void FRAME_FILTER(
         
         if ((xyzi.w < threshold_two.x) || (xyzi.w > threshold_two.y))
         {
-            sample = (float4)(1.0,1.0,1.0,1.0);
+            sample = (float4)(0.1,0.0,1.0,0.7);
         }
         else
         {

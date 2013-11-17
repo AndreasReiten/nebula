@@ -1,7 +1,7 @@
 #include "worker.h"
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
-static const size_t BRICK_POOL_SOFT_MAX_BYTES = 7e8;
+static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.5e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU
 static const size_t nodes_per_kernel_call = 1024;
 static const size_t max_points_per_cluster = 50e6;
 
@@ -749,6 +749,9 @@ void VoxelizeWorker::initializeCLKernel()
     // Kernel handles
     voxelize_kernel = clCreateKernel(program, "voxelize", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    
+    fill_kernel = clCreateKernel(program, "fill", &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isCLInitialized = true;
 }
@@ -788,12 +791,19 @@ void VoxelizeWorker::process()
         if (pool_dimension[2] < 1) pool_dimension[2] = 1;
         pool_dimension[2] *= svo->getBrickOuterDimension();
 
-        svo->pool.set(pool_dimension[0]*pool_dimension[1]*pool_dimension[2], 0);
-        size_t BRICK_POOL_HARD_MAX_BYTES = svo->pool.bytes();
+//        svo->pool.set(, 0);
+        size_t BRICK_POOL_HARD_MAX_BYTES = pool_dimension[0]*pool_dimension[1]*pool_dimension[2]*sizeof(float);
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
-        cl_mem cluster_pool_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem pool_cl = clCreateBuffer(*context_cl->getContext(),
+            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
+            BRICK_POOL_HARD_MAX_BYTES,
+            NULL,
+            &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        
+        cl_mem pool_cluster_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                                                 nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
             NULL,
@@ -868,6 +878,9 @@ void VoxelizeWorker::process()
 
             // Cycle through the levels
             QElapsedTimer timer;
+            
+            // Keep track of the maximum sum returned by a brick and use it later to estimate max value in data set
+            float max_brick_sum = 0.0;
             
             // Containers 
             MiniArray<double> brick_extent(6*nodes_per_kernel_call);
@@ -1008,7 +1021,7 @@ void VoxelizeWorker::process()
                     err |= clSetKernelArg( voxelize_kernel, 1, sizeof(cl_mem), (void *) &point_data_offset_cl);
                     err |= clSetKernelArg( voxelize_kernel, 2, sizeof(cl_mem), (void *) &point_data_count_cl);
                     err |= clSetKernelArg( voxelize_kernel, 3, sizeof(cl_mem), (void *) &brick_extent_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 4, sizeof(cl_mem), (void *) &cluster_pool_cl);
+                    err |= clSetKernelArg( voxelize_kernel, 4, sizeof(cl_mem), (void *) &pool_cluster_cl);
                     err |= clSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &empty_check_cl);
                     err |= clSetKernelArg( voxelize_kernel, 6, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
                     int tmp = svo->getBrickOuterDimension();
@@ -1016,7 +1029,8 @@ void VoxelizeWorker::process()
                     err |= clSetKernelArg( voxelize_kernel, 8, sizeof(cl_float), &search_radius);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
-                    clFinish(*context_cl->getCommandQueue());
+                    err = clFinish(*context_cl->getCommandQueue());
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                     // Second pass: calculate the data for each node in the cluster (OpenCL)
                     for (int j = 0; j < nodes_per_kernel_call; j++)
@@ -1037,7 +1051,8 @@ void VoxelizeWorker::process()
                         
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
-                    clFinish(*context_cl->getCommandQueue());
+                    err = clFinish(*context_cl->getCommandQueue());
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     // Read currently relevant data
                     err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
@@ -1050,7 +1065,8 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     
-                    clFinish(*context_cl->getCommandQueue());
+                    err = clFinish(*context_cl->getCommandQueue());
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     
                     // Third pass: transfer non-empty nodes to svo data structure (OpenCL)
@@ -1073,6 +1089,8 @@ void VoxelizeWorker::process()
                         }
                         else
                         {
+                            if (empty_check[j] > max_brick_sum) max_brick_sum = empty_check[j];
+                            
                             gpuHelpOcttree[currentId].setDataFlag(1);
                             gpuHelpOcttree[currentId].setMsdFlag(0);
                             if (lvl >= svo->getLevels() - 1) gpuHelpOcttree[currentId].setMsdFlag(1);
@@ -1091,16 +1109,37 @@ void VoxelizeWorker::process()
                             }
                             
                             // Transfer data to pool
+                            err = clSetKernelArg( fill_kernel, 0, sizeof(cl_mem), (void *) &pool_cluster_cl);
+                            err |= clSetKernelArg( fill_kernel, 1, sizeof(cl_mem), (void *) &pool_cl);
+                            err |= clSetKernelArg( fill_kernel, 2, sizeof(cl_int4), pool_dimension.data());
+                            int tmp = svo->getBrickOuterDimension();
+                            err |= clSetKernelArg( fill_kernel, 3, sizeof(cl_uint), &tmp);
+                            err |= clSetKernelArg( fill_kernel, 4, sizeof(cl_uint), &non_empty_node_counter); // only arg. that needs to be this deep inside the loop
+                            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+                            
+                            // Launch kernel to write data to pool
+                            size_t glb_offset[3] = {0,0,8*j};
+                            size_t loc_ws[3] = {8,8,8};
+                            size_t glb_ws[3] = {8,8,8};
+                            err = clEnqueueNDRangeKernel(
+                                        *context_cl->getCommandQueue(), 
+                                        fill_kernel, 
+                                        3, 
+                                        glb_offset, 
+                                        glb_ws, 
+                                        loc_ws, 
+                                        0, NULL, NULL);
+                            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+                            
                             
                             non_empty_node_counter++;
                             iter++;
-                            
-                            
                         }
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
 
-                    clFinish(*context_cl->getCommandQueue());
+                    err = clFinish(*context_cl->getCommandQueue());
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
                 }
@@ -1144,15 +1183,18 @@ void VoxelizeWorker::process()
 
                 // Read results
                 svo->pool.reserve(non_empty_node_counter_rounded_up*n_points_brick);
-
-//                err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-//                    pool_cl,
-//                    CL_TRUE,
-//                    0,
-//                    svo->pool.bytes(),
-//                    svo->pool.data(),
-//                    0, NULL, NULL);
-//                if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+                
+                svo->setMin(0.0f);
+                svo->setMax(max_brick_sum/(float)(n_points_brick));
+                
+                err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+                    pool_cl,
+                    CL_TRUE,
+                    0,
+                    non_empty_node_counter_rounded_up*n_points_brick*sizeof(float),
+                    svo->pool.data(),
+                    0, NULL, NULL);
+                if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
             }
 
             if (!kill_flag)
@@ -1166,7 +1208,8 @@ void VoxelizeWorker::process()
         clReleaseMemObject(point_data_offset_cl);
         clReleaseMemObject(point_data_count_cl);
         clReleaseMemObject(brick_extent_cl);
-        clReleaseMemObject(cluster_pool_cl);
+        clReleaseMemObject(pool_cluster_cl);
+        clReleaseMemObject(pool_cl);
         clReleaseMemObject(empty_check_cl);
     }
 

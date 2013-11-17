@@ -25,7 +25,9 @@ class SparseVoxelOcttree
         void set(unsigned int levels = 0, unsigned int brick_inner_dimension = 7, unsigned int brick_outer_dimension = 8, unsigned int brick_pool_power = 7);
         void setLevels(int value);
         void setExtent(float Q);
-
+        void setMax(float value);
+        void setMin(float value);
+        
         void save(QString path);
         void open(QString path);
 
@@ -61,5 +63,7 @@ class SparseVoxelOcttree
         quint64 brick_pool_power;
         quint64 brick_inner_dimension;
         quint64 brick_outer_dimension;
+        
+        float max, min;
 };
 #endif

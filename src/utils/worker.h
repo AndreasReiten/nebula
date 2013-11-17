@@ -227,7 +227,8 @@ class VoxelizeWorker : public BaseWorker
 
     protected:
         cl_kernel voxelize_kernel;
-
+        cl_kernel fill_kernel;
+        
         unsigned int getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child);
         unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);
 };

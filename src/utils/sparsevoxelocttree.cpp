@@ -82,20 +82,20 @@ void SparseVoxelOcttree::save(QString path)
     if (path != "")
     {
         quint64 bins = 1000;
-        double min = pool.min();
-        double max = pool.max();
+//        double min = pool.min();
+//        double max = pool.max();
 
-        double * hist_log = pool.histogram(bins, min, max, 1, 1);
-        double * hist_norm = pool.histogram(bins, min, max, 0, 1);
+//        double * hist_log = pool.histogram(bins, min, max, 1, 1);
+//        double * hist_norm = pool.histogram(bins, min, max, 0, 1);
 
-        hist_log[0] = 0.0;
-        hist_norm[0] = 0.0;
+//        hist_log[0] = 0.0;
+//        hist_norm[0] = 0.0;
 
-        data_histogram.setDeep(bins, hist_norm);
-        data_histogram_log.setDeep(bins, hist_log);
+//        data_histogram.setDeep(bins, hist_norm);
+//        data_histogram_log.setDeep(bins, hist_log);
 
-        minmax[0] = 1.0;
-        minmax[1] = max;
+//        minmax[0] = 1.0;
+//        minmax[1] = max;
 
 
         QFile file(path);
@@ -108,8 +108,8 @@ void SparseVoxelOcttree::save(QString path)
         out << brick_inner_dimension;
         out << brick_pool_power;
         out << levels;
-        out << minmax[0];
-        out << minmax[1];
+        out << min;
+        out << max;
         out << data_histogram.toQVector();
         out << data_histogram_log.toQVector();
         out << extent.toQVector();
@@ -120,6 +120,17 @@ void SparseVoxelOcttree::save(QString path)
 
     this->print();
 }
+
+void SparseVoxelOcttree::setMax(float value)
+{
+    max = value;
+}
+
+void SparseVoxelOcttree::setMin(float value)
+{
+    min = value;
+}
+
 void SparseVoxelOcttree::open(QString path)
 {
     // Disabled chunking and compression due to problems under Windows
