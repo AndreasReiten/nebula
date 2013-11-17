@@ -9,64 +9,30 @@
 #include <QDropEvent>
 #include <QDragMoveEvent>
 #include <QDragLeaveEvent>
+#include <QTreeWidgetItem>
 #include <QDebug>
 
-class FileTreeView : public QTreeView
+class FileTreeView : public QTreeWidget
 {
     Q_OBJECT
 public:
     explicit FileTreeView(QWidget *parent = 0);
-
+    
 protected:
     void dragEnterEvent(QDragEnterEvent *event);
     void dragLeaveEvent(QDragLeaveEvent *event);
     void dropEvent(QDropEvent *event);
     void dragMoveEvent(QDragMoveEvent *event);
+    void startDrag(Qt::DropActions supportedActions);
     
 signals:
 
 public slots:
+    void showDirectory(QTreeWidgetItem* item, int);  
 
-};
-
-class FileSourceModel : public QFileSystemModel
-{
-    Q_OBJECT
-public:
-    explicit FileSourceModel(QWidget *parent = 0);
+private:
+    void addChildren(QTreeWidgetItem* item,QString filePath);
     
-protected:
-    Qt::DropActions supportedDropActions() const;
-    Qt::ItemFlags flags(const QModelIndex &index) const;
-    QStringList mimeTypes() const;
-    QMimeData *mimeData(const QModelIndexList &indexes) const;
-    
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-    bool canDropMimeData(const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent) const;
-    
-    
-signals:
-
-public slots:
-
-};
-
-class FileDisplayModel : public QStandardItemModel
-{
-    Q_OBJECT
-public:
-    explicit FileDisplayModel(QWidget *parent = 0);
-    
-protected:
-    Qt::DropActions supportedDropActions() const;
-    Qt::ItemFlags flags(const QModelIndex &index) const;   
-    QStringList mimeTypes() const;
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-
-signals:
-
-public slots:
-
 };
 
 #endif // FILETREEVIEW_H

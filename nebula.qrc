@@ -32,5 +32,8 @@
         <file>art/scalebar.png</file>
         <file>art/script.png</file>
         <file>art/slice.png</file>
+        <file>art/file.png</file>
+        <file>art/folder.png</file>
+        <file>art/ofolder.png</file>
     </qresource>
 </RCC>
