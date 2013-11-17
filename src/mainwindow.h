@@ -39,8 +39,8 @@
 #include <QCheckBox>
 #include <QSlider>
 #include <QList>
-//#include <QFileSystemModel>
-//#include <QStandardItemModel>
+#include <QFileSystemModel>
+#include <QStandardItemModel>
 //#include <QTreeView>
 
 #include "utils/contextcl.h"
@@ -176,8 +176,8 @@ private:
 
     // File browser
     QWidget * fileBrowserWidget;
-//    FileSourceModel * fileSystemModel;
-//    FileDisplayModel * fileSelectedModel;
+    FileSourceModel * fileSystemModel;
+    FileSourceModel * fileSelectedModel;
     FileTreeView *fileSystemTree;
     FileTreeView *fileSelectedTree;
 

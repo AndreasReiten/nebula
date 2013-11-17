@@ -1014,8 +1014,13 @@ void MainWindow::initializeInteractives()
 
         // File browser
         fileBrowserWidget = new QWidget;
+        fileSystemModel  = new FileSourceModel;
+        fileSelectedModel = new FileSourceModel;
+        fileSystemModel->setRootPath(QDir::rootPath());
         
         fileSystemTree = new FileTreeView;
+        fileSystemTree->setModel(fileSystemModel);
+        fileSystemTree->viewport()->setAcceptDrops(true);
         fileSystemTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
         fileSystemTree->setDragDropMode(QAbstractItemView::DragDrop);
         fileSystemTree->setDragEnabled(1);
@@ -1025,6 +1030,8 @@ void MainWindow::initializeInteractives()
         
 
         fileSelectedTree = new FileTreeView;
+        fileSelectedTree->setModel(fileSelectedModel);
+        fileSystemTree->viewport()->setAcceptDrops(true);
         fileSelectedTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
         fileSelectedTree->setDragDropMode(QAbstractItemView::DragDrop);
         fileSelectedTree->setDragEnabled(1);
