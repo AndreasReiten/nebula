@@ -38,6 +38,7 @@
 #include "bricknode.h"
 #include "sparsevoxelocttree.h"
 #include "contextcl.h"
+#include "globalvar.h"
 
 class BaseWorker : public QObject
 {
@@ -66,6 +67,8 @@ class BaseWorker : public QObject
 //        void repaintImageWidget();
         void aquireSharedBuffers();
         void releaseSharedBuffers();
+        void changedFile(int file);
+        void popup(QString title, QString text);
 
     public slots:
         void killProcess();
@@ -104,7 +107,8 @@ class BaseWorker : public QObject
         QList<PilatusFile> * files;
 //        QList<PilatusFile> * background_files;
         MiniArray<float> * reduced_pixels;
-
+        
+        size_t GLOBAL_VRAM_ALLOC_MAX;
         // OpenGL
 //        QOpenGLContext * context_gl;
 };
@@ -181,6 +185,7 @@ class ProjectFileWorker : public BaseWorker
         void testToWindow();
         void testToMain();
         void updateRequest();
+        void changedImage(int value);
         void test();
 
     public slots:

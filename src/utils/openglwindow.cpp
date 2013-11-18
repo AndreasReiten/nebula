@@ -211,6 +211,7 @@ void OpenGLWindow::wheelEvent(QWheelEvent* ev)
 void OpenGLWindow::resizeEvent(QResizeEvent * ev)
 {
     emit resizeEventCaught(ev);
+    renderLater();
 }
 
 //void OpenGLWindow::setOpenGLWorker(OpenGLWorker * worker)

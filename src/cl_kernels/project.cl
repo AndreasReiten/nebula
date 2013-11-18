@@ -75,6 +75,21 @@ __kernel void FRAME_FILTER(
         {
             intensity = 0.0f;
         }
+        
+        // Write to beta target (Shared CL/GL texture)
+        tmp = intensity;
+        if (tmp < 1) tmp = 1;
+        
+        if ((intensity < threshold_one.x) || (intensity > threshold_one.y))
+        {
+            sample = (float4)(0.1,0.0,1.0,0.7);
+        }
+        else
+        {
+            tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
+            sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
+        }
+        write_imagef(corrected_target_clgl, id_glb, sample);
 
         float4 xyzi = (float4)(0.0f);
         if (intensity > 0.0f)
@@ -127,28 +142,13 @@ __kernel void FRAME_FILTER(
             xyzi.y = temp.x * sample_rotation_matrix[4] + temp.y * sample_rotation_matrix[5] + temp.z * sample_rotation_matrix[6];
             xyzi.z = temp.x * sample_rotation_matrix[8] + temp.y * sample_rotation_matrix[9] + temp.z * sample_rotation_matrix[10];
 
-            // Flat min/max filter (threshold_one)
+            // Flat min/max filter (threshold_two)
             if (((xyzi.w < threshold_two.x) || (xyzi.w > threshold_two.y)))
             {
                 xyzi.w = 0.0f;
             }
         }
 
-        // Write to beta target (Shared CL/GL texture)
-        tmp = intensity;
-        if (tmp < 1) tmp = 1;
-        
-        if ((intensity < threshold_one.x) || (intensity > threshold_one.y))
-        {
-            sample = (float4)(0.1,0.0,1.0,0.7);
-        }
-        else
-        {
-            tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
-            sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
-        }
-        write_imagef(corrected_target_clgl, id_glb, sample);
-        
         // Write to gamma target (Shared CL/GL texture)
         tmp = xyzi.w;
         if (tmp < 1) tmp = 1;

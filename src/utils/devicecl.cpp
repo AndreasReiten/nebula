@@ -60,6 +60,10 @@ void DeviceCL::getDeviceInfo ()
     clGetDeviceInfo(device_id, CL_DEVICE_MAX_WRITE_IMAGE_ARGS, sizeof(cl_uint), &max_write_image_args, NULL);
     clGetDeviceInfo(device_id, CL_DEVICE_MAX_SAMPLERS, sizeof(cl_uint), &max_samplers, NULL);
     clGetDeviceInfo(device_id, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_ulong), &max_constant_buffer_size, NULL);
+    
+    GLOBAL_VRAM_ALLOC_MAX = max_mem_alloc_size;
+    
+    qDebug() << GLOBAL_VRAM_ALLOC_MAX;
 }
 
 std::string DeviceCL::getDeviceInfoString()
@@ -83,11 +87,11 @@ std::string DeviceCL::getDeviceInfoString()
     ss << "___ Memory and Compute Units ___" << std::endl;
     ss << "CL_DEVICE_MAX_COMPUTE_UNITS:         " << max_compute_units << std::endl;
     ss << "CL_DEVICE_MAX_CLOCK_FREQUENCY:       " << max_clock_frequency << " MHz" << std::endl;
-    ss << "CL_DEVICE_GLOBAL_MEM_SIZE:           " << (global_mem_size >> 20) << " MB" << std::endl;
-    ss << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:        " << (max_mem_alloc_size >> 20) << " MB" << std::endl;
+    ss << "CL_DEVICE_GLOBAL_MEM_SIZE:           " << (global_mem_size / 1e6) << " MB" << std::endl;
+    ss << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:        " << (max_mem_alloc_size / 1e6) << " MB" << std::endl;
     ss << "CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE: " << global_mem_mem_cacheline_size << " B" << std::endl;
-    ss << "CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE:  " << (max_constant_buffer_size >> 10) << " KB" << std::endl;
-    ss << "CL_DEVICE_LOCAL_MEM_SIZE:            " << (local_mem_size >> 10) << " KB" << std::endl;
+    ss << "CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE:  " << (max_constant_buffer_size / 1e3) << " KB" << std::endl;
+    ss << "CL_DEVICE_LOCAL_MEM_SIZE:            " << (local_mem_size / 1e3) << " KB" << std::endl;
     ss << std::endl;
 
     ss << "___ Work Items and Work Groups ___" << std::endl;

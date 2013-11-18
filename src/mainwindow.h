@@ -65,6 +65,8 @@ public:
 
 
 private slots:
+    void updateFileHeader(int value);
+    void displayPopup(QString title, QString text);
     void toggleScriptView();
 
     void test();
@@ -127,6 +129,10 @@ signals:
     void changedPaths(QStringList strlist);
 
 private:
+    // Header dock widget
+    QDockWidget * fileHeaderDock;
+    QPlainTextEdit * fileHeaderEdit;
+    
     // Header strings
     QString current_svo_path;
     QString current_script_path;

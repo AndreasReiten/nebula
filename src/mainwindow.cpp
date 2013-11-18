@@ -88,6 +88,12 @@ void MainWindow::setCurrentSvoLevel(int value)
     svo_inprocess.setLevels(value);
 }
 
+void MainWindow::displayPopup(QString title, QString text)
+{
+    QMessageBox::warning(this, title, text);
+}
+
+
 void MainWindow::initializeThreads()
 {
     readScriptThread = new QThread;
@@ -132,6 +138,7 @@ void MainWindow::initializeThreads()
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
     connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
+    connect(setFileWorker, SIGNAL(changedFile(int)), this, SLOT(updateFileHeader(int)));
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -151,6 +158,7 @@ void MainWindow::initializeThreads()
     connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
     connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
+    connect(readFileWorker, SIGNAL(changedFile(int)), this, SLOT(updateFileHeader(int)));
     connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(readFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -177,13 +185,16 @@ void MainWindow::initializeThreads()
     connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     projectFileWorker->moveToThread(projectFileThread);
-    connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
+//    connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
     connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
+    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
+    connect(projectFileWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int)));
+//    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
-    connect(projectFileWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
+//    connect(projectFileWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -221,13 +232,15 @@ void MainWindow::initializeThreads()
     connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     allInOneWorker->moveToThread(allInOneThread);
-    connect(allInOneThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
+//    connect(allInOneThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
     connect(allInOneWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
     connect(allInOneWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
-    connect(allInOneWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
+    connect(allInOneWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
+    connect(allInOneWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int)));
+//    connect(allInOneWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -254,6 +267,7 @@ void MainWindow::initializeThreads()
     connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)), Qt::DirectConnection);
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
+    connect(voxelizeWorker, SIGNAL(popup(QString,QString)), this, SLOT(displayPopup(QString,QString)));
     connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -281,6 +295,7 @@ void MainWindow::initializeThreads()
     connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
     connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
     connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(displayFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
     connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
     connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
@@ -289,7 +304,7 @@ void MainWindow::initializeThreads()
     connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
     connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
     connect(this->imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
-    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
+//    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
 }
 
 void MainWindow::test()
@@ -400,10 +415,21 @@ void MainWindow::runDisplayFileThread(int value)
     if ((file_paths.size() > 0 ) && (display_file != value))
     {
         display_file = value;
+        
+        updateFileHeader(display_file);
         imageNumberSpinBox->setValue(display_file);
+        imageNumberSpinBox->setMaximum(files.size());
         displayFileWorker->setDisplayFile(display_file);
-
+        
         displayFileThread->start();
+    }
+}
+
+void MainWindow::updateFileHeader(int value)
+{
+    if ((file_paths.size() > value ))
+    {
+        fileHeaderEdit->setPlainText(files[value].getHeaderText());
     }
 }
 
@@ -439,7 +465,7 @@ void MainWindow::runAllInOneThread()
 void MainWindow::initializeEmit()
 {
     tabWidget->setCurrentIndex(0);
-    svoLevelSpinBox->setValue(9);
+    svoLevelSpinBox->setValue(11);
 
     reduceThresholdLow->setValue(10);
     reduceThresholdHigh->setValue(1e9);
@@ -744,7 +770,8 @@ void MainWindow::setTab(int tab)
             fileDockWidget->hide();
             toolChainWidget->show();
             outputDockWidget->show();
-            setWindowTitle(tr("Nebula[*] @ SCRIPT: ")+current_script_path);
+            fileHeaderDock->show();
+            setWindowTitle(tr("Nebula[*] now looking at: ")+current_script_path);
             break;
 
         case 1:
@@ -754,21 +781,23 @@ void MainWindow::setTab(int tab)
             toolChainWidget->show();
             fileDockWidget->show();
             outputDockWidget->show();
-            setWindowTitle(tr("Nebula[*] @ SCRIPT:")+current_script_path);
+            fileHeaderDock->show();
+            setWindowTitle(tr("Nebula[*] now looking at:")+current_script_path);
             break;
 
         case 2:
             toolChainWidget->hide();
             fileDockWidget->hide();
             outputDockWidget->hide();
+            fileHeaderDock->hide();
             graphicsDockWidget->show();
             unitcellDockWidget->show();
             functionDockWidget->show();
-            setWindowTitle(tr("Nebula[*] @ SVO:")+current_svo_path);
+            setWindowTitle(tr("Nebula[*] now looking at:")+current_svo_path);
             break;
 
         default:
-            std::cout << "Reverting to Default Tab" << std::endl;
+            qDebug("Reverting to Default Tab");
             break;
     }
 }
@@ -1112,7 +1141,7 @@ void MainWindow::initializeInteractives()
         imageRenderWindow->setSharedWindow(sharedContextWindow);
         imageRenderWindow->setFormat(format_gl);
         imageRenderWindow->setOpenCLContext(context_cl);
-        imageRenderWindow->setAnimating(true);
+        imageRenderWindow->setAnimating(false);
         imageRenderWindow->initializeWorker();
 
         imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
@@ -1364,8 +1393,8 @@ void MainWindow::initializeInteractives()
 
         // Labels
         QLabel * labelA = new QLabel(QString("Detector File Format:"));
-        QLabel * labelB = new QLabel(QString("Correction Threshold:"));
-        QLabel * labelC = new QLabel(QString("Projection Threshold:"));
+        QLabel * labelB = new QLabel(QString("Pre-correction Threshold:"));
+        QLabel * labelC = new QLabel(QString("Post-correction Threshold:"));
         QLabel * labelD = new QLabel(QString("Octtree Levels: "));
 
         // Combo boxes and their labels
@@ -1434,7 +1463,18 @@ void MainWindow::initializeInteractives()
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         this->addDockWidget(Qt::BottomDockWidgetArea, fileDockWidget);
     }
-
+    
+    // File header dock widget
+    {
+        fileHeaderEdit = new QPlainTextEdit;
+        fileHeaderEdit->setReadOnly(true);
+        
+        fileHeaderDock = new QDockWidget(tr("Header Info"), this);
+        fileHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+        fileHeaderDock->setWidget(fileHeaderEdit);
+        this->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDock);
+    }
+    
     /* Function dock widget */
     {
         QLabel * p0= new QLabel(QString("Var 1: "));

@@ -265,7 +265,7 @@ void ImageRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(alpha_string_rect, Qt::AlignCenter, alpha_string);
 
     // beta text
-    QString beta_string("Background subtracted");
+    QString beta_string("Pre-correction threshold applied");
     QRect beta_string_rect(beta_rect.x(),
                                  render_surface->height() - 31,
                                  beta_rect.width(),
@@ -276,7 +276,7 @@ void ImageRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(beta_string_rect, Qt::AlignCenter, beta_string);
 
     // gamma text
-    QString gamma_string("Lorentz Polarization corrected");
+    QString gamma_string("Corrections and post-correction threshold applied");
     QRect gamma_string_rect(gamma_rect.x(),
                                  render_surface->height() - 31,
                                  gamma_rect.width(),

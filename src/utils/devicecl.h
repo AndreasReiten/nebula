@@ -5,6 +5,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include "globalvar.h"
+
+#include <QDebug>
 
 class DeviceCL
 {
@@ -51,6 +54,8 @@ private:
     cl_uint max_write_image_args;
     cl_uint max_samplers;
     cl_ulong max_constant_buffer_size;
+    
+    size_t GLOBAL_VRAM_ALLOC_MAX;
 };
 
 #endif // DEVICECL_H

@@ -62,6 +62,7 @@ class PilatusFile
         float getExpTime();
         void setProjectionKernel(cl_kernel * kernel);
         void print();
+        QString getHeaderText();
         
     private:
         OpenCLContext * context_cl;

@@ -20,6 +20,35 @@ PilatusFile::PilatusFile(QString path, OpenCLContext *context)
     STATUS_OK = this->set(path, context_cl);
 }
 
+QString PilatusFile::getHeaderText()
+{
+    std::stringstream ss;
+    ss << "__Detector___________" << std::endl;
+    ss << "Detector:    " << detector.toStdString().c_str() << std::endl;
+    ss << "Pixel size:  " << pixel_size_x << " x " << pixel_size_y << " m"<<  std::endl;
+    ss << "Exposure time:   "<< exposure_time << " s" << std::endl;
+    ss << "Count cutoff:    "<< count_cutoff << std::endl << std::endl;
+    
+    
+    ss << "__Beam_______________" << std::endl;
+    ss << "Wavelength:  " << wavelength << " Å"<< std::endl;
+    ss << "Flux:        "<< flux << std::endl << std::endl;
+
+    
+    ss << "__Geometry___________" << std::endl;
+    ss << "Detector distance:   " << detector_distance << " m" << std::endl;
+    ss << "Beam x y:        "<< beam_x << ", "<< beam_y << " pixels" << std::endl;
+    ss << "Start angle:     "<< start_angle*180.0/pi << " deg" << std::endl;
+    ss << "Angle increment: "<< angle_increment*180.0/pi << " deg"<< std::endl;
+    ss << "Omega:           "<< omega*180.0/pi   << " deg" << std::endl;
+    ss << "Kappa:           "<< kappa*180.0/pi   << " deg" << std::endl;
+    ss << "Phi:             "<< phi*180.0/pi << " deg" << std::endl << std::endl;
+    
+    QString text(ss.str().c_str());
+
+    return text;
+}
+
 int PilatusFile::set(QString path, OpenCLContext *context)
 {
     this->context_cl = context;

@@ -1,7 +1,7 @@
 #include "worker.h"
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
-static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.5e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU
+static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.7e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU during pool construction. 3D image can be used with OpenCL 1.2, allowing you to use the entire VRAM.
 static const size_t nodes_per_kernel_call = 1024;
 static const size_t max_points_per_cluster = 50e6;
 
@@ -122,6 +122,8 @@ void ReadScriptWorker::setInput(QPlainTextEdit * widget)
 
 void ReadScriptWorker::process()
 {
+    qDebug() << GLOBAL_VRAM_ALLOC_MAX;
+    
     QCoreApplication::processEvents();
     
     kill_flag = false;
@@ -210,7 +212,7 @@ void SetFileWorker::process()
 
     if (file_paths->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Error: No paths specified!");
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No paths specified!");
 
         emit changedMessageString(str);
         kill_flag = true;
@@ -238,7 +240,7 @@ void SetFileWorker::process()
         // Kill process if requested
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
+            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
 
             emit changedMessageString(str);
             files->clear();
@@ -258,6 +260,8 @@ void SetFileWorker::process()
 
             // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
             if ((*suggested_q) < files->back().getQSuggestion()) (*suggested_q) = files->back().getQSuggestion();
+            
+            emit changedFile(files->size()-1);
         }
         else
         {
@@ -350,6 +354,9 @@ void ReadFileWorker::process()
         // Read file and get status
         int STATUS_OK = (*files)[i].readData();
         size_raw += (*files)[i].getBytes();
+        
+        emit changedFile(i);
+        
         if (!STATUS_OK)
         {
             QString str("\n["+QString(this->metaObject()->className())+"] Warning: could not read \""+files->at(i).getPath()+"\"");
@@ -418,7 +425,7 @@ void ProjectFileWorker::process()
     
     if (files->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Error: No files specified!");
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No files specified!");
 
         emit changedMessageString(str);
 
@@ -441,7 +448,7 @@ void ProjectFileWorker::process()
         // Kill process if requested
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
+            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
 
             emit changedMessageString(str);
             break;
@@ -451,7 +458,7 @@ void ProjectFileWorker::process()
         if (n > reduced_pixels->size())
         {
             // Break if there is too much data.
-            emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));
+            emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Warning: There was too much data!"));
             kill_flag = true;
         }
         else
@@ -471,10 +478,11 @@ void ProjectFileWorker::process()
             emit releaseSharedBuffers();
 
             emit updateRequest();
-
+            emit changedImage(i);
+            
             if (!STATUS_OK)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: could not process data \""+files->at(i).getPath()+"\"");
                 kill_flag = true;
             }
         }
@@ -570,7 +578,7 @@ void AllInOneWorker::process()
     kill_flag = false;
     if (file_paths->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Error: No paths specified!");
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No paths specified!");
 
         emit changedMessageString(str);
         kill_flag = true;
@@ -600,7 +608,7 @@ void AllInOneWorker::process()
         // Kill process if requested
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
+            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
 
             emit changedMessageString(str);
             reduced_pixels->clear();
@@ -625,7 +633,7 @@ void AllInOneWorker::process()
                 if (n > REDUCED_PIXELS_MAX_BYTES/sizeof(float))
                 {
                     // Break if there is too much data.
-                    emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Error: There was too much data!"));
+                    emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Warning: There was too much data!"));
                     kill_flag = true;
                 }
                 else
@@ -639,7 +647,8 @@ void AllInOneWorker::process()
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
                     emit releaseSharedBuffers();
                     emit updateRequest();
-
+                    emit changedImage(i);
+                    
                     if (STATUS_OK)
                     {
 //                        emit repaintImageWidget();
@@ -655,14 +664,14 @@ void AllInOneWorker::process()
                     }
                     else
                     {
-                        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Error: could not process data \""+files->at(i).getPath()+"\"");
+                        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: could not process data \""+files->at(i).getPath()+"\"");
                         kill_flag = true;
                     }
                 }
             }
             else if (!STATUS_OK)
             {
-                QString str("\n["+QString(this->metaObject()->className())+"] Error: could not read \""+files->at(i).getPath()+"\"");
+                QString str("\n["+QString(this->metaObject()->className())+"] Warning: could not read \""+files->at(i).getPath()+"\"");
 
                 emit changedMessageString(str);
 
@@ -856,7 +865,7 @@ void VoxelizeWorker::process()
         {
             if (kill_flag)
             {
-                QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(i)+" of "+QString::number(reduced_pixels->size()/4)+"!");
+                QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(reduced_pixels->size()/4)+"!");
 
                 emit changedMessageString(str);
                 break;
@@ -868,7 +877,7 @@ void VoxelizeWorker::process()
         if (!kill_flag)
         {
             /* Create an octtree from brick data. The nodes are maintained in a linear array rather than on the heap. This is due to lack of proper support for recursion on GPUs */
-            MiniArray<BrickNode> gpuHelpOcttree(n_max_bricks*8);
+            MiniArray<BrickNode> gpuHelpOcttree(n_max_bricks*16);
             gpuHelpOcttree[0].setParent(0);
             MiniArray<unsigned int> nodes;
             nodes.set(64, (unsigned int) 0);
@@ -890,7 +899,7 @@ void VoxelizeWorker::process()
             
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
-                qDebug() << " ___ Level" << lvl << "___";
+//                qDebug() << " ___ Level" << lvl << "___";
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
@@ -908,14 +917,14 @@ void VoxelizeWorker::process()
                 {
                     if((non_empty_node_counter+1) >= n_max_bricks)
                     {
-                        QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed due to memory overflow. The dataset has grown too large! ("+QString::number(non_empty_node_counter*n_points_brick*sizeof(cl_float)/1e6, 'g', 3)+" MB)");
+                        QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed due to memory overflow. The dataset has grown too large! ("+QString::number(non_empty_node_counter*n_points_brick*sizeof(cl_float)/1e6, 'g', 3)+" MB)");
                         emit changedMessageString(str);
                         kill_flag = true;
                     }
 
                     if (kill_flag) break;
                         
-                    qDebug() << "i" << i;
+//                    qDebug() << "i" << i;
                     
                     // First pass: find relevant data for cluster of nodes
                     unsigned int currentId;
@@ -1089,6 +1098,13 @@ void VoxelizeWorker::process()
                         }
                         else
                         {
+                            if (non_empty_node_counter + 1 >= n_max_bricks)
+                            {
+                                emit popup(QString("Warning - Data Overflow"), QString("The dataset you are trying to create grew too large. This event occured at level X. The data exceeded the limit of Y MB. The issue can be remedied by increasing the lower thresholds."));
+                                kill_flag = true;
+                                break;
+                            }
+                            
                             if (empty_check[j] > max_brick_sum) max_brick_sum = empty_check[j];
                             
                             gpuHelpOcttree[currentId].setDataFlag(1);
@@ -1134,19 +1150,29 @@ void VoxelizeWorker::process()
                             
                             non_empty_node_counter++;
                             iter++;
+                            
+                            err = clFinish(*context_cl->getCommandQueue());
+                            if ( err != CL_SUCCESS)
+                            {
+                                qDebug() << empty_check[j];
+                                qDebug() << glb_offset[2];
+                                qDebug() << lvl << i << j << non_empty_node_counter;
+                                qDebug() << "Space:" << non_empty_node_counter << "vs" << n_max_bricks;
+                                qFatal(cl_error_cstring(err));
+                            }
                         }
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
 
-                    err = clFinish(*context_cl->getCommandQueue());
-                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//                    err = clFinish(*context_cl->getCommandQueue());
+//                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
                 }
                 if (kill_flag)
                 {
 
-                    QString str("\n["+QString(this->metaObject()->className())+"] Error: Process killed at iteration "+QString::number(lvl)+" of "+QString::number(svo->getLevels())+"!");
+                    QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(lvl)+" of "+QString::number(svo->getLevels())+"!");
 
                     emit changedMessageString(str);
                     break;
@@ -1154,7 +1180,7 @@ void VoxelizeWorker::process()
 
                 confirmed_nodes += nodes[lvl];
                 
-                qDebug() << "nodes[" << lvl << "] =" << nodes[lvl]; 
+//                qDebug() << "nodes[" << lvl << "] =" << nodes[lvl]; 
 
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
@@ -1277,6 +1303,8 @@ void DisplayFileWorker::process()
             emit aquireSharedBuffers();
             STATUS_OK = file.filterData( &n, NULL, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high, 0);
             emit releaseSharedBuffers();
+            
+            emit updateRequest();
 //            if (STATUS_OK)
 //            {
 ////                emit repaintImageWidget();
