@@ -549,6 +549,7 @@ void MainWindow::initializeActions()
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take Screenshot"), this);
     scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle Scalebars"), this);
     sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle Slicing"), this);
+    integrateAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle Integration"), this);
 
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
@@ -827,6 +828,7 @@ void MainWindow::initializeConnects()
     connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setQuality(int)));
     connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setScalebar()));
     connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setSlicing()));
+    connect(this->integrateAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration()));
     connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
     connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
     connect(this->logAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
@@ -1203,6 +1205,8 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(dataStructureAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(sliceAct);
+        viewToolBar->addAction(integrateAct);
+        viewToolBar->addSeparator();
         viewToolBar->addAction(screenshotAct);
 
         // Layout

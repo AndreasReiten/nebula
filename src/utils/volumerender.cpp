@@ -374,10 +374,11 @@ void VolumeRenderWorker::initResourcesGL()
 void VolumeRenderWorker::initResourcesCL()
 {
     // Build program from OpenCL kernel source
-    Matrix<const char *> paths(1,3);
+    Matrix<const char *> paths(1,4);
     paths[0] = "cl_kernels/render_shared.cl";
     paths[1] = "cl_kernels/render_svo.cl";
     paths[2] = "cl_kernels/render_model.cl";
+    paths[3] = "cl_kernels/integrate.cl";
 
     program = context_cl->createProgram(&paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -389,14 +390,10 @@ void VolumeRenderWorker::initResourcesCL()
     cl_svo_raytrace = clCreateKernel(program, "svoRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_svo_workload = clCreateKernel(program, "svoWorkload", &err);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-
     cl_model_raytrace = clCreateKernel(program, "modelRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_model_workload = clCreateKernel(program, "modelWorkload", &err);
+    cl_integrate_image = clCreateKernel(program, "integrateImage", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
@@ -491,13 +488,9 @@ void VolumeRenderWorker::setViewMatrix()
 
     err = clSetKernelArg(cl_model_raytrace, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     err |= clSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
-    err |= clSetKernelArg(cl_model_workload, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err |= clSetKernelArg(cl_model_workload, 6, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
 
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     err |= clSetKernelArg(cl_svo_raytrace, 12, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
-    err |= clSetKernelArg(cl_svo_workload, 5, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err |= clSetKernelArg(cl_svo_workload, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 //    qDebug() << "Done setting view matrix";
@@ -525,15 +518,11 @@ void VolumeRenderWorker::setDataExtent()
 
     err = clSetKernelArg(cl_model_raytrace, 4, sizeof(cl_mem),  &cl_data_extent);
     err |= clSetKernelArg(cl_model_raytrace, 5, sizeof(cl_mem), &cl_data_view_extent);
-    err |= clSetKernelArg(cl_model_workload, 4, sizeof(cl_mem), &cl_data_view_extent);
-    err |= clSetKernelArg(cl_model_workload, 5, sizeof(cl_mem), &cl_data_view_extent);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
     err = clSetKernelArg(cl_svo_raytrace, 8, sizeof(cl_mem),  &cl_data_extent);
     err |= clSetKernelArg(cl_svo_raytrace, 9, sizeof(cl_mem), &cl_data_view_extent);
-    err = clSetKernelArg(cl_svo_workload, 6, sizeof(cl_mem),  &cl_data_extent);
-    err |= clSetKernelArg(cl_svo_workload, 7, sizeof(cl_mem), &cl_data_view_extent);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -567,6 +556,7 @@ void VolumeRenderWorker::setMiscArrays()
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
     misc_ints[4] = isSlicingActive;
+    misc_ints[5] = isIntegrationActive;
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_misc_ints,
         CL_TRUE,
@@ -588,7 +578,6 @@ void VolumeRenderWorker::setMiscArrays()
     err = clSetKernelArg(cl_model_raytrace, 7, sizeof(cl_mem), &cl_model_misc_floats);
     err |= clSetKernelArg(cl_model_raytrace, 8, sizeof(cl_mem), &cl_misc_ints);
     err |= clSetKernelArg(cl_svo_raytrace, 11, sizeof(cl_mem), &cl_misc_ints);
-    err |= clSetKernelArg(cl_svo_workload, 8, sizeof(cl_mem), &cl_misc_ints);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -658,9 +647,27 @@ void VolumeRenderWorker::setRayTexture()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         isRayTexInitialized = true;
-
+        
+        // Integration texture
+        cl_image_format integration_format;
+        integration_format.image_channel_order = CL_INTENSITY;
+        integration_format.image_channel_data_type = CL_FLOAT;
+        
+        integration_tex_cl = clCreateImage2D ( *context_cl->getContext(),
+            CL_MEM_READ_WRITE  | CL_MEM_ALLOC_HOST_PTR,
+            &integration_format,
+            ray_tex_dim[0],
+            ray_tex_dim[1],
+            0,
+            NULL,
+            &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        
+        
+        
         // Pass texture to CL kernel
         if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_cl);
         if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
@@ -740,7 +747,7 @@ void VolumeRenderWorker::setTsfTexture()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isTsfTexInitialized = true;
-
+    
     // Set corresponding kernel arguments
     if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
     if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 6, sizeof(cl_sampler), &tsf_tex_sampler);
@@ -926,8 +933,8 @@ void VolumeRenderWorker::drawScalebars()
 void VolumeRenderWorker::drawRayTex()
 {
     // Volume rendering
-    if (isModelActive) raytrace(cl_model_raytrace, cl_model_workload);
-    else if(isSvoInitialized) raytrace(cl_svo_raytrace, cl_svo_workload);
+    if (isModelActive) raytrace(cl_model_raytrace);
+    else if(isSvoInitialized) raytrace(cl_svo_raytrace);
 
     // Draw texture given one of the above is true
     if (isModelActive || isSvoInitialized)
@@ -974,44 +981,10 @@ void VolumeRenderWorker::drawRayTex()
     }
 }
 
-void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
+void VolumeRenderWorker::raytrace(cl_kernel kernel)
 {
-    // Estimate workload and and adjust rendering quality accordingly. Only bother if there is ample incentive to do so, i.e. quality factor is off by too much
-//    if (std::abs(1.0 - quality_factor) > 0.15)
-//    {
-//        setRayTexture();
-
-//        err = clSetKernelArg(cl_model_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
-//        err |= clSetKernelArg(cl_model_workload, 1, sizeof(cl_mem), &cl_glb_work);
-//        err |= clSetKernelArg(cl_model_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//        err = clSetKernelArg(cl_svo_workload, 0, sizeof(cl_int2), ray_tex_dim.data());
-//        err |= clSetKernelArg(cl_svo_workload, 1, sizeof(cl_mem), &cl_glb_work);
-//        err |= clSetKernelArg(cl_svo_workload, 2, ray_loc_ws[0]*ray_loc_ws[1]*sizeof(cl_int), NULL);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//        // Launch the workload kernel to estimate workload in current configuration of input parameters
-//        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), workload, 2, NULL, ray_glb_ws.data(), ray_loc_ws.data(), 0, NULL, NULL);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//        err = clFinish(*context_cl->getCommandQueue());
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//        Matrix<float> glb_work((ray_glb_ws[1]/ray_loc_ws[1]), (ray_glb_ws[0]/ray_loc_ws[0]));
-
-//        err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-//            cl_glb_work,
-//            CL_TRUE, 0,
-//            glb_work.bytes(),
-//            glb_work.data(),
-//            0, NULL, NULL);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//        work = (double) glb_work.sum();
-//        if (work)
-//    }
     setRayTexture();
+    
     // Aquire shared CL/GL objects
     glFinish();
     err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -1021,6 +994,7 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
     Matrix<size_t> area_per_call(1,2);
     area_per_call[0] = 128;
     area_per_call[1] = 128;
+    
     Matrix<size_t> call_offset(1,2);
     call_offset[0] = 0;
     call_offset[1] = 0;
@@ -1049,9 +1023,6 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel, cl_kernel workload)
     double actual_time = work_time * 1.0e-9;// / work) * 1.0e-9;
     double requested_time = 1.0 / fps_requested;
     quality_factor = requested_time / actual_time;// / work;
-//    qDebug() << quality_factor << requested_time << actual_time; 
-    
-    //    std::cout << quality_factor * 100.0 << std::endl;
 
     // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -1136,8 +1107,6 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
     err |= clSetKernelArg(cl_svo_raytrace, 3, sizeof(cl_mem), &cl_svo_index);
     err |= clSetKernelArg(cl_svo_raytrace, 4, sizeof(cl_mem), &cl_svo_brick);
     err |= clSetKernelArg(cl_svo_raytrace, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
-    err |= clSetKernelArg(cl_svo_workload, 3, sizeof(cl_mem), &cl_svo_index);
-    err |= clSetKernelArg(cl_svo_workload, 4, sizeof(cl_mem), &cl_svo_brick);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isSvoInitialized = true;
@@ -1353,6 +1322,12 @@ void VolumeRenderWorker::setDataStructure()
 void VolumeRenderWorker::setSlicing()
 {
     isSlicingActive = !isSlicingActive;
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWorker::setIntegration()
+{
+    isIntegrationActive = !isIntegrationActive;
+    if (isIntegrationActive) isOrthonormal = 1;
     if (isInitialized) setMiscArrays();
 }
 void VolumeRenderWorker::setTsfColor(int value)

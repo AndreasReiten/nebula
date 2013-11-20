@@ -75,6 +75,7 @@ public slots:
     void setModelParam4(double value);
     void setModelParam5(double value);
     void setSlicing();
+    void setIntegration();
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
@@ -97,6 +98,7 @@ private:
     bool isScalebarActive;
     bool isSlicingActive;
     bool isRendering;
+    bool isIntegrationActive;
 
     // Ray texture
     Matrix<int> ray_tex_dim;
@@ -105,9 +107,10 @@ private:
     float ray_tex_resolution;
     cl_mem ray_tex_cl;
     GLuint ray_tex_gl;
+    cl_mem integration_tex_cl;
     bool isRayTexInitialized;
     void setRayTexture();
-    void raytrace(cl_kernel kernel, cl_kernel workload);
+    void raytrace(cl_kernel kernel);
     double work, work_time, quality_factor;
 
     // Drawing functions
@@ -181,9 +184,8 @@ private:
     cl_program program;
     cl_kernel cl_svo_raytrace;
     cl_kernel cl_model_raytrace;
-    cl_kernel cl_svo_workload;
-    cl_kernel cl_model_workload;
-
+    cl_kernel cl_integrate_image;
+    
     cl_mem cl_glb_work;
     cl_mem cl_view_matrix_inverse;
     cl_mem cl_scalebar_rotation;
