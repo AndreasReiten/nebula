@@ -689,9 +689,14 @@ void VolumeRenderWorker::setRayTexture()
         
         isIntegrationTexInitialized = true;
         
-        // Pass texture to CL kernel
-        if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        // Pass textures to CL kernels
+        if (isInitialized) err = clSetKernelArg(cl_integrate_image, 0, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        if (isInitialized) err |= clSetKernelArg(cl_integrate_image, 1, sizeof(cl_mem), (void *) &integration_tex_beta_cl);
+        if (isInitialized) err |= clSetKernelArg(cl_integrate_image, 3, sizeof(cl_sampler), &integration_sampler_cl);
+        
+        if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
         if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        
         if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
         if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -813,7 +818,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     endRawGLCalls(painter);
 
     // Visualize 2D to 1D integration
-    drawIntegral(painter);
+    if (isIntegrationActive) drawIntegral(painter);
     
     // Draw overlay
     drawOverlay(painter);
@@ -837,10 +842,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     int block_size = 128;
     
     // Set kernel arguments
-    err = clSetKernelArg(cl_integrate_image, 0, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
-    err |= clSetKernelArg(cl_integrate_image, 1, sizeof(cl_mem), (void *) &integration_tex_beta_cl);
-    err |= clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
-    err |= clSetKernelArg(cl_integrate_image, 3, sizeof(cl_sampler), &integration_sampler_cl);
+    err = clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
     err |= clSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
@@ -854,21 +856,28 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     global_size[!direction] = ray_tex_dim[!direction];  
     
     Matrix<size_t> global_offset(1,2);
-
+    
+    ray_tex_dim.print(2, "ray_tex_dim");
+    local_size.print(2, "local_size");
+    global_size.print(2, "global_size");
+    
+    
     for (size_t glb_x = 0; glb_x < global_size[0]; glb_x += local_size[0])
     {
         for (size_t glb_y = 0; glb_y < global_size[1]; glb_y += local_size[1])
         {
             global_offset[0] = glb_x;
             global_offset[1] = glb_y;
-
-            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), local_size.data(), local_size.data(), 0, NULL, NULL);
-            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+            
+            
+            
+//            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), local_size.data(), local_size.data(), 0, NULL, NULL);
+//            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
 
-    err = clFinish(*context_cl->getCommandQueue());
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    err = clFinish(*context_cl->getCommandQueue());
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
     // Visualize the summed arrays as histograms
 }
