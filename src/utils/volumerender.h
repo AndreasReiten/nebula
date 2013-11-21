@@ -100,7 +100,6 @@ private:
     bool isSlicingActive;
     bool isRendering;
     bool isIntegrationActive;
-    bool isIntegrationTexInitialized;
 
     // Ray texture
     Matrix<int> ray_tex_dim;
@@ -109,16 +108,22 @@ private:
     float ray_tex_resolution;
     cl_mem ray_tex_cl;
     GLuint ray_tex_gl;
-    cl_mem integration_tex_cl;
     bool isRayTexInitialized;
     void setRayTexture();
     void raytrace(cl_kernel kernel);
     double work, work_time, quality_factor;
+    
+    // Integration
+    cl_sampler integration_sampler_cl;
+    cl_mem integration_tex_alpha_cl;
+    cl_mem integration_tex_beta_cl;
+    bool isIntegrationTexInitialized;
 
     // Drawing functions
     void drawRayTex();
     void drawScalebars();
     void drawOverlay(QPainter *painter);
+    void drawIntegral(QPainter *painter);
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
     int fps_string_width_prev;

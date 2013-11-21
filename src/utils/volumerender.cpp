@@ -653,7 +653,9 @@ void VolumeRenderWorker::setRayTexture()
         
         // Integration texture
         if (isIntegrationTexInitialized){
-            err = clReleaseMemObject(integration_tex_cl);
+            err = clReleaseMemObject(integration_tex_alpha_cl);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+            err = clReleaseMemObject(integration_tex_beta_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
         
@@ -661,7 +663,7 @@ void VolumeRenderWorker::setRayTexture()
         integration_format.image_channel_order = CL_INTENSITY;
         integration_format.image_channel_data_type = CL_FLOAT;
         
-        integration_tex_cl = clCreateImage2D ( *context_cl->getContext(),
+        integration_tex_alpha_cl = clCreateImage2D ( *context_cl->getContext(),
             CL_MEM_READ_WRITE  | CL_MEM_ALLOC_HOST_PTR,
             &integration_format,
             ray_tex_dim[0],
@@ -671,13 +673,27 @@ void VolumeRenderWorker::setRayTexture()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
+        integration_tex_beta_cl = clCreateImage2D ( *context_cl->getContext(),
+            CL_MEM_READ_WRITE  | CL_MEM_ALLOC_HOST_PTR,
+            &integration_format,
+            ray_tex_dim[0],
+            ray_tex_dim[1],
+            0,
+            NULL,
+            &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        
+        // Sampler for integration texture
+        integration_sampler_cl = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        
         isIntegrationTexInitialized = true;
         
         // Pass texture to CL kernel
         if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-        if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_cl);
+        if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
         if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-        if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_cl);
+        if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 }
@@ -796,6 +812,9 @@ void VolumeRenderWorker::render(QPainter *painter)
     drawRayTex();
     endRawGLCalls(painter);
 
+    // Visualize 2D to 1D integration
+    drawIntegral(painter);
+    
     // Draw overlay
     drawOverlay(painter);
 //    this->blockSignals(false);
@@ -804,6 +823,55 @@ void VolumeRenderWorker::render(QPainter *painter)
     isRendering = false;
 }
 
+
+void VolumeRenderWorker::drawIntegral(QPainter *painter)
+{
+    // Sum the rows and columns of the integrated texture (which resides as a pure OpenCL image buffer)
+//    __read_only image2d_t source,
+//    __write_only image2d_t target,
+//    __local float * addition_array,
+//    sampler_t source_sampler,
+//    int direction
+    
+    int direction = 0;
+    int block_size = 128;
+    
+    // Set kernel arguments
+    err = clSetKernelArg(cl_integrate_image, 0, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+    err |= clSetKernelArg(cl_integrate_image, 1, sizeof(cl_mem), (void *) &integration_tex_beta_cl);
+    err |= clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
+    err |= clSetKernelArg(cl_integrate_image, 3, sizeof(cl_sampler), &integration_sampler_cl);
+    err |= clSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    
+    // Launch kernel
+    Matrix<size_t> local_size(1,2);
+    local_size[direction] = block_size;
+    local_size[!direction] = 1;
+    
+    Matrix<size_t> global_size(1,2);
+    global_size[direction] = (block_size - (ray_tex_dim[direction] % block_size)) + ray_tex_dim[direction];
+    global_size[!direction] = ray_tex_dim[!direction];  
+    
+    Matrix<size_t> global_offset(1,2);
+
+    for (size_t glb_x = 0; glb_x < global_size[0]; glb_x += local_size[0])
+    {
+        for (size_t glb_y = 0; glb_y < global_size[1]; glb_y += local_size[1])
+        {
+            global_offset[0] = glb_x;
+            global_offset[1] = glb_y;
+
+            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), local_size.data(), local_size.data(), 0, NULL, NULL);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        }
+    }
+
+    err = clFinish(*context_cl->getCommandQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    
+    // Visualize the summed arrays as histograms
+}
 
 void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
 {
