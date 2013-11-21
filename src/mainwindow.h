@@ -290,11 +290,11 @@ private:
 protected:
     // OpenGL rendering widgets
     SharedContextWindow *sharedContextWindow;
-    VolumeRenderWorker *volumeRenderWorker;
+//    VolumeRenderWorker *volumeRenderWorker;
     VolumeRenderWindow *volumeRenderWindow;
     QWidget *volumeRenderWidget;
 
-    ImageRenderWorker *imageRenderWorker;
+//    ImageRenderWorker *imageRenderWorker;
     ImageRenderWindow *imageRenderWindow;
     QWidget *imageRenderWidget;
 

@@ -52,7 +52,8 @@ public:
 
 signals:
     void renderState(int value);
-
+    void changedMessageString(QString str);
+    
 public slots:
     void setQuality(int value);
     void setScalebar();
@@ -99,6 +100,7 @@ private:
     bool isSlicingActive;
     bool isRendering;
     bool isIntegrationActive;
+    bool isIntegrationTexInitialized;
 
     // Ray texture
     Matrix<int> ray_tex_dim;

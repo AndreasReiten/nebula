@@ -100,6 +100,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isInitialized(false),
       isRayTexInitialized(false),
       isTsfTexInitialized(false),
+      isIntegrationTexInitialized(false),
       isDSActive(false),
       isOrthonormal(true),
       isLogarithmic(true),
@@ -108,6 +109,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isSvoInitialized(false),
       isScalebarActive(true),
       isSlicingActive(false),
+      isIntegrationActive(false),
       isRendering(true),
       ray_tex_resolution(20)
 {
@@ -557,6 +559,7 @@ void VolumeRenderWorker::setMiscArrays()
     misc_ints[3] = isDSActive;
     misc_ints[4] = isSlicingActive;
     misc_ints[5] = isIntegrationActive;
+    
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_misc_ints,
         CL_TRUE,
@@ -649,6 +652,11 @@ void VolumeRenderWorker::setRayTexture()
         isRayTexInitialized = true;
         
         // Integration texture
+        if (isIntegrationTexInitialized){
+            err = clReleaseMemObject(integration_tex_cl);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        }
+        
         cl_image_format integration_format;
         integration_format.image_channel_order = CL_INTENSITY;
         integration_format.image_channel_data_type = CL_FLOAT;
@@ -663,12 +671,13 @@ void VolumeRenderWorker::setRayTexture()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        
+        isIntegrationTexInitialized = true;
         
         // Pass texture to CL kernel
         if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-        if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_cl);
+        if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_cl);
         if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 }
@@ -1327,7 +1336,9 @@ void VolumeRenderWorker::setSlicing()
 void VolumeRenderWorker::setIntegration()
 {
     isIntegrationActive = !isIntegrationActive;
-    if (isIntegrationActive) isOrthonormal = 1;
+    
+    if (!isOrthonormal) emit changedMessageString("Warning: Perspective projection is currently active.");
+    
     if (isInitialized) setMiscArrays();
 }
 void VolumeRenderWorker::setTsfColor(int value)

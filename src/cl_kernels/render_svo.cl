@@ -53,6 +53,7 @@ __kernel void svoRayTrace(
         float3 ray_delta;
         float cone_diameter_increment;
         float cone_diameter_near;
+        float integrated_intensity = 0.0f;
         {
             float4 rayNearEdge, rayFarEdge;
             float3 pixel_radius_near, pixel_radius_far;
@@ -114,9 +115,7 @@ __kernel void svoRayTrace(
         }
         float4 sample = (float4)(0.0f);
         float4 color = (float4)(0.0f);
-        float integrated_intensity = 0.0f;
         float step_length = 1.0f;
-        float2 tsfPosition;
         
         // In the case that the ray actually hits the bounding box, prepare for volume sampling and color accumulation
         if(hit)
@@ -314,7 +313,7 @@ __kernel void svoRayTrace(
                                     intensity = log10(intensity);
                                 }
                                 
-                                tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                                float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
                                 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
@@ -462,18 +461,18 @@ __kernel void svoRayTrace(
 
 
                             // Sample color
-                            if(isLogActive)
+                            if (isIntegrationActive && !isDsActive)
                             {
-                                intensity = log10(intensity);
-                            }
-                            
-                            if (isIntegrationActive)
-                            {
-                                integrated_intensity += intensity;
+                                integrated_intensity += intensity * step_length;
                             }
                             else
                             {
-                                tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                                if(isLogActive)
+                                {
+                                    intensity = log10(intensity);
+                                }
+                            
+                                float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
     
@@ -511,19 +510,25 @@ __kernel void svoRayTrace(
             }
             if (!isDsActive)color *= brightness;
         }
-        if (isIntegrationActive)
+        if (isIntegrationActive && !isSlicingActive && !isDsActive)
         {
-            tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * (((integrated_intensity * step_length) - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+            if(isLogActive) 
+            {
+                if (integrated_intensity < 1.f) integrated_intensity = 1.f;            
+                integrated_intensity = log10(integrated_intensity);
+            }
+            
+            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
             sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);       
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
-            write_imagef(integration_tex, id_glb, (float4)(integrated_intensity * step_length));
+            write_imagef(integration_tex, id_glb, (float4)(integrated_intensity));
         }        
         else
         {
             write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
-            write_imagef(integration_tex, id_glb, (float4)(integrated_intensity * step_length));
+            write_imagef(integration_tex, id_glb, (float4)(integrated_intensity));
         }
     }
 }

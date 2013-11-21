@@ -34,7 +34,8 @@ __kernel void modelRayTrace(
     __constant float * tsf_var,
     __constant float * parameters,
     __constant int * misc_int,
-    __constant float * scalebar_rotation)
+    __constant float * scalebar_rotation,
+    __write_only image2d_t integration_tex)
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
 
@@ -50,6 +51,7 @@ __kernel void modelRayTrace(
 
     int isLogActive = misc_int[2];
     int isSlicingActive = misc_int[4];
+    int isIntegrationActive = misc_int[5];
 
     if (isLogActive)
     {
@@ -66,6 +68,8 @@ __kernel void modelRayTrace(
         float3 ray_delta;
         float cone_diameter_increment;
         float cone_diameter_near;
+        float integrated_intensity = 0.0;
+        
         {
             float4 rayNearEdge, rayFarEdge;
             float3 pixel_radius_near, pixel_radius_far;
@@ -143,7 +147,7 @@ __kernel void modelRayTrace(
             float rayBoxLength = fast_length(rayBoxDelta);
 
             float3 ray_xyz_box = rayBoxOrigin;
-            float val;
+            float intensity;
 
             if (isSlicingActive)
             {
@@ -187,15 +191,15 @@ __kernel void modelRayTrace(
                     {
                         ray_xyz_box = rayBoxOrigin + d[i] * rayBoxDelta;
 
-                        val = model(ray_xyz_box, parameters);
+                        intensity = model(ray_xyz_box, parameters);
 
                         if(isLogActive)
                         {
-                            if (val < 1.f) val = 1.f;
-                            val = log10(val);
+                            if (intensity < 1.f) intensity = 1.f;
+                            intensity = log10(intensity);
                         }
 
-                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
                         sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
                         color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
@@ -215,40 +219,64 @@ __kernel void modelRayTrace(
                     step_length = cone_diameter;
                     ray_add_box = direction * step_length;
 
-                    val = model(ray_xyz_box, parameters);
+                    intensity = model(ray_xyz_box, parameters);
 
-                    if(isLogActive)
+                    if (isIntegrationActive)
                     {
-                        if (val < 1.f) val = 1.f;
-                        val = log10(val);
+                        integrated_intensity += intensity * step_length;
                     }
-
-                    if ((val >= data_offset_low) && (val <= data_offset_high))
+                    else
                     {
-                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((val - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                        sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
-
-                        color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-                        color.w += (1.0f - color.w)*sample.w;
+                        if(isLogActive)
+                        {
+                            if (intensity < 1.f) intensity = 1.f;
+                            intensity = log10(intensity);
+                        }
+            
+                        if ((intensity >= data_offset_low) && (intensity <= data_offset_high))
+                        {
+                            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+            
+                            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                            sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
+            
+                            color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                            color.w += (1.0f - color.w)*sample.w;
+                        }
+                        else if (intensity > data_offset_high)
+                        {
+                            sample = max_sample;
+                            sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
+            
+                            color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                            color.w += (1.0f - color.w)*sample.w;
+                        }
+                        if (color.w > 0.999f) break;
                     }
-                    else if (val > data_offset_high)
-                    {
-                        sample = max_sample;
-                        sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
-
-                        color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-                        color.w += (1.0f - color.w)*sample.w;
-                    }
-
                     ray_xyz_box += ray_add_box;
-                    if (color.w > 0.999f) break;
-
                 }
                 color *= brightness;
             }
         }
-        write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+        if (isIntegrationActive && !isSlicingActive)
+        {
+            if(isLogActive) 
+            {
+                if (integrated_intensity < 1.f) integrated_intensity = 1.f;            
+                integrated_intensity = log10(integrated_intensity);
+            }
+            
+            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+    
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);       
+
+            write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
+            write_imagef(integration_tex, id_glb, (float4)(integrated_intensity));
+        }        
+        else
+        {
+            write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+            write_imagef(integration_tex, id_glb, (float4)(integrated_intensity));
+        }
     }
 }
