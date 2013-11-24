@@ -366,6 +366,10 @@ void VolumeRenderWorker::initializePaintTools()
     dark_fill_brush = new QBrush;
     dark_fill_brush->setStyle(Qt::SolidPattern);
     dark_fill_brush->setColor(QColor(0,0,0,255));
+    
+    histogram_brush = new QBrush;
+    histogram_brush->setStyle(Qt::SolidPattern);
+    histogram_brush->setColor(QColor(40,225,40,225));
 }
 
 void VolumeRenderWorker::initResourcesGL()
@@ -590,11 +594,14 @@ void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 
     if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
     ctc_matrix.setWindow(render_surface->width(), render_surface->height());
-    setRayTexture();
+    
+//    qDebug();
+//    setRayTexture();
 }
 
 void VolumeRenderWorker::setRayTexture()
 {
+//    qDebug();
     // Set a texture for the volume rendering kernel
     Matrix<int> ray_tex_new(1, 2);
     ray_tex_new[0] = (int)((float)render_surface->width()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
@@ -684,7 +691,7 @@ void VolumeRenderWorker::setRayTexture()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
         // Sampler for integration texture
-        integration_sampler_cl = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+        integration_sampler_cl = clCreateSampler(*context_cl->getContext(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
         isIntegrationTexInitialized = true;
@@ -816,10 +823,10 @@ void VolumeRenderWorker::render(QPainter *painter)
     // Draw raytracing texture
     drawRayTex();
     endRawGLCalls(painter);
-
+//    qDebug("Do not change");
     // Visualize 2D to 1D integration
     if (isIntegrationActive) drawIntegral(painter);
-    
+//    qDebug("Ok, change");
     // Draw overlay
     drawOverlay(painter);
 //    this->blockSignals(false);
@@ -832,12 +839,11 @@ void VolumeRenderWorker::render(QPainter *painter)
 void VolumeRenderWorker::drawIntegral(QPainter *painter)
 {
     // Sum the rows and columns of the integrated texture (which resides as a pure OpenCL image buffer)
-//    __read_only image2d_t source,
-//    __write_only image2d_t target,
-//    __local float * addition_array,
-//    sampler_t source_sampler,
-//    int direction
     
+    // __ROWS__
+    
+    // sum along w (rows, x): direction = 0
+    // sum along h (columns, y): direction = 1
     int direction = 0;
     int block_size = 128;
     
@@ -848,39 +854,211 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     
     // Launch kernel
     Matrix<size_t> local_size(1,2);
-    local_size[direction] = block_size;
-    local_size[!direction] = 1;
+    local_size[0] = block_size;
+    local_size[1] = 1;
     
     Matrix<size_t> global_size(1,2);
-    global_size[direction] = (block_size - (ray_tex_dim[direction] % block_size)) + ray_tex_dim[direction];
-    global_size[!direction] = ray_tex_dim[!direction];  
+    global_size[0] = (block_size - (ray_tex_dim[0] % block_size)) + ray_tex_dim[0];
+    global_size[1] = ray_tex_dim[1];  
+
+    Matrix<size_t> work_size(1,2);
+    work_size[0] = global_size[0];
+    work_size[1] = 1;
     
     Matrix<size_t> global_offset(1,2);
+    global_offset[0] = 0;
+    global_offset[1] = 0;
     
-    ray_tex_dim.print(2, "ray_tex_dim");
-    local_size.print(2, "local_size");
-    global_size.print(2, "global_size");
+//    ray_tex_dim.print(2, "ray_tex_dim");
+//    local_size.print(2, "local_size");
+//    global_size.print(2, "global_size");
+//    work_size.print(2, "work_size");
     
     
-    for (size_t glb_x = 0; glb_x < global_size[0]; glb_x += local_size[0])
+    for (size_t row = 0; row < global_size[1]; row += local_size[1])
     {
-        for (size_t glb_y = 0; glb_y < global_size[1]; glb_y += local_size[1])
-        {
-            global_offset[0] = glb_x;
-            global_offset[1] = glb_y;
-            
-            
-            
-//            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), local_size.data(), local_size.data(), 0, NULL, NULL);
-//            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-        }
+        global_offset[1] = row;
+        
+        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
+
+    err = clFinish(*context_cl->getCommandQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    
+    
+    // Read the output data
+    Matrix<float> output(ray_tex_dim[1], global_size[0]/block_size);
+    
+    Matrix<size_t> origin(1,3);
+    origin[0] = 0;
+    origin[1] = 0;
+    origin[2] = 0;
+    
+    Matrix<size_t> region(1,3);
+    region[0] = global_size[0]/block_size;//output.getM();
+    region[1] = ray_tex_dim[1];//output.getN();
+    region[2] = 1;
+    
+//    origin.print(2,"origin");
+//    region.print(2,"region");
+            
+    
+    err = clEnqueueReadImage ( 	*context_cl->getCommandQueue(),
+        integration_tex_beta_cl,
+        CL_TRUE,
+        origin.data(),
+        region.data(),
+        0,
+        0,
+        output.data(),
+        0, NULL, NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));        
+    
+    // Sum up the partially reduced array    
+    Matrix<float> row_sum(ray_tex_dim[1], 1, 0.0f);
+    float max = 0;
+    float min = 0;
+    for (int i = 0; i < output.getM(); i++)
+    {
+        for(int j = 0; j < output.getN(); j++)
+        {
+            row_sum[i] += output[i*output.getN() + j];
+        }
+        
+        if (row_sum[i] > max) max = row_sum[i];
+        if (row_sum[i] < min) min = row_sum[i];
+    }   
+    
+    
+    QPolygonF row_polygon;
+    row_polygon << QPointF(0,0);
+    for (int i = 0; i < row_sum.getM(); i++)
+    {
+        QPointF point_top, point_bottom;
+        
+        float value = ((row_sum[row_sum.getM() - i - 1] - min) / max)*render_surface->width()/10.0;
+        
+        point_top.setX(value);
+        point_top.setY(((float) i / (float) row_sum.getM())*render_surface->height());
+        
+        point_bottom.setX(value);
+        point_bottom.setY((((float) i + 1) / (float) row_sum.getM())*render_surface->height());
+        row_polygon << point_top << point_bottom;
+    }
+    row_polygon << QPointF(0,render_surface->height());
+    
+    
+    
+    
+    // __COLUMNS__
+//    direction = 1;
+//    block_size = 128;
+    
+//    // Set kernel arguments
+//    err = clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
+//    err |= clSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    
+//    // Launch kernel
+//    local_size[0] = 1;
+//    local_size[1] = block_size;
+    
+//    global_size[0] = ray_tex_dim[0];
+//    global_size[1] = (block_size - (ray_tex_dim[1] % block_size)) + ray_tex_dim[1];  
+
+//    work_size[0] = 1;
+//    work_size[1] = global_size[1];
+    
+//    global_offset[0] = 0;
+//    global_offset[1] = 0;
+    
+//    for (size_t column = 0; column < global_size[0]; column += local_size[0])
+//    {
+//        global_offset[0] = column;
+        
+////        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    }
 
 //    err = clFinish(*context_cl->getCommandQueue());
 //    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
+    
+//    // Read the output data
+//    Matrix<float> output2(ray_tex_dim[0], global_size[1]/block_size);
+    
+//    origin[0] = 0;
+//    origin[1] = 0;
+//    origin[2] = 0;
+    
+//    region[0] = ray_tex_dim[0];
+//    region[1] = global_size[1]/block_size;
+//    region[2] = 1;
+    
+//    err = clEnqueueReadImage ( 	*context_cl->getCommandQueue(),
+//        integration_tex_beta_cl,
+//        CL_TRUE,
+//        origin.data(),
+//        region.data(),
+//        0,
+//        0,
+//        output2.data(),
+//        0, NULL, NULL);
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));        
+    
+//    // Sum up the partially reduced array    
+//    Matrix<float> column_sum(ray_tex_dim[1], 1, 0.0f);
+//    max = 0;
+//    min = 0;
+//    for (int i = 0; i < output2.getM(); i++)
+//    {
+//        for(int j = 0; j < output2.getN(); j++)
+//        {
+//            column_sum[i] += output2[i*output2.getN() + j];
+//        }
+        
+//        if (column_sum[i] > max) max = column_sum[i];
+//        if (column_sum[i] < min) min = column_sum[i];
+//    }   
+    
+//    QPolygonF column_polygon;
+//    column_polygon << QPointF(0,0);
+//    for (int i = 0; i < column_sum.getM(); i++)
+//    {
+//        QPointF point_top, point_bottom;
+        
+//        float value = ((column_sum[column_sum.getM() - i - 1] - min) / max)*render_surface->width()/10.0;
+        
+//        point_top.setX(value);
+//        point_top.setY(((float) i / (float) column_sum.getM())*render_surface->height());
+        
+//        point_bottom.setX(value);
+//        point_bottom.setY((((float) i + 1) / (float) column_sum.getM())*render_surface->height());
+//        column_polygon << point_top << point_bottom;
+//    }
+//    column_polygon << QPointF(0,render_surface->height());
+    
+    
+    
+    
     // Visualize the summed arrays as histograms
+    
+    
+    painter->setRenderHint(QPainter::Antialiasing);
+    
+    QLinearGradient lgrad(QPointF(0,0), QPointF(render_surface->width()/10.0,0));
+                lgrad.setColorAt(0.0, Qt::transparent);
+                lgrad.setColorAt(1.0, Qt::blue);
+                
+    QBrush histogram_brush_lg(lgrad);
+    
+    painter->setBrush(histogram_brush_lg);
+    painter->setPen(*normal_pen);
+    
+    painter->drawPolygon(row_polygon);
 }
+
 
 void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
 {
@@ -1021,7 +1199,7 @@ void VolumeRenderWorker::drawRayTex()
     // Volume rendering
     if (isModelActive) raytrace(cl_model_raytrace);
     else if(isSvoInitialized) raytrace(cl_svo_raytrace);
-
+    
     // Draw texture given one of the above is true
     if (isModelActive || isSvoInitialized)
     {

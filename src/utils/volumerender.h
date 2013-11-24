@@ -25,6 +25,7 @@
 #include <QMouseEvent>
 #include <QOpenGLShaderProgram>
 #include <QResizeEvent>
+#include <QPolygonF>
 
 
 #include "tools.h"
@@ -222,6 +223,7 @@ private:
     QPen * normal_pen;
     QPen * border_pen;
     QBrush * fill_brush;
+    QBrush * histogram_brush;
     QBrush * normal_brush;
     QBrush * dark_fill_brush;
     QFont * normal_font;

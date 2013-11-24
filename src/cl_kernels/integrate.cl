@@ -9,6 +9,10 @@ __kernel void integrateImage(
     /* 
     * Parallel reduction of an image. Depending on the direction, all rows or columns are summed in chunks and written to a target. It is up to the host to determine how many times an image should be integrated in this way.  
     */
+    
+    // sum along w (rows, x): direction = 0
+    // sum along h (columns, y): direction = 1
+    
     int id_loc[2];
     id_loc[0] = get_local_id(0);
     id_loc[1] = get_local_id(1);
@@ -29,7 +33,7 @@ __kernel void integrateImage(
     
     if (id_glb[direction] < source_dim[direction])
     {
-        addition_array[id_loc[direction]] = read_imagef(source, source_sampler, (int2)(id_glb[0], id_glb[1])).w;    
+        addition_array[id_loc[direction]] = read_imagef(source, source_sampler, (int2)(id_glb[direction], id_glb[!direction])).w;    
     }
     else
     {
@@ -49,7 +53,7 @@ __kernel void integrateImage(
         }        
         
         float4 sample;
-        sample.w = addition_array[0];
+        sample = (float4)(addition_array[direction]);
 
         // Write to target 
         if (id_loc[direction] == 0) write_imagef(target, id_out, sample);
@@ -57,7 +61,7 @@ __kernel void integrateImage(
     else
     {
         float4 sample;
-        sample.w = addition_array[0];
+        sample = (float4)(addition_array[0]);
 
         if (id_loc[direction] == 0) write_imagef(target, id_out, sample);
     }
