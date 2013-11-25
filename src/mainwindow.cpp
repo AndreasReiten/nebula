@@ -542,14 +542,17 @@ void MainWindow::initializeActions()
     //~aboutHDF5Act = new QAction(tr("About HDF"), this);
     openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
     saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
-    logAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle Logarithm"), this);
+    log3DAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle Logarithmic"), this);
     dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle Data Structure"), this);
     backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle Background Color"), this);
     projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle Projection"), this);
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take Screenshot"), this);
     scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle Scalebars"), this);
     sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle Slicing"), this);
-    integrateAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle Integration"), this);
+    integrate2DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->1D Integration"), this);
+    integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D Integration"), this);
+    logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), tr("&Toggle Logarithmic"), this);
+    shadowAct = new QAction(QIcon(":/art/shadow.png"), tr("&Toggle Shadows"), this);
 
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
@@ -828,10 +831,12 @@ void MainWindow::initializeConnects()
     connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setQuality(int)));
     connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setScalebar()));
     connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setSlicing()));
-    connect(this->integrateAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration()));
+    connect(this->integrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration2D()));
+    connect(this->integrate3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration3D()));
+    connect(this->shadowAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setShadow()));
     connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
     connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
-    connect(this->logAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
+    connect(this->log3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
     connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setDataStructure()));
     connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
     connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
@@ -1200,13 +1205,17 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(openSVOAct);
         viewToolBar->addSeparator();
         viewToolBar->addAction(projectionAct);
-        viewToolBar->addAction(backgroundAct);
-        viewToolBar->addAction(logAct);
         viewToolBar->addAction(dataStructureAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(sliceAct);
-        viewToolBar->addAction(integrateAct);
+        viewToolBar->addAction(shadowAct);
+        viewToolBar->addAction(integrate3DAct);
+        viewToolBar->addAction(log3DAct);
         viewToolBar->addSeparator();
+        viewToolBar->addAction(integrate2DAct);
+        viewToolBar->addAction(logIntegrate2DAct);
+        viewToolBar->addSeparator();
+        viewToolBar->addAction(backgroundAct);
         viewToolBar->addAction(screenshotAct);
 
         // Layout

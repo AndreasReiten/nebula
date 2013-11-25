@@ -186,8 +186,35 @@ private:
     FileSourceModel * fileSelectedModel;
     FileTreeView *fileSystemTree;
     FileTreeView *fileSelectedTree;
-
-
+    
+    
+    // Actions
+    QAction *shadowAct;
+    QAction *integrate3DAct;
+    QAction *integrate2DAct;
+    QAction *logIntegrate2DAct;
+    QAction *sliceAct;
+    QAction *scalebarAct;
+    QAction *saveSVOAct;
+    QAction *log3DAct;
+    QAction *dataStructureAct;
+    QAction *backgroundAct;
+    QAction *projectionAct;
+    QAction *screenshotAct;
+    QAction *openSVOAct;
+    QAction *newAct;
+    QAction *openAct;
+    QAction *saveAct;
+    QAction *scriptingAct;
+    QAction *runScriptAct;
+    QAction *saveAsAct;
+    QAction *exitAct;
+    QAction *aboutAct;
+    QAction *aboutQtAct;
+    QAction *aboutOpenCLAct;
+    QAction *aboutOpenGLAct;
+    
+    
     int current_svo;
 
     float suggested_search_radius_high;
@@ -268,9 +295,7 @@ private:
 
     QTabWidget *tabWidget;
 
-    QAction *integrateAct;
-    QAction *sliceAct;
-    QAction *scalebarAct;
+    
     QSpinBox *imageNumberSpinBox;
     QDockWidget *fileDockWidget;
     QWidget *fileControlsWidget;
@@ -321,24 +346,6 @@ protected:
     QToolBar *scriptToolBar;
     QToolBar *viewToolBar;
 
-    QAction *saveSVOAct;
-    QAction *logAct;
-    QAction *dataStructureAct;
-    QAction *backgroundAct;
-    QAction *projectionAct;
-    QAction *screenshotAct;
-    QAction *openSVOAct;
-    QAction *newAct;
-    QAction *openAct;
-    QAction *saveAct;
-    QAction *scriptingAct;
-    QAction *runScriptAct;
-    QAction *saveAsAct;
-    QAction *exitAct;
-    QAction *aboutAct;
-    QAction *aboutQtAct;
-    QAction *aboutOpenCLAct;
-    QAction *aboutOpenGLAct;
 
 //    QScriptValue rawFilesValue;
     QScriptEngine engine;

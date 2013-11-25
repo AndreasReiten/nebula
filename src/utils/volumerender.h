@@ -77,7 +77,9 @@ public slots:
     void setModelParam4(double value);
     void setModelParam5(double value);
     void setSlicing();
-    void setIntegration();
+    void setIntegration2D();
+    void setIntegration3D();
+    void setShadow();
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
@@ -100,7 +102,8 @@ private:
     bool isScalebarActive;
     bool isSlicingActive;
     bool isRendering;
-    bool isIntegrationActive;
+    bool isIntegration2DActive;
+    bool isShadowActive;
 
     // Ray texture
     Matrix<int> ray_tex_dim;
@@ -230,6 +233,9 @@ private:
     QFont * emph_font;
     QFontMetrics * normal_fontmetric;
     QFontMetrics * emph_fontmetric;
+    
+    // Shadow
+    Matrix<float> shadow_vector;
 };
 
 class VolumeRenderWindow : public OpenGLWindow

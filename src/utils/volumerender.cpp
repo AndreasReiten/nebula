@@ -109,8 +109,9 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isSvoInitialized(false),
       isScalebarActive(true),
       isSlicingActive(false),
-      isIntegrationActive(false),
+      isIntegration2DActive(false),
       isRendering(true),
+      isShadowActive(false),
       ray_tex_resolution(20)
 {
     // Matrices
@@ -187,6 +188,12 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 
     // Fps
     fps_string_width_prev = 0;
+    
+    // Shadow
+    shadow_vector.set(1,3);
+    shadow_vector[0] = 1.0;
+    shadow_vector[1] = 0.0;
+    shadow_vector[2] = 0.0;
 }
 
 VolumeRenderWorker::~VolumeRenderWorker()
@@ -562,7 +569,8 @@ void VolumeRenderWorker::setMiscArrays()
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
     misc_ints[4] = isSlicingActive;
-    misc_ints[5] = isIntegrationActive;
+    misc_ints[5] = isIntegration2DActive;
+    misc_ints[6] = isShadowActive;
     
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_misc_ints,
@@ -825,7 +833,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     endRawGLCalls(painter);
 //    qDebug("Do not change");
     // Visualize 2D to 1D integration
-    if (isIntegrationActive) drawIntegral(painter);
+    if (isIntegration2DActive) drawIntegral(painter);
 //    qDebug("Ok, change");
     // Draw overlay
     drawOverlay(painter);
@@ -1588,13 +1596,23 @@ void VolumeRenderWorker::setSlicing()
     isSlicingActive = !isSlicingActive;
     if (isInitialized) setMiscArrays();
 }
-void VolumeRenderWorker::setIntegration()
+void VolumeRenderWorker::setShadow()
 {
-    isIntegrationActive = !isIntegrationActive;
+    isShadowActive = !isShadowActive;
+    
+    if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWorker::setIntegration2D()
+{
+    isIntegration2DActive = !isIntegration2DActive;
     
     if (!isOrthonormal) emit changedMessageString("Warning: Perspective projection is currently active.");
     
     if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWorker::setIntegration3D()
+{
+    qDebug();
 }
 void VolumeRenderWorker::setTsfColor(int value)
 {

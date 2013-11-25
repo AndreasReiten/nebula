@@ -35,7 +35,8 @@ __kernel void modelRayTrace(
     __constant float * parameters,
     __constant int * misc_int,
     __constant float * scalebar_rotation,
-    __write_only image2d_t integration_tex)
+    __write_only image2d_t integration_tex,
+    float3 shadow_vector)
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
 
@@ -49,18 +50,23 @@ __kernel void modelRayTrace(
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
-    int isLogActive = misc_int[2];
+    int islog3DActive = misc_int[2];
     int isSlicingActive = misc_int[4];
-    int isIntegrationActive = misc_int[5];
+    int isIntegration2DActive = misc_int[5];
+    int isShadowActive = misc_int[6];
 
-    if (isLogActive)
+    if (islog3DActive)
     {
         if (data_offset_low <= 0) data_offset_low = 0.01f;
         if (data_offset_high <= 0) data_offset_high = 0.01f;
         data_offset_low = log10(data_offset_low);
         data_offset_high = log10(data_offset_high);
     }
-
+    
+    // The color of "shadow", or rather the color associated with gradient matching
+    float4 shadow_color = (float4)(0.0f,0.0f,0.0f,1.0f);
+    shadow_vector = normalize(shadow_vector);
+    
     // If the global id corresponds to a texel
     if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
     {
@@ -130,8 +136,8 @@ __kernel void modelRayTrace(
         float4 color = (float4)(0.0f);
         float4 sample = (float4)(0.0f);
 
-        float4 max_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(1.0f, 0.5f));
-        float4 min_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(0.0f, 0.5f));
+//        float4 max_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(1.0f, 0.5f));
+//        float4 min_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(0.0f, 0.5f));
 
         if(hit)
         {
@@ -193,7 +199,7 @@ __kernel void modelRayTrace(
 
                         intensity = model(ray_xyz_box, parameters);
 
-                        if(isLogActive)
+                        if(islog3DActive)
                         {
                             if (intensity < 1.f) intensity = 1.f;
                             intensity = log10(intensity);
@@ -221,38 +227,43 @@ __kernel void modelRayTrace(
 
                     intensity = model(ray_xyz_box, parameters);
 
-//                    if (isIntegrationActive)
-//                    {
-                        integrated_intensity += intensity * step_length;
-//                    }
-//                    else
-//                    {
-                        if(isLogActive)
-                        {
-                            if (intensity < 1.f) intensity = 1.f;
-                            intensity = log10(intensity);
-                        }
+                    integrated_intensity += intensity * step_length;
+
+                    if(islog3DActive)
+                    {
+                        if (intensity < 1.f) intensity = 1.f;
+                        intensity = log10(intensity);
+                    }
             
-                        if ((intensity >= data_offset_low) && (intensity <= data_offset_high))
-                        {
-                            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-            
-                            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                            sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
-            
-                            color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-                            color.w += (1.0f - color.w)*sample.w;
-                        }
-                        else if (intensity > data_offset_high)
-                        {
-                            sample = max_sample;
-                            sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
-            
-                            color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-                            color.w += (1.0f - color.w)*sample.w;
-                        }
-                        if (color.w > 0.999f) break;
-//                    }
+                    float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+    
+                    sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                    sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
+
+                    if (isShadowActive)
+                    {
+                        float3 gradient_vector = (float3)(
+                            native_divide(
+                                - model((float3)(ray_xyz_box.x - step_length, ray_xyz_box.y, ray_xyz_box.z), parameters)
+                                + model((float3)(ray_xyz_box.x + step_length, ray_xyz_box.y, ray_xyz_box.z), parameters),
+                                step_length),
+                            native_divide(
+                                - model((float3)(ray_xyz_box.x, ray_xyz_box.y - step_length, ray_xyz_box.z), parameters)
+                                + model((float3)(ray_xyz_box.x, ray_xyz_box.y + step_length, ray_xyz_box.z), parameters), 
+                                step_length),
+                            native_divide(
+                                - model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z - step_length), parameters)
+                                + model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z + step_length), parameters),
+                                step_length));
+
+                        float strength = (dot(shadow_vector, normalize(gradient_vector)) + 1.0f) * 0.5f;
+                        sample.xyz = mix(sample.xyz, shadow_color.xyz, sample.w*strength);
+                    }
+                    
+                    color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+                    color.w += (1.0f - color.w)*sample.w;
+                        
+                    if (color.w > 0.999f) break;
                     ray_xyz_box += ray_add_box;
                 }
                 color *= brightness;
@@ -260,9 +271,9 @@ __kernel void modelRayTrace(
         }
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
         write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
-//        if (isIntegrationActive && !isSlicingActive)
+//        if (isIntegration2DActive && !isSlicingActive)
 //        {
-//            if(isLogActive) 
+//            if(islog3DActive) 
 //            {
 //                if (integrated_intensity < 1.f) integrated_intensity = 1.f;            
 //                integrated_intensity = log10(integrated_intensity);

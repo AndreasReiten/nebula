@@ -23,10 +23,10 @@ __kernel void svoRayTrace(
 
     int numOctLevels = misc_int[0];
     int brickSize = misc_int[1];
-    int isLogActive = misc_int[2];
+    int islog3DActive = misc_int[2];
     int isDsActive = misc_int[3];
     int isSlicingActive = misc_int[4];
-    int isIntegrationActive = misc_int[5];
+    int isIntegration2DActive = misc_int[5];
 
     float tsfOffsetLow = tsf_var[0];
     float tsfOffsetHigh = tsf_var[1];
@@ -35,7 +35,7 @@ __kernel void svoRayTrace(
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
-    if (isLogActive)
+    if (islog3DActive)
     {
         if (data_offset_low <= 0.0f) data_offset_low = 0.01f;
         if (data_offset_high <= 0.0f) data_offset_high = 0.01f;
@@ -308,7 +308,7 @@ __kernel void svoRayTrace(
 
 
                                 // Sample color
-                                if(isLogActive)
+                                if(islog3DActive)
                                 {
                                     intensity = log10(intensity);
                                 }
@@ -461,13 +461,13 @@ __kernel void svoRayTrace(
 
 
                             // Sample color
-//                            if (isIntegrationActive && !isDsActive)
+//                            if (isIntegration2DActive && !isDsActive)
 //                            {
                                 integrated_intensity += intensity * step_length;
 //                            }
 //                            else
 //                            {
-                                if(isLogActive)
+                                if(islog3DActive)
                                 {
                                     intensity = log10(intensity);
                                 }
@@ -513,9 +513,9 @@ __kernel void svoRayTrace(
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
         write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
         
-//        if (isIntegrationActive && !isSlicingActive && !isDsActive)
+//        if (isIntegration2DActive && !isSlicingActive && !isDsActive)
 //        {
-//            if(isLogActive) 
+//            if(islog3DActive) 
 //            {
 //                if (integrated_intensity < 1.f) integrated_intensity = 1.f;            
 //                integrated_intensity = log10(integrated_intensity);
