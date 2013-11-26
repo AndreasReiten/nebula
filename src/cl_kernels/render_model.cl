@@ -36,7 +36,7 @@ __kernel void modelRayTrace(
     __constant int * misc_int,
     __constant float * scalebar_rotation,
     __write_only image2d_t integration_tex,
-    float3 shadow_vector)
+    float4 shadow_vector)
 {
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
 
@@ -238,8 +238,8 @@ __kernel void modelRayTrace(
                     float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
                     sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                    sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);;
-
+                    sample.w *= alpha;
+                    
                     if (isShadowActive)
                     {
                         float3 gradient_vector = (float3)(
@@ -255,12 +255,25 @@ __kernel void modelRayTrace(
                                 - model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z - step_length), parameters)
                                 + model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z + step_length), parameters),
                                 step_length));
-
-                        float strength = (dot(shadow_vector, normalize(gradient_vector)) + 1.0f) * 0.5f;
-                        sample.xyz = mix(sample.xyz, shadow_color.xyz, sample.w*strength);
+                        float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f; // Simplest form. Can multiply with shadow_magnitude*(1.0f - color.w)*sample.w or the like, but can it be justified, and does it provide better results? Thus far I am inclined to say no.
+//                        float strength = native_powr((dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f, 2.0f); // Scaled with some power to increase contrast between shadow and no shadow
+                        sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
                     }
+
+//                f = (1.0f - color.w)*sample_color.w;
+//                p = native_powr(f,0.5);
+
+//                if (shading)
+//                {
+//                    val = free_param_a*p*native_powr((1.0+dot(shadow_vec.xyz,normalize(sample.xyz)))*0.5,2.0);
+//                    sample_color.xyz = mix(sample_color.xyz, shadow.xyz, (float3)(val, val, val));
+//                }
+                    // Scale the alpha channel in accordance with the cone diameter
+                    sample.w *= native_divide(cone_diameter, cone_diameter_low);
                     
+                    // MIX COLORS                    
                     color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+//                    color.xyz += (1.0f - color.w)*sample.xyz; //(Crassin)
                     color.w += (1.0f - color.w)*sample.w;
                         
                     if (color.w > 0.999f) break;

@@ -190,10 +190,11 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     fps_string_width_prev = 0;
     
     // Shadow
-    shadow_vector.set(1,3);
-    shadow_vector[0] = 1.0;
-    shadow_vector[1] = 0.0;
-    shadow_vector[2] = 0.0;
+    shadow_vector.reserve(4,1);
+    shadow_vector[0] = -1.0;
+    shadow_vector[1] = +1.0;
+    shadow_vector[2] = -1.0;
+    shadow_vector[3] = 0.0;
 }
 
 VolumeRenderWorker::~VolumeRenderWorker()
@@ -1257,6 +1258,9 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel)
 {
     setRayTexture();
     
+//    if (isShadowActive) setShadowVector();
+    setShadowVector();
+    
     // Aquire shared CL/GL objects
     glFinish();
     err = clEnqueueAcquireGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -1602,6 +1606,18 @@ void VolumeRenderWorker::setShadow()
     
     if (isInitialized) setMiscArrays();
 }
+
+void VolumeRenderWorker::setShadowVector()
+{
+    Matrix<float> shadow_kernel_arg;
+    
+    shadow_kernel_arg = shadow_vector;
+    
+    shadow_kernel_arg = rotation.getInverse().toFloat()*shadow_kernel_arg;
+    
+    clSetKernelArg(cl_model_raytrace, 11, sizeof(cl_float4),  shadow_kernel_arg.data());
+}
+
 void VolumeRenderWorker::setIntegration2D()
 {
     isIntegration2DActive = !isIntegration2DActive;

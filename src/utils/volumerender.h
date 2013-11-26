@@ -80,6 +80,7 @@ public slots:
     void setIntegration2D();
     void setIntegration3D();
     void setShadow();
+    void setShadowVector();
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
