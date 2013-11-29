@@ -112,6 +112,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isIntegration2DActive(false),
       isRendering(true),
       isShadowActive(false),
+      isLogarithmic2D(false),
       ray_tex_resolution(20)
 {
     // Matrices
@@ -156,6 +157,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     ray_loc_ws.reserve(1,2);
     ray_loc_ws[0] = 16;
     ray_loc_ws[1] = 16;
+    pixel_size.reserve(2,1);
 
     // Transfer texture
     tsf_color_scheme = 0;
@@ -204,10 +206,12 @@ VolumeRenderWorker::~VolumeRenderWorker()
 
 void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 {
-    if ( (ev->x() >= 0) && (ev->x() <= render_surface->width()) && (ev->y() >= 0) && (ev->y() <= render_surface->height()))
-    {
+//    if ( (ev->x() >= 1) && (ev->x() <= render_surface->width()) && (ev->y() >= 1) && (ev->y() <= render_surface->height()))
+//    {
+//        qDebug() << "___________________YOLOSWAG___________________";
+//        qDebug() << last_mouse_pos_x << last_mouse_pos_y;
 //        qDebug() << ev->x() << render_surface->width() << ev->y() << render_surface->height();
-        if (!isRendering && (std::abs(last_mouse_pos_x - ev->x()) < 10) && (std::abs(last_mouse_pos_y - ev->y()) < 10));
+        if (!isRendering)// && (std::abs(last_mouse_pos_x - ev->x()) > 0) && (std::abs(last_mouse_pos_y - ev->y()) > 0));
         {
             float move_scaling = 1.0;
             if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
@@ -231,8 +235,10 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
                     rotation = roll_rotation * rotation;
                     scalebar_rotation = roll_rotation * scalebar_rotation;
                 }
+                
+//                qDebug() << "Rotating";
             }
-            if ((ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
+            else if ((ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton) && !(ev->buttons() & Qt::MiddleButton))// && (ev->buttons() & Qt::RightButton))
             {
                 /* Rotation happens multiplicatively around a rolling axis given
                  * by the mouse move direction and magnitude.
@@ -250,8 +256,10 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
                     rotation = roll_rotation * rotation;
                     scalebar_rotation = roll_rotation * scalebar_rotation;
                 }
+                
+//                qDebug() << "Rolling";
             }
-            else if (ev->buttons() & Qt::MiddleButton)
+            else if ((ev->buttons() & Qt::MiddleButton) && !(ev->buttons() & Qt::LeftButton) && !(ev->buttons() & Qt::RightButton))
             {
                 /* X/Y translation happens multiplicatively. Here it is
                  * important to retain the bounding box accordingly  */
@@ -269,8 +277,10 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
                 data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
     
                 this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+                
+//                qDebug() << "Translating X/Y";
             }
-            else if (!(ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton))
+            else if (!(ev->buttons() & Qt::LeftButton) && (ev->buttons() & Qt::RightButton) && !(ev->buttons() & Qt::MiddleButton))
             {
                 /* Z translation happens multiplicatively */
                 float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) render_surface->height()) * (ev->y() - last_mouse_pos_y);
@@ -285,13 +295,18 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
                 data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
     
                 this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+                
+//                qDebug() << "Translating Z";
             }
     
     //        qDebug() << ev->x() << ev->y();
+            
+            
         }
+        
         last_mouse_pos_x = ev->x();
         last_mouse_pos_y = ev->y();
-    }
+//    }
 
 }
 
@@ -506,7 +521,6 @@ void VolumeRenderWorker::setViewMatrix()
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     err |= clSetKernelArg(cl_svo_raytrace, 12, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
 //    qDebug() << "Done setting view matrix";
 }
 
@@ -603,30 +617,29 @@ void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 
     if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
     ctc_matrix.setWindow(render_surface->width(), render_surface->height());
-    
-//    qDebug();
-//    setRayTexture();
 }
 
 void VolumeRenderWorker::setRayTexture()
 {
-//    qDebug();
-    // Set a texture for the volume rendering kernel
-    Matrix<int> ray_tex_new(1, 2);
-    ray_tex_new[0] = (int)((float)render_surface->width()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
-    ray_tex_new[1] = (int)((float)render_surface->height()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
-
-    // Clamp
-    if (ray_tex_new[0] < 32) ray_tex_new[0] = 32;
-    if (ray_tex_new[1] < 32) ray_tex_new[1] = 32;
-
-    if (ray_tex_new[0] > render_surface->width()) ray_tex_new[0] = render_surface->width();
-    if (ray_tex_new[1] > render_surface->height()) ray_tex_new[1] = render_surface->height();
-
     // Only resize the texture if the change is somewhat significant (in area cahnged)
     if (isInitialized && ((!isRayTexInitialized) || (std::abs(1.0 - quality_factor) > 0.15)))
     {
-        // Calculate the actula quality factor multiplier
+        // Scale down the change in quality factor a bit so that a stable resolution will be easier to reach. If not we risk having the resolution jump between two states that both fullfill the if-criterion enclosing this code         
+        quality_factor = 1.0 + (quality_factor - 1.0)*0.25;
+        
+        // Set a texture for the volume rendering kernel
+        Matrix<int> ray_tex_new(1, 2);
+        ray_tex_new[0] = (int)((float)render_surface->width()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
+        ray_tex_new[1] = (int)((float)render_surface->height()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
+    
+        // Clamp
+        if (ray_tex_new[0] < 32) ray_tex_new[0] = 32;
+        if (ray_tex_new[1] < 32) ray_tex_new[1] = 32;
+    
+        if (ray_tex_new[0] > render_surface->width()) ray_tex_new[0] = render_surface->width();
+        if (ray_tex_new[1] > render_surface->height()) ray_tex_new[1] = render_surface->height();
+        
+        // Calculate the actual quality factor multiplier
         quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(ray_tex_resolution*0.01)), 2.0);
 
         ray_tex_resolution *= std::sqrt(quality_factor);
@@ -832,6 +845,10 @@ void VolumeRenderWorker::render(QPainter *painter)
     // Draw raytracing texture
     drawRayTex();
     endRawGLCalls(painter);
+    
+    // Compute the projected pixel size in orthonormal configuration
+    computePixelSize();
+    
 //    qDebug("Do not change");
     // Visualize 2D to 1D integration
     if (isIntegration2DActive) drawIntegral(painter);
@@ -842,6 +859,12 @@ void VolumeRenderWorker::render(QPainter *painter)
     emit renderState(0);
 
     isRendering = false;
+}
+
+
+void VolumeRenderWorker::takeScreenShot(QString path, float quality)
+{
+    
 }
 
 
@@ -926,8 +949,9 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     
     // Sum up the partially reduced array    
     Matrix<float> row_sum(ray_tex_dim[1], 1, 0.0f);
-    float max = 0;
-    float min = 0;
+    float max = 1;
+    float min = 1e9;
+    double sum = 0;
     for (int i = 0; i < output.getM(); i++)
     {
         for(int j = 0; j < output.getN(); j++)
@@ -936,28 +960,68 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
         }
         
         if (row_sum[i] > max) max = row_sum[i];
-        if (row_sum[i] < min) min = row_sum[i];
+        if ((row_sum[i] < min) && (row_sum[i] > 0)) min = row_sum[i];
+        
+        sum += row_sum[i]; 
     }   
     
-    
-    QPolygonF row_polygon;
-    row_polygon << QPointF(0,0);
-    for (int i = 0; i < row_sum.getM(); i++)
+    if (sum > 0)
     {
-        QPointF point_top, point_bottom;
+        for (int i = 0; i < row_sum.getM(); i++)
+        {
+            row_sum[i] *= 100000.0/sum; 
+        }  
+        max *=  100000.0/sum;
+        min *=  100000.0/sum;
         
-        float value = ((row_sum[row_sum.getM() - i - 1] - min) / max)*render_surface->width()/10.0;
+        if (isLogarithmic2D)
+        {
+            for (int i = 0; i < row_sum.getM(); i++)
+            {
+                if (row_sum[i] <= 0) row_sum[i] = min;
+                row_sum[i] = log10(row_sum[i]); 
+            }  
+            max =  log10(max);
+            min =  log10(min);
+        }
         
-        point_top.setX(value);
-        point_top.setY(((float) i / (float) row_sum.getM())*render_surface->height());
+//        qDebug() << min << max;
         
-        point_bottom.setX(value);
-        point_bottom.setY((((float) i + 1) / (float) row_sum.getM())*render_surface->height());
-        row_polygon << point_top << point_bottom;
+        // need to find effective length
+        
+        QPolygonF row_polygon;
+        row_polygon << QPointF(0,0);
+        for (int i = 0; i < row_sum.getM(); i++)
+        {
+            QPointF point_top, point_bottom;
+            
+            float value = ((row_sum[row_sum.getM() - i - 1] - min) / (max - min))*render_surface->width()/10.0;
+//            float value = (row_sum[row_sum.getM() - i - 1]);
+            
+            point_top.setX(value);
+            point_top.setY(((float) i / (float) row_sum.getM())*render_surface->height());
+            
+            point_bottom.setX(value);
+            point_bottom.setY((((float) i + 1) / (float) row_sum.getM())*render_surface->height());
+            row_polygon << point_top << point_bottom;
+        }
+        row_polygon << QPointF(0,render_surface->height());
+    
+        
+        
+        painter->setRenderHint(QPainter::Antialiasing);
+        
+        QLinearGradient lgrad(QPointF(0,0), QPointF(render_surface->width()/10.0,0));
+                    lgrad.setColorAt(0.0, Qt::transparent);
+                    lgrad.setColorAt(1.0, Qt::blue);
+                    
+        QBrush histogram_brush_lg(lgrad);
+        
+        painter->setBrush(histogram_brush_lg);
+        painter->setPen(*normal_pen);
+        
+        painter->drawPolygon(row_polygon);
     }
-    row_polygon << QPointF(0,render_surface->height());
-    
-    
     
     
     // __COLUMNS__
@@ -1054,18 +1118,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     // Visualize the summed arrays as histograms
     
     
-    painter->setRenderHint(QPainter::Antialiasing);
-    
-    QLinearGradient lgrad(QPointF(0,0), QPointF(render_surface->width()/10.0,0));
-                lgrad.setColorAt(0.0, Qt::transparent);
-                lgrad.setColorAt(1.0, Qt::blue);
-                
-    QBrush histogram_brush_lg(lgrad);
-    
-    painter->setBrush(histogram_brush_lg);
-    painter->setPen(*normal_pen);
-    
-    painter->drawPolygon(row_polygon);
+
 }
 
 
@@ -1082,6 +1135,54 @@ void VolumeRenderWorker::endRawGLCalls(QPainter * painter)
     glDisable(GL_BLEND);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
+}
+
+void VolumeRenderWorker::drawGrid()
+{
+    
+}
+
+void VolumeRenderWorker::computePixelSize()
+{
+    setViewMatrix();
+    
+    // Calculate the current pixel size()
+    Matrix<double> ndc00(4,1);
+    ndc00[0] = 0.0;
+    ndc00[1] = 0.0;
+    ndc00[2] = -1.0;
+    ndc00[3] = 1.0;
+    
+    Matrix<double> ndc01(4,1);
+    ndc01[0] = 0.0;
+    ndc01[1] = 2.0/(double)render_surface->height();
+    ndc01[2] = -1.0;
+    ndc01[3] = 1.0;
+    
+    Matrix<double> ndc10(4,1);
+    ndc10[0] = 2.0/(double)render_surface->width();
+    ndc10[1] = 0.0;
+    ndc10[2] = -1.0;
+    ndc10[3] = 1.0;
+    
+    Matrix<double> xyz_00(4,1);
+    Matrix<double> xyz_01(4,1);
+    Matrix<double> xyz_10(4,1);
+    
+    xyz_00 = view_matrix.getInverse()*ndc00;
+    xyz_01 = view_matrix.getInverse()*ndc01;
+    xyz_10 = view_matrix.getInverse()*ndc10;
+    
+    Matrix<double> w_vec = xyz_00 - xyz_10;
+    Matrix<double> h_vec = xyz_00 - xyz_01;
+    
+    
+    pixel_size[0] = std::sqrt(w_vec[0]*w_vec[0] + w_vec[1]*w_vec[1] + w_vec[2]*w_vec[2]);
+    pixel_size[1] = std::sqrt(h_vec[0]*h_vec[0] + h_vec[1]*h_vec[1] + h_vec[2]*h_vec[2]);
+    
+
+//    ray_tex_dim.print(0,"ray_tex_dim");
+//    pixel_size.print(4,"Pixel Size");
 }
 
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
@@ -1589,6 +1690,10 @@ void VolumeRenderWorker::setLogarithmic()
 {
     isLogarithmic = !isLogarithmic;
     if (isInitialized) setMiscArrays();
+}
+void VolumeRenderWorker::setLogarithmic2D()
+{
+    isLogarithmic2D = !isLogarithmic2D;
 }
 void VolumeRenderWorker::setDataStructure()
 {

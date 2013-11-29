@@ -127,6 +127,7 @@ signals:
     void changedFormat(int value);
     void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
+    void captureFrameBuffer(QString path, float quality);
 
 private:
     // Header dock widget

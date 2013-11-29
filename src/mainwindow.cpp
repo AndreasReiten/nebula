@@ -795,7 +795,7 @@ void MainWindow::setTab(int tab)
             outputDockWidget->hide();
             fileHeaderDock->hide();
             graphicsDockWidget->show();
-            unitcellDockWidget->show();
+            unitcellDockWidget->hide();
             functionDockWidget->show();
             setWindowTitle(tr("Nebula[*] now looking at:")+current_svo_path);
             break;
@@ -837,6 +837,7 @@ void MainWindow::initializeConnects()
     connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
     connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
     connect(this->log3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
+    connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic2D()));
     connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setDataStructure()));
     connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
     connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
@@ -851,7 +852,7 @@ void MainWindow::initializeConnects()
     connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam2(double)));
     connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam3(double)));
     connect(volumeRenderWindow->getWorker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
-
+    connect(this, SIGNAL(captureFrameBuffer(QString,float)), volumeRenderWindow->getWorker(), SLOT(takeScreenShot(QString,float)));
     /* this <-> this */
     connect(this->scriptingAct, SIGNAL(triggered()), this, SLOT(toggleScriptView()));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
@@ -1721,21 +1722,23 @@ void MainWindow::takeScreenshot()
 {
     // NB: The only safe way to do this is to render to a framebuffer and grab the corresponding QPixMap
 
-    QScreen * screen = QGuiApplication::primaryScreen();
-    if (screen)
-    {
-        QPixmap screenshot = screen->grabWindow(volumeRenderWindow->winId());
+//    QScreen * screen = QGuiApplication::primaryScreen();
+//    if (screen)
+//    {
+//        QPixmap screenshot = screen->grabWindow(volumeRenderWindow->winId());
 
-        QString format = "jpg";
-        QDateTime dateTime = dateTime.currentDateTime();
-        QString initialPath = QDir::currentPath() + QString("/screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
+    QString format = "jpg";
+    QDateTime dateTime = dateTime.currentDateTime();
+    QString initialPath = QDir::currentPath() + QString("/screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
 
-        QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), initialPath,
-                                                    tr("%1 Files (*.%2);;All Files (*)")
-                                                    .arg(format.toUpper())
-                                                    .arg(format));
-        if (!fileName.isEmpty()) screenshot.save(fileName, format.toLatin1().constData(), 100);
-        print(QString("\n Saved: "+fileName));
-    }
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), initialPath,
+                                                tr("%1 Files (*.%2);;All Files (*)")
+                                                .arg(format.toUpper())
+                                                .arg(format));
+    
+    emit captureFrameBuffer(fileName, 100);
+//    if (!fileName.isEmpty()) screenshot.save(fileName, format.toLatin1().constData(), 100);
+//    print(QString("\n Saved: "+fileName));
+//    }
 }
 

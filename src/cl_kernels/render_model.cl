@@ -260,14 +260,6 @@ __kernel void modelRayTrace(
                         sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
                     }
 
-//                f = (1.0f - color.w)*sample_color.w;
-//                p = native_powr(f,0.5);
-
-//                if (shading)
-//                {
-//                    val = free_param_a*p*native_powr((1.0+dot(shadow_vec.xyz,normalize(sample.xyz)))*0.5,2.0);
-//                    sample_color.xyz = mix(sample_color.xyz, shadow.xyz, (float3)(val, val, val));
-//                }
                     // Scale the alpha channel in accordance with the cone diameter
                     sample.w *= native_divide(cone_diameter, cone_diameter_low);
                     

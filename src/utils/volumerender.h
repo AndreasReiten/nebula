@@ -61,6 +61,7 @@ public slots:
     void setProjection();
     void setBackground();
     void setLogarithmic();
+    void setLogarithmic2D();
     void setDataStructure();
     void setTsfColor(int value);
     void setTsfAlpha(int value);
@@ -81,6 +82,7 @@ public slots:
     void setIntegration3D();
     void setShadow();
     void setShadowVector();
+    void takeScreenShot(QString path, float quality);
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
@@ -105,8 +107,10 @@ private:
     bool isRendering;
     bool isIntegration2DActive;
     bool isShadowActive;
+    bool isLogarithmic2D;
 
     // Ray texture
+    Matrix<double> pixel_size;
     Matrix<int> ray_tex_dim;
     Matrix<size_t> ray_glb_ws;
     Matrix<size_t> ray_loc_ws;
@@ -125,6 +129,7 @@ private:
     bool isIntegrationTexInitialized;
 
     // Drawing functions
+    void drawGrid();
     void drawRayTex();
     void drawScalebars();
     void drawOverlay(QPainter *painter);
@@ -139,7 +144,10 @@ private:
     void resetViewMatrix();
     void setTsfParameters();
     void setMiscArrays();
-
+    
+    // Misc compute functions
+    void computePixelSize();
+    
     // Scalebars
     size_t setScaleBars();
     size_t scalebar_coord_count;
