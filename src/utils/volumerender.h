@@ -110,7 +110,7 @@ private:
     bool isShadowActive;
     bool isLogarithmic2D;
     bool isOrthoGridActive;
-
+    
     // Ray texture
     Matrix<double> pixel_size;
     Matrix<int> ray_tex_dim;

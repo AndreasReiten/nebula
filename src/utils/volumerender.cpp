@@ -865,7 +865,36 @@ void VolumeRenderWorker::render(QPainter *painter)
 
 void VolumeRenderWorker::takeScreenShot(QString path, float quality)
 {
+    QOpenGLFramebufferObjectFormat format;
     
+    format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    format.setMipmap(true);
+    format.setSamples(64);
+    format.setTextureTarget(GL_TEXTURE_2D);
+    format.setInternalTextureFormat(GL_RGBA32F);
+    
+    qDebug() << render_surface->size() << render_surface->format().samples();
+    
+    QOpenGLFramebufferObject buffy(render_surface->width(), render_surface->height(), format);
+    
+    buffy.bind();
+            
+    // Render into buffer using max quality
+    QPainter painter(paint_device_gl);
+    quality_factor = 1.0e9;
+    
+    render(&painter);
+    
+//    quality_factor = 1.0e-9;
+    
+    buffy.release();
+    
+    buffy.toImage().save(path);
+    
+    // Save buffer as image
+    
+    qDebug() << render_surface->size() << render_surface->format().samples();
+
 }
 
 
@@ -1405,9 +1434,9 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel)
     work_time = (double) ray_kernel_timer.nsecsElapsed();
 
     // Calculate how much the quality must be reduced (if any) in order to achieve the requested fps. This fps does not take into account the time spent on other rendering details.
-    double actual_time = work_time * 1.0e-9;// / work) * 1.0e-9;
+    double actual_time = work_time * 1.0e-9;
     double requested_time = 1.0 / fps_requested;
-    quality_factor = requested_time / actual_time;// / work;
+    quality_factor = requested_time / actual_time;
 
     // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);

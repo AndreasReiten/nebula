@@ -20,6 +20,7 @@
 #include <QElapsedTimer>
 #include <QCoreApplication>
 #include <QThread>
+#include <QOpenGLFramebufferObject>
 
 #include "contextcl.h"
 #include "matrix.h"
@@ -65,7 +66,7 @@ protected:
     QOpenGLContext *context_gl;
     OpenCLContext *context_cl;
     QWindow *render_surface;
-
+    
 private:
     // Boolean checks
     bool isInitialized;
