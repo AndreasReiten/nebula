@@ -113,6 +113,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isRendering(true),
       isShadowActive(false),
       isLogarithmic2D(false),
+      isOrthoGridActive(false),
       ray_tex_resolution(20)
 {
     // Matrices
@@ -1137,6 +1138,11 @@ void VolumeRenderWorker::endRawGLCalls(QPainter * painter)
     painter->endNativePainting();
 }
 
+void VolumeRenderWorker::setOrthoGrid()
+{
+    isOrthoGridActive = !isOrthoGridActive;
+}
+
 void VolumeRenderWorker::drawGrid()
 {
     
@@ -1277,6 +1283,8 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
 
     painter->setBrush(*normal_brush);
     painter->drawRect(tsf_rect);
+    
+    if (isOrthoGridActive) drawGrid();
 }
 
 void VolumeRenderWorker::drawScalebars()

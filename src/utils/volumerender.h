@@ -82,6 +82,7 @@ public slots:
     void setIntegration3D();
     void setShadow();
     void setShadowVector();
+    void setOrthoGrid();
     void takeScreenShot(QString path, float quality);
     void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
@@ -108,6 +109,7 @@ private:
     bool isIntegration2DActive;
     bool isShadowActive;
     bool isLogarithmic2D;
+    bool isOrthoGridActive;
 
     // Ray texture
     Matrix<double> pixel_size;

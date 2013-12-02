@@ -37,5 +37,6 @@
         <file>art/ofolder.png</file>
         <file>art/integrate.png</file>
         <file>art/shadow.png</file>
+        <file>art/grid.png</file>
     </qresource>
 </RCC>

@@ -214,6 +214,7 @@ private:
     QAction *aboutQtAct;
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
+    QAction *orthoGridAct;
     
     
     int current_svo;

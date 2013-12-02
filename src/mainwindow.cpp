@@ -553,6 +553,7 @@ void MainWindow::initializeActions()
     integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D Integration"), this);
     logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), tr("&Toggle Logarithmic"), this);
     shadowAct = new QAction(QIcon(":/art/shadow.png"), tr("&Toggle Shadows"), this);
+    orthoGridAct = new QAction(QIcon(":/art/grid.png"), tr("&Toggle Orthonormal Grid"), this);
 
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
@@ -834,6 +835,7 @@ void MainWindow::initializeConnects()
     connect(this->integrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration2D()));
     connect(this->integrate3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration3D()));
     connect(this->shadowAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setShadow()));
+    connect(this->orthoGridAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setOrthoGrid()));
     connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
     connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
     connect(this->log3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
@@ -1204,6 +1206,7 @@ void MainWindow::initializeInteractives()
         // Toolbar
         viewToolBar = new QToolBar(tr("3D View"));
         viewToolBar->addAction(openSVOAct);
+        
         viewToolBar->addSeparator();
         viewToolBar->addAction(projectionAct);
         viewToolBar->addAction(dataStructureAct);
@@ -1212,10 +1215,13 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(integrate3DAct);
         viewToolBar->addAction(log3DAct);
+        viewToolBar->addAction(orthoGridAct);
         viewToolBar->addSeparator();
+        
         viewToolBar->addAction(integrate2DAct);
         viewToolBar->addAction(logIntegrate2DAct);
         viewToolBar->addSeparator();
+        
         viewToolBar->addAction(backgroundAct);
         viewToolBar->addAction(screenshotAct);
 
