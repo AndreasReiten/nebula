@@ -108,7 +108,7 @@ private:
     bool isIntegration2DActive;
     bool isShadowActive;
     bool isLogarithmic2D;
-
+    
     // Ray texture
     Matrix<double> pixel_size;
     Matrix<int> ray_tex_dim;
