@@ -29,11 +29,12 @@ __kernel void integrateImage(
     source_dim[0]  = get_image_dim(source).x;
     source_dim[1]  = get_image_dim(source).y;
     
-    int2 id_out = (int2)(id_glb[direction]/local_size[direction], id_glb[!direction]);
+    // The position of the output value
+    int2 id_out = (int2)(id_glb[0]/local_size[0], id_glb[1]/local_size[1]);
     
     if (id_glb[direction] < source_dim[direction])
     {
-        addition_array[id_loc[direction]] = read_imagef(source, source_sampler, (int2)(id_glb[direction], id_glb[!direction])).w;    
+        addition_array[id_loc[direction]] = read_imagef(source, source_sampler, (int2)(id_glb[0], id_glb[1])).w;    
     }
     else
     {
@@ -52,16 +53,17 @@ __kernel void integrateImage(
             barrier(CLK_LOCAL_MEM_FENCE);
         }        
         
-        float4 sample;
-        sample = (float4)(addition_array[direction]);
+        float4 sample = (float4)(addition_array[0]);
+//        sample = (float4)((float)id_glb[!direction]);
 
         // Write to target 
         if (id_loc[direction] == 0) write_imagef(target, id_out, sample);
     }
     else
     {
-        float4 sample;
-        sample = (float4)(addition_array[0]);
+        float4 sample = (float4)(addition_array[0]);
+//        sample = (float4)(0.0f);
+//        sample = (float4)((float)id_glb[!direction]);
 
         if (id_loc[direction] == 0) write_imagef(target, id_out, sample);
     }

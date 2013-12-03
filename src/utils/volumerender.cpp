@@ -114,6 +114,8 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isShadowActive(false),
       isLogarithmic2D(false),
       isOrthoGridActive(false),
+      isBackgroundBlack(false),
+      isDataExtentReadOnly(true),
       ray_tex_resolution(20)
 {
     // Matrices
@@ -313,33 +315,39 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 
 void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
 {
-    float move_scaling = 1.0;
-    if(ev->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
-    else if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
-
-
-    double delta = move_scaling*((double)ev->delta())*0.0008;
-
-    if (!(ev->buttons() & Qt::LeftButton) && !(ev->buttons() & Qt::RightButton))
+    if (!isDataExtentReadOnly)// && (std::abs(last_mouse_pos_x - ev->x()) > 0) && (std::abs(last_mouse_pos_y - ev->y()) > 0));
     {
-        if ((data_scaling[0] > 0.0001) || (delta > 0))
+        float move_scaling = 1.0;
+        if(ev->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
+        else if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
+    
+//        qDebug() << ev->delta();
+        double delta = 0;
+        if ((ev->delta() > -1000) && (ev->delta() < 1000))
         {
-            data_scaling[0] += data_scaling[0]*delta;
-            data_scaling[5] += data_scaling[5]*delta;
-            data_scaling[10] += data_scaling[10]*delta;
-
-            data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            delta = move_scaling*((double)ev->delta())*0.0008;
         }
-    }
-    else
-    {
-        if ((bbox_scaling[0] > 0.0001) || (delta > 0))
+        if (!(ev->buttons() & Qt::LeftButton) && !(ev->buttons() & Qt::RightButton))
         {
-            bbox_scaling[0] += bbox_scaling[0]*delta;
-            bbox_scaling[5] += bbox_scaling[5]*delta;
-            bbox_scaling[10] += bbox_scaling[10]*delta;
+            if ((data_scaling[0] > 0.0001) || (delta > 0))
+            {
+                data_scaling[0] += data_scaling[0]*delta;
+                data_scaling[5] += data_scaling[5]*delta;
+                data_scaling[10] += data_scaling[10]*delta;
+    
+                data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            }
         }
-    }
+        else
+        {
+            if ((bbox_scaling[0] > 0.0001) || (delta > 0))
+            {
+                bbox_scaling[0] += bbox_scaling[0]*delta;
+                bbox_scaling[5] += bbox_scaling[5]*delta;
+                bbox_scaling[10] += bbox_scaling[10]*delta;
+            }
+        }
+    }   
 }
 
 
@@ -368,9 +376,11 @@ void VolumeRenderWorker::initialize()
 void VolumeRenderWorker::initializePaintTools()
 {
     normal_pen = new QPen;
-    normal_pen->setWidth(1);
+    normal_pen->setWidthF(1.0);
     border_pen = new QPen;
     border_pen->setWidth(1);
+    
+    whatever_pen = new QPen;
 
     normal_font = new QFont();
 //    normal_font->setStyleHint(QFont::Monospace);
@@ -827,8 +837,9 @@ void VolumeRenderWorker::render(QPainter *painter)
 //    qDebug() << "Render";
 //    QCoreApplication::processEvents();
     isRendering = true;
-    emit renderState(1);
+//    emit renderState(1);
 //    this->blockSignals(true);
+    isDataExtentReadOnly = true;
     setDataExtent();
     setViewMatrix();
 
@@ -842,7 +853,9 @@ void VolumeRenderWorker::render(QPainter *painter)
 
     // Draw relative scalebar
     if (isScalebarActive) drawScalebars();
-
+    
+    isDataExtentReadOnly = false;
+    
     // Draw raytracing texture
     drawRayTex();
     endRawGLCalls(painter);
@@ -857,7 +870,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     // Draw overlay
     drawOverlay(painter);
 //    this->blockSignals(false);
-    emit renderState(0);
+//    emit renderState(0);
 
     isRendering = false;
 }
@@ -931,12 +944,6 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     global_offset[0] = 0;
     global_offset[1] = 0;
     
-//    ray_tex_dim.print(2, "ray_tex_dim");
-//    local_size.print(2, "local_size");
-//    global_size.print(2, "global_size");
-//    work_size.print(2, "work_size");
-    
-    
     for (size_t row = 0; row < global_size[1]; row += local_size[1])
     {
         global_offset[1] = row;
@@ -958,13 +965,10 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     origin[2] = 0;
     
     Matrix<size_t> region(1,3);
-    region[0] = global_size[0]/block_size;//output.getM();
-    region[1] = ray_tex_dim[1];//output.getN();
+    region[0] = global_size[0]/block_size;
+    region[1] = ray_tex_dim[1];
     region[2] = 1;
     
-//    origin.print(2,"origin");
-//    region.print(2,"region");
-            
     
     err = clEnqueueReadImage ( 	*context_cl->getCommandQueue(),
         integration_tex_beta_cl,
@@ -1015,10 +1019,6 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
             min =  log10(min);
         }
         
-//        qDebug() << min << max;
-        
-        // need to find effective length
-        
         QPolygonF row_polygon;
         row_polygon << QPointF(0,0);
         for (int i = 0; i < row_sum.getM(); i++)
@@ -1026,7 +1026,6 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
             QPointF point_top, point_bottom;
             
             float value = ((row_sum[row_sum.getM() - i - 1] - min) / (max - min))*render_surface->width()/10.0;
-//            float value = (row_sum[row_sum.getM() - i - 1]);
             
             point_top.setX(value);
             point_top.setY(((float) i / (float) row_sum.getM())*render_surface->height());
@@ -1055,100 +1054,133 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     
     
     // __COLUMNS__
-//    direction = 1;
-//    block_size = 128;
+    direction = 1;
+    block_size = 128;
     
-//    // Set kernel arguments
-//    err = clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
-//    err |= clSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
-//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    // Set kernel arguments
+    err = clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
+    err |= clSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-//    // Launch kernel
-//    local_size[0] = 1;
-//    local_size[1] = block_size;
+    // Launch kernel
+    local_size[0] = 1;
+    local_size[1] = block_size;
     
-//    global_size[0] = ray_tex_dim[0];
-//    global_size[1] = (block_size - (ray_tex_dim[1] % block_size)) + ray_tex_dim[1];  
+    global_size[0] = ray_tex_dim[0];
+    global_size[1] = (block_size - (ray_tex_dim[1] % block_size)) + ray_tex_dim[1];  
 
-//    work_size[0] = 1;
-//    work_size[1] = global_size[1];
+    work_size[0] = 1;
+    work_size[1] = global_size[1];
     
-//    global_offset[0] = 0;
-//    global_offset[1] = 0;
+    global_offset[0] = 0;
+    global_offset[1] = 0;
     
-//    for (size_t column = 0; column < global_size[0]; column += local_size[0])
-//    {
-//        global_offset[0] = column;
+    for (size_t column = 0; column < global_size[0]; column += local_size[0])
+    {
+        global_offset[0] = column;
         
-////        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//    }
+        err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 
-//    err = clFinish(*context_cl->getCommandQueue());
-//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    err = clFinish(*context_cl->getCommandQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
     
-//    // Read the output data
-//    Matrix<float> output2(ray_tex_dim[0], global_size[1]/block_size);
+    // Read the output data
+    Matrix<float> output2(global_size[1]/block_size, ray_tex_dim[0]);
     
-//    origin[0] = 0;
-//    origin[1] = 0;
-//    origin[2] = 0;
+    origin[0] = 0;
+    origin[1] = 0;
+    origin[2] = 0;
     
-//    region[0] = ray_tex_dim[0];
-//    region[1] = global_size[1]/block_size;
-//    region[2] = 1;
+    region[0] = ray_tex_dim[0];
+    region[1] = global_size[1]/block_size;
+    region[2] = 1;
     
-//    err = clEnqueueReadImage ( 	*context_cl->getCommandQueue(),
-//        integration_tex_beta_cl,
-//        CL_TRUE,
-//        origin.data(),
-//        region.data(),
-//        0,
-//        0,
-//        output2.data(),
-//        0, NULL, NULL);
-//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));        
+    err = clEnqueueReadImage ( 	*context_cl->getCommandQueue(),
+        integration_tex_beta_cl,
+        CL_TRUE,
+        origin.data(),
+        region.data(),
+        0,
+        0,
+        output2.data(),
+        0, NULL, NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));        
     
-//    // Sum up the partially reduced array    
-//    Matrix<float> column_sum(ray_tex_dim[1], 1, 0.0f);
-//    max = 0;
-//    min = 0;
-//    for (int i = 0; i < output2.getM(); i++)
-//    {
-//        for(int j = 0; j < output2.getN(); j++)
-//        {
-//            column_sum[i] += output2[i*output2.getN() + j];
-//        }
+    // Sum up the partially reduced array    
+    Matrix<float> column_sum(1, ray_tex_dim[0], 0.0f);
+    max = 1;
+    min = 1e9;
+    sum = 0;
+  
+    for (int i = 0; i < output2.getN(); i++)
+    {
+        for(int j = 0; j < output2.getM(); j++)
+        {
+            column_sum[i] += output[i*output.getN() + j];
+        }
         
-//        if (column_sum[i] > max) max = column_sum[i];
-//        if (column_sum[i] < min) min = column_sum[i];
-//    }   
-    
-//    QPolygonF column_polygon;
-//    column_polygon << QPointF(0,0);
-//    for (int i = 0; i < column_sum.getM(); i++)
-//    {
-//        QPointF point_top, point_bottom;
+        if (column_sum[i] > max) max = column_sum[i];
+        if ((column_sum[i] < min) && (column_sum[i] > 0)) min = column_sum[i];
         
-//        float value = ((column_sum[column_sum.getM() - i - 1] - min) / max)*render_surface->width()/10.0;
+        sum += column_sum[i]; 
+    }   
+    
+    if (sum > 0)
+    {
+        for (int i = 0; i < column_sum.getN(); i++)
+        {
+            column_sum[i] *= 100000.0/sum; 
+        }  
+        max *=  100000.0/sum;
+        min *=  100000.0/sum;
         
-//        point_top.setX(value);
-//        point_top.setY(((float) i / (float) column_sum.getM())*render_surface->height());
+        if (isLogarithmic2D)
+        {
+            for (int i = 0; i < column_sum.getN(); i++)
+            {
+                if (column_sum[i] <= 0) column_sum[i] = min;
+                column_sum[i] = log10(column_sum[i]); 
+            }  
+            max =  log10(max);
+            min =  log10(min);
+        }
         
-//        point_bottom.setX(value);
-//        point_bottom.setY((((float) i + 1) / (float) column_sum.getM())*render_surface->height());
-//        column_polygon << point_top << point_bottom;
-//    }
-//    column_polygon << QPointF(0,render_surface->height());
+        QPolygonF column_polygon;
+        column_polygon << QPointF(0,render_surface->height());
+        for (int i = 0; i < column_sum.getN(); i++)
+        {
+            QPointF point_top, point_bottom;
+            
+            float value = render_surface->height() - (column_sum[i] - min) / (max - min)*render_surface->height()*0.1;
+            
+            point_top.setX(((float) i / (float) column_sum.getN())*render_surface->width());
+            point_top.setY(value);
+            
+            point_bottom.setX((((float) i + 1) / (float) column_sum.getN())*render_surface->width());
+            point_bottom.setY(value);
+            column_polygon << point_top << point_bottom;
+        }
+        column_polygon << QPointF(render_surface->width(),render_surface->height());
     
+        
+        
+        painter->setRenderHint(QPainter::Antialiasing);
+        
+        QLinearGradient lgrad(QPointF(0,render_surface->height()*0.9), QPointF(0,render_surface->height()));
+                    lgrad.setColorAt(0.0, Qt::blue);
+                    lgrad.setColorAt(1.0, Qt::transparent);
+                    
+        QBrush histogram_brush_lg(lgrad);
+        
+        painter->setBrush(histogram_brush_lg);
+        painter->setPen(*normal_pen);
+        
+        painter->drawPolygon(column_polygon);
+    }
     
-    
-    
-    // Visualize the summed arrays as histograms
-    
-    
-
 }
 
 
@@ -1172,9 +1204,93 @@ void VolumeRenderWorker::setOrthoGrid()
     isOrthoGridActive = !isOrthoGridActive;
 }
 
-void VolumeRenderWorker::drawGrid()
+void VolumeRenderWorker::drawGrid(QPainter * painter)
 {
+    // Draw grid lines, the center of the screen is (0,0)
+    double screen_width = pixel_size[0]*render_surface->width();
+    double screen_height = pixel_size[1]*render_surface->height();
     
+    // Find appropriate tick intervals
+    int levels = 2;
+    int qualified_levels = 0;
+    double level_min_ticks = 2.0;
+    double min_pix_interdist = 20.0;
+    double exponent = 5.0;
+    
+    Matrix<int> exponent_by_level(1,levels);
+    Matrix<int> ticks_by_level(1,levels);
+    
+    while (qualified_levels < levels)
+    {
+        
+        if (((screen_width / pow(10.0, (double) exponent)) > level_min_ticks))
+        {
+            if ((render_surface->width()/(screen_width / pow(10.0, (double) exponent)) < min_pix_interdist)) break;
+            exponent_by_level[qualified_levels] = exponent;
+            ticks_by_level[qualified_levels] = (screen_width / pow(10.0, (double) exponent)) + 1;
+            qualified_levels++;
+        }
+        exponent--;
+    }
+    
+    if (qualified_levels > 0)
+    {
+        // Draw lines according to tick intervals
+        Matrix<QPointF> vertical_lines(1, (int)((screen_width / pow(10.0, (double) exponent_by_level[qualified_levels-1])) + 5)*2);
+        Matrix<QPointF> horizontal_lines(1, (int)((screen_width / pow(10.0, (double) exponent_by_level[qualified_levels-1])) + 5)*2);
+        for (int i = qualified_levels-1; i >= 0; i--)
+        {
+            vertical_lines[2] = QPointF(render_surface->width()*0.5, render_surface->height());
+            vertical_lines[3] = QPointF(render_surface->width()*0.5, 0);
+            
+            for (int j = 1; j < ticks_by_level[i]/2+1; j++)
+            {
+                vertical_lines[j*4] = QPointF((j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height());
+                vertical_lines[j*4+1] = QPointF((j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, 0);
+                
+                vertical_lines[j*4+2] = QPointF((-j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height());
+                vertical_lines[j*4+3] = QPointF((-j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, 0);
+            }
+            
+            horizontal_lines[2] = QPointF(render_surface->width(), render_surface->height()*0.5);
+            horizontal_lines[3] = QPointF(0,render_surface->height()*0.5);
+            
+            for (int j = 1; j < ticks_by_level[i]/2+1; j++)
+            {
+                horizontal_lines[j*4] = QPointF(render_surface->width(), (j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
+                horizontal_lines[j*4+1] = QPointF(0,(j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
+                
+                horizontal_lines[j*4+2] = QPointF(render_surface->width(), (-j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
+                horizontal_lines[j*4+3] = QPointF(0,(-j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
+            }
+            
+            if (i == 0) 
+            {
+                whatever_pen->setWidthF(1.0);
+                QVector<qreal> dashes;
+                qreal space = 4;
+                
+                dashes << 1 << space << 3 << space << 9 << space
+                           << 27 << space << 9 << space;
+                
+                whatever_pen->setDashPattern(dashes);
+                whatever_pen->setColor(QColor(200,0,255,255));
+                painter->setPen(*whatever_pen);
+            }
+            else
+            {
+                whatever_pen->setWidthF(0.3);
+                whatever_pen->setStyle(Qt::SolidLine);
+                whatever_pen->setColor(QColor(50,50,255,255));
+                painter->setPen(*whatever_pen);
+            }
+            
+            painter->drawLines(vertical_lines.data()+2, (ticks_by_level[i]/2)*2+1);
+            painter->drawLines(horizontal_lines.data()+2, (ticks_by_level[i]/2)*2+1);
+        }
+        
+        normal_pen->setWidthF(1.0);
+    }
 }
 
 void VolumeRenderWorker::computePixelSize()
@@ -1222,10 +1338,15 @@ void VolumeRenderWorker::computePixelSize()
 
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
+    
+    
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(*normal_brush);
+    
+    if (isOrthoGridActive) drawGrid(painter);
+    
     painter->setPen(*normal_pen);
-
+    
     // Tick labels
     if (isScalebarActive)
     {
@@ -1234,7 +1355,9 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
             painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));
         }
     }
-
+    
+    
+    
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
     QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);
@@ -1313,13 +1436,11 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->setBrush(*normal_brush);
     painter->drawRect(tsf_rect);
     
-    if (isOrthoGridActive) drawGrid();
+    
 }
 
 void VolumeRenderWorker::drawScalebars()
 {
-//    Why not put entire QWindow into a thread? How to limit queued connections?
-
     scalebar_coord_count = setScaleBars();
 
     shared_window->std_3d_color_program->bind();
@@ -1706,6 +1827,8 @@ void VolumeRenderWorker::setProjection()
 
 void VolumeRenderWorker::setBackground()
 {
+    isBackgroundBlack = !isBackgroundBlack;
+    
     Matrix<GLfloat> tmp;
     tmp = clear_color;
 
@@ -1714,14 +1837,18 @@ void VolumeRenderWorker::setBackground()
     clear_color_inverse = tmp;
 
     normal_pen->setColor(QColor(255.0*clear_color_inverse[0],
-                         255.0*clear_color_inverse[1],
-                         255.0*clear_color_inverse[2],
-                         255));
+                        255.0*clear_color_inverse[1],
+                        255.0*clear_color_inverse[2],
+                        255));
+    whatever_pen->setColor(QColor(255.0*clear_color_inverse[0],
+                        255.0*clear_color_inverse[1],
+                        255.0*clear_color_inverse[2],
+                        255));
     fill_brush->setColor(QColor(255.0*clear_color[0],
-                         255.0*clear_color[1],
-                         255.0*clear_color[2],
-                         255.0*0.7));
-    normal_pen->setWidth(1);
+                        255.0*clear_color[1],
+                        255.0*clear_color[2],
+                        255.0*0.7));
+//    normal_pen->setWidth(1);
 }
 void VolumeRenderWorker::setLogarithmic()
 {

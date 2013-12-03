@@ -274,6 +274,7 @@ __kernel void modelRayTrace(
                 color *= brightness;
             }
         }
+//        if ( (id_glb.x == 5) || (id_glb.y == 15))color = (float4)(1.0,0.0,0.0,1.0);
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
         write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
 //        if (isIntegration2DActive && !isSlicingActive)

@@ -52,7 +52,7 @@ public:
     void setSvo(SparseVoxelOcttree * svo);
 
 signals:
-    void renderState(int value);
+//    void renderState(int value);
     void changedMessageString(QString str);
     
 public slots:
@@ -110,6 +110,8 @@ private:
     bool isShadowActive;
     bool isLogarithmic2D;
     bool isOrthoGridActive;
+    bool isBackgroundBlack;
+    bool isDataExtentReadOnly;
     
     // Ray texture
     Matrix<double> pixel_size;
@@ -131,7 +133,7 @@ private:
     bool isIntegrationTexInitialized;
 
     // Drawing functions
-    void drawGrid();
+    void drawGrid(QPainter *painter);
     void drawRayTex();
     void drawScalebars();
     void drawOverlay(QPainter *painter);
@@ -236,6 +238,7 @@ private:
     void initializePaintTools();
     QPen * normal_pen;
     QPen * border_pen;
+    QPen * whatever_pen;
     QBrush * fill_brush;
     QBrush * histogram_brush;
     QBrush * normal_brush;
