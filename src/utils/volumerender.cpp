@@ -116,6 +116,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isOrthoGridActive(false),
       isBackgroundBlack(false),
       isDataExtentReadOnly(true),
+      isCenterlineActive(true),
       ray_tex_resolution(20)
 {
     // Matrices
@@ -162,6 +163,9 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     ray_loc_ws[1] = 16;
     pixel_size.reserve(2,1);
 
+    // Center line
+    centerline_coords.set(2,3, 0.0);
+    
     // Transfer texture
     tsf_color_scheme = 0;
     tsf_alpha_scheme = 0;
@@ -186,10 +190,13 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     // Color
     GLfloat white_buf[] = {1,1,1,0.4};
     GLfloat black_buf[] = {0,0,0,0.4};
+    GLfloat yellow_buf[] = {1,0.2,0,0.8};
     white.setDeep(1,4,white_buf);
     black.setDeep(1,4,black_buf);
+    yellow.setDeep(1,4,yellow_buf);
     clear_color = white;
     clear_color_inverse = black;
+    centerline_color = yellow;
 
     // Fps
     fps_string_width_prev = 0;
@@ -205,6 +212,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 VolumeRenderWorker::~VolumeRenderWorker()
 {
     if (isInitialized) glDeleteBuffers(1, &scalebar_vbo);
+    if (isInitialized) glDeleteBuffers(1, &centerline_vbo);
 }
 
 void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
@@ -214,7 +222,7 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 //        qDebug() << "___________________YOLOSWAG___________________";
 //        qDebug() << last_mouse_pos_x << last_mouse_pos_y;
 //        qDebug() << ev->x() << render_surface->width() << ev->y() << render_surface->height();
-        if (!isRendering)// && (std::abs(last_mouse_pos_x - ev->x()) > 0) && (std::abs(last_mouse_pos_y - ev->y()) > 0));
+        if (!isRendering && (std::abs(last_mouse_pos_x - ev->x()) > 0) && (std::abs(last_mouse_pos_y - ev->y()) > 0));
         {
             float move_scaling = 1.0;
             if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
@@ -313,6 +321,39 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 
 }
 
+void VolumeRenderWorker::setCenterLine()
+{
+    centerline_coords[3] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0])*0.5;
+    centerline_coords[4] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2])*0.5;
+    centerline_coords[5] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4])*0.5;
+    
+    // Center line
+    setVbo(centerline_vbo, centerline_coords.data(), 6, GL_STATIC_DRAW);
+}
+
+void VolumeRenderWorker::drawCenterLine()
+{
+    setCenterLine();
+
+    shared_window->std_3d_color_program->bind();
+    glEnableVertexAttribArray(shared_window->std_3d_fragpos);
+
+    glBindBuffer(GL_ARRAY_BUFFER, centerline_vbo);
+    glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+
+    
+    glUniform4fv(shared_window->std_3d_color, 1, centerline_color.data());
+
+    glDrawArrays(GL_LINES,  0, 2);
+
+    glDisableVertexAttribArray(shared_window->std_3d_fragpos);
+
+    shared_window->std_3d_color_program->release();        
+}
+
 void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
 {
     if (!isDataExtentReadOnly)// && (std::abs(last_mouse_pos_x - ev->x()) > 0) && (std::abs(last_mouse_pos_y - ev->y()) > 0));
@@ -409,6 +450,7 @@ void VolumeRenderWorker::initializePaintTools()
 void VolumeRenderWorker::initResourcesGL()
 {
     glGenBuffers(1, &scalebar_vbo);
+    glGenBuffers(1, &centerline_vbo);
 }
 
 void VolumeRenderWorker::initResourcesCL()
@@ -853,6 +895,7 @@ void VolumeRenderWorker::render(QPainter *painter)
 
     // Draw relative scalebar
     if (isScalebarActive) drawScalebars();
+    if (isCenterlineActive) drawCenterLine();
     
     isDataExtentReadOnly = false;
     
@@ -1109,7 +1152,8 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
         0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));        
     
-    // Sum up the partially reduced array    
+    // Sum up the partially reduced array  
+//    qDebug() << "_____________________Control:" << ray_tex_dim[0];
     Matrix<float> column_sum(1, ray_tex_dim[0], 0.0f);
     max = 1;
     min = 1e9;
@@ -1119,7 +1163,8 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     {
         for(int j = 0; j < output2.getM(); j++)
         {
-            column_sum[i] += output[i*output.getN() + j];
+//            qDebug() << "Loop:" << ray_tex_dim[0];
+            column_sum[i] += output2[j*output2.getN() + i];
         }
         
         if (column_sum[i] > max) max = column_sum[i];
@@ -1356,7 +1401,22 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
         }
     }
     
+    // Distance from (000), length of center line
+    double distance = std::sqrt(centerline_coords[3]*centerline_coords[3] + centerline_coords[4]*centerline_coords[4] + centerline_coords[5]*centerline_coords[5]);
     
+    QString centerline_string("Distance from (000): "+QString::number(distance, 'g', 5)+" Å");
+    QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
+    centerline_string_rect += QMargins(5,5,5,5);
+    centerline_string_rect.moveBottomRight(QPoint(render_surface->width()-5,render_surface->height()-5));
+
+    painter->setBrush(*fill_brush);
+    painter->drawRoundedRect(centerline_string_rect, 5, 5, Qt::AbsoluteSize);
+    painter->drawText(centerline_string_rect, Qt::AlignCenter, centerline_string);
+    
+    // Draw some text at the (000) position
+    Matrix<float> zero_position(1,4);
+    getPosition2D(zero_position.data(), centerline_coords.data(), &view_matrix);
+    painter->drawText(QPointF(zero_position[0]*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height() - (zero_position[1]*render_surface->height()*0.5 + render_surface->height()*0.5)), "(000)");
     
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));

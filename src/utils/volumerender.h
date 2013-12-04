@@ -112,6 +112,7 @@ private:
     bool isOrthoGridActive;
     bool isBackgroundBlack;
     bool isDataExtentReadOnly;
+    bool isCenterlineActive;
     
     // Ray texture
     Matrix<double> pixel_size;
@@ -126,6 +127,11 @@ private:
     void raytrace(cl_kernel kernel);
     double work, work_time, quality_factor;
     
+    // Center line
+    GLuint centerline_vbo;
+    void setCenterLine();
+    Matrix<GLfloat> centerline_coords;
+    
     // Integration
     cl_sampler integration_sampler_cl;
     cl_mem integration_tex_alpha_cl;
@@ -138,6 +144,7 @@ private:
     void drawScalebars();
     void drawOverlay(QPainter *painter);
     void drawIntegral(QPainter *painter);
+    void drawCenterLine();
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
     int fps_string_width_prev;
@@ -231,8 +238,10 @@ private:
     // Colors
     Matrix<GLfloat> white;
     Matrix<GLfloat> black;
+    Matrix<GLfloat> yellow;
     Matrix<GLfloat> clear_color;
     Matrix<GLfloat> clear_color_inverse;
+    Matrix<GLfloat> centerline_color;
 
     // Pens
     void initializePaintTools();
