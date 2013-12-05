@@ -222,7 +222,7 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent* ev)
 //        qDebug() << "___________________YOLOSWAG___________________";
 //        qDebug() << last_mouse_pos_x << last_mouse_pos_y;
 //        qDebug() << ev->x() << render_surface->width() << ev->y() << render_surface->height();
-        if (!isRendering && (std::abs(last_mouse_pos_x - ev->x()) > 0) && (std::abs(last_mouse_pos_y - ev->y()) > 0));
+        if (!isRendering && (std::abs(last_mouse_pos_x - ev->x()) < 50) && (std::abs(last_mouse_pos_y - ev->y()) < 50));
         {
             float move_scaling = 1.0;
             if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
@@ -1026,7 +1026,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     
     // Sum up the partially reduced array    
     Matrix<float> row_sum(ray_tex_dim[1], 1, 0.0f);
-    float max = 1;
+    float max = 0;
     float min = 1e9;
     double sum = 0;
     for (int i = 0; i < output.getM(); i++)
@@ -1155,7 +1155,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     // Sum up the partially reduced array  
 //    qDebug() << "_____________________Control:" << ray_tex_dim[0];
     Matrix<float> column_sum(1, ray_tex_dim[0], 0.0f);
-    max = 1;
+    max = 0;
     min = 1e9;
     sum = 0;
   
@@ -1404,7 +1404,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     // Distance from (000), length of center line
     double distance = std::sqrt(centerline_coords[3]*centerline_coords[3] + centerline_coords[4]*centerline_coords[4] + centerline_coords[5]*centerline_coords[5]);
     
-    QString centerline_string("Distance from (000): "+QString::number(distance, 'g', 5)+" Å");
+    QString centerline_string("Distance from (000): "+QString::number(distance, 'g', 5)+" 1/Å");
     QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
     centerline_string_rect += QMargins(5,5,5,5);
     centerline_string_rect.moveBottomRight(QPoint(render_surface->width()-5,render_surface->height()-5));
@@ -1440,7 +1440,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
 
     // Scalebar multiplier
-    QString multiplier_string("x"+QString::number(scalebar_multiplier)+" Å");
+    QString multiplier_string("x"+QString::number(scalebar_multiplier)+" 1/Å");
     QRect multiplier_string_rect = emph_fontmetric->boundingRect(multiplier_string);
     multiplier_string_rect += QMargins(5,5,5,5);
     multiplier_string_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
