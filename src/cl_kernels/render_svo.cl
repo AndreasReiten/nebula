@@ -23,10 +23,11 @@ __kernel void svoRayTrace(
 
     int numOctLevels = misc_int[0];
     int brickSize = misc_int[1];
-    int islog3DActive = misc_int[2];
+    int isLogActive = misc_int[2];
     int isDsActive = misc_int[3];
     int isSlicingActive = misc_int[4];
     int isIntegration2DActive = misc_int[5];
+    int isIntegration3DActive = misc_int[7];
 
     float tsfOffsetLow = tsf_var[0];
     float tsfOffsetHigh = tsf_var[1];
@@ -35,7 +36,7 @@ __kernel void svoRayTrace(
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
-    if (islog3DActive)
+    if (isLogActive)
     {
         if (data_offset_low <= 0.0f) data_offset_low = 0.01f;
         if (data_offset_high <= 0.0f) data_offset_high = 0.01f;
@@ -116,7 +117,7 @@ __kernel void svoRayTrace(
         float4 sample = (float4)(0.0f);
         float4 color = (float4)(0.0f);
         float step_length = 1.0f;
-        
+
         // In the case that the ray actually hits the bounding box, prepare for volume sampling and color accumulation
         if(hit)
         {
@@ -154,7 +155,7 @@ __kernel void svoRayTrace(
 
             /* Traverse the octtree. For each step, descend into the octree until a) The resolution is appreciable or b) The final level of the octree is reached. During any descent, empty nodes might be found. In such case, the ray is advanced forward without sampling to the next sample that is not in said node. Stuff inside this while loop is what really takes time and therefore should be optimized
              * */
-            
+
             if (isSlicingActive)
             {
                 // Ray-plane intersection
@@ -308,13 +309,13 @@ __kernel void svoRayTrace(
 
 
                                 // Sample color
-                                if(islog3DActive)
+                                if(isLogActive)
                                 {
                                     intensity = log10(intensity);
                                 }
-                                
+
                                 float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-                                
+
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
                                 color.xyz += (1.f - color.w)*sample.xyz*sample.w;
@@ -347,8 +348,11 @@ __kernel void svoRayTrace(
                 while ( fast_length(ray_xyz_box - rayBoxOrigin) < fast_length(rayBoxDelta) )
                 {
                     // Break off early if the accumulated alpha is high enough
-                    if (color.w > 0.995f) break;
-
+                    if (!isIntegration3DActive) 
+                    {
+                        if (color.w > 0.995f) break;
+                    }
+                    
                     // Index trackers for the traversal.
                     index = 0;
                     index_prev = 0;
@@ -467,21 +471,25 @@ __kernel void svoRayTrace(
 //                            }
 //                            else
 //                            {
-                                if(islog3DActive)
+                                if (!isIntegration3DActive)
                                 {
+                                if(isLogActive)
+                                {
+                                    if (intensity < 0.f) intensity = 0.f;
                                     intensity = log10(intensity);
                                 }
-                            
-                                float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
-                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                                    float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
-                                sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);
+                                    sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
     
-                                color.xyz += (1.f - color.w)*sample.xyz*sample.w;
-                                color.w += (1.f - color.w)*sample.w;
+                                    sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);
+    
+                                    color.xyz += (1.f - color.w)*sample.xyz*sample.w;
+                                    color.w += (1.f - color.w)*sample.w;
+                                }
 //                            }
-                            
+
                             ray_xyz_box += ray_add_box;
                             break;
                         }
@@ -511,22 +519,36 @@ __kernel void svoRayTrace(
             if (!isDsActive)color *= brightness;
         }
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
-        write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
-        
+        if (isIntegration3DActive)
+        {
+            if(isLogActive)
+            {
+                if (integrated_intensity < 0.f) integrated_intensity = 0.f;
+                integrated_intensity = log10(integrated_intensity);
+            }
+    
+            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+    
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+    
+            write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
+        }
+        else write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+
 //        if (isIntegration2DActive && !isSlicingActive && !isDsActive)
 //        {
-//            if(islog3DActive) 
+//            if(isLogActive)
 //            {
-//                if (integrated_intensity < 1.f) integrated_intensity = 1.f;            
+//                if (integrated_intensity < 1.f) integrated_intensity = 1.f;
 //                integrated_intensity = log10(integrated_intensity);
 //            }
-            
+
 //            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-    
-//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);       
-    
+
+//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+
 //            write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
-//        }        
+//        }
 //        else
 //        {
 //            write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));

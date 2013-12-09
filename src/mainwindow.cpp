@@ -529,6 +529,7 @@ void MainWindow::initializeActions()
 
     // Actions
     scriptingAct = new QAction(QIcon(":/art/script.png"), tr("&Toggle scripting mode"), this);
+    scriptingAct->setCheckable(true);
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
     saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
@@ -543,18 +544,30 @@ void MainWindow::initializeActions()
     openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
     saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
     log3DAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle Logarithmic"), this);
+    log3DAct->setCheckable(true);
+    log3DAct->setChecked(true);
     dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle Data Structure"), this);
+    dataStructureAct->setCheckable(true);
     backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle Background Color"), this);
+    backgroundAct->setCheckable(true);
     projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle Projection"), this);
+    projectionAct->setCheckable(true);
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take Screenshot"), this);
     scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle Scalebars"), this);
+    scalebarAct->setCheckable(true);
+    scalebarAct->setChecked(true);
     sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle Slicing"), this);
     integrate2DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->1D Integration"), this);
+    integrate2DAct->setCheckable(true);
     integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D Integration"), this);
+    integrate3DAct->setCheckable(true);
     logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), tr("&Toggle Logarithmic"), this);
+    logIntegrate2DAct->setCheckable(true);
     shadowAct = new QAction(QIcon(":/art/shadow.png"), tr("&Toggle Shadows"), this);
+    shadowAct->setCheckable(true);
     orthoGridAct = new QAction(QIcon(":/art/grid.png"), tr("&Toggle Orthonormal Grid"), this);
-
+    orthoGridAct->setCheckable(true);
+    
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
     openAct->setStatusTip(tr("Open an existing file"));

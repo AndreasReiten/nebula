@@ -54,7 +54,7 @@ public:
 signals:
 //    void renderState(int value);
     void changedMessageString(QString str);
-    
+
 public slots:
     void setQuality(int value);
     void setScalebar();
@@ -84,7 +84,9 @@ public slots:
     void setShadowVector();
     void setOrthoGrid();
     void takeScreenShot(QString path, float quality);
-    void mouseMoveEvent(QMouseEvent* ev);
+//    void metaMouseMoveEventCompact(QMouseEvent ev);
+    void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+//    void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
 
@@ -107,13 +109,14 @@ private:
     bool isSlicingActive;
     bool isRendering;
     bool isIntegration2DActive;
+    bool isIntegration3DActive;
     bool isShadowActive;
     bool isLogarithmic2D;
     bool isOrthoGridActive;
     bool isBackgroundBlack;
     bool isDataExtentReadOnly;
     bool isCenterlineActive;
-    
+
     // Ray texture
     Matrix<double> pixel_size;
     Matrix<int> ray_tex_dim;
@@ -126,12 +129,12 @@ private:
     void setRayTexture();
     void raytrace(cl_kernel kernel);
     double work, work_time, quality_factor;
-    
+
     // Center line
     GLuint centerline_vbo;
     void setCenterLine();
     Matrix<GLfloat> centerline_coords;
-    
+
     // Integration
     cl_sampler integration_sampler_cl;
     cl_mem integration_tex_alpha_cl;
@@ -155,10 +158,10 @@ private:
     void resetViewMatrix();
     void setTsfParameters();
     void setMiscArrays();
-    
+
     // Misc compute functions
     void computePixelSize();
-    
+
     // Scalebars
     size_t setScaleBars();
     size_t scalebar_coord_count;
@@ -216,7 +219,7 @@ private:
     cl_kernel cl_svo_raytrace;
     cl_kernel cl_model_raytrace;
     cl_kernel cl_integrate_image;
-    
+
     cl_mem cl_glb_work;
     cl_mem cl_view_matrix_inverse;
     cl_mem cl_scalebar_rotation;
@@ -256,7 +259,7 @@ private:
     QFont * emph_font;
     QFontMetrics * normal_fontmetric;
     QFontMetrics * emph_fontmetric;
-    
+
     // Shadow
     Matrix<float> shadow_vector;
 };

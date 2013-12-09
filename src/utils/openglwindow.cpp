@@ -19,6 +19,16 @@ void OpenGLWorker::mouseMoveEvent(QMouseEvent* ev)
     Q_UNUSED(ev);
 }
 
+void OpenGLWorker::metaMouseMoveEventCompact(QMouseEvent ev)
+{
+    Q_UNUSED(ev);
+}
+
+void OpenGLWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+{
+}
+
+
 void OpenGLWorker::wheelEvent(QWheelEvent* ev)
 {
     Q_UNUSED(ev);
@@ -190,7 +200,13 @@ OpenGLWindow::~OpenGLWindow()
 
 void OpenGLWindow::mouseMoveEvent(QMouseEvent* ev)
 {
-    emit mouseMoveEventCaught(ev);
+//    std::stringstream ss;
+//    ss << "___EVENT SENT___" << "\n id:" << ev << "\n x:" << ev->x() << "\n y:" << ev->y() << "\n L:" << (ev->buttons() & Qt::LeftButton) << "\n M:" << (ev->buttons() & Qt::MidButton) << "\n R:" << (ev->buttons() & Qt::RightButton);
+
+//    std::cout << ss.str().c_str() << std::endl;
+//    emit mouseMoveEventCaught(ev);
+//    emit metaMouseMoveEventCaughtCompact(*ev);
+    emit metaMouseMoveEventCaught((int)ev->x(), (int)ev->y(), (int)(ev->buttons() & Qt::LeftButton), (int)(ev->buttons() & Qt::MidButton), (int)(ev->buttons() & Qt::RightButton), (int)(ev->modifiers() & Qt::ControlModifier), (int)(ev->modifiers() & Qt::ShiftModifier));
 }
 
 void OpenGLWindow::setMultiThreading(bool value)

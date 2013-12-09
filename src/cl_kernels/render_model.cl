@@ -50,23 +50,24 @@ __kernel void modelRayTrace(
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
-    int islog3DActive = misc_int[2];
+    int isLogActive = misc_int[2];
     int isSlicingActive = misc_int[4];
     int isIntegration2DActive = misc_int[5];
     int isShadowActive = misc_int[6];
+    int isIntegration3DActive = misc_int[7];
 
-    if (islog3DActive)
+    if (isLogActive)
     {
         if (data_offset_low <= 0) data_offset_low = 0.01f;
         if (data_offset_high <= 0) data_offset_high = 0.01f;
         data_offset_low = log10(data_offset_low);
         data_offset_high = log10(data_offset_high);
     }
-    
+
     // The color of "shadow", or rather the color associated with gradient matching
     float4 shadow_color = (float4)(0.0f,0.0f,0.0f,1.0f);
     shadow_vector = normalize(shadow_vector);
-    
+
     // If the global id corresponds to a texel
     if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
     {
@@ -75,7 +76,7 @@ __kernel void modelRayTrace(
         float cone_diameter_increment;
         float cone_diameter_near;
         float integrated_intensity = 0.0;
-        
+
         {
             float4 rayNearEdge, rayFarEdge;
             float3 pixel_radius_near, pixel_radius_far;
@@ -199,7 +200,7 @@ __kernel void modelRayTrace(
 
                         intensity = model(ray_xyz_box, parameters);
 
-                        if(islog3DActive)
+                        if(isLogActive)
                         {
                             if (intensity < 1.f) intensity = 1.f;
                             intensity = log10(intensity);
@@ -228,47 +229,50 @@ __kernel void modelRayTrace(
                     intensity = model(ray_xyz_box, parameters);
 
                     integrated_intensity += intensity * step_length;
-
-                    if(islog3DActive)
+                    
+                    if (!isIntegration3DActive)
                     {
-                        if (intensity < 1.f) intensity = 1.f;
-                        intensity = log10(intensity);
-                    }
-            
-                    float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                        if(isLogActive)
+                        {
+                            if (intensity < 0.f) intensity = 0.f;
+                            intensity = log10(intensity);
+                        }
     
-                    sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-                    sample.w *= alpha;
-                    
-                    if (isShadowActive)
-                    {
-                        float3 gradient_vector = (float3)(
-                            native_divide(
-                                - model((float3)(ray_xyz_box.x - step_length, ray_xyz_box.y, ray_xyz_box.z), parameters)
-                                + model((float3)(ray_xyz_box.x + step_length, ray_xyz_box.y, ray_xyz_box.z), parameters),
-                                step_length),
-                            native_divide(
-                                - model((float3)(ray_xyz_box.x, ray_xyz_box.y - step_length, ray_xyz_box.z), parameters)
-                                + model((float3)(ray_xyz_box.x, ray_xyz_box.y + step_length, ray_xyz_box.z), parameters), 
-                                step_length),
-                            native_divide(
-                                - model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z - step_length), parameters)
-                                + model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z + step_length), parameters),
-                                step_length));
-                        float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f; // Simplest form. Can multiply with shadow_magnitude*(1.0f - color.w)*sample.w or the like, but can it be justified, and does it provide better results? Thus far I am inclined to say no.
-//                        float strength = native_powr((dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f, 2.0f); // Scaled with some power to increase contrast between shadow and no shadow
-                        sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
+                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+    
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                        sample.w *= alpha;
+    
+                        if (isShadowActive)
+                        {
+                            float3 gradient_vector = (float3)(
+                                native_divide(
+                                    - model((float3)(ray_xyz_box.x - step_length, ray_xyz_box.y, ray_xyz_box.z), parameters)
+                                    + model((float3)(ray_xyz_box.x + step_length, ray_xyz_box.y, ray_xyz_box.z), parameters),
+                                    step_length),
+                                native_divide(
+                                    - model((float3)(ray_xyz_box.x, ray_xyz_box.y - step_length, ray_xyz_box.z), parameters)
+                                    + model((float3)(ray_xyz_box.x, ray_xyz_box.y + step_length, ray_xyz_box.z), parameters),
+                                    step_length),
+                                native_divide(
+                                    - model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z - step_length), parameters)
+                                    + model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z + step_length), parameters),
+                                    step_length));
+                            float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f; // Simplest form. Can multiply with shadow_magnitude*(1.0f - color.w)*sample.w or the like, but can it be justified, and does it provide better results? Thus far I am inclined to say no.
+    //                        float strength = native_powr((dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f, 2.0f); // Scaled with some power to increase contrast between shadow and no shadow
+                            sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
+                        }
+    
+                        // Scale the alpha channel in accordance with the cone diameter
+                        sample.w *= native_divide(cone_diameter, cone_diameter_low);
+    
+                        // MIX COLORS
+                        color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
+    //                    color.xyz += (1.0f - color.w)*sample.xyz; //(Crassin)
+                        color.w += (1.0f - color.w)*sample.w;
+    
+                        if (color.w > 0.999f) break;
                     }
-
-                    // Scale the alpha channel in accordance with the cone diameter
-                    sample.w *= native_divide(cone_diameter, cone_diameter_low);
-                    
-                    // MIX COLORS                    
-                    color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
-//                    color.xyz += (1.0f - color.w)*sample.xyz; //(Crassin)
-                    color.w += (1.0f - color.w)*sample.w;
-                        
-                    if (color.w > 0.999f) break;
                     ray_xyz_box += ray_add_box;
                 }
                 color *= brightness;
@@ -276,21 +280,35 @@ __kernel void modelRayTrace(
         }
 //        if ( (id_glb.x == 5) || (id_glb.y == 15))color = (float4)(1.0,0.0,0.0,1.0);
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
-        write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+        if (isIntegration3DActive)
+        {
+            if(isLogActive)
+            {
+                if (integrated_intensity < 0.f) integrated_intensity = 0.f;
+                integrated_intensity = log10(integrated_intensity);
+            }
+    
+            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+    
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+    
+            write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
+        }
+        else write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
 //        if (isIntegration2DActive && !isSlicingActive)
 //        {
-//            if(islog3DActive) 
+//            if(isLogActive)
 //            {
-//                if (integrated_intensity < 1.f) integrated_intensity = 1.f;            
+//                if (integrated_intensity < 1.f) integrated_intensity = 1.f;
 //                integrated_intensity = log10(integrated_intensity);
 //            }
-            
+
 //            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-    
-//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);       
+
+//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
 //            write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
-//        }        
+//        }
 //        else
 //        {
 //            write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));

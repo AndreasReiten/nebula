@@ -21,6 +21,8 @@
 #include <QCoreApplication>
 #include <QThread>
 #include <QOpenGLFramebufferObject>
+#include <QMouseEvent>
+#include <QDebug>
 
 #include "contextcl.h"
 #include "matrix.h"
@@ -50,6 +52,8 @@ signals:
 public slots:
     void process();
 //    void process();
+    virtual void metaMouseMoveEventCompact(QMouseEvent ev);
+    virtual void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     virtual void mouseMoveEvent(QMouseEvent* ev);
     virtual void wheelEvent(QWheelEvent* ev);
     virtual void resizeEvent(QResizeEvent * ev);
@@ -66,7 +70,7 @@ protected:
     QOpenGLContext *context_gl;
     OpenCLContext *context_cl;
     QWindow *render_surface;
-    
+
 private:
     // Boolean checks
     bool isInitialized;
@@ -90,6 +94,8 @@ public:
     OpenCLContext * getCLContext();
 
 signals:
+    void metaMouseMoveEventCaught(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+    void metaMouseMoveEventCaughtCompact(QMouseEvent ev);
     void mouseMoveEventCaught(QMouseEvent* ev);
     void wheelEventCaught(QWheelEvent* ev);
     void resizeEventCaught(QResizeEvent* ev);
