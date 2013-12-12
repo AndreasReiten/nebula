@@ -186,18 +186,18 @@ bool FileSourceModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
 
 
 
-FileDisplayModel::FileDisplayModel(QWidget *parent) :
-    QStandardItemModel(parent)
-{
+//FileDisplayModel::FileDisplayModel(QWidget *parent) :
+//    QStandardItemModel(parent)
+//{
     
-}
+//}
 
-Qt::DropActions FileDisplayModel::supportedDropActions() const
-{
-    qDebug();
+//Qt::DropActions FileDisplayModel::supportedDropActions() const
+//{
+//    qDebug();
     
-    return Qt::CopyAction | Qt::MoveAction;
-}
+//    return Qt::CopyAction | Qt::MoveAction;
+//}
 
 //Qt::DropActions FileDisplayModel::supportedDragActions() const
 //{
@@ -206,10 +206,10 @@ Qt::DropActions FileDisplayModel::supportedDropActions() const
 //    return Qt::CopyAction | Qt::MoveAction;
 //}
 
-Qt::ItemFlags FileDisplayModel::flags(const QModelIndex &index) const
-{
-    return Qt::ItemIsSelectable | Qt::ItemIsDragEnabled |
-               Qt::ItemIsDropEnabled | Qt::ItemIsEnabled;
+//Qt::ItemFlags FileDisplayModel::flags(const QModelIndex &index) const
+//{
+//    return Qt::ItemIsSelectable | Qt::ItemIsDragEnabled |
+//               Qt::ItemIsDropEnabled | Qt::ItemIsEnabled;
 //    qDebug();
     
 //    Qt::ItemFlags defaultFlags = QStandardItemModel::flags(index);
@@ -221,59 +221,59 @@ Qt::ItemFlags FileDisplayModel::flags(const QModelIndex &index) const
 //        qDebug() << "invalid index";
 //        return Qt::ItemIsDropEnabled | defaultFlags;
 //    }
-}
+//}
 
-QStringList FileDisplayModel::mimeTypes() const
-{
-    QStringList types;
-    types << "text/path";
-    return types;
-}
+//QStringList FileDisplayModel::mimeTypes() const
+//{
+//    QStringList types;
+//    types << "text/path";
+//    return types;
+//}
 
-bool FileDisplayModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
-{
-    qDebug() << "Dropping payload!";
+//bool FileDisplayModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+//{
+//    qDebug() << "Dropping payload!";
     
-    if (action == Qt::IgnoreAction)
-        return true;
+//    if (action == Qt::IgnoreAction)
+//        return true;
 
-    if (!data->hasFormat("text/path"))
-        return false;
+//    if (!data->hasFormat("text/path"))
+//        return false;
 
-    if (column > 0)
-        return false;
+//    if (column > 0)
+//        return false;
     
-    int beginRow;
+//    int beginRow;
     
-    if (row != -1)
-        beginRow = row;
+//    if (row != -1)
+//        beginRow = row;
 
-    else if (parent.isValid())
-        beginRow = parent.row();
+//    else if (parent.isValid())
+//        beginRow = parent.row();
 
-    else
-        beginRow = rowCount(QModelIndex());
+//    else
+//        beginRow = rowCount(QModelIndex());
     
-    QByteArray encodedData = data->data("text/path");
-    QDataStream stream(&encodedData, QIODevice::ReadOnly);
-    QStringList newItems;
-    int rows = 0;
+//    QByteArray encodedData = data->data("text/path");
+//    QDataStream stream(&encodedData, QIODevice::ReadOnly);
+//    QStringList newItems;
+//    int rows = 0;
 
-    while (!stream.atEnd()) 
-    {
-        QString text;
-        stream >> text;
-        qDebug() << text;
-        newItems << text;
-        ++rows;
-    }
+//    while (!stream.atEnd()) 
+//    {
+//        QString text;
+//        stream >> text;
+//        qDebug() << text;
+//        newItems << text;
+//        ++rows;
+//    }
     
-    insertRows(beginRow, rows, QModelIndex());
-    foreach (const QString &text, newItems) {
-        QModelIndex idx = index(beginRow, 0, QModelIndex());
-        setData(idx, text);
-        beginRow++;
-    }
+//    insertRows(beginRow, rows, QModelIndex());
+//    foreach (const QString &text, newItems) {
+//        QModelIndex idx = index(beginRow, 0, QModelIndex());
+//        setData(idx, text);
+//        beginRow++;
+//    }
 
-    return true;
-}
+//    return true;
+//}

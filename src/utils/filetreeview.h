@@ -53,24 +53,24 @@ public slots:
 
 };
 
-class FileDisplayModel : public QStandardItemModel
-{
-    Q_OBJECT
-public:
-    explicit FileDisplayModel(QWidget *parent = 0);
+//class FileDisplayModel : public QStandardItemModel
+//{
+//    Q_OBJECT
+//public:
+//    explicit FileDisplayModel(QWidget *parent = 0);
     
-protected:
-    Qt::DropActions supportedDropActions() const;
-//    Qt::DropActions supportedDragActions() const;
-    Qt::ItemFlags flags(const QModelIndex &index) const;   
-    QStringList mimeTypes() const;
+//protected:
+//    Qt::DropActions supportedDropActions() const;
+////    Qt::DropActions supportedDragActions() const;
+//    Qt::ItemFlags flags(const QModelIndex &index) const;   
+//    QStringList mimeTypes() const;
     
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
+//    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
 
-signals:
+//signals:
 
-public slots:
+//public slots:
 
-};
+//};
 
 #endif // FILETREEVIEW_H

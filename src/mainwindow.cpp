@@ -48,7 +48,7 @@ MainWindow::MainWindow() :
     setCurrentFile("");
     initializeEmit();
     print("[Nebula] Welcome to Nebula alpha!");
-    setWindowTitle(tr("Nebula[*]"));
+    setWindowTitle(tr("Nebula[*] ()"));
 
     graphicsDockWidget->hide();
     unitcellDockWidget->hide();
@@ -518,7 +518,8 @@ void MainWindow::openScript()
             QFileInfo fileInfo = QFileInfo(current_script_path);
             if (fileInfo.size() < 5000000) loadFile(current_script_path);
             else print("\nFile is too large!");
-
+            
+            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
         }
     }
 }
@@ -789,7 +790,7 @@ void MainWindow::setTab(int tab)
             toolChainWidget->show();
             outputDockWidget->show();
             fileHeaderDock->show();
-            setWindowTitle(tr("Nebula[*] now looking at: ")+current_script_path);
+            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
             break;
 
         case 1:
@@ -800,7 +801,7 @@ void MainWindow::setTab(int tab)
             fileDockWidget->show();
             outputDockWidget->show();
             fileHeaderDock->show();
-            setWindowTitle(tr("Nebula[*] now looking at:")+current_script_path);
+            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
             break;
 
         case 2:
@@ -811,7 +812,7 @@ void MainWindow::setTab(int tab)
             graphicsDockWidget->show();
             unitcellDockWidget->hide();
             functionDockWidget->show();
-            setWindowTitle(tr("Nebula[*] now looking at:")+current_svo_path);
+            setWindowTitle(tr("Nebula[*] (")+current_svo_path+")");
             break;
 
         default:
@@ -933,6 +934,8 @@ void MainWindow::openSvo()
         dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
 
         print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+current_svo_path+"\"");
+        
+        setWindowTitle(tr("Nebula[*] (")+current_svo_path+")");
     }
 }
 
