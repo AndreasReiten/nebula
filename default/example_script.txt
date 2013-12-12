@@ -1,0 +1,24 @@
+/* Add file paths using this Javascript window. 
+ * Do this by appedning paths to the variable 'files'.
+ * Once the files have been found, they can be treated further. 
+ * For example:
+ */ 
+
+// Use this function to zero-pad files 
+function pad (str, max) {
+	 return (str).toString().length < max ? pad("0" + (str).toString(), max) : (str).toString(); 
+}
+
+// A variable containing the path to your files
+var path = "/location/of/my/files/";
+
+// The prefix of said files, for example
+var prefix = "filename_0001p_";
+
+// A for loop that iterates over the files and checks if the paths are valid
+for (var i = 0; i < 42; i++)
+{
+	var i_padded = pad( i, 5);
+	files.push(path+file_prefix+i_padded+".cbf");
+}
+ 

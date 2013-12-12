@@ -531,6 +531,7 @@ void MainWindow::initializeActions()
     // Actions
     scriptingAct = new QAction(QIcon(":/art/script.png"), tr("&Toggle scripting mode"), this);
     scriptingAct->setCheckable(true);
+    scriptingAct->setChecked(true);
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
     saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
@@ -1057,9 +1058,11 @@ void MainWindow::initializeInteractives()
         // Script text edit
         scriptTextEdit = new QPlainTextEdit;
         script_highlighter = new Highlighter(scriptTextEdit->document());
-        scriptHelp = "/* Add file paths using this Javascript window. \nDo this by appedning paths to the variable 'files'. */ \n\n files = ";
-        scriptTextEdit->setPlainText(scriptHelp);
-
+//        scriptHelp = "/* Add file paths using this Javascript window. \n* Do this by appedning paths to the variable 'files'. \n* For example:\n*/ \n\n files = ";
+//        scriptTextEdit->setPlainText(scriptHelp);
+        loadFile(":/default/example_script.txt");
+        
+        
         // Toolbar
         scriptToolBar = new QToolBar(tr("Script"));
         scriptToolBar->addAction(newAct);
@@ -1107,8 +1110,8 @@ void MainWindow::initializeInteractives()
         fileBrowserLayout->addWidget(fileSelectedTree,0,1,1,1);
 
         fileBrowserWidget->setLayout(fileBrowserLayout);
-
-        toggleScriptView();
+        fileBrowserWidget->hide();
+//        toggleScriptView();
 
         // Layout
         QGridLayout * scriptLayout = new QGridLayout;

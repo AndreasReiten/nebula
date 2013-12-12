@@ -38,5 +38,6 @@
         <file>art/integrate.png</file>
         <file>art/shadow.png</file>
         <file>art/grid.png</file>
+        <file>default/example_script.txt</file>
     </qresource>
 </RCC>
