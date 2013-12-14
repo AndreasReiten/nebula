@@ -1434,22 +1434,29 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
 
             if (i == 0)
             {
+//                QVector<qreal> dashes;
+//                dashes << 6 << 6;
+                
                 whatever_pen->setWidthF(1.0);
-                QVector<qreal> dashes;
-                qreal space = 4;
-
-                dashes << 1 << space << 3 << space << 9 << space
-                           << 27 << space << 9 << space;
-
-                whatever_pen->setDashPattern(dashes);
-                whatever_pen->setColor(QColor(200,0,255,255));
+                whatever_pen->setStyle(Qt::SolidLine);
+//                whatever_pen->setDashPattern(dashes);
+//                whatever_pen->setColor(QColor(40,255,40,255));
+                whatever_pen->setColor(QColor(50,50,255,255));
                 painter->setPen(*whatever_pen);
             }
             else
             {
+                QVector<qreal> dashes;
+                dashes << 3 << 3;
+                
                 whatever_pen->setWidthF(0.3);
-                whatever_pen->setStyle(Qt::SolidLine);
-                whatever_pen->setColor(QColor(50,50,255,255));
+                whatever_pen->setStyle(Qt::CustomDashLine);
+                whatever_pen->setDashPattern(dashes);
+//                whatever_pen->setColor(QColor(50,50,255,255));
+                whatever_pen->setColor(QColor(255.0*clear_color_inverse[0],
+                                        255.0*clear_color_inverse[1],
+                                        255.0*clear_color_inverse[2],
+                                        255));
                 painter->setPen(*whatever_pen);
             }
 
@@ -1460,6 +1467,38 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
         normal_pen->setWidthF(1.0);
     }
 }
+
+void VolumeRenderWorker::alignX()
+{
+//    rotation = roll_rotation * rotation;
+//    scalebar_rotation = roll_rotation * scalebar_rotation;
+}
+
+void VolumeRenderWorker::alignY()
+{
+    qDebug();
+}
+void VolumeRenderWorker::alignZ()
+{
+    qDebug();
+}
+void VolumeRenderWorker::rotateLeft()
+{
+    qDebug();
+}
+void VolumeRenderWorker::rotateRight()
+{
+    qDebug();
+}
+void VolumeRenderWorker::rotateUp()
+{
+    qDebug();
+}
+void VolumeRenderWorker::rotateDown()
+{
+    qDebug();
+}
+
 
 void VolumeRenderWorker::computePixelSize()
 {

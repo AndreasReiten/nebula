@@ -545,30 +545,40 @@ void MainWindow::initializeActions()
     //~aboutHDF5Act = new QAction(tr("About HDF"), this);
     openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
     saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
-    log3DAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle Logarithmic"), this);
+    log3DAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle logarithmic"), this);
     log3DAct->setCheckable(true);
     log3DAct->setChecked(true);
-    dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle Data Structure"), this);
+    dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle data structure"), this);
     dataStructureAct->setCheckable(true);
-    backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle Background Color"), this);
+    backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle background color"), this);
     backgroundAct->setCheckable(true);
-    projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle Projection"), this);
+    projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle projection"), this);
     projectionAct->setCheckable(true);
-    screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take Screenshot"), this);
-    scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle Scalebars"), this);
+    screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take screenshot"), this);
+    scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle scalebars"), this);
     scalebarAct->setCheckable(true);
     scalebarAct->setChecked(true);
-    sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle Slicing"), this);
-    integrate2DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->1D Integration"), this);
+    sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle slicing"), this);
+    integrate2DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->1D integration"), this);
     integrate2DAct->setCheckable(true);
-    integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D Integration"), this);
+    integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D integration"), this);
     integrate3DAct->setCheckable(true);
-    logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), tr("&Toggle Logarithmic"), this);
+    logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), tr("&Toggle logarithmic"), this);
     logIntegrate2DAct->setCheckable(true);
-    shadowAct = new QAction(QIcon(":/art/shadow.png"), tr("&Toggle Shadows"), this);
+    shadowAct = new QAction(QIcon(":/art/shadow.png"), tr("&Toggle shadows"), this);
     shadowAct->setCheckable(true);
-    orthoGridAct = new QAction(QIcon(":/art/grid.png"), tr("&Toggle Orthonormal Grid"), this);
+    orthoGridAct = new QAction(QIcon(":/art/grid.png"), tr("&Toggle orthonormal grid"), this);
     orthoGridAct->setCheckable(true);
+    
+    alignXAct = new QAction(QIcon(":/art/align_x.png"), tr("&Align along x"), this);
+    alignYAct = new QAction(QIcon(":/art/align_y.png"), tr("&Align along y"), this);
+    alignZAct = new QAction(QIcon(":/art/align_z.png"), tr("&Align along z"), this);
+    
+    rotateRightAct = new QAction(QIcon(":/art/rotate_right.png"), tr("&Rotate right"), this);
+    rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), tr("&Rotate left"), this);
+    rotateUpAct = new QAction(QIcon(":/art/rotate_up.png"), tr("&Rotate up"), this);
+    rotateDownAct = new QAction(QIcon(":/art/rotate_down.png"), tr("&Rotate down"), this);
+    
     
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
@@ -870,6 +880,16 @@ void MainWindow::initializeConnects()
     connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam3(double)));
     connect(volumeRenderWindow->getWorker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
     connect(this, SIGNAL(captureFrameBuffer(QString,float)), volumeRenderWindow->getWorker(), SLOT(takeScreenShot(QString,float)));
+    connect(this->alignXAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignX()));
+    connect(this->alignYAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignY()));
+    connect(this->alignZAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignZ()));
+    connect(this->rotateLeftAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateLeft()));
+    connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateRight()));
+    connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
+    connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
+    
+    
+    
     /* this <-> this */
     connect(this->scriptingAct, SIGNAL(triggered()), this, SLOT(toggleScriptView()));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
@@ -1239,6 +1259,15 @@ void MainWindow::initializeInteractives()
         
         viewToolBar->addAction(integrate2DAct);
         viewToolBar->addAction(logIntegrate2DAct);
+        viewToolBar->addSeparator();
+        
+        viewToolBar->addAction(alignXAct);
+        viewToolBar->addAction(alignYAct);
+        viewToolBar->addAction(alignZAct);
+        viewToolBar->addAction(rotateLeftAct);
+        viewToolBar->addAction(rotateRightAct);
+        viewToolBar->addAction(rotateDownAct);
+        viewToolBar->addAction(rotateUpAct);
         viewToolBar->addSeparator();
         
         viewToolBar->addAction(backgroundAct);

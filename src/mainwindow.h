@@ -215,6 +215,13 @@ private:
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
     QAction *orthoGridAct;
+    QAction *alignXAct;
+    QAction *alignYAct;
+    QAction *alignZAct;
+    QAction *rotateRightAct;
+    QAction *rotateLeftAct;
+    QAction *rotateUpAct;
+    QAction *rotateDownAct;
     
     
     int current_svo;

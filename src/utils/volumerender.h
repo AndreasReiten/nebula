@@ -89,6 +89,15 @@ public slots:
 //    void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
+    
+    // Alignment and fixed rotation 
+    void alignX();
+    void alignY();
+    void alignZ();
+    void rotateLeft();
+    void rotateRight();
+    void rotateUp();
+    void rotateDown();
 
 protected:
     void initialize();
@@ -96,7 +105,7 @@ protected:
 
 private:
     SharedContextWindow * shared_window;
-
+    
     // Boolean checks
     bool isInitialized;
     bool isDSActive;

@@ -39,5 +39,12 @@
         <file>art/shadow.png</file>
         <file>art/grid.png</file>
         <file>default/example_script.txt</file>
+        <file>art/align_x.png</file>
+        <file>art/align_y.png</file>
+        <file>art/align_z.png</file>
+        <file>art/rotate_up.png</file>
+        <file>art/rotate_right.png</file>
+        <file>art/rotate_left.png</file>
+        <file>art/rotate_down.png</file>
     </qresource>
 </RCC>
