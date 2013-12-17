@@ -65,7 +65,7 @@ class Matrix {
         std::vector<T> buffer;
 
         /* Swap function as per C++11 idiom */
-        void swap(Matrix& first, Matrix& second);
+        void swap(Matrix &first, Matrix &second);
 };
 
 template<class T>
@@ -147,7 +147,7 @@ T Matrix<T>::sum()
 
 
 template <class T>
-void Matrix<T>::swap(Matrix& first, Matrix& second)
+void Matrix<T>::swap(Matrix &first, Matrix &second)
 {
     std::swap(first.m, second.m);
     std::swap(first.n, second.n);

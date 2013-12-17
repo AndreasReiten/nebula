@@ -1470,33 +1470,79 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
 
 void VolumeRenderWorker::alignX()
 {
-//    rotation = roll_rotation * rotation;
-//    scalebar_rotation = roll_rotation * scalebar_rotation;
+    RotationMatrix<double> x_aligned;
+    x_aligned.setYRotation(pi*0.5);
+    
+    RotationMatrix<double> delta_rotation;
+    
+    delta_rotation = x_aligned * scalebar_rotation.getInverse();
+    
+    scalebar_rotation = delta_rotation * scalebar_rotation;
+    
+    rotation = delta_rotation * rotation;
 }
 
 void VolumeRenderWorker::alignY()
 {
-    qDebug();
+    RotationMatrix<double> y_aligned;
+    y_aligned.setXRotation(-pi*0.5);
+    
+    RotationMatrix<double> delta_rotation;
+    
+    delta_rotation = y_aligned * scalebar_rotation.getInverse();
+    
+    scalebar_rotation = delta_rotation * scalebar_rotation;
+    
+    rotation = delta_rotation * rotation;
 }
 void VolumeRenderWorker::alignZ()
 {
-    qDebug();
+    RotationMatrix<double> z_aligned;
+    z_aligned.setYRotation(0.0);
+    
+    RotationMatrix<double> delta_rotation;
+    
+    delta_rotation = z_aligned * scalebar_rotation.getInverse();
+    
+    scalebar_rotation = delta_rotation * scalebar_rotation;
+    
+    rotation = delta_rotation * rotation;
 }
 void VolumeRenderWorker::rotateLeft()
 {
-    qDebug();
+    RotationMatrix<double> rot;
+    rot.setYRotation(pi*0.25);
+    
+    scalebar_rotation = rot * scalebar_rotation;
+    
+    rotation = rot * rotation;
 }
 void VolumeRenderWorker::rotateRight()
 {
-    qDebug();
+    RotationMatrix<double> rot;
+    rot.setYRotation(-pi*0.25);
+    
+    scalebar_rotation = rot * scalebar_rotation;
+    
+    rotation = rot * rotation;
 }
 void VolumeRenderWorker::rotateUp()
 {
-    qDebug();
+    RotationMatrix<double> rot;
+    rot.setXRotation(pi*0.25);
+    
+    scalebar_rotation = rot * scalebar_rotation;
+    
+    rotation = rot * rotation;
 }
 void VolumeRenderWorker::rotateDown()
 {
-    qDebug();
+    RotationMatrix<double> rot;
+    rot.setXRotation(-pi*0.25);
+    
+    scalebar_rotation = rot * scalebar_rotation;
+    
+    rotation = rot * rotation;
 }
 
 
@@ -1593,7 +1639,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
 
     // Texture resolution
-    QString resolution_string("Resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%, Volume Rendering Fps: "+QString::number(fps_requested));
+    QString resolution_string("Texture resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%");//+"%, Volume Rendering Fps: "+QString::number(fps_requested));
     QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
     resolution_string_rect += QMargins(5,5,5,5);
     resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
