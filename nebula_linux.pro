@@ -56,9 +56,9 @@ RCC_DIR = .rcc
 UI_DIR = .ui
 
 OTHER_FILES += \
-    src/cl_kernels/project.cl \
-    src/cl_kernels/voxelize.cl \
-    src/cl_kernels/render_svo.cl \
-    src/cl_kernels/render_shared.cl \
-    src/cl_kernels/render_model.cl \
-    src/cl_kernels/integrate.cl
+    src/kernels/project.cl \
+    src/kernels/voxelize.cl \
+    src/kernels/render_svo.cl \
+    src/kernels/render_shared.cl \
+    src/kernels/render_model.cl \
+    src/kernels/integrate.cl

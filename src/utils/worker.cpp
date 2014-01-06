@@ -403,7 +403,7 @@ ProjectFileWorker::~ProjectFileWorker()
 void ProjectFileWorker::initializeCLKernel()
 {
     Matrix<const char *> paths(1,1);
-    paths[0] = "cl_kernels/project.cl";
+    paths[0] = "kernels/project.cl";
 
     program = context_cl->createProgram(&paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -747,7 +747,7 @@ unsigned int VoxelizeWorker::getOctBrick(unsigned int poolX, unsigned int poolY,
 void VoxelizeWorker::initializeCLKernel()
 {
     Matrix<const char *> paths(1,1);
-    paths[0] = "cl_kernels/voxelize.cl";
+    paths[0] = "kernels/voxelize.cl";
 
     program = context_cl->createProgram(&paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));

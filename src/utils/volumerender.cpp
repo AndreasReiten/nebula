@@ -579,10 +579,10 @@ void VolumeRenderWorker::initResourcesCL()
 {
     // Build program from OpenCL kernel source
     Matrix<const char *> paths(1,4);
-    paths[0] = "cl_kernels/render_shared.cl";
-    paths[1] = "cl_kernels/render_svo.cl";
-    paths[2] = "cl_kernels/render_model.cl";
-    paths[3] = "cl_kernels/integrate.cl";
+    paths[0] = "kernels/render_shared.cl";
+    paths[1] = "kernels/render_svo.cl";
+    paths[2] = "kernels/render_model.cl";
+    paths[3] = "kernels/integrate.cl";
 
     program = context_cl->createProgram(&paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
