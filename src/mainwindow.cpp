@@ -570,6 +570,9 @@ void MainWindow::initializeActions()
     orthoGridAct = new QAction(QIcon(":/art/grid.png"), tr("&Toggle orthonormal grid"), this);
     orthoGridAct->setCheckable(true);
     
+    rulerAct = new QAction(QIcon(":/art/ruler.png"), tr("&Toggle ruler"), this);
+    rulerAct->setCheckable(true);
+    
     alignXAct = new QAction(QIcon(":/art/align_x.png"), tr("&Align along x"), this);
     alignYAct = new QAction(QIcon(":/art/align_y.png"), tr("&Align along y"), this);
     alignZAct = new QAction(QIcon(":/art/align_z.png"), tr("&Align along z"), this);
@@ -887,6 +890,8 @@ void MainWindow::initializeConnects()
     connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateRight()));
     connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
     connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
+    connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
+    
     
     
     
@@ -1248,13 +1253,17 @@ void MainWindow::initializeInteractives()
         
         viewToolBar->addSeparator();
         viewToolBar->addAction(projectionAct);
-        viewToolBar->addAction(dataStructureAct);
+        
+        viewToolBar->addAction(rulerAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(sliceAct);
-        viewToolBar->addAction(shadowAct);
+        viewToolBar->addAction(orthoGridAct);
+        
         viewToolBar->addAction(integrate3DAct);
         viewToolBar->addAction(log3DAct);
-        viewToolBar->addAction(orthoGridAct);
+        
+        viewToolBar->addAction(shadowAct);
+        viewToolBar->addAction(dataStructureAct);
         viewToolBar->addSeparator();
         
         viewToolBar->addAction(integrate2DAct);
