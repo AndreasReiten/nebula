@@ -222,6 +222,7 @@ private:
     QAction *rotateLeftAct;
     QAction *rotateUpAct;
     QAction *rotateDownAct;
+    QAction *rulerAct;
     
     
     int current_svo;

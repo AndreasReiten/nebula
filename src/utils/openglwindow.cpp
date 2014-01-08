@@ -28,6 +28,13 @@ void OpenGLWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_but
 {
 }
 
+void OpenGLWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+{
+}
+
+void OpenGLWorker::metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+{
+}
 
 void OpenGLWorker::wheelEvent(QWheelEvent* ev)
 {
@@ -196,6 +203,16 @@ OpenGLWindow::~OpenGLWindow()
         worker_thread->quit();
         worker_thread->wait(1000);
     }
+}
+
+void OpenGLWindow::mouseReleaseEvent(QMouseEvent* ev)
+{
+    emit metaMouseReleaseEventCaught((int)ev->x(), (int)ev->y(), (int)(ev->buttons() & Qt::LeftButton), (int)(ev->buttons() & Qt::MidButton), (int)(ev->buttons() & Qt::RightButton), (int)(ev->modifiers() & Qt::ControlModifier), (int)(ev->modifiers() & Qt::ShiftModifier));
+}
+
+void OpenGLWindow::mousePressEvent(QMouseEvent* ev)
+{
+    emit metaMousePressEventCaught((int)ev->x(), (int)ev->y(), (int)(ev->buttons() & Qt::LeftButton), (int)(ev->buttons() & Qt::MidButton), (int)(ev->buttons() & Qt::RightButton), (int)(ev->modifiers() & Qt::ControlModifier), (int)(ev->modifiers() & Qt::ShiftModifier));
 }
 
 void OpenGLWindow::mouseMoveEvent(QMouseEvent* ev)

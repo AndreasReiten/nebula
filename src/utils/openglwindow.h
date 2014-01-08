@@ -51,9 +51,10 @@ signals:
 
 public slots:
     void process();
-//    void process();
     virtual void metaMouseMoveEventCompact(QMouseEvent ev);
     virtual void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+    virtual void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+    virtual void metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     virtual void mouseMoveEvent(QMouseEvent* ev);
     virtual void wheelEvent(QWheelEvent* ev);
     virtual void resizeEvent(QResizeEvent * ev);
@@ -95,6 +96,8 @@ public:
 
 signals:
     void metaMouseMoveEventCaught(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+    void metaMousePressEventCaught(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+    void metaMouseReleaseEventCaught(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMouseMoveEventCaughtCompact(QMouseEvent ev);
     void mouseMoveEventCaught(QMouseEvent* ev);
     void wheelEventCaught(QWheelEvent* ev);
@@ -117,6 +120,8 @@ protected:
     // Event handling
     bool event(QEvent *event);
     void mouseMoveEvent(QMouseEvent* ev);
+    void mousePressEvent(QMouseEvent* ev);
+    void mouseReleaseEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
     void exposeEvent(QExposeEvent *event);

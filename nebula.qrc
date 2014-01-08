@@ -46,5 +46,6 @@
         <file>art/rotate_right.png</file>
         <file>art/rotate_left.png</file>
         <file>art/rotate_down.png</file>
+        <file>art/ruler.png</file>
     </qresource>
 </RCC>

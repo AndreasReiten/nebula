@@ -86,6 +86,8 @@ public slots:
     void takeScreenShot(QString path, float quality);
 //    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+    void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+    void metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
 //    void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
@@ -98,7 +100,8 @@ public slots:
     void rotateRight();
     void rotateUp();
     void rotateDown();
-
+    void toggleRuler();
+    
 protected:
     void initialize();
     void render(QPainter *painter);
@@ -125,6 +128,8 @@ private:
     bool isBackgroundBlack;
     bool isDataExtentReadOnly;
     bool isCenterlineActive;
+    bool isRulerActive;
+    bool isLMBDown;
 
     // Ray texture
     Matrix<double> pixel_size;
@@ -150,15 +155,21 @@ private:
     cl_mem integration_tex_beta_cl;
     bool isIntegrationTexInitialized;
 
+    // Ruler
+    Matrix<double> ruler;
+    
     // Drawing functions
-    void drawGrid(QPainter *painter);
     void drawRayTex();
     void drawScalebars();
     void drawOverlay(QPainter *painter);
     void drawIntegral(QPainter *painter);
+    void drawRuler(QPainter *painter);
+    void drawGrid(QPainter *painter);
     void drawCenterLine();
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
+    
+    
     int fps_string_width_prev;
 
     // Core set functions
