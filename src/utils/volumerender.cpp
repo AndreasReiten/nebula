@@ -1284,10 +1284,10 @@ void VolumeRenderWorker::setOrthoGrid()
 
 void VolumeRenderWorker::drawRuler(QPainter * painter)
 {
-    // Draw grid lines, the center of the screen is (0,0)
     double screen_width = pixel_size[0]*render_surface->width();
     double screen_height = pixel_size[1]*render_surface->height();
     
+    // Draw ruler and alignment crosses 
     QVector<QLine> lines;
     
     lines << QLine(ruler[0],ruler[1],ruler[2],ruler[3]);
@@ -1299,7 +1299,7 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
     QVector<qreal> dashes;
     dashes << 2 << 2;
     
-    whatever_pen->setWidthF(2.0);
+    whatever_pen->setWidthF(1.0);
     whatever_pen->setStyle(Qt::CustomDashLine);
     whatever_pen->setDashPattern(dashes);
     whatever_pen->setColor(QColor(
@@ -1310,6 +1310,19 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
     painter->setPen(*whatever_pen);
     
     painter->drawLines(lines.data(), 5);
+    
+    // Draw text with info 
+    double length = sqrt((ruler[2]-ruler[0])*(ruler[2]-ruler[0])*pixel_size[0]*pixel_size[0] + (ruler[3]-ruler[1])*(ruler[3]-ruler[1])*pixel_size[1]*pixel_size[1]);
+    
+    QString centerline_string(QString::number(length, 'g', 5)+" 1/Å");
+    QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
+    centerline_string_rect += QMargins(5,5,5,5);
+    centerline_string_rect.moveBottomLeft(QPoint(ruler[0]+2, ruler[1]-2));
+    
+    painter->setPen(*normal_pen);
+    painter->setBrush(*fill_brush);
+    painter->drawRoundedRect(centerline_string_rect, 5, 5, Qt::AbsoluteSize);
+    painter->drawText(centerline_string_rect, Qt::AlignCenter, centerline_string);
 }
 
 void VolumeRenderWorker::drawGrid(QPainter * painter)
@@ -1659,7 +1672,6 @@ void VolumeRenderWorker::drawScalebars()
     glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-//    setViewMatrix();
     glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
 
     glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
