@@ -143,7 +143,7 @@ private:
     void setRayTexture();
     void raytrace(cl_kernel kernel);
     double work, work_time, quality_factor;
-
+    
     // Center line
     GLuint centerline_vbo;
     void setCenterLine();
@@ -158,20 +158,27 @@ private:
     // Ruler
     Matrix<double> ruler;
     
+    // Ticks
+    void tickzerize(double min, double max, double size, double min_interdist, double *qualified_exponent, double * start, int *num_ticks);
+    
     // Drawing functions
     void drawRayTex();
-    void drawScalebars();
+    void drawPositionScalebars();
     void drawOverlay(QPainter *painter);
     void drawIntegral(QPainter *painter);
     void drawRuler(QPainter *painter);
     void drawGrid(QPainter *painter);
+    void drawCountScalebar(QPainter *painter);
     void drawCenterLine();
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
     
     
     int fps_string_width_prev;
-
+    
+    // Drawing rectangles
+    QRect multiplier_string_rect;
+    
     // Core set functions
     void setDataExtent();
     void setViewMatrix();
@@ -186,10 +193,14 @@ private:
     size_t setScaleBars();
     size_t scalebar_coord_count;
     GLuint scalebar_vbo;
-    Matrix<float> scalebar_ticks;
-    int n_scalebar_ticks;
+    Matrix<float> position_scalebar_ticks;
+    int n_position_scalebar_ticks;
+    int n_count_scalebar_ticks;
     double scalebar_multiplier;
-
+    GLuint count_scalebar_vbo;
+    Matrix<float> count_scalebar_ticks;
+    
+    
     // Transfer function texture
     void setTsfTexture();
     cl_mem tsf_tex_cl;

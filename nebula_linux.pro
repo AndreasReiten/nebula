@@ -61,4 +61,12 @@ OTHER_FILES += \
     src/kernels/render_svo.cl \
     src/kernels/render_shared.cl \
     src/kernels/render_model.cl \
-    src/kernels/integrate.cl
+    src/kernels/integrate.cl \
+    src/shaders/std_2d_tex.f.glsl \
+    src/shaders/std_2d_tex.v.glsl \
+    src/shaders/std_3d_color.f.glsl \
+    src/shaders/std_3d_color.v.glsl \
+    src/shaders/std_blend.f.glsl \
+    src/shaders/std_blend.v.glsl \
+    src/shaders/std_2d_color.f.glsl \
+    src/shaders/std_2d_color.v.glsl

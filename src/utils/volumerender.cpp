@@ -191,8 +191,12 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     work_time = 0.0;
     quality_factor = 0.5;
 
-    // Scalebar
-    scalebar_ticks.reserve(100,3);
+    // Scalebars
+    position_scalebar_ticks.reserve(100,3);
+    count_scalebar_ticks.reserve(10,3);
+    n_count_scalebar_ticks = 0;
+    n_position_scalebar_ticks = 0;
+            
 
     // Color
     GLfloat white_buf[] = {1,1,1,0.4};
@@ -222,6 +226,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 VolumeRenderWorker::~VolumeRenderWorker()
 {
     if (isInitialized) glDeleteBuffers(1, &scalebar_vbo);
+    if (isInitialized) glDeleteBuffers(1, &count_scalebar_vbo);
     if (isInitialized) glDeleteBuffers(1, &centerline_vbo);
 }
 
@@ -482,6 +487,7 @@ void VolumeRenderWorker::initializePaintTools()
 void VolumeRenderWorker::initResourcesGL()
 {
     glGenBuffers(1, &scalebar_vbo);
+    glGenBuffers(1, &count_scalebar_vbo);
     glGenBuffers(1, &centerline_vbo);
 }
 
@@ -927,7 +933,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     glViewport(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
 
     // Draw relative scalebar
-    if (isScalebarActive) drawScalebars();
+    if (isScalebarActive) drawPositionScalebars();
     if (isCenterlineActive) drawCenterLine();
 
     isDataExtentReadOnly = false;
@@ -1317,7 +1323,7 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
     QString centerline_string(QString::number(length, 'g', 5)+" 1/Å");
     QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
     centerline_string_rect += QMargins(5,5,5,5);
-    centerline_string_rect.moveBottomLeft(QPoint(ruler[0]+2, ruler[1]-2));
+    centerline_string_rect.moveBottomLeft(QPoint(ruler[0]+5, ruler[1]-5));
     
     painter->setPen(*normal_pen);
     painter->setBrush(*fill_brush);
@@ -1426,13 +1432,21 @@ void VolumeRenderWorker::alignX()
     RotationMatrix<double> x_aligned;
     x_aligned.setYRotation(pi*0.5);
     
+//    x_aligned.print(2);
+    
     RotationMatrix<double> delta_rotation;
     
     delta_rotation = x_aligned * scalebar_rotation.getInverse();
     
-    scalebar_rotation = delta_rotation * scalebar_rotation;
+//    delta_rotation.print(2);
+    
+    scalebar_rotation = x_aligned;
     
     rotation = delta_rotation * rotation;
+    
+//    scalebar_rotation.print(2);
+    
+//    rotation.print(2);
 }
 
 void VolumeRenderWorker::alignY()
@@ -1440,26 +1454,43 @@ void VolumeRenderWorker::alignY()
     RotationMatrix<double> y_aligned;
     y_aligned.setXRotation(-pi*0.5);
     
+//    y_aligned.print(2);
+    
     RotationMatrix<double> delta_rotation;
     
     delta_rotation = y_aligned * scalebar_rotation.getInverse();
     
-    scalebar_rotation = delta_rotation * scalebar_rotation;
+//    delta_rotation.print(2);
+    
+    scalebar_rotation = y_aligned;
     
     rotation = delta_rotation * rotation;
+    
+//    scalebar_rotation.print(2);
+    
+//    rotation.print(2);
 }
 void VolumeRenderWorker::alignZ()
 {
     RotationMatrix<double> z_aligned;
     z_aligned.setYRotation(0.0);
     
+//    z_aligned.print(2);
+    
     RotationMatrix<double> delta_rotation;
     
     delta_rotation = z_aligned * scalebar_rotation.getInverse();
     
-    scalebar_rotation = delta_rotation * scalebar_rotation;
+//    delta_rotation.print(2);
+    
+    scalebar_rotation = z_aligned;
     
     rotation = delta_rotation * rotation;
+    
+//    scalebar_rotation.print(2);
+    
+//    rotation.print(2);
+    
 }
 void VolumeRenderWorker::rotateLeft()
 {
@@ -1544,25 +1575,33 @@ void VolumeRenderWorker::computePixelSize()
 
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
-
-
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(*normal_brush);
 
     if (isOrthoGridActive) drawGrid(painter);
     if (isRulerActive) drawRuler(painter);
+    drawCountScalebar(painter);
     
     painter->setPen(*normal_pen);
 
-    // Tick labels
+    // Position scalebar tick labels
     if (isScalebarActive)
     {
-        for (int i = 0; i < n_scalebar_ticks; i++)
+        for (int i = 0; i < n_position_scalebar_ticks; i++)
         {
-            painter->drawText(QPointF(scalebar_ticks[i*3+0], scalebar_ticks[i*3+1]), QString::number(scalebar_ticks[i*3+2]));
+            painter->drawText(QPointF(position_scalebar_ticks[i*3+0], position_scalebar_ticks[i*3+1]), QString::number(position_scalebar_ticks[i*3+2]));
         }
     }
 
+    // Count scalebar tick labels
+    if (isScalebarActive)
+    {
+        for (int i = 0; i < n_count_scalebar_ticks; i++)
+        {
+            painter->drawText(QPointF(count_scalebar_ticks[i*3+0], count_scalebar_ticks[i*3+1]), QString::number(count_scalebar_ticks[i*3+2], 'g', 4));
+        }
+    }
+    
     // Distance from (000), length of center line
     double distance = std::sqrt(centerline_coords[3]*centerline_coords[3] + centerline_coords[4]*centerline_coords[4] + centerline_coords[5]*centerline_coords[5]);
 
@@ -1600,68 +1639,18 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
 
     painter->drawRoundedRect(resolution_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
-
+    
     // Scalebar multiplier
     QString multiplier_string("x"+QString::number(scalebar_multiplier)+" 1/Å");
-    QRect multiplier_string_rect = emph_fontmetric->boundingRect(multiplier_string);
+    multiplier_string_rect = emph_fontmetric->boundingRect(multiplier_string);
     multiplier_string_rect += QMargins(5,5,5,5);
     multiplier_string_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
 
     painter->drawRoundedRect(multiplier_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);
-
-    // Transfer function
-    QRect tsf_rect(0, 0, 20, render_surface->height() - (multiplier_string_rect.bottom() + 5) - 50);
-    tsf_rect += QMargins(5,5,5,5);
-    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, multiplier_string_rect.bottom() + 5));
-
-    painter->setBrush(*fill_brush);
-    painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
-
-    tsf_rect -= QMargins(5,5,5,5);
-    Matrix<GLfloat> gl_tsf_rect(4,2);
-    glRect(&gl_tsf_rect, &tsf_rect);
-
-    beginRawGLCalls(painter);
-
-    shared_window->std_2d_tex_program->bind();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
-    shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
-
-    GLfloat texpos[] = {
-        0.0, 1.0,
-        0.0, 0.0,
-        1.0, 0.0,
-        1.0, 1.0
-    };
-
-    GLuint indices[] = {0,1,3,1,2,3};
-
-    glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
-    glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
-
-    glEnableVertexAttribArray(shared_window->std_2d_fragpos);
-    glEnableVertexAttribArray(shared_window->std_2d_texpos);
-
-    glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
-
-    glDisableVertexAttribArray(shared_window->std_2d_texpos);
-    glDisableVertexAttribArray(shared_window->std_2d_fragpos);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    shared_window->std_2d_tex_program->release();
-
-    endRawGLCalls(painter);
-
-    painter->setBrush(*normal_brush);
-    painter->drawRect(tsf_rect);
-
-
 }
 
-void VolumeRenderWorker::drawScalebars()
+void VolumeRenderWorker::drawPositionScalebars()
 {
     scalebar_coord_count = setScaleBars();
 
@@ -1681,6 +1670,167 @@ void VolumeRenderWorker::drawScalebars()
     glDisableVertexAttribArray(shared_window->std_3d_fragpos);
 
     shared_window->std_3d_color_program->release();
+}
+
+void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
+{
+    /*
+     * Based on the current display values (min and max), draw ticks on the counts scalebar. There are major and minor ticks.
+     * */
+    
+    double data_min, data_max;//, data_delta;
+    double tick_interdist_min = 10; // pixels
+    double exponent;
+    
+    // Draw transfer function bounding box
+    QRect tsf_rect(0, 0, 20, render_surface->height() - (multiplier_string_rect.bottom() + 5) - 50);
+    tsf_rect += QMargins(30,5,5,5);
+    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, multiplier_string_rect.bottom() + 5));
+
+    painter->setBrush(*fill_brush);
+//    painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
+
+    tsf_rect -= QMargins(30,5,5,5);
+    Matrix<GLfloat> gl_tsf_rect(4,2);
+    glRect(&gl_tsf_rect, &tsf_rect);
+    
+    
+    // Find appropriate tick positions
+    if (isModelActive)
+    {
+        data_min = tsf_parameters_model[2];
+        data_max = tsf_parameters_model[3];
+    }
+    else
+    {
+        data_min = tsf_parameters_svo[2];
+        data_max = tsf_parameters_svo[3];      
+    }
+    
+    if(isLogarithmic)
+    {
+        if (data_min <= 0) data_min = 1.0e-9;
+        if (data_max <= 0) data_min = 1.0e-9;
+        
+        data_min = log10(data_min);
+        data_max = log10(data_max);
+    }
+    
+    if (data_min < data_max)
+    {
+        double start, current;
+        int iter = 0, num_ticks = 0;
+        tickzerize(data_min, data_max, (double) tsf_rect.height(), tick_interdist_min, &exponent, &start, &num_ticks);
+        current = start;
+        n_count_scalebar_ticks = 0;
+                
+        Matrix<double> ticks(num_ticks+1,4);
+        
+        while ((current < data_max) && (iter < ticks.size()/4))
+        {
+            ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-10)/ (double) render_surface->width())*2.0;
+            ticks[iter*4+1] = -1.0 + ((render_surface->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) render_surface->height())*2.0;
+            ticks[iter*4+2] = -1.0 + (tsf_rect.right()/ (double) render_surface->width())*2.0;
+            ticks[iter*4+3] = -1.0 + ((render_surface->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) render_surface->height())*2.0;
+            
+            if (((int)round(current*pow(10.0, -exponent)) % 10) == 0)
+            {
+                ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-25)/ (double) render_surface->width())*2.0;
+                
+                if(n_count_scalebar_ticks < count_scalebar_ticks.size())
+                {
+                    count_scalebar_ticks[n_count_scalebar_ticks*3+0] = tsf_rect.left()-35;
+                    count_scalebar_ticks[n_count_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height();
+                    if (isLogarithmic) count_scalebar_ticks[n_count_scalebar_ticks*3+2] = pow(10,current);
+                    else count_scalebar_ticks[n_count_scalebar_ticks*3+2] = current;
+                    
+                    n_count_scalebar_ticks++;
+                }
+            }
+            current += pow(10.0, exponent);
+            iter++;
+        }
+        
+        beginRawGLCalls(painter);
+        setVbo(count_scalebar_vbo, ticks.toFloat().data(), iter*4, GL_STATIC_DRAW);
+        
+        // Draw transfer function texture
+        shared_window->std_2d_tex_program->bind();
+    
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+    
+        GLfloat texpos[] = {
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0
+        };
+    
+        GLuint indices[] = {0,1,3,1,2,3};
+    
+        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
+        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+    
+        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
+        glEnableVertexAttribArray(shared_window->std_2d_texpos);
+    
+        glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
+    
+        glDisableVertexAttribArray(shared_window->std_2d_texpos);
+        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    
+        shared_window->std_2d_tex_program->release();
+        
+        
+        // Draw the ticks
+        RotationMatrix<double> identity;
+        identity.setIdentity(2);
+        
+        shared_window->std_2d_color_program->bind();
+        glEnableVertexAttribArray(shared_window->std_2d_color_fragpos);
+    
+        glBindBuffer(GL_ARRAY_BUFFER, count_scalebar_vbo);
+        glVertexAttribPointer(shared_window->std_2d_color_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+        glUniformMatrix2fv(shared_window->std_2d_color_transform, 1, GL_FALSE, identity.getColMajor().toFloat().data());
+    
+        glUniform4fv(shared_window->std_2d_color_color, 1, clear_color_inverse.data());
+    
+        glDrawArrays(GL_LINES,  0, iter*2);
+    
+        glDisableVertexAttribArray(shared_window->std_2d_color_fragpos);
+    
+        shared_window->std_2d_color_program->release();
+        
+        endRawGLCalls(painter);
+    
+        painter->setBrush(*normal_brush);
+        painter->drawRect(tsf_rect);
+    }
+    
+}
+
+
+void VolumeRenderWorker::tickzerize(double min, double max, double size, double min_interdist, double * qualified_exponent, double * start, int * num_ticks)
+{
+    double delta = max - min;
+    double exponent = -10;
+    
+    while (exponent < 10)
+    {
+        if ((size/(delta / pow(10.0, exponent))) >= min_interdist) 
+        {
+            *qualified_exponent = exponent;
+            *num_ticks = delta / pow(10.0, exponent);
+            break;
+        }
+        exponent++;
+    }
+    *start = ((int) ceil(min * pow(10.0, -*qualified_exponent))) * pow(10.0, *qualified_exponent);; 
 }
 
 void VolumeRenderWorker::drawRayTex()
@@ -1890,7 +2040,7 @@ size_t VolumeRenderWorker::setScaleBars()
 
     Matrix<GLfloat> scalebar_coords(20000,3);
 
-    n_scalebar_ticks = 0;
+    n_position_scalebar_ticks = 0;
 
     // Draw ticks
     for (int i = 5; i >= -5; i--)
@@ -1966,25 +2116,25 @@ size_t VolumeRenderWorker::setScaleBars()
                     // Text
                     if (tick_levels == tick_levels_max - 1)
                     {
-                        if ((size_t) n_scalebar_ticks+3 < scalebar_ticks.getM())
+                        if ((size_t) n_position_scalebar_ticks+3 < position_scalebar_ticks.getM())
                         {
-                            getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
-                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
-                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
-                            scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
-                            n_scalebar_ticks++;
+                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1;
+                            n_position_scalebar_ticks++;
 
-                            getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+4)*3, &scalebar_view_matrix);
-                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
-                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
-                            scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
-                            n_scalebar_ticks++;
+                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+4)*3, &scalebar_view_matrix);
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1;
+                            n_position_scalebar_ticks++;
 
-                            getPosition2D(scalebar_ticks.data() + 3 * n_scalebar_ticks, scalebar_coords.data() + (coord_counter+8)*3, &scalebar_view_matrix);
-                            scalebar_ticks[3 * n_scalebar_ticks + 0] = (scalebar_ticks[3 * n_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
-                            scalebar_ticks[3 * n_scalebar_ticks + 1] = (1.0 - (scalebar_ticks[3 * n_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
-                            scalebar_ticks[3 * n_scalebar_ticks + 2] = j * 0.1;
-                            n_scalebar_ticks++;
+                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+8)*3, &scalebar_view_matrix);
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1;
+                            n_position_scalebar_ticks++;
                         }
                         scalebar_multiplier = tick_interdistance * 10.0;
                     }

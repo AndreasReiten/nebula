@@ -753,8 +753,13 @@ RotationMatrix<T>::~RotationMatrix()
 template <class T>
 RotationMatrix<T>& RotationMatrix<T>::operator = (RotationMatrix other)
 {
-    swap(*this, other);
-
+    this->m = other.getM();
+    this->n = other.getN();
+    this->buffer.resize(this->m*this->n);
+    for (size_t i = 0; i < this->m*this->n; i++)
+    {
+        this->buffer[i] = other[i];
+    }
     return * this;
 }
 

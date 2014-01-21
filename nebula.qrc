@@ -47,5 +47,7 @@
         <file>art/rotate_left.png</file>
         <file>art/rotate_down.png</file>
         <file>art/ruler.png</file>
+        <file>src/shaders/std_2d_color.v.glsl</file>
+        <file>src/shaders/std_2d_color.f.glsl</file>
     </qresource>
 </RCC>

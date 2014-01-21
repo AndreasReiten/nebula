@@ -3,6 +3,7 @@
 SharedContextWindow::SharedContextWindow()
     : std_2d_tex_program(0),
     std_3d_color_program(0),
+    std_2d_color_program(0),
     std_blend_program(0),
     gl_worker(0)
 {
@@ -83,6 +84,16 @@ void SharedContextWindow::initialize()
     if ((std_3d_fragpos = std_3d_color_program->attributeLocation("fragpos")) == -1) qCritical("Invalid attribute");
     if ((std_3d_color = std_3d_color_program->uniformLocation("color")) == -1) qCritical("Invalid uniform");
     if ((std_3d_transform = std_3d_color_program->uniformLocation("transform")) == -1) qCritical("Invalid uniform");
+    
+    // Shader for drawing lines and similar in 2D
+    std_2d_color_program = new QOpenGLShaderProgram(this);
+    std_2d_color_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "://src/shaders/std_2d_color.v.glsl");
+    std_2d_color_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "://src/shaders/std_2d_color.f.glsl");
+    if (!std_2d_color_program->link()) qFatal(std_2d_tex_program->log().toStdString().c_str());
+
+    if ((std_2d_color_fragpos = std_2d_color_program->attributeLocation("fragpos")) == -1) qCritical("Invalid attribute");
+    if ((std_2d_color_color = std_2d_color_program->uniformLocation("color")) == -1) qCritical("Invalid uniform");
+    if ((std_2d_color_transform = std_2d_color_program->uniformLocation("transform")) == -1) qCritical("Invalid uniform");
 
     // Shader for blending two textures
     std_blend_program = new QOpenGLShaderProgram(this);
