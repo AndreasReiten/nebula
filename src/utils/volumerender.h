@@ -193,12 +193,17 @@ private:
     size_t setScaleBars();
     size_t scalebar_coord_count;
     GLuint scalebar_vbo;
-    Matrix<float> position_scalebar_ticks;
+    GLuint count_scalebar_vbo;
+    double scalebar_multiplier;
+    
     int n_position_scalebar_ticks;
     int n_count_scalebar_ticks;
-    double scalebar_multiplier;
-    GLuint count_scalebar_vbo;
+    int n_count_minor_scalebar_ticks;
+    
+    
+    Matrix<float> position_scalebar_ticks;
     Matrix<float> count_scalebar_ticks;
+    Matrix<float> count_minor_scalebar_ticks;
     
     
     // Transfer function texture

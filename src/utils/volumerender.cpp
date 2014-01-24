@@ -193,8 +193,10 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 
     // Scalebars
     position_scalebar_ticks.reserve(100,3);
-    count_scalebar_ticks.reserve(10,3);
+    count_scalebar_ticks.reserve(100,3);
+    count_minor_scalebar_ticks.reserve(100,3);
     n_count_scalebar_ticks = 0;
+    n_count_minor_scalebar_ticks = 0;
     n_position_scalebar_ticks = 0;
             
 
@@ -1594,11 +1596,18 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     }
 
     // Count scalebar tick labels
-    if (isScalebarActive)
+    if (n_count_scalebar_ticks >= 2)
     {
         for (int i = 0; i < n_count_scalebar_ticks; i++)
         {
             painter->drawText(QPointF(count_scalebar_ticks[i*3+0], count_scalebar_ticks[i*3+1]), QString::number(count_scalebar_ticks[i*3+2], 'g', 4));
+        }
+    }
+    else
+    {
+        for (int i = 0; i < n_count_minor_scalebar_ticks; i++)
+        {
+            painter->drawText(QPointF(count_minor_scalebar_ticks[i*3+0], count_minor_scalebar_ticks[i*3+1]), QString::number(count_minor_scalebar_ticks[i*3+2], 'g', 4));
         }
     }
     
@@ -1722,7 +1731,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         int iter = 0, num_ticks = 0;
         tickzerize(data_min, data_max, (double) tsf_rect.height(), tick_interdist_min, &exponent, &start, &num_ticks);
         current = start;
-        n_count_scalebar_ticks = 0;
+        n_count_scalebar_ticks = 0, n_count_minor_scalebar_ticks = 0;;
                 
         Matrix<double> ticks(num_ticks+1,4);
         
@@ -1747,6 +1756,17 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
                     n_count_scalebar_ticks++;
                 }
             }
+            
+            if(n_count_minor_scalebar_ticks < count_minor_scalebar_ticks.size())
+            {
+                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+0] = tsf_rect.left()-35;
+                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height();
+                if (isLogarithmic) count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = pow(10,current);
+                else count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = current;
+                
+                n_count_minor_scalebar_ticks++;
+            }
+            
             current += pow(10.0, exponent);
             iter++;
         }

@@ -18,43 +18,25 @@ void FileTreeView::dragEnterEvent(QDragEnterEvent *event)
     }   
 }
 
-//void FileTreeView::dragLeaveEvent(QDragLeaveEvent *event)
-//{
-//    qDebug("Drag leave event");
-//    event->accept();
-//}
-
 void FileTreeView::dropEvent(QDropEvent *event)
 {
     qDebug("Drop event");
     
     QByteArray encodedData = event->mimeData()->data("text/path");
     QDataStream stream(&encodedData, QIODevice::ReadOnly);
-    QStringList newItems;
-    int rows = 0;
-
+    
     while (!stream.atEnd()) 
     {
         QString text;
         stream >> text;
-        newItems << text;
         
         qDebug() << text;
-        
-        ++rows;
     }
     
-//    mimeTypeCombo->clear();
-//    mimeTypeCombo->addItems(event->mimeData()->formats());
     event->setDropAction(Qt::CopyAction);
     event->acceptProposedAction();
 }
 
-//void FileTreeView::dragMoveEvent(QDragMoveEvent *event)
-//{
-////    qDebug("Drag move event");
-//    event->acceptProposedAction();
-//}
 
 void FileTreeView::itemChanged(const QModelIndex & item)
 {
@@ -67,48 +49,18 @@ FileSourceModel::FileSourceModel(QWidget *parent) :
     
 }
 
-//bool FileSourceModel::canDropMimeData(const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent) const
-//{
-//    qDebug();
-    
-//    return true;
-//}
-
 Qt::DropActions FileSourceModel::supportedDropActions() const
 {
-    qDebug();
-    
     return Qt::CopyAction | Qt::MoveAction;
 }
 
-//Qt::DropActions FileSourceModel::supportedDragActions() const
-//{
-//    qDebug();
-    
-//    return Qt::CopyAction | Qt::MoveAction;
-//}
-
 Qt::ItemFlags FileSourceModel::flags(const QModelIndex &index) const
 {
-    return Qt::ItemIsSelectable | Qt::ItemIsDragEnabled |
-               Qt::ItemIsDropEnabled | Qt::ItemIsEnabled;
-//    qDebug();
-    
-//    Qt::ItemFlags defaultFlags = QFileSystemModel::flags(index);
-
-//    if (index.isValid())
-//        return Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | defaultFlags;
-//    else
-//    {
-//        qDebug() << "invalid index";
-//        return Qt::ItemIsDropEnabled | defaultFlags;
-//    }
+    return Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEnabled;
 }
 
 QStringList FileSourceModel::mimeTypes() const
 {
-    qDebug();
-    
     QStringList types;
     types << "text/path";
     return types;
@@ -123,11 +75,11 @@ QMimeData *FileSourceModel::mimeData(const QModelIndexList &indexes) const
 
     QDataStream stream(&encodedData, QIODevice::WriteOnly);
 
-    foreach (const QModelIndex &index, indexes) {
-        if (index.isValid()) 
+    foreach (const QModelIndex &index, indexes) 
+    {
+        if (index.isValid() && (index.column() == 0)) 
         {
-            QString text = filePath(index); //data(index, Qt::DisplayRole).toString();
-            stream << text;
+            stream << filePath(index);
         }
     }
 
@@ -135,145 +87,3 @@ QMimeData *FileSourceModel::mimeData(const QModelIndexList &indexes) const
     return mimeData;
 }
 
-bool FileSourceModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
-{
-    qDebug() << "Dropping payload!";
-    
-    if (action == Qt::IgnoreAction)
-        return true;
-
-    if (!data->hasFormat("text/path"))
-        return false;
-
-    if (column > 0)
-        return false;
-    
-    int beginRow;
-    
-    if (row != -1)
-        beginRow = row;
-
-    else if (parent.isValid())
-        beginRow = parent.row();
-
-    else
-        beginRow = rowCount(QModelIndex());
-    
-    QByteArray encodedData = data->data("text/path");
-    QDataStream stream(&encodedData, QIODevice::ReadOnly);
-    QStringList newItems;
-    int rows = 0;
-
-    while (!stream.atEnd()) 
-    {
-        QString text;
-        stream >> text;
-        qDebug() << text;
-        newItems << text;
-        ++rows;
-    }
-    
-    insertRows(beginRow, rows, QModelIndex());
-    foreach (const QString &text, newItems) {
-        QModelIndex idx = index(beginRow, 0, QModelIndex());
-        setData(idx, text);
-        beginRow++;
-    }
-
-    return true;
-}
-
-
-
-
-//FileDisplayModel::FileDisplayModel(QWidget *parent) :
-//    QStandardItemModel(parent)
-//{
-    
-//}
-
-//Qt::DropActions FileDisplayModel::supportedDropActions() const
-//{
-//    qDebug();
-    
-//    return Qt::CopyAction | Qt::MoveAction;
-//}
-
-//Qt::DropActions FileDisplayModel::supportedDragActions() const
-//{
-//    qDebug();
-    
-//    return Qt::CopyAction | Qt::MoveAction;
-//}
-
-//Qt::ItemFlags FileDisplayModel::flags(const QModelIndex &index) const
-//{
-//    return Qt::ItemIsSelectable | Qt::ItemIsDragEnabled |
-//               Qt::ItemIsDropEnabled | Qt::ItemIsEnabled;
-//    qDebug();
-    
-//    Qt::ItemFlags defaultFlags = QStandardItemModel::flags(index);
-
-//    if (index.isValid())
-//        return Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | defaultFlags;
-//    else
-//    {
-//        qDebug() << "invalid index";
-//        return Qt::ItemIsDropEnabled | defaultFlags;
-//    }
-//}
-
-//QStringList FileDisplayModel::mimeTypes() const
-//{
-//    QStringList types;
-//    types << "text/path";
-//    return types;
-//}
-
-//bool FileDisplayModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
-//{
-//    qDebug() << "Dropping payload!";
-    
-//    if (action == Qt::IgnoreAction)
-//        return true;
-
-//    if (!data->hasFormat("text/path"))
-//        return false;
-
-//    if (column > 0)
-//        return false;
-    
-//    int beginRow;
-    
-//    if (row != -1)
-//        beginRow = row;
-
-//    else if (parent.isValid())
-//        beginRow = parent.row();
-
-//    else
-//        beginRow = rowCount(QModelIndex());
-    
-//    QByteArray encodedData = data->data("text/path");
-//    QDataStream stream(&encodedData, QIODevice::ReadOnly);
-//    QStringList newItems;
-//    int rows = 0;
-
-//    while (!stream.atEnd()) 
-//    {
-//        QString text;
-//        stream >> text;
-//        qDebug() << text;
-//        newItems << text;
-//        ++rows;
-//    }
-    
-//    insertRows(beginRow, rows, QModelIndex());
-//    foreach (const QString &text, newItems) {
-//        QModelIndex idx = index(beginRow, 0, QModelIndex());
-//        setData(idx, text);
-//        beginRow++;
-//    }
-
-//    return true;
-//}

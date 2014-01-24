@@ -1096,13 +1096,33 @@ void MainWindow::initializeInteractives()
         scriptToolBar->addAction(scriptingAct);
 
         // File browser
+        
+        // Drag-dropping will result in adding relevant paths to the filter. Will not add individual files to filters in fear that it might slow down the browser. Can experiment later
+        // Implement a function that lets a tree act on its model and set its filters. Call this function from drag drop. Also make a function to make a qstringlist containing filenames as specified by drag-drop
+        // Also the ruler function should be made to use vertices to look better
         fileBrowserWidget = new QWidget;
         fileSystemModel  = new FileSourceModel;
         fileSelectedModel = new FileSourceModel;
         fileSystemModel->setRootPath(QDir::rootPath());
+        fileSystemModel->setNameFilterDisables(false);
+        QStringList filters;
+        filters << "*.txt";
+        fileSystemModel->setNameFilters(filters);
+        fileSystemModel->setFilter(QDir::AllDirs | QDir::Files | QDir::Drives);
+        
+        
+        fileSelectedModel->setRootPath(QDir::rootPath());
+//        fileSelectedModel->setNameFilterDisables(false);
+//        filters.;
+//        filters << "/home/natt/" << "/home/natt" << "home/natt/" << "*.cbf";
+//        fileSelectedModel->setNameFilters(filters);
+//        fileSelectedModel->setFilter(QDir::Dirs | QDir::Files | QDir::Drives);
+        
+//        qDebug() << fileSelectedModel->nameFilters();
         
         fileSystemTree = new FileTreeView;
         fileSystemTree->setModel(fileSystemModel);
+//        fileSystemTree->setSelectionMode(QAbstractItemView::NoSelection);
         fileSystemTree->viewport()->setAcceptDrops(true);
         fileSystemTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
         fileSystemTree->setDragDropMode(QAbstractItemView::DragDrop);
@@ -1115,13 +1135,17 @@ void MainWindow::initializeInteractives()
         fileSelectedTree = new FileTreeView;
         fileSelectedTree->setModel(fileSelectedModel);
         fileSystemTree->viewport()->setAcceptDrops(true);
-        fileSelectedTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        fileSelectedTree->setSelectionMode(QAbstractItemView::MultiSelection);
         fileSelectedTree->setDragDropMode(QAbstractItemView::DragDrop);
         fileSelectedTree->setDragEnabled(1);
         fileSelectedTree->setAcceptDrops(1);
         fileSelectedTree->setDropIndicatorShown(1);
         fileSelectedTree->setSortingEnabled(1);
-
+          
+//        filters.clear();
+//        filters << "home";// << "natt" << "*.txt"; 
+//        fileSelectedModel->setNameFilters(filters);
+//        qDebug() << fileSelectedModel->nameFilters();
         
 //        fileSelectedModel->setRootPath(QDir::rootPath());
         

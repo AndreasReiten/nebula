@@ -10,6 +10,9 @@
 #include <QDragMoveEvent>
 #include <QDragLeaveEvent>
 #include <QDebug>
+#include <QStringList>
+
+// New idea is to use a single view akin to http://www.bogotobogo.com/Qt/Qt5_QTreeView_QFileSystemModel_ModelView_MVC.php and rather mark indices for inclusion using QFileSystemModel::setData
 
 class FileTreeView : public QTreeView
 {
@@ -19,15 +22,14 @@ public:
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event);
-//    void dragLeaveEvent(QDragLeaveEvent *event);
     void dropEvent(QDropEvent *event);
-//    void dragMoveEvent(QDragMoveEvent *event);
     
-signals:
-
 public slots:
     void itemChanged(const QModelIndex & item);
 
+private:
+    QStringList filter;    
+    
 };
 
 class FileSourceModel : public QFileSystemModel
@@ -38,39 +40,10 @@ public:
     
 protected:
     Qt::DropActions supportedDropActions() const;
-//    Qt::DropActions supportedDragActions() const;
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QStringList mimeTypes() const;
     QMimeData *mimeData(const QModelIndexList &indexes) const;
     
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-//    bool canDropMimeData(const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent) const;
-    
-    
-signals:
-
-public slots:
-
 };
-
-//class FileDisplayModel : public QStandardItemModel
-//{
-//    Q_OBJECT
-//public:
-//    explicit FileDisplayModel(QWidget *parent = 0);
-    
-//protected:
-//    Qt::DropActions supportedDropActions() const;
-////    Qt::DropActions supportedDragActions() const;
-//    Qt::ItemFlags flags(const QModelIndex &index) const;   
-//    QStringList mimeTypes() const;
-    
-//    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-
-//signals:
-
-//public slots:
-
-//};
 
 #endif // FILETREEVIEW_H
