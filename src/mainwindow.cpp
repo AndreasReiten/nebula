@@ -1102,16 +1102,19 @@ void MainWindow::initializeInteractives()
         // Also the ruler function should be made to use vertices to look better
         fileBrowserWidget = new QWidget;
         fileSystemModel  = new FileSourceModel;
-        fileSelectedModel = new FileSourceModel;
+//        fileSelectedModel = new FileSourceModel;
         fileSystemModel->setRootPath(QDir::rootPath());
-        fileSystemModel->setNameFilterDisables(false);
+//        fileSystemModel->setNameFilterDisables(false);
+//        QStringList filters;
+//        filters << "*.txt";
+//        fileSystemModel->setNameFilters(filters);
+//        fileSystemModel->setFilter(QDir::AllDirs | QDir::Files | QDir::Drives | QDir::NoDotAndDotDot);
+        
+        
+//        fileSelectedModel->setRootPath(QDir::rootPath());
         QStringList filters;
         filters << "*.txt";
         fileSystemModel->setNameFilters(filters);
-        fileSystemModel->setFilter(QDir::AllDirs | QDir::Files | QDir::Drives);
-        
-        
-        fileSelectedModel->setRootPath(QDir::rootPath());
 //        fileSelectedModel->setNameFilterDisables(false);
 //        filters.;
 //        filters << "/home/natt/" << "/home/natt" << "home/natt/" << "*.cbf";
@@ -1123,24 +1126,24 @@ void MainWindow::initializeInteractives()
         fileSystemTree = new FileTreeView;
         fileSystemTree->setModel(fileSystemModel);
 //        fileSystemTree->setSelectionMode(QAbstractItemView::NoSelection);
-        fileSystemTree->viewport()->setAcceptDrops(true);
-        fileSystemTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
-        fileSystemTree->setDragDropMode(QAbstractItemView::DragDrop);
-        fileSystemTree->setDragEnabled(1);
-        fileSystemTree->setAcceptDrops(1);
-        fileSystemTree->setDropIndicatorShown(1);
-        fileSystemTree->setSortingEnabled(1);
+//        fileSystemTree->viewport()->setAcceptDrops(true);
+//        fileSystemTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
+//        fileSystemTree->setDragDropMode(QAbstractItemView::DragDrop);
+//        fileSystemTree->setDragEnabled(1);
+//        fileSystemTree->setAcceptDrops(1);
+//        fileSystemTree->setDropIndicatorShown(1);
+//        fileSystemTree->setSortingEnabled(1);
         
 
-        fileSelectedTree = new FileTreeView;
-        fileSelectedTree->setModel(fileSelectedModel);
-        fileSystemTree->viewport()->setAcceptDrops(true);
-        fileSelectedTree->setSelectionMode(QAbstractItemView::MultiSelection);
-        fileSelectedTree->setDragDropMode(QAbstractItemView::DragDrop);
-        fileSelectedTree->setDragEnabled(1);
-        fileSelectedTree->setAcceptDrops(1);
-        fileSelectedTree->setDropIndicatorShown(1);
-        fileSelectedTree->setSortingEnabled(1);
+//        fileSelectedTree = new FileTreeView;
+//        fileSelectedTree->setModel(fileSelectedModel);
+//        fileSystemTree->viewport()->setAcceptDrops(true);
+//        fileSelectedTree->setSelectionMode(QAbstractItemView::MultiSelection);
+//        fileSelectedTree->setDragDropMode(QAbstractItemView::DragDrop);
+//        fileSelectedTree->setDragEnabled(1);
+//        fileSelectedTree->setAcceptDrops(1);
+//        fileSelectedTree->setDropIndicatorShown(1);
+//        fileSelectedTree->setSortingEnabled(1);
           
 //        filters.clear();
 //        filters << "home";// << "natt" << "*.txt"; 
@@ -1156,7 +1159,7 @@ void MainWindow::initializeInteractives()
         fileBrowserLayout->setMargin(0);
         fileBrowserLayout->setContentsMargins(0,0,0,0);
         fileBrowserLayout->addWidget(fileSystemTree,0,0,1,1);
-        fileBrowserLayout->addWidget(fileSelectedTree,0,1,1,1);
+//        fileBrowserLayout->addWidget(fileSelectedTree,0,1,1,1);
 
         fileBrowserWidget->setLayout(fileBrowserLayout);
         fileBrowserWidget->hide();

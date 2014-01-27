@@ -8,82 +8,132 @@ FileTreeView::FileTreeView(QWidget *parent) :
     connect(this, SIGNAL(clicked(const QModelIndex &)), this, SLOT(itemChanged(const QModelIndex &)));
 }
 
-void FileTreeView::dragEnterEvent(QDragEnterEvent *event)
-{
-    qDebug("Drag enter event");
-    if (event->mimeData()->hasFormat("text/path"))
-    {
-        qDebug("Accepted");
-        event->acceptProposedAction();
-    }   
-}
-
-void FileTreeView::dropEvent(QDropEvent *event)
-{
-    qDebug("Drop event");
-    
-    QByteArray encodedData = event->mimeData()->data("text/path");
-    QDataStream stream(&encodedData, QIODevice::ReadOnly);
-    
-    while (!stream.atEnd()) 
-    {
-        QString text;
-        stream >> text;
-        
-        qDebug() << text;
-    }
-    
-    event->setDropAction(Qt::CopyAction);
-    event->acceptProposedAction();
-}
-
-
 void FileTreeView::itemChanged(const QModelIndex & item)
 {
-    resizeColumnToContents(item.column());
+    if (item.column() == 0) resizeColumnToContents(item.column());
 }
 
 FileSourceModel::FileSourceModel(QWidget *parent) :
     QFileSystemModel(parent)
 {
-    
+    setReadOnly(true);
+    setNameFilterDisables(false);
+    setFilter(QDir::NoDotAndDotDot | QDir::AllDirs | QDir::Files);
 }
 
-Qt::DropActions FileSourceModel::supportedDropActions() const
+Qt::ItemFlags FileSourceModel::flags(const QModelIndex& index) const
 {
-    return Qt::CopyAction | Qt::MoveAction;
+	Qt::ItemFlags f = QFileSystemModel::flags(index);
+	if (index.column() == 0) 
+    { // make the first column checkable
+		f |= Qt::ItemIsUserCheckable;
+	}
+	return f;
 }
 
-Qt::ItemFlags FileSourceModel::flags(const QModelIndex &index) const
+QVariant FileSourceModel::data(const QModelIndex& index, int role) const
 {
-    return Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEnabled;
-}
-
-QStringList FileSourceModel::mimeTypes() const
-{
-    QStringList types;
-    types << "text/path";
-    return types;
-}
-
-QMimeData *FileSourceModel::mimeData(const QModelIndexList &indexes) const
-{
-    qDebug();
-    
-    QMimeData *mimeData = new QMimeData();
-    QByteArray encodedData;
-
-    QDataStream stream(&encodedData, QIODevice::WriteOnly);
-
-    foreach (const QModelIndex &index, indexes) 
+    // Returns state depending on role (for example, is this index checked or not?)
+	if (index.isValid() && (index.column() == 0) && (role == Qt::CheckStateRole)) 
     {
-        if (index.isValid() && (index.column() == 0)) 
+        // If an index has multiple children, of which at least one is unchecked, set the index check flag to partially checked
+        if (isDir(index))
         {
-            stream << filePath(index);
+            if (hasChildren(index))
+            {
+                int contained = 0;
+                for (int i = 0; i < rowCount(index); i++)
+                {
+                    if (directories.contains(filePath(index.child(i,0)))) contained++;
+                }
+                if (contained == 0) return Qt::Unchecked; 
+                else if (contained == rowCount(index)) return Qt::Checked; 
+                else return Qt::PartiallyChecked;
+            }
+            else if (directories.contains(filePath(index)))
+            {
+                return Qt::Checked;
+            } 
+            else 
+            {
+                return Qt::Unchecked;
+            }
+        }
+        else 
+        {
+            if (files.contains(filePath(index)))
+            {
+                return Qt::Checked;
+            } 
+            else 
+            {
+                return Qt::Unchecked;
+            }
+        }
+	}
+	else return QFileSystemModel::data(index, role);
+}
+
+bool FileSourceModel::setData(const QModelIndex& index, const QVariant& value, int role)
+{
+    // Set data depending on role and corresponding value
+	if ((index.isValid()) && (index.column() == 0) && (role == Qt::CheckStateRole)) 
+    {
+		// store checked paths, remove unchecked paths
+		if (isDir(index)) 
+        {
+			if (value.toInt() == Qt::Checked) addPath(index);
+            else removePath(index);
+            
+			directories.sort();
+		}
+        else 
+        {
+            if (value.toInt() == Qt::Checked) files << filePath(index);
+            else files.removeAll(filePath(index));
+			files.sort();
+            qDebug() << files;
+        }
+		return true;
+	}
+	return QFileSystemModel::setData(index, value, role);
+}
+
+
+bool FileSourceModel::addPath(QModelIndex index)
+{
+    directories << filePath(index);
+    if (hasChildren(index))
+    {
+        for (int i = 0; i < rowCount(index); i++)
+        {
+            QModelIndex child = index.child(i,0);
+            if (child.isValid())
+            {
+//                Need dir check here and func below
+                directories << filePath(child);
+                emit dataChanged(index, child);
+            }
         }
     }
-
-    mimeData->setData("text/path", encodedData);
-    return mimeData;
+    emit dataChanged(index, index.parent());
 }
 
+bool FileSourceModel::removePath(QModelIndex index)
+{
+    directories.removeAll(filePath(index));
+    if (hasChildren(index))
+    {
+        for (int i = 0; i < rowCount(index); i++)
+        {
+            QModelIndex child = index.child(i,0);
+            if (child.isValid())
+            {
+                directories.removeAll(filePath(child));
+                emit dataChanged(index, child);
+                removePath(child);
+            }
+        }
+    }
+    emit dataChanged(index, index.parent());
+}

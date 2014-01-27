@@ -184,9 +184,9 @@ private:
     // File browser
     QWidget * fileBrowserWidget;
     FileSourceModel * fileSystemModel;
-    FileSourceModel * fileSelectedModel;
+//    FileSourceModel * fileSelectedModel;
     FileTreeView *fileSystemTree;
-    FileTreeView *fileSelectedTree;
+//    FileTreeView *fileSelectedTree;
     
     
     // Actions
