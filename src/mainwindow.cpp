@@ -1113,7 +1113,7 @@ void MainWindow::initializeInteractives()
         
 //        fileSelectedModel->setRootPath(QDir::rootPath());
         QStringList filters;
-        filters << "*.txt";
+        filters << "*.cbf";
         fileSystemModel->setNameFilters(filters);
 //        fileSelectedModel->setNameFilterDisables(false);
 //        filters.;
