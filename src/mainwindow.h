@@ -67,7 +67,7 @@ public:
 private slots:
     void updateFileHeader(int value);
     void displayPopup(QString title, QString text);
-    void toggleScriptView();
+//    void toggleScriptView();
 
     void test();
 
@@ -105,7 +105,7 @@ private slots:
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
-    void initializeThreads();
+    void initializeWorkers();
 
 //    void setReduceThresholdLow(double value);
 //    void setReduceThresholdHigh(double value);
@@ -119,6 +119,9 @@ private slots:
     void decrementDisplayFile1();
     void decrementDisplayFile10();
     void setDisplayFile(int value);
+    
+    // File selection
+    void setFilesFromSelectionModel();
 
 signals:
     void testToWindow();
@@ -130,6 +133,9 @@ signals:
     void captureFrameBuffer(QString path, float quality);
 
 private:
+    // File selection filter
+    QLineEdit * fileSelectionFilter;
+    
     // Header dock widget
     QDockWidget * fileHeaderDock;
     QPlainTextEdit * fileHeaderEdit;
@@ -178,14 +184,14 @@ private:
     DisplayFileWorker * displayFileWorker;
 
     // Boolean checks
-    bool isInScriptMode;
+//    bool isInScriptMode;
 
 
     // File browser
     QWidget * fileBrowserWidget;
-    FileSourceModel * fileSystemModel;
+    FileSelectionModel * fileSelectionModel;
 //    FileSourceModel * fileSelectedModel;
-    FileTreeView *fileSystemTree;
+    FileTreeView *fileSelectionTree;
 //    FileTreeView *fileSelectedTree;
     
     
@@ -353,7 +359,7 @@ protected:
     QMenu *scriptMenu;
     QMenu *viewMenu;
     QMenu *helpMenu;
-    QToolBar *scriptToolBar;
+    QToolBar *fileSelectionToolBar;
     QToolBar *viewToolBar;
 
 

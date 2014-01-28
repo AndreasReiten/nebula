@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 
-MainWindow::MainWindow() :
-    isInScriptMode(true)
+MainWindow::MainWindow() 
+//    isInScriptMode(true)
 {
     //     Set default values
     current_svo = 0;
@@ -41,7 +41,7 @@ MainWindow::MainWindow() :
     this->initializeMenus();
     this->initializeInteractives();
     this->initializeConnects();
-    this->initializeThreads();
+    this->initializeWorkers();
 
     setCentralWidget(mainWidget);
     readSettings();
@@ -94,7 +94,7 @@ void MainWindow::displayPopup(QString title, QString text)
 }
 
 
-void MainWindow::initializeThreads()
+void MainWindow::initializeWorkers()
 {
     readScriptThread = new QThread;
     setFileThread = new QThread;
@@ -133,6 +133,7 @@ void MainWindow::initializeThreads()
     setFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
 
     setFileWorker->moveToThread(setFileThread);
+    connect(setFileButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
     connect(setFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
     connect(setFileWorker, SIGNAL(finished()), this, SLOT(setFileButtonFinish()));
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
@@ -445,6 +446,13 @@ void MainWindow::runAllInOneThread()
     allInOneThread->start();
 }
 
+void MainWindow::setFilesFromSelectionModel()
+{
+    if (!scriptingAct->isChecked()) file_paths = fileSelectionModel->getFiles();
+    
+//    qDebug() << file_paths;
+}
+
 //void MainWindow::setReduceThresholdLow(double value)
 //{
 //    this->threshold_reduce_low = (float) value;
@@ -483,6 +491,8 @@ void MainWindow::initializeEmit()
     funcParamDSpinBox->setValue(0.005);
 
     qualitySlider->setValue(100);
+    
+    fileSelectionFilter->setText("*.cbf");
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -531,10 +541,13 @@ void MainWindow::initializeActions()
     // Actions
     scriptingAct = new QAction(QIcon(":/art/script.png"), tr("&Toggle scripting mode"), this);
     scriptingAct->setCheckable(true);
-    scriptingAct->setChecked(true);
+    scriptingAct->setChecked(false);
     newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
+    newAct->setVisible(false);
     openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
+    openAct->setVisible(false);
     saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
+    saveAct->setVisible(false);
     runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
     saveAsAct = new QAction(QIcon(":/art/save.png"), tr("Save script &As..."), this);
     exitAct = new QAction(tr("E&xit program"), this);
@@ -836,23 +849,23 @@ void MainWindow::setTab(int tab)
 }
 
 
-void MainWindow::toggleScriptView()
-{
-    isInScriptMode = !isInScriptMode;
+//void MainWindow::toggleScriptView()
+//{
+//    isInScriptMode = !isInScriptMode;
 
-    if (isInScriptMode)
-    {
-        scriptTextEdit->show();
-        readScriptButton->show();
-        fileBrowserWidget->hide();
-    }
-    else
-    {
-        scriptTextEdit->hide();
-        readScriptButton->hide();
-        fileBrowserWidget->show();
-    }
-}
+//    if (isInScriptMode)
+//    {
+//        scriptTextEdit->show();
+//        readScriptButton->show();
+//        fileBrowserWidget->hide();
+//    }
+//    else
+//    {
+//        scriptTextEdit->hide();
+//        readScriptButton->hide();
+//        fileBrowserWidget->show();
+//    }
+//}
 
 void MainWindow::initializeConnects()
 {
@@ -896,7 +909,14 @@ void MainWindow::initializeConnects()
     
     
     /* this <-> this */
-    connect(this->scriptingAct, SIGNAL(triggered()), this, SLOT(toggleScriptView()));
+    connect(this->scriptingAct, SIGNAL(toggled(bool)), fileBrowserWidget, SLOT(setHidden(bool)));
+    connect(this->scriptingAct, SIGNAL(toggled(bool)), fileSelectionFilter, SLOT(setDisabled(bool)));
+    connect(this->scriptingAct, SIGNAL(toggled(bool)), scriptTextEdit, SLOT(setVisible(bool)));
+    connect(this->scriptingAct, SIGNAL(toggled(bool)), readScriptButton, SLOT(setVisible(bool)));
+    connect(this->scriptingAct, SIGNAL(toggled(bool)), newAct, SLOT(setVisible(bool)));
+    connect(this->scriptingAct, SIGNAL(toggled(bool)), openAct, SLOT(setVisible(bool)));
+    connect(this->scriptingAct, SIGNAL(toggled(bool)), saveAct, SLOT(setVisible(bool)));
+    
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
 //    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
 //    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdHigh(double)));
@@ -917,6 +937,9 @@ void MainWindow::initializeConnects()
     connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
+    
+    /*this <-> misc*/
+    connect(fileSelectionFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
 }
 
 void MainWindow::setGenericProgressFormat(QString str)
@@ -1009,7 +1032,8 @@ void MainWindow::initializeInteractives()
         readScriptButton->setIconSize(QSize(32,32));
         readScriptButton->setText("Run Script ");
         readScriptButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-
+        readScriptButton->setVisible(false);
+        
         setFileButton = new QPushButton;
         setFileButton->setIcon(QIcon(":/art/proceed.png"));
         setFileButton->setIconSize(QSize(24,24));
@@ -1082,6 +1106,7 @@ void MainWindow::initializeInteractives()
 
         // Script text edit
         scriptTextEdit = new QPlainTextEdit;
+        scriptTextEdit->hide();
         script_highlighter = new Highlighter(scriptTextEdit->document());
 //        scriptHelp = "/* Add file paths using this Javascript window. \n* Do this by appedning paths to the variable 'files'. \n* For example:\n*/ \n\n files = ";
 //        scriptTextEdit->setPlainText(scriptHelp);
@@ -1089,88 +1114,41 @@ void MainWindow::initializeInteractives()
         
         
         // Toolbar
-        scriptToolBar = new QToolBar(tr("Script"));
-        scriptToolBar->addAction(newAct);
-        scriptToolBar->addAction(openAct);
-        scriptToolBar->addAction(saveAct);
-        scriptToolBar->addAction(scriptingAct);
-
+        fileSelectionToolBar = new QToolBar(tr("File selection toolbar"));
+        fileSelectionToolBar->addAction(scriptingAct);
+//        fileSelectionToolBar->addSeparator();
+        fileSelectionToolBar->addAction(newAct);
+        fileSelectionToolBar->addAction(openAct);
+        fileSelectionToolBar->addAction(saveAct);
+        
+//        QLabel * lal = new QLabel(" Filter");
+//        fileSelectionToolBar->addWidget(lal);
+        
+        fileSelectionFilter = new QLineEdit;
+        fileSelectionToolBar->addWidget(fileSelectionFilter);
+        
         // File browser
-        
-        // Drag-dropping will result in adding relevant paths to the filter. Will not add individual files to filters in fear that it might slow down the browser. Can experiment later
-        // Implement a function that lets a tree act on its model and set its filters. Call this function from drag drop. Also make a function to make a qstringlist containing filenames as specified by drag-drop
-        // Also the ruler function should be made to use vertices to look better
         fileBrowserWidget = new QWidget;
-        fileSystemModel  = new FileSourceModel;
-//        fileSelectedModel = new FileSourceModel;
-        fileSystemModel->setRootPath(QDir::rootPath());
-//        fileSystemModel->setNameFilterDisables(false);
-//        QStringList filters;
-//        filters << "*.txt";
-//        fileSystemModel->setNameFilters(filters);
-//        fileSystemModel->setFilter(QDir::AllDirs | QDir::Files | QDir::Drives | QDir::NoDotAndDotDot);
-        
-        
-//        fileSelectedModel->setRootPath(QDir::rootPath());
-        QStringList filters;
-        filters << "*.cbf";
-        fileSystemModel->setNameFilters(filters);
-//        fileSelectedModel->setNameFilterDisables(false);
-//        filters.;
-//        filters << "/home/natt/" << "/home/natt" << "home/natt/" << "*.cbf";
-//        fileSelectedModel->setNameFilters(filters);
-//        fileSelectedModel->setFilter(QDir::Dirs | QDir::Files | QDir::Drives);
-        
-//        qDebug() << fileSelectedModel->nameFilters();
-        
-        fileSystemTree = new FileTreeView;
-        fileSystemTree->setModel(fileSystemModel);
-//        fileSystemTree->setSelectionMode(QAbstractItemView::NoSelection);
-//        fileSystemTree->viewport()->setAcceptDrops(true);
-//        fileSystemTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
-//        fileSystemTree->setDragDropMode(QAbstractItemView::DragDrop);
-//        fileSystemTree->setDragEnabled(1);
-//        fileSystemTree->setAcceptDrops(1);
-//        fileSystemTree->setDropIndicatorShown(1);
-//        fileSystemTree->setSortingEnabled(1);
-        
+        fileSelectionModel  = new FileSelectionModel;
+        fileSelectionModel->setRootPath(QDir::rootPath());
 
-//        fileSelectedTree = new FileTreeView;
-//        fileSelectedTree->setModel(fileSelectedModel);
-//        fileSystemTree->viewport()->setAcceptDrops(true);
-//        fileSelectedTree->setSelectionMode(QAbstractItemView::MultiSelection);
-//        fileSelectedTree->setDragDropMode(QAbstractItemView::DragDrop);
-//        fileSelectedTree->setDragEnabled(1);
-//        fileSelectedTree->setAcceptDrops(1);
-//        fileSelectedTree->setDropIndicatorShown(1);
-//        fileSelectedTree->setSortingEnabled(1);
-          
-//        filters.clear();
-//        filters << "home";// << "natt" << "*.txt"; 
-//        fileSelectedModel->setNameFilters(filters);
-//        qDebug() << fileSelectedModel->nameFilters();
-        
-//        fileSelectedModel->setRootPath(QDir::rootPath());
-        
-        
+        fileSelectionTree = new FileTreeView;
+        fileSelectionTree->setModel(fileSelectionModel);
 
         QGridLayout * fileBrowserLayout = new QGridLayout;
         fileBrowserLayout->setSpacing(0);
         fileBrowserLayout->setMargin(0);
         fileBrowserLayout->setContentsMargins(0,0,0,0);
-        fileBrowserLayout->addWidget(fileSystemTree,0,0,1,1);
-//        fileBrowserLayout->addWidget(fileSelectedTree,0,1,1,1);
+        fileBrowserLayout->addWidget(fileSelectionTree,0,0,1,1);
 
         fileBrowserWidget->setLayout(fileBrowserLayout);
-        fileBrowserWidget->hide();
-//        toggleScriptView();
 
         // Layout
         QGridLayout * scriptLayout = new QGridLayout;
         scriptLayout->setSpacing(0);
         scriptLayout->setMargin(0);
         scriptLayout->setContentsMargins(0,0,0,0);
-        scriptLayout->addWidget(scriptToolBar,0,0,1,2);
+        scriptLayout->addWidget(fileSelectionToolBar,0,0,1,2);
         scriptLayout->addWidget(scriptTextEdit,1,0,1,2);
         scriptLayout->addWidget(fileBrowserWidget,2,0,1,2);
 

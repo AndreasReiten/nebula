@@ -10,6 +10,7 @@
 #include <QDragMoveEvent>
 #include <QDragLeaveEvent>
 #include <QDebug>
+#include <QList>
 #include <QStringList>
 
 class FileTreeView : public QTreeView
@@ -23,22 +24,32 @@ public slots:
 };
 
 
-class FileSourceModel : public QFileSystemModel
+class FileSelectionModel : public QFileSystemModel
 {
     Q_OBJECT
     
+public slots:
+    void setStringFilter(QString str);
+    
 public:
-    explicit FileSourceModel(QWidget *parent = 0);
-	inline QStringList getCheckedDirectories() const { return directories; }
+    explicit FileSelectionModel(QWidget *parent = 0);
+//	inline QStringList getCheckedDirectories() const { return directories; }
 	Qt::ItemFlags flags(const QModelIndex& index) const;
 	QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
 	bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);    
-    bool addPath(QModelIndex index);
-    bool removePath(QModelIndex index);
+    QStringList getFiles();
+    
     
 private:
-	QStringList directories;
+//	QStringList directories;
     QStringList files;
+    
+    QList<QModelIndex> indices;
+//    bool addPath(QModelIndex index);
+//    bool removePath(QModelIndex index);
+    bool addIndex(QModelIndex index);
+    bool removeIndex(QModelIndex index);
+    void refreshFiles();
 };
 
 #endif // FILETREEVIEW_H
