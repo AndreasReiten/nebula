@@ -61,6 +61,18 @@ QVariant FileSelectionModel::data(const QModelIndex& index, int role) const
         
         return state;
 	}
+//    else if (index.isValid() && (role == Qt::BackgroundRole)) 
+//    {
+//        QBrush brush;
+
+//        if (indices.contains(index))
+//        {
+//            brush = QBrush(QColor(50,255,0,50));
+//        }
+//        else brush = QBrush(Qt::transparent);;
+        
+//        return brush;
+//	}
 	else return QFileSystemModel::data(index, role);
 }
 

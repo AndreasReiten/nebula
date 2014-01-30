@@ -227,6 +227,7 @@ void MainWindow::initializeWorkers()
 //    allInOneWorker->setReduceThresholdHigh(&threshold_reduce_high);
 //    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
 //    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
+    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
     connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
     connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
@@ -240,7 +241,7 @@ void MainWindow::initializeWorkers()
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
     connect(allInOneWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
-    connect(allInOneWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int)));
+//    connect(allInOneWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int))); // Cant use this one until there is an implementation that is independent of [files]
 //    connect(allInOneWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
@@ -430,6 +431,7 @@ void MainWindow::updateFileHeader(int value)
 {
     if ((file_paths.size() > value ))
     {
+//        qDebug() << files.size() << value;
         fileHeaderEdit->setPlainText(files[value].getHeaderText());
     }
 }
@@ -1116,13 +1118,10 @@ void MainWindow::initializeInteractives()
         // Toolbar
         fileSelectionToolBar = new QToolBar(tr("File selection toolbar"));
         fileSelectionToolBar->addAction(scriptingAct);
-//        fileSelectionToolBar->addSeparator();
         fileSelectionToolBar->addAction(newAct);
         fileSelectionToolBar->addAction(openAct);
         fileSelectionToolBar->addAction(saveAct);
         
-//        QLabel * lal = new QLabel(" Filter");
-//        fileSelectionToolBar->addWidget(lal);
         
         fileSelectionFilter = new QLineEdit;
         fileSelectionToolBar->addWidget(fileSelectionFilter);

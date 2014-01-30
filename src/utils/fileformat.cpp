@@ -388,11 +388,17 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
 
     alpha =  0.8735582;
     beta =  0.000891863;
-
-    PHI.setArbRotation(-phi, beta, 0);
-    KAPPA.setArbRotation(-kappa, alpha, 0);
+    
+//    qDebug() << "PHI";
+    PHI.setArbRotation(beta, 0, -phi); 
+//    qDebug() << "KAPPA";
+    KAPPA.setArbRotation(alpha, 0, -kappa);
+//    qDebug() << "OMEGA";
     OMEGA.setZRotation(-omega);
 
+//    qDebug() << phi;
+//    PHI.print(5);
+    
     sampleRotMat = PHI*KAPPA*OMEGA;
 
     cl_mem sample_rotation_matrix_cl = clCreateBuffer(*context_cl->getContext(),

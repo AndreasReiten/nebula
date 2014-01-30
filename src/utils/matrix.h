@@ -846,6 +846,12 @@ void RotationMatrix<T>::setArbRotation(double zeta, double eta, double gamma)
     RzGamma.setZRotation(gamma);
     RxMinus.setXRotation(-eta);
     RyMinus.setYRotation(-zeta);
+    
+//    RyPlus.print(3,"Ry");
+//    RxPlus.print(3,"Rx");
+//    RzGamma.print(3,"Rz");
+//    RxMinus.print(3,"Rxm");
+//    RyMinus.print(3,"Rym");
 
     (*this) = RyPlus * RxPlus * RzGamma * RxMinus * RyMinus;
 }
