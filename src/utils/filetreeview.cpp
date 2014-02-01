@@ -21,6 +21,11 @@ FileSelectionModel::FileSelectionModel(QWidget *parent) :
     setFilter(QDir::NoDotAndDotDot | QDir::AllDirs | QDir::Files | QDir::Drives);
 }
 
+int FileSelectionModel::columnCount(const QModelIndex& parent) const
+{
+    return QFileSystemModel::columnCount();
+}
+
 void FileSelectionModel::setStringFilter(QString str)
 {
     setNameFilters(str.split(",", QString::SkipEmptyParts));
@@ -61,6 +66,21 @@ QVariant FileSelectionModel::data(const QModelIndex& index, int role) const
         
         return state;
 	}
+//    else if (index.column() == columnCount(index.parent())-1)
+//    {
+//        switch(role)
+//        {
+//            case(Qt::DisplayRole):
+//            {
+//                return QString("YourText");
+//            }
+//            case(Qt::TextAlignmentRole):
+//            {
+//                return Qt::AlignHCenter;
+//            }
+//            default:{}
+//        }
+//    }
 //    else if (index.isValid() && (role == Qt::BackgroundRole)) 
 //    {
 //        QBrush brush;

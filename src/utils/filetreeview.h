@@ -33,12 +33,11 @@ public slots:
     
 public:
     explicit FileSelectionModel(QWidget *parent = 0);
-//	inline QStringList getCheckedDirectories() const { return directories; }
 	Qt::ItemFlags flags(const QModelIndex& index) const;
 	QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
 	bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);    
     QStringList getFiles();
-    
+    int columnCount(const QModelIndex& parent = QModelIndex()) const;
     
 private:
 //	QStringList directories;

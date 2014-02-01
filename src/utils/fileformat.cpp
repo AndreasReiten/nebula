@@ -399,6 +399,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
 //    qDebug() << phi;
 //    PHI.print(5);
     
+    // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
+    
     sampleRotMat = PHI*KAPPA*OMEGA;
 
     cl_mem sample_rotation_matrix_cl = clCreateBuffer(*context_cl->getContext(),

@@ -13,6 +13,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
+/* Notes:
+ * Lines drawn by QPainter are thick and ugly. Let OpenGL do such jobs.
+ * The rotation angle is set to omega. There should be a detection mechanism to determine the actual rotation angle.
+ * UB marix and orientation
+ * Radial integration
+ * Brick merging (performance and storage consumption)
+ * */
+
 #include <QCoreApplication>
 #include <QApplication>
 #include <QIcon>
@@ -55,7 +63,7 @@ void appOutput(QtMsgType type, const QMessageLogContext &context, const QString 
 }
 
 
-/* This is the top level GUI implementation */
+/* This is the top level of the GUI application*/
 int main(int argc, char **argv)
 {
     // Initialize the log file

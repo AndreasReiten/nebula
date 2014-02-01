@@ -161,7 +161,10 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     ctc_matrix.setF(F);
     ctc_matrix.setFov(fov);
     ctc_matrix.setProjection(isOrthonormal);
-
+    
+    // Timer
+    session_age.start();
+    
     // Ray tex
     ray_tex_dim.reserve(1, 2);
     ray_glb_ws.reserve(1,2);
@@ -230,6 +233,7 @@ VolumeRenderWorker::~VolumeRenderWorker()
     if (isInitialized) glDeleteBuffers(1, &scalebar_vbo);
     if (isInitialized) glDeleteBuffers(1, &count_scalebar_vbo);
     if (isInitialized) glDeleteBuffers(1, &centerline_vbo);
+    if (isInitialized) glDeleteBuffers(1, &point_vbo);
 }
 
 
@@ -385,9 +389,41 @@ void VolumeRenderWorker::drawCenterLine()
     glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
 
 
-    glUniform4fv(shared_window->std_3d_color, 1, centerline_color.data());
+    glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
 
     glDrawArrays(GL_LINES,  0, 2);
+
+    glDisableVertexAttribArray(shared_window->std_3d_fragpos);
+
+    shared_window->std_3d_color_program->release();
+}
+
+void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, GLuint vbo, double rpm)
+{
+    shared_window->std_3d_color_program->bind();
+    glEnableVertexAttribArray(shared_window->std_3d_fragpos);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0); 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    
+    double gamma = fmod(session_age.elapsed()*(rpm/60000)*2*pi, 2*pi);
+    
+//    qDebug() << gamma;
+    
+    RotationMatrix<double> point_rotation, axis_rotation;
+    
+    axis_rotation.setArbRotation(zeta, eta, gamma);
+    point_rotation = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * axis_rotation;
+    
+    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, point_rotation.getColMajor().toFloat().data());
+
+    glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
+    
+    
+    glPointSize(5);
+    glDrawArrays(GL_POINTS,  0, 10);
 
     glDisableVertexAttribArray(shared_window->std_3d_fragpos);
 
@@ -445,7 +481,7 @@ void VolumeRenderWorker::initialize()
 
     // Core set functions
     setDataExtent();
-    setViewMatrix();
+    setViewMatrices();
     setTsfParameters();
     setMiscArrays();
 
@@ -491,6 +527,7 @@ void VolumeRenderWorker::initResourcesGL()
     glGenBuffers(1, &scalebar_vbo);
     glGenBuffers(1, &count_scalebar_vbo);
     glGenBuffers(1, &centerline_vbo);
+    glGenBuffers(1, &point_vbo);
 }
 
 void VolumeRenderWorker::initResourcesCL()
@@ -579,7 +616,7 @@ void VolumeRenderWorker::initResourcesCL()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setViewMatrix()
+void VolumeRenderWorker::setViewMatrices()
 {
 //    qDebug() << "Setting view matrix";
 
@@ -924,7 +961,7 @@ void VolumeRenderWorker::render(QPainter *painter)
 //    this->blockSignals(true);
     isDataExtentReadOnly = true;
     setDataExtent();
-    setViewMatrix();
+    setViewMatrices();
 
     glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -942,6 +979,17 @@ void VolumeRenderWorker::render(QPainter *painter)
 
     // Draw raytracing texture
     drawRayTex();
+    
+    Matrix<float> point_coords(1,3*10, 0.0);
+    for (int i = 0; i < 10; i++) point_coords[i*3] = i*0.5;
+//    point_coords[3] = -1.0;
+    
+    setVbo(point_vbo, point_coords.data(), 3*10, GL_STATIC_DRAW);
+    // PHI
+    drawSenseOfRotation(0.000891863, 0, point_vbo, 60.0);
+    // KAPPA
+    drawSenseOfRotation(0.8735582, 0, point_vbo, 60.0);
+    
     endRawGLCalls(painter);
 
     // Compute the projected pixel size in orthonormal configuration
@@ -1534,7 +1582,7 @@ void VolumeRenderWorker::rotateDown()
 
 void VolumeRenderWorker::computePixelSize()
 {
-    setViewMatrix();
+    setViewMatrices();
 
     // Calculate the current pixel size()
     Matrix<double> ndc00(4,1);

@@ -161,6 +161,9 @@ private:
     // Ticks
     void tickzerize(double min, double max, double size, double min_interdist, double *qualified_exponent, double * start, int *num_ticks);
     
+    // Sense of rotation
+    GLuint point_vbo;
+    
     // Drawing functions
     void drawRayTex();
     void drawPositionScalebars();
@@ -172,6 +175,7 @@ private:
     void drawCenterLine();
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
+    void drawSenseOfRotation(double zeta, double eta, GLuint vbo, double rpm);
     
     
     int fps_string_width_prev;
@@ -181,7 +185,7 @@ private:
     
     // Core set functions
     void setDataExtent();
-    void setViewMatrix();
+    void setViewMatrices();
     void resetViewMatrix();
     void setTsfParameters();
     void setMiscArrays();
@@ -216,7 +220,10 @@ private:
     TransferFunction tsf;
     int tsf_color_scheme;
     int tsf_alpha_scheme;
-
+    
+    // Timing
+    QElapsedTimer session_age;
+    
     // Ray texture timing
     float fps_requested;
     QElapsedTimer ray_kernel_timer;
