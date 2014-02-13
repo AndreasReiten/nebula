@@ -1,6 +1,10 @@
 #ifndef IMAGERENDER_H
 #define IMAGERENDER_H
 
+/*
+ * A class to render data files real-time during reconstruction
+ * */
+
 /* Useful C++ libs */
 #include <cmath>
 #include <sstream>

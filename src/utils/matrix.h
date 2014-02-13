@@ -1,6 +1,10 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
+/*
+ * A class supplying matrix functionality and with various subclasses
+ * */
+
 #include <cassert>
 #include <sstream>
 #include <iostream>
@@ -45,6 +49,7 @@ class Matrix {
         void set(size_t m, size_t n, T value);
         void setDeep(size_t m, size_t n, T * buffer);
         void reserve(size_t m, size_t n);
+        void resize(size_t m, size_t n);
         void clear();
 
         const T *data() const;
@@ -129,6 +134,31 @@ Matrix<T>::~Matrix()
         n = 0;
     }
 }
+
+template <class T>
+void Matrix<T>::resize(size_t m, size_t n)
+{
+    // This resize function retains any old values and fills voids with zeros
+    Matrix<T> temp(m,n);
+    
+    for (int i = 0; i < m; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if ((i < this->m) && (j < this->n))
+            {
+                temp[n*i+j] = buffer[n*i+j];    
+            }
+            else 
+            {
+                temp[n*i+j] = 0;
+            }
+        }    
+    }
+    
+    *this = temp;
+}
+
 
 template <class T>
 T Matrix<T>::sum()

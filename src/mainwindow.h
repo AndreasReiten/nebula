@@ -373,7 +373,7 @@ protected:
     QStringList file_paths;
     QList<PilatusFile> files;
 //    QList<PilatusFile> background_files;
-    MiniArray<float> reduced_pixels;
+    Matrix<float> reduced_pixels;
 
     // Related to file treatment
     float threshold_reduce_low;

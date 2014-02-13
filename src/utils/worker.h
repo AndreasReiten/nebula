@@ -38,7 +38,7 @@
 #include "bricknode.h"
 #include "sparsevoxelocttree.h"
 #include "contextcl.h"
-#include "globalvar.h"
+//#include "globalvar.h"
 
 class BaseWorker : public QObject
 {
@@ -51,7 +51,7 @@ class BaseWorker : public QObject
         void setFilePaths(QStringList * file_paths);
         void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
         void setFiles(QList<PilatusFile> * files);
-        void setReducedPixels(MiniArray<float> * reduced_pixels);
+        void setReducedPixels(Matrix<float> *reduced_pixels);
         void setOpenCLContext(OpenCLContext * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
@@ -106,7 +106,7 @@ class BaseWorker : public QObject
         QStringList * file_paths;
         QList<PilatusFile> * files;
 //        QList<PilatusFile> * background_files;
-        MiniArray<float> * reduced_pixels;
+        Matrix<float> * reduced_pixels;
         
         size_t GLOBAL_VRAM_ALLOC_MAX;
         // OpenGL

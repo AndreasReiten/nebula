@@ -1,6 +1,10 @@
 #ifndef FILE_FORMATS_H
 #define FILE_FORMATS_H
 
+/*
+ * The fileformat class can be subclassed to support custom file formats (detector data files, typically). 
+ * */
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -48,7 +52,7 @@ class PilatusFile
         int filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive = true);
         //~int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
 
-        MiniArray<float> getTest();
+        Matrix<float> getTest();
         int getWidth() const;
         int getHeight() const;
         size_t getBytes() const;
@@ -78,7 +82,7 @@ class PilatusFile
         size_t loc_ws[2];
         size_t glb_ws[2];
 
-        MiniArray<float> data_buf;
+        Matrix<float> data_buf;
 //        Matrix<float> * background;
         float background_flux;
         float backgroundExpTime;

@@ -1,6 +1,10 @@
 #ifndef CONTEXTCL_H
 #define CONTEXTCL_H
 
+/*
+ * This class initializes an OpenCL context.
+ * */
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -39,8 +43,8 @@ public:
     void buildProgram(cl_program * program, const char * options);
 
 private:
-    MiniArray<cl_platform_id> platforms;
-    MiniArray<cl_device_id> devices;
+    Matrix<cl_platform_id> platforms;
+    Matrix<cl_device_id> devices;
 
     DeviceCL *main_device;
     QList<DeviceCL> device_list;

@@ -398,33 +398,56 @@ void VolumeRenderWorker::drawCenterLine()
     shared_window->std_3d_color_program->release();
 }
 
-void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, GLuint vbo, double rpm)
+void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm)
 {
+    Matrix<float> point_coords(1,3*100, 0.0);
+    point_coords[0*3+2] = -5;
+    point_coords[1*3+2] = 5;
+   
+    for (int i = 2; i < 100; i++)
+    {
+        point_coords[i*3+2] = -5.0 + (10.0/97.0) * (i - 2);
+        point_coords[i*3+0] = 0.5*sin(2.0*point_coords[i*3+2]);
+        point_coords[i*3+1] = 0.5*cos(2.0*point_coords[i*3+2]);
+    }
+    
+    setVbo(point_vbo, point_coords.data(), 3*100, GL_DYNAMIC_DRAW);
+    
+    
     shared_window->std_3d_color_program->bind();
     glEnableVertexAttribArray(shared_window->std_3d_fragpos);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
     glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0); 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     
     double gamma = fmod(session_age.elapsed()*(rpm/60000)*2*pi, 2*pi);
-    
-//    qDebug() << gamma;
-    
-    RotationMatrix<double> point_rotation, axis_rotation;
-    
-    axis_rotation.setArbRotation(zeta, eta, gamma);
-    point_rotation = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * axis_rotation;
-    
-    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, point_rotation.getColMajor().toFloat().data());
 
+    // Vertices on the axis
+    RotationMatrix<double> point_on_axis, RyPlus, RxPlus;
+    RyPlus.setYRotation(zeta);
+    RxPlus.setXRotation(eta);
+    point_on_axis = ctc_matrix * bbox_translation * normalization_scaling * rotation * RyPlus * RxPlus;
+    
+    // Vertices rotating around the axis    
+    RotationMatrix<double> point_around_axis, axis_rotation;
+    axis_rotation.setArbRotation(zeta, eta, gamma);
+    point_around_axis = ctc_matrix * bbox_translation * normalization_scaling * rotation * axis_rotation * RyPlus * RxPlus;
+    
+    
     glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
     
-    
     glPointSize(5);
-    glDrawArrays(GL_POINTS,  0, 10);
-
+    
+    
+    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, point_around_axis.getColMajor().toFloat().data());
+    glDrawArrays(GL_POINTS,  2, 98);
+    
+    
+    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, point_on_axis.getColMajor().toFloat().data());
+    glDrawArrays(GL_LINE_STRIP,  0, 2);
+    
     glDisableVertexAttribArray(shared_window->std_3d_fragpos);
 
     shared_window->std_3d_color_program->release();
@@ -980,15 +1003,13 @@ void VolumeRenderWorker::render(QPainter *painter)
     // Draw raytracing texture
     drawRayTex();
     
-    Matrix<float> point_coords(1,3*10, 0.0);
-    for (int i = 0; i < 10; i++) point_coords[i*3] = i*0.5;
-//    point_coords[3] = -1.0;
+    // Test (zeta, eta)
+    drawSenseOfRotation(-0.5*pi, 0, 30.0);
     
-    setVbo(point_vbo, point_coords.data(), 3*10, GL_STATIC_DRAW);
     // PHI
-    drawSenseOfRotation(0.000891863, 0, point_vbo, 60.0);
+//    drawSenseOfRotation(0.000891863, 0, 30.0);
     // KAPPA
-    drawSenseOfRotation(0.8735582, 0, point_vbo, 60.0);
+//    drawSenseOfRotation(0.8735582, 0, 30.0);
     
     endRawGLCalls(painter);
 
@@ -1000,6 +1021,15 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isIntegration2DActive) drawIntegral(painter);
 //    qDebug("Ok, change");
     // Draw overlay
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setBrush(*normal_brush);
+
+    if (isOrthoGridActive) drawGrid(painter);
+    if (isRulerActive) drawRuler(painter);
+    drawCountScalebar(painter);
+    
+    painter->setPen(*normal_pen);
+    
     drawOverlay(painter);
 //    this->blockSignals(false);
 //    emit renderState(0);
@@ -1625,14 +1655,29 @@ void VolumeRenderWorker::computePixelSize()
 
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
-    painter->setRenderHint(QPainter::Antialiasing);
-    painter->setBrush(*normal_brush);
-
-    if (isOrthoGridActive) drawGrid(painter);
-    if (isRulerActive) drawRuler(painter);
-    drawCountScalebar(painter);
+    // Draw text to indicate lab reference frame directions
+    Matrix<float> x_high(1,3,0), y_high(1,3,0), z_high(1,3,0);
+    float length = data_view_extent[1] - data_view_extent[0];
+    x_high[0] = data_view_extent[1] + length * 0.05;
+    x_high[1] = data_view_extent[2] + length * 0.5;
+    x_high[2] = data_view_extent[4] + length * 0.5;
     
-    painter->setPen(*normal_pen);
+    y_high[0] = data_view_extent[0] + length * 0.5;
+    y_high[1] = data_view_extent[3] + length * 0.05;
+    y_high[2] = data_view_extent[4] + length * 0.5;
+
+    z_high[0] = data_view_extent[0] + length * 0.5;
+    z_high[1] = data_view_extent[2] + length * 0.5;
+    z_high[2] = data_view_extent[5] + length * 0.05;
+    
+    Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
+    getPosition2D(x_2d.data(), x_high.data(), &view_matrix);
+    getPosition2D(y_2d.data(), y_high.data(), &view_matrix);
+    getPosition2D(z_2d.data(), z_high.data(), &view_matrix);
+    
+    painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("X (towards source)"));
+    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y"));
+    painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Z"));
 
     // Position scalebar tick labels
     if (isScalebarActive)
@@ -1717,13 +1762,18 @@ void VolumeRenderWorker::drawPositionScalebars()
     glBindBuffer(GL_ARRAY_BUFFER, scalebar_vbo);
     glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
-
+    
     glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
-
+    
+    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
+    
     glDrawArrays(GL_LINES,  0, scalebar_coord_count);
-
+    
+    // Draw in addition the lab reference frame (directions)
+    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+    
+    glDrawArrays(GL_LINES,  scalebar_coord_count - 6, 6);
+    
     glDisableVertexAttribArray(shared_window->std_3d_fragpos);
 
     shared_window->std_3d_color_program->release();
@@ -2110,7 +2160,7 @@ size_t VolumeRenderWorker::setScaleBars()
 
     n_position_scalebar_ticks = 0;
 
-    // Draw ticks
+    // Calculate positions of ticks
     for (int i = 5; i >= -5; i--)
     {
         double tick_interdistance = std::pow((double) 10.0, (double) -i);
@@ -2129,7 +2179,7 @@ size_t VolumeRenderWorker::setScaleBars()
             {
                 if (j != 0)
                 {
-                    // X-tick
+                    // X-tick cross
                     scalebar_coords[(coord_counter+0)*3+0] = x_start + j * tick_interdistance;
                     scalebar_coords[(coord_counter+0)*3+1] = data_view_extent[2] + length * 0.5 + tick_width * 0.5;
                     scalebar_coords[(coord_counter+0)*3+2] = data_view_extent[4] + length * 0.5;
@@ -2146,7 +2196,7 @@ size_t VolumeRenderWorker::setScaleBars()
                     scalebar_coords[(coord_counter+3)*3+1] = data_view_extent[2] + length * 0.5;
                     scalebar_coords[(coord_counter+3)*3+2] = data_view_extent[4] + length * 0.5 - tick_width * 0.5;
 
-                    // Y-tick
+                    // Y-tick cross
                     scalebar_coords[(coord_counter+4)*3+0] = data_view_extent[0] + length * 0.5 + tick_width * 0.5;
                     scalebar_coords[(coord_counter+4)*3+1] = y_start + j * tick_interdistance;
                     scalebar_coords[(coord_counter+4)*3+2] = data_view_extent[4] + length * 0.5;
@@ -2163,7 +2213,7 @@ size_t VolumeRenderWorker::setScaleBars()
                     scalebar_coords[(coord_counter+7)*3+1] = y_start + j * tick_interdistance;
                     scalebar_coords[(coord_counter+7)*3+2] = data_view_extent[4] + length * 0.5 - tick_width * 0.5;
 
-                    // Z-tick
+                    // Z-tick cross
                     scalebar_coords[(coord_counter+8)*3+0] = data_view_extent[0] + length * 0.5 + tick_width * 0.5;
                     scalebar_coords[(coord_counter+8)*3+1] = data_view_extent[2] + length * 0.5;
                     scalebar_coords[(coord_counter+8)*3+2] = z_start + j * tick_interdistance;
@@ -2181,7 +2231,7 @@ size_t VolumeRenderWorker::setScaleBars()
                     scalebar_coords[(coord_counter+11)*3+2] = z_start + j * tick_interdistance;
 
 
-                    // Text
+                    // Get positions for tick text
                     if (tick_levels == tick_levels_max - 1)
                     {
                         if ((size_t) n_position_scalebar_ticks+3 < position_scalebar_ticks.getM())
@@ -2213,7 +2263,8 @@ size_t VolumeRenderWorker::setScaleBars()
         }
     }
 
-    // Cross
+    // Base cross 
+    // X
     scalebar_coords[(coord_counter+0)*3+0] = data_view_extent[0];
     scalebar_coords[(coord_counter+0)*3+1] = data_view_extent[2] + length * 0.5;
     scalebar_coords[(coord_counter+0)*3+2] = data_view_extent[4] + length * 0.5;
@@ -2222,6 +2273,7 @@ size_t VolumeRenderWorker::setScaleBars()
     scalebar_coords[(coord_counter+1)*3+1] = data_view_extent[2] + length * 0.5;
     scalebar_coords[(coord_counter+1)*3+2] = data_view_extent[4] + length * 0.5;
 
+    // Y
     scalebar_coords[(coord_counter+2)*3+0] = data_view_extent[0] + length * 0.5;
     scalebar_coords[(coord_counter+2)*3+1] = data_view_extent[2];
     scalebar_coords[(coord_counter+2)*3+2] = data_view_extent[4] + length * 0.5;
@@ -2230,6 +2282,7 @@ size_t VolumeRenderWorker::setScaleBars()
     scalebar_coords[(coord_counter+3)*3+1] = data_view_extent[3];
     scalebar_coords[(coord_counter+3)*3+2] = data_view_extent[4] + length * 0.5;
 
+    // Z
     scalebar_coords[(coord_counter+4)*3+0] = data_view_extent[0] + length * 0.5;
     scalebar_coords[(coord_counter+4)*3+1] = data_view_extent[2] + length * 0.5;
     scalebar_coords[(coord_counter+4)*3+2] = data_view_extent[4];
@@ -2330,7 +2383,7 @@ void VolumeRenderWorker::setIntegration2D()
 {
     isIntegration2DActive = !isIntegration2DActive;
 
-    if (!isOrthonormal) emit changedMessageString("Warning: Perspective projection is currently active.");
+    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
 
     if (isInitialized) setMiscArrays();
 }
@@ -2340,7 +2393,7 @@ void VolumeRenderWorker::setIntegration3D()
 
     isIntegration3DActive = !isIntegration3DActive;
 
-    if (!isOrthonormal) emit changedMessageString("Warning: Perspective projection is currently active.");
+    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
 
     if (isInitialized) setMiscArrays();
 }

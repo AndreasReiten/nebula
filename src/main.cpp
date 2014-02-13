@@ -19,6 +19,10 @@
  * UB marix and orientation
  * Radial integration
  * Brick merging (performance and storage consumption)
+ * Extract base fileformat for subclassing
+ * 
+ * Debugging:
+ * 
  * */
 
 #include <QCoreApplication>

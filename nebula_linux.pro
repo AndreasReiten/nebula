@@ -20,7 +20,7 @@ HEADERS = \
     src/utils/sharedcontext.h \
     src/utils/transferfunction.h \
     src/utils/filetreeview.h \
-    src/utils/globalvar.h
+    src/utils/imagepreview.h
 
 SOURCES = \
     src/main.cpp \
@@ -41,7 +41,8 @@ SOURCES = \
     src/utils/devicecl.cpp \
     src/utils/sharedcontext.cpp \
     src/utils/transferfunction.cpp \
-    src/utils/filetreeview.cpp
+    src/utils/filetreeview.cpp \
+    src/utils/imagepreview.cpp
 
 RESOURCES     = nebula.qrc
 

@@ -1,11 +1,16 @@
 #ifndef DEVICECL_H
 #define DEVICECL_H
 
+/*
+ * This is a convenienze class to store and get information about an OpenCL device.
+ * */
+
+
 #include <CL/opencl.h>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "globalvar.h"
+//#include "globalvar.h"
 
 #include <QDebug>
 

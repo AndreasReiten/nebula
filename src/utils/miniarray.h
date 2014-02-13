@@ -1,6 +1,10 @@
 #ifndef MINIARRAY_H
 #define MINIARRAY_H
 
+/*
+ * A redundant class
+ * */
+
 
 #include <QVector>
 #include <cassert>

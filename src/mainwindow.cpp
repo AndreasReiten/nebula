@@ -702,7 +702,7 @@ void MainWindow::openUnitcellFile()
         QByteArray contents(f.readAll());
 
         // Find a, b, c, alpha, beta, gamma
-        MiniArray<float> abc(6);
+        Matrix<float> abc(1,6);
         int pos = 0;
         for(int i = 0; i < unitcellRegExp.size(); i++)
         {
@@ -1650,9 +1650,9 @@ void MainWindow::initializeInteractives()
     tabWidget = new QTabWidget(mainWidget);
 
     // Add tabs
-    tabWidget->addTab(setFilesWidget, tr("Files"));
-    tabWidget->addTab(imageWidget, tr("Ewald's Projection"));
-    tabWidget->addTab(viewWidget, tr("3D View"));
+    tabWidget->addTab(setFilesWidget, tr("File Selection"));
+    tabWidget->addTab(imageWidget, tr("Reconstruction"));
+    tabWidget->addTab(viewWidget, tr("Visualization"));
 
     // Put into main layout
     mainLayout->setMargin(0);

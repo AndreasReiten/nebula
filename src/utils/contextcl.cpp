@@ -75,7 +75,7 @@ void OpenCLContext::initDevices()
     // Platforms and Devices
     cl_uint max_platforms = 10; // Max number of platforms
     cl_uint num_platforms = 0;
-    platforms.reserve (max_platforms);
+    platforms.reserve (1, max_platforms);
 
     // Get platforms
     err = clGetPlatformIDs(max_platforms, platforms.data(), &num_platforms);
@@ -84,7 +84,7 @@ void OpenCLContext::initDevices()
     cl_uint max_devices = 10; // Max number of devices per platform
     cl_uint nupaint_device_gls = 0;
     cl_uint nupaint_device_gls_total = 0;
-    devices.reserve (max_devices);
+    devices.reserve (1, max_devices);
 
     // Get devices for platforms
     for (size_t i = 0; i < num_platforms; i++)
@@ -111,7 +111,7 @@ void OpenCLContext::initDevices()
     }
 
     // Re-populate devices with only suitable devices
-    devices.reserve(device_list.size());
+    devices.reserve(1, device_list.size());
     for (int i = 0; i < device_list.size(); i++)
     {
         devices[i] = device_list[i].getDeviceId();

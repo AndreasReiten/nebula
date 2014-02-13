@@ -1,6 +1,10 @@
 #ifndef FILETREEVIEW_H
 #define FILETREEVIEW_H
 
+/*
+ * These two classes supply a directory tree structure that can be used to select files.
+ * */
+
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QStandardItemModel>

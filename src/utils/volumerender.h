@@ -175,7 +175,7 @@ private:
     void drawCenterLine();
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
-    void drawSenseOfRotation(double zeta, double eta, GLuint vbo, double rpm);
+    void drawSenseOfRotation(double zeta, double eta, double rpm);
     
     
     int fps_string_width_prev;

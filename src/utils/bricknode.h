@@ -1,12 +1,14 @@
 #ifndef OCTNODE_H
 #define OCTNODE_H
 
+/*
+ * This class represents a node in the sparse voxel octtree. The nodes lie in an array. This is a convenience class to make the data structure more managable. 
+ * */
+
 #include <iostream>
 #include <iomanip>
 
 class BrickNode {
-
-    /* Octtree node. A convenience object to make the GPU octtree data structure more managable */
     public:
         BrickNode();
         ~BrickNode();

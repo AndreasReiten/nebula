@@ -92,7 +92,7 @@ void BaseWorker::setFiles(QList<PilatusFile> * files)
 
     this->files = files;
 }
-void BaseWorker::setReducedPixels(MiniArray<float> * reduced_pixels)
+void BaseWorker::setReducedPixels(Matrix<float> * reduced_pixels)
 {
 
     this->reduced_pixels = reduced_pixels;
@@ -441,7 +441,7 @@ void ProjectFileWorker::process()
     kill_flag = false;
 
     size_t n = 0;
-    reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
+    reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
@@ -492,7 +492,7 @@ void ProjectFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-    reduced_pixels->resize(n);
+    reduced_pixels->resize(1, n);
 
     /* Create dummy dataset for debugging purposes.
      *
@@ -502,7 +502,7 @@ void ProjectFileWorker::process()
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
 
-        reduced_pixels->resize(theta_max*phi_max*4);
+        reduced_pixels->resize(1, theta_max*phi_max*4);
 
         float radius = 1.15;
         double pi = 4.0*std::atan(1.0);
@@ -524,7 +524,7 @@ void ProjectFileWorker::process()
     else if (0) // A gradiented box
     {
         int res = 32;
-        reduced_pixels->resize(res*res*res*4);
+        reduced_pixels->resize(1, res*res*res*4);
 
         for (int i = 0; i < res; i++)
         {
@@ -591,7 +591,7 @@ void AllInOneWorker::process()
 
     // Parameters for Ewald's projection
     //    std::cout << "RESERVING for reduced_pixels: " << REDUCED_PIXELS_MAX_BYTES/sizeof(float) << std::endl;
-    reduced_pixels->reserve(REDUCED_PIXELS_MAX_BYTES/sizeof(float));
+    reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
     (*suggested_q) = std::numeric_limits<float>::min();
@@ -686,7 +686,7 @@ void AllInOneWorker::process()
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/file_paths->size());
     }
-    reduced_pixels->resize(n);
+    reduced_pixels->resize(1, n);
 
     size_t t = stopwatch.restart();
 

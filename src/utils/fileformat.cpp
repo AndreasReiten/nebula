@@ -115,7 +115,7 @@ size_t PilatusFile::getBytes() const
     return data_buf.bytes();
 }
 
-MiniArray<float> PilatusFile::getTest()
+Matrix<float> PilatusFile::getTest()
 {
     return data_buf;
 }
@@ -555,7 +555,7 @@ int PilatusFile::readData()
     in.read(buf, length);
     in.close();
 
-    this->data_buf.reserve(fast_dimension*slow_dimension);
+    this->data_buf.reserve(1, fast_dimension*slow_dimension);
 
     // Find beginning of binary section
     for (int i = 0; i < header_length_max; i++)
