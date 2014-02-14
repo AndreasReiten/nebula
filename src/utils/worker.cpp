@@ -792,7 +792,7 @@ void VoxelizeWorker::process()
         svo->setExtent(*suggested_q);
 
         // Prepare the brick pool
-        MiniArray<int> pool_dimension(4, 0);
+        Matrix<int> pool_dimension(1, 4, 0);
         pool_dimension[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
         pool_dimension[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
         pool_dimension[2] = (BRICK_POOL_SOFT_MAX_BYTES/(sizeof(cl_float)*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower()));
@@ -847,7 +847,7 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                            
-        MiniArray<float> empty_check(nodes_per_kernel_call, 0);
+        Matrix<float> empty_check(1, nodes_per_kernel_call, 0);
         cl_mem empty_check_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(float),
@@ -877,10 +877,10 @@ void VoxelizeWorker::process()
         if (!kill_flag)
         {
             /* Create an octtree from brick data. The nodes are maintained in a linear array rather than on the heap. This is due to lack of proper support for recursion on GPUs */
-            MiniArray<BrickNode> gpuHelpOcttree(n_max_bricks*16);
+            Matrix<BrickNode> gpuHelpOcttree(1, n_max_bricks*16);
             gpuHelpOcttree[0].setParent(0);
-            MiniArray<unsigned int> nodes;
-            nodes.set(64, (unsigned int) 0);
+            Matrix<unsigned int> nodes;
+            nodes.set(1, 64, (unsigned int) 0);
             nodes[0] = 1;
 
             unsigned int confirmed_nodes = 0, non_empty_node_counter = 0;
@@ -892,10 +892,10 @@ void VoxelizeWorker::process()
             float max_brick_sum = 0.0;
             
             // Containers 
-            MiniArray<double> brick_extent(6*nodes_per_kernel_call);
+            Matrix<double> brick_extent(1, 6*nodes_per_kernel_call);
             Matrix<float> point_data(max_points_per_cluster,4);
-            MiniArray<int> point_data_offset(nodes_per_kernel_call);
-            MiniArray<int> point_data_count(nodes_per_kernel_call);
+            Matrix<int> point_data_offset(1, nodes_per_kernel_call);
+            Matrix<int> point_data_count(1, nodes_per_kernel_call);
             
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
@@ -1193,8 +1193,8 @@ void VoxelizeWorker::process()
             {
                 // Use the node structure to populate the GPU arrays
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"]"+QString(" Transforming: %p%"));
-                svo->index.reserve(confirmed_nodes);
-                svo->brick.reserve(confirmed_nodes);
+                svo->index.reserve(1, confirmed_nodes);
+                svo->brick.reserve(1, confirmed_nodes);
 
                 for (size_t i = 0; i < confirmed_nodes; i++)
                 {
@@ -1208,7 +1208,7 @@ void VoxelizeWorker::process()
                 unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
 
                 // Read results
-                svo->pool.reserve(non_empty_node_counter_rounded_up*n_points_brick);
+                svo->pool.reserve(1, non_empty_node_counter_rounded_up*n_points_brick);
                 
                 svo->setMin(0.0f);
                 svo->setMax(max_brick_sum/(float)(n_points_brick));

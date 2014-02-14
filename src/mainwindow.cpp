@@ -574,6 +574,8 @@ void MainWindow::initializeActions()
     scalebarAct->setCheckable(true);
     scalebarAct->setChecked(true);
     sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle slicing"), this);
+    sliceAct->setCheckable(true);
+    sliceAct->setChecked(false);
     integrate2DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->1D integration"), this);
     integrate2DAct->setCheckable(true);
     integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D integration"), this);

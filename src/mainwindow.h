@@ -46,7 +46,6 @@
 #include "utils/contextcl.h"
 #include "utils/sharedcontext.h"
 #include "utils/texthighlighter.h"
-#include "utils/miniarray.h"
 #include "utils/volumerender.h"
 #include "utils/imagerender.h"
 #include "utils/worker.h"

@@ -30,7 +30,7 @@
 
 /* Project files */
 #include "tools.h"
-#include "miniarray.h"
+//#include "miniarray.h"
 #include "matrix.h"
 #include "fileformat.h"
 #include "imagerender.h"
@@ -224,7 +224,7 @@ class VoxelizeWorker : public BaseWorker
     public:
         VoxelizeWorker();
         ~VoxelizeWorker();
-        void setResources(MiniArray<unsigned int> * gpuIndices, MiniArray<unsigned int> * gpuBricks, MiniArray<float> * gpuBrickPool);
+//        void setResources(Matrix<unsigned int> * gpuIndices, Matrix<unsigned int> * gpuBricks, Matrix<float> * gpuBrickPool);
 
     public slots:
         void process();

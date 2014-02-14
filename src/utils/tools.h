@@ -23,7 +23,7 @@
 #include <cmath>
 #include <cstring>
 
-#include "miniarray.h"
+//#include "miniarray.h"
 #include "matrix.h"
 
 QString openResource(const char * path);

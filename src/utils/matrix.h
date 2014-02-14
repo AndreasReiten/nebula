@@ -45,6 +45,7 @@ class Matrix {
         Matrix<float> toFloat() const;
 
         T sum();
+        QVector<T> toQVector() const;
         void setIdentity(size_t n);
         void set(size_t m, size_t n, T value);
         void setDeep(size_t m, size_t n, T * buffer);
@@ -102,6 +103,20 @@ Matrix<T>::Matrix()
     this->m = 0;
     this->n = 0;
 //    this->buffer = NULL;
+}
+
+template <class T>
+QVector<T> Matrix<T>::toQVector() const
+{
+    QVector<T> buf;
+    buf.resize(this->size());
+
+    for (size_t i = 0; i < this->size(); i++)
+    {
+        buf[i] = this->buffer[i];
+    }
+
+    return buf;
 }
 
 template <class T>

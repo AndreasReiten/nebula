@@ -26,7 +26,7 @@
 
 
 #include "imagerender.h"
-#include "miniarray.h"
+//#include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
 #include "sharedcontext.h"

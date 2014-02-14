@@ -19,7 +19,7 @@
 
 #include "devicecl.h"
 #include "tools.h"
-#include "miniarray.h"
+//#include "miniarray.h"
 
 #ifdef Q_OS_WIN
     #include <windows.h>

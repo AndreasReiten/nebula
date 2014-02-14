@@ -11,7 +11,7 @@ SearchNode::SearchNode()
     this->isEmpty = true;
     this->n_points = 0;
     this->n_children = 0;
-    this->extent.reserve(6);
+    this->extent.reserve(1,6);
 }
 
 SearchNode::SearchNode(SearchNode * parent, double * extent)
@@ -21,7 +21,7 @@ SearchNode::SearchNode(SearchNode * parent, double * extent)
     this->parent = parent;
     this->n_points = 0;
     this->n_children = 0;
-    this->extent.reserve(6);
+    this->extent.reserve(1,6);
 
     for (int i = 0; i < 6; i++)
     {
@@ -226,7 +226,7 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     float sum_w = 0;
     float sum_wu = 0;
 
-    MiniArray<double> sample_extent(6);
+    Matrix<double> sample_extent(1,6);
     sample_extent[0] = sample[0] - search_radius;
     sample_extent[1] = sample[0] + search_radius;
     sample_extent[2] = sample[1] - search_radius;
@@ -240,7 +240,7 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     else return 0;
 }
 
-void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsigned int * item_counter, cl_mem * items)
+void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, unsigned int * item_counter, cl_mem * items)
 {
     if ((this->isMsd) && (!this->isEmpty))
     {
@@ -284,7 +284,7 @@ void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, unsig
     }
 }
 
-void SearchNode::getIntersectedItems(MiniArray<double> * effective_extent, size_t * accumulated_points, float * point_data)
+void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, float * point_data)
 {
     if ((this->isMsd) && (!this->isEmpty))
     {
@@ -330,7 +330,7 @@ void SearchNode::getData(double * brick_extent,
     size_t * accumulated_points,
     float search_radius)
 {
-    MiniArray<double> effective_extent(6);
+    Matrix<double> effective_extent(1,6);
     effective_extent[0] = brick_extent[0] - search_radius;
     effective_extent[1] = brick_extent[1] + search_radius;
     effective_extent[2] = brick_extent[2] - search_radius;
@@ -347,14 +347,14 @@ void SearchNode::getData(double * brick_extent,
     getIntersectedItems(&effective_extent, accumulated_points, point_data);
 }
 
-int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * pool_cl, cl_kernel * voxelize_kernel, int * method, unsigned int brick_counter, unsigned int brick_pool_power)
+int SearchNode::getBrick(Matrix<double> * brick_extent, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * pool_cl, cl_kernel * voxelize_kernel, int * method, unsigned int brick_counter, unsigned int brick_pool_power)
 {
     QElapsedTimer timer;
     timer.start();
 
     int isEmptyBrick = 1;
 
-    MiniArray<double> effective_extent(6);
+    Matrix<double> effective_extent(1,6);
     effective_extent[0] = brick_extent->at(0) - search_radius;
     effective_extent[1] = brick_extent->at(1) + search_radius;
     effective_extent[2] = brick_extent->at(2) - search_radius;
@@ -429,7 +429,7 @@ int SearchNode::getBrick(MiniArray<double> * brick_extent, float search_radius, 
         qDebug() << "CPU";
 
         float idw[1];
-        MiniArray<float> sample(3);
+        Matrix<float> sample(1,3);
         float brick_step = (brick_extent->at(1) - brick_extent->at(0)) / ((float)(brick_outer_dimension-1));
 
         // If not, however, the calculations are simply carried out on the CPU instead

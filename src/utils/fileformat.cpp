@@ -475,7 +475,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
     region[1] = slow_dimension;
     region[2] = 1;
 
-    MiniArray<float> projected_data_buf(fast_dimension*slow_dimension*4);
+    Matrix<float> projected_data_buf(1,fast_dimension*slow_dimension*4);
     err = clEnqueueReadImage ( *context_cl->getCommandQueue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 

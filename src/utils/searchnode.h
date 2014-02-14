@@ -13,7 +13,7 @@
 #include <CL/opencl.h>
 
 #include "contextcl.h"
-#include "miniarray.h"
+//#include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
 
@@ -37,7 +37,7 @@ class SearchNode {
         void setParent(SearchNode * parent);
 
         int getBrick(
-            MiniArray<double> * brick_extent,
+            Matrix<double> * brick_extent,
             float search_radius,
             unsigned int brick_outer_dimension,
             unsigned int level,
@@ -60,12 +60,12 @@ class SearchNode {
         double * getExtent();
 
     private:
-        void getIntersectedItems(MiniArray<double> * effective_extent, unsigned int * item_counter, cl_mem * items);
-        void getIntersectedItems(MiniArray<double> * effective_extent, size_t * accumulated_points, float * point_data);
+        void getIntersectedItems(Matrix<double> * effective_extent, unsigned int * item_counter, cl_mem * items);
+        void getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, float * point_data);
         SearchNode * parent;
         SearchNode ** children;
         float * points;
-        MiniArray<double> extent;
+        Matrix<double> extent;
 
         float distance(float * a, float * b);
 //        void writeLog(QString str);

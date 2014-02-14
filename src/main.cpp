@@ -20,6 +20,7 @@
  * Radial integration
  * Brick merging (performance and storage consumption)
  * Extract base fileformat for subclassing
+ * The performance formula is off
  * 
  * Debugging:
  * 

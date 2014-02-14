@@ -29,7 +29,7 @@
 
 
 #include "tools.h"
-#include "miniarray.h"
+//#include "miniarray.h"
 #include "matrix.h"
 #include "sparsevoxelocttree.h"
 #include "openglwindow.h"

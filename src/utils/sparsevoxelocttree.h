@@ -11,7 +11,7 @@
 #include <QString>
 #include <QDebug>
 
-#include "miniarray.h"
+//#include "miniarray.h"
 #include "tools.h"
 
 class SparseVoxelOcttree
@@ -31,10 +31,10 @@ class SparseVoxelOcttree
         void save(QString path);
         void open(QString path);
 
-        MiniArray<double> * getExtent();
-        MiniArray<double> * getDataHistogram();
-        MiniArray<double> * getDataHistogramLog();
-        MiniArray<double> * getMinMax();
+        Matrix<double> * getExtent();
+        Matrix<double> * getDataHistogram();
+        Matrix<double> * getDataHistogramLog();
+        Matrix<double> *getMinMax();
 
         unsigned int getLevels();
         unsigned int getBrickPoolPower();
@@ -45,15 +45,15 @@ class SparseVoxelOcttree
 
         quint64 getBytes();
 
-        MiniArray<unsigned int> index;
-        MiniArray<unsigned int> brick;
-        MiniArray<float> pool;
+        Matrix<unsigned int> index;
+        Matrix<unsigned int> brick;
+        Matrix<float> pool;
 
     private:
-        MiniArray<double> data_histogram;
-        MiniArray<double> data_histogram_log;
-        MiniArray<double> minmax;
-        MiniArray<double> extent;
+        Matrix<double> data_histogram;
+        Matrix<double> data_histogram_log;
+        Matrix<double> minmax;
+        Matrix<double> extent;
 
         quint64 version_major;
         quint64 version_minor;

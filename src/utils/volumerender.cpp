@@ -1676,7 +1676,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     getPosition2D(z_2d.data(), z_high.data(), &view_matrix);
     
     painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("X (towards source)"));
-    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y"));
+    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y (up)"));
     painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Z"));
 
     // Position scalebar tick labels
@@ -2074,7 +2074,7 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
 
     size_t n_bricks = svo->pool.size()/(svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension());
 
-    MiniArray<size_t> pool_dim(3);
+    Matrix<size_t> pool_dim(1,3);
     pool_dim[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
     pool_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
     pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())))*svo->getBrickOuterDimension();

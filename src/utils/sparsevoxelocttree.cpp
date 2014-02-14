@@ -6,10 +6,10 @@ SparseVoxelOcttree::SparseVoxelOcttree()
     this->brick_inner_dimension = 7;
     this->brick_outer_dimension = 8;
     this->brick_pool_power = 7;
-    this->extent.reserve(8);
+    this->extent.reserve(1,8);
     this->version_major = 0;
     this->version_minor = 2;
-    this->minmax.reserve(2);
+    this->minmax.reserve(1,2);
 };
 
 SparseVoxelOcttree::~SparseVoxelOcttree()
@@ -47,19 +47,19 @@ void SparseVoxelOcttree::setExtent(float Q)
     this->extent[7] = 1;
 }
 
-MiniArray<double> * SparseVoxelOcttree::getExtent()
+Matrix<double> * SparseVoxelOcttree::getExtent()
 {
     return &extent;
 }
-MiniArray<double> * SparseVoxelOcttree::getDataHistogram()
+Matrix<double> * SparseVoxelOcttree::getDataHistogram()
 {
     return &data_histogram;
 }
-MiniArray<double> * SparseVoxelOcttree::getDataHistogramLog()
+Matrix<double> * SparseVoxelOcttree::getDataHistogramLog()
 {
     return &data_histogram_log;
 }
-MiniArray<double> * SparseVoxelOcttree::getMinMax()
+Matrix<double> * SparseVoxelOcttree::getMinMax()
 {
     return &minmax;
 }
@@ -164,12 +164,12 @@ void SparseVoxelOcttree::open(QString path)
         in >> qvec_index;
         in >> qvec_brick;
 
-        data_histogram.setDeep(qvec_data_histogram.size(), qvec_data_histogram.data());
-        data_histogram_log.setDeep(qvec_data_histogram_log.size(), qvec_data_histogram_log.data());
-        extent.setDeep(qvec_extent.size(), qvec_extent.data());
-        pool.setDeep(qvec_pool.size(), qvec_pool.data());
-        index.setDeep(qvec_index.size(), qvec_index.data());
-        brick.setDeep(qvec_brick.size(), qvec_brick.data());
+        data_histogram.setDeep(1, qvec_data_histogram.size(), qvec_data_histogram.data());
+        data_histogram_log.setDeep(1, qvec_data_histogram_log.size(), qvec_data_histogram_log.data());
+        extent.setDeep(1, qvec_extent.size(), qvec_extent.data());
+        pool.setDeep(1, qvec_pool.size(), qvec_pool.data());
+        index.setDeep(1, qvec_index.size(), qvec_index.data());
+        brick.setDeep(1, qvec_brick.size(), qvec_brick.data());
     }
 
     this->print();

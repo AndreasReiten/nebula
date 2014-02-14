@@ -8,7 +8,6 @@ HEADERS = \
     src/utils/imagerender.h \
     src/utils/fileformat.h \
     src/utils/worker.h \
-    src/utils/miniarray.h \
     src/utils/texthighlighter.h \
     src/utils/tools.h \
     src/utils/matrix.h \

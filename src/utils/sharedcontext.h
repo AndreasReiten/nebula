@@ -18,7 +18,7 @@
 //#include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
 
-#include "miniarray.h"
+//#include "miniarray.h"
 #include "tools.h"
 #include "openglwindow.h"
 
