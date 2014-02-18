@@ -958,7 +958,7 @@ void MainWindow::saveSvo()
     if (svo_inprocess.index.size() > 0)
     {
         QFileDialog dialog;
-        dialog.setDefaultSuffix(".svo");
+        dialog.setDefaultSuffix("svo");
         QString file_name = dialog.getSaveFileName(this, tr("Save File"), "", tr(".svo (*.svo);; All Files (*)"));
 
         if (file_name != "")

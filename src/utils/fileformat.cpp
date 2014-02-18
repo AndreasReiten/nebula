@@ -142,8 +142,8 @@ int PilatusFile::readHeader()
     // Based on the PILATUS 1.2 header convention. Regular expressions are used to fetch header values
     QString reqExpDetector("(?:Detector:\\s+)(\\S+\\s+\\S+),");
     QString reqExpTime("(?:Exposure_time\\s+)(\\d+(?:\\.\\d+)?)");
-    QString reqPixSizex("(?:Pixel_size\\s+)(\\d+e[+-]\\d+)");
-    QString reqPixSizey("(?:Pixel_size\\s+)(?:\\d+e[+-]\\d+)\\sm\\sx\\s(\\d+e[+-]\\d+)");
+    QString reqPixSizex("(?:Pixel_size\\s+)(\\d+(?:\\.\\d+)?e[+-]\\d+)");
+    QString reqPixSizey("(?:Pixel_size\\s+)(?:\\d+(?:\\.\\d+)?e[+-]\\d+)\\sm\\sx\\s(\\d+(?:\\.\\d+)?e[+-]\\d+)");
 
     QString optExpWl( "Wavelength\\s+(\\d+(?:\\.\\d+)?)" );
     QString optExpStAng( "Start_angle\\s+(\\d+(?:\\.\\d+)?)" );
@@ -170,19 +170,6 @@ int PilatusFile::readHeader()
         return 0;
     }
     // Read file
-//    std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
-//    if (!in)
-//    {
-//        std::cout << "Error reading file: " << path.toStdString().c_str() << std::endl;
-//        return 0;
-//    }
-
-//    std::string contents;
-//    contents.reserve(4096);
-//    in.read(&contents[0], 4096);
-//    in.close();
-//    QString header(contents.c_str());
-
     QFile file(path.toStdString().c_str());
     if (!file.open(QIODevice::ReadOnly))
     {
@@ -566,6 +553,7 @@ int PilatusFile::readData()
             break;
         }
     }
+    
     // Decompress data and neglect data outside given thresholds
     int prev = 0;
     size_t id = offset;
@@ -601,16 +589,24 @@ int PilatusFile::readData()
                 counts = prev + (int) (buf[id]);
                 id++;
             }
+            
+            
+            
             prev = counts;
 
             data_buf[i*fast_dimension+j] = (float) counts;
 
+            if ((i < 10) && (j < 10)) qDebug() << "i,j" << i << j << "data" << data_buf[i*fast_dimension+j] << "prev" << prev;
+            
             if (max_counts < counts) max_counts = counts;
         }
     }
     delete[] buf;
-
-
+    
+//    data_buf.print(0);
+    qDebug() << "offset" << offset;
+    
+    
     return 1;
 }
 

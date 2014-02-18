@@ -126,7 +126,7 @@ __kernel void FRAME_FILTER(
                 /* Lorentz Polarization correction - The Lorentz part will depend on the scanning axis, but has to be applied if the frames are integrated over some time */
 
                 // Assuming rotation around the z-axis of the lab frame:
-                float L = native_sin(lab_theta);
+                float L = native_sin(fabs(lab_theta));
 
                 // The polarization correction also needs a bit more work...
                 xyzi.w *= L;

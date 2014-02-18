@@ -29,7 +29,6 @@ SOURCES = \
     src/utils/imagerender.cpp \
     src/utils/fileformat.cpp \
     src/utils/worker.cpp \
-    src/utils/miniarray.cpp \
     src/utils/texthighlighter.cpp \
     src/utils/tools.cpp \
     src/utils/matrix.cpp \

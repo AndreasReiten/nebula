@@ -1004,7 +1004,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     drawRayTex();
     
     // Test (zeta, eta)
-    drawSenseOfRotation(-0.5*pi, 0, 30.0);
+//    drawSenseOfRotation(-0.5*pi, 0, 30.0);
     
     // PHI
 //    drawSenseOfRotation(0.000891863, 0, 30.0);
