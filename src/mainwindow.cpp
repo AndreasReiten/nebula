@@ -1495,6 +1495,7 @@ void MainWindow::initializeInteractives()
         activeAngleComboBox->addItem("Phi");
         activeAngleComboBox->addItem("Kappa");
         activeAngleComboBox->addItem("Omega");
+        activeAngleComboBox->addItem("Given by file");
         
 
         // Spin Boxes

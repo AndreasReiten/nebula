@@ -775,7 +775,7 @@ void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 
 void VolumeRenderWorker::setRayTexture()
 {
-    // Only resize the texture if the change is somewhat significant (in area cahnged)
+    // Only resize the texture if the change is somewhat significant (in terms of area changed)
     if (isInitialized && ((!isRayTexInitialized) || (std::abs(1.0 - quality_factor) > 0.15)))
     {
         // Scale down the change in quality factor a bit so that a stable resolution will be easier to reach. If not we risk having the resolution jump between two states that both fullfill the if-criterion enclosing this code
@@ -783,8 +783,8 @@ void VolumeRenderWorker::setRayTexture()
 
         // Set a texture for the volume rendering kernel
         Matrix<int> ray_tex_new(1, 2);
-        ray_tex_new[0] = (int)((float)render_surface->width()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
-        ray_tex_new[1] = (int)((float)render_surface->height()*(ray_tex_resolution*0.01)*std::sqrt(quality_factor));
+        ray_tex_new[0] = (int)((float)render_surface->width()*(ray_tex_resolution*0.01)*std::pow(quality_factor, 1.0/3.0));
+        ray_tex_new[1] = (int)((float)render_surface->height()*(ray_tex_resolution*0.01)*std::pow(quality_factor, 1.0/3.0));
 
         // Clamp
         if (ray_tex_new[0] < 32) ray_tex_new[0] = 32;
@@ -794,7 +794,7 @@ void VolumeRenderWorker::setRayTexture()
         if (ray_tex_new[1] > render_surface->height()) ray_tex_new[1] = render_surface->height();
 
         // Calculate the actual quality factor multiplier
-        quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(ray_tex_resolution*0.01)), 2.0);
+        quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(ray_tex_resolution*0.01)), 3.0);
 
         ray_tex_resolution *= std::sqrt(quality_factor);
         ray_tex_dim = ray_tex_new;

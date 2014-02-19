@@ -29,7 +29,6 @@ int FileSelectionModel::columnCount(const QModelIndex& parent) const
 void FileSelectionModel::setStringFilter(QString str)
 {
     setNameFilters(str.split(",", QString::SkipEmptyParts));
-//    qDebug() << str.split(",", QString::SkipEmptyParts);
 }
 
 Qt::ItemFlags FileSelectionModel::flags(const QModelIndex& index) const
@@ -66,33 +65,7 @@ QVariant FileSelectionModel::data(const QModelIndex& index, int role) const
         
         return state;
 	}
-//    else if (index.column() == columnCount(index.parent())-1)
-//    {
-//        switch(role)
-//        {
-//            case(Qt::DisplayRole):
-//            {
-//                return QString("YourText");
-//            }
-//            case(Qt::TextAlignmentRole):
-//            {
-//                return Qt::AlignHCenter;
-//            }
-//            default:{}
-//        }
-//    }
-//    else if (index.isValid() && (role == Qt::BackgroundRole)) 
-//    {
-//        QBrush brush;
 
-//        if (indices.contains(index))
-//        {
-//            brush = QBrush(QColor(50,255,0,50));
-//        }
-//        else brush = QBrush(Qt::transparent);;
-        
-//        return brush;
-//	}
 	else return QFileSystemModel::data(index, role);
 }
 
@@ -116,50 +89,6 @@ bool FileSelectionModel::setData(const QModelIndex& index, const QVariant& value
 }
 
 
-//bool FileSourceModel::addPath(QModelIndex index)
-//{
-//    directories << filePath(index);
-//    if (fileInfo(index).isFile()) files << filePath(index);
-    
-    
-    
-//    if (hasChildren(index))
-//    {
-//        for (int i = 0; i < rowCount(index); i++)
-//        {
-//            QModelIndex child = index.child(i,0);
-//            if (child.isValid())
-//            {
-//                directories << filePath(child);
-//                if (fileInfo(index).isFile()) files.removeAll(filePath(index));
-//            }
-//        }
-//    }
-    
-//    emit dataChanged(index.parent(), index.child(rowCount(index)-1,0));
-//}
-
-//bool FileSourceModel::removePath(QModelIndex index)
-//{
-//    directories.removeAll(filePath(index));
-//    if (fileInfo(index).isFile()) files.removeAll(filePath(index));
-    
-//    emit dataChanged(index.parent(), index);
-    
-//    if (hasChildren(index))
-//    {
-//        for (int i = 0; i < rowCount(index); i++)
-//        {
-//            QModelIndex child = index.child(i,0);
-//            if (child.isValid())
-//            {
-//                removePath(child);
-//            }
-//        }
-//    }
-//}
-
-
 bool FileSelectionModel::addIndex(QModelIndex index)
 {
     indices << index;
@@ -181,7 +110,7 @@ bool FileSelectionModel::addIndex(QModelIndex index)
 
 bool FileSelectionModel::removeIndex(QModelIndex index)
 {
-    indices.removeAll(index);
+    indices.removeAll(index); // If the index of an item changes it cannot be removed. This can occur if the number of items in a folder change.
     
     if (hasChildren(index))
     {
