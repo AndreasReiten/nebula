@@ -4,20 +4,27 @@ PilatusFile::~PilatusFile()
 {
 
 }
-PilatusFile::PilatusFile()
+PilatusFile::PilatusFile() :
+    active_angle(2)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
     STATUS_OK = 0;
 }
-PilatusFile::PilatusFile(QString path, OpenCLContext *context)
+PilatusFile::PilatusFile(QString path, OpenCLContext *context):
+    active_angle(2)
 {
     context_cl = context;
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
     STATUS_OK = this->set(path, context_cl);
+}
+
+void PilatusFile::setActiveAngle(int value)
+{
+    active_angle = value;
 }
 
 QString PilatusFile::getHeaderText()
@@ -362,8 +369,8 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
-    int active_angle = 2;
 
+    qDebug() << "The active angle is " << active_angle;
     if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
     else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
     else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
@@ -391,7 +398,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
     sampleRotMat = PHI*KAPPA*OMEGA;
 
     cl_mem sample_rotation_matrix_cl = clCreateBuffer(*context_cl->getContext(),
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
         sampleRotMat.bytes(),
         sampleRotMat.data(),
         &err);
@@ -596,7 +603,7 @@ int PilatusFile::readData()
 
             data_buf[i*fast_dimension+j] = (float) counts;
 
-            if ((i < 10) && (j < 10)) qDebug() << "i,j" << i << j << "data" << data_buf[i*fast_dimension+j] << "prev" << prev;
+//            if ((i < 10) && (j < 10)) qDebug() << "i,j" << i << j << "data" << data_buf[i*fast_dimension+j] << "prev" << prev;
             
             if (max_counts < counts) max_counts = counts;
         }

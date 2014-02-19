@@ -67,8 +67,13 @@ class PilatusFile
         void setProjectionKernel(cl_kernel * kernel);
         void print();
         QString getHeaderText();
+        void setActiveAngle(int value);
         
     private:
+        // Misc
+        int active_angle;
+        
+        
         OpenCLContext * context_cl;
         cl_mem * cl_img_alpha;
         cl_mem * cl_img_beta;

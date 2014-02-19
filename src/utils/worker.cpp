@@ -46,6 +46,12 @@ void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
     this->svo = svo;
 }
 
+void BaseWorker::setActiveAngle(int value)
+{
+    active_angle = value;
+    qDebug() << "Active angle:" << active_angle;
+}
+
 void BaseWorker::setReduceThresholdLow(double value)
 {
     this->threshold_reduce_low = (float) value;
@@ -464,6 +470,7 @@ void ProjectFileWorker::process()
         else
         {
             emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
+            (*files)[i].setActiveAngle(active_angle);
             (*files)[i].setProjectionKernel(&project_kernel);
             (*files)[i].setBackground(files->front().getFlux(), files->front().getExpTime());
 
@@ -640,6 +647,7 @@ void AllInOneWorker::process()
                 {
                     emit changedImageSize(file.getWidth(), file.getHeight());
 
+                    file.setActiveAngle(active_angle);
                     file.setProjectionKernel(&project_kernel);
                     file.setBackground(file.getFlux(), file.getExpTime());
 
@@ -1284,6 +1292,8 @@ void DisplayFileWorker::setDisplayFile(int value)
 
 void DisplayFileWorker::process()
 {
+    /* 
+     * This function updates the image buffers that are shown in the reconstruction tab according to a given file index (display_file)*/
     QCoreApplication::processEvents();
     
     PilatusFile file;
@@ -1296,6 +1306,7 @@ void DisplayFileWorker::process()
         if (STATUS_OK)
         {
             emit changedImageSize(file.getWidth(), file.getHeight());
+            file.setActiveAngle(active_angle);
             file.setProjectionKernel(&project_kernel);
             file.setBackground(file.getFlux(), file.getExpTime());
 
@@ -1305,10 +1316,6 @@ void DisplayFileWorker::process()
             emit releaseSharedBuffers();
             
             emit updateRequest();
-//            if (STATUS_OK)
-//            {
-////                emit repaintImageWidget();
-//            }
         }
     }
     emit finished();

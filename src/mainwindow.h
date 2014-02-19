@@ -280,6 +280,7 @@ private:
     QLabel * cStar;
 
     QComboBox *formatComboBox;
+    QComboBox *activeAngleComboBox;
 
     QSpinBox * svoLevelSpinBox;
 

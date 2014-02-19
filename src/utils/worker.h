@@ -72,6 +72,7 @@ class BaseWorker : public QObject
 
     public slots:
         void killProcess();
+        void setActiveAngle(int value);
         void setReduceThresholdLow(double value);
         void setReduceThresholdHigh(double value);
         void setProjectThresholdLow(double value);
@@ -99,6 +100,7 @@ class BaseWorker : public QObject
         float * suggested_q;
 
         // File treatment
+        int active_angle;
         float threshold_reduce_low;
         float threshold_reduce_high;
         float threshold_project_low;

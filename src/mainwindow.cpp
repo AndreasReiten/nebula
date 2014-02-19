@@ -180,6 +180,7 @@ void MainWindow::initializeWorkers()
 //    projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
 //    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
 //    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), projectFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
     connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
     connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
@@ -228,6 +229,7 @@ void MainWindow::initializeWorkers()
 //    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
 //    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), allInOneWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
     connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
     connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
@@ -288,6 +290,7 @@ void MainWindow::initializeWorkers()
 //    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
 //    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
 //    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), displayFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
     connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
     connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
@@ -495,6 +498,8 @@ void MainWindow::initializeEmit()
     qualitySlider->setValue(100);
     
     fileSelectionFilter->setText("*.cbf");
+    
+    activeAngleComboBox->setCurrentIndex(2);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -1056,12 +1061,12 @@ void MainWindow::initializeInteractives()
         projectFileButton->setText("Correction and Projection ");
         projectFileButton->setEnabled(false);
 
-        voxelizeButton = new QPushButton;
-        voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
-        voxelizeButton->setText("Voxelize ");
-        voxelizeButton->setIconSize(QSize(32,32));
-        voxelizeButton->setEnabled(false);
-        voxelizeButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+//        voxelizeButton = new QPushButton;
+//        voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
+//        voxelizeButton->setText("Voxelize ");
+//        voxelizeButton->setIconSize(QSize(32,32));
+//        voxelizeButton->setEnabled(false);
+//        voxelizeButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
         allInOneButton = new QPushButton;
         allInOneButton->setIcon(QIcon(":/art/fast_proceed.png"));
@@ -1078,7 +1083,7 @@ void MainWindow::initializeInteractives()
         toolChainWidget = new QWidget;
         QGridLayout * toolChainLayout = new QGridLayout;
         toolChainLayout->setSpacing(0);
-        toolChainLayout->setMargin(0);
+//        toolChainLayout->setMargin(0);
         toolChainLayout->setContentsMargins(0,0,0,0);
         toolChainLayout->setColumnStretch(1,1);
         toolChainLayout->setColumnStretch(2,1);
@@ -1089,14 +1094,14 @@ void MainWindow::initializeInteractives()
         toolChainLayout->addWidget(readFileButton,0,2,1,1);
         toolChainLayout->addWidget(projectFileButton,0,3,1,1);
         toolChainLayout->addWidget(voxelizeButton,0,4,2,1);
-        toolChainLayout->addWidget(killButton,0,5,2,1);
+        toolChainLayout->addWidget(killButton,0,4,2,1);
         toolChainLayout->addWidget(allInOneButton,1,1,1,3);
         toolChainWidget->setLayout(toolChainLayout);
 
         // Layout
         QGridLayout * topLayout = new QGridLayout;
         topLayout->setSpacing(0);
-        topLayout->setMargin(0);
+//        topLayout->setMargin(0);
         topLayout->setContentsMargins(0,0,0,0);
         topLayout->addWidget(mainMenu,0,0,1,1);
         topLayout->addWidget(toolChainWidget,1,0,1,1);
@@ -1138,7 +1143,7 @@ void MainWindow::initializeInteractives()
 
         QGridLayout * fileBrowserLayout = new QGridLayout;
         fileBrowserLayout->setSpacing(0);
-        fileBrowserLayout->setMargin(0);
+//        fileBrowserLayout->setMargin(0);
         fileBrowserLayout->setContentsMargins(0,0,0,0);
         fileBrowserLayout->addWidget(fileSelectionTree,0,0,1,1);
 
@@ -1147,7 +1152,7 @@ void MainWindow::initializeInteractives()
         // Layout
         QGridLayout * scriptLayout = new QGridLayout;
         scriptLayout->setSpacing(0);
-        scriptLayout->setMargin(0);
+//        scriptLayout->setMargin(0);
         scriptLayout->setContentsMargins(0,0,0,0);
         scriptLayout->addWidget(fileSelectionToolBar,0,0,1,2);
         scriptLayout->addWidget(scriptTextEdit,1,0,1,2);
@@ -1209,7 +1214,7 @@ void MainWindow::initializeInteractives()
 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setSpacing(0);
-        imageLayout->setMargin(0);
+//        imageLayout->setMargin(0);
         imageLayout->setContentsMargins(0,0,0,0);
         imageLayout->setRowStretch(0,1);
         imageLayout->setColumnStretch(0,1);
@@ -1291,7 +1296,7 @@ void MainWindow::initializeInteractives()
         // Layout
         QGridLayout * viewLayout = new QGridLayout;
         viewLayout->setSpacing(0);
-        viewLayout->setMargin(0);
+//        viewLayout->setMargin(0);
         viewLayout->setContentsMargins(0,0,0,0);
 //        viewLayout->setAlignment(Qt::AlignTop);
         viewLayout->addWidget(viewToolBar,0,0,1,1);
@@ -1362,7 +1367,7 @@ void MainWindow::initializeInteractives()
 
         QGridLayout * graphicsLayout = new QGridLayout;
         graphicsLayout->setSpacing(0);
-        graphicsLayout->setMargin(0);
+//        graphicsLayout->setMargin(0);
         graphicsLayout->setContentsMargins(0,0,0,0);
 
         graphicsLayout->addWidget(label_texture,0,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
@@ -1430,7 +1435,7 @@ void MainWindow::initializeInteractives()
 
         QGridLayout * unitcellLayout = new QGridLayout;
         unitcellLayout->setSpacing(0);
-        unitcellLayout->setMargin(0);
+//        unitcellLayout->setMargin(0);
         unitcellLayout->setContentsMargins(0,0,0,0);
         unitcellLayout->addWidget(unitcellButton,0,0,1,4);
         unitcellLayout->addWidget(loadParButton,1,0,1,4);
@@ -1475,15 +1480,22 @@ void MainWindow::initializeInteractives()
         fileControlsWidget = new QWidget;
 
         // Labels
-        QLabel * labelA = new QLabel(QString("Detector File Format:"));
-        QLabel * labelB = new QLabel(QString("Pre-correction Threshold:"));
-        QLabel * labelC = new QLabel(QString("Post-correction Threshold:"));
-        QLabel * labelD = new QLabel(QString("Octtree Levels: "));
-
+        QLabel * labelA = new QLabel(QString("Detector file format:"));
+        QLabel * labelB = new QLabel(QString("Pre correction threshold:"));
+        QLabel * labelC = new QLabel(QString("Post correction threshold:"));
+        QLabel * labelD = new QLabel(QString("Octtree levels: "));
+        QLabel * labelE = new QLabel(QString("Active angle:"));
+        
         // Combo boxes and their labels
         formatComboBox = new QComboBox;
         formatComboBox->addItem("PILATUS CBF 1.2");
         formatComboBox->addItem("[ your file format here ]");
+        
+        activeAngleComboBox = new QComboBox;
+        activeAngleComboBox->addItem("Phi");
+        activeAngleComboBox->addItem("Kappa");
+        activeAngleComboBox->addItem("Omega");
+        
 
         // Spin Boxes
         reduceThresholdLow = new QDoubleSpinBox;
@@ -1518,31 +1530,41 @@ void MainWindow::initializeInteractives()
         svoLevelSpinBox->setRange(1, 15);
 
         // Buttons
+        voxelizeButton = new QPushButton;
+        voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
+        voxelizeButton->setText("Voxelize");
+//        voxelizeButton->setIconSize(QSize(32,32));
+        voxelizeButton->setEnabled(false);
+//        voxelizeButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+        
         saveSvoButton = new QPushButton;
         saveSvoButton->setIcon(QIcon(":/art/save.png"));
         saveSvoButton->setText("Save Octtree");
 
-        QGridLayout * fileLayout = new QGridLayout;
-        fileLayout->setSpacing(0);
-        fileLayout->setMargin(0);
-        fileLayout->setContentsMargins(0,0,0,0);
-        fileLayout->addWidget(labelA,0,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        fileLayout->addWidget(formatComboBox,0,4,1,4);
-        fileLayout->addWidget(labelB,1,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        fileLayout->addWidget(reduceThresholdLow,1,4,1,2);
-        fileLayout->addWidget(reduceThresholdHigh,1,6,1,2);
-        fileLayout->addWidget(labelC,2,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        fileLayout->addWidget(projectThresholdLow,2,4,1,2);
-        fileLayout->addWidget(projectThresholdHigh,2,6,1,2);
-        fileLayout->addWidget(labelD,3,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        fileLayout->addWidget(svoLevelSpinBox,3,4,1,4);
-        fileLayout->addWidget(saveSvoButton,4,0,1,8);
-        fileControlsWidget->setLayout(fileLayout);
-//        fileControlsWidget->setMaximumHeight(fileLayout->minimumSize().rheight());
+        QGridLayout * reconstructLayout = new QGridLayout;
+        reconstructLayout->setSpacing(0);
+//        reconstructLayout->setMargin(0);
+//        reconstructLayout->setContentsMargins(0,0,0,0);
+        reconstructLayout->addWidget(labelA,0,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(formatComboBox,0,4,1,4);
+        reconstructLayout->addWidget(labelE,1,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(activeAngleComboBox,1,4,1,4);
+        reconstructLayout->addWidget(labelB,2,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(reduceThresholdLow,2,4,1,2);
+        reconstructLayout->addWidget(reduceThresholdHigh,2,6,1,2);
+        reconstructLayout->addWidget(labelC,3,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(projectThresholdLow,3,4,1,2);
+        reconstructLayout->addWidget(projectThresholdHigh,3,6,1,2);
+        reconstructLayout->addWidget(labelD,4,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(svoLevelSpinBox,4,4,1,4);
+        reconstructLayout->addWidget(voxelizeButton,5,0,1,8);
+        reconstructLayout->addWidget(saveSvoButton,6,0,1,8);
+        fileControlsWidget->setLayout(reconstructLayout);
+//        fileControlsWidget->setMaximumHeight(reconstructLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileDockWidget->setWidget(fileControlsWidget);
-        fileDockWidget->setMaximumWidth(fileLayout->minimumSize().rwidth());
+        fileDockWidget->setMaximumWidth(reconstructLayout->minimumSize().rwidth());
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         this->addDockWidget(Qt::BottomDockWidgetArea, fileDockWidget);
     }
@@ -1595,7 +1617,7 @@ void MainWindow::initializeInteractives()
 
         QGridLayout * functionLayout = new QGridLayout;
         functionLayout->setSpacing(0);
-        functionLayout->setMargin(0);
+//        functionLayout->setMargin(0);
         functionLayout->setContentsMargins(0,0,0,0);
         functionLayout->addWidget(functionToggleButton,0,0,1,4);
         functionLayout->addWidget(p0,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
@@ -1636,7 +1658,7 @@ void MainWindow::initializeInteractives()
         // Layout
         QGridLayout * botLayout = new QGridLayout;
         botLayout->setSpacing(0);
-        botLayout->setMargin(0);
+//        botLayout->setMargin(0);
         botLayout->setContentsMargins(0,0,0,0);
         botLayout->addWidget(errorTextEdit, 0, 0, 1, 1);
         botLayout->addWidget(progressBar, 1, 0, 1, 1);
@@ -1657,7 +1679,7 @@ void MainWindow::initializeInteractives()
     tabWidget->addTab(viewWidget, tr("Visualization"));
 
     // Put into main layout
-    mainLayout->setMargin(0);
+//    mainLayout->setMargin(0);
     mainLayout->setContentsMargins(3,3,3,3);
     mainLayout->addWidget(topWidget,0,0,1,1);
     mainLayout->addWidget(tabWidget,1,0,1,1);
