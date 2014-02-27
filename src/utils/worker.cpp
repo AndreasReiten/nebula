@@ -267,7 +267,8 @@ void SetFileWorker::process()
             // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
             if ((*suggested_q) < files->back().getQSuggestion()) (*suggested_q) = files->back().getQSuggestion();
             
-            emit changedFile(files->size()-1);
+            emit changedFile(files->size()-1); 
+//            qDebug() <<  files->size()-1;
         }
         else
         {
@@ -528,7 +529,7 @@ void ProjectFileWorker::process()
             }
         }
     }
-    else if (0) // A gradiented box
+    else if (1) // A gradiented box
     {
         int res = 32;
         reduced_pixels->resize(1, res*res*res*4);

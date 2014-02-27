@@ -124,7 +124,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isCenterlineActive(true),
       isRulerActive(false),
       isLMBDown(false),
-      ray_tex_resolution(20)
+      weird_parameter(20)
 {
     // Matrices
     double extent[8] = {
@@ -779,12 +779,20 @@ void VolumeRenderWorker::setRayTexture()
     if (isInitialized && ((!isRayTexInitialized) || (std::abs(1.0 - quality_factor) > 0.15)))
     {
         // Scale down the change in quality factor a bit so that a stable resolution will be easier to reach. If not we risk having the resolution jump between two states that both fullfill the if-criterion enclosing this code
-        quality_factor = 1.0 + (quality_factor - 1.0)*0.25;
-
+        
+//        if (quality_factor < 1.0)
+//        {
+//            quality_factor = 1.0 + (quality_factor - 1.0)*0.50; 
+//        }
+//        else
+//        {
+            // If the quality factor is greater than one, it means the program wants to increase the resolution of the rendering texture. It can be beneficial to downscale the quality factor a bit in such cases
+            quality_factor = 1.0 + (quality_factor - 1.0)*0.25;
+//        }
         // Set a texture for the volume rendering kernel
         Matrix<int> ray_tex_new(1, 2);
-        ray_tex_new[0] = (int)((float)render_surface->width()*(ray_tex_resolution*0.01)*std::pow(quality_factor, 1.0/3.0));
-        ray_tex_new[1] = (int)((float)render_surface->height()*(ray_tex_resolution*0.01)*std::pow(quality_factor, 1.0/3.0));
+        ray_tex_new[0] = (int)((float)render_surface->width()*(weird_parameter*0.01)*std::pow(quality_factor, 1.0/3.0));
+        ray_tex_new[1] = (int)((float)render_surface->height()*(weird_parameter*0.01)*std::pow(quality_factor, 1.0/3.0));
 
         // Clamp
         if (ray_tex_new[0] < 32) ray_tex_new[0] = 32;
@@ -794,9 +802,12 @@ void VolumeRenderWorker::setRayTexture()
         if (ray_tex_new[1] > render_surface->height()) ray_tex_new[1] = render_surface->height();
 
         // Calculate the actual quality factor multiplier
-        quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(ray_tex_resolution*0.01)), 3.0);
+        quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(weird_parameter*0.01)), 3.0);
 
-        ray_tex_resolution *= std::sqrt(quality_factor);
+        weird_parameter *= std::pow(quality_factor, 1.0/3.0);
+//        weird_parameter =  100.0*(ray_tex_new[0]*ray_tex_new[1])/(render_surface->width()*render_surface->height());
+//        qDebug() << weird_parameter <<  100.0*(ray_tex_new[0]*ray_tex_new[1])/(render_surface->width()*render_surface->height()) <<  100.0*(ray_tex_new[1])/(render_surface->height());
+        
         ray_tex_dim = ray_tex_new;
 
         // Global work size
@@ -1398,9 +1409,10 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
     painter->drawLines(lines.data(), 5);
     
     // Draw text with info 
+    ruler.print(2,"Ruler");
     double length = sqrt((ruler[2]-ruler[0])*(ruler[2]-ruler[0])*pixel_size[0]*pixel_size[0] + (ruler[3]-ruler[1])*(ruler[3]-ruler[1])*pixel_size[1]*pixel_size[1]);
     
-    QString centerline_string(QString::number(length, 'g', 5)+" 1/Å");
+    QString centerline_string(QString::number(length, 'g', 5)+" 1/Å ("+QString::number(1.0/length, 'g', 5)+"Å)");
     QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
     centerline_string_rect += QMargins(5,5,5,5);
     centerline_string_rect.moveBottomLeft(QPoint(ruler[0]+5, ruler[1]-5));
@@ -1620,13 +1632,15 @@ void VolumeRenderWorker::computePixelSize()
     ndc00[1] = 0.0;
     ndc00[2] = -1.0;
     ndc00[3] = 1.0;
-
+    
+    // The height of a single pixel
     Matrix<double> ndc01(4,1);
     ndc01[0] = 0.0;
     ndc01[1] = 2.0/(double)render_surface->height();
     ndc01[2] = -1.0;
     ndc01[3] = 1.0;
-
+    
+    // The width of a single pixel
     Matrix<double> ndc10(4,1);
     ndc10[0] = 2.0/(double)render_surface->width();
     ndc10[1] = 0.0;
@@ -1645,10 +1659,14 @@ void VolumeRenderWorker::computePixelSize()
     Matrix<double> h_vec = xyz_00 - xyz_01;
 
 
+//    w_vec.print(2, "w_vec");
+//    h_vec.print(2, "h_vec");
+    
     pixel_size[0] = std::sqrt(w_vec[0]*w_vec[0] + w_vec[1]*w_vec[1] + w_vec[2]*w_vec[2]);
     pixel_size[1] = std::sqrt(h_vec[0]*h_vec[0] + h_vec[1]*h_vec[1] + h_vec[2]*h_vec[2]);
 
-
+//    qDebug() << "The width is " << pixel_size[0]*render_surface->width();
+//    qDebug() << "The height is " << pixel_size[1]*render_surface->height();
 //    ray_tex_dim.print(0,"ray_tex_dim");
 //    pixel_size.print(4,"Pixel Size");
 }
@@ -1656,29 +1674,32 @@ void VolumeRenderWorker::computePixelSize()
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
     // Draw text to indicate lab reference frame directions
-    Matrix<float> x_high(1,3,0), y_high(1,3,0), z_high(1,3,0);
-    float length = data_view_extent[1] - data_view_extent[0];
-    x_high[0] = data_view_extent[1] + length * 0.05;
-    x_high[1] = data_view_extent[2] + length * 0.5;
-    x_high[2] = data_view_extent[4] + length * 0.5;
+    if (isScalebarActive)
+    {
+        Matrix<float> x_high(1,3,0), y_high(1,3,0), z_high(1,3,0);
+        float length = data_view_extent[1] - data_view_extent[0];
+        x_high[0] = data_view_extent[1] + length * 0.05;
+        x_high[1] = data_view_extent[2] + length * 0.5;
+        x_high[2] = data_view_extent[4] + length * 0.5;
+        
+        y_high[0] = data_view_extent[0] + length * 0.5;
+        y_high[1] = data_view_extent[3] + length * 0.05;
+        y_high[2] = data_view_extent[4] + length * 0.5;
     
-    y_high[0] = data_view_extent[0] + length * 0.5;
-    y_high[1] = data_view_extent[3] + length * 0.05;
-    y_high[2] = data_view_extent[4] + length * 0.5;
-
-    z_high[0] = data_view_extent[0] + length * 0.5;
-    z_high[1] = data_view_extent[2] + length * 0.5;
-    z_high[2] = data_view_extent[5] + length * 0.05;
+        z_high[0] = data_view_extent[0] + length * 0.5;
+        z_high[1] = data_view_extent[2] + length * 0.5;
+        z_high[2] = data_view_extent[5] + length * 0.05;
+        
+        Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
+        getPosition2D(x_2d.data(), x_high.data(), &view_matrix);
+        getPosition2D(y_2d.data(), y_high.data(), &view_matrix);
+        getPosition2D(z_2d.data(), z_high.data(), &view_matrix);
+        
+        painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("X (towards source)"));
+        painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y (up)"));
+        painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Z"));
+    }
     
-    Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
-    getPosition2D(x_2d.data(), x_high.data(), &view_matrix);
-    getPosition2D(y_2d.data(), y_high.data(), &view_matrix);
-    getPosition2D(z_2d.data(), z_high.data(), &view_matrix);
-    
-    painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("X (towards source)"));
-    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y (up)"));
-    painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Z"));
-
     // Position scalebar tick labels
     if (isScalebarActive)
     {
@@ -1734,7 +1755,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
 
     // Texture resolution
-    QString resolution_string("Texture resolution: "+QString::number(ray_tex_resolution, 'f', 1)+"%");//+"%, Volume Rendering Fps: "+QString::number(fps_requested));
+    QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(render_surface->width()*render_surface->height()), 'f', 1)+"%");//+"%, Volume Rendering Fps: "+QString::number(fps_requested));
     QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
     resolution_string_rect += QMargins(5,5,5,5);
     resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));

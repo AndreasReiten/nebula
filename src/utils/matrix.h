@@ -34,10 +34,12 @@ class Matrix {
         const Matrix operator - (const T&) const;
         const Matrix operator + (const Matrix&) const;
         const Matrix operator + (const T&) const;
+        
+//        friend std::ostream& operator << (std::ostream& os, const Matrix&);
 
         T& operator[] (const size_t index);
         const T& operator[] (const size_t index) const;
-        Matrix& operator = (Matrix other);
+        Matrix<T> &operator =(Matrix other);
 
         // Utility
         const Matrix<T> getInverse() const;
@@ -104,6 +106,13 @@ Matrix<T>::Matrix()
     this->n = 0;
 //    this->buffer = NULL;
 }
+
+//template <class T>
+//std::ostream& operator << (std::ostream& os, const Matrix& M);
+//{
+////    os << "lol";
+//    return os;
+//}
 
 template <class T>
 QVector<T> Matrix<T>::toQVector() const
@@ -350,7 +359,6 @@ template <class T>
 const Matrix<T> Matrix<T>::operator + (const Matrix& M) const
 {
     Matrix<T> c(*this);
-    //~ c.copy(this->m, this->n, this->data());
 
     if ((this->n != M.getN()) || (this->m != M.getM()))
     {

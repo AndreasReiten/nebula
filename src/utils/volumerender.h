@@ -136,7 +136,7 @@ private:
     Matrix<int> ray_tex_dim;
     Matrix<size_t> ray_glb_ws;
     Matrix<size_t> ray_loc_ws;
-    float ray_tex_resolution;
+    float weird_parameter;
     cl_mem ray_tex_cl;
     GLuint ray_tex_gl;
     bool isRayTexInitialized;
@@ -154,7 +154,20 @@ private:
     cl_mem integration_tex_alpha_cl;
     cl_mem integration_tex_beta_cl;
     bool isIntegrationTexInitialized;
-
+    
+    // UB matrix implementation
+    void updateUnitCell();
+    void drawUnitCell();
+    void loadParFile();
+    GLuint unticell_vbo;
+    
+    Matrix<double> U;
+    Matrix<double> B; // Save this one to the SVO file as meta data
+    
+    // UI elements for UB matrix
+    QWidget * unitCellWidget;
+    
+    
     // Ruler
     Matrix<double> ruler;
     

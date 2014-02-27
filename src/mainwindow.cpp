@@ -3,6 +3,11 @@
 MainWindow::MainWindow() 
 //    isInScriptMode(true)
 {
+//    Matrix<double> lallelol(2,2, 0);
+    
+//    std::cout << lallelol;
+    
+    
     //     Set default values
     current_svo = 0;
     display_file = 0;
@@ -27,7 +32,7 @@ MainWindow::MainWindow()
     format_gl.setBlueBufferSize(8);
     format_gl.setAlphaBufferSize(8);
 //    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-
+    
 
     sharedContextWindow = new SharedContextWindow();
     sharedContextWindow->setFormat(format_gl);
@@ -36,13 +41,20 @@ MainWindow::MainWindow()
     sharedContextWindow->show();
     sharedContextWindow->initializeWorker();
     sharedContextWindow->hide();
-
+    
+    
     this->initializeActions();
+    
     this->initializeMenus();
+    
     this->initializeInteractives();
+    
     this->initializeConnects();
+    
     this->initializeWorkers();
-
+    
+    
+    
     setCentralWidget(mainWidget);
     readSettings();
     setCurrentFile("");
@@ -56,6 +68,8 @@ MainWindow::MainWindow()
     fileDockWidget->hide();
     toolChainWidget->show();
     outputDockWidget->show();
+    
+    
 
 }
 
@@ -435,7 +449,7 @@ void MainWindow::updateFileHeader(int value)
     if ((file_paths.size() > value ))
     {
 //        qDebug() << files.size() << value;
-        fileHeaderEdit->setPlainText(files[value].getHeaderText());
+        if (files.size() > value) fileHeaderEdit->setPlainText(files[value].getHeaderText());
     }
 }
 
@@ -1030,7 +1044,7 @@ void MainWindow::initializeInteractives()
 {
     mainWidget = new QWidget(this);
     mainLayout = new QGridLayout;
-
+    
     /* Top Widget */
     {
         topWidget = new QWidget(mainWidget);
@@ -1093,7 +1107,7 @@ void MainWindow::initializeInteractives()
         toolChainLayout->addWidget(setFileButton,0,1,1,1);
         toolChainLayout->addWidget(readFileButton,0,2,1,1);
         toolChainLayout->addWidget(projectFileButton,0,3,1,1);
-        toolChainLayout->addWidget(voxelizeButton,0,4,2,1);
+//        toolChainLayout->addWidget(voxelizeButton,0,4,2,1);
         toolChainLayout->addWidget(killButton,0,4,2,1);
         toolChainLayout->addWidget(allInOneButton,1,1,1,3);
         toolChainWidget->setLayout(toolChainLayout);
@@ -1212,6 +1226,9 @@ void MainWindow::initializeInteractives()
         imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
         imageRenderWidget->setFocusPolicy(Qt::TabFocus);
 
+        imageHint = new QLabel("(Images are visualized looking from the detector and toward the source)");
+//        QLabel * imageLabel = new QLabel("");
+                                        
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setSpacing(0);
 //        imageLayout->setMargin(0);
@@ -1220,12 +1237,14 @@ void MainWindow::initializeInteractives()
         imageLayout->setColumnStretch(0,1);
         imageLayout->setColumnStretch(6,1);
         imageLayout->addWidget(imageRenderWidget,0,0,1,7);
+        imageLayout->addWidget(imageHint,1,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
         imageLayout->addWidget(imageFastBackButton,1,1,1,1);
         imageLayout->addWidget(imageBackButton,1,2,1,1);
         imageLayout->addWidget(imageNumberSpinBox,1,3,1,1);
         imageLayout->addWidget(imageForwardButton,1,4,1,1);
         imageLayout->addWidget(imageFastForwardButton,1,5,1,1);
-
+//        imageLayout->addWidget(imageLabel,6,1,1,1);
+        
         imageWidget = new QWidget;
         imageWidget->setLayout(imageLayout);
     }

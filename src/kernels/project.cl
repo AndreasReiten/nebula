@@ -107,7 +107,9 @@ __kernel void FRAME_FILTER(
 
             // Center the detector
             xyzi.y -= h_beam_x * h_pixel_size_x; // Not sure if one should offset by half a pixel more/less
+            // Which one of these is right, though?
             xyzi.z -= h_beam_y * h_pixel_size_y;
+//            xyzi.z -= (target_dim.x - h_beam_y) * h_pixel_size_y;
 
             // Titlt the detector around origo assuming it correctly coincides with the actual center of rotation ( not yet implemented)
 
@@ -126,7 +128,7 @@ __kernel void FRAME_FILTER(
                 /* Lorentz Polarization correction - The Lorentz part will depend on the scanning axis, but has to be applied if the frames are integrated over some time */
 
                 // Assuming rotation around the z-axis of the lab frame:
-                float L = native_sin(fabs(lab_theta));
+                float L = fabs(native_sin(lab_theta));
 
                 // The polarization correction also needs a bit more work...
                 xyzi.w *= L;

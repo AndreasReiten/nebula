@@ -193,6 +193,9 @@ private:
     FileTreeView *fileSelectionTree;
 //    FileTreeView *fileSelectedTree;
     
+    // Image toolbar
+    QLabel * imageHint;
+    
     
     // Actions
     QAction *shadowAct;
