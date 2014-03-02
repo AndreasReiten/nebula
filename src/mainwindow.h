@@ -132,14 +132,59 @@ signals:
     void captureFrameBuffer(QString path, float quality);
 
 private:
-    // File selection filter
+    /* UI elements for UB matrix */
+    QDockWidget * unitCellDock;
+    QWidget * unitCellWidget;
+    
+    void loadParFile();
+    
+    
+    Matrix<double> U; // Rotation
+    Matrix<double> B; // Reciprocal vectors
+    
+    // Real space unit cell
+    QDoubleSpinBox * aNormSpinBox;
+    QDoubleSpinBox * bNormSpinBox;
+    QDoubleSpinBox * cNormSpinBox;
+
+    QDoubleSpinBox * alphaNormSpinBox;
+    QDoubleSpinBox * betaNormSpinBox;
+    QDoubleSpinBox * gammaNormSpinBox;
+    
+    // Reciprocal space unit cell
+    QDoubleSpinBox * aStarSpinBox;
+    QDoubleSpinBox * bStarSpinBox;
+    QDoubleSpinBox * cStarSpinBox;
+    
+    QDoubleSpinBox * alphaStarSpinBox;
+    QDoubleSpinBox * betaStarSpinBox;
+    QDoubleSpinBox * gammaStarSpinBox;
+    
+    // Rotation
+    QDoubleSpinBox * phiSpinBox;
+    QDoubleSpinBox * kappaSpinBox;
+    QDoubleSpinBox * omegaSpinBox;
+    
+    // Positioning
+    QDoubleSpinBox * hSpinBox;
+    QDoubleSpinBox * kSpinBox;
+    QDoubleSpinBox * lSpinBox;
+    
+    QPushButton * alignAlongAStarButton;
+    QPushButton * alignAlongBStarButton;
+    QPushButton * alignAlongCStarButton;
+    
+    QPushButton * helpCellOverlayButton;
+    QPushButton * rotateCellButton;
+    
+    /* File selection filter */
     QLineEdit * fileSelectionFilter;
     
-    // Header dock widget
+    /* Header dock widget */
     QDockWidget * fileHeaderDock;
     QPlainTextEdit * fileHeaderEdit;
     
-    // Header strings
+    /* Header strings */
     QString current_svo_path;
     QString current_script_path;
 
@@ -345,7 +390,7 @@ protected:
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;
     QDockWidget *functionDockWidget;
-    QDockWidget *unitcellDockWidget;
+//    QDockWidget *unitcellDockWidget;
 
     QString svoDir;
 //    QString scriptDir;

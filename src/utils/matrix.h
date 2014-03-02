@@ -63,9 +63,11 @@ class Matrix {
         size_t getN() const;
         size_t size() const;
         size_t bytes() const;
-
+        
         void print(int precision = 0, const char * id = "") const;
-
+        
+        // Vector math
+        T vecLength();
 
     protected:
         size_t m;
@@ -113,6 +115,19 @@ Matrix<T>::Matrix()
 ////    os << "lol";
 //    return os;
 //}
+
+template <class T>
+T Matrix<T>::vecLength()
+{
+    T sum = 0;
+    
+    for (int i = 0; i < m*n; i++)
+    {
+        sum += this->at(i)*this->at(i);    
+    }
+    
+    return sqrt(sum);
+}
 
 template <class T>
 QVector<T> Matrix<T>::toQVector() const
@@ -974,4 +989,259 @@ const RotationMatrix<T> RotationMatrix<T>::getArbRotation(double zeta, double et
 
     return RyPlus * RxPlus * RzGamma * RxMinus * RyMinus;
 }
+
+
+
+
+/* UB matrix */
+template <class T>
+class UBMatrix : public Matrix<T>{
+    public:
+        UBMatrix();
+        ~UBMatrix();
+
+        UBMatrix<T>& operator = (UBMatrix other);
+        UBMatrix& operator = (const Matrix<T> &);
+        
+        void setBMatrix(Matrix<double> mat);
+        void setUMatrix(Matrix<double> mat);
+        
+        Matrix<double> getUMatrix();
+        Matrix<double> getBMatrix();
+        
+        void setA(double value);
+        void setB(double value);
+        void setC(double value);
+        
+        void setAlpha(double value);
+        void setBeta(double value);
+        void setGamma(double value);
+        
+        void setAStar(double value);
+        void setBStar(double value);
+        void setCStar(double value);
+        
+        void setAlphaStar(double value);
+        void setBetaStar(double value);
+        void setGammaStar(double value);
+        
+        double getA();
+        double getB();
+        double getC();
+        
+        double getAlpha();
+        double getBeta();
+        double getGamma();
+        
+        double getAStar();
+        double getBStar();
+        double getCStar();
+        
+        double getAlphaStar();
+        double getBetaStar();
+        double getGammaStar();
+        
+    private:
+        Matrix<double> a, b, c;
+//        double alpha, beta, gamma;
+        
+        Matrix<double> U;
+        Matrix<double> B;
+        
+        void updateUB();
+};
+
+template <class T>
+UBMatrix<T>::UBMatrix()
+{
+    a.set(3,1,0);
+    b.set(3,1,0);
+    c.set(3,1,0);
+    
+    a[0] = 1;
+    b[1] = 1;
+    c[2] = 1;
+    
+    this->set(3,3,0);
+    U.set(3,3,0);
+    B.set(3,3,0);
+}
+
+template <class T>
+UBMatrix<T>::~UBMatrix()
+{
+    ;
+}
+
+template <class T>
+UBMatrix<T>& UBMatrix<T>::operator = (UBMatrix other)
+{
+    return *this;
+}
+template <class T>
+UBMatrix<T>& UBMatrix<T>::operator = (const Matrix<T> &)
+{
+    return *this;
+}
+
+template <class T>
+void UBMatrix<T>::setBMatrix(Matrix<double> mat)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setUMatrix(Matrix<double> mat)
+{
+    ;
+}
+template <class T>
+Matrix<double> UBMatrix<T>::getUMatrix()
+{
+    return U;
+}
+template <class T>
+Matrix<double> UBMatrix<T>::getBMatrix()
+{
+    return B;
+}
+
+template <class T>
+void UBMatrix<T>::setA(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setB(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setC(double value)
+{
+    ;
+}
+
+template <class T>
+void UBMatrix<T>::setAlpha(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setBeta(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setGamma(double value)
+{
+    ;
+}
+
+template <class T>
+void UBMatrix<T>::setAStar(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setBStar(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setCStar(double value)
+{
+    ;
+}
+
+template <class T>
+void UBMatrix<T>::setAlphaStar(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setBetaStar(double value)
+{
+    ;
+}
+template <class T>
+void UBMatrix<T>::setGammaStar(double value)
+{
+    ;
+}
+
+template <class T>
+double UBMatrix<T>::getA()
+{
+    return a.vecLength();
+}
+
+template <class T>
+double UBMatrix<T>::getB()
+{
+    return b.vecLength();
+}
+template <class T>
+double UBMatrix<T>::getC()
+{
+    return c.vecLength();
+}
+
+template <class T>
+double UBMatrix<T>::getAlpha()
+{
+    double dot = (b*c.getColMajor()).at(0);
+    return acos(dot/(b.vecLength()*c.vecLength()));
+}
+template <class T>
+double UBMatrix<T>::getBeta()
+{
+    double dot = (a*c.getColMajor()).at(0);
+    return acos(dot/(a.vecLength()*c.vecLength()));
+}
+template <class T>
+double UBMatrix<T>::getGamma()
+{
+    double dot = (a*b.getColMajor()).at(0);
+    return acos(dot/(a.vecLength()*b.vecLength()));
+}
+
+template <class T>
+double UBMatrix<T>::getAStar()
+{
+    return 1;
+}
+template <class T>
+double UBMatrix<T>::getBStar()
+{
+    return 1;
+}
+template <class T>
+double UBMatrix<T>::getCStar()
+{
+    return 1;
+}
+
+template <class T>
+double UBMatrix<T>::getAlphaStar()
+{
+    return 1;
+}
+template <class T>
+double UBMatrix<T>::getBetaStar()
+{
+    return 1;
+}
+template <class T>
+double UBMatrix<T>::getGammaStar()
+{
+    return 1;
+}
+
+template <class T>
+void UBMatrix<T>::updateUB()
+{
+    ;
+}
+
+
 #endif

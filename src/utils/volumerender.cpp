@@ -2476,10 +2476,10 @@ void VolumeRenderWorker::setBrightness(double value)
     }
     if (isInitialized) setTsfParameters();
 }
-void VolumeRenderWorker::setUnitcell()
-{
-    isUnitcellActive = !isUnitcellActive;
-}
+//void VolumeRenderWorker::setUnitcell()
+//{
+//    isUnitcellActive = !isUnitcellActive;
+//}
 void VolumeRenderWorker::setModel()
 {
     isModelActive = !isModelActive;

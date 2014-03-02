@@ -69,7 +69,7 @@ public slots:
     void setDataMax(double Value);
     void setAlpha(double value);
     void setBrightness(double value);
-    void setUnitcell();
+//    void setUnitcell();
     void setModel();
     void setModelParam0(double value);
     void setModelParam1(double value);
@@ -158,15 +158,9 @@ private:
     // UB matrix implementation
     void updateUnitCell();
     void drawUnitCell();
-    void loadParFile();
+    
     GLuint unticell_vbo;
-    
-    Matrix<double> U;
-    Matrix<double> B; // Save this one to the SVO file as meta data
-    
-    // UI elements for UB matrix
-    QWidget * unitCellWidget;
-    
+    int nunitcell_nodes;
     
     // Ruler
     Matrix<double> ruler;

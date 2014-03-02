@@ -7,6 +7,13 @@ MainWindow::MainWindow()
     
 //    std::cout << lallelol;
     
+    UBMatrix<double> lol;
+    
+    lol.print(2,"UB");
+    lol.getUMatrix().print(2,"U");
+    lol.getBMatrix().print(2,"B");
+    qDebug() << lol.getA() << lol.getB() << lol.getC() << lol.getAlpha();
+    
     
     //     Set default values
     current_svo = 0;
@@ -63,7 +70,7 @@ MainWindow::MainWindow()
     setWindowTitle(tr("Nebula[*] ()"));
 
     graphicsDockWidget->hide();
-    unitcellDockWidget->hide();
+    unitCellDock->hide();
     functionDockWidget->hide();
     fileDockWidget->hide();
     toolChainWidget->show();
@@ -834,7 +841,7 @@ void MainWindow::setTab(int tab)
     {
         case 0:
             graphicsDockWidget->hide();
-            unitcellDockWidget->hide();
+            unitCellDock->hide();
             functionDockWidget->hide();
             fileDockWidget->hide();
             toolChainWidget->show();
@@ -845,7 +852,7 @@ void MainWindow::setTab(int tab)
 
         case 1:
             graphicsDockWidget->hide();
-            unitcellDockWidget->hide();
+            unitCellDock->hide();
             functionDockWidget->hide();
             toolChainWidget->show();
             fileDockWidget->show();
@@ -860,7 +867,7 @@ void MainWindow::setTab(int tab)
             outputDockWidget->hide();
             fileHeaderDock->hide();
             graphicsDockWidget->show();
-            unitcellDockWidget->hide();
+            unitCellDock->show();
             functionDockWidget->show();
             setWindowTitle(tr("Nebula[*] (")+current_svo_path+")");
             break;
@@ -911,7 +918,7 @@ void MainWindow::initializeConnects()
     connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
     connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setAlpha(double)));
     connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setBrightness(double)));
-    connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
+//    connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
     connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setModel()));
     connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam0(double)));
     connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam1(double)));
@@ -959,7 +966,7 @@ void MainWindow::initializeConnects()
     connect(aboutOpenCLAct, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
     connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-    connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
+//    connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
     
     /*this <-> misc*/
     connect(fileSelectionFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
@@ -1122,7 +1129,7 @@ void MainWindow::initializeInteractives()
         topWidget->setLayout(topLayout);
     }
 
-
+    
     /*      File Select Widget       */
     {
         setFilesWidget = new QWidget;
@@ -1385,9 +1392,9 @@ void MainWindow::initializeInteractives()
         graphicsWidget = new QWidget;
 
         QGridLayout * graphicsLayout = new QGridLayout;
-        graphicsLayout->setSpacing(0);
+//        graphicsLayout->setSpacing(0);
 //        graphicsLayout->setMargin(0);
-        graphicsLayout->setContentsMargins(0,0,0,0);
+//        graphicsLayout->setContentsMargins(0,0,0,0);
 
         graphicsLayout->addWidget(label_texture,0,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         graphicsLayout->addWidget(tsfComboBox,0,2,1,1);
@@ -1404,6 +1411,8 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(qualitySlider,5,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
+//        graphicsDockWidget->setFixedHeight(graphicsWidget->minimumSizeHint().height());
+        graphicsDockWidget->setFixedSize(graphicsWidget->minimumSizeHint());
 ////        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 ////        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
         graphicsDockWidget->setWidget(graphicsWidget);
@@ -1413,85 +1422,202 @@ void MainWindow::initializeInteractives()
 
     /* Unitcell dock widget */
     {
-        unitcellDockWidget = new QDockWidget(tr("Unitcell Settings"), this);
-        unitcellDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-        unitcellWidget = new QWidget;
-
+        unitCellDock = new QDockWidget(tr("UB Matrix"), this);
+        unitCellDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+        unitCellWidget = new QWidget;
+        
+        // Real space unit cell
+        aNormSpinBox = new QDoubleSpinBox;
+        bNormSpinBox = new QDoubleSpinBox;
+        cNormSpinBox = new QDoubleSpinBox;
+    
+        alphaNormSpinBox = new QDoubleSpinBox;
+        betaNormSpinBox = new QDoubleSpinBox;
+        gammaNormSpinBox = new QDoubleSpinBox;
+        
+        // Reciprocal space unit cell
+        aStarSpinBox = new QDoubleSpinBox;
+        bStarSpinBox = new QDoubleSpinBox;
+        cStarSpinBox = new QDoubleSpinBox;
+        
+        alphaStarSpinBox = new QDoubleSpinBox;
+        betaStarSpinBox = new QDoubleSpinBox;
+        gammaStarSpinBox = new QDoubleSpinBox;
+        
+        // Rotation
+        phiSpinBox = new QDoubleSpinBox;
+        kappaSpinBox = new QDoubleSpinBox;
+        omegaSpinBox = new QDoubleSpinBox;
+        
+        // Positioning
+        hSpinBox = new QDoubleSpinBox;
+        hSpinBox->setRange(-1e3,1e3);
+        kSpinBox = new QDoubleSpinBox;
+        kSpinBox->setRange(-1e3,1e3);
+        lSpinBox = new QDoubleSpinBox;
+        lSpinBox->setRange(-1e3,1e3);
+        
+        alignAlongAStarButton = new QPushButton("Align a*");
+        alignAlongBStarButton = new QPushButton("Align b*");
+        alignAlongCStarButton = new QPushButton("Align c*");
+        
+        helpCellOverlayButton = new QPushButton("Overlay");
+        rotateCellButton = new QPushButton("Rotation");
+        
+        
         QLabel * aLabel = new QLabel("<i>a<i>");
-        a = new QLabel(tr("-"));
         QLabel * bLabel = new QLabel("<i>b<i>");
-        b = new QLabel(tr("-"));
         QLabel * cLabel = new QLabel("<i>c<i>");
-        c = new QLabel(tr("-"));
         QLabel * alphaLabel = new QLabel(trUtf8("<i>α<i>"));
-        alpha = new QLabel(tr("-"));
         QLabel * betaLabel = new QLabel(trUtf8( "<i>β<i>"));
-        beta = new QLabel(tr("-"));
         QLabel * gammaLabel = new QLabel(trUtf8( "<i>γ<i>"));
-        gamma = new QLabel(tr("-"));
-
 
         QLabel * aStarLabel = new QLabel("<i>a*<i>");
-        aStar = new QLabel(tr("-"));
         QLabel * bStarLabel = new QLabel("<i>b*<i>");
-        bStar = new QLabel(tr("-"));
         QLabel * cStarLabel = new QLabel("<i>c*<i>");
-        cStar = new QLabel(tr("-"));
         QLabel * alphaStarLabel = new QLabel(trUtf8("<i>α*<i>"));
-        alphaStar = new QLabel(tr("-"));
         QLabel * betaStarLabel = new QLabel(trUtf8( "<i>β*<i>"));
-        betaStar = new QLabel(tr("-"));
         QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
-        gammaStar = new QLabel(tr("-"));
+        
+        QLabel * hLabel = new QLabel("<i>h<i>");
+        QLabel * kLabel = new QLabel("<i>k<i>");
+        QLabel * lLabel = new QLabel("<i>l<i>");
+        
+        QGridLayout * unitCellLayout = new QGridLayout; 
+        
+        unitCellLayout->addWidget(aLabel,0,0,1,1);
+        unitCellLayout->addWidget(aNormSpinBox,0,1,1,1);
+        unitCellLayout->addWidget(bLabel,0,2,1,1);
+        unitCellLayout->addWidget(bNormSpinBox,0,3,1,1);
+        unitCellLayout->addWidget(cLabel,0,4,1,1);
+        unitCellLayout->addWidget(cNormSpinBox,0,5,1,1);
+        
+        unitCellLayout->addWidget(alphaLabel,1,0,1,1);
+        unitCellLayout->addWidget(alphaNormSpinBox,1,1,1,1);
+        unitCellLayout->addWidget(betaLabel,1,2,1,1);
+        unitCellLayout->addWidget(betaNormSpinBox,1,3,1,1);
+        unitCellLayout->addWidget(gammaLabel,1,4,1,1);
+        unitCellLayout->addWidget(gammaNormSpinBox,1,5,1,1);
+        
+        unitCellLayout->addWidget(aStarLabel,2,0,1,1);
+        unitCellLayout->addWidget(aStarSpinBox,2,1,1,1);
+        unitCellLayout->addWidget(bStarLabel,2,2,1,1);
+        unitCellLayout->addWidget(bStarSpinBox,2,3,1,1);
+        unitCellLayout->addWidget(cStarLabel,2,4,1,1);
+        unitCellLayout->addWidget(cStarSpinBox,2,5,1,1);
+        
+        unitCellLayout->addWidget(alphaStarLabel,3,0,1,1);
+        unitCellLayout->addWidget(alphaStarSpinBox,3,1,1,1);
+        unitCellLayout->addWidget(betaStarLabel,3,2,1,1);
+        unitCellLayout->addWidget(betaStarSpinBox,3,3,1,1);
+        unitCellLayout->addWidget(gammaStarLabel,3,4,1,1);
+        unitCellLayout->addWidget(gammaStarSpinBox,3,5,1,1);
+        
+        unitCellLayout->addWidget(hLabel,4,0,1,1);
+        unitCellLayout->addWidget(hSpinBox,4,1,1,1);
+        unitCellLayout->addWidget(kLabel,4,2,1,1);
+        unitCellLayout->addWidget(kSpinBox,4,3,1,1);
+        unitCellLayout->addWidget(lLabel,4,4,1,1);
+        unitCellLayout->addWidget(lSpinBox,4,5,1,1);
+        
+        unitCellLayout->addWidget(alignAlongAStarButton,5,0,1,2);
+        unitCellLayout->addWidget(alignAlongBStarButton,5,2,1,2);
+        unitCellLayout->addWidget(alignAlongCStarButton,5,4,1,2);
+        
+        unitCellLayout->addWidget(helpCellOverlayButton,6,0,1,3);
+        unitCellLayout->addWidget(rotateCellButton,6,3,1,3);
+        
+        unitCellWidget->setLayout(unitCellLayout);
+        
+        unitCellDock->setWidget(unitCellWidget);
+        
+//        unitCellDock->setFixedHeight(unitCellWidget->minimumSizeHint().height());
+        unitCellDock->setFixedSize(unitCellWidget->minimumSizeHint());
+        
+        viewMenu->addAction(unitCellDock->toggleViewAction());
+        this->addDockWidget(Qt::RightDockWidgetArea, unitCellDock);
+        
+        /* OLD */
+        
+//        unitcellDockWidget = new QDockWidget(tr("Unitcell Settings"), this);
+//        unitcellDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+//        unitcellWidget = new QWidget;
 
-        unitcellButton = new QPushButton(tr("Toggle Unitcell"));
-        loadParButton = new QPushButton(tr("Load Unitcell File"));
+//        QLabel * aLabel = new QLabel("<i>a<i>");
+//        a = new QLabel(tr("-"));
+//        QLabel * bLabel = new QLabel("<i>b<i>");
+//        b = new QLabel(tr("-"));
+//        QLabel * cLabel = new QLabel("<i>c<i>");
+//        c = new QLabel(tr("-"));
+//        QLabel * alphaLabel = new QLabel(trUtf8("<i>α<i>"));
+//        alpha = new QLabel(tr("-"));
+//        QLabel * betaLabel = new QLabel(trUtf8( "<i>β<i>"));
+//        beta = new QLabel(tr("-"));
+//        QLabel * gammaLabel = new QLabel(trUtf8( "<i>γ<i>"));
+//        gamma = new QLabel(tr("-"));
 
-        QLabel * hklEditLabel = new QLabel(trUtf8( "<i>hkl: <i>"));
-        hklEdit = new QLineEdit;
-        //~ hklEdit->setFixedWidth(100);
-        hklEdit->setValidator( new QRegExpValidator(QRegExp("(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)")) );
 
-        QGridLayout * unitcellLayout = new QGridLayout;
-        unitcellLayout->setSpacing(0);
-//        unitcellLayout->setMargin(0);
-        unitcellLayout->setContentsMargins(0,0,0,0);
-        unitcellLayout->addWidget(unitcellButton,0,0,1,4);
-        unitcellLayout->addWidget(loadParButton,1,0,1,4);
-        unitcellLayout->addWidget(hklEditLabel,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(hklEdit,2,2,1,2);
-        unitcellLayout->addWidget(aLabel,3,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(a,3,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(alphaLabel,3,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(alpha,3,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(bLabel,4,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(b,4,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(betaLabel,4,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(beta,4,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(cLabel,5,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(c,5,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(gammaLabel,5,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(gamma,5,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        QLabel * aStarLabel = new QLabel("<i>a*<i>");
+//        aStar = new QLabel(tr("-"));
+//        QLabel * bStarLabel = new QLabel("<i>b*<i>");
+//        bStar = new QLabel(tr("-"));
+//        QLabel * cStarLabel = new QLabel("<i>c*<i>");
+//        cStar = new QLabel(tr("-"));
+//        QLabel * alphaStarLabel = new QLabel(trUtf8("<i>α*<i>"));
+//        alphaStar = new QLabel(tr("-"));
+//        QLabel * betaStarLabel = new QLabel(trUtf8( "<i>β*<i>"));
+//        betaStar = new QLabel(tr("-"));
+//        QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
+//        gammaStar = new QLabel(tr("-"));
 
-        unitcellLayout->addWidget(aStarLabel,6,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(aStar,6,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(alphaStarLabel,6,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(alphaStar,6,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(bStarLabel,7,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(bStar,7,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(betaStarLabel,7,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(betaStar,7,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(cStarLabel,8,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(cStar,8,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(gammaStarLabel,8,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        unitcellLayout->addWidget(gammaStar,8,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellButton = new QPushButton(tr("Toggle Unitcell"));
+//        loadParButton = new QPushButton(tr("Load Unitcell File"));
 
-        unitcellWidget->setLayout(unitcellLayout);
-//        //~unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-////        unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
-        unitcellDockWidget->setWidget(unitcellWidget);
-        viewMenu->addAction(unitcellDockWidget->toggleViewAction());
-        this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
+//        QLabel * hklEditLabel = new QLabel(trUtf8( "<i>hkl: <i>"));
+//        hklEdit = new QLineEdit;
+//        //~ hklEdit->setFixedWidth(100);
+//        hklEdit->setValidator( new QRegExpValidator(QRegExp("(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)")) );
+
+//        QGridLayout * unitcellLayout = new QGridLayout;
+//        unitcellLayout->setSpacing(0);
+////        unitcellLayout->setMargin(0);
+//        unitcellLayout->setContentsMargins(0,0,0,0);
+//        unitcellLayout->addWidget(unitcellButton,0,0,1,4);
+//        unitcellLayout->addWidget(loadParButton,1,0,1,4);
+//        unitcellLayout->addWidget(hklEditLabel,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(hklEdit,2,2,1,2);
+//        unitcellLayout->addWidget(aLabel,3,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(a,3,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(alphaLabel,3,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(alpha,3,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(bLabel,4,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(b,4,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(betaLabel,4,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(beta,4,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(cLabel,5,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(c,5,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(gammaLabel,5,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(gamma,5,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+
+//        unitcellLayout->addWidget(aStarLabel,6,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(aStar,6,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(alphaStarLabel,6,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(alphaStar,6,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(bStarLabel,7,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(bStar,7,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(betaStarLabel,7,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(betaStar,7,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(cStarLabel,8,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(cStar,8,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(gammaStarLabel,8,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        unitcellLayout->addWidget(gammaStar,8,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+
+//        unitcellWidget->setLayout(unitcellLayout);
+////        //~unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+//////        unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
+//        unitcellDockWidget->setWidget(unitcellWidget);
+//        viewMenu->addAction(unitcellDockWidget->toggleViewAction());
+//        this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
     }
 
     /* File Controls Widget */
@@ -1562,7 +1688,7 @@ void MainWindow::initializeInteractives()
         saveSvoButton->setText("Save Octtree");
 
         QGridLayout * reconstructLayout = new QGridLayout;
-        reconstructLayout->setSpacing(0);
+//        reconstructLayout->setSpacing(0);
 //        reconstructLayout->setMargin(0);
 //        reconstructLayout->setContentsMargins(0,0,0,0);
         reconstructLayout->addWidget(labelA,0,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
@@ -1584,7 +1710,9 @@ void MainWindow::initializeInteractives()
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileDockWidget->setWidget(fileControlsWidget);
-        fileDockWidget->setMaximumWidth(reconstructLayout->minimumSize().rwidth());
+//        fileDockWidget->setFixedHeight(fileControlsWidget->minimumSizeHint().height());
+        fileDockWidget->setFixedSize(fileControlsWidget->minimumSizeHint());
+//        fileDockWidget->setMaximumWidth(reconstructLayout->minimumSize().rwidth());
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         this->addDockWidget(Qt::BottomDockWidgetArea, fileDockWidget);
     }
@@ -1636,7 +1764,7 @@ void MainWindow::initializeInteractives()
         functionWidget = new QWidget;
 
         QGridLayout * functionLayout = new QGridLayout;
-        functionLayout->setSpacing(0);
+//        functionLayout->setSpacing(0);
 //        functionLayout->setMargin(0);
         functionLayout->setContentsMargins(0,0,0,0);
         functionLayout->addWidget(functionToggleButton,0,0,1,4);
@@ -1652,6 +1780,8 @@ void MainWindow::initializeInteractives()
 //        functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 //        functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
         functionDockWidget->setWidget(functionWidget);
+        functionDockWidget->setFixedHeight(functionWidget->minimumSizeHint().height());
+//        functionDockWidget->setFixedSize(functionWidget->minimumSizeHint());
         functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         viewMenu->addAction(functionDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, functionDockWidget);

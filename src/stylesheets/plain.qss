@@ -12,3 +12,4 @@ QDockWidget::title
 {
     text-align: center;
 }
+
