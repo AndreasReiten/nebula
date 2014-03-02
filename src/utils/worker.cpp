@@ -933,17 +933,14 @@ void VoxelizeWorker::process()
 
                     if (kill_flag) break;
                         
-//                    qDebug() << "i" << i;
-                    
                     // First pass: find relevant data for cluster of nodes
                     unsigned int currentId;
                     size_t accumulated_points = 0;
-                    for (int j = 0; j < nodes_per_kernel_call; j++)
+                    for (size_t j = 0; j < nodes_per_kernel_call; j++)
                     {
                         
                         // The id of the octnode in the octnode array
                         currentId = confirmed_nodes+i+j;
-//                        qDebug() << "currentId" << currentId;
                         
                         // Set the level
                         gpuHelpOcttree[currentId].setLevel(lvl);
@@ -954,16 +951,12 @@ void VoxelizeWorker::process()
                         // Based on brick id calculate the brick extent 
                         unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
                         
-//                        qDebug() << "brickId" << brickId[0] << brickId[1] << brickId[2];
-                        
                         brick_extent[j*6 + 0] = svo->getExtent()->at(0) + tmp*brickId[0];
                         brick_extent[j*6 + 1] = svo->getExtent()->at(0) + tmp*(brickId[0]+1);
                         brick_extent[j*6 + 2] = svo->getExtent()->at(2) + tmp*brickId[1];
                         brick_extent[j*6 + 3] = svo->getExtent()->at(2) + tmp*(brickId[1]+1);
                         brick_extent[j*6 + 4] = svo->getExtent()->at(4) + tmp*brickId[2];
                         brick_extent[j*6 + 5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
-                        
-//                        qDebug() << "hilf" <<brick_extent[j*6 + 0] << brick_extent[j*6 + 1] << brick_extent[j*6 + 2] << brick_extent[j*6 + 3] << brick_extent[j*6 + 4] << brick_extent[j*6 + 5];
                         
                         // Offset of points accumulated thus far
                         point_data_offset[j] = accumulated_points;
@@ -977,9 +970,6 @@ void VoxelizeWorker::process()
                         // Number of points accumulated thus far
                         point_data_count[j] = accumulated_points - point_data_offset[j];
                         
-//                        qDebug() << "lvl" << lvl << "node" <<  i+j << "points" << point_data_count[j];
-//                        qDebug() << "Ac. pts. lvl" << lvl << ":" << accumulated_points;
-                        
                         // Upload this point data to an OpenCL buffer
                         if (point_data_count[j] > 0)
                         {
@@ -992,18 +982,10 @@ void VoxelizeWorker::process()
                                 0, NULL, NULL);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                         }
-//                        qDebug() << "lvl" << lvl << "node" <<  i+j << "writing" << (accumulated_points - point_data_offset[j]) << "points at offset" << point_data_offset[j]; 
                         
                         // Increment node
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
-                    
-//                    point_data.print(2,"point data");
-                    
-//                    point_data.print(2,"point_data");
-//                    point_data_offset.print(2,"point_data_offset");
-//                    point_data_count.print(2,"point_data_count");
-//                    qDebug() << "search_radius" << search_radius;
                     
                     // Upload this extent to an OpenCL buffer
                     err = clEnqueueWriteBuffer(
@@ -1051,7 +1033,7 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                     // Second pass: calculate the data for each node in the cluster (OpenCL)
-                    for (int j = 0; j < nodes_per_kernel_call; j++)
+                    for (size_t j = 0; j < nodes_per_kernel_call; j++)
                     {
                         // Launch kernel
                         size_t glb_offset[3] = {0,0,8*j};
@@ -1088,14 +1070,8 @@ void VoxelizeWorker::process()
                     
                     
                     // Third pass: transfer non-empty nodes to svo data structure (OpenCL)
-                    for (int j = 0; j < nodes_per_kernel_call; j++)
+                    for (size_t j = 0; j < nodes_per_kernel_call; j++)
                     {
-//                        qDebug() << "Empty check " << j << ":" << empty_check[j];
-//                        if (point_data_count[j] > 0) 
-//                            qDebug() << " lvl" << lvl << "node" <<  i+j << "sum" << empty_check[j] << "points" << point_data_count[j] << "offset" << point_data_offset[j] << "radius" << search_radius;
-//                        if (point_data_count[j] > 0) 
-//                            qDebug() << "   -> " << brick_extent[j*6 + 0] << brick_extent[j*6 + 1] << brick_extent[j*6 + 2] << brick_extent[j*6 + 3] << brick_extent[j*6 + 4] << brick_extent[j*6 + 5];
-                        
                         // The id of the octnode in the octnode array
                         currentId = confirmed_nodes+i+j;
                         
@@ -1173,9 +1149,6 @@ void VoxelizeWorker::process()
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
 
-//                    err = clFinish(*context_cl->getCommandQueue());
-//                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
                 }
                 if (kill_flag)
@@ -1189,11 +1162,8 @@ void VoxelizeWorker::process()
 
                 confirmed_nodes += nodes[lvl];
                 
-//                qDebug() << "nodes[" << lvl << "] =" << nodes[lvl]; 
-
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done (time: "+QString::number(t)+" ms)");
-                //~if (cpu_counter+gpu_counter > 0) std::cout << "L " << lvl << " cpu: "<< 100*cpu_counter/(cpu_counter+gpu_counter) << "%, gpu: " << 100*gpu_counter/(cpu_counter+gpu_counter) << "%" << std::endl;
             }
             
             
@@ -1250,20 +1220,6 @@ void VoxelizeWorker::process()
 
     emit finished();
 }
-
-//uint getPoolIndex(int *pool_dimension, int4 id_loc ,uint brick_outer_dimension, uint brick_count)
-//{
-//    int4 target_brick_dimension = target_dimension/(int4)(brick_outer_dimension);
-
-//    int4 brick_offset;
-//    brick_offset.z = brick_count / (target_brick_dimension.x * target_brick_dimension.y);
-//    brick_offset.y = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) / target_brick_dimension.x;
-//    brick_offset.x = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) % target_brick_dimension.x;
-
-//    int4 index3d = brick_offset*(int4)(brick_outer_dimension) + id_loc;
-
-//    return index3d.x + index3d.y * target_dimension.x + index3d.z * target_dimension.x * target_dimension.y;
-//}
 
 /***
  *         dBBBBb  dBP.dBBBBP dBBBBBb  dBP dBBBBBb dBP dBP

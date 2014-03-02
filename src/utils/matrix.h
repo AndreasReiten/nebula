@@ -68,6 +68,9 @@ class Matrix {
         
         // Vector math
         T vecLength();
+        
+        template <class F>
+        friend Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B);
 
     protected:
         size_t m;
@@ -93,7 +96,6 @@ Matrix<T>::Matrix(size_t m, size_t n, T value)
     this->set(m, n, value);
 }
 template <class T>
-
 Matrix<T>::Matrix(size_t m, size_t n)
 {
     this->m = 0;
@@ -106,15 +108,9 @@ Matrix<T>::Matrix()
 {
     this->m = 0;
     this->n = 0;
-//    this->buffer = NULL;
 }
 
-//template <class T>
-//std::ostream& operator << (std::ostream& os, const Matrix& M);
-//{
-////    os << "lol";
-//    return os;
-//}
+
 
 template <class T>
 T Matrix<T>::vecLength()
@@ -1054,9 +1050,9 @@ class UBMatrix : public Matrix<T>{
 template <class T>
 UBMatrix<T>::UBMatrix()
 {
-    a.set(3,1,0);
-    b.set(3,1,0);
-    c.set(3,1,0);
+    a.set(1,3,0);
+    b.set(1,3,0);
+    c.set(1,3,0);
     
     a[0] = 1;
     b[1] = 1;
@@ -1124,12 +1120,12 @@ void UBMatrix<T>::setC(double value)
 template <class T>
 void UBMatrix<T>::setAlpha(double value)
 {
-    ;
+
 }
 template <class T>
 void UBMatrix<T>::setBeta(double value)
 {
-    ;
+
 }
 template <class T>
 void UBMatrix<T>::setGamma(double value)
@@ -1189,52 +1185,55 @@ double UBMatrix<T>::getC()
 template <class T>
 double UBMatrix<T>::getAlpha()
 {
-    double dot = (b*c.getColMajor()).at(0);
+    double dot = (b*c.getColMajor())[0];
     return acos(dot/(b.vecLength()*c.vecLength()));
 }
 template <class T>
 double UBMatrix<T>::getBeta()
 {
-    double dot = (a*c.getColMajor()).at(0);
+    double dot = (a*c.getColMajor())[0];
     return acos(dot/(a.vecLength()*c.vecLength()));
 }
 template <class T>
 double UBMatrix<T>::getGamma()
 {
-    double dot = (a*b.getColMajor()).at(0);
+    double dot = (a*b.getColMajor())[0];
     return acos(dot/(a.vecLength()*b.vecLength()));
 }
 
 template <class T>
 double UBMatrix<T>::getAStar()
 {
-    return 1;
+    return 2*pi*vecCross(b,c)*(1.0/(a*vecCross(b,c).getColMajor())[0]);
 }
 template <class T>
 double UBMatrix<T>::getBStar()
 {
-    return 1;
+    return 2*pi*vecCross(c,a)*(1.0/(b*vecCross(c,a).getColMajor())[0]);
 }
 template <class T>
 double UBMatrix<T>::getCStar()
 {
-    return 1;
+    return 2*pi*vecCross(a,b)*(1.0/(c*vecCross(a,b).getColMajor())[0]);
 }
 
 template <class T>
 double UBMatrix<T>::getAlphaStar()
 {
-    return 1;
+    double dot = (getBStar()*getCStar().getColMajor())[0];
+    return acos(dot/(getBStar().vecLength()*getCStar().vecLength()));
 }
 template <class T>
 double UBMatrix<T>::getBetaStar()
 {
-    return 1;
+    double dot = (getAStar()*getCStar().getColMajor())[0];
+    return acos(dot/(getAStar().vecLength()*getCStar().vecLength()));
 }
 template <class T>
 double UBMatrix<T>::getGammaStar()
 {
-    return 1;
+    double dot = (getAStar()*getBStar().getColMajor())[0];
+    return acos(dot/(getAStar().vecLength()*getBStar().vecLength()));
 }
 
 template <class T>

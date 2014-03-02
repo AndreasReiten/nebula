@@ -1,8 +1,8 @@
 #include "volumerender.h"
 
 VolumeRenderWindow::VolumeRenderWindow()
-    : gl_worker(0),
-      isInitialized(false)
+    : isInitialized(false)
+    , gl_worker(0)
 {
 
 }
@@ -239,9 +239,14 @@ VolumeRenderWorker::~VolumeRenderWorker()
 
 void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
-//    std::stringstream ss;
-//    ss << "___EVENT CAUGHT___\n x:" << x << "\n y:" << y << "\n L:" << left_button << "\n M:" << mid_button << "\n R:" << right_button;
-//    std::cout << ss.str().c_str() << std::endl;
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
+    
     if (isRulerActive && left_button)
     {
         ruler[0] = x;
@@ -254,113 +259,112 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
 
 void VolumeRenderWorker::metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
-//    std::stringstream ss;
-//    ss << "___EVENT CAUGHT___\n x:" << x << "\n y:" << y << "\n L:" << left_button << "\n M:" << mid_button << "\n R:" << right_button;
-//    std::cout << ss.str().c_str() << std::endl;
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
 }
 
 void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
-//        std::stringstream ss;
-//        ss << "___EVENT CAUGHT___\n x:" << x << "\n y:" << y << "\n L:" << left_button << "\n M:" << mid_button << "\n R:" << right_button;
-//        std::cout << ss.str().c_str() << std::endl;
-        
-        if (left_button) isLMBDown = true;
-        else isLMBDown = false;
+    if (left_button) isLMBDown = true;
+    else isLMBDown = false;
+
+    if (isLMBDown && isRulerActive)
+    {
+        ruler[2] = x;
+        ruler[3] = y;
+    }
     
-        if (isLMBDown && isRulerActive)
+    if (!isRendering && (std::abs(last_mouse_pos_x - x) < 50) && (std::abs(last_mouse_pos_y - y) < 50))
+    {
+        float move_scaling = 1.0;
+        if(ctrl_button) move_scaling = 0.2;
+
+        if (left_button && !right_button && !isRulerActive)
         {
-            ruler[2] = x;
-            ruler[3] = y;
-//            ruler.print();
-        }
-        
-        if (!isRendering && (std::abs(last_mouse_pos_x - x) < 50) && (std::abs(last_mouse_pos_y - y) < 50));
-        {
-            float move_scaling = 1.0;
-            if(ctrl_button) move_scaling = 0.2;
+            /* Rotation happens multiplicatively around a rolling axis given
+             * by the mouse move direction and magnitude.
+             * Moving the mouse alters rotation.
+             * */
 
-            if (left_button && !right_button && !isRulerActive)
+            double eta = std::atan2((double)x - last_mouse_pos_x, (double)y - last_mouse_pos_y) - pi*1.0;
+            double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(x - last_mouse_pos_x)*(x - last_mouse_pos_x) + (y - last_mouse_pos_y)*(y - last_mouse_pos_y));
+
+            RotationMatrix<double> roll_rotation;
+            roll_rotation.setArbRotation(-0.5*pi, eta, roll);
+
+            if(shift_button) scalebar_rotation = roll_rotation * scalebar_rotation;
+            else
             {
-                /* Rotation happens multiplicatively around a rolling axis given
-                 * by the mouse move direction and magnitude.
-                 * Moving the mouse alters rotation.
-                 * */
-
-                double eta = std::atan2((double)x - last_mouse_pos_x, (double)y - last_mouse_pos_y) - pi*1.0;
-                double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(x - last_mouse_pos_x)*(x - last_mouse_pos_x) + (y - last_mouse_pos_y)*(y - last_mouse_pos_y));
-
-                RotationMatrix<double> roll_rotation;
-                roll_rotation.setArbRotation(-0.5*pi, eta, roll);
-
-                if(shift_button) scalebar_rotation = roll_rotation * scalebar_rotation;
-                else
-                {
-                    rotation = roll_rotation * rotation;
-                    scalebar_rotation = roll_rotation * scalebar_rotation;
-                }
-
-            }
-            else if (left_button && right_button && !mid_button && !isRulerActive)// && (ev->buttons() & Qt::RightButton))
-            {
-                /* Rotation happens multiplicatively around a rolling axis given
-                 * by the mouse move direction and magnitude.
-                 * Moving the mouse alters rotation.
-                 * */
-
-                RotationMatrix<double> roll_rotation;
-                double roll = move_scaling * pi/((float) render_surface->height()) * (y - last_mouse_pos_y);
-
-                roll_rotation.setArbRotation(0, 0, roll);
-
-                if(shift_button) scalebar_rotation = roll_rotation * scalebar_rotation;
-                else
-                {
-                    rotation = roll_rotation * rotation;
-                    scalebar_rotation = roll_rotation * scalebar_rotation;
-                }
-
-            }
-            else if (mid_button && !left_button && !right_button)
-            {
-                /* X/Y translation happens multiplicatively. Here it is
-                 * important to retain the bounding box accordingly  */
-                float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) render_surface->height()) * (x - last_mouse_pos_x);
-                float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) render_surface->height()) * (y - last_mouse_pos_y);
-
-                Matrix<double> data_translation_prev;
-                data_translation_prev.setIdentity(4);
-                data_translation_prev = data_translation;
-
-                data_translation.setIdentity(4);
-                data_translation[3] = dx;
-                data_translation[7] = dy;
-
-                data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
-
-                this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
-            }
-            else if (!left_button && right_button && !mid_button)
-            {
-                /* Z translation happens multiplicatively */
-                float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) render_surface->height()) * (y - last_mouse_pos_y);
-
-                Matrix<double> data_translation_prev;
-                data_translation_prev.setIdentity(4);
-                data_translation_prev = data_translation;
-
-                data_translation.setIdentity(4);
-                data_translation[11] = dz;
-
-                data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
-
-                this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+                rotation = roll_rotation * rotation;
+                scalebar_rotation = roll_rotation * scalebar_rotation;
             }
 
         }
+        else if (left_button && right_button && !mid_button && !isRulerActive)// && (ev->buttons() & Qt::RightButton))
+        {
+            /* Rotation happens multiplicatively around a rolling axis given
+             * by the mouse move direction and magnitude.
+             * Moving the mouse alters rotation.
+             * */
 
-        last_mouse_pos_x = x;
-        last_mouse_pos_y = y;
+            RotationMatrix<double> roll_rotation;
+            double roll = move_scaling * pi/((float) render_surface->height()) * (y - last_mouse_pos_y);
+
+            roll_rotation.setArbRotation(0, 0, roll);
+
+            if(shift_button) scalebar_rotation = roll_rotation * scalebar_rotation;
+            else
+            {
+                rotation = roll_rotation * rotation;
+                scalebar_rotation = roll_rotation * scalebar_rotation;
+            }
+
+        }
+        else if (mid_button && !left_button && !right_button)
+        {
+            /* X/Y translation happens multiplicatively. Here it is
+             * important to retain the bounding box accordingly  */
+            float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) render_surface->height()) * (x - last_mouse_pos_x);
+            float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) render_surface->height()) * (y - last_mouse_pos_y);
+
+            Matrix<double> data_translation_prev;
+            data_translation_prev.setIdentity(4);
+            data_translation_prev = data_translation;
+
+            data_translation.setIdentity(4);
+            data_translation[3] = dx;
+            data_translation[7] = dy;
+
+            data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
+
+            this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+        }
+        else if (!left_button && right_button && !mid_button)
+        {
+            /* Z translation happens multiplicatively */
+            float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) render_surface->height()) * (y - last_mouse_pos_y);
+
+            Matrix<double> data_translation_prev;
+            data_translation_prev.setIdentity(4);
+            data_translation_prev = data_translation;
+
+            data_translation.setIdentity(4);
+            data_translation[11] = dz;
+
+            data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
+
+            this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+        }
+
+    }
+
+    last_mouse_pos_x = x;
+    last_mouse_pos_y = y;
 }
 
 
@@ -1049,7 +1053,7 @@ void VolumeRenderWorker::render(QPainter *painter)
 }
 
 
-void VolumeRenderWorker::takeScreenShot(QString path, float quality)
+void VolumeRenderWorker::takeScreenShot(QString path)
 {
     QOpenGLFramebufferObjectFormat format;
 
@@ -1159,9 +1163,9 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     float max = 0;
     float min = 1e9;
     double sum = 0;
-    for (int i = 0; i < output.getM(); i++)
+    for (size_t i = 0; i < output.getM(); i++)
     {
-        for(int j = 0; j < output.getN(); j++)
+        for(size_t j = 0; j < output.getN(); j++)
         {
             row_sum[i] += output[i*output.getN() + j];
         }
@@ -1174,7 +1178,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
     if (sum > 0)
     {
-        for (int i = 0; i < row_sum.getM(); i++)
+        for (size_t i = 0; i < row_sum.getM(); i++)
         {
             row_sum[i] *= 100000.0/sum;
         }
@@ -1183,7 +1187,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         if (isLogarithmic2D)
         {
-            for (int i = 0; i < row_sum.getM(); i++)
+            for (size_t i = 0; i < row_sum.getM(); i++)
             {
                 if (row_sum[i] <= 0) row_sum[i] = min;
                 row_sum[i] = log10(row_sum[i]);
@@ -1194,7 +1198,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         QPolygonF row_polygon;
         row_polygon << QPointF(0,0);
-        for (int i = 0; i < row_sum.getM(); i++)
+        for (size_t i = 0; i < row_sum.getM(); i++)
         {
             QPointF point_top, point_bottom;
 
@@ -1289,9 +1293,9 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     min = 1e9;
     sum = 0;
 
-    for (int i = 0; i < output2.getN(); i++)
+    for (size_t i = 0; i < output2.getN(); i++)
     {
-        for(int j = 0; j < output2.getM(); j++)
+        for(size_t j = 0; j < output2.getM(); j++)
         {
 //            qDebug() << "Loop:" << ray_tex_dim[0];
             column_sum[i] += output2[j*output2.getN() + i];
@@ -1305,7 +1309,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
     if (sum > 0)
     {
-        for (int i = 0; i < column_sum.getN(); i++)
+        for (size_t i = 0; i < column_sum.getN(); i++)
         {
             column_sum[i] *= 100000.0/sum;
         }
@@ -1314,7 +1318,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         if (isLogarithmic2D)
         {
-            for (int i = 0; i < column_sum.getN(); i++)
+            for (size_t i = 0; i < column_sum.getN(); i++)
             {
                 if (column_sum[i] <= 0) column_sum[i] = min;
                 column_sum[i] = log10(column_sum[i]);
@@ -1325,7 +1329,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         QPolygonF column_polygon;
         column_polygon << QPointF(0,render_surface->height());
-        for (int i = 0; i < column_sum.getN(); i++)
+        for (size_t i = 0; i < column_sum.getN(); i++)
         {
             QPointF point_top, point_bottom;
 
@@ -1381,8 +1385,8 @@ void VolumeRenderWorker::setOrthoGrid()
 
 void VolumeRenderWorker::drawRuler(QPainter * painter)
 {
-    double screen_width = pixel_size[0]*render_surface->width();
-    double screen_height = pixel_size[1]*render_surface->height();
+//    double screen_width = pixel_size[0]* (double) render_surface->width();
+//    double screen_height = pixel_size[1]* (double) render_surface->height();
     
     // Draw ruler and alignment crosses 
     QVector<QLine> lines;
@@ -1703,7 +1707,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     // Position scalebar tick labels
     if (isScalebarActive)
     {
-        for (int i = 0; i < n_position_scalebar_ticks; i++)
+        for (size_t i = 0; i < n_position_scalebar_ticks; i++)
         {
             painter->drawText(QPointF(position_scalebar_ticks[i*3+0], position_scalebar_ticks[i*3+1]), QString::number(position_scalebar_ticks[i*3+2]));
         }
@@ -1712,14 +1716,14 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     // Count scalebar tick labels
     if (n_count_scalebar_ticks >= 2)
     {
-        for (int i = 0; i < n_count_scalebar_ticks; i++)
+        for (size_t i = 0; i < n_count_scalebar_ticks; i++)
         {
             painter->drawText(QPointF(count_scalebar_ticks[i*3+0], count_scalebar_ticks[i*3+1]), QString::number(count_scalebar_ticks[i*3+2], 'g', 4));
         }
     }
     else
     {
-        for (int i = 0; i < n_count_minor_scalebar_ticks; i++)
+        for (size_t i = 0; i < n_count_minor_scalebar_ticks; i++)
         {
             painter->drawText(QPointF(count_minor_scalebar_ticks[i*3+0], count_minor_scalebar_ticks[i*3+1]), QString::number(count_minor_scalebar_ticks[i*3+2], 'g', 4));
         }
@@ -1847,7 +1851,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     if (data_min < data_max)
     {
         double start, current;
-        int iter = 0, num_ticks = 0;
+        size_t iter = 0, num_ticks = 0;
         tickzerize(data_min, data_max, (double) tsf_rect.height(), tick_interdist_min, &exponent, &start, &num_ticks);
         current = start;
         n_count_scalebar_ticks = 0, n_count_minor_scalebar_ticks = 0;;
@@ -1954,7 +1958,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
 }
 
 
-void VolumeRenderWorker::tickzerize(double min, double max, double size, double min_interdist, double * qualified_exponent, double * start, int * num_ticks)
+void VolumeRenderWorker::tickzerize(double min, double max, double size, double min_interdist, double * qualified_exponent, double * start, size_t * num_ticks)
 {
     double delta = max - min;
     double exponent = -10;

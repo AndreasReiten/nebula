@@ -81,7 +81,7 @@ void SparseVoxelOcttree::save(QString path)
 {
     if (path != "")
     {
-        quint64 bins = 1000;
+//        quint64 bins = 1000;
 //        double min = pool.min();
 //        double max = pool.max();
 

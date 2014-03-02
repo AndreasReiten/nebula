@@ -133,9 +133,9 @@ protected:
     QThread *worker_thread;
     QOpenGLContext *context_gl;
     OpenCLContext *context_cl;
-
-    bool isWorkerBusy;
+    
     bool isUpdatePending;
+    bool isWorkerBusy;
     bool isAnimating;
     bool isMultiThreaded;
 };

@@ -154,10 +154,10 @@ signals:
     void changedMessageString(QString str);
 
 private:
-    bool isInitialized;
-
     SharedContextWindow * shared_window;
     ImageRenderWorker * gl_worker;
+    
+    bool isInitialized;
 };
 
 #endif

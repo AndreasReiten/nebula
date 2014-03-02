@@ -2,9 +2,9 @@
 
 OpenGLWorker::OpenGLWorker(QObject *parent)
     : QObject(parent)
+    , paint_device_gl(0)
     , isInitialized(false)
     , isMultiThreaded(false)
-    , paint_device_gl(0)
 {
     fps_elapsed_timer.start();
 }
@@ -26,14 +26,35 @@ void OpenGLWorker::metaMouseMoveEventCompact(QMouseEvent ev)
 
 void OpenGLWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
 }
 
 void OpenGLWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
 }
 
 void OpenGLWorker::metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
 }
 
 void OpenGLWorker::wheelEvent(QWheelEvent* ev)
@@ -180,11 +201,11 @@ OpenCLContext * OpenGLWindow::getCLContext()
 
 OpenGLWindow::OpenGLWindow(QWindow *parent, QOpenGLContext * shareContext)
     : QWindow(parent)
+    , context_gl(0)
     , isUpdatePending(false)
     , isWorkerBusy(false)
     , isAnimating(false)
     , isMultiThreaded(false)
-    , context_gl(0)
 {
     this->shared_context = shareContext;
 

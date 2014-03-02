@@ -23,6 +23,7 @@ FileSelectionModel::FileSelectionModel(QWidget *parent) :
 
 int FileSelectionModel::columnCount(const QModelIndex& parent) const
 {
+    Q_UNUSED(parent);
     return QFileSystemModel::columnCount();
 }
 
@@ -89,7 +90,7 @@ bool FileSelectionModel::setData(const QModelIndex& index, const QVariant& value
 }
 
 
-bool FileSelectionModel::addIndex(QModelIndex index)
+void FileSelectionModel::addIndex(QModelIndex index)
 {
     indices << index;
     
@@ -108,7 +109,7 @@ bool FileSelectionModel::addIndex(QModelIndex index)
     emit dataChanged(index.parent(), index.child(rowCount(index)-1,0));
 }
 
-bool FileSelectionModel::removeIndex(QModelIndex index)
+void FileSelectionModel::removeIndex(QModelIndex index)
 {
     indices.removeAll(index); // If the index of an item changes it cannot be removed. This can occur if the number of items in a folder change.
     

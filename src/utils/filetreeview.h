@@ -50,8 +50,8 @@ private:
     QList<QModelIndex> indices;
 //    bool addPath(QModelIndex index);
 //    bool removePath(QModelIndex index);
-    bool addIndex(QModelIndex index);
-    bool removeIndex(QModelIndex index);
+    void addIndex(QModelIndex index);
+    void removeIndex(QModelIndex index);
     void refreshFiles();
 };
 

@@ -83,7 +83,7 @@ public slots:
     void setShadow();
     void setShadowVector();
     void setOrthoGrid();
-    void takeScreenShot(QString path, float quality);
+    void takeScreenShot(QString path);
 //    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
@@ -111,6 +111,9 @@ private:
     
     // Boolean checks
     bool isInitialized;
+    bool isRayTexInitialized;
+    bool isTsfTexInitialized;
+    bool isIntegrationTexInitialized;
     bool isDSActive;
     bool isOrthonormal;
     bool isLogarithmic;
@@ -119,9 +122,9 @@ private:
     bool isSvoInitialized;
     bool isScalebarActive;
     bool isSlicingActive;
-    bool isRendering;
     bool isIntegration2DActive;
     bool isIntegration3DActive;
+    bool isRendering;
     bool isShadowActive;
     bool isLogarithmic2D;
     bool isOrthoGridActive;
@@ -130,7 +133,7 @@ private:
     bool isCenterlineActive;
     bool isRulerActive;
     bool isLMBDown;
-
+    
     // Ray texture
     Matrix<double> pixel_size;
     Matrix<int> ray_tex_dim;
@@ -139,7 +142,6 @@ private:
     float weird_parameter;
     cl_mem ray_tex_cl;
     GLuint ray_tex_gl;
-    bool isRayTexInitialized;
     void setRayTexture();
     void raytrace(cl_kernel kernel);
     double work, work_time, quality_factor;
@@ -153,7 +155,6 @@ private:
     cl_sampler integration_sampler_cl;
     cl_mem integration_tex_alpha_cl;
     cl_mem integration_tex_beta_cl;
-    bool isIntegrationTexInitialized;
     
     // UB matrix implementation
     void updateUnitCell();
@@ -166,7 +167,7 @@ private:
     Matrix<double> ruler;
     
     // Ticks
-    void tickzerize(double min, double max, double size, double min_interdist, double *qualified_exponent, double * start, int *num_ticks);
+    void tickzerize(double min, double max, double size, double min_interdist, double *qualified_exponent, double * start, size_t *num_ticks);
     
     // Sense of rotation
     GLuint point_vbo;
@@ -207,9 +208,9 @@ private:
     GLuint count_scalebar_vbo;
     double scalebar_multiplier;
     
-    int n_position_scalebar_ticks;
-    int n_count_scalebar_ticks;
-    int n_count_minor_scalebar_ticks;
+    size_t n_position_scalebar_ticks;
+    size_t n_count_scalebar_ticks;
+    size_t n_count_minor_scalebar_ticks;
     
     
     Matrix<float> position_scalebar_ticks;
@@ -223,7 +224,6 @@ private:
     cl_sampler tsf_tex_sampler;
     GLuint tsf_tex_gl;
     GLuint tsf_tex_gl_thumb;
-    bool isTsfTexInitialized;
     TransferFunction tsf;
     int tsf_color_scheme;
     int tsf_alpha_scheme;

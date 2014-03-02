@@ -925,7 +925,7 @@ void MainWindow::initializeConnects()
     connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam2(double)));
     connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam3(double)));
     connect(volumeRenderWindow->getWorker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(captureFrameBuffer(QString,float)), volumeRenderWindow->getWorker(), SLOT(takeScreenShot(QString,float)));
+    connect(this, SIGNAL(captureFrameBuffer(QString)), volumeRenderWindow->getWorker(), SLOT(takeScreenShot(QString)));
     connect(this->alignXAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignX()));
     connect(this->alignYAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignY()));
     connect(this->alignZAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignZ()));
@@ -1977,7 +1977,7 @@ void MainWindow::takeScreenshot()
                                                 .arg(format.toUpper())
                                                 .arg(format));
     
-    emit captureFrameBuffer(fileName, 100);
+    emit captureFrameBuffer(fileName);
 //    if (!fileName.isEmpty()) screenshot.save(fileName, format.toLatin1().constData(), 100);
 //    print(QString("\n Saved: "+fileName));
 //    }

@@ -129,7 +129,7 @@ signals:
     void changedFormat(int value);
     void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
-    void captureFrameBuffer(QString path, float quality);
+    void captureFrameBuffer(QString path);
 
 private:
     /* UI elements for UB matrix */
@@ -137,7 +137,6 @@ private:
     QWidget * unitCellWidget;
     
     void loadParFile();
-    
     
     Matrix<double> U; // Rotation
     Matrix<double> B; // Reciprocal vectors

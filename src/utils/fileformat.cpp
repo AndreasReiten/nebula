@@ -419,8 +419,11 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
     err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_sampler), &tsf_sampler);
     err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &intensity_sampler);
     err |= clSetKernelArg(*project_kernel, 8, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
-    float threshold_one[2] = {this->threshold_reduce_low, this->threshold_reduce_high};
-    float threshold_two[2] = {this->threshold_project_low, this->threshold_project_high};
+    float threshold_one[2], threshold_two[2];
+    threshold_one[0] = this->threshold_reduce_low;
+    threshold_one[1] = this->threshold_reduce_high;
+    threshold_two[0] = this->threshold_project_low;
+    threshold_two[1] = this->threshold_project_high;
     err |= clSetKernelArg(*project_kernel, 9, 2*sizeof(cl_float), threshold_one);
     err |= clSetKernelArg(*project_kernel, 10, 2*sizeof(cl_float), threshold_two);
     err |= clSetKernelArg(*project_kernel, 11, sizeof(cl_float), &background_flux);
