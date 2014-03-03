@@ -8,12 +8,25 @@ MainWindow::MainWindow()
 //    std::cout << lallelol;
     
     UBMatrix<double> lol;
+    UBMatrix<double> lal;
+    Matrix<double> foo;
+    
+    lal[3] = 4;
+    
+    foo.set(3,3,5);
     
     lol.print(2,"UB");
     lol.getUMatrix().print(2,"U");
     lol.getBMatrix().print(2,"B");
     qDebug() << lol.getA() << lol.getB() << lol.getC() << lol.getAlpha();
     
+    lol = lal;
+    
+    lol.print(2,"UB");
+    
+    lol = foo;
+    
+    lol.print(2,"UB");
     
     //     Set default values
     current_svo = 0;

@@ -35,11 +35,10 @@ class Matrix {
         const Matrix operator + (const Matrix&) const;
         const Matrix operator + (const T&) const;
         
-//        friend std::ostream& operator << (std::ostream& os, const Matrix&);
-
         T& operator[] (const size_t index);
         const T& operator[] (const size_t index) const;
-        Matrix<T> &operator =(Matrix other);
+        Matrix<T> &operator =(Matrix<T> other);
+        
 
         // Utility
         const Matrix<T> getInverse() const;
@@ -144,7 +143,6 @@ Matrix<T>::Matrix(const Matrix & other)
 {
     this->m = other.getM();
     this->n = other.getN();
-//    this->buffer = new T[m*n];
     this->buffer.resize(m*n);
     for (size_t i = 0; i < m*n; i++)
     {
@@ -164,7 +162,6 @@ Matrix<T>::~Matrix()
 {
     if (m*n > 0)
     {
-//        this->buffer.clear(); // Not needed
         m = 0;
         n = 0;
     }
@@ -393,7 +390,6 @@ template <class T>
 const Matrix<T> Matrix<T>::operator + (const T& value) const
 {
     Matrix<T> c(*this);
-    //~ c.copy(this->m, this->n, this->data());
 
     for (size_t i = 0; i < c.getM(); i++)
     {
@@ -411,7 +407,6 @@ template <class T>
 const Matrix<T> Matrix<T>::operator - (const Matrix& M) const
 {
     Matrix<T> c(*this);
-    //~ c.copy(this->m, this->n, this->data());
 
     if ((this->n != M.getN()) || (this->m != M.getM()))
     {
@@ -435,7 +430,6 @@ template <class T>
 const Matrix<T> Matrix<T>::operator - (const T& value) const
 {
     Matrix<T> c(*this);
-    //~ c.copy(this->m, this->n, this->data());
 
     for (size_t i = 0; i < c.getM(); i++)
     {
@@ -504,8 +498,6 @@ void Matrix<T>::print(int precision, const char * id) const
 
         for (int j = 0; j < n; j++)
         {
-//            if (this->buffer[i*n+j] >= 0) ss << " "<< std::setprecision(precision) << std::fixed << (double) this->buffer[i*n+j];
-//            else
             ss << std::setprecision(precision) << std::fixed << this->buffer[i*n+j];
             if (j != n-1) ss << ", ";
         }
@@ -517,22 +509,8 @@ void Matrix<T>::print(int precision, const char * id) const
     qDebug() << ss.str().c_str();
 }
 
-//~ template <class T>
-//~ void Matrix<T>::copy(size_t m, size_t n, T * buffer)
-//~ {
-    //~ this->clear();
-    //~ this->m = m;
-    //~ this->n = n;
-    //~ this->buffer = new T[m*n];
-    //~ for (size_t i = 0; i < m*n; i++)
-    //~ {
-        //~ this->buffer[i] = buffer[i];
-    //~ }
-//~ }
-
-
 template <class T>
-Matrix<T>& Matrix<T>::operator = (Matrix other)
+Matrix<T>& Matrix<T>::operator = (Matrix<T> other)
 {
     swap(*this, other);
 
@@ -546,7 +524,6 @@ void Matrix<T>::set(size_t m, size_t n, T value)
     this->clear();
     this->m = m;
     this->n = n;
-//    this->buffer = new T[m*n];
     this->buffer.resize(m*n);
     for (size_t i = 0; i < m*n; i++)
     {
@@ -560,7 +537,6 @@ void Matrix<T>::setDeep(size_t m, size_t n, T * buffer)
     this->clear();
     this->m = m;
     this->n = n;
-//    this->buffer = new T[m*n];
     this->buffer.resize(m*n);
     for (size_t i = 0; i < m*n; i++)
     {
@@ -574,7 +550,6 @@ void Matrix<T>::reserve(size_t m, size_t n)
     this->clear();
     this->m = m;
     this->n = n;
-//    this->buffer = new T[m*n];
     this->buffer.resize(m*n);
 }
 
@@ -647,16 +622,14 @@ size_t Matrix<T>::size() const
 }
 
 /* CameraToClipMatrix */
-
 template <class T>
 class CameraToClipMatrix : public Matrix<T>{
     public:
-        //~ using Matrix<T>::Matrix;
         CameraToClipMatrix();
         ~CameraToClipMatrix();
 
-        CameraToClipMatrix& operator = (const CameraToClipMatrix &);
-        CameraToClipMatrix& operator = (const Matrix<T> &);
+        CameraToClipMatrix<T>& operator = (Matrix<T> other);
+        CameraToClipMatrix<T>& operator = (CameraToClipMatrix<T> other);
 
         void setN(double N);
         void setF(double F);
@@ -687,36 +660,19 @@ CameraToClipMatrix<T>::~CameraToClipMatrix()
     this->clear();
 }
 
-
 template <class T>
-CameraToClipMatrix<T>& CameraToClipMatrix<T>::operator = (const CameraToClipMatrix & other)
+CameraToClipMatrix<T>& CameraToClipMatrix<T>::operator = (Matrix<T> other)
 {
-    this->m = other.getM();
-    this->n = other.getN();
-//    T * local_buffer = new T[this->m*this->n];
-//    std::vector<T> local_buffer;
-//    local_buffer.resize(this->m*this->n);
-    this->buffer.resize(this->m*this->n);
-    for (size_t i = 0; i < this->m*this->n; i++)
-    {
-//        local_buffer[i] = other[i];
-        this->buffer[i] = other[i];
-    }
-//    delete[] this->buffer;
-//    this->buffer = local_buffer;
+    this->swap(*this, other);
+
     return * this;
 }
 
 template <class T>
-CameraToClipMatrix<T>& CameraToClipMatrix<T>::operator = (const Matrix<T> & other)
+CameraToClipMatrix<T>& CameraToClipMatrix<T>::operator = (CameraToClipMatrix<T> other)
 {
-    this->m = other.getM();
-    this->n = other.getN();
-    this->buffer.resize(this->m*this->n);
-    for (size_t i = 0; i < this->m*this->n; i++)
-    {
-        this->buffer[i] = other[i];
-    }
+    this->swap(*this, other);
+
     return * this;
 }
 
@@ -787,9 +743,8 @@ class RotationMatrix : public Matrix<T>{
         ~RotationMatrix();
 
 
-        RotationMatrix<T>& operator = (RotationMatrix other);
-        //~ RotationMatrix& operator = (const RotationMatrix &);
-        RotationMatrix& operator = (const Matrix<T> &);
+        RotationMatrix<T>& operator = (Matrix<T> other);
+        RotationMatrix<T>& operator = (RotationMatrix<T> other);
 
         void setXRotation(double value);
         void setYRotation(double value);
@@ -814,44 +769,20 @@ RotationMatrix<T>::~RotationMatrix()
     this->clear();
 }
 
+
 template <class T>
-RotationMatrix<T>& RotationMatrix<T>::operator = (RotationMatrix other)
+RotationMatrix<T>& RotationMatrix<T>::operator = (Matrix<T> other)
 {
-    this->m = other.getM();
-    this->n = other.getN();
-    this->buffer.resize(this->m*this->n);
-    for (size_t i = 0; i < this->m*this->n; i++)
-    {
-        this->buffer[i] = other[i];
-    }
+    this->swap(*this, other);
+
     return * this;
 }
 
-//~ template <class T>
-//~ RotationMatrix<T>& RotationMatrix<T>::operator = (const RotationMatrix & other)
-//~ {
-    //~ this->m = other.getM();
-    //~ this->n = other.getN();
-    //~ T * local_buffer = new T[this->m*this->n];
-    //~ for (size_t i = 0; i < this->m*this->n; i++)
-    //~ {
-        //~ local_buffer[i] = other[i];
-    //~ }
-    //~ delete[] this->buffer;
-    //~ this->buffer = local_buffer;
-    //~ return * this;
-//~ }
-
 template <class T>
-RotationMatrix<T>& RotationMatrix<T>::operator = (const Matrix<T> & other)
+RotationMatrix<T>& RotationMatrix<T>::operator = (RotationMatrix<T> other)
 {
-    this->m = other.getM();
-    this->n = other.getN();
-    this->buffer.resize(this->m*this->n);
-    for (size_t i = 0; i < this->m*this->n; i++)
-    {
-        this->buffer[i] = other[i];
-    }
+    this->swap(*this, other);
+
     return * this;
 }
 
@@ -901,8 +832,6 @@ template <class T>
 void RotationMatrix<T>::setArbRotation(double zeta, double eta, double gamma)
 {
     /* Rotation around a axis whose tilts are given by zeta and eta */
-    //~ this->setIdentity(4);
-
     RotationMatrix<T> RyPlus, RxPlus, RzGamma, RxMinus, RyMinus;
 
     RyPlus.setYRotation(zeta);
@@ -910,12 +839,6 @@ void RotationMatrix<T>::setArbRotation(double zeta, double eta, double gamma)
     RzGamma.setZRotation(gamma);
     RxMinus.setXRotation(-eta);
     RyMinus.setYRotation(-zeta);
-    
-//    RyPlus.print(3,"Ry");
-//    RxPlus.print(3,"Rx");
-//    RzGamma.print(3,"Rz");
-//    RxMinus.print(3,"Rxm");
-//    RyMinus.print(3,"Rym");
 
     (*this) = RyPlus * RxPlus * RzGamma * RxMinus * RyMinus;
 }
@@ -973,8 +896,6 @@ template <class T>
 const RotationMatrix<T> RotationMatrix<T>::getArbRotation(double zeta, double eta, double gamma)
 {
     /* Rotation around a axis whose tilts are given by zeta and eta */
-    //~ this->setIdentity(4);
-
     RotationMatrix<T> RyPlus, RxPlus, RzGamma, RxMinus, RyMinus;
 
     RyPlus.setYRotation(zeta);
@@ -996,8 +917,8 @@ class UBMatrix : public Matrix<T>{
         UBMatrix();
         ~UBMatrix();
 
-        UBMatrix<T>& operator = (UBMatrix other);
-        UBMatrix& operator = (const Matrix<T> &);
+        UBMatrix<T>& operator = (Matrix<T> other);
+        UBMatrix<T>& operator = (UBMatrix<T> other);
         
         void setBMatrix(Matrix<double> mat);
         void setUMatrix(Matrix<double> mat);
@@ -1028,7 +949,6 @@ class UBMatrix : public Matrix<T>{
         double getAlpha();
         double getBeta();
         double getGamma();
-        
         double getAStar();
         double getBStar();
         double getCStar();
@@ -1039,7 +959,6 @@ class UBMatrix : public Matrix<T>{
         
     private:
         Matrix<double> a, b, c;
-//        double alpha, beta, gamma;
         
         Matrix<double> U;
         Matrix<double> B;
@@ -1070,25 +989,30 @@ UBMatrix<T>::~UBMatrix()
 }
 
 template <class T>
-UBMatrix<T>& UBMatrix<T>::operator = (UBMatrix other)
+UBMatrix<T>& UBMatrix<T>::operator = (Matrix<T> other)
 {
-    return *this;
+    this->swap(*this, other);
+
+    return * this;
 }
+
 template <class T>
-UBMatrix<T>& UBMatrix<T>::operator = (const Matrix<T> &)
+UBMatrix<T>& UBMatrix<T>::operator = (UBMatrix<T> other)
 {
-    return *this;
+    this->swap(*this, other);
+
+    return * this;
 }
 
 template <class T>
 void UBMatrix<T>::setBMatrix(Matrix<double> mat)
 {
-    ;
+    B = mat;
 }
 template <class T>
 void UBMatrix<T>::setUMatrix(Matrix<double> mat)
 {
-    ;
+    U = mat;
 }
 template <class T>
 Matrix<double> UBMatrix<T>::getUMatrix()
