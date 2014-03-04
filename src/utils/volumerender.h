@@ -84,6 +84,7 @@ public slots:
     void setShadowVector();
     void setOrthoGrid();
     void takeScreenShot(QString path);
+    void updateUnitCell(UBMatrix<double> & UB);
 //    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
@@ -157,7 +158,6 @@ private:
     cl_mem integration_tex_beta_cl;
     
     // UB matrix implementation
-    void updateUnitCell();
     void drawUnitCell();
     
     GLuint unticell_vbo;

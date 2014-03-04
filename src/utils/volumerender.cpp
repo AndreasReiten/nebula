@@ -367,6 +367,10 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
     last_mouse_pos_y = y;
 }
 
+void VolumeRenderWorker::updateUnitCell(UBMatrix<double> & UB)
+{
+    
+}
 
 void VolumeRenderWorker::setCenterLine()
 {

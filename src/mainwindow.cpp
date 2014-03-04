@@ -1,44 +1,8 @@
 #include "mainwindow.h"
 
 MainWindow::MainWindow() 
-//    isInScriptMode(true)
 {
-//    Matrix<double> lallelol(2,2, 0);
-    
-//    std::cout << lallelol;
-    
-    UBMatrix<double> lol;
-    UBMatrix<double> lal;
-    Matrix<double> foo;
-    
-    lal[3] = 4;
-    
-    foo.set(3,3,5);
-    
-    lol.print(2,"UB");
-    lol.getUMatrix().print(2,"U");
-    lol.getBMatrix().print(2,"B");
-//    qDebug() << lol.getA() << lol.getB() << lol.getC() << lol.getAlpha();
-    
-    lol = lal;
-    
-    lol.print(2,"UB");
-    
-    lol = foo;
-    
-    lol.print(2,"UB");
-    
-//    lol.getAStar();
-    
-    lol.setA(10);
-    
-    qDebug() << lol.getA();
-    
-    lol.print(2,"UB");
-    
-    lol.setAlpha(45);
-    
-    //     Set default values
+    //     Set some default values
     current_svo = 0;
     display_file = 0;
     svo_loaded.append(SparseVoxelOcttree());
