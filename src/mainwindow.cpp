@@ -18,7 +18,7 @@ MainWindow::MainWindow()
     lol.print(2,"UB");
     lol.getUMatrix().print(2,"U");
     lol.getBMatrix().print(2,"B");
-    qDebug() << lol.getA() << lol.getB() << lol.getC() << lol.getAlpha();
+//    qDebug() << lol.getA() << lol.getB() << lol.getC() << lol.getAlpha();
     
     lol = lal;
     
@@ -27,6 +27,16 @@ MainWindow::MainWindow()
     lol = foo;
     
     lol.print(2,"UB");
+    
+//    lol.getAStar();
+    
+    lol.setA(10);
+    
+    qDebug() << lol.getA();
+    
+    lol.print(2,"UB");
+    
+    lol.setAlpha(45);
     
     //     Set default values
     current_svo = 0;

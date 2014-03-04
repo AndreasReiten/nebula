@@ -65,11 +65,21 @@ class Matrix {
         
         void print(int precision = 0, const char * id = "") const;
         
-        // Vector math
-        T vecLength();
+        // Vector math friends
+//        T vecLength();
+        
+        template <class F>
+        friend F vecLength(const Matrix<F> A);
+        
+        template <class F>
+        friend Matrix<F> normalized(const Matrix<F> A);
         
         template <class F>
         friend Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B);
+        
+        // Other friends
+        template <class F>
+        friend Matrix<F> operator*(F factor, const Matrix<F> B);
 
     protected:
         size_t m;
@@ -80,12 +90,11 @@ class Matrix {
         void swap(Matrix &first, Matrix &second);
 };
 
-template<class T>
-Matrix<T> operator* (T factor, const Matrix<T> &M)
-{
-    return M * factor;
-}
-
+//template<class T>
+//Matrix<T> operator* (T factor, const Matrix<T> &M)
+//{
+//    return M * factor;
+//}
 
 template <class T>
 Matrix<T>::Matrix(size_t m, size_t n, T value)
@@ -109,19 +118,73 @@ Matrix<T>::Matrix()
     this->n = 0;
 }
 
-
-
-template <class T>
-T Matrix<T>::vecLength()
-{
-    T sum = 0;
+//template <class T>
+//Matrix<T> Matrix<T>::normalized()
+//{
+//    Matrix<T> foo;
+//    foo = *this;
+//    return foo;
     
-    for (int i = 0; i < m*n; i++)
+//}
+
+//template <class T>
+//T Matrix<T>::vecLength()
+//{
+//    T sum = 0;
+    
+//    for (int i = 0; i < m*n; i++)
+//    {
+//        sum += this->at(i)*this->at(i);    
+//    }
+    
+//    return sqrt(sum);
+//}
+
+template <class F>
+Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B)
+{
+    Matrix<F> C(1,3,0);
+    
+    if ((A.getM()*A.getN() != 3) || (B.getM()*B.getN() != 3))
     {
-        sum += this->at(i)*this->at(i);    
+        qWarning() << "Attempt to take cross product of vectors with dimensions" << A.getM() << "x" << A.getN() << "and" << B.getM() << "x" << B.getN(); 
+    }    
+    else
+    {
+        C[0] = A[1]*B[2] - A[2]*B[1];
+        C[1] = A[2]*B[0] - A[0]*B[2];
+        C[2] = A[0]*B[1] - A[1]*B[0];
+    }
+    return C;
+}
+
+template <class F>
+Matrix<F> operator*(F factor, const Matrix<F> A)
+{
+    return A*factor;
+}
+
+template <class F>
+F vecLength(const Matrix<F> A)
+{
+    F sum = 0;
+    
+    for (int i = 0; i < A.getM()*A.getN(); i++)
+    {
+        sum += A[i]*A[i];    
     }
     
     return sqrt(sum);
+}
+
+template <class F>
+Matrix<F> normalize(const Matrix<F> A)
+{
+//    Matrix<F> foo;
+    
+//    foo = A*(1.0/vecLength(A));
+    
+    return A*(1.0/vecLength(A));
 }
 
 template <class T>
@@ -920,48 +983,47 @@ class UBMatrix : public Matrix<T>{
         UBMatrix<T>& operator = (Matrix<T> other);
         UBMatrix<T>& operator = (UBMatrix<T> other);
         
-        void setBMatrix(Matrix<double> mat);
-        void setUMatrix(Matrix<double> mat);
+        void setBMatrix(Matrix<T> mat);
+        void setUMatrix(Matrix<T> mat);
         
-        Matrix<double> getUMatrix();
-        Matrix<double> getBMatrix();
+        Matrix<T> getUMatrix();
+        Matrix<T> getBMatrix();
         
-        void setA(double value);
-        void setB(double value);
-        void setC(double value);
+        void setA(T value);
+        void setB(T value);
+        void setC(T value);
         
-        void setAlpha(double value);
-        void setBeta(double value);
-        void setGamma(double value);
+        void setAlpha(T value);
+        void setBeta(T value);
+        void setGamma(T value);
         
-        void setAStar(double value);
-        void setBStar(double value);
-        void setCStar(double value);
+        void setAStar(T value);
+        void setBStar(T value);
+        void setCStar(T value);
         
-        void setAlphaStar(double value);
-        void setBetaStar(double value);
-        void setGammaStar(double value);
+        void setAlphaStar(T value);
+        void setBetaStar(T value);
+        void setGammaStar(T value);
         
-        double getA();
-        double getB();
-        double getC();
+        T getA();
+        T getB();
+        T getC();
         
-        double getAlpha();
-        double getBeta();
-        double getGamma();
-        double getAStar();
-        double getBStar();
-        double getCStar();
+        T getAlpha();
+        T getBeta();
+        T getGamma();
+        T getAStar();
+        T getBStar();
+        T getCStar();
         
-        double getAlphaStar();
-        double getBetaStar();
-        double getGammaStar();
+        T getAlphaStar();
+        T getBetaStar();
+        T getGammaStar();
         
     private:
-        Matrix<double> a, b, c;
-        
-        Matrix<double> U;
-        Matrix<double> B;
+        Matrix<T> a, b, c;
+        Matrix<T> U;
+        Matrix<T> B;
         
         void updateUB();
 };
@@ -1005,165 +1067,190 @@ UBMatrix<T>& UBMatrix<T>::operator = (UBMatrix<T> other)
 }
 
 template <class T>
-void UBMatrix<T>::setBMatrix(Matrix<double> mat)
+void UBMatrix<T>::setBMatrix(Matrix<T> mat)
 {
     B = mat;
 }
 template <class T>
-void UBMatrix<T>::setUMatrix(Matrix<double> mat)
+void UBMatrix<T>::setUMatrix(Matrix<T> mat)
 {
     U = mat;
 }
 template <class T>
-Matrix<double> UBMatrix<T>::getUMatrix()
+Matrix<T> UBMatrix<T>::getUMatrix()
 {
     return U;
 }
 template <class T>
-Matrix<double> UBMatrix<T>::getBMatrix()
+Matrix<T> UBMatrix<T>::getBMatrix()
 {
     return B;
 }
 
 template <class T>
-void UBMatrix<T>::setA(double value)
+void UBMatrix<T>::setA(T value)
 {
-    ;
+    a = value*normalize(a);
 }
 template <class T>
-void UBMatrix<T>::setB(double value)
+void UBMatrix<T>::setB(T value)
 {
-    ;
+    b = value*normalize(b);
 }
 template <class T>
-void UBMatrix<T>::setC(double value)
+void UBMatrix<T>::setC(T value)
 {
-    ;
-}
-
-template <class T>
-void UBMatrix<T>::setAlpha(double value)
-{
-
-}
-template <class T>
-void UBMatrix<T>::setBeta(double value)
-{
-
-}
-template <class T>
-void UBMatrix<T>::setGamma(double value)
-{
-    ;
+    c = value*normalize(c);
 }
 
 template <class T>
-void UBMatrix<T>::setAStar(double value)
+void UBMatrix<T>::setAlpha(T value)
 {
-    ;
+    c.print(2,"c");
+    b.getInverse().print(2,"b inverse");
+    
+    c = vecLength(b)*vecLength(c)*cos(value*pi/180.0)*b.getInverse();
+            
+    c.print(2,"c");
 }
 template <class T>
-void UBMatrix<T>::setBStar(double value)
+void UBMatrix<T>::setBeta(T value)
 {
-    ;
+    // Math to go from argument to vector form
 }
 template <class T>
-void UBMatrix<T>::setCStar(double value)
+void UBMatrix<T>::setGamma(T value)
 {
-    ;
-}
-
-template <class T>
-void UBMatrix<T>::setAlphaStar(double value)
-{
-    ;
-}
-template <class T>
-void UBMatrix<T>::setBetaStar(double value)
-{
-    ;
-}
-template <class T>
-void UBMatrix<T>::setGammaStar(double value)
-{
-    ;
+    // Math to go from argument to vector form
 }
 
 template <class T>
-double UBMatrix<T>::getA()
+void UBMatrix<T>::setAStar(T value)
 {
-    return a.vecLength();
+    // Math to go from argument to vector form
+}
+template <class T>
+void UBMatrix<T>::setBStar(T value)
+{
+    // Math to go from argument to vector form
+}
+template <class T>
+void UBMatrix<T>::setCStar(T value)
+{
+    // Math to go from argument to vector form
 }
 
 template <class T>
-double UBMatrix<T>::getB()
+void UBMatrix<T>::setAlphaStar(T value)
 {
-    return b.vecLength();
+    // Math to go from argument to vector form
 }
 template <class T>
-double UBMatrix<T>::getC()
+void UBMatrix<T>::setBetaStar(T value)
 {
-    return c.vecLength();
-}
-
-template <class T>
-double UBMatrix<T>::getAlpha()
-{
-    double dot = (b*c.getColMajor())[0];
-    return acos(dot/(b.vecLength()*c.vecLength()));
+    // Math to go from argument to vector form
 }
 template <class T>
-double UBMatrix<T>::getBeta()
+void UBMatrix<T>::setGammaStar(T value)
 {
-    double dot = (a*c.getColMajor())[0];
-    return acos(dot/(a.vecLength()*c.vecLength()));
-}
-template <class T>
-double UBMatrix<T>::getGamma()
-{
-    double dot = (a*b.getColMajor())[0];
-    return acos(dot/(a.vecLength()*b.vecLength()));
+    // Math to go from argument to vector form
 }
 
 template <class T>
-double UBMatrix<T>::getAStar()
+T UBMatrix<T>::getA()
 {
-    return 2*pi*vecCross(b,c)*(1.0/(a*vecCross(b,c).getColMajor())[0]);
-}
-template <class T>
-double UBMatrix<T>::getBStar()
-{
-    return 2*pi*vecCross(c,a)*(1.0/(b*vecCross(c,a).getColMajor())[0]);
-}
-template <class T>
-double UBMatrix<T>::getCStar()
-{
-    return 2*pi*vecCross(a,b)*(1.0/(c*vecCross(a,b).getColMajor())[0]);
+    return vecLength(a);
 }
 
 template <class T>
-double UBMatrix<T>::getAlphaStar()
+T UBMatrix<T>::getB()
 {
-    double dot = (getBStar()*getCStar().getColMajor())[0];
-    return acos(dot/(getBStar().vecLength()*getCStar().vecLength()));
+    return vecLength(b);
 }
 template <class T>
-double UBMatrix<T>::getBetaStar()
+T UBMatrix<T>::getC()
 {
-    double dot = (getAStar()*getCStar().getColMajor())[0];
-    return acos(dot/(getAStar().vecLength()*getCStar().vecLength()));
+    return vecLength(c);
+}
+
+template <class T>
+T UBMatrix<T>::getAlpha()
+{
+    T dot = (b*c.getColMajor())[0];
+    return acos(dot/(vecLength(b)*vecLength(c)));
+}
+
+template <class T>
+T UBMatrix<T>::getBeta()
+{
+    T dot = (a*c.getColMajor())[0];
+    return acos(dot/(vecLength(a)*vecLength(c)));
 }
 template <class T>
-double UBMatrix<T>::getGammaStar()
+T UBMatrix<T>::getGamma()
 {
-    double dot = (getAStar()*getBStar().getColMajor())[0];
-    return acos(dot/(getAStar().vecLength()*getBStar().vecLength()));
+    T dot = (a*b.getColMajor())[0];
+    return acos(dot/(vecLength(a)*vecLength(b)));
+}
+
+template <class T>
+T UBMatrix<T>::getAStar()
+{
+    Matrix<T> foo;
+    foo = 2*pi*vecCross(b,c)*(1.0/(a*vecCross(b,c).getColMajor())[0]);
+    return vecLength(foo);
+}
+template <class T>
+T UBMatrix<T>::getBStar()
+{
+    return vecLength(2*pi*vecCross(c,a)*(1.0/(b*vecCross(c,a).getColMajor())[0]));
+}
+template <class T>
+T UBMatrix<T>::getCStar()
+{
+    return vecLength(2*pi*vecCross(a,b)*(1.0/(c*vecCross(a,b).getColMajor())[0]));
+}
+
+template <class T>
+T UBMatrix<T>::getAlphaStar()
+{
+    T dot = (getBStar()*getCStar().getColMajor())[0];
+    return acos(dot/(vecLength(getBStar())*vecLength(getCStar())));
+}
+template <class T>
+T UBMatrix<T>::getBetaStar()
+{
+    T dot = (getAStar()*getCStar().getColMajor())[0];
+    return acos(dot/(vecLength(getAStar())*vecLength(getCStar())));
+}
+template <class T>
+T UBMatrix<T>::getGammaStar()
+{
+    T dot = (getAStar()*getBStar().getColMajor())[0];
+    return acos(dot/(vecLength(getAStar())*vecLength(getBStar())));
 }
 
 template <class T>
 void UBMatrix<T>::updateUB()
 {
-    ;
+    T sa = sin(getAlpha());
+    T ca = cos(getAlpha());
+    T cb = cos(getBeta());
+    T cg = cos(getGamma());
+    T V = (vecLength(a)*vecLength(b)*vecLength(c)) * sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2.0*ca*cb*cg);
+
+    Matrix<T> B(3,3);
+    B[0] = vecLength(b)*vecLength(c)*sa/V;
+    B[1] = vecLength(a)*vecLength(c)*(ca*cb-cg)/(V*sa);
+    B[2] = vecLength(a)*vecLength(b)*(ca*cg-cb)/(V*sa);
+    B[3] = 0;
+    B[4] = 1.0/(vecLength(b)*sa);
+    B[5] = -ca/(vecLength(c)*sa);
+    B[6] = 0;
+    B[7] = 0;
+    B[8] = 1.0/vecLength(c);
+    
+    *this = U*B;
 }
 
 
