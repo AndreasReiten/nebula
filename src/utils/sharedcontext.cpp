@@ -82,6 +82,7 @@ void SharedContextWindow::initialize()
     if ((unitcell_transform = unitcell_program->uniformLocation("transform")) == -1) qCritical("Invalid uniform");
     if ((unitcell_lim_low = unitcell_program->uniformLocation("lim_low")) == -1) qCritical("Invalid uniform");
     if ((unitcell_lim_high = unitcell_program->uniformLocation("lim_high")) == -1) qCritical("Invalid uniform");
+    if ((unitcell_diagonal = unitcell_program->uniformLocation("unitcell_diagonal")) == -1) qCritical("Invalid uniform");
     
     // Initialization of OpenCL/OpenGL interop context
     this->getCLContext()->initDevices();

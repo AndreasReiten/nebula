@@ -464,9 +464,17 @@ void VolumeRenderWorker::drawUnitCell()
     lim_high[1] = data_view_extent[3];
     lim_high[2] = data_view_extent[5];
     
+    float unitcell_diagonal = sqrt(UB.getAStar()*UB.getAStar() + UB.getBStar()*UB.getBStar() + UB.getCStar()*UB.getCStar());
+    
+//    data_view_extent.print(2,"DWE");
+    
+//    qDebug() << unitcell_diagonal;
+    
     glUniform3fv(shared_window->unitcell_lim_low, 1, lim_low.data());
     
     glUniform3fv(shared_window->unitcell_lim_high, 1, lim_high.data());
+    
+    glUniform1fv(shared_window->unitcell_diagonal, 1, &unitcell_diagonal);
 
     glDrawArrays(GL_LINES,  0, unitcell_nodes);
 
