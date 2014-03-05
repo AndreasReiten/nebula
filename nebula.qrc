@@ -4,8 +4,8 @@
         <file>src/shaders/std_blend.f.glsl</file>
         <file>src/shaders/std_2d_tex.v.glsl</file>
         <file>src/shaders/std_2d_tex.f.glsl</file>
-        <file>src/shaders/std_3d_color.v.glsl</file>
-        <file>src/shaders/std_3d_color.f.glsl</file>
+        <file>src/shaders/std_3d_col.v.glsl</file>
+        <file>src/shaders/std_3d_col.f.glsl</file>
         <file>art/app.png</file>
         <file>src/stylesheets/gosutheme.qss</file>
         <file>art/placeholder.png</file>
@@ -47,7 +47,9 @@
         <file>art/rotate_left.png</file>
         <file>art/rotate_down.png</file>
         <file>art/ruler.png</file>
-        <file>src/shaders/std_2d_color.v.glsl</file>
-        <file>src/shaders/std_2d_color.f.glsl</file>
+        <file>src/shaders/std_2d_col.v.glsl</file>
+        <file>src/shaders/std_2d_col.f.glsl</file>
+        <file>src/shaders/unitcell.f.glsl</file>
+        <file>src/shaders/unitcell.v.glsl</file>
     </qresource>
 </RCC>

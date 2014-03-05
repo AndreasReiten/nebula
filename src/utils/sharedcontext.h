@@ -32,20 +32,27 @@ public:
     ~SharedContextWindow();
 
     // Shaders
-    GLint std_2d_fragpos;
-    GLint std_2d_texpos;
-    GLint std_2d_texture;
+    GLint std_2d_tex_fragpos;
+    GLint std_2d_tex_pos;
+    GLint std_2d_tex_texture;
     QOpenGLShaderProgram *std_2d_tex_program;
     
-    GLint std_2d_color_color;
-    GLint std_2d_color_transform;
-    GLint std_2d_color_fragpos;
-    QOpenGLShaderProgram *std_2d_color_program;
+    GLint std_2d_col_color;
+    GLint std_2d_col_transform;
+    GLint std_2d_col_fragpos;
+    QOpenGLShaderProgram *std_2d_col_program;
 
-    GLint std_3d_color;
-    GLint std_3d_transform;
-    GLint std_3d_fragpos;
-    QOpenGLShaderProgram *std_3d_color_program;
+    GLint std_3d_col_color;
+    GLint std_3d_col_transform;
+    GLint std_3d_col_fragpos;
+    QOpenGLShaderProgram *std_3d_col_program;
+    
+    GLint unitcell_color;
+    GLint unitcell_transform;
+    GLint unitcell_fragpos;
+    GLint unitcell_lim_low;
+    GLint unitcell_lim_high;
+    QOpenGLShaderProgram *unitcell_program;
 
     GLint std_blend_fragpos;
     GLint std_blend_texpos;
@@ -54,7 +61,6 @@ public:
     GLint std_blend_method;
     QOpenGLShaderProgram *std_blend_program;
 
-//    void renderNow();
     void initializeWorker();
 
 signals:

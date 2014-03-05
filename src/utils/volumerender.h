@@ -50,6 +50,7 @@ public:
 
     void setSharedWindow(SharedContextWindow * window);
     void setSvo(SparseVoxelOcttree * svo);
+    void setUBMatrix(UBMatrix<double> & mat);
 
 signals:
 //    void renderState(int value);
@@ -84,7 +85,7 @@ public slots:
     void setShadowVector();
     void setOrthoGrid();
     void takeScreenShot(QString path);
-    void updateUnitCell(UBMatrix<double> & UB);
+    void updateUnitCell();
 //    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
@@ -160,8 +161,9 @@ private:
     // UB matrix implementation
     void drawUnitCell();
     
-    GLuint unticell_vbo;
-    int nunitcell_nodes;
+    GLuint unitcell_vbo;
+    int unitcell_nodes;
+    UBMatrix<double> UB;
     
     // Ruler
     Matrix<double> ruler;

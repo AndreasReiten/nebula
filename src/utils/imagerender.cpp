@@ -204,40 +204,40 @@ void ImageRenderWorker::drawData()
             1.0, 1.0,
             0.0, 1.0
         };
-        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
-        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
-        glEnableVertexAttribArray(shared_window->std_2d_texpos);
+        glEnableVertexAttribArray(shared_window->std_2d_tex_fragpos);
+        glEnableVertexAttribArray(shared_window->std_2d_tex_pos);
 
         // Alpha
         Matrix<GLfloat> gl_alpha_rect(4,2);
         glRect(&gl_alpha_rect, &alpha_rect);
-        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_alpha_rect.data());
+        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_alpha_rect.data());
 
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
         // Beta
         Matrix<GLfloat> gl_beta_rect(4,2);
         glRect(&gl_beta_rect, &beta_rect);
-        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_beta_rect.data());
+        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_beta_rect.data());
 
         glBindTexture(GL_TEXTURE_2D, image_tex[1]);
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
         // Gamma
         Matrix<GLfloat> gl_gamma_rect(4,2);
         glRect(&gl_gamma_rect, &gamma_rect);
-        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_gamma_rect.data());
+        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_gamma_rect.data());
 
         glBindTexture(GL_TEXTURE_2D, image_tex[2]);
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
 
-        glDisableVertexAttribArray(shared_window->std_2d_texpos);
-        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+        glDisableVertexAttribArray(shared_window->std_2d_tex_pos);
+        glDisableVertexAttribArray(shared_window->std_2d_tex_fragpos);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         shared_window->std_2d_tex_program->release();

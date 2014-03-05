@@ -63,9 +63,11 @@ OTHER_FILES += \
     src/kernels/integrate.cl \
     src/shaders/std_2d_tex.f.glsl \
     src/shaders/std_2d_tex.v.glsl \
-    src/shaders/std_3d_color.f.glsl \
-    src/shaders/std_3d_color.v.glsl \
     src/shaders/std_blend.f.glsl \
     src/shaders/std_blend.v.glsl \
-    src/shaders/std_2d_color.f.glsl \
-    src/shaders/std_2d_color.v.glsl
+    src/shaders/std_3d_col.f.glsl \
+    src/shaders/std_3d_col.v.glsl \
+    src/shaders/std_2d_col.v.glsl \
+    src/shaders/std_2d_col.f.glsl \ 
+    src/shaders/unitcell.f.glsl \
+    src/shaders/unitcell.v.glsl

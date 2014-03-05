@@ -109,7 +109,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isOrthonormal(true),
       isLogarithmic(true),
       isModelActive(true),
-      isUnitcellActive(false),
+      isUnitcellActive(true),
       isSvoInitialized(false),
       isScalebarActive(true),
       isSlicingActive(false),
@@ -230,10 +230,15 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 
 VolumeRenderWorker::~VolumeRenderWorker()
 {
-    if (isInitialized) glDeleteBuffers(1, &scalebar_vbo);
-    if (isInitialized) glDeleteBuffers(1, &count_scalebar_vbo);
-    if (isInitialized) glDeleteBuffers(1, &centerline_vbo);
-    if (isInitialized) glDeleteBuffers(1, &point_vbo);
+    if (isInitialized)
+    {
+        glDeleteBuffers(1, &scalebar_vbo);
+        glDeleteBuffers(1, &count_scalebar_vbo);
+        glDeleteBuffers(1, &centerline_vbo);
+        glDeleteBuffers(1, &point_vbo);
+        glDeleteBuffers(1, &point_vbo);
+        glDeleteBuffers(1, &unitcell_vbo);
+    }
 }
 
 
@@ -367,9 +372,107 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
     last_mouse_pos_y = y;
 }
 
-void VolumeRenderWorker::updateUnitCell(UBMatrix<double> & UB)
+void VolumeRenderWorker::setUBMatrix(UBMatrix<double> & mat)
 {
+    this->UB = mat;
+//    qDebug() << "Attempring to set UB";
+//    UB.print(2,"UB");
+}
+
+void VolumeRenderWorker::updateUnitCell()
+{
+    /* Generates a unit cell grid based on an UB matrix. The grid consists of one set of reciprocal basis vectors per hkl */
     
+    // Start by setting limits of the unitcell that we will visualize
+    Matrix<int> hkl_limits(1,6);
+    hkl_limits[0] = -10;
+    hkl_limits[1] = 10;
+    hkl_limits[2] = -10;
+    hkl_limits[3] = 10;
+    hkl_limits[4] = -10;
+    hkl_limits[5] = 10;
+    
+    int n_basis = ((hkl_limits[1] - hkl_limits[0] + 1)*(hkl_limits[3] - hkl_limits[2] + 1)*(hkl_limits[5] - hkl_limits[4] + 1));
+    
+    // Generate the positions ([number of bases] X [number of vertices per basis] X [number of float values per vertice]);
+    Matrix<float> vertices(n_basis*6,3);
+    
+    int m = 0;
+    
+    for(int h = hkl_limits[0]; h < hkl_limits[1]; h++)
+    {
+        for(int k = hkl_limits[2]; k < hkl_limits[3]; k++)
+        {
+            for(int l = hkl_limits[4]; l < hkl_limits[5]; l++)
+            {
+                // Assign 6 vertices, each with 4 float values;
+                vertices[m+0] = h*UB[0] + k*UB[1] + l*UB[2];
+                vertices[m+1] = h*UB[3] + k*UB[4] + l*UB[5];
+                vertices[m+2] = h*UB[6] + k*UB[7] + l*UB[8];
+                
+                vertices[m+3] = (1+h)*UB[0] + k*UB[1] + l*UB[2];
+                vertices[m+4] = (1+h)*UB[3] + k*UB[4] + l*UB[5];
+                vertices[m+5] = (1+h)*UB[6] + k*UB[7] + l*UB[8];
+                
+                vertices[m+6] = h*UB[0] + k*UB[1] + l*UB[2];
+                vertices[m+7] = h*UB[3] + k*UB[4] + l*UB[5];
+                vertices[m+8] = h*UB[6] + k*UB[7] + l*UB[8];
+                
+                vertices[m+9] = h*UB[0] + (1+k)*UB[1] + l*UB[2];
+                vertices[m+10] = h*UB[3] + (1+k)*UB[4] + l*UB[5];
+                vertices[m+11] = h*UB[6] + (1+k)*UB[7] + l*UB[8];
+                
+                vertices[m+12] = h*UB[0] + k*UB[1] + l*UB[2];
+                vertices[m+13] = h*UB[3] + k*UB[4] + l*UB[5];
+                vertices[m+14] = h*UB[6] + k*UB[7] + l*UB[8];
+                
+                vertices[m+15] = h*UB[0] + k*UB[1] + (1+l)*UB[2];
+                vertices[m+16] = h*UB[3] + k*UB[4] + (1+l)*UB[5];
+                vertices[m+17] = h*UB[6] + k*UB[7] + (1+l)*UB[8];
+                
+                m += 6*3;
+            }    
+        }
+    }
+//    qDebug() << "Attempring to set VBO";
+    setVbo(unitcell_vbo, vertices.data(), vertices.size(), GL_STATIC_DRAW);
+    unitcell_nodes = n_basis*6;
+}
+
+void VolumeRenderWorker::drawUnitCell()
+{
+    updateUnitCell(); // It is not necessary to do this for each frame!
+            
+    shared_window->unitcell_program->bind();
+    glEnableVertexAttribArray(shared_window->unitcell_fragpos);
+
+    glBindBuffer(GL_ARRAY_BUFFER, unitcell_vbo);
+    glVertexAttribPointer(shared_window->unitcell_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUniformMatrix4fv(shared_window->unitcell_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+
+    glUniform4fv(shared_window->unitcell_color, 1, clear_color_inverse.data());
+    
+    Matrix<float> lim_low(1,3);
+    lim_low[0] = data_view_extent[0];
+    lim_low[1] = data_view_extent[2];
+    lim_low[2] = data_view_extent[4];
+    
+    Matrix<float> lim_high(1,3);
+    lim_high[0] = data_view_extent[1];
+    lim_high[1] = data_view_extent[3];
+    lim_high[2] = data_view_extent[5];
+    
+    glUniform3fv(shared_window->unitcell_lim_low, 1, lim_low.data());
+    
+    glUniform3fv(shared_window->unitcell_lim_high, 1, lim_high.data());
+
+    glDrawArrays(GL_LINES,  0, unitcell_nodes);
+
+    glDisableVertexAttribArray(shared_window->unitcell_fragpos);
+
+    shared_window->unitcell_program->release();
 }
 
 void VolumeRenderWorker::setCenterLine()
@@ -387,23 +490,23 @@ void VolumeRenderWorker::drawCenterLine()
 {
     setCenterLine();
 
-    shared_window->std_3d_color_program->bind();
-    glEnableVertexAttribArray(shared_window->std_3d_fragpos);
+    shared_window->std_3d_col_program->bind();
+    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, centerline_vbo);
-    glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
 
 
-    glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
+    glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
 
     glDrawArrays(GL_LINES,  0, 2);
 
-    glDisableVertexAttribArray(shared_window->std_3d_fragpos);
+    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
-    shared_window->std_3d_color_program->release();
+    shared_window->std_3d_col_program->release();
 }
 
 void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm)
@@ -422,11 +525,11 @@ void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm
     setVbo(point_vbo, point_coords.data(), 3*100, GL_DYNAMIC_DRAW);
     
     
-    shared_window->std_3d_color_program->bind();
-    glEnableVertexAttribArray(shared_window->std_3d_fragpos);
+    shared_window->std_3d_col_program->bind();
+    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
-    glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0); 
+    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0); 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     
@@ -444,21 +547,21 @@ void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm
     point_around_axis = ctc_matrix * bbox_translation * normalization_scaling * rotation * axis_rotation * RyPlus * RxPlus;
     
     
-    glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
+    glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
     
     glPointSize(5);
     
     
-    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, point_around_axis.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_around_axis.getColMajor().toFloat().data());
     glDrawArrays(GL_POINTS,  2, 98);
     
     
-    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, point_on_axis.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_on_axis.getColMajor().toFloat().data());
     glDrawArrays(GL_LINE_STRIP,  0, 2);
     
-    glDisableVertexAttribArray(shared_window->std_3d_fragpos);
+    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
-    shared_window->std_3d_color_program->release();
+    shared_window->std_3d_col_program->release();
 }
 
 void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
@@ -559,6 +662,7 @@ void VolumeRenderWorker::initResourcesGL()
     glGenBuffers(1, &count_scalebar_vbo);
     glGenBuffers(1, &centerline_vbo);
     glGenBuffers(1, &point_vbo);
+    glGenBuffers(1, &unitcell_vbo);
 }
 
 void VolumeRenderWorker::initResourcesCL()
@@ -1016,6 +1120,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     // Draw relative scalebar
     if (isScalebarActive) drawPositionScalebars();
     if (isCenterlineActive) drawCenterLine();
+    if (isUnitcellActive) drawUnitCell();
 
     isDataExtentReadOnly = false;
 
@@ -1785,27 +1890,27 @@ void VolumeRenderWorker::drawPositionScalebars()
 {
     scalebar_coord_count = setScaleBars();
 
-    shared_window->std_3d_color_program->bind();
-    glEnableVertexAttribArray(shared_window->std_3d_fragpos);
+    shared_window->std_3d_col_program->bind();
+    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, scalebar_vbo);
-    glVertexAttribPointer(shared_window->std_3d_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    glUniform4fv(shared_window->std_3d_color, 1, clear_color_inverse.data());
+    glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
     
-    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
     
     glDrawArrays(GL_LINES,  0, scalebar_coord_count);
     
     // Draw in addition the lab reference frame (directions)
-    glUniformMatrix4fv(shared_window->std_3d_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
     
     glDrawArrays(GL_LINES,  scalebar_coord_count - 6, 6);
     
-    glDisableVertexAttribArray(shared_window->std_3d_fragpos);
+    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
-    shared_window->std_3d_color_program->release();
+    shared_window->std_3d_col_program->release();
 }
 
 void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
@@ -1906,7 +2011,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
     
         GLfloat texpos[] = {
             0.0, 1.0,
@@ -1917,16 +2022,16 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
         GLuint indices[] = {0,1,3,1,2,3};
     
-        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
-        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
+        glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
     
-        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
-        glEnableVertexAttribArray(shared_window->std_2d_texpos);
+        glEnableVertexAttribArray(shared_window->std_2d_tex_fragpos);
+        glEnableVertexAttribArray(shared_window->std_2d_tex_pos);
     
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
     
-        glDisableVertexAttribArray(shared_window->std_2d_texpos);
-        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+        glDisableVertexAttribArray(shared_window->std_2d_tex_pos);
+        glDisableVertexAttribArray(shared_window->std_2d_tex_fragpos);
         glBindTexture(GL_TEXTURE_2D, 0);
     
         shared_window->std_2d_tex_program->release();
@@ -1936,22 +2041,22 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         RotationMatrix<double> identity;
         identity.setIdentity(2);
         
-        shared_window->std_2d_color_program->bind();
-        glEnableVertexAttribArray(shared_window->std_2d_color_fragpos);
+        shared_window->std_2d_col_program->bind();
+        glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
     
         glBindBuffer(GL_ARRAY_BUFFER, count_scalebar_vbo);
-        glVertexAttribPointer(shared_window->std_2d_color_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(shared_window->std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-        glUniformMatrix2fv(shared_window->std_2d_color_transform, 1, GL_FALSE, identity.getColMajor().toFloat().data());
+        glUniformMatrix2fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.getColMajor().toFloat().data());
     
-        glUniform4fv(shared_window->std_2d_color_color, 1, clear_color_inverse.data());
+        glUniform4fv(shared_window->std_2d_col_color, 1, clear_color_inverse.data());
     
         glDrawArrays(GL_LINES,  0, iter*2);
     
-        glDisableVertexAttribArray(shared_window->std_2d_color_fragpos);
+        glDisableVertexAttribArray(shared_window->std_2d_col_fragpos);
     
-        shared_window->std_2d_color_program->release();
+        shared_window->std_2d_col_program->release();
         
         endRawGLCalls(painter);
     
@@ -1995,7 +2100,7 @@ void VolumeRenderWorker::drawRayTex()
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_texture, 0);
+        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
 
         GLfloat fragpos[] = {
             -1.0, -1.0,
@@ -2013,16 +2118,16 @@ void VolumeRenderWorker::drawRayTex()
 
         GLuint indices[] = {0,1,3,1,2,3};
 
-        glVertexAttribPointer(shared_window->std_2d_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
-        glVertexAttribPointer(shared_window->std_2d_texpos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
+        glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
-        glEnableVertexAttribArray(shared_window->std_2d_fragpos);
-        glEnableVertexAttribArray(shared_window->std_2d_texpos);
+        glEnableVertexAttribArray(shared_window->std_2d_tex_fragpos);
+        glEnableVertexAttribArray(shared_window->std_2d_tex_pos);
 
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-        glDisableVertexAttribArray(shared_window->std_2d_texpos);
-        glDisableVertexAttribArray(shared_window->std_2d_fragpos);
+        glDisableVertexAttribArray(shared_window->std_2d_tex_pos);
+        glDisableVertexAttribArray(shared_window->std_2d_tex_fragpos);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         shared_window->std_2d_tex_program->release();

@@ -1000,6 +1000,9 @@ class UBMatrix : public Matrix<T>{
         T getBetaStar();
         T getGammaStar();
         
+//    signals:
+//        void dataChanged(UBMatrix<T> & mat);
+        
     private:
         double a, b, c;
         double alpha, beta, gamma;
@@ -1021,9 +1024,9 @@ UBMatrix<T>::UBMatrix()
     beta = pi*0.5; 
     gamma = pi*0.5;
     
-    this->set(3,3,0);
     U.setIdentity(3);
-    B.set(3,3,0);
+    
+    updateUB();
 }
 
 template <class T>
@@ -1230,6 +1233,8 @@ void UBMatrix<T>::updateUB()
     B[8] = 1.0/c;
     
     *this = U*B;
+    
+//    dataChanged(*this);
 }
 
 

@@ -6,7 +6,7 @@ MainWindow::MainWindow()
     current_svo = 0;
     display_file = 0;
     svo_loaded.append(SparseVoxelOcttree());
-
+    
     //     Set stylesheet
     QFile styleFile( ":/src/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
@@ -31,7 +31,6 @@ MainWindow::MainWindow()
     sharedContextWindow = new SharedContextWindow();
     sharedContextWindow->setFormat(format_gl);
     sharedContextWindow->setOpenCLContext(context_cl);
-//    sharedContextWindow->resize(2, 2);
     sharedContextWindow->show();
     sharedContextWindow->initializeWorker();
     sharedContextWindow->hide();
@@ -508,6 +507,11 @@ void MainWindow::initializeEmit()
     fileSelectionFilter->setText("*.cbf");
     
     activeAngleComboBox->setCurrentIndex(2);
+    
+    
+    volumeRenderWindow->getWorker()->setUBMatrix(UB);
+    
+//    emit changedUB();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -905,7 +909,6 @@ void MainWindow::initializeConnects()
     connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
     connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setAlpha(double)));
     connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setBrightness(double)));
-//    connect(this->unitcellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
     connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setModel()));
     connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam0(double)));
     connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam1(double)));
@@ -921,9 +924,7 @@ void MainWindow::initializeConnects()
     connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
     connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
     connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
-    
-    
-    
+    connect(this, SIGNAL(changedUB()), volumeRenderWindow->getWorker(), SLOT(updateUnitCell()));
     
     /* this <-> this */
     connect(this->scriptingAct, SIGNAL(toggled(bool)), fileBrowserWidget, SLOT(setHidden(bool)));
@@ -935,10 +936,6 @@ void MainWindow::initializeConnects()
     connect(this->scriptingAct, SIGNAL(toggled(bool)), saveAct, SLOT(setVisible(bool)));
     
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
-//    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdLow(double)));
-//    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(setReduceThresholdHigh(double)));
-//    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdLow(double)));
-//    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(setProjectThresholdHigh(double)));
     connect(scriptTextEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSvo()));
@@ -953,7 +950,6 @@ void MainWindow::initializeConnects()
     connect(aboutOpenCLAct, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
     connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-//    connect(loadParButton, SIGNAL(clicked()), this, SLOT(openUnitcellFile()));
     
     /*this <-> misc*/
     connect(fileSelectionFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));

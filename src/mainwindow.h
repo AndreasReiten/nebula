@@ -130,7 +130,8 @@ signals:
     void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
     void captureFrameBuffer(QString path);
-
+    void changedUB();
+    
 private:
     /* UI elements for UB matrix */
     QDockWidget * unitCellDock;
@@ -138,8 +139,7 @@ private:
     
     void loadParFile();
     
-    Matrix<double> U; // Rotation
-    Matrix<double> B; // Reciprocal vectors
+    UBMatrix<double> UB; 
     
     // Real space unit cell
     QDoubleSpinBox * aNormSpinBox;
