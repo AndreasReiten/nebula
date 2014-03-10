@@ -508,6 +508,13 @@ void MainWindow::initializeEmit()
     
     activeAngleComboBox->setCurrentIndex(2);
     
+    alphaNormSpinBox->setValue(UB.getAlpha()*180.0/pi);
+    betaNormSpinBox->setValue(UB.getBeta()*180.0/pi);
+    gammaNormSpinBox->setValue(UB.getGamma()*180.0/pi);
+    
+    aNormSpinBox->setValue(UB.getA());
+    bNormSpinBox->setValue(UB.getB());
+    cNormSpinBox->setValue(UB.getC());
     
     volumeRenderWindow->getWorker()->setUBMatrix(UB);
     
@@ -575,8 +582,9 @@ void MainWindow::initializeActions()
     aboutOpenCLAct = new QAction(tr("About OpenCL"), this);
     aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
     //~aboutHDF5Act = new QAction(tr("About HDF"), this);
-    openSVOAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
+    openSvoAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
     saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
+    saveLoadedSvoAct = new QAction(QIcon(":/art/save.png"), tr("Save Current SVO"), this);
     log3DAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle logarithmic"), this);
     log3DAct->setCheckable(true);
     log3DAct->setChecked(true);
@@ -636,6 +644,39 @@ void MainWindow::initializeActions()
     saveAct->setShortcuts(QKeySequence::Save);
     saveAsAct->setShortcuts(QKeySequence::SaveAs);
     exitAct->setShortcuts(QKeySequence::Quit);
+}
+
+void MainWindow::setUB_a(double value)
+{
+    UB.setA(value);
+    volumeRenderWindow->getWorker()->setUBMatrix(UB);
+}
+
+void MainWindow::setUB_b(double value)
+{
+    UB.setB(value);
+    volumeRenderWindow->getWorker()->setUBMatrix(UB);
+}
+void MainWindow::setUB_c(double value)
+{
+    UB.setC(value);
+    volumeRenderWindow->getWorker()->setUBMatrix(UB);
+}
+
+void MainWindow::setUB_alpha(double value)
+{
+    UB.setAlpha(value*pi/180.0);
+    volumeRenderWindow->getWorker()->setUBMatrix(UB);
+}
+void MainWindow::setUB_beta(double value)
+{
+    UB.setBeta(value*pi/180.0);
+    volumeRenderWindow->getWorker()->setUBMatrix(UB);
+}
+void MainWindow::setUB_gamma(double value)
+{
+    UB.setGamma(value*pi/180.0);
+    volumeRenderWindow->getWorker()->setUBMatrix(UB);
 }
 
 void MainWindow::saveScript()
@@ -828,45 +869,67 @@ void MainWindow::openUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
-    switch (tab)
-    {
-        case 0:
-            graphicsDockWidget->hide();
-            unitCellDock->hide();
-            functionDockWidget->hide();
-            fileDockWidget->hide();
-            toolChainWidget->show();
-            outputDockWidget->show();
-            fileHeaderDock->show();
-            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
-            break;
+    if ((tab==0) || (tab==1)) toolChainWidget->show();
+    else toolChainWidget->hide();
+    
+    if ((tab==0) || (tab==1)) fileHeaderDock->show();
+    else fileHeaderDock->hide();
+    
+    if ((tab==0) || (tab==1)) outputDockWidget->show();
+    else outputDockWidget->hide();
+    
+    if (tab==2) graphicsDockWidget->show();
+    else graphicsDockWidget->hide();
+    
+    if (tab==2) unitCellDock->show();
+    else unitCellDock->hide();
+     
+    if (tab==2) functionDockWidget->show();
+    else functionDockWidget->hide();
+    
+    if (tab==2) svoHeaderDock->show();
+    else svoHeaderDock->hide();
 
-        case 1:
-            graphicsDockWidget->hide();
-            unitCellDock->hide();
-            functionDockWidget->hide();
-            toolChainWidget->show();
-            fileDockWidget->show();
-            outputDockWidget->show();
-            fileHeaderDock->show();
-            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
-            break;
+    
+//    switch (tab)
+//    {
+//        case 0:
+//            graphicsDockWidget->hide();
+//            unitCellDock->hide();
+//            functionDockWidget->hide();
+//            fileDockWidget->hide();
+//            toolChainWidget->show();
+//            outputDockWidget->show();
+//            fileHeaderDock->show();
+//            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
+//            break;
 
-        case 2:
-            toolChainWidget->hide();
-            fileDockWidget->hide();
-            outputDockWidget->hide();
-            fileHeaderDock->hide();
-            graphicsDockWidget->show();
-            unitCellDock->show();
-            functionDockWidget->show();
-            setWindowTitle(tr("Nebula[*] (")+current_svo_path+")");
-            break;
+//        case 1:
+//            graphicsDockWidget->hide();
+//            unitCellDock->hide();
+//            functionDockWidget->hide();
+//            toolChainWidget->show();
+//            fileDockWidget->show();
+//            outputDockWidget->show();
+//            fileHeaderDock->show();
+//            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
+//            break;
 
-        default:
-            qDebug("Reverting to Default Tab");
-            break;
-    }
+//        case 2:
+//            toolChainWidget->hide();
+//            fileDockWidget->hide();
+//            outputDockWidget->hide();
+//            fileHeaderDock->hide();
+//            graphicsDockWidget->show();
+//            unitCellDock->show();
+//            functionDockWidget->show();
+//            setWindowTitle(tr("Nebula[*] (")+current_svo_path+")");
+//            break;
+
+//        default:
+//            qDebug("Reverting to Default Tab");
+//            break;
+//    }
 }
 
 
@@ -924,9 +987,23 @@ void MainWindow::initializeConnects()
     connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
     connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
     connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
-    connect(this, SIGNAL(changedUB()), volumeRenderWindow->getWorker(), SLOT(updateUnitCell()));
+//    connect(this, SIGNAL(changedUB()), volumeRenderWindow->getWorker(), SLOT(updateUnitCell()));
+    connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setURotation()));
+    connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
+    connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setHCurrent(int)));
+    connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setKCurrent(int)));
+    connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setLCurrent(int)));
     
     /* this <-> this */
+    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_a(double)));
+    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_b(double)));
+    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_c(double)));
+    
+    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_alpha(double)));
+    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_beta(double)));
+    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_gamma(double)));
+    
+    
     connect(this->scriptingAct, SIGNAL(toggled(bool)), fileBrowserWidget, SLOT(setHidden(bool)));
     connect(this->scriptingAct, SIGNAL(toggled(bool)), fileSelectionFilter, SLOT(setDisabled(bool)));
     connect(this->scriptingAct, SIGNAL(toggled(bool)), scriptTextEdit, SLOT(setVisible(bool)));
@@ -938,8 +1015,9 @@ void MainWindow::initializeConnects()
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
     connect(scriptTextEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
-    connect(openSVOAct, SIGNAL(triggered()), this, SLOT(openSvo()));
+    connect(openSvoAct, SIGNAL(triggered()), this, SLOT(openSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
+    connect(saveLoadedSvoAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvo()));
     connect(saveSvoButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
     connect(newAct, SIGNAL(triggered()), this, SLOT(newScriptFile()));
     connect(openAct, SIGNAL(triggered()), this, SLOT(openScript()));
@@ -962,8 +1040,6 @@ void MainWindow::setGenericProgressFormat(QString str)
 
 void MainWindow::saveSvo()
 {
-
-
     if (svo_inprocess.index.size() > 0)
     {
         QFileDialog dialog;
@@ -975,11 +1051,26 @@ void MainWindow::saveSvo()
             svo_inprocess.save(file_name);
         }
     }
-    else
-    {
+}
 
+
+void MainWindow::saveLoadedSvo()
+{
+    if (svo_loaded[current_svo].getBrickNumber() > 0)
+    {
+        QFileDialog dialog;
+        dialog.setDefaultSuffix("svo");
+        QString file_name = dialog.getSaveFileName(this, tr("Save File"), "", tr(".svo (*.svo);; All Files (*)"));
+
+        if (file_name != "")
+        {
+            svo_loaded[current_svo].setUB(UB);
+            svo_loaded[current_svo].setMetaData(svoHeaderEdit->toPlainText());
+            svo_loaded[current_svo].save(file_name);
+        }
     }
 }
+
 
 void MainWindow::openSvo()
 {
@@ -994,6 +1085,21 @@ void MainWindow::openSvo()
         brightnessSpinBox->setValue(2.0);
         dataMinSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(0));
         dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
+        
+        UB = svo_loaded[current_svo].getUB();
+        
+        if (UB.size() == 3*3) volumeRenderWindow->getWorker()->setUBMatrix(UB);
+        
+        alphaNormSpinBox->setValue(UB.getAlpha()*180.0/pi);
+        betaNormSpinBox->setValue(UB.getBeta()*180.0/pi);
+        gammaNormSpinBox->setValue(UB.getGamma()*180.0/pi);
+        
+        aNormSpinBox->setValue(UB.getA());
+        bNormSpinBox->setValue(UB.getB());
+        cNormSpinBox->setValue(UB.getC());
+        
+        svoHeaderEdit->setDocumentTitle(current_svo_path);
+        svoHeaderEdit->setPlainText(svo_loaded[current_svo].getMetaData());
 
         print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+current_svo_path+"\"");
         
@@ -1238,7 +1344,8 @@ void MainWindow::initializeInteractives()
         imageWidget = new QWidget;
         imageWidget->setLayout(imageLayout);
     }
-
+    
+    
 
     /*      3D View widget      */
     {
@@ -1269,7 +1376,8 @@ void MainWindow::initializeInteractives()
 
         // Toolbar
         viewToolBar = new QToolBar(tr("3D View"));
-        viewToolBar->addAction(openSVOAct);
+        viewToolBar->addAction(openSvoAct);
+        viewToolBar->addAction(saveLoadedSvoAct);
         
         viewToolBar->addSeparator();
         viewToolBar->addAction(projectionAct);
@@ -1301,6 +1409,7 @@ void MainWindow::initializeInteractives()
         
         viewToolBar->addAction(backgroundAct);
         viewToolBar->addAction(screenshotAct);
+        
 
         // Layout
         QGridLayout * viewLayout = new QGridLayout;
@@ -1318,7 +1427,7 @@ void MainWindow::initializeInteractives()
     /*
      * QDockWidgets
      * */
-
+    
     /* Graphics dock widget */
     {
         QLabel * label_texture= new QLabel(QString("Texture "));
@@ -1402,7 +1511,7 @@ void MainWindow::initializeInteractives()
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
     }
-
+    
     /* Unitcell dock widget */
     {
         unitCellDock = new QDockWidget(tr("UB Matrix"), this);
@@ -1433,11 +1542,11 @@ void MainWindow::initializeInteractives()
         omegaSpinBox = new QDoubleSpinBox;
         
         // Positioning
-        hSpinBox = new QDoubleSpinBox;
+        hSpinBox = new QSpinBox;
         hSpinBox->setRange(-1e3,1e3);
-        kSpinBox = new QDoubleSpinBox;
+        kSpinBox = new QSpinBox;
         kSpinBox->setRange(-1e3,1e3);
-        lSpinBox = new QDoubleSpinBox;
+        lSpinBox = new QSpinBox;
         lSpinBox->setRange(-1e3,1e3);
         
         alignAlongAStarButton = new QPushButton("Align a*");
@@ -1446,7 +1555,10 @@ void MainWindow::initializeInteractives()
         
         helpCellOverlayButton = new QPushButton("Overlay");
         rotateCellButton = new QPushButton("Rotation");
+        toggleCellButton = new QPushButton("Toggle");
         
+        rotateCellButton->setCheckable(true);
+        rotateCellButton->setChecked(false);
         
         QLabel * aLabel = new QLabel("<i>a<i>");
         QLabel * bLabel = new QLabel("<i>b<i>");
@@ -1510,6 +1622,8 @@ void MainWindow::initializeInteractives()
         unitCellLayout->addWidget(helpCellOverlayButton,6,0,1,3);
         unitCellLayout->addWidget(rotateCellButton,6,3,1,3);
         
+        unitCellLayout->addWidget(toggleCellButton,7,0,1,6);
+        
         unitCellWidget->setLayout(unitCellLayout);
         
         unitCellDock->setWidget(unitCellWidget);
@@ -1519,6 +1633,8 @@ void MainWindow::initializeInteractives()
         
         viewMenu->addAction(unitCellDock->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, unitCellDock);
+        
+  
         
         /* OLD */
         
@@ -1603,6 +1719,18 @@ void MainWindow::initializeInteractives()
 //        this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
     }
 
+    
+    /* SVO metadata text edit */
+    {
+        svoHeaderDock = new QDockWidget(tr("Metadata"), this);
+        svoHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+        svoHeaderEdit = new QPlainTextEdit;
+        
+        svoHeaderDock->setWidget(svoHeaderEdit);
+        
+        this->addDockWidget(Qt::RightDockWidgetArea, svoHeaderDock);
+    }
+    
     /* File Controls Widget */
     {
         fileControlsWidget = new QWidget;
@@ -1718,7 +1846,7 @@ void MainWindow::initializeInteractives()
         QLabel * p2= new QLabel(QString("Var 3: "));
         QLabel * p3= new QLabel(QString("Var 4: "));
 
-        functionToggleButton = new QPushButton(tr("Toggle On/Off"));
+        functionToggleButton = new QPushButton(tr("Toggle"));
         funcParamASpinBox = new QDoubleSpinBox;
         funcParamASpinBox->setDecimals(3);
         funcParamASpinBox->setRange(0, 100);
@@ -1749,8 +1877,7 @@ void MainWindow::initializeInteractives()
         QGridLayout * functionLayout = new QGridLayout;
 //        functionLayout->setSpacing(0);
 //        functionLayout->setMargin(0);
-        functionLayout->setContentsMargins(0,0,0,0);
-        functionLayout->addWidget(functionToggleButton,0,0,1,4);
+//        functionLayout->setContentsMargins(0,0,0,0);
         functionLayout->addWidget(p0,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         functionLayout->addWidget(funcParamASpinBox,1,2,1,2);
         functionLayout->addWidget(p1,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
@@ -1759,6 +1886,7 @@ void MainWindow::initializeInteractives()
         functionLayout->addWidget(funcParamCSpinBox,3,2,1,2);
         functionLayout->addWidget(p3,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         functionLayout->addWidget(funcParamDSpinBox,4,2,1,2);
+        functionLayout->addWidget(functionToggleButton,5,0,1,4);
         functionWidget->setLayout(functionLayout);
 //        functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
 //        functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());

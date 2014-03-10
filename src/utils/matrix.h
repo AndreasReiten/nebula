@@ -783,6 +783,7 @@ class RotationMatrix : public Matrix<T>{
     public:
 //        using Matrix<T>::Matrix;
         RotationMatrix();
+//        RotationMatrix(size_t value);
         ~RotationMatrix();
 
 
@@ -793,7 +794,8 @@ class RotationMatrix : public Matrix<T>{
         void setYRotation(double value);
         void setZRotation(double value);
         void setArbRotation(double zeta, double eta, double gamma);
-
+        
+        const RotationMatrix<T> to3x3();
         const RotationMatrix<T> getXRotation(double value);
         const RotationMatrix<T> getYRotation(double value);
         const RotationMatrix<T> getZRotation(double value);
@@ -804,6 +806,32 @@ template <class T>
 RotationMatrix<T>::RotationMatrix()
 {
     this->setIdentity(4);
+}
+
+//template <class T>
+//RotationMatrix<T>::RotationMatrix(size_t value)
+//{
+//    this->setIdentity(value);
+//}
+
+template <class T>
+const RotationMatrix<T> RotationMatrix<T>::to3x3()
+{
+    RotationMatrix<T> tmp;
+    
+    tmp.setIdentity(3);
+    
+    tmp[0] = this->at(0);
+    tmp[1] = this->at(1);
+    tmp[2] = this->at(2);
+    tmp[3] = this->at(4);
+    tmp[4] = this->at(5);
+    tmp[5] = this->at(6);
+    tmp[6] = this->at(8);
+    tmp[7] = this->at(9);
+    tmp[8] = this->at(10);
+    
+    return tmp;
 }
 
 template <class T>
@@ -964,7 +992,7 @@ class UBMatrix : public Matrix<T>{
         UBMatrix<T>& operator = (UBMatrix<T> other);
         
         void setBMatrix(Matrix<T> mat);
-        void setUMatrix(Matrix<T> mat);
+        void setUMatrix(RotationMatrix<T> mat);
         
         Matrix<T> getUMatrix();
         Matrix<T> getBMatrix();
@@ -1058,7 +1086,7 @@ void UBMatrix<T>::setBMatrix(Matrix<T> mat)
     updateUB();
 }
 template <class T>
-void UBMatrix<T>::setUMatrix(Matrix<T> mat)
+void UBMatrix<T>::setUMatrix(RotationMatrix<T> mat)
 {
     U = mat;
     updateUB();
@@ -1219,14 +1247,11 @@ void UBMatrix<T>::updateUB()
     T cg = cos(getGamma());
     T V = (a*b*c) * sqrt(1.0 - ca*ca - cb*cb - cg*cg + 2.0*ca*cb*cg);
 
-    Matrix<T> B(3,3);
+    B.set(3,3,0);
     B[0] = b*c*sa/V;
-    B[3] = 0;
-    B[6] = 0;
     
     B[1] = a*c*(ca*cb-cg)/(V*sa);
     B[4] = 1.0/(b*sa);
-    B[7] = 0;
     
     B[2] = a*b*(ca*cg-cb)/(V*sa);
     B[5] = -ca/(c*sa);

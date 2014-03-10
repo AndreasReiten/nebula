@@ -148,6 +148,20 @@ void OpenGLWorker::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> 
     pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
 }
 
+void OpenGLWorker::getPosition2D(double * pos_2d, double * pos_3d, Matrix<double> * transform)
+{
+    Matrix<double> pos_3d_matrix;
+    Matrix<double> pos_2d_matrix(4, 1);
+
+    pos_3d_matrix.setDeep(4, 1, pos_3d);
+    pos_3d_matrix[3] = 1.0;
+
+    pos_2d_matrix = *transform * pos_3d_matrix;
+
+    pos_2d[0] = pos_2d_matrix[0]/pos_2d_matrix[3];
+    pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
+}
+
 QPointF OpenGLWorker::coordQttoGL(QPointF coord)
 {
     QPointF GLPoint;

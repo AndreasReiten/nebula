@@ -77,6 +77,16 @@ void SparseVoxelOcttree::set(unsigned int levels, unsigned int brick_inner_dimen
     this->brick_pool_power = brick_pool_power;
 }
 
+void SparseVoxelOcttree::setMetaData(QString text)
+{
+    metadata = text;    
+}
+
+QString SparseVoxelOcttree::getMetaData()
+{
+    return metadata;
+}
+
 void SparseVoxelOcttree::save(QString path)
 {
     if (path != "")
@@ -116,6 +126,8 @@ void SparseVoxelOcttree::save(QString path)
         out << pool.toQVector();
         out << index.toQVector();
         out << brick.toQVector();
+        out << UB.toQVector();
+        out << metadata;
     }
 
     this->print();
@@ -131,6 +143,11 @@ void SparseVoxelOcttree::setMin(float value)
     min = value;
 }
 
+void SparseVoxelOcttree::setUB(UBMatrix<double> mat)
+{
+    UB = mat;
+}
+
 void SparseVoxelOcttree::open(QString path)
 {
     // Disabled chunking and compression due to problems under Windows
@@ -144,6 +161,7 @@ void SparseVoxelOcttree::open(QString path)
         QVector<float> qvec_pool;
         QVector<unsigned int> qvec_index;
         QVector<unsigned int> qvec_brick;
+        QVector<double> qvec_ub;
 
         QFile file(path);
         file.open(QIODevice::ReadOnly);
@@ -163,6 +181,8 @@ void SparseVoxelOcttree::open(QString path)
         in >> qvec_pool;
         in >> qvec_index;
         in >> qvec_brick;
+        in >> qvec_ub;
+        in >> metadata;
 
         data_histogram.setDeep(1, qvec_data_histogram.size(), qvec_data_histogram.data());
         data_histogram_log.setDeep(1, qvec_data_histogram_log.size(), qvec_data_histogram_log.data());
@@ -170,6 +190,7 @@ void SparseVoxelOcttree::open(QString path)
         pool.setDeep(1, qvec_pool.size(), qvec_pool.data());
         index.setDeep(1, qvec_index.size(), qvec_index.data());
         brick.setDeep(1, qvec_brick.size(), qvec_brick.data());
+        UB.setDeep(1, qvec_ub.size(), qvec_ub.data());
     }
 
     this->print();
@@ -177,6 +198,12 @@ void SparseVoxelOcttree::open(QString path)
 unsigned int SparseVoxelOcttree::getLevels()
 {
     return levels;
+}
+
+
+UBMatrix<double> SparseVoxelOcttree::getUB()
+{
+    return UB;
 }
 
 unsigned int SparseVoxelOcttree::getBrickPoolPower()

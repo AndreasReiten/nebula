@@ -91,6 +91,7 @@ private slots:
     void saveScript();
     void openSvo();
     void saveSvo();
+    void saveLoadedSvo();
 
 
     void documentWasModified();
@@ -121,7 +122,16 @@ private slots:
     
     // File selection
     void setFilesFromSelectionModel();
-
+    
+    // UB matrix help slots
+    void setUB_a(double value);
+    void setUB_b(double value);
+    void setUB_c(double value);
+    
+    void setUB_alpha(double value);
+    void setUB_beta(double value);
+    void setUB_gamma(double value);
+    
 signals:
     void testToWindow();
 
@@ -140,6 +150,12 @@ private:
     void loadParFile();
     
     UBMatrix<double> UB; 
+    
+    
+    // SVO metadata editor
+    QPlainTextEdit * svoHeaderEdit;
+    QDockWidget * svoHeaderDock;
+    
     
     // Real space unit cell
     QDoubleSpinBox * aNormSpinBox;
@@ -165,9 +181,9 @@ private:
     QDoubleSpinBox * omegaSpinBox;
     
     // Positioning
-    QDoubleSpinBox * hSpinBox;
-    QDoubleSpinBox * kSpinBox;
-    QDoubleSpinBox * lSpinBox;
+    QSpinBox * hSpinBox;
+    QSpinBox * kSpinBox;
+    QSpinBox * lSpinBox;
     
     QPushButton * alignAlongAStarButton;
     QPushButton * alignAlongBStarButton;
@@ -175,6 +191,7 @@ private:
     
     QPushButton * helpCellOverlayButton;
     QPushButton * rotateCellButton;
+    QPushButton * toggleCellButton;
     
     /* File selection filter */
     QLineEdit * fileSelectionFilter;
@@ -249,12 +266,13 @@ private:
     QAction *sliceAct;
     QAction *scalebarAct;
     QAction *saveSVOAct;
+    QAction *saveLoadedSvoAct;
     QAction *log3DAct;
     QAction *dataStructureAct;
     QAction *backgroundAct;
     QAction *projectionAct;
     QAction *screenshotAct;
-    QAction *openSVOAct;
+    QAction *openSvoAct;
     QAction *newAct;
     QAction *openAct;
     QAction *saveAct;

@@ -27,6 +27,9 @@ class SparseVoxelOcttree
         void setExtent(float Q);
         void setMax(float value);
         void setMin(float value);
+        void setUB(UBMatrix<double> mat);
+        void setMetaData(QString text);
+        QString getMetaData();
         
         void save(QString path);
         void open(QString path);
@@ -41,6 +44,7 @@ class SparseVoxelOcttree
         unsigned int getBrickInnerDimension();
         unsigned int getBrickOuterDimension();
         unsigned int getBrickNumber();
+        UBMatrix<double> getUB();
         void print();
 
         quint64 getBytes();
@@ -63,6 +67,10 @@ class SparseVoxelOcttree
         quint64 brick_pool_power;
         quint64 brick_inner_dimension;
         quint64 brick_outer_dimension;
+        
+        QString metadata;
+        
+        UBMatrix<double> UB;
         
         float max, min;
 };

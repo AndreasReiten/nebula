@@ -70,7 +70,7 @@ public slots:
     void setDataMax(double Value);
     void setAlpha(double value);
     void setBrightness(double value);
-//    void setUnitcell();
+    void setUnitcell();
     void setModel();
     void setModelParam0(double value);
     void setModelParam1(double value);
@@ -86,6 +86,11 @@ public slots:
     void setOrthoGrid();
     void takeScreenShot(QString path);
     void updateUnitCell();
+    void setURotation();
+    void setHCurrent(int value);
+    void setKCurrent(int value);
+    void setLCurrent(int value);
+    
 //    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
@@ -135,6 +140,8 @@ private:
     bool isCenterlineActive;
     bool isRulerActive;
     bool isLMBDown;
+    bool isURotationActive;
+//    bool isUBActive;
     
     // Ray texture
     Matrix<double> pixel_size;
@@ -152,7 +159,15 @@ private:
     GLuint centerline_vbo;
     void setCenterLine();
     Matrix<GLfloat> centerline_coords;
-
+    
+    // Hkl selection
+    Matrix<int> hklCurrent;
+    void setHkl(Matrix<int> & hkl);
+    
+    // Hkl text 
+    Matrix<double> hkl_text;
+    size_t hkl_text_counter;
+    
     // Integration
     cl_sampler integration_sampler_cl;
     cl_mem integration_tex_alpha_cl;
@@ -186,6 +201,7 @@ private:
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
     void drawSenseOfRotation(double zeta, double eta, double rpm);
+    void drawHklText(QPainter * painter);
     
     
     int fps_string_width_prev;
@@ -253,7 +269,8 @@ private:
     Matrix<double> scalebar_view_matrix;
     RotationMatrix<double> scalebar_rotation;
     Matrix<double> projection_scaling;
-
+    RotationMatrix<double> U;
+    
     // Other matrices
     Matrix<double> data_extent;
     Matrix<double> data_view_extent;
@@ -308,6 +325,7 @@ private:
     QBrush * normal_brush;
     QBrush * dark_fill_brush;
     QFont * normal_font;
+    QFont * tiny_font;
     QFont * emph_font;
     QFontMetrics * normal_fontmetric;
     QFontMetrics * emph_fontmetric;

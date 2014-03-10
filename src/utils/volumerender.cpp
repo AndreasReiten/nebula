@@ -124,6 +124,8 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isCenterlineActive(true),
       isRulerActive(false),
       isLMBDown(false),
+      isURotationActive(false),
+//      isUBActive(true),
       weird_parameter(20)
 {
     // Matrices
@@ -161,6 +163,12 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     ctc_matrix.setF(F);
     ctc_matrix.setFov(fov);
     ctc_matrix.setProjection(isOrthonormal);
+    
+    // hkl selection
+    hklCurrent.set(1,3,0);
+    
+    // hkl text
+    hkl_text.set(4*4*4,6,0);
     
     // Timer
     session_age.start();
@@ -241,6 +249,40 @@ VolumeRenderWorker::~VolumeRenderWorker()
     }
 }
 
+void VolumeRenderWorker::setHCurrent(int value)
+{
+    hklCurrent[0] = value;
+    setHkl(hklCurrent);
+}
+
+void VolumeRenderWorker::setKCurrent(int value)
+{
+    hklCurrent[1] = value;
+    setHkl(hklCurrent);
+}
+
+void VolumeRenderWorker::setLCurrent(int value)
+{
+    hklCurrent[2] = value;
+    setHkl(hklCurrent);
+}
+
+void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
+{
+    Matrix<double> hkl_focus(1,3,0);
+    
+    hkl_focus[0] = hkl[0]*UB[0] + hkl[1]*UB[1] + hkl[2]*UB[2];
+    hkl_focus[1] = hkl[0]*UB[3] + hkl[1]*UB[4] + hkl[2]*UB[5];
+    hkl_focus[2] = hkl[0]*UB[6] + hkl[1]*UB[7] + hkl[2]*UB[8];
+    
+    data_translation[3] = hkl_focus[0];
+    data_translation[7] = hkl_focus[1];
+    data_translation[11] = hkl_focus[2];
+    
+    data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+    
+    
+}
 
 void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
@@ -301,8 +343,16 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             RotationMatrix<double> roll_rotation;
             roll_rotation.setArbRotation(-0.5*pi, eta, roll);
-
-            if(shift_button) scalebar_rotation = roll_rotation * scalebar_rotation;
+            
+            if (shift_button && isURotationActive)
+            {
+                U = roll_rotation * U;
+                UB.setUMatrix(U.to3x3());
+            }
+            else if(shift_button) 
+            {
+                scalebar_rotation = roll_rotation * scalebar_rotation;
+            }
             else
             {
                 rotation = roll_rotation * rotation;
@@ -322,7 +372,15 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             roll_rotation.setArbRotation(0, 0, roll);
 
-            if(shift_button) scalebar_rotation = roll_rotation * scalebar_rotation;
+            if (shift_button && isURotationActive)
+            {
+                U = roll_rotation * U; 
+                UB.setUMatrix(U.to3x3());
+            }
+            else if(shift_button) 
+            {
+                scalebar_rotation = roll_rotation * scalebar_rotation;
+            }
             else
             {
                 rotation = roll_rotation * rotation;
@@ -397,7 +455,9 @@ void VolumeRenderWorker::updateUnitCell()
     // Generate the positions ([number of bases] X [number of vertices per basis] X [number of float values per vertice]);
     Matrix<float> vertices(n_basis*6,3);
     
-    int m = 0;
+    size_t m = 0, i = 0;
+    hkl_text_counter = 0;
+
     
     for(int h = hkl_limits[0]; h < hkl_limits[1]; h++)
     {
@@ -406,34 +466,61 @@ void VolumeRenderWorker::updateUnitCell()
             for(int l = hkl_limits[4]; l < hkl_limits[5]; l++)
             {
                 // Assign 6 vertices, each with 4 float values;
-                vertices[m+0] = h*UB[0] + k*UB[1] + l*UB[2];
-                vertices[m+1] = h*UB[3] + k*UB[4] + l*UB[5];
-                vertices[m+2] = h*UB[6] + k*UB[7] + l*UB[8];
+                double x = h*UB[0] + k*UB[1] + l*UB[2];
+                double y = h*UB[3] + k*UB[4] + l*UB[5];
+                double z = h*UB[6] + k*UB[7] + l*UB[8];
+                
+                vertices[m+0] = x;
+                vertices[m+1] = y;
+                vertices[m+2] = z;
                 
                 vertices[m+3] = (1+h)*UB[0] + k*UB[1] + l*UB[2];
                 vertices[m+4] = (1+h)*UB[3] + k*UB[4] + l*UB[5];
                 vertices[m+5] = (1+h)*UB[6] + k*UB[7] + l*UB[8];
                 
-                vertices[m+6] = h*UB[0] + k*UB[1] + l*UB[2];
-                vertices[m+7] = h*UB[3] + k*UB[4] + l*UB[5];
-                vertices[m+8] = h*UB[6] + k*UB[7] + l*UB[8];
+                vertices[m+6] = x;
+                vertices[m+7] = y;
+                vertices[m+8] = z;
                 
                 vertices[m+9] = h*UB[0] + (1+k)*UB[1] + l*UB[2];
                 vertices[m+10] = h*UB[3] + (1+k)*UB[4] + l*UB[5];
                 vertices[m+11] = h*UB[6] + (1+k)*UB[7] + l*UB[8];
                 
-                vertices[m+12] = h*UB[0] + k*UB[1] + l*UB[2];
-                vertices[m+13] = h*UB[3] + k*UB[4] + l*UB[5];
-                vertices[m+14] = h*UB[6] + k*UB[7] + l*UB[8];
+                vertices[m+12] = x;
+                vertices[m+13] = y;
+                vertices[m+14] = z;
                 
                 vertices[m+15] = h*UB[0] + k*UB[1] + (1+l)*UB[2];
                 vertices[m+16] = h*UB[3] + k*UB[4] + (1+l)*UB[5];
                 vertices[m+17] = h*UB[6] + k*UB[7] + (1+l)*UB[8];
                 
                 m += 6*3;
+                
+                // Also assign a coordinate to use for font rendering since we want to see the indices of the peaks. Only render those that lie within the view extent and only when this list is less than some number of items to avoid clutter.
+                
+                if (i+5 < hkl_text.size())
+                {
+                    if (((x > data_view_extent[0]) && (x < data_view_extent[1])) && 
+                        ((y > data_view_extent[2]) && (y < data_view_extent[3])) && 
+                        ((z > data_view_extent[4]) && (z < data_view_extent[5])))
+                    {
+                        hkl_text[i+0] = h;
+                        hkl_text[i+1] = k;
+                        hkl_text[i+2] = l;
+                        hkl_text[i+3] = x;
+                        hkl_text[i+4] = y;
+                        hkl_text[i+5] = z;
+                        
+                        i+=6;
+                        
+                        hkl_text_counter++;
+                    }
+                }
+                else hkl_text_counter = 0;
             }    
         }
     }
+    
 //    qDebug() << "Attempring to set VBO";
     setVbo(unitcell_vbo, vertices.data(), vertices.size(), GL_STATIC_DRAW);
     unitcell_nodes = n_basis*6;
@@ -464,7 +551,7 @@ void VolumeRenderWorker::drawUnitCell()
     lim_high[1] = data_view_extent[3];
     lim_high[2] = data_view_extent[5];
     
-    float unitcell_diagonal = sqrt(UB.getAStar()*UB.getAStar() + UB.getBStar()*UB.getBStar() + UB.getCStar()*UB.getCStar());
+//    float unitcell_diagonal = sqrt(UB.getAStar()*UB.getAStar() + UB.getBStar()*UB.getBStar() + UB.getCStar()*UB.getCStar());
     
 //    data_view_extent.print(2,"DWE");
     
@@ -474,13 +561,29 @@ void VolumeRenderWorker::drawUnitCell()
     
     glUniform3fv(shared_window->unitcell_lim_high, 1, lim_high.data());
     
-    glUniform1fv(shared_window->unitcell_diagonal, 1, &unitcell_diagonal);
+//    glUniform1fv(shared_window->unitcell_diagonal, 1, &unitcell_diagonal);
 
     glDrawArrays(GL_LINES,  0, unitcell_nodes);
 
     glDisableVertexAttribArray(shared_window->unitcell_fragpos);
 
     shared_window->unitcell_program->release();
+}
+
+void VolumeRenderWorker::drawHklText(QPainter * painter)
+{
+    painter->setFont(*tiny_font);
+    for (size_t i = 0; i < hkl_text_counter; i++)
+    {
+        Matrix<double> pos2d(1,2);
+        
+        getPosition2D(pos2d.data(), hkl_text.data()+i*6+3, &view_matrix);
+        
+        QString text = "("+QString::number((int) hkl_text[i*6+0])+","+QString::number((int) hkl_text[i*6+1])+","+QString::number((int) hkl_text[i*6+2])+")";
+        
+        painter->drawText(QPointF((pos2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( pos2d[1]+ 1.0) * 0.5) *render_surface->height()), text);
+    }
+    painter->setFont(*normal_font);    
 }
 
 void VolumeRenderWorker::setCenterLine()
@@ -641,6 +744,8 @@ void VolumeRenderWorker::initializePaintTools()
     whatever_pen = new QPen;
 
     normal_font = new QFont();
+    tiny_font = new QFont;
+    tiny_font->setPixelSize(12);
 //    normal_font->setStyleHint(QFont::Monospace);
     emph_font = new QFont;
     emph_font->setBold(true);
@@ -1108,11 +1213,7 @@ void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWorker::render(QPainter *painter)
 {
-//    qDebug() << "Render";
-//    QCoreApplication::processEvents();
     isRendering = true;
-//    emit renderState(1);
-//    this->blockSignals(true);
     isDataExtentReadOnly = true;
     setDataExtent();
     setViewMatrices();
@@ -1121,7 +1222,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     beginRawGLCalls(painter);
-    glLineWidth(1.5);
+    glLineWidth(1.0);
     const qreal retinaScale = render_surface->devicePixelRatio();
     glViewport(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
 
@@ -1129,7 +1230,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isScalebarActive) drawPositionScalebars();
     if (isCenterlineActive) drawCenterLine();
     if (isUnitcellActive) drawUnitCell();
-
+    
     isDataExtentReadOnly = false;
 
     // Draw raytracing texture
@@ -1148,14 +1249,13 @@ void VolumeRenderWorker::render(QPainter *painter)
     // Compute the projected pixel size in orthonormal configuration
     computePixelSize();
 
-//    qDebug("Do not change");
     // Visualize 2D to 1D integration
     if (isIntegration2DActive) drawIntegral(painter);
-//    qDebug("Ok, change");
-    // Draw overlay
+
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setBrush(*normal_brush);
-
+    
+    
     if (isOrthoGridActive) drawGrid(painter);
     if (isRulerActive) drawRuler(painter);
     drawCountScalebar(painter);
@@ -1163,6 +1263,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     painter->setPen(*normal_pen);
     
     drawOverlay(painter);
+    if (isUnitcellActive) drawHklText(painter);
 //    this->blockSignals(false);
 //    emit renderState(0);
 
@@ -1859,9 +1960,9 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(centerline_string_rect, Qt::AlignCenter, centerline_string);
 
     // Draw some text at the (000) position
-    Matrix<float> zero_position(1,4);
-    getPosition2D(zero_position.data(), centerline_coords.data(), &view_matrix);
-    painter->drawText(QPointF(zero_position[0]*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height() - (zero_position[1]*render_surface->height()*0.5 + render_surface->height()*0.5)), "(000)");
+//    Matrix<float> zero_position(1,4);
+//    getPosition2D(zero_position.data(), centerline_coords.data(), &view_matrix);
+//    painter->drawText(QPointF(zero_position[0]*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height() - (zero_position[1]*render_surface->height()*0.5 + render_surface->height()*0.5)), "(000)");
 
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
@@ -2484,6 +2585,12 @@ void VolumeRenderWorker::setBackground()
                         255.0*0.7));
 //    normal_pen->setWidth(1);
 }
+
+void VolumeRenderWorker::setURotation()
+{
+    isURotationActive = !isURotationActive;
+}
+
 void VolumeRenderWorker::setLogarithmic()
 {
     isLogarithmic = !isLogarithmic;
@@ -2597,10 +2704,13 @@ void VolumeRenderWorker::setBrightness(double value)
     }
     if (isInitialized) setTsfParameters();
 }
-//void VolumeRenderWorker::setUnitcell()
-//{
-//    isUnitcellActive = !isUnitcellActive;
-//}
+
+void VolumeRenderWorker::setUnitcell()
+{
+    isUnitcellActive = !isUnitcellActive;
+}
+
+
 void VolumeRenderWorker::setModel()
 {
     isModelActive = !isModelActive;
