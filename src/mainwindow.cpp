@@ -508,15 +508,15 @@ void MainWindow::initializeEmit()
     
     activeAngleComboBox->setCurrentIndex(2);
     
-    alphaNormSpinBox->setValue(UB.getAlpha()*180.0/pi);
-    betaNormSpinBox->setValue(UB.getBeta()*180.0/pi);
-    gammaNormSpinBox->setValue(UB.getGamma()*180.0/pi);
+//    alphaNormSpinBox->setValue(UB.getAlpha()*180.0/pi);
+//    betaNormSpinBox->setValue(UB.getBeta()*180.0/pi);
+//    gammaNormSpinBox->setValue(UB.getGamma()*180.0/pi);
     
-    aNormSpinBox->setValue(UB.getA());
-    bNormSpinBox->setValue(UB.getB());
-    cNormSpinBox->setValue(UB.getC());
+//    aNormSpinBox->setValue(UB.getA());
+//    bNormSpinBox->setValue(UB.getB());
+//    cNormSpinBox->setValue(UB.getC());
     
-    volumeRenderWindow->getWorker()->setUBMatrix(UB);
+//    volumeRenderWindow->getWorker()->setUBMatrix(UB);
     
 //    emit changedUB();
 }
@@ -646,38 +646,6 @@ void MainWindow::initializeActions()
     exitAct->setShortcuts(QKeySequence::Quit);
 }
 
-void MainWindow::setUB_a(double value)
-{
-    UB.setA(value);
-    volumeRenderWindow->getWorker()->setUBMatrix(UB);
-}
-
-void MainWindow::setUB_b(double value)
-{
-    UB.setB(value);
-    volumeRenderWindow->getWorker()->setUBMatrix(UB);
-}
-void MainWindow::setUB_c(double value)
-{
-    UB.setC(value);
-    volumeRenderWindow->getWorker()->setUBMatrix(UB);
-}
-
-void MainWindow::setUB_alpha(double value)
-{
-    UB.setAlpha(value*pi/180.0);
-    volumeRenderWindow->getWorker()->setUBMatrix(UB);
-}
-void MainWindow::setUB_beta(double value)
-{
-    UB.setBeta(value*pi/180.0);
-    volumeRenderWindow->getWorker()->setUBMatrix(UB);
-}
-void MainWindow::setUB_gamma(double value)
-{
-    UB.setGamma(value*pi/180.0);
-    volumeRenderWindow->getWorker()->setUBMatrix(UB);
-}
 
 void MainWindow::saveScript()
 {
@@ -878,6 +846,9 @@ void MainWindow::setTab(int tab)
     if ((tab==0) || (tab==1)) outputDockWidget->show();
     else outputDockWidget->hide();
     
+    if (tab==1) fileDockWidget->show();
+    else fileDockWidget->hide();
+    
     if (tab==2) graphicsDockWidget->show();
     else graphicsDockWidget->hide();
     
@@ -995,13 +966,13 @@ void MainWindow::initializeConnects()
     connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setLCurrent(int)));
     
     /* this <-> this */
-    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_a(double)));
-    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_b(double)));
-    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_c(double)));
+    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_a(double)));
+    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_b(double)));
+    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_c(double)));
     
-    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_alpha(double)));
-    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_beta(double)));
-    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setUB_gamma(double)));
+    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_alpha(double)));
+    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_beta(double)));
+    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_gamma(double)));
     
     
     connect(this->scriptingAct, SIGNAL(toggled(bool)), fileBrowserWidget, SLOT(setHidden(bool)));
@@ -1064,7 +1035,7 @@ void MainWindow::saveLoadedSvo()
 
         if (file_name != "")
         {
-            svo_loaded[current_svo].setUB(UB);
+            svo_loaded[current_svo].setUB(volumeRenderWindow->getWorker()->getUBMatrix());
             svo_loaded[current_svo].setMetaData(svoHeaderEdit->toPlainText());
             svo_loaded[current_svo].save(file_name);
         }
@@ -1085,6 +1056,8 @@ void MainWindow::openSvo()
         brightnessSpinBox->setValue(2.0);
         dataMinSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(0));
         dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
+        
+        UBMatrix<double> UB;
         
         UB = svo_loaded[current_svo].getUB();
         
@@ -1524,8 +1497,11 @@ void MainWindow::initializeInteractives()
         cNormSpinBox = new QDoubleSpinBox;
     
         alphaNormSpinBox = new QDoubleSpinBox;
+        alphaNormSpinBox->setRange(0,180);
         betaNormSpinBox = new QDoubleSpinBox;
+        betaNormSpinBox->setRange(0,180);
         gammaNormSpinBox = new QDoubleSpinBox;
+        gammaNormSpinBox->setRange(0,180);
         
         // Reciprocal space unit cell
         aStarSpinBox = new QDoubleSpinBox;

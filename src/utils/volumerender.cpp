@@ -344,7 +344,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             RotationMatrix<double> roll_rotation;
             roll_rotation.setArbRotation(-0.5*pi, eta, roll);
             
-            if (shift_button && isURotationActive)
+            if (shift_button && isURotationActive && isUnitcellActive)
             {
                 U = roll_rotation * U;
                 UB.setUMatrix(U.to3x3());
@@ -372,7 +372,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             roll_rotation.setArbRotation(0, 0, roll);
 
-            if (shift_button && isURotationActive)
+            if (shift_button && isURotationActive && isUnitcellActive)
             {
                 U = roll_rotation * U; 
                 UB.setUMatrix(U.to3x3());
@@ -430,9 +430,47 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
     last_mouse_pos_y = y;
 }
 
+void VolumeRenderWorker::setUB_a(double value)
+{
+    UB.setA(value);
+}
+
+void VolumeRenderWorker::setUB_b(double value)
+{
+    UB.setB(value);
+}
+void VolumeRenderWorker::setUB_c(double value)
+{
+    UB.setC(value);
+}
+
+void VolumeRenderWorker::setUB_alpha(double value)
+{
+    UB.setAlpha(value*pi/180.0);
+}
+void VolumeRenderWorker::setUB_beta(double value)
+{
+    UB.setBeta(value*pi/180.0);
+}
+void VolumeRenderWorker::setUB_gamma(double value)
+{
+    UB.setGamma(value*pi/180.0);
+}
+
+
 void VolumeRenderWorker::setUBMatrix(UBMatrix<double> & mat)
 {
+//    alpha = 
     this->UB = mat;
+    
+    
+//    qDebug() << "Attempring to set UB";
+//    UB.print(2,"UB");
+}
+
+UBMatrix<double> & VolumeRenderWorker::getUBMatrix()
+{
+    return UB;
 //    qDebug() << "Attempring to set UB";
 //    UB.print(2,"UB");
 }

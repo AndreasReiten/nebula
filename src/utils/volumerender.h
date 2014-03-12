@@ -51,6 +51,7 @@ public:
     void setSharedWindow(SharedContextWindow * window);
     void setSvo(SparseVoxelOcttree * svo);
     void setUBMatrix(UBMatrix<double> & mat);
+    UBMatrix<double> & getUBMatrix();
 
 signals:
 //    void renderState(int value);
@@ -108,6 +109,15 @@ public slots:
     void rotateUp();
     void rotateDown();
     void toggleRuler();
+    
+    // UB matrix help slots
+    void setUB_a(double value);
+    void setUB_b(double value);
+    void setUB_c(double value);
+    
+    void setUB_alpha(double value);
+    void setUB_beta(double value);
+    void setUB_gamma(double value);
     
 protected:
     void initialize();

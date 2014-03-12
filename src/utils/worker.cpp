@@ -529,7 +529,7 @@ void ProjectFileWorker::process()
             }
         }
     }
-    else if (1) // A gradiented box
+    else if (0) // A gradiented box
     {
         int res = 32;
         reduced_pixels->resize(1, res*res*res*4);
@@ -785,6 +785,26 @@ void VoxelizeWorker::process()
         QString str("\n["+QString(this->metaObject()->className())+"] Warning: No data available!");
         emit changedMessageString(str);
         kill_flag = true;
+    }
+    else
+    {
+        float x_avg = 0, y_avg = 0, z_avg = 0, i_avg = 0;
+        
+        for (size_t i = 0; i < reduced_pixels->size()/4; i++)
+        {
+            x_avg += reduced_pixels->at(i*4+0);
+            y_avg += reduced_pixels->at(i*4+1);
+            z_avg += reduced_pixels->at(i*4+2);
+            i_avg += reduced_pixels->at(i*4+3);
+        }
+        
+        x_avg /= (float)reduced_pixels->size();
+        y_avg /= (float)reduced_pixels->size();
+        z_avg /= (float)reduced_pixels->size();
+        i_avg /= (float)reduced_pixels->size();
+        
+        qDebug() << reduced_pixels->size() << "points";
+        qDebug() << x_avg << y_avg << z_avg << i_avg;
     }
     if (!kill_flag)
     {

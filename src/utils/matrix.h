@@ -72,10 +72,13 @@ class Matrix {
         friend F vecLength(const Matrix<F> A);
         
         template <class F>
-        friend Matrix<F> normalized(const Matrix<F> A);
+        friend Matrix<F> vecNormalize(const Matrix<F> A);
         
         template <class F>
         friend Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B);
+        
+        template <class F>
+        F vecDot(const Matrix<F> A, const Matrix<F> B);
         
         // Other friends
         template <class F>
@@ -139,6 +142,19 @@ Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B)
 }
 
 template <class F>
+F vecDot(const Matrix<F> A, const Matrix<F> B)
+{
+    F value = 0;
+    
+    for (size_t i = 0; i < A.size(); i++)
+    {
+        value += A[i]*B[i];
+    }
+    
+    return value;
+}
+
+template <class F>
 Matrix<F> operator*(F factor, const Matrix<F> A)
 {
     return A*factor;
@@ -158,12 +174,8 @@ F vecLength(const Matrix<F> A)
 }
 
 template <class F>
-Matrix<F> normalize(const Matrix<F> A)
+Matrix<F> vecNormalize(const Matrix<F> A)
 {
-//    Matrix<F> foo;
-    
-//    foo = A*(1.0/vecLength(A));
-    
     return A*(1.0/vecLength(A));
 }
 
@@ -1028,9 +1040,6 @@ class UBMatrix : public Matrix<T>{
         T getBetaStar();
         T getGammaStar();
         
-//    signals:
-//        void dataChanged(UBMatrix<T> & mat);
-        
     private:
         double a, b, c;
         double alpha, beta, gamma;
@@ -1066,16 +1075,66 @@ UBMatrix<T>::~UBMatrix()
 template <class T>
 UBMatrix<T>& UBMatrix<T>::operator = (Matrix<T> other)
 {
+    
+    
+//    other.print(2,"other");
+    
+    Matrix<double> a_star_vec(1,3,0);
+    Matrix<double> b_star_vec(1,3,0);
+    Matrix<double> c_star_vec(1,3,0);
+    
+    a_star_vec[0] = other[0];
+    a_star_vec[1] = other[3];
+    a_star_vec[2] = other[6];
+    
+    b_star_vec[0] = other[1];
+    b_star_vec[1] = other[4];
+    b_star_vec[2] = other[7];
+    
+    c_star_vec[0] = other[2];
+    c_star_vec[1] = other[5];
+    c_star_vec[2] = other[8];
+    
+    a = 1.0/vecLength(a_star_vec);
+    b = 1.0/vecLength(b_star_vec);
+    c = 1.0/vecLength(c_star_vec);
+    
+//    alphaStar = acos(vecDot(b_vec,c_vec)/(vecLength(b_vec)*vecLength(c_vec)));
+//    betaStar = acos(vecDot(a_vec,c_vec)/(vecLength(a_vec)*vecLength(c_vec)));
+//    gammaStar = acos(vecDot(a_vec,b_vec)/(vecLength(a_vec)*vecLength(b_vec)));
+    
     this->swap(*this, other);
-
     return * this;
 }
 
 template <class T>
 UBMatrix<T>& UBMatrix<T>::operator = (UBMatrix<T> other)
 {
+    Matrix<double> a_star_vec(1,3,0);
+    Matrix<double> b_star_vec(1,3,0);
+    Matrix<double> c_star_vec(1,3,0);
+    
+    a_star_vec[0] = other[0];
+    a_star_vec[1] = other[3];
+    a_star_vec[2] = other[6];
+    
+    b_star_vec[0] = other[1];
+    b_star_vec[1] = other[4];
+    b_star_vec[2] = other[7];
+    
+    c_star_vec[0] = other[2];
+    c_star_vec[1] = other[5];
+    c_star_vec[2] = other[8];
+    
+    a = 1.0/vecLength(a_star_vec);
+    b = 1.0/vecLength(b_star_vec);
+    c = 1.0/vecLength(c_star_vec);
+    
+//    alphaStar = acos(vecDot(b_vec,c_vec)/(vecLength(b_vec)*vecLength(c_vec)));
+//    betaStar = acos(vecDot(a_vec,c_vec)/(vecLength(a_vec)*vecLength(c_vec)));
+//    gammaStar = acos(vecDot(a_vec,b_vec)/(vecLength(a_vec)*vecLength(b_vec)));
+    
     this->swap(*this, other);
-
     return * this;
 }
 
@@ -1105,57 +1164,86 @@ Matrix<T> UBMatrix<T>::getBMatrix()
 template <class T>
 void UBMatrix<T>::setA(T value)
 {
-    a = value;
-    updateUB();
+    if (a > 0)
+    {
+        a = value;
+        updateUB();
+    }
 }
 template <class T>
 void UBMatrix<T>::setB(T value)
 {
-    b = value;
-    updateUB();
+    if (b > 0)
+    {
+        b = value;
+        updateUB();
+    }
 }
 template <class T>
 void UBMatrix<T>::setC(T value)
 {
-    c = value;
-    updateUB();
+    if (c > 0)
+    {
+        c = value;
+        updateUB();
+    }
 }
 
 template <class T>
 void UBMatrix<T>::setAlpha(T value)
 {
-    alpha = value;
-    updateUB();
+    if (alpha > 0)
+    {
+        alpha = value;
+        updateUB();
+    }
 }
 template <class T>
 void UBMatrix<T>::setBeta(T value)
 {
-    beta = value;
-    updateUB();
+    if (beta > 0)
+    {
+        beta = value;
+        updateUB();
+    }
 }
 template <class T>
 void UBMatrix<T>::setGamma(T value)
 {
-    gamma = value;
-    updateUB();
+    if (gamma > 0)
+    {
+        gamma = value;
+        updateUB();
+    }
 }
 
 template <class T>
 void UBMatrix<T>::setAStar(T value)
 {
-    a = 1/value;
+    if (value > 0)
+    {
+        a = 1/value;
+        updateUB();
+    }
 }
 template <class T>
 void UBMatrix<T>::setBStar(T value)
 {
-    b = 1/value;
+    if (value > 0)
+    {
+        b = 1/value;
+        updateUB();
+    }
 }
 template <class T>
 void UBMatrix<T>::setCStar(T value)
 {
-    c = 1/value;
+    if (value > 0)
+    {
+        c = 1/value;
+        updateUB();
+    }
 }
-
 template <class T>
 void UBMatrix<T>::setAlphaStar(T value)
 {
@@ -1257,9 +1345,14 @@ void UBMatrix<T>::updateUB()
     B[5] = -ca/(c*sa);
     B[8] = 1.0/c;
     
+    qDebug() << "__________";
+    qDebug() << a << b << c;
+    qDebug() << alpha << beta << gamma;
+    
     *this = U*B;
     
-//    dataChanged(*this);
+    qDebug() << a << b << c;
+    qDebug() << alpha << beta << gamma;
 }
 
 

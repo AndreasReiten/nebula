@@ -8,7 +8,7 @@ SparseVoxelOcttree::SparseVoxelOcttree()
     this->brick_pool_power = 7;
     this->extent.reserve(1,8);
     this->version_major = 0;
-    this->version_minor = 2;
+    this->version_minor = 3;
     this->minmax.reserve(1,2);
 };
 
@@ -29,9 +29,14 @@ void SparseVoxelOcttree::print()
     ss << "Index elements:          "<< index.size() << std::endl;
     ss << "Brick elements:          "<< brick.size() << std::endl;
     ss << "Pool size:               "<< pool.size() << std::endl;
+    ss << "Data min:                "<< minmax[0] << std::endl;
+    ss << "Data max:                "<< minmax[1] << std::endl;
+    ss << "Metadata:                \n"<< metadata.toStdString() << std::endl;
     ss << "____________________________\n";
-
+    
     qDebug() << ss.str().c_str();
+    
+    UB.print(2, "___ UB ___");
 }
 
 
@@ -51,14 +56,14 @@ Matrix<double> * SparseVoxelOcttree::getExtent()
 {
     return &extent;
 }
-Matrix<double> * SparseVoxelOcttree::getDataHistogram()
-{
-    return &data_histogram;
-}
-Matrix<double> * SparseVoxelOcttree::getDataHistogramLog()
-{
-    return &data_histogram_log;
-}
+//Matrix<double> * SparseVoxelOcttree::getDataHistogram()
+//{
+//    return &data_histogram;
+//}
+//Matrix<double> * SparseVoxelOcttree::getDataHistogramLog()
+//{
+//    return &data_histogram_log;
+//}
 Matrix<double> * SparseVoxelOcttree::getMinMax()
 {
     return &minmax;
@@ -91,37 +96,19 @@ void SparseVoxelOcttree::save(QString path)
 {
     if (path != "")
     {
-//        quint64 bins = 1000;
-//        double min = pool.min();
-//        double max = pool.max();
-
-//        double * hist_log = pool.histogram(bins, min, max, 1, 1);
-//        double * hist_norm = pool.histogram(bins, min, max, 0, 1);
-
-//        hist_log[0] = 0.0;
-//        hist_norm[0] = 0.0;
-
-//        data_histogram.setDeep(bins, hist_norm);
-//        data_histogram_log.setDeep(bins, hist_log);
-
-//        minmax[0] = 1.0;
-//        minmax[1] = max;
-
-
         QFile file(path);
         file.open(QIODevice::WriteOnly);
         QDataStream out(&file);
-        out << QString("While HDF is nice, it does not work easily for Windows (to my stressful experience). Therefore the (more naive) QDataStream class is used instead.");
+//        out << QString("Svo file");
         out << version_major;
         out << version_minor;
         out << brick_outer_dimension;
         out << brick_inner_dimension;
         out << brick_pool_power;
         out << levels;
-        out << min;
-        out << max;
-        out << data_histogram.toQVector();
-        out << data_histogram_log.toQVector();
+        out << minmax.toQVector();
+//        out << data_histogram.toQVector();
+//        out << data_histogram_log.toQVector();
         out << extent.toQVector();
         out << pool.toQVector();
         out << index.toQVector();
@@ -129,18 +116,22 @@ void SparseVoxelOcttree::save(QString path)
         out << UB.toQVector();
         out << metadata;
     }
+    
+//    UB.print(2,"UB");
+//    qDebug() << metadata;
+    
 
     this->print();
 }
 
 void SparseVoxelOcttree::setMax(float value)
 {
-    max = value;
+    minmax[1] = value;
 }
 
 void SparseVoxelOcttree::setMin(float value)
 {
-    min = value;
+    minmax[0] = value;
 }
 
 void SparseVoxelOcttree::setUB(UBMatrix<double> mat)
@@ -153,30 +144,30 @@ void SparseVoxelOcttree::open(QString path)
     // Disabled chunking and compression due to problems under Windows
     if ((path != ""))
     {
-        QString cool_story_bro;
+//        QString cool_story_bro;
 
-        QVector<double> qvec_data_histogram;
-        QVector<double> qvec_data_histogram_log;
+//        QVector<double> qvec_data_histogram;
+//        QVector<double> qvec_data_histogram_log;
         QVector<double> qvec_extent;
         QVector<float> qvec_pool;
         QVector<unsigned int> qvec_index;
         QVector<unsigned int> qvec_brick;
         QVector<double> qvec_ub;
+        QVector<double> qvec_minmax;
 
         QFile file(path);
         file.open(QIODevice::ReadOnly);
         QDataStream in(&file);
-        in >> cool_story_bro;
+//        in >> cool_story_bro;
         in >> version_major;
         in >> version_minor;
         in >> brick_outer_dimension;
         in >> brick_inner_dimension;
         in >> brick_pool_power;
         in >> levels;
-        in >> minmax[0];
-        in >> minmax[1];
-        in >> qvec_data_histogram;
-        in >> qvec_data_histogram_log;
+        in >> qvec_minmax;
+//        in >> qvec_data_histogram;
+//        in >> qvec_data_histogram_log;
         in >> qvec_extent;
         in >> qvec_pool;
         in >> qvec_index;
@@ -184,13 +175,17 @@ void SparseVoxelOcttree::open(QString path)
         in >> qvec_ub;
         in >> metadata;
 
-        data_histogram.setDeep(1, qvec_data_histogram.size(), qvec_data_histogram.data());
-        data_histogram_log.setDeep(1, qvec_data_histogram_log.size(), qvec_data_histogram_log.data());
+//        data_histogram.setDeep(1, qvec_data_histogram.size(), qvec_data_histogram.data());
+//        data_histogram_log.setDeep(1, qvec_data_histogram_log.size(), qvec_data_histogram_log.data());
+        minmax.setDeep(1, qvec_minmax.size(), qvec_minmax.data());
         extent.setDeep(1, qvec_extent.size(), qvec_extent.data());
         pool.setDeep(1, qvec_pool.size(), qvec_pool.data());
         index.setDeep(1, qvec_index.size(), qvec_index.data());
         brick.setDeep(1, qvec_brick.size(), qvec_brick.data());
         UB.setDeep(1, qvec_ub.size(), qvec_ub.data());
+        
+//        UB.print(2,"UB");
+//        qDebug() << metadata;
     }
 
     this->print();

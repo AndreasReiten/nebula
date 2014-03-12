@@ -123,14 +123,7 @@ private slots:
     // File selection
     void setFilesFromSelectionModel();
     
-    // UB matrix help slots
-    void setUB_a(double value);
-    void setUB_b(double value);
-    void setUB_c(double value);
     
-    void setUB_alpha(double value);
-    void setUB_beta(double value);
-    void setUB_gamma(double value);
     
 signals:
     void testToWindow();
@@ -149,7 +142,7 @@ private:
     
     void loadParFile();
     
-    UBMatrix<double> UB; 
+//    UBMatrix<double> UB; 
     
     
     // SVO metadata editor
