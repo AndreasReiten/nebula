@@ -83,6 +83,9 @@ class Matrix {
         // Other friends
         template <class F>
         friend Matrix<F> operator*(F factor, const Matrix<F> B);
+        
+        template <class F>
+        friend std::ostream & operator << (std::ostream & stream, const Matrix<F> M);
 
     protected:
         size_t m;
@@ -177,6 +180,32 @@ template <class F>
 Matrix<F> vecNormalize(const Matrix<F> A)
 {
     return A*(1.0/vecLength(A));
+}
+
+template <class F>
+std::ostream & operator << (std::ostream & stream, const Matrix<F> M)
+{
+    std::stringstream ss;
+    ss << std::endl;
+
+    ss << "("<< M.getM() << ", " << M.getN() << "):"<<std::endl;
+    for (int i = 0; i < M.getM(); i++)
+    {
+        if (i == 0) ss << "{{ ";
+        else ss << " { ";
+
+        for (int j = 0; j < M.getN(); j++)
+        {
+            ss << std::setprecision(2) << std::fixed << M.data()[i*M.getN()+j];
+            if (j != M.getN()-1) ss << ", ";
+        }
+
+        if (i == M.getM()-1) ss << " }}" << std::endl;
+        else ss << " }," << std::endl;
+    }
+    stream << ss.str();
+
+    return stream;
 }
 
 template <class T>

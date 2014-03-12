@@ -837,6 +837,16 @@ void MainWindow::openUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
+    toolChainWidget->hide();
+    fileHeaderDock->hide();
+    outputDockWidget->hide();
+    fileDockWidget->hide();
+    graphicsDockWidget->hide();
+    unitCellDock->hide();
+    functionDockWidget->hide();
+    svoHeaderDock->hide();
+    
+    
     if ((tab==0) || (tab==1)) toolChainWidget->show();
     else toolChainWidget->hide();
     

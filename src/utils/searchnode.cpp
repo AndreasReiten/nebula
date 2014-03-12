@@ -118,6 +118,7 @@ void SearchNode::insert(float * point)
 
         unsigned int id = getOctant(point, &isOutofBounds);
         if (!isOutofBounds) this->children[id]->insert(point);
+//        else qDebug() << point[0] << point[1] << point[2] << point[3];
     }
     else if ((n_points == 0) && isMsd)
     {
@@ -174,6 +175,8 @@ void SearchNode::insert(float * point)
         points[n_points*4+3]  = point[3];
         n_points++;
     }
+    
+//    return isOutofBounds;
 }
 
 void SearchNode::weighSamples(float * sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)

@@ -32,11 +32,12 @@ void SparseVoxelOcttree::print()
     ss << "Data min:                "<< minmax[0] << std::endl;
     ss << "Data max:                "<< minmax[1] << std::endl;
     ss << "Metadata:                \n"<< metadata.toStdString() << std::endl;
+    ss << "UB:" << UB << std::endl;
+    ss << "Extent:" << extent << std::endl;
     ss << "____________________________\n";
     
     qDebug() << ss.str().c_str();
     
-    UB.print(2, "___ UB ___");
 }
 
 

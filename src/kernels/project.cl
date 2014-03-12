@@ -51,7 +51,7 @@ __kernel void FRAME_FILTER(
     if ((id_glb.x < target_dim.x) && (id_glb.y < target_dim.y))
     {
 
-        float intensity = read_imagef(source, intensity_sampler, (target_dim - id_glb - 1)).w;
+        float intensity = read_imagef(source, intensity_sampler, (target_dim - id_glb - 1)).w; /* DANGER */
 
         // Write to alpha target (Shared CL/GL texture)
         float tmp = intensity;
@@ -105,13 +105,13 @@ __kernel void FRAME_FILTER(
 
             float k = 1.0f/h_wavelength; // Multiply with 2pi if desired
             
-            float3 k_i = (float3)(k,0,0);
+            float3 k_i = (float3)(-k,0,0);
             float3 k_f = k*normalize((float3)(
                 -h_detector_distance, 
-                h_pixel_size_x * (float) id_glb.y - h_beam_x * h_pixel_size_x,
-                h_pixel_size_y * (float) id_glb.x - h_beam_y * h_pixel_size_y));
+                h_pixel_size_x * ((float) id_glb.y - h_beam_x), /* DANGER */
+                h_pixel_size_y * ((float) id_glb.x - h_beam_y))); /* DANGER */
             
-            Q.xyz = k_f - k_i;
+            Q.xyz = k_f - k_i; 
             Q.w = intensity;
             // Center the detector
 //            Q.y -= h_beam_x * h_pixel_size_x; // Not sure if one should offset by half a pixel more/less

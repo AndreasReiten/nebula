@@ -105,7 +105,7 @@ float PilatusFile::getSearchRadiusHighSuggestion()
 }
 float PilatusFile::getQSuggestion()
 {
-    return 1.0/wavelength;
+    return 2.0/wavelength;
 }
 
 int PilatusFile::getWidth() const
@@ -614,7 +614,7 @@ int PilatusFile::readData()
     delete[] buf;
     
 //    data_buf.print(0);
-    qDebug() << "offset" << offset;
+//    qDebug() << "offset" << offset;
     
     
     return 1;

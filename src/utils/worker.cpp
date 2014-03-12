@@ -798,13 +798,15 @@ void VoxelizeWorker::process()
             i_avg += reduced_pixels->at(i*4+3);
         }
         
-        x_avg /= (float)reduced_pixels->size();
-        y_avg /= (float)reduced_pixels->size();
-        z_avg /= (float)reduced_pixels->size();
-        i_avg /= (float)reduced_pixels->size();
+        x_avg /= (float)reduced_pixels->size()/4;
+        y_avg /= (float)reduced_pixels->size()/4;
+        z_avg /= (float)reduced_pixels->size()/4;
+        i_avg /= (float)reduced_pixels->size()/4;
         
         qDebug() << reduced_pixels->size() << "points";
         qDebug() << x_avg << y_avg << z_avg << i_avg;
+        
+//        svo->print();
     }
     if (!kill_flag)
     {
@@ -819,6 +821,11 @@ void VoxelizeWorker::process()
 
         // The extent of the volume
         svo->setExtent(*suggested_q);
+        
+        svo->print();
+        
+        // The extent of the volume
+        svo->setMetaData("You can write notes about the dataset here.");
 
         // Prepare the brick pool
         Matrix<int> pool_dimension(1, 4, 0);
