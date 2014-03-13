@@ -105,7 +105,7 @@ float PilatusFile::getSearchRadiusHighSuggestion()
 }
 float PilatusFile::getQSuggestion()
 {
-    return 2.0/wavelength;
+    return 1.0/wavelength;
 }
 
 int PilatusFile::getWidth() const
@@ -370,7 +370,7 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
 
-    qDebug() << "The active angle is " << active_angle;
+//    qDebug() << "The active angle is " << active_angle;
     if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
     else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
     else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;

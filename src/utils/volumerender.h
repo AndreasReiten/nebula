@@ -101,9 +101,10 @@ public slots:
     void resizeEvent(QResizeEvent * ev);
     
     // Alignment and fixed rotation 
-    void alignX();
-    void alignY();
-    void alignZ();
+    void alignLabXtoSliceX();
+    void alignLabYtoSliceY();
+    void alignLabZtoSliceZ();
+    void alignSliceToLab();
     void rotateLeft();
     void rotateRight();
     void rotateUp();
@@ -277,6 +278,7 @@ private:
     Matrix<double> bbox_translation;
     Matrix<double> normalization_scaling;
     Matrix<double> scalebar_view_matrix;
+    Matrix<double> unitcell_view_matrix;
     RotationMatrix<double> scalebar_rotation;
     Matrix<double> projection_scaling;
     RotationMatrix<double> U;

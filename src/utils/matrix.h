@@ -1104,33 +1104,43 @@ UBMatrix<T>::~UBMatrix()
 template <class T>
 UBMatrix<T>& UBMatrix<T>::operator = (Matrix<T> other)
 {
+//    Matrix<double> a_star_vec(1,3,0);
+//    Matrix<double> b_star_vec(1,3,0);
+//    Matrix<double> c_star_vec(1,3,0);
     
+//    a_star_vec[0] = other[0];
+//    a_star_vec[1] = other[3];
+//    a_star_vec[2] = other[6];
     
-//    other.print(2,"other");
+//    b_star_vec[0] = other[1];
+//    b_star_vec[1] = other[4];
+//    b_star_vec[2] = other[7];
     
-    Matrix<double> a_star_vec(1,3,0);
-    Matrix<double> b_star_vec(1,3,0);
-    Matrix<double> c_star_vec(1,3,0);
+//    c_star_vec[0] = other[2];
+//    c_star_vec[1] = other[5];
+//    c_star_vec[2] = other[8];
     
-    a_star_vec[0] = other[0];
-    a_star_vec[1] = other[3];
-    a_star_vec[2] = other[6];
+//    Matrix<double> a_norm_vec(1,3,0);
+//    Matrix<double> b_norm_vec(1,3,0);
+//    Matrix<double> c_norm_vec(1,3,0);
     
-    b_star_vec[0] = other[1];
-    b_star_vec[1] = other[4];
-    b_star_vec[2] = other[7];
+//    double V = vecDot(a_star_vec,vecCross(b_star_vec,c_star_vec));
     
-    c_star_vec[0] = other[2];
-    c_star_vec[1] = other[5];
-    c_star_vec[2] = other[8];
+//    a_norm_vec = V * vecCross(b_star_vec, c_star_vec);
+//    b_norm_vec = V * vecCross(c_star_vec, a_star_vec);
+//    c_norm_vec = V * vecCross(a_star_vec, b_star_vec);
     
-    a = 1.0/vecLength(a_star_vec);
-    b = 1.0/vecLength(b_star_vec);
-    c = 1.0/vecLength(c_star_vec);
+//    a = vecLength(a_norm_vec);
+//    b = vecLength(b_norm_vec);
+//    c = vecLength(c_norm_vec);
+
+//    alpha = acos(vecDot(b_norm_vec, c_norm_vec)/(vecLength(b_norm_vec)*vecLength(c_norm_vec)));
+//    beta = acos(vecDot(a_norm_vec, c_norm_vec)/(vecLength(a_norm_vec)*vecLength(c_norm_vec)));
+//    gamma = acos(vecDot(a_norm_vec, b_norm_vec)/(vecLength(a_norm_vec)*vecLength(b_norm_vec)));
     
-//    alphaStar = acos(vecDot(b_vec,c_vec)/(vecLength(b_vec)*vecLength(c_vec)));
-//    betaStar = acos(vecDot(a_vec,c_vec)/(vecLength(a_vec)*vecLength(c_vec)));
-//    gammaStar = acos(vecDot(a_vec,b_vec)/(vecLength(a_vec)*vecLength(b_vec)));
+//    qDebug() << "__________";
+//    qDebug() << a << b << c;
+//    qDebug() << alpha << beta << gamma;
     
     this->swap(*this, other);
     return * this;
@@ -1139,29 +1149,43 @@ UBMatrix<T>& UBMatrix<T>::operator = (Matrix<T> other)
 template <class T>
 UBMatrix<T>& UBMatrix<T>::operator = (UBMatrix<T> other)
 {
-    Matrix<double> a_star_vec(1,3,0);
-    Matrix<double> b_star_vec(1,3,0);
-    Matrix<double> c_star_vec(1,3,0);
+//    Matrix<double> a_star_vec(1,3,0);
+//    Matrix<double> b_star_vec(1,3,0);
+//    Matrix<double> c_star_vec(1,3,0);
     
-    a_star_vec[0] = other[0];
-    a_star_vec[1] = other[3];
-    a_star_vec[2] = other[6];
+//    a_star_vec[0] = other[0];
+//    a_star_vec[1] = other[3];
+//    a_star_vec[2] = other[6];
     
-    b_star_vec[0] = other[1];
-    b_star_vec[1] = other[4];
-    b_star_vec[2] = other[7];
+//    b_star_vec[0] = other[1];
+//    b_star_vec[1] = other[4];
+//    b_star_vec[2] = other[7];
     
-    c_star_vec[0] = other[2];
-    c_star_vec[1] = other[5];
-    c_star_vec[2] = other[8];
+//    c_star_vec[0] = other[2];
+//    c_star_vec[1] = other[5];
+//    c_star_vec[2] = other[8];
     
-    a = 1.0/vecLength(a_star_vec);
-    b = 1.0/vecLength(b_star_vec);
-    c = 1.0/vecLength(c_star_vec);
+//    Matrix<double> a_norm_vec(1,3,0);
+//    Matrix<double> b_norm_vec(1,3,0);
+//    Matrix<double> c_norm_vec(1,3,0);
     
-//    alphaStar = acos(vecDot(b_vec,c_vec)/(vecLength(b_vec)*vecLength(c_vec)));
-//    betaStar = acos(vecDot(a_vec,c_vec)/(vecLength(a_vec)*vecLength(c_vec)));
-//    gammaStar = acos(vecDot(a_vec,b_vec)/(vecLength(a_vec)*vecLength(b_vec)));
+//    double V = vecDot(a_star_vec,vecCross(b_star_vec,c_star_vec));
+    
+//    a_norm_vec = V * vecCross(b_star_vec, c_star_vec);
+//    b_norm_vec = V * vecCross(c_star_vec, a_star_vec);
+//    c_norm_vec = V * vecCross(a_star_vec, b_star_vec);
+    
+//    a = vecLength(a_norm_vec);
+//    b = vecLength(b_norm_vec);
+//    c = vecLength(c_norm_vec);
+
+//    alpha = acos(vecDot(b_norm_vec, c_norm_vec)/(vecLength(b_norm_vec)*vecLength(c_norm_vec)));
+//    beta = acos(vecDot(a_norm_vec, c_norm_vec)/(vecLength(a_norm_vec)*vecLength(c_norm_vec)));
+//    gamma = acos(vecDot(a_norm_vec, b_norm_vec)/(vecLength(a_norm_vec)*vecLength(b_norm_vec)));
+    
+//        qDebug() << "__________";
+//        qDebug() << a << b << c;
+//        qDebug() << alpha << beta << gamma;
     
     this->swap(*this, other);
     return * this;
@@ -1374,14 +1398,14 @@ void UBMatrix<T>::updateUB()
     B[5] = -ca/(c*sa);
     B[8] = 1.0/c;
     
-    qDebug() << "__________";
-    qDebug() << a << b << c;
-    qDebug() << alpha << beta << gamma;
+//    qDebug() << "__________";
+//    qDebug() << a << b << c;
+//    qDebug() << alpha << beta << gamma;
     
     *this = U*B;
     
-    qDebug() << a << b << c;
-    qDebug() << alpha << beta << gamma;
+//    qDebug() << a << b << c;
+//    qDebug() << alpha << beta << gamma;
 }
 
 

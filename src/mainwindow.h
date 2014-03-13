@@ -278,9 +278,10 @@ private:
     QAction *aboutOpenCLAct;
     QAction *aboutOpenGLAct;
     QAction *orthoGridAct;
-    QAction *alignXAct;
-    QAction *alignYAct;
-    QAction *alignZAct;
+    QAction *alignLabXtoSliceXAct;
+    QAction *alignLabYtoSliceYAct;
+    QAction *alignLabZtoSliceZAct;
+    QAction *alignSliceToLabAct;
     QAction *rotateRightAct;
     QAction *rotateLeftAct;
     QAction *rotateUpAct;

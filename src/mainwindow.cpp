@@ -615,14 +615,16 @@ void MainWindow::initializeActions()
     rulerAct = new QAction(QIcon(":/art/ruler.png"), tr("&Toggle ruler"), this);
     rulerAct->setCheckable(true);
     
-    alignXAct = new QAction(QIcon(":/art/align_x.png"), tr("&Align along x"), this);
-    alignYAct = new QAction(QIcon(":/art/align_y.png"), tr("&Align along y"), this);
-    alignZAct = new QAction(QIcon(":/art/align_z.png"), tr("&Align along z"), this);
+    alignLabXtoSliceXAct = new QAction(QIcon(":/art/align_x.png"), tr("Align lab frame to slice frame x"), this);
+    alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), tr("Align lab frame to slice frame y"), this);
+    alignLabZtoSliceZAct = new QAction(QIcon(":/art/align_z.png"), tr("Align lab frame to slice frame z"), this);
+    alignSliceToLabAct = new QAction(QIcon(":/art/placeholder.png"), tr("Align slice frame to lab frame"), this);
+//    alignSliceToLabAct = new QAction(QIcon(":/art/placeholder.png"), tr("Align slice frame to lab frame"), this);
     
-    rotateRightAct = new QAction(QIcon(":/art/rotate_right.png"), tr("&Rotate right"), this);
-    rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), tr("&Rotate left"), this);
-    rotateUpAct = new QAction(QIcon(":/art/rotate_up.png"), tr("&Rotate up"), this);
-    rotateDownAct = new QAction(QIcon(":/art/rotate_down.png"), tr("&Rotate down"), this);
+    rotateRightAct = new QAction(QIcon(":/art/rotate_right.png"), tr("Rotate right"), this);
+    rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), tr("Rotate left"), this);
+    rotateUpAct = new QAction(QIcon(":/art/rotate_up.png"), tr("Rotate up"), this);
+    rotateDownAct = new QAction(QIcon(":/art/rotate_down.png"), tr("Rotate down"), this);
     
     
     // Action Tips
@@ -960,9 +962,11 @@ void MainWindow::initializeConnects()
     connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam3(double)));
     connect(volumeRenderWindow->getWorker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
     connect(this, SIGNAL(captureFrameBuffer(QString)), volumeRenderWindow->getWorker(), SLOT(takeScreenShot(QString)));
-    connect(this->alignXAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignX()));
-    connect(this->alignYAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignY()));
-    connect(this->alignZAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignZ()));
+    connect(this->alignLabXtoSliceXAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabXtoSliceX()));
+    connect(this->alignLabYtoSliceYAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabYtoSliceY()));
+    connect(this->alignLabZtoSliceZAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabZtoSliceZ()));
+    connect(this->alignSliceToLabAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignSliceToLab()));
+    
     connect(this->rotateLeftAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateLeft()));
     connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateRight()));
     connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
@@ -1276,7 +1280,7 @@ void MainWindow::initializeInteractives()
         imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
         imageNumberSpinBox = new QSpinBox;
-        imageNumberSpinBox->setMinimum(0);
+        imageNumberSpinBox->setRange(0,1e9);
         imageNumberSpinBox->setAccelerated(true);
 
 
@@ -1381,9 +1385,10 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(logIntegrate2DAct);
         viewToolBar->addSeparator();
         
-        viewToolBar->addAction(alignXAct);
-        viewToolBar->addAction(alignYAct);
-        viewToolBar->addAction(alignZAct);
+        viewToolBar->addAction(alignLabXtoSliceXAct);
+        viewToolBar->addAction(alignLabYtoSliceYAct);
+        viewToolBar->addAction(alignLabZtoSliceZAct);
+        viewToolBar->addAction(alignSliceToLabAct);
         viewToolBar->addAction(rotateLeftAct);
         viewToolBar->addAction(rotateRightAct);
         viewToolBar->addAction(rotateDownAct);
