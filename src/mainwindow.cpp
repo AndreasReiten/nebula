@@ -52,8 +52,8 @@ MainWindow::MainWindow()
     readSettings();
     setCurrentFile("");
     initializeEmit();
-    print("[Nebula] Welcome to Nebula alpha!");
-    setWindowTitle(tr("Nebula[*] ()"));
+    print("[Nebula] Welcome to Nebula!");
+    setWindowTitle(tr("Nebula[*]"));
 
     graphicsDockWidget->hide();
     unitCellDock->hide();
@@ -188,6 +188,9 @@ void MainWindow::initializeWorkers()
 //    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
 //    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
     connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), projectFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
+    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
+    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
+    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
     connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
@@ -237,6 +240,9 @@ void MainWindow::initializeWorkers()
 //    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
     connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), allInOneWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
+    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
+    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
+    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
     connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
     connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
@@ -507,6 +513,13 @@ void MainWindow::initializeEmit()
     fileSelectionFilter->setText("*.cbf");
     
     activeAngleComboBox->setCurrentIndex(2);
+    omegaCorrectionSpinBox->setValue(1.0);
+    kappaCorrectionSpinBox->setValue(1.0);
+    phiCorrectionSpinBox->setValue(1.0);
+    
+    omegaCorrectionSpinBox->setValue(0.0);
+    kappaCorrectionSpinBox->setValue(0.0);
+    phiCorrectionSpinBox->setValue(0.0);
     
 //    alphaNormSpinBox->setValue(UB.getAlpha()*180.0/pi);
 //    betaNormSpinBox->setValue(UB.getBeta()*180.0/pi);
@@ -933,7 +946,6 @@ void MainWindow::setTab(int tab)
 //        fileBrowserWidget->show();
 //    }
 //}
-
 void MainWindow::initializeConnects()
 {
     /* this <-> volumeRenderWidget */
@@ -1732,6 +1744,12 @@ void MainWindow::initializeInteractives()
         QLabel * labelC = new QLabel(QString("Post correction threshold:"));
         QLabel * labelD = new QLabel(QString("Octtree levels: "));
         QLabel * labelE = new QLabel(QString("Active angle:"));
+        QLabel * labelF = new QLabel("<i>ω</i> correction");
+        QLabel * labelG = new QLabel("<i>κ</i> correction:");
+        QLabel * labelH = new QLabel("<i>φ</i> correction:");
+        
+//        trUtf8( "<i>β*<i>"));
+//                QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
         
         // Combo boxes and their labels
         formatComboBox = new QComboBox;
@@ -1774,8 +1792,27 @@ void MainWindow::initializeInteractives()
         projectThresholdHigh->setDecimals(2);
         projectThresholdHigh->setFocusPolicy(Qt::ClickFocus);
 
+        omegaCorrectionSpinBox = new QDoubleSpinBox;
+        omegaCorrectionSpinBox->setRange(-180, 180);
+        omegaCorrectionSpinBox->setDecimals(3);
+//        omegaCorrectionSpinBox->setValue(0);
+        
+        kappaCorrectionSpinBox = new QDoubleSpinBox;
+        kappaCorrectionSpinBox->setRange(-180, 180);
+        kappaCorrectionSpinBox->setDecimals(3);
+//        kappaCorrectionSpinBox->setValue(0);
+        
+        phiCorrectionSpinBox = new QDoubleSpinBox;
+        phiCorrectionSpinBox->setRange(-180, 180);
+        phiCorrectionSpinBox->setDecimals(3);
+//        phiCorrectionSpinBox->setValue(0);
+        
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
+        
+        
+        
+        
 
         // Buttons
         voxelizeButton = new QPushButton;
@@ -1805,8 +1842,14 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(projectThresholdHigh,3,6,1,2);
         reconstructLayout->addWidget(labelD,4,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         reconstructLayout->addWidget(svoLevelSpinBox,4,4,1,4);
-        reconstructLayout->addWidget(voxelizeButton,5,0,1,8);
-        reconstructLayout->addWidget(saveSvoButton,6,0,1,8);
+        reconstructLayout->addWidget(labelF,5,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(omegaCorrectionSpinBox,5,4,1,4);
+        reconstructLayout->addWidget(labelG,6,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(kappaCorrectionSpinBox,6,4,1,4);
+        reconstructLayout->addWidget(labelH,7,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(phiCorrectionSpinBox,7,4,1,4);
+        reconstructLayout->addWidget(voxelizeButton,8,0,1,8);
+        reconstructLayout->addWidget(saveSvoButton,9,0,1,8);
         fileControlsWidget->setLayout(reconstructLayout);
 //        fileControlsWidget->setMaximumHeight(reconstructLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);

@@ -46,10 +46,26 @@ void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
     this->svo = svo;
 }
 
+void BaseWorker::setOffsetOmega(double value)
+{
+    offset_omega = value;
+//    qDebug() << "setOffsetOmega" << value;
+}
+void BaseWorker::setOffsetKappa(double value)
+{
+    offset_kappa = value;
+//    qDebug() << "setOffsetKappa" << value;
+}
+void BaseWorker::setOffsetPhi(double value)
+{
+    offset_phi = value;
+//    qDebug() << "setOffsetPhi" << value;
+}
+
 void BaseWorker::setActiveAngle(int value)
 {
     active_angle = value;
-    qDebug() << "Active angle:" << active_angle;
+//    qDebug() << "Active angle:" << active_angle;
 }
 
 void BaseWorker::setReduceThresholdLow(double value)
@@ -128,7 +144,7 @@ void ReadScriptWorker::setInput(QPlainTextEdit * widget)
 
 void ReadScriptWorker::process()
 {
-    qDebug() << GLOBAL_VRAM_ALLOC_MAX;
+//    qDebug() << GLOBAL_VRAM_ALLOC_MAX;
     
     QCoreApplication::processEvents();
     
@@ -449,7 +465,9 @@ void ProjectFileWorker::process()
 
     size_t n = 0;
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
-
+    
+//    qDebug() << "Worker:" << offset_omega << offset_kappa << offset_phi;
+    
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
@@ -474,6 +492,9 @@ void ProjectFileWorker::process()
             (*files)[i].setActiveAngle(active_angle);
             (*files)[i].setProjectionKernel(&project_kernel);
             (*files)[i].setBackground(files->front().getFlux(), files->front().getExpTime());
+            (*files)[i].setOffsetOmega(offset_omega);
+            (*files)[i].setOffsetKappa(offset_kappa);
+            (*files)[i].setOffsetPhi(offset_phi);
 
             emit aquireSharedBuffers();
             
@@ -611,6 +632,9 @@ void AllInOneWorker::process()
     size_t n_ok_files = 0;
     size_t n = 0;
     size_t size_raw = 0;
+    
+//    qDebug() << "Worker:" << offset_omega << offset_kappa << offset_phi;
+    
     for (size_t i = 0; i < (size_t) file_paths->size(); i++)
     {
         // Kill process if requested
@@ -651,6 +675,9 @@ void AllInOneWorker::process()
                     file.setActiveAngle(active_angle);
                     file.setProjectionKernel(&project_kernel);
                     file.setBackground(file.getFlux(), file.getExpTime());
+                    file.setOffsetOmega(offset_omega);
+                    file.setOffsetKappa(offset_kappa);
+                    file.setOffsetPhi(offset_phi);
 
                     emit aquireSharedBuffers();
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
@@ -788,23 +815,23 @@ void VoxelizeWorker::process()
     }
     else
     {
-        float x_avg = 0, y_avg = 0, z_avg = 0, i_avg = 0;
+//        float x_avg = 0, y_avg = 0, z_avg = 0, i_avg = 0;
         
-        for (size_t i = 0; i < reduced_pixels->size()/4; i++)
-        {
-            x_avg += reduced_pixels->at(i*4+0);
-            y_avg += reduced_pixels->at(i*4+1);
-            z_avg += reduced_pixels->at(i*4+2);
-            i_avg += reduced_pixels->at(i*4+3);
-        }
+//        for (size_t i = 0; i < reduced_pixels->size()/4; i++)
+//        {
+//            x_avg += reduced_pixels->at(i*4+0);
+//            y_avg += reduced_pixels->at(i*4+1);
+//            z_avg += reduced_pixels->at(i*4+2);
+//            i_avg += reduced_pixels->at(i*4+3);
+//        }
         
-        x_avg /= (float)reduced_pixels->size()/4;
-        y_avg /= (float)reduced_pixels->size()/4;
-        z_avg /= (float)reduced_pixels->size()/4;
-        i_avg /= (float)reduced_pixels->size()/4;
+//        x_avg /= (float)reduced_pixels->size()/4;
+//        y_avg /= (float)reduced_pixels->size()/4;
+//        z_avg /= (float)reduced_pixels->size()/4;
+//        i_avg /= (float)reduced_pixels->size()/4;
         
-        qDebug() << reduced_pixels->size() << "points";
-        qDebug() << x_avg << y_avg << z_avg << i_avg;
+//        qDebug() << reduced_pixels->size() << "points";
+//        qDebug() << x_avg << y_avg << z_avg << i_avg;
         
 //        svo->print();
     }
@@ -1166,10 +1193,10 @@ void VoxelizeWorker::process()
                             err = clFinish(*context_cl->getCommandQueue());
                             if ( err != CL_SUCCESS)
                             {
-                                qDebug() << empty_check[j];
-                                qDebug() << glb_offset[2];
-                                qDebug() << lvl << i << j << non_empty_node_counter;
-                                qDebug() << "Space:" << non_empty_node_counter << "vs" << n_max_bricks;
+//                                qDebug() << empty_check[j];
+//                                qDebug() << glb_offset[2];
+//                                qDebug() << lvl << i << j << non_empty_node_counter;
+//                                qDebug() << "Space:" << non_empty_node_counter << "vs" << n_max_bricks;
                                 qFatal(cl_error_cstring(err));
                             }
                         }

@@ -11,6 +11,10 @@ PilatusFile::PilatusFile() :
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
     STATUS_OK = 0;
+    
+    offset_omega = 0;
+    offset_kappa = 0;
+    offset_phi = 0;
 }
 PilatusFile::PilatusFile(QString path, OpenCLContext *context):
     active_angle(2)
@@ -20,6 +24,19 @@ PilatusFile::PilatusFile(QString path, OpenCLContext *context):
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
     STATUS_OK = this->set(path, context_cl);
+}
+
+void PilatusFile::setOffsetOmega(double value)
+{
+    offset_omega = value*pi/180.0;
+}
+void PilatusFile::setOffsetKappa(double value)
+{
+    offset_kappa = value*pi/180.0;
+}
+void PilatusFile::setOffsetPhi(double value)
+{
+    offset_phi = value*pi/180.0;
 }
 
 void PilatusFile::setActiveAngle(int value)
@@ -383,12 +400,16 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
     alpha =  0.8735582;
     beta =  0.000891863;
     
+    qDebug() << "Omega" << omega*180/pi << offset_omega*180/pi;
+    qDebug() << "Kappa" << kappa*180/pi << offset_kappa*180/pi;
+    qDebug() << "Phi" << phi*180/pi << offset_phi*180/pi;
+    
 //    qDebug() << "PHI";
-    PHI.setArbRotation(beta, 0, -phi); 
+    PHI.setArbRotation(beta, 0, -(phi+offset_phi)); 
 //    qDebug() << "KAPPA";
-    KAPPA.setArbRotation(alpha, 0, -kappa);
+    KAPPA.setArbRotation(alpha, 0, -(kappa+offset_kappa));
 //    qDebug() << "OMEGA";
-    OMEGA.setZRotation(-omega);
+    OMEGA.setZRotation(-(omega+offset_omega));
 
 //    qDebug() << phi;
 //    PHI.print(5);

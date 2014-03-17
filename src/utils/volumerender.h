@@ -171,6 +171,9 @@ private:
     void setCenterLine();
     Matrix<GLfloat> centerline_coords;
     
+    // Roll 
+    double accumulated_roll;
+    
     // Hkl selection
     Matrix<int> hklCurrent;
     void setHkl(Matrix<int> & hkl);

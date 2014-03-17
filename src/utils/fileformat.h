@@ -68,6 +68,10 @@ class PilatusFile
         void print();
         QString getHeaderText();
         void setActiveAngle(int value);
+        void setOffsetOmega(double value);
+        void setOffsetKappa(double value);
+        void setOffsetPhi(double value);
+        
         
     private:
         // Misc
@@ -105,6 +109,11 @@ class PilatusFile
         int readHeader();
         QString regExp(QString * regular_expression, QString * source, size_t offset, size_t i);
 
+        // Angle offsets
+        double offset_omega;
+        double offset_kappa;
+        double offset_phi;
+        
         /* Non-optional keywords */
         QString detector;
         float pixel_size_x, pixel_size_y;

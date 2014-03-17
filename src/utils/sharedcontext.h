@@ -52,6 +52,7 @@ public:
     GLint unitcell_fragpos;
     GLint unitcell_lim_low;
     GLint unitcell_lim_high;
+    GLint unitcell_u;
 //    GLint unitcell_diagonal;
     QOpenGLShaderProgram *unitcell_program;
 

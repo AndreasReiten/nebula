@@ -235,6 +235,9 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     
     // Ruler
     ruler.reserve(1,4);
+    
+    // Roll
+    accumulated_roll = 0;
 }
 
 VolumeRenderWorker::~VolumeRenderWorker()
@@ -303,6 +306,8 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
         ruler[3] = y;
     }
     
+    accumulated_roll = 0;
+    
 }
 
 void VolumeRenderWorker::metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
@@ -329,8 +334,8 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
     
     if (!isRendering && (std::abs(last_mouse_pos_x - x) < 50) && (std::abs(last_mouse_pos_y - y) < 50))
     {
-        float move_scaling = 1.0;
-        if(ctrl_button) move_scaling = 0.2;
+        float move_scaling = 0.6;
+        if(ctrl_button) move_scaling = 0.1;
 
         if (left_button && !right_button && !isRulerActive)
         {
@@ -341,7 +346,9 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             double eta = std::atan2((double)x - last_mouse_pos_x, (double)y - last_mouse_pos_y) - pi*1.0;
             double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(x - last_mouse_pos_x)*(x - last_mouse_pos_x) + (y - last_mouse_pos_y)*(y - last_mouse_pos_y));
-
+            
+            accumulated_roll += roll;
+            
             RotationMatrix<double> roll_rotation;
             roll_rotation.setArbRotation(-0.5*pi, eta, roll);
             
@@ -373,7 +380,9 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             RotationMatrix<double> roll_rotation;
             double roll = move_scaling * pi/((float) render_surface->height()) * (y - last_mouse_pos_y);
-
+            
+            accumulated_roll += roll;
+            
             roll_rotation.setArbRotation(0, 0, roll);
 
             if (shift_button && isURotationActive && isUnitcellActive)
@@ -584,6 +593,9 @@ void VolumeRenderWorker::drawUnitCell()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glUniformMatrix4fv(shared_window->unitcell_transform, 1, GL_FALSE, unitcell_view_matrix.getColMajor().toFloat().data());
+    
+    glUniformMatrix4fv(shared_window->unitcell_u, 1, GL_FALSE, U.getColMajor().toFloat().data());
+    
 
     glUniform4fv(shared_window->unitcell_color, 1, clear_color_inverse.data());
     
@@ -2004,6 +2016,16 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
 
     painter->drawRoundedRect(resolution_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
+    
+    // Draw accumulated roll for a mouse move event
+    QString roll_string("Roll: "+QString::number(accumulated_roll*180/pi, 'g', 5)+" deg");
+    QRect roll_string_rect = emph_fontmetric->boundingRect(roll_string);
+    roll_string_rect += QMargins(5,5,5,5);
+    roll_string_rect.moveBottomLeft(QPoint(5,render_surface->height() -10 -resolution_string_rect.height()));
+
+    painter->setBrush(*fill_brush);
+    painter->drawRoundedRect(roll_string_rect, 5, 5, Qt::AbsoluteSize);
+    painter->drawText(roll_string_rect, Qt::AlignCenter, roll_string);
     
     // Scalebar multiplier
     QString multiplier_string("x"+QString::number(scalebar_multiplier)+" 1/Å");

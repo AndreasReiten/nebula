@@ -73,6 +73,9 @@ class BaseWorker : public QObject
     public slots:
         void killProcess();
         void setActiveAngle(int value);
+        void setOffsetOmega(double value);
+        void setOffsetKappa(double value);
+        void setOffsetPhi(double value);
         void setReduceThresholdLow(double value);
         void setReduceThresholdHigh(double value);
         void setProjectThresholdLow(double value);
@@ -109,6 +112,10 @@ class BaseWorker : public QObject
         QList<PilatusFile> * files;
 //        QList<PilatusFile> * background_files;
         Matrix<float> * reduced_pixels;
+        
+        double offset_omega;
+        double offset_kappa;
+        double offset_phi;
         
         size_t GLOBAL_VRAM_ALLOC_MAX;
         // OpenGL

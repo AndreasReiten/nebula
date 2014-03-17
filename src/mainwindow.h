@@ -347,6 +347,10 @@ private:
     QDoubleSpinBox *reduceThresholdHigh;
     QDoubleSpinBox *projectThresholdLow;
     QDoubleSpinBox *projectThresholdHigh;
+    
+    QDoubleSpinBox *omegaCorrectionSpinBox;
+    QDoubleSpinBox *kappaCorrectionSpinBox;
+    QDoubleSpinBox *phiCorrectionSpinBox;
 
 
     QDoubleSpinBox * funcParamASpinBox;

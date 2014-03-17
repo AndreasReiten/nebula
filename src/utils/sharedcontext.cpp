@@ -80,6 +80,7 @@ void SharedContextWindow::initialize()
     if ((unitcell_fragpos = unitcell_program->attributeLocation("fragpos")) == -1) qCritical("Invalid attribute");
     if ((unitcell_color = unitcell_program->uniformLocation("color")) == -1) qCritical("Invalid uniform");
     if ((unitcell_transform = unitcell_program->uniformLocation("transform")) == -1) qCritical("Invalid uniform");
+    if ((unitcell_u = unitcell_program->uniformLocation("u")) == -1) qCritical("Invalid uniform");
     if ((unitcell_lim_low = unitcell_program->uniformLocation("lim_low")) == -1) qCritical("Invalid uniform");
     if ((unitcell_lim_high = unitcell_program->uniformLocation("lim_high")) == -1) qCritical("Invalid uniform");
 //    if ((unitcell_diagonal = unitcell_program->uniformLocation("unitcell_diagonal")) == -1) qCritical("Invalid uniform");
