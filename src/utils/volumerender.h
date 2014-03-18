@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <ctime>
 #include <algorithm>
+//#include <cstdio>
 
 #include <QtGlobal>
 #include <QDebug>
@@ -31,6 +32,7 @@
 #include "tools.h"
 //#include "miniarray.h"
 #include "matrix.h"
+#include "marker.h"
 #include "sparsevoxelocttree.h"
 #include "openglwindow.h"
 #include "sharedcontext.h"
@@ -58,6 +60,7 @@ signals:
     void changedMessageString(QString str);
 
 public slots:
+    void addMarker();
     void setQuality(int value);
     void setScalebar();
     void setProjection();
@@ -153,6 +156,12 @@ private:
     bool isLMBDown;
     bool isURotationActive;
 //    bool isUBActive;
+    
+    // Markers
+    QVector<Marker> markers;
+    void drawMarkers();
+    GLuint marker_vbo[10];
+    GLuint center_marker_vbo;
     
     // Ray texture
     Matrix<double> pixel_size;
@@ -273,6 +282,7 @@ private:
 
     // View matrices
     Matrix<double> view_matrix;
+    Matrix<double> marker_matrix;
     CameraToClipMatrix<double> ctc_matrix;
     RotationMatrix<double> rotation;
     Matrix<double> data_translation;

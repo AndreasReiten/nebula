@@ -63,7 +63,7 @@ MainWindow::MainWindow()
     outputDockWidget->show();
     
     
-
+    
 }
 
 MainWindow::~MainWindow()
@@ -628,6 +628,8 @@ void MainWindow::initializeActions()
     rulerAct = new QAction(QIcon(":/art/ruler.png"), tr("&Toggle ruler"), this);
     rulerAct->setCheckable(true);
     
+    markAct = new QAction(QIcon(":/art/marker.png"), tr("&Add marker"), this);
+    
     alignLabXtoSliceXAct = new QAction(QIcon(":/art/align_x.png"), tr("Align lab frame to slice frame x"), this);
     alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), tr("Align lab frame to slice frame y"), this);
     alignLabZtoSliceZAct = new QAction(QIcon(":/art/align_z.png"), tr("Align lab frame to slice frame z"), this);
@@ -984,6 +986,7 @@ void MainWindow::initializeConnects()
     connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
     connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
     connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
+    connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(addMarker()));
 //    connect(this, SIGNAL(changedUB()), volumeRenderWindow->getWorker(), SLOT(updateUnitCell()));
     connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setURotation()));
     connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
@@ -1355,6 +1358,7 @@ void MainWindow::initializeInteractives()
         format_gl.setGreenBufferSize(8);
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
+//        format_gl.setDepthBufferSize(8);
 
 //        volumeRenderWorker = new VolumeRenderWorker();
 //        volumeRenderWorker->setMultiThreading(true);
@@ -1381,6 +1385,7 @@ void MainWindow::initializeInteractives()
         viewToolBar->addSeparator();
         viewToolBar->addAction(projectionAct);
         
+        viewToolBar->addAction(markAct);
         viewToolBar->addAction(rulerAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(sliceAct);

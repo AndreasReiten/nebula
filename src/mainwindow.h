@@ -287,6 +287,7 @@ private:
     QAction *rotateUpAct;
     QAction *rotateDownAct;
     QAction *rulerAct;
+    QAction *markAct;
     
     
     int current_svo;

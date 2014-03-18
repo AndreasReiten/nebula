@@ -51,5 +51,6 @@
         <file>src/shaders/std_2d_col.f.glsl</file>
         <file>src/shaders/unitcell.f.glsl</file>
         <file>src/shaders/unitcell.v.glsl</file>
+        <file>art/marker.png</file>
     </qresource>
 </RCC>

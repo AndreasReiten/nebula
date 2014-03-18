@@ -238,6 +238,8 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     
     // Roll
     accumulated_roll = 0;
+    
+//    updateUnitCell();
 }
 
 VolumeRenderWorker::~VolumeRenderWorker()
@@ -250,6 +252,8 @@ VolumeRenderWorker::~VolumeRenderWorker()
         glDeleteBuffers(1, &point_vbo);
         glDeleteBuffers(1, &point_vbo);
         glDeleteBuffers(1, &unitcell_vbo);
+        glDeleteBuffers(10, marker_vbo);
+        glDeleteBuffers(1, &center_marker_vbo);
     }
 }
 
@@ -307,6 +311,72 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
     }
     
     accumulated_roll = 0;
+    
+//    GLbyte color[4];
+    GLfloat depth;
+//    GLuint index;
+    
+//    glReadPixels(x, render_surface->height() - y - 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, color);
+    glReadPixels(x, render_surface->height() - y - 1, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+//    glReadPixels(x, render_surface->height() - y - 1, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
+    
+//    qDebug() << color[0] <<  color[1] << color[2] << color[3] << depth;
+    
+    // Select the closest marker given a valid depth
+    
+    
+    
+    
+    
+    if (( depth < 1.0) && (markers.size() > 0))
+    {
+        Matrix<double> xyz_clip(4,1,1.0);
+        xyz_clip[0] = 2.0 * (double) x / (double) render_surface->width() - 1.0;
+        xyz_clip[1] = 2.0 * (double) (render_surface->height() - y)/ (double) render_surface->height() - 1.0;
+        xyz_clip[2] = 2.0 * depth - 1.0;
+            
+        Matrix<double> xyz = view_matrix.getInverse() * xyz_clip;
+        
+        xyz[0] /= xyz[3];
+        xyz[1] /= xyz[3];
+        xyz[2] /= xyz[3];
+        
+//        xyz[2] *= xyz[3];
+        
+        
+//        xyz_clip.print(2,"xyz_clip");
+        
+//        xyz.print(2,"xyz");
+        
+//        Matrix<double> tmp = view_matrix*xyz;
+//        tmp.print(2,"clip back again");
+            
+        int closest = 0;  
+        
+        double min_distance = 1e9;
+            
+        for (int i = 0; i < markers.size(); i++)
+        {
+//            qDebug() << "Distance:" << i << markers[i].getDistance(xyz[0], xyz[1], xyz[2]);
+            
+            if (min_distance > markers[i].getDistance(xyz[0], xyz[1], xyz[2])) 
+            {
+                min_distance = markers[i].getDistance(xyz[0], xyz[1], xyz[2]); 
+                closest = i;
+            }
+        }
+        
+//        markers.append(Marker(xyz[0],xyz[1],xyz[2]));
+        
+//        Matrix<float> vertices = markers.last().getVerts();
+        
+//        glBindBuffer(GL_ARRAY_BUFFER, marker_vbo[markers.size()-1]);
+//        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        
+        markers[closest].setTagged(!markers[closest].getTagged());
+    }
+    
     
 }
 
@@ -421,6 +491,8 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
 
             this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            
+            updateUnitCell();
         }
         else if (!left_button && right_button && !mid_button)
         {
@@ -437,6 +509,8 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
 
             this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            
+            updateUnitCell();
         }
 
     }
@@ -448,28 +522,34 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 void VolumeRenderWorker::setUB_a(double value)
 {
     UB.setA(value);
+    updateUnitCell();
 }
 
 void VolumeRenderWorker::setUB_b(double value)
 {
     UB.setB(value);
+    updateUnitCell();
 }
 void VolumeRenderWorker::setUB_c(double value)
 {
     UB.setC(value);
+    updateUnitCell();
 }
 
 void VolumeRenderWorker::setUB_alpha(double value)
 {
     UB.setAlpha(value*pi/180.0);
+    updateUnitCell();
 }
 void VolumeRenderWorker::setUB_beta(double value)
 {
     UB.setBeta(value*pi/180.0);
+    updateUnitCell();
 }
 void VolumeRenderWorker::setUB_gamma(double value)
 {
     UB.setGamma(value*pi/180.0);
+    updateUnitCell();
 }
 
 
@@ -583,8 +663,7 @@ void VolumeRenderWorker::updateUnitCell()
 
 void VolumeRenderWorker::drawUnitCell()
 {
-    updateUnitCell(); // It is not necessary to do this for each frame!
-            
+//    glLineWidth(5.0);
     shared_window->unitcell_program->bind();
     glEnableVertexAttribArray(shared_window->unitcell_fragpos);
 
@@ -596,8 +675,18 @@ void VolumeRenderWorker::drawUnitCell()
     
     glUniformMatrix4fv(shared_window->unitcell_u, 1, GL_FALSE, U.getColMajor().toFloat().data());
     
-
-    glUniform4fv(shared_window->unitcell_color, 1, clear_color_inverse.data());
+    
+    float alpha = pow((std::max(std::max(UB.getCStar(), UB.getBStar()), UB.getCStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
+    
+    if (alpha > 1.0) alpha = 1.0;
+    
+//    qDebug() << alpha;
+    
+    Matrix<float> color = clear_color_inverse;
+    
+    color[3] = alpha;
+    
+    glUniform4fv(shared_window->unitcell_color, 1, color.data());
     
     Matrix<float> lim_low(1,3);
     lim_low[0] = data_view_extent[0];
@@ -609,24 +698,50 @@ void VolumeRenderWorker::drawUnitCell()
     lim_high[1] = data_view_extent[3];
     lim_high[2] = data_view_extent[5];
     
-//    float unitcell_diagonal = sqrt(UB.getAStar()*UB.getAStar() + UB.getBStar()*UB.getBStar() + UB.getCStar()*UB.getCStar());
-    
-//    data_view_extent.print(2,"DWE");
-    
-//    qDebug() << unitcell_diagonal;
-    
     glUniform3fv(shared_window->unitcell_lim_low, 1, lim_low.data());
     
     glUniform3fv(shared_window->unitcell_lim_high, 1, lim_high.data());
     
-//    glUniform1fv(shared_window->unitcell_diagonal, 1, &unitcell_diagonal);
-
     glDrawArrays(GL_LINES,  0, unitcell_nodes);
-
+    
     glDisableVertexAttribArray(shared_window->unitcell_fragpos);
 
     shared_window->unitcell_program->release();
+    
+    
+//    glLineWidth(1.0);
 }
+
+void VolumeRenderWorker::drawMarkers()
+{
+    glLineWidth(3.0);
+    
+    shared_window->std_3d_col_program->bind();
+    
+    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, marker_matrix.getColMajor().toFloat().data());
+    
+    for (int i = 0; i < markers.size(); i++)
+    {
+        glUniform4fv(shared_window->std_3d_col_color, 1, markers[i].getColor());
+        
+        glBindBuffer(GL_ARRAY_BUFFER, marker_vbo[i]);
+        glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        
+        glEnable(GL_DEPTH_TEST);
+        glDrawArrays(GL_LINES,  0, 6);
+        glDisable(GL_DEPTH_TEST);
+    }
+    
+    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+
+    shared_window->std_3d_col_program->release();
+    
+    glLineWidth(1.0);
+}
+
 
 void VolumeRenderWorker::drawHklText(QPainter * painter)
 {
@@ -755,7 +870,10 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
                 data_scaling[10] += data_scaling[10]*delta;
 
                 data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+                
+                updateUnitCell();
             }
+            
         }
         else
         {
@@ -790,6 +908,9 @@ void VolumeRenderWorker::initialize()
 
     // Pens
     initializePaintTools();
+    
+    // Initial drawings
+    updateUnitCell();
 }
 
 void VolumeRenderWorker::initializePaintTools()
@@ -834,6 +955,8 @@ void VolumeRenderWorker::initResourcesGL()
     glGenBuffers(1, &centerline_vbo);
     glGenBuffers(1, &point_vbo);
     glGenBuffers(1, &unitcell_vbo);
+    glGenBuffers(10, marker_vbo);
+    glGenBuffers(1, &center_marker_vbo);
 }
 
 void VolumeRenderWorker::initResourcesCL()
@@ -933,7 +1056,8 @@ void VolumeRenderWorker::setViewMatrices()
     view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation * data_translation;
     unitcell_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
-
+    marker_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
+    
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_view_matrix_inverse,
         CL_TRUE,
@@ -1327,7 +1451,11 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isUnitcellActive) drawHklText(painter);
 //    this->blockSignals(false);
 //    emit renderState(0);
-
+    
+    beginRawGLCalls(painter);
+    drawMarkers();
+    endRawGLCalls(painter);
+    
     isRendering = false;
 }
 
@@ -1646,6 +1774,7 @@ void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
 {
     painter->beginNativePainting();
     glEnable(GL_BLEND);
+//    glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
 }
@@ -1653,6 +1782,7 @@ void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
 void VolumeRenderWorker::endRawGLCalls(QPainter * painter)
 {
     glDisable(GL_BLEND);
+//    glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
 }
@@ -2217,6 +2347,28 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
 }
 
+void VolumeRenderWorker::addMarker()
+{
+    if (markers.size() < 10)
+    {
+        Matrix<double> xyz(1,3);
+        xyz[0] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0])*0.5;
+        xyz[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2])*0.5;
+        xyz[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4])*0.5;
+        
+        markers.append(Marker(xyz[0],xyz[1],xyz[2]));
+        
+        Matrix<float> vertices = markers.last().getVerts();
+        
+        glBindBuffer(GL_ARRAY_BUFFER, marker_vbo[markers.size()-1]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        
+//        glBindBuffer(GL_ARRAY_BUFFER, center_marker_vbo[markers.size()-1]);
+//        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*xyz.size(), xyz.toFloat().data(), GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+}
 
 void VolumeRenderWorker::tickzerize(double min, double max, double size, double min_interdist, double * qualified_exponent, double * start, size_t * num_ticks)
 {
