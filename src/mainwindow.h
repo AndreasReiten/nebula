@@ -47,7 +47,7 @@
 #include "utils/sharedcontext.h"
 #include "utils/texthighlighter.h"
 #include "utils/volumerender.h"
-#include "utils/imagerender.h"
+//#include "utils/imagerender.h"
 #include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
@@ -199,10 +199,10 @@ private:
 
     // Buttons
     QPushButton *allInOneButton;
-    QPushButton *imageForwardButton;
-    QPushButton *imageFastForwardButton;
-    QPushButton *imageBackButton;
-    QPushButton *imageFastBackButton;
+//    QPushButton *imageForwardButton;
+//    QPushButton *imageFastForwardButton;
+//    QPushButton *imageBackButton;
+//    QPushButton *imageFastBackButton;
     QPushButton *readScriptButton;
     QPushButton *setFileButton;
     QPushButton *readFileButton;
@@ -248,7 +248,7 @@ private:
 //    FileTreeView *fileSelectedTree;
     
     // Image toolbar
-    QLabel * imageHint;
+//    QLabel * imageHint;
     
     
     // Actions
@@ -376,11 +376,11 @@ private:
     QTabWidget *tabWidget;
 
     
-    QSpinBox *imageNumberSpinBox;
+//    QSpinBox *imageNumberSpinBox;
     QDockWidget *fileDockWidget;
     QWidget *fileControlsWidget;
     QWidget *imageWidget;
-    QWidget *imageControlsWidget;
+//    QWidget *imageControlsWidget;
 
     QWidget *toolChainWidget;
     QWidget *mainWidget;
@@ -400,8 +400,8 @@ protected:
     QWidget *volumeRenderWidget;
 
 //    ImageRenderWorker *imageRenderWorker;
-    ImageRenderWindow *imageRenderWindow;
-    QWidget *imageRenderWidget;
+//    ImageRenderWindow *imageRenderWindow;
+//    QWidget *imageRenderWidget;
 
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;

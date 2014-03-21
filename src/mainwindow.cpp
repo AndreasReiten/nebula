@@ -137,7 +137,7 @@ void MainWindow::initializeWorkers()
     setFileWorker->setSVOFile(&svo_inprocess);
     setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     setFileWorker->setOpenCLContext(context_cl);
-    setFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
+//    setFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
@@ -199,8 +199,8 @@ void MainWindow::initializeWorkers()
     projectFileWorker->moveToThread(projectFileThread);
 //    connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
+//    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int)));
 //    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
@@ -220,10 +220,10 @@ void MainWindow::initializeWorkers()
 //    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()), Qt::BlockingQueuedConnection);
 
 
-    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
 
-    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
     //### allInOneWorker ###
     allInOneWorker = new AllInOneWorker();
@@ -231,7 +231,7 @@ void MainWindow::initializeWorkers()
     allInOneWorker->setSVOFile(&svo_inprocess);
     allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     allInOneWorker->setOpenCLContext(context_cl);
-    allInOneWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
+//    allInOneWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
     allInOneWorker->setReducedPixels(&reduced_pixels);
     allInOneWorker->initializeCLKernel();
 //    allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
@@ -251,22 +251,22 @@ void MainWindow::initializeWorkers()
     allInOneWorker->moveToThread(allInOneThread);
 //    connect(allInOneThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-    connect(allInOneWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
     connect(allInOneWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
-    connect(allInOneWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
+//    connect(allInOneWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
 //    connect(allInOneWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int))); // Cant use this one until there is an implementation that is independent of [files]
 //    connect(allInOneWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-    connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
     connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
 
     //### voxelizeWorker ###
@@ -295,7 +295,7 @@ void MainWindow::initializeWorkers()
     //### displayFileWorker ###
     displayFileWorker = new DisplayFileWorker();
     displayFileWorker->setOpenCLContext(context_cl);
-    displayFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
+//    displayFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
     displayFileWorker->setFilePaths(&file_paths);
     displayFileWorker->setFiles(&files);
     displayFileWorker->initializeCLKernel();
@@ -313,15 +313,15 @@ void MainWindow::initializeWorkers()
     connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
     connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
     connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(displayFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
-    connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
-    connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
-    connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
-    connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
-    connect(this->imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
+//    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
+//    connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
+//    connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
+//    connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
+//    connect(this->imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
 //    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
 }
 
@@ -435,8 +435,8 @@ void MainWindow::runDisplayFileThread(int value)
         display_file = value;
         
         updateFileHeader(display_file);
-        imageNumberSpinBox->setValue(display_file);
-        imageNumberSpinBox->setMaximum(files.size());
+//        imageNumberSpinBox->setValue(display_file);
+//        imageNumberSpinBox->setMaximum(files.size());
         displayFileWorker->setDisplayFile(display_file);
         
         displayFileThread->start();
@@ -1275,77 +1275,77 @@ void MainWindow::initializeInteractives()
 
 
     /* Image Widget */
-    {
-        imageControlsWidget = new QWidget;
+//    {
+//        imageControlsWidget = new QWidget;
 
-        imageForwardButton = new QPushButton;
-        imageForwardButton->setIcon(QIcon(":/art/forward.png"));
-        imageForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+//        imageForwardButton = new QPushButton;
+//        imageForwardButton->setIcon(QIcon(":/art/forward.png"));
+//        imageForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
-        imageFastForwardButton = new QPushButton;
-        imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
-        imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+//        imageFastForwardButton = new QPushButton;
+//        imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
+//        imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
-        imageBackButton = new QPushButton;
-        imageBackButton->setIcon(QIcon(":/art/back.png"));
-        imageBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+//        imageBackButton = new QPushButton;
+//        imageBackButton->setIcon(QIcon(":/art/back.png"));
+//        imageBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
-        imageFastBackButton = new QPushButton;
-        imageFastBackButton->setIcon(QIcon(":/art/fast_back.png"));
-        imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+//        imageFastBackButton = new QPushButton;
+//        imageFastBackButton->setIcon(QIcon(":/art/fast_back.png"));
+//        imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
-        imageNumberSpinBox = new QSpinBox;
-        imageNumberSpinBox->setRange(0,1e9);
-        imageNumberSpinBox->setAccelerated(true);
+//        imageNumberSpinBox = new QSpinBox;
+//        imageNumberSpinBox->setRange(0,1e9);
+//        imageNumberSpinBox->setAccelerated(true);
 
 
-        QSurfaceFormat format_gl;
+//        QSurfaceFormat format_gl;
 //        format_gl.setVersion(4, 3);
-        format_gl.setSamples(16);
-        format_gl.setRedBufferSize(8);
-        format_gl.setGreenBufferSize(8);
-        format_gl.setBlueBufferSize(8);
-        format_gl.setAlphaBufferSize(8);
+//        format_gl.setSamples(16);
+//        format_gl.setRedBufferSize(8);
+//        format_gl.setGreenBufferSize(8);
+//        format_gl.setBlueBufferSize(8);
+//        format_gl.setAlphaBufferSize(8);
 
 //        imageRenderWorker = new ImageRenderWorker();
 //        imageRenderWorker->setMultiThreading(false);
 //        imageRenderWorker->setOpenCLContext(context_cl);
 //        imageRenderWorker->setSharedWindow(sharedContextWindow);
 
-        imageRenderWindow = new ImageRenderWindow();
-        imageRenderWindow->setMultiThreading(false);
+//        imageRenderWindow = new ImageRenderWindow();
+//        imageRenderWindow->setMultiThreading(false);
 //        imageRenderWindow->setOpenGLWorker(imageRenderWorker);
-        imageRenderWindow->setSharedWindow(sharedContextWindow);
-        imageRenderWindow->setFormat(format_gl);
-        imageRenderWindow->setOpenCLContext(context_cl);
-        imageRenderWindow->setAnimating(false);
-        imageRenderWindow->initializeWorker();
+//        imageRenderWindow->setSharedWindow(sharedContextWindow);
+//        imageRenderWindow->setFormat(format_gl);
+//        imageRenderWindow->setOpenCLContext(context_cl);
+//        imageRenderWindow->setAnimating(false);
+//        imageRenderWindow->initializeWorker();
 
-        imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
-        imageRenderWidget->setFocusPolicy(Qt::TabFocus);
+//        imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
+//        imageRenderWidget->setFocusPolicy(Qt::TabFocus);
 
-        imageHint = new QLabel("(Images are visualized looking from the detector and toward the source)");
+//        imageHint = new QLabel("(Images are visualized looking from the detector and toward the source)");
 //        QLabel * imageLabel = new QLabel("");
                                         
-        QGridLayout * imageLayout = new QGridLayout;
-        imageLayout->setSpacing(0);
-//        imageLayout->setMargin(0);
-        imageLayout->setContentsMargins(0,0,0,0);
-        imageLayout->setRowStretch(0,1);
-        imageLayout->setColumnStretch(0,1);
-        imageLayout->setColumnStretch(6,1);
-        imageLayout->addWidget(imageRenderWidget,0,0,1,7);
-        imageLayout->addWidget(imageHint,1,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-        imageLayout->addWidget(imageFastBackButton,1,1,1,1);
-        imageLayout->addWidget(imageBackButton,1,2,1,1);
-        imageLayout->addWidget(imageNumberSpinBox,1,3,1,1);
-        imageLayout->addWidget(imageForwardButton,1,4,1,1);
-        imageLayout->addWidget(imageFastForwardButton,1,5,1,1);
-//        imageLayout->addWidget(imageLabel,6,1,1,1);
+//        QGridLayout * imageLayout = new QGridLayout;
+//        imageLayout->setSpacing(0);
+////        imageLayout->setMargin(0);
+//        imageLayout->setContentsMargins(0,0,0,0);
+//        imageLayout->setRowStretch(0,1);
+//        imageLayout->setColumnStretch(0,1);
+//        imageLayout->setColumnStretch(6,1);
+////        imageLayout->addWidget(imageRenderWidget,0,0,1,7);
+//        imageLayout->addWidget(imageHint,1,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+//        imageLayout->addWidget(imageFastBackButton,1,1,1,1);
+//        imageLayout->addWidget(imageBackButton,1,2,1,1);
+//        imageLayout->addWidget(imageNumberSpinBox,1,3,1,1);
+//        imageLayout->addWidget(imageForwardButton,1,4,1,1);
+//        imageLayout->addWidget(imageFastForwardButton,1,5,1,1);
+////        imageLayout->addWidget(imageLabel,6,1,1,1);
         
         imageWidget = new QWidget;
-        imageWidget->setLayout(imageLayout);
-    }
+//        imageWidget->setLayout(imageLayout);
+//    }
     
     
 

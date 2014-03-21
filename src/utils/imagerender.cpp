@@ -1,4 +1,4 @@
-#include "imagerender.h"
+//#include "imagerender.h"
 
 ImageRenderWindow::ImageRenderWindow()
     : gl_worker(0),

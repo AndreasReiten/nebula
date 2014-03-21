@@ -33,7 +33,7 @@
 //#include "miniarray.h"
 #include "matrix.h"
 #include "fileformat.h"
-#include "imagerender.h"
+//#include "imagerender.h"
 #include "searchnode.h"
 #include "bricknode.h"
 #include "sparsevoxelocttree.h"
@@ -65,8 +65,8 @@ class BaseWorker : public QObject
         void changedFormatGenericProgress(QString str);
         void changedTabWidget(int value);
 //        void repaintImageWidget();
-        void aquireSharedBuffers();
-        void releaseSharedBuffers();
+//        void aquireSharedBuffers();
+//        void releaseSharedBuffers();
         void changedFile(int file);
         void popup(QString title, QString text);
 
@@ -193,9 +193,9 @@ class ProjectFileWorker : public BaseWorker
         void changedImageSize(int w, int h);
         void testToWindow();
         void testToMain();
-        void updateRequest();
-        void changedImage(int value);
-        void test();
+//        void updateRequest();
+//        void changedImage(int value);
+//        void test();
 
     public slots:
         void initializeCLKernel();

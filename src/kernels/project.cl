@@ -1,9 +1,9 @@
 __kernel void FRAME_FILTER(
     __write_only image2d_t xyzi_target,
-    __write_only image2d_t raw_target_clgl,
-    __write_only image2d_t corrected_target_clgl,
-    __write_only image2d_t gamma_target_clgl,
-    __read_only image2d_t tsf_source_clgl,
+//    __write_only image2d_t raw_target_clgl,
+//    __write_only image2d_t corrected_target_clgl,
+//    __write_only image2d_t gamma_target_clgl,
+//    __read_only image2d_t tsf_source_clgl,
 //    __read_only image2d_t background,
     __read_only image2d_t source,
     sampler_t tsf_sampler,
@@ -54,12 +54,12 @@ __kernel void FRAME_FILTER(
         float intensity = read_imagef(source, intensity_sampler, (target_dim - id_glb - 1)).w; /* DANGER */
 
         // Write to alpha target (Shared CL/GL texture)
-        float tmp = intensity;
-        if (tmp < 1) tmp = 1;
+//        float tmp = intensity;
+//        if (tmp < 1) tmp = 1;
 
-        float2 tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
-        float4 sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
-        write_imagef(raw_target_clgl, id_glb, sample);
+//        float2 tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
+//        float4 sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
+//        write_imagef(raw_target_clgl, id_glb, sample);
 
         // Scale source to background
         intensity *= native_divide(background_flux * background_exposure_time, h_flux * h_exposure_time);
@@ -77,19 +77,19 @@ __kernel void FRAME_FILTER(
         }
         
         // Write to beta target (Shared CL/GL texture)
-        tmp = intensity;
-        if (tmp < 1) tmp = 1;
+//        tmp = intensity;
+//        if (tmp < 1) tmp = 1;
         
-        if ((intensity < threshold_one.x) || (intensity > threshold_one.y))
-        {
-            sample = (float4)(0.1,0.0,1.0,0.7);
-        }
-        else
-        {
-            tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
-            sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
-        }
-        write_imagef(corrected_target_clgl, id_glb, sample);
+//        if ((intensity < threshold_one.x) || (intensity > threshold_one.y))
+//        {
+//            sample = (float4)(0.1,0.0,1.0,0.7);
+//        }
+//        else
+//        {
+//            tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
+//            sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
+//        }
+//        write_imagef(corrected_target_clgl, ide_glb, sample);
 
         float4 Q = (float4)(0.0f);
         if (intensity > 0.0f)
@@ -164,19 +164,19 @@ __kernel void FRAME_FILTER(
         }
 
         // Write to gamma target (Shared CL/GL texture)
-        tmp = Q.w;
-        if (tmp < 1) tmp = 1;
+//        tmp = Q.w;
+//        if (tmp < 1) tmp = 1;
         
-        if ((Q.w < threshold_two.x) || (Q.w > threshold_two.y))
-        {
-            sample = (float4)(0.1,0.0,1.0,0.7);
-        }
-        else
-        {
-            tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
-            sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
-        }
-        write_imagef(gamma_target_clgl, id_glb, sample);
+//        if ((Q.w < threshold_two.x) || (Q.w > threshold_two.y))
+//        {
+//            sample = (float4)(0.1,0.0,1.0,0.7);
+//        }
+//        else
+//        {
+//            tsf_position = (float2)(native_divide(log10(tmp), log10(max_intensity)), 0.5f);
+//            sample = read_imagef(tsf_source_clgl, tsf_sampler, tsf_position);
+//        }
+//        write_imagef(gamma_target_clgl, id_glb, sample);
 
         // Write to the Q target (CL texture)
         write_imagef(xyzi_target, id_glb, Q);

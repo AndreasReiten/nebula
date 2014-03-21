@@ -273,7 +273,7 @@ void SetFileWorker::process()
         // Set file and get status
         files->append(PilatusFile());
         int STATUS_OK = files->back().set(file_paths->at(i), context_cl);
-        files->back().setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
+//        files->back().setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -496,7 +496,7 @@ void ProjectFileWorker::process()
             (*files)[i].setOffsetKappa(offset_kappa);
             (*files)[i].setOffsetPhi(offset_phi);
 
-            emit aquireSharedBuffers();
+//            emit aquireSharedBuffers();
             
 //            std::cout << threshold_reduce_low << " " << threshold_reduce_high << " " << threshold_project_low << " " << threshold_project_high << std::endl;
             
@@ -504,10 +504,10 @@ void ProjectFileWorker::process()
             
 //            (*files)[i].print();
             
-            emit releaseSharedBuffers();
+//            emit releaseSharedBuffers();
 
-            emit updateRequest();
-            emit changedImage(i);
+//            emit updateRequest();
+//            emit changedImage(i);
             
             if (!STATUS_OK)
             {
@@ -651,7 +651,7 @@ void AllInOneWorker::process()
         // Set file and get status
         PilatusFile file;
         int STATUS_OK = file.set(file_paths->at(i), context_cl);
-        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
+//        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
 
         if (STATUS_OK)
         {
@@ -679,11 +679,11 @@ void AllInOneWorker::process()
                     file.setOffsetKappa(offset_kappa);
                     file.setOffsetPhi(offset_phi);
 
-                    emit aquireSharedBuffers();
+//                    emit aquireSharedBuffers();
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
-                    emit releaseSharedBuffers();
-                    emit updateRequest();
-                    emit changedImage(i);
+//                    emit releaseSharedBuffers();
+//                    emit updateRequest();
+//                    emit changedImage(i);
                     
                     if (STATUS_OK)
                     {
@@ -1312,7 +1312,7 @@ void DisplayFileWorker::process()
     int STATUS_OK = file.set(file_paths->at(display_file), context_cl);
     if (STATUS_OK)
     {
-        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
+//        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
         STATUS_OK = file.readData();
         if (STATUS_OK)
         {
@@ -1322,11 +1322,11 @@ void DisplayFileWorker::process()
             file.setBackground(file.getFlux(), file.getExpTime());
 
             size_t n;
-            emit aquireSharedBuffers();
+//            emit aquireSharedBuffers();
             STATUS_OK = file.filterData( &n, NULL, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high, 0);
-            emit releaseSharedBuffers();
+//            emit releaseSharedBuffers();
             
-            emit updateRequest();
+//            emit updateRequest();
         }
     }
     emit finished();

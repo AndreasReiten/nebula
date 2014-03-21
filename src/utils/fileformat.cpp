@@ -281,13 +281,13 @@ void PilatusFile::clearData()
 }
 
 
-void PilatusFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex)
-{
-    this->cl_img_alpha = cl_img_alpha;
-    this->cl_img_beta = cl_img_beta;
-    this->cl_img_gamma = cl_img_gamma;
-    this->cl_tsf_tex = cl_tsf_tex;
-}
+//void PilatusFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex)
+//{
+//    this->cl_img_alpha = cl_img_alpha;
+//    this->cl_img_beta = cl_img_beta;
+//    this->cl_img_gamma = cl_img_gamma;
+//    this->cl_tsf_tex = cl_tsf_tex;
+//}
 
 void PilatusFile::print()
 {
@@ -295,9 +295,9 @@ void PilatusFile::print()
     ss << "__________ PILATUS FILE __________" << std::endl;
     ss << "Path: " << path.toStdString().c_str() << std::endl;
     ss << "CL context: " << context_cl << std::endl;
-    ss << "CL image alpha: " << cl_img_alpha << std::endl;
-    ss << "CL image beta: " << cl_img_beta << std::endl;
-    ss << "CL image gamma: " << cl_img_gamma << std::endl;
+//    ss << "CL image alpha: " << cl_img_alpha << std::endl;
+//    ss << "CL image beta: " << cl_img_beta << std::endl;
+//    ss << "CL image gamma: " << cl_img_gamma << std::endl;
     ss << "CL kernel: " << project_kernel << std::endl;
     ss << "CL local work dim: " << loc_ws[0] << " " << loc_ws[1] << std::endl;
     ss << "CL global work dim: " << glb_ws[0] << " " << glb_ws[1] << std::endl;
@@ -431,38 +431,38 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
 
     // Set kernel arguments
     err = clSetKernelArg(*project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) cl_img_alpha);
-    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) cl_img_beta);
-    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) cl_img_gamma);
-    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) cl_tsf_tex);
+//    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) cl_img_alpha);
+//    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) cl_img_beta);
+//    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) cl_img_gamma);
+//    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) cl_tsf_tex);
 //    err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &background_cl);
-    err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(*project_kernel, 6, sizeof(cl_sampler), &tsf_sampler);
-    err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_sampler), &intensity_sampler);
-    err |= clSetKernelArg(*project_kernel, 8, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
+    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_sampler), &intensity_sampler);
+    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
     float threshold_one[2], threshold_two[2];
     threshold_one[0] = this->threshold_reduce_low;
     threshold_one[1] = this->threshold_reduce_high;
     threshold_two[0] = this->threshold_project_low;
     threshold_two[1] = this->threshold_project_high;
-    err |= clSetKernelArg(*project_kernel, 9, 2*sizeof(cl_float), threshold_one);
-    err |= clSetKernelArg(*project_kernel, 10, 2*sizeof(cl_float), threshold_two);
-    err |= clSetKernelArg(*project_kernel, 11, sizeof(cl_float), &background_flux);
-    err |= clSetKernelArg(*project_kernel, 12, sizeof(cl_float), &backgroundExpTime);
-    err |= clSetKernelArg(*project_kernel, 13, sizeof(cl_float), &pixel_size_x);
-    err |= clSetKernelArg(*project_kernel, 14, sizeof(cl_float), &pixel_size_y);
-    err |= clSetKernelArg(*project_kernel, 15, sizeof(cl_float), &exposure_time);
-    err |= clSetKernelArg(*project_kernel, 16, sizeof(cl_float), &wavelength);
-    err |= clSetKernelArg(*project_kernel, 17, sizeof(cl_float), &detector_distance);
-    err |= clSetKernelArg(*project_kernel, 18, sizeof(cl_float), &beam_x);
-    err |= clSetKernelArg(*project_kernel, 19, sizeof(cl_float), &beam_y);
-    err |= clSetKernelArg(*project_kernel, 20, sizeof(cl_float), &flux);
-    err |= clSetKernelArg(*project_kernel, 21, sizeof(cl_float), &start_angle);
-    err |= clSetKernelArg(*project_kernel, 22, sizeof(cl_float), &angle_increment);
-    err |= clSetKernelArg(*project_kernel, 23, sizeof(cl_float), &kappa);
-    err |= clSetKernelArg(*project_kernel, 24, sizeof(cl_float), &phi);
-    err |= clSetKernelArg(*project_kernel, 25, sizeof(cl_float), &omega);
-    err |= clSetKernelArg(*project_kernel, 26, sizeof(cl_float), &max_counts);
+    err |= clSetKernelArg(*project_kernel, 5, 2*sizeof(cl_float), threshold_one);
+    err |= clSetKernelArg(*project_kernel, 6, 2*sizeof(cl_float), threshold_two);
+    err |= clSetKernelArg(*project_kernel, 7, sizeof(cl_float), &background_flux);
+    err |= clSetKernelArg(*project_kernel, 8, sizeof(cl_float), &backgroundExpTime);
+    err |= clSetKernelArg(*project_kernel, 9, sizeof(cl_float), &pixel_size_x);
+    err |= clSetKernelArg(*project_kernel, 10, sizeof(cl_float), &pixel_size_y);
+    err |= clSetKernelArg(*project_kernel, 11, sizeof(cl_float), &exposure_time);
+    err |= clSetKernelArg(*project_kernel, 12, sizeof(cl_float), &wavelength);
+    err |= clSetKernelArg(*project_kernel, 13, sizeof(cl_float), &detector_distance);
+    err |= clSetKernelArg(*project_kernel, 14, sizeof(cl_float), &beam_x);
+    err |= clSetKernelArg(*project_kernel, 15, sizeof(cl_float), &beam_y);
+    err |= clSetKernelArg(*project_kernel, 16, sizeof(cl_float), &flux);
+    err |= clSetKernelArg(*project_kernel, 17, sizeof(cl_float), &start_angle);
+    err |= clSetKernelArg(*project_kernel, 18, sizeof(cl_float), &angle_increment);
+    err |= clSetKernelArg(*project_kernel, 19, sizeof(cl_float), &kappa);
+    err |= clSetKernelArg(*project_kernel, 20, sizeof(cl_float), &phi);
+    err |= clSetKernelArg(*project_kernel, 21, sizeof(cl_float), &omega);
+    err |= clSetKernelArg(*project_kernel, 22, sizeof(cl_float), &max_counts);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Launch rendering kernel */
