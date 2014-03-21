@@ -35,18 +35,17 @@ Marker::Marker(double x, double y, double z)
     xyz[1] = y;
     xyz[2] = z;
     
-    
     tagged_color.set(1,4,0);
-    tagged_color[0] = 0.7;
-    tagged_color[1] = 0.2;
+    tagged_color[0] = 0.3;
+    tagged_color[1] = 0.3;
     tagged_color[2] = 1.0;
-    tagged_color[3] = 0.7;
+    tagged_color[3] = 0.9;
     
     untagged_color.set(1,4,0);
     untagged_color[0] = 1.0;
-    untagged_color[1] = 0.2;
-    untagged_color[2] = 0.7;
-    untagged_color[3] = 0.6;
+    untagged_color[1] = 0.3;
+    untagged_color[2] = 0.3;
+    untagged_color[3] = 0.8;
     
 //    glGenBuffers(1, &vbo);
     
@@ -67,6 +66,11 @@ float * Marker::getColor()
 {
     if (isTagged) return tagged_color.data();
     else return untagged_color.data();
+}
+
+Matrix<double> & Marker::getCenter()
+{
+    return xyz;
 }
 
 double Marker::getDistance(double x, double y, double z)

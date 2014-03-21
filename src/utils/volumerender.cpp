@@ -128,6 +128,9 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 //      isUBActive(true),
       weird_parameter(20)
 {
+    // Marker
+    markers_selected_indices.set(100,1,0);
+            
     // Matrices
     double extent[8] = {
         -2.0*pi,2.0*pi,
@@ -216,12 +219,14 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     GLfloat white_buf[] = {1,1,1,0.4};
     GLfloat black_buf[] = {0,0,0,0.4};
     GLfloat yellow_buf[] = {1,0.2,0,0.8};
+    GLfloat blue_buf[] = {0.4,0.4,1,0.9};
     white.setDeep(1,4,white_buf);
     black.setDeep(1,4,black_buf);
     yellow.setDeep(1,4,yellow_buf);
     clear_color = white;
     clear_color_inverse = black;
     centerline_color = yellow;
+    marker_line_color.setDeep(1,4,blue_buf); 
 
     // Fps
     fps_string_width_prev = 0;
@@ -252,8 +257,8 @@ VolumeRenderWorker::~VolumeRenderWorker()
         glDeleteBuffers(1, &point_vbo);
         glDeleteBuffers(1, &point_vbo);
         glDeleteBuffers(1, &unitcell_vbo);
-        glDeleteBuffers(10, marker_vbo);
-        glDeleteBuffers(1, &center_marker_vbo);
+//        glDeleteBuffers(10, marker_vbo);
+        glDeleteBuffers(1, &marker_centers_vbo);
     }
 }
 
@@ -326,9 +331,7 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
     
     
     
-    
-    
-    if (( depth < 1.0) && (markers.size() > 0))
+    if (( depth < 1.0) && (markers.size() > 0) && left_button && !right_button && !mid_button)
     {
         Matrix<double> xyz_clip(4,1,1.0);
         xyz_clip[0] = 2.0 * (double) x / (double) render_surface->width() - 1.0;
@@ -352,13 +355,11 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
 //        tmp.print(2,"clip back again");
             
         int closest = 0;  
-        
         double min_distance = 1e9;
             
         for (int i = 0; i < markers.size(); i++)
         {
-//            qDebug() << "Distance:" << i << markers[i].getDistance(xyz[0], xyz[1], xyz[2]);
-            
+            // Find the closest marker
             if (min_distance > markers[i].getDistance(xyz[0], xyz[1], xyz[2])) 
             {
                 min_distance = markers[i].getDistance(xyz[0], xyz[1], xyz[2]); 
@@ -366,15 +367,49 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
             }
         }
         
-//        markers.append(Marker(xyz[0],xyz[1],xyz[2]));
+        if (ctrl_button)
+        {
+            qDebug() << "Removing" << closest << "of" << markers.size();
+            markers.remove(closest);
+            glDeleteBuffers(1, &marker_vbo[closest]);
+            marker_vbo.remove(closest);
+        }
+        else
+        {
+            markers[closest].setTagged(!markers[closest].getTagged());
+        }  
         
-//        Matrix<float> vertices = markers.last().getVerts();
+        Matrix<float> marker_selected(10,3); 
+        int n_markers_selected = 0;
+        int iter = 0;
+        n_marker_indices = 0;
         
-//        glBindBuffer(GL_ARRAY_BUFFER, marker_vbo[markers.size()-1]);
-//        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
-//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        for (int i = 0; i < markers.size(); i++)
+        {
+            // Generate a vbo to draw lines between selected markers
+            if (markers[i].getTagged())
+            {
+                marker_selected[n_markers_selected*3+0] = markers[i].getCenter()[0];
+                marker_selected[n_markers_selected*3+1] = markers[i].getCenter()[1];
+                marker_selected[n_markers_selected*3+2] = markers[i].getCenter()[2];
+                
+                for (int i = 0; i < n_markers_selected; i++)
+                {
+                    markers_selected_indices[iter*2+0] = n_markers_selected;
+                    markers_selected_indices[iter*2+1] = i;
+                    iter++;
+                    n_marker_indices += 2;
+                }
+                
+                n_markers_selected++;
+            }
+            
+        }
         
-        markers[closest].setTagged(!markers[closest].getTagged());
+        glBindBuffer(GL_ARRAY_BUFFER, marker_centers_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*marker_selected.size(), marker_selected.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        
     }
     
     
@@ -678,7 +713,7 @@ void VolumeRenderWorker::drawUnitCell()
     
     float alpha = pow((std::max(std::max(UB.getCStar(), UB.getBStar()), UB.getCStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
     
-    if (alpha > 1.0) alpha = 1.0;
+    if (alpha > 0.9) alpha = 0.9;
     
 //    qDebug() << alpha;
     
@@ -734,6 +769,15 @@ void VolumeRenderWorker::drawMarkers()
         glDrawArrays(GL_LINES,  0, 6);
         glDisable(GL_DEPTH_TEST);
     }
+    glLineWidth(1.5);
+    
+    glUniform4fv(shared_window->std_3d_col_color, 1, marker_line_color.data());
+    
+    glBindBuffer(GL_ARRAY_BUFFER, marker_centers_vbo);
+    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    glDrawElements(GL_LINES,  n_marker_indices, GL_UNSIGNED_INT, markers_selected_indices.data());
     
     glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
@@ -955,8 +999,8 @@ void VolumeRenderWorker::initResourcesGL()
     glGenBuffers(1, &centerline_vbo);
     glGenBuffers(1, &point_vbo);
     glGenBuffers(1, &unitcell_vbo);
-    glGenBuffers(10, marker_vbo);
-    glGenBuffers(1, &center_marker_vbo);
+//    glGenBuffers(10, marker_vbo);
+    glGenBuffers(1, &marker_centers_vbo);
 }
 
 void VolumeRenderWorker::initResourcesCL()
@@ -2360,11 +2404,15 @@ void VolumeRenderWorker::addMarker()
         
         Matrix<float> vertices = markers.last().getVerts();
         
-        glBindBuffer(GL_ARRAY_BUFFER, marker_vbo[markers.size()-1]);
+        
+        GLuint vbo;
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         
-//        glBindBuffer(GL_ARRAY_BUFFER, center_marker_vbo[markers.size()-1]);
+        marker_vbo.append(vbo);
+//        glBindBuffer(GL_ARRAY_BUFFER, marker_centers_vbo[markers.size()-1]);
 //        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*xyz.size(), xyz.toFloat().data(), GL_STATIC_DRAW);
 //        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }

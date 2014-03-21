@@ -159,9 +159,13 @@ private:
     
     // Markers
     QVector<Marker> markers;
+    QVector<GLuint> marker_vbo;
     void drawMarkers();
-    GLuint marker_vbo[10];
-    GLuint center_marker_vbo;
+    
+    GLuint marker_centers_vbo;
+    int n_marker_indices;
+    Matrix<GLuint> markers_selected_indices;
+//    Matrix<double> marker_centers;
     
     // Ray texture
     Matrix<double> pixel_size;
@@ -333,6 +337,7 @@ private:
     cl_sampler cl_svo_pool_sampler;
 
     // Colors
+    Matrix<GLfloat> marker_line_color;
     Matrix<GLfloat> white;
     Matrix<GLfloat> black;
     Matrix<GLfloat> yellow;

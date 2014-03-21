@@ -1,11 +1,11 @@
 #ifndef MARKER_H
 #define MARKER_H
 
-//#include <QOpenGLFunctions>
+#include <QOpenGLFunctions>
 #include "matrix.h"
 #include "tools.h"
 
-class Marker //: protected QOpenGLFunctions
+class Marker : protected QOpenGLFunctions
 {
 public:
     Marker();
@@ -19,6 +19,7 @@ public:
 //    GLuint getVbo();
     Matrix<float> &  getVerts();
     bool getTagged();
+    Matrix<double> &getCenter();
     
 private:
     bool isTagged;
