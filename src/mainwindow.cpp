@@ -201,7 +201,7 @@ void MainWindow::initializeWorkers()
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
 //    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
 //    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
-    connect(projectFileWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int)));
+//    connect(projectFileWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int)));
 //    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
@@ -521,13 +521,13 @@ void MainWindow::initializeEmit()
     kappaCorrectionSpinBox->setValue(0.0);
     phiCorrectionSpinBox->setValue(0.0);
     
-//    alphaNormSpinBox->setValue(UB.getAlpha()*180.0/pi);
-//    betaNormSpinBox->setValue(UB.getBeta()*180.0/pi);
-//    gammaNormSpinBox->setValue(UB.getGamma()*180.0/pi);
+//    alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
+//    betaNormSpinBox->setValue(UB.beta()*180.0/pi);
+//    gammaNormSpinBox->setValue(UB.gamma()*180.0/pi);
     
-//    aNormSpinBox->setValue(UB.getA());
-//    bNormSpinBox->setValue(UB.getB());
-//    cNormSpinBox->setValue(UB.getC());
+//    aNormSpinBox->setValue(UB.a());
+//    bNormSpinBox->setValue(UB.b());
+//    cNormSpinBox->setValue(UB.c());
     
 //    volumeRenderWindow->getWorker()->setUBMatrix(UB);
     
@@ -1092,13 +1092,13 @@ void MainWindow::openSvo()
         
         if (UB.size() == 3*3) volumeRenderWindow->getWorker()->setUBMatrix(UB);
         
-        alphaNormSpinBox->setValue(UB.getAlpha()*180.0/pi);
-        betaNormSpinBox->setValue(UB.getBeta()*180.0/pi);
-        gammaNormSpinBox->setValue(UB.getGamma()*180.0/pi);
+        alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
+        betaNormSpinBox->setValue(UB.beta()*180.0/pi);
+        gammaNormSpinBox->setValue(UB.gamma()*180.0/pi);
         
-        aNormSpinBox->setValue(UB.getA());
-        bNormSpinBox->setValue(UB.getB());
-        cNormSpinBox->setValue(UB.getC());
+        aNormSpinBox->setValue(UB.a());
+        bNormSpinBox->setValue(UB.b());
+        cNormSpinBox->setValue(UB.c());
         
         svoHeaderEdit->setDocumentTitle(current_svo_path);
         svoHeaderEdit->setPlainText(svo_loaded[current_svo].getMetaData());
@@ -1343,10 +1343,30 @@ void MainWindow::initializeInteractives()
 //        imageLayout->addWidget(imageFastForwardButton,1,5,1,1);
 ////        imageLayout->addWidget(imageLabel,6,1,1,1);
         
-        imageWidget = new QWidget;
+//        imageWidget = new QWidget;
 //        imageWidget->setLayout(imageLayout);
 //    }
     
+    /* Image browser widget */
+    imageDock = new QDockWidget;
+    
+    imageWidget = new QWidget;
+    
+    imageLabel = new QLabel;
+    
+    imageRawWidget = new QWidget;
+    imageCorrectedWidget = new QWidget;
+    
+    imageFastBackButton = new QPushButton;
+    imageSlowBackButton = new QPushButton;
+    
+    imageSpinBox = new QSpinBox;
+    
+    imageFastForwardButton = new QPushButton;
+    imageSlowForwardButton = new QPushButton;
+    
+    imageRawCeckBox = new QCheckBox;
+    imageCorrectedCeckBox = new QCheckBox;
     
 
     /*      3D View widget      */

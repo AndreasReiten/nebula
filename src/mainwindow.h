@@ -251,6 +251,27 @@ private:
 //    QLabel * imageHint;
     
     
+    // Image browser QDockWidget
+    QDockWidget * imageDock;
+    
+    QWidget * imageWidget;
+    
+    QLabel * imageLabel;
+    
+    QWidget * imageRawWidget;
+    QWidget * imageCorrectedWidget;
+    
+    QPushButton * imageFastBackButton;
+    QPushButton * imageSlowBackButton;
+    
+    QSpinBox * imageSpinBox;
+    
+    QPushButton * imageFastForwardButton;
+    QPushButton * imageSlowForwardButton;
+    
+    QCheckBox * imageRawCeckBox;
+    QCheckBox * imageCorrectedCeckBox;
+    
     // Actions
     QAction *shadowAct;
     QAction *integrate3DAct;
@@ -379,7 +400,7 @@ private:
 //    QSpinBox *imageNumberSpinBox;
     QDockWidget *fileDockWidget;
     QWidget *fileControlsWidget;
-    QWidget *imageWidget;
+//    QWidget *imageWidget;
 //    QWidget *imageControlsWidget;
 
     QWidget *toolChainWidget;

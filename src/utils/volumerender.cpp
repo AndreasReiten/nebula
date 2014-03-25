@@ -627,7 +627,9 @@ void VolumeRenderWorker::updateUnitCell()
     hkl_text_counter = 0;
 
     
-    Matrix<double> B = UB.getBMatrix();
+    Matrix<double> B = UB.getBMatrix(); // Why B and not UB?
+    
+//    B.print(2,"B");
     
     for(int h = hkl_limits[0]; h < hkl_limits[1]; h++)
     {
@@ -711,7 +713,7 @@ void VolumeRenderWorker::drawUnitCell()
     glUniformMatrix4fv(shared_window->unitcell_u, 1, GL_FALSE, U.getColMajor().toFloat().data());
     
     
-    float alpha = pow((std::max(std::max(UB.getCStar(), UB.getBStar()), UB.getCStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
+    float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
     
     if (alpha > 0.9) alpha = 0.9;
     
@@ -1230,7 +1232,7 @@ void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 void VolumeRenderWorker::setRayTexture()
 {
     // Only resize the texture if the change is somewhat significant (in terms of area changed)
-    if (isInitialized && ((!isRayTexInitialized) || (std::abs(1.0 - quality_factor) > 0.15)))
+    if (isInitialized && ((!isRayTexInitialized) || (fabs(1.0 - quality_factor) > 0.15)))
     {
         // Scale down the change in quality factor a bit so that a stable resolution will be easier to reach. If not we risk having the resolution jump between two states that both fullfill the if-criterion enclosing this code
         
