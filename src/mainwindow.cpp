@@ -607,6 +607,7 @@ void MainWindow::initializeActions()
     backgroundAct->setCheckable(true);
     projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle projection"), this);
     projectionAct->setCheckable(true);
+    projectionAct->setChecked(true);
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take screenshot"), this);
     scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle scalebars"), this);
     scalebarAct->setCheckable(true);
@@ -1090,15 +1091,20 @@ void MainWindow::openSvo()
         
         UB = svo_loaded[current_svo].getUB();
         
-        if (UB.size() == 3*3) volumeRenderWindow->getWorker()->setUBMatrix(UB);
+        if (UB.size() == 3*3)
+        {
+            volumeRenderWindow->getWorker()->setUBMatrix(UB);
         
-        alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
-        betaNormSpinBox->setValue(UB.beta()*180.0/pi);
-        gammaNormSpinBox->setValue(UB.gamma()*180.0/pi);
+            UB.print(2,"UB loaded");
         
-        aNormSpinBox->setValue(UB.a());
-        bNormSpinBox->setValue(UB.b());
-        cNormSpinBox->setValue(UB.c());
+            alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
+            betaNormSpinBox->setValue(UB.beta()*180.0/pi);
+            gammaNormSpinBox->setValue(UB.gamma()*180.0/pi);
+            
+            aNormSpinBox->setValue(UB.a());
+            bNormSpinBox->setValue(UB.b());
+            cNormSpinBox->setValue(UB.c());
+        }
         
         svoHeaderEdit->setDocumentTitle(current_svo_path);
         svoHeaderEdit->setPlainText(svo_loaded[current_svo].getMetaData());
@@ -1347,28 +1353,8 @@ void MainWindow::initializeInteractives()
 //        imageWidget->setLayout(imageLayout);
 //    }
     
-    /* Image browser widget */
-    imageDock = new QDockWidget;
     
-    imageWidget = new QWidget;
     
-    imageLabel = new QLabel;
-    
-    imageRawWidget = new QWidget;
-    imageCorrectedWidget = new QWidget;
-    
-    imageFastBackButton = new QPushButton;
-    imageSlowBackButton = new QPushButton;
-    
-    imageSpinBox = new QSpinBox;
-    
-    imageFastForwardButton = new QPushButton;
-    imageSlowForwardButton = new QPushButton;
-    
-    imageRawCeckBox = new QCheckBox;
-    imageCorrectedCeckBox = new QCheckBox;
-    
-
     /*      3D View widget      */
     {
         QSurfaceFormat format_gl;
@@ -1452,6 +1438,70 @@ void MainWindow::initializeInteractives()
     /*
      * QDockWidgets
      * */
+    
+    /* Image browser widget */
+    {
+//        imageDock = new QDockWidget(tr("Image Browser"));
+        
+        imageWidget = new QWidget;
+        
+        imageLabel = new QLabel("---");
+        
+        imageRawWidget = new QWidget;
+        imageRawWidget->setFixedSize(200,150);
+        imageCorrectedWidget = new QWidget;
+        imageCorrectedWidget->setFixedSize(200,200);
+        
+        QWidget * frameWidget = new QWidget; 
+        
+        QHBoxLayout * frameLayout = new QHBoxLayout;
+        
+        frameLayout->addWidget(imageRawWidget);
+        frameLayout->addWidget(imageCorrectedWidget);
+        frameWidget->setLayout(frameLayout);    
+        
+        imageFastBackButton = new QPushButton;
+        imageFastBackButton->setIcon(QIcon(":art/fast_back.png"));
+        imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        imageSlowBackButton = new QPushButton;
+        imageSlowBackButton->setIcon(QIcon(":art/back.png"));
+        imageSlowBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        
+        imageSpinBox = new QSpinBox;
+        
+        imageFastForwardButton = new QPushButton;
+        imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
+        imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        imageSlowForwardButton = new QPushButton;
+        imageSlowForwardButton->setIcon(QIcon(":art/forward.png"));
+        imageSlowForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        
+        imageRawCeckBox = new QCheckBox("Raw");
+        imageCorrectedCeckBox = new QCheckBox("Corrected");
+        connect(imageRawCeckBox, SIGNAL(clicked(bool)), imageRawWidget, SLOT(setVisible(bool)));
+        connect(imageCorrectedCeckBox, SIGNAL(clicked(bool)), imageCorrectedWidget, SLOT(setVisible(bool)));
+        imageRawCeckBox->setChecked(true);
+        imageCorrectedCeckBox->setChecked(true);
+                
+        QGridLayout * imageLayout = new QGridLayout;
+        imageLayout->setRowStretch(1,1);
+        imageLayout->addWidget(imageLabel,0,0,1,8);
+        imageLayout->addWidget(frameWidget,1,0,1,8);
+        imageLayout->addWidget(imageFastBackButton,2,0,1,2);
+        imageLayout->addWidget(imageSlowBackButton,2,2,1,1);
+        imageLayout->addWidget(imageSpinBox,2,3,1,2);
+        imageLayout->addWidget(imageSlowForwardButton,2,5,1,1);
+        imageLayout->addWidget(imageFastForwardButton,2,6,1,2);
+        imageLayout->addWidget(imageRawCeckBox,3,0,1,1);
+        imageLayout->addWidget(imageCorrectedCeckBox,3,1,1,1);
+        
+        imageWidget->setLayout(imageLayout);
+        
+//        imageDock->setWidget(imageWidget);
+//        imageDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
+//        viewMenu->addAction(imageDock->toggleViewAction());
+//        this->addDockWidget(Qt::TopDockWidgetArea, imageDock);
+    }
     
     /* Graphics dock widget */
     {
@@ -1769,9 +1819,10 @@ void MainWindow::initializeInteractives()
         QLabel * labelC = new QLabel(QString("Post correction threshold:"));
         QLabel * labelD = new QLabel(QString("Octtree levels: "));
         QLabel * labelE = new QLabel(QString("Active angle:"));
-        QLabel * labelF = new QLabel("<i>ω</i> correction");
-        QLabel * labelG = new QLabel("<i>κ</i> correction:");
-        QLabel * labelH = new QLabel("<i>φ</i> correction:");
+        QLabel * labelF = new QLabel("<i>ω</i>:");
+        QLabel * labelG = new QLabel("<i>κ</i>:");
+        QLabel * labelH = new QLabel("<i>φ</i>:");
+        QLabel * labelI = new QLabel("Correction:");
         
 //        trUtf8( "<i>β*<i>"));
 //                QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
@@ -1867,12 +1918,13 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(projectThresholdHigh,3,6,1,2);
         reconstructLayout->addWidget(labelD,4,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         reconstructLayout->addWidget(svoLevelSpinBox,4,4,1,4);
-        reconstructLayout->addWidget(labelF,5,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        reconstructLayout->addWidget(omegaCorrectionSpinBox,5,4,1,4);
-        reconstructLayout->addWidget(labelG,6,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        reconstructLayout->addWidget(kappaCorrectionSpinBox,6,4,1,4);
-        reconstructLayout->addWidget(labelH,7,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
-        reconstructLayout->addWidget(phiCorrectionSpinBox,7,4,1,4);
+        reconstructLayout->addWidget(labelI,5,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelF,5,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(omegaCorrectionSpinBox,5,3,1,1);
+        reconstructLayout->addWidget(labelG,5,4,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(kappaCorrectionSpinBox,5,5,1,1);
+        reconstructLayout->addWidget(labelH,5,6,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(phiCorrectionSpinBox,5,7,1,1);
         reconstructLayout->addWidget(voxelizeButton,8,0,1,8);
         reconstructLayout->addWidget(saveSvoButton,9,0,1,8);
         fileControlsWidget->setLayout(reconstructLayout);

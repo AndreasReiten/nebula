@@ -1111,14 +1111,17 @@ void UBMatrix<T>::setBMatrix(Matrix<T> mat)
 {
     B = mat;
     
-    *this = U*B;
+    *this = getUMatrix()*B;
 }
 template <class T>
 void UBMatrix<T>::setUMatrix(RotationMatrix<T> mat)
 {
     U = mat;
     
-    *this = U*B;
+    U.print(2,"U set");
+    *this = U*getBMatrix();
+    
+//    this->print(2,"UB new");
 }
 template <class T>
 Matrix<T> UBMatrix<T>::getUMatrix()
@@ -1188,12 +1191,8 @@ void UBMatrix<T>::setC(T value)
 template <class T>
 void UBMatrix<T>::setAlpha(T value)
 {
-    qDebug() << value*180/pi << beta()*180/pi << gamma()*180/pi;
-    
     if ((value > 0) && (value > fabs(beta() - gamma())) && (value + beta() + gamma() < 2*pi))
     {
-        qDebug() << "NoooO!" << value*180/pi << beta()*180/pi << gamma()*180/pi << fabs(beta() - gamma())*180/pi;
-        
         // Get all the current values including U
         // Change value in question to the given one
         // Calculate and set B
@@ -1204,14 +1203,10 @@ void UBMatrix<T>::setAlpha(T value)
         T cb = cos(beta());
         T cg = cos(gamma());
         
-//        qDebug() << a() << b() << c() << value << beta() << gamma();
-//        qDebug() << cos(value)*cos(beta())-cos(gamma()) << sin(value)*sin(beta());
-        
         double gammaStar_tmp = acos((cos(value)*cos(beta())-cos(gamma())) / (sin(value)*sin(beta())));
         
         double V_tmp = a()*b()*c()*sin(value)*sin(beta())*sin(gammaStar_tmp); 
         
-//        qDebug() << a() << b() << c() << value << beta() << gamma() << "(" << gammaStar_tmp << ")" << "V:" << V_tmp;
         B.set(3,3,0);
         B[0] = b()*c()*sa/V_tmp;
         

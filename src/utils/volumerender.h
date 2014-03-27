@@ -89,7 +89,8 @@ public slots:
     void setShadowVector();
     void setOrthoGrid();
     void takeScreenShot(QString path);
-    void updateUnitCell();
+    void updateUnitCellText();
+    void updateUnitCellVertices();
     void setURotation();
     void setHCurrent(int value);
     void setKCurrent(int value);
@@ -166,6 +167,11 @@ private:
     int n_marker_indices;
     Matrix<GLuint> markers_selected_indices;
 //    Matrix<double> marker_centers;
+    
+    // Mini unit cell
+    void drawMiniCell(QPainter *painter);
+    GLuint minicell_vbo;
+    
     
     // Ray texture
     Matrix<double> pixel_size;
@@ -286,16 +292,18 @@ private:
 
     // View matrices
     Matrix<double> view_matrix;
-    Matrix<double> marker_matrix;
+//    Matrix<double> marker_matrix;
     CameraToClipMatrix<double> ctc_matrix;
     RotationMatrix<double> rotation;
     Matrix<double> data_translation;
     Matrix<double> data_scaling;
     Matrix<double> bbox_scaling;
+    Matrix<double> minicell_scaling;
     Matrix<double> bbox_translation;
     Matrix<double> normalization_scaling;
     Matrix<double> scalebar_view_matrix;
     Matrix<double> unitcell_view_matrix;
+    Matrix<double> minicell_view_matrix;
     RotationMatrix<double> scalebar_rotation;
     Matrix<double> projection_scaling;
     RotationMatrix<double> U;
@@ -341,6 +349,9 @@ private:
     Matrix<GLfloat> white;
     Matrix<GLfloat> black;
     Matrix<GLfloat> yellow;
+    Matrix<GLfloat> red;
+    Matrix<GLfloat> green;
+    Matrix<GLfloat> blue;
     Matrix<GLfloat> clear_color;
     Matrix<GLfloat> clear_color_inverse;
     Matrix<GLfloat> centerline_color;

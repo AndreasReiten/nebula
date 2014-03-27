@@ -106,7 +106,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isTsfTexInitialized(false),
       isIntegrationTexInitialized(false),
       isDSActive(false),
-      isOrthonormal(true),
+      isOrthonormal(false),
       isLogarithmic(true),
       isModelActive(true),
       isUnitcellActive(true),
@@ -151,6 +151,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     data_translation.setIdentity(4);
     data_scaling.setIdentity(4);
     bbox_scaling.setIdentity(4);
+    minicell_scaling.setIdentity(4);
     bbox_translation.setIdentity(4);
     normalization_scaling.setIdentity(4);
     scalebar_view_matrix.setIdentity(4);
@@ -223,6 +224,15 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     white.setDeep(1,4,white_buf);
     black.setDeep(1,4,black_buf);
     yellow.setDeep(1,4,yellow_buf);
+    red.set(1,4,0);
+    red[0] = 1;
+    red[3] = 1;
+    green.set(1,4,0); 
+    green[1] = 1;
+    green[3] = 1;
+    blue.set(1,4,0);
+    blue[2] = 1;
+    blue[3] = 1;
     clear_color = white;
     clear_color_inverse = black;
     centerline_color = yellow;
@@ -259,6 +269,7 @@ VolumeRenderWorker::~VolumeRenderWorker()
         glDeleteBuffers(1, &unitcell_vbo);
 //        glDeleteBuffers(10, marker_vbo);
         glDeleteBuffers(1, &marker_centers_vbo);
+        glDeleteBuffers(1, &minicell_vbo);
     }
 }
 
@@ -294,7 +305,7 @@ void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
     
     data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
     
-    
+    updateUnitCellText();
 }
 
 void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
@@ -462,6 +473,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 //                U = roll_rotation * U; 
                 U = rotation.getInverse() * roll_rotation * rotation * U;
                 UB.setUMatrix(U.to3x3());
+                updateUnitCellText();
             }
             else if(shift_button) 
             {
@@ -496,6 +508,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 //                unitcell_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
                 U = rotation.getInverse() * roll_rotation *  rotation * U; 
                 UB.setUMatrix(U.to3x3());
+                updateUnitCellText();
             }
             else if(shift_button) 
             {
@@ -527,7 +540,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
             
-            updateUnitCell();
+            updateUnitCellText();
         }
         else if (!left_button && right_button && !mid_button)
         {
@@ -545,7 +558,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
             
-            updateUnitCell();
+            updateUnitCellText();
         }
 
     }
@@ -557,34 +570,40 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 void VolumeRenderWorker::setUB_a(double value)
 {
     UB.setA(value);
-    updateUnitCell();
+    updateUnitCellVertices();
+    updateUnitCellText();
 }
 
 void VolumeRenderWorker::setUB_b(double value)
 {
     UB.setB(value);
-    updateUnitCell();
+    updateUnitCellVertices();
+    updateUnitCellText();
 }
 void VolumeRenderWorker::setUB_c(double value)
 {
     UB.setC(value);
-    updateUnitCell();
+    updateUnitCellVertices();
+    updateUnitCellText();
 }
 
 void VolumeRenderWorker::setUB_alpha(double value)
 {
     UB.setAlpha(value*pi/180.0);
-    updateUnitCell();
+    updateUnitCellVertices();
+    updateUnitCellText();
 }
 void VolumeRenderWorker::setUB_beta(double value)
 {
     UB.setBeta(value*pi/180.0);
-    updateUnitCell();
+    updateUnitCellVertices();
+    updateUnitCellText();
 }
 void VolumeRenderWorker::setUB_gamma(double value)
 {
     UB.setGamma(value*pi/180.0);
-    updateUnitCell();
+    updateUnitCellVertices();
+    updateUnitCellText();
 }
 
 
@@ -605,7 +624,63 @@ UBMatrix<double> & VolumeRenderWorker::getUBMatrix()
 //    UB.print(2,"UB");
 }
 
-void VolumeRenderWorker::updateUnitCell()
+void VolumeRenderWorker::updateUnitCellText()
+{
+    /* Generates a unit cell grid based on an UB matrix. The grid consists of one set of reciprocal basis vectors per hkl */
+    
+    // Start by setting limits of the unitcell that we will visualize
+    Matrix<int> hkl_limits(1,6);
+    hkl_limits[0] = -10;
+    hkl_limits[1] = 10;
+    hkl_limits[2] = -10;
+    hkl_limits[3] = 10;
+    hkl_limits[4] = -10;
+    hkl_limits[5] = 10;
+    
+    
+    size_t i = 0;
+    hkl_text_counter = 0;
+    
+    Matrix<double> B = UB; // Why B and not UB?
+    
+//    UB.print(2,"UB UC txt");
+    
+    for(int h = hkl_limits[0]; h < hkl_limits[1]; h++)
+    {
+        for(int k = hkl_limits[2]; k < hkl_limits[3]; k++)
+        {
+            for(int l = hkl_limits[4]; l < hkl_limits[5]; l++)
+            {
+                // Assign a coordinate to use for font rendering since we want to see the indices of the peaks. Only render those that lie within the view extent and only when this list is less than some number of items to avoid clutter.
+                double x = h*B[0] + k*B[1] + l*B[2];
+                double y = h*B[3] + k*B[4] + l*B[5];
+                double z = h*B[6] + k*B[7] + l*B[8];
+                
+                if (i+5 < hkl_text.size())
+                {
+                    if (((x > data_view_extent[0]) && (x < data_view_extent[1])) && 
+                        ((y > data_view_extent[2]) && (y < data_view_extent[3])) && 
+                        ((z > data_view_extent[4]) && (z < data_view_extent[5])))
+                    {
+                        hkl_text[i+0] = h;
+                        hkl_text[i+1] = k;
+                        hkl_text[i+2] = l;
+                        hkl_text[i+3] = x;
+                        hkl_text[i+4] = y;
+                        hkl_text[i+5] = z;
+                        
+                        i+=6;
+                        
+                        hkl_text_counter++;
+                    }
+                }
+                else hkl_text_counter = 0;
+            }    
+        }
+    }
+}
+
+void VolumeRenderWorker::updateUnitCellVertices()
 {
     /* Generates a unit cell grid based on an UB matrix. The grid consists of one set of reciprocal basis vectors per hkl */
     
@@ -623,13 +698,10 @@ void VolumeRenderWorker::updateUnitCell()
     // Generate the positions ([number of bases] X [number of vertices per basis] X [number of float values per vertice]);
     Matrix<float> vertices(n_basis*6,3);
     
-    size_t m = 0, i = 0;
+    size_t m = 0;
     hkl_text_counter = 0;
 
-    
     Matrix<double> B = UB.getBMatrix(); // Why B and not UB?
-    
-//    B.print(2,"B");
     
     for(int h = hkl_limits[0]; h < hkl_limits[1]; h++)
     {
@@ -667,28 +739,6 @@ void VolumeRenderWorker::updateUnitCell()
                 vertices[m+17] = h*B[6] + k*B[7] + (1+l)*B[8];
                 
                 m += 6*3;
-                
-                // Also assign a coordinate to use for font rendering since we want to see the indices of the peaks. Only render those that lie within the view extent and only when this list is less than some number of items to avoid clutter.
-                
-                if (i+5 < hkl_text.size())
-                {
-                    if (((x > data_view_extent[0]) && (x < data_view_extent[1])) && 
-                        ((y > data_view_extent[2]) && (y < data_view_extent[3])) && 
-                        ((z > data_view_extent[4]) && (z < data_view_extent[5])))
-                    {
-                        hkl_text[i+0] = h;
-                        hkl_text[i+1] = k;
-                        hkl_text[i+2] = l;
-                        hkl_text[i+3] = x;
-                        hkl_text[i+4] = y;
-                        hkl_text[i+5] = z;
-                        
-                        i+=6;
-                        
-                        hkl_text_counter++;
-                    }
-                }
-                else hkl_text_counter = 0;
             }    
         }
     }
@@ -715,7 +765,7 @@ void VolumeRenderWorker::drawUnitCell()
     
     float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
     
-    if (alpha > 0.9) alpha = 0.9;
+    if (alpha > 0.7) alpha = 0.7;
     
 //    qDebug() << alpha;
     
@@ -749,6 +799,140 @@ void VolumeRenderWorker::drawUnitCell()
 //    glLineWidth(1.0);
 }
 
+void VolumeRenderWorker::drawMiniCell(QPainter * painter)
+{
+    // Minicell backdrop
+    endRawGLCalls(painter);
+    QRect minicell_rect(0,0,200,200);
+
+    painter->setPen(*normal_pen);
+    painter->setBrush(*fill_brush);
+    painter->drawRoundedRect(minicell_rect, 5, 5, Qt::AbsoluteSize);
+    beginRawGLCalls(painter);
+    
+    // Generate the vertices for the minicell
+    Matrix<double> B = UB.getBMatrix();
+    
+    // Offset by half a diagonal to center the cell
+    Matrix<float> hd(3,1); 
+    hd[0] = (B[0] + B[1] + B[2])*0.5;
+    hd[1] = (B[3] + B[4] + B[5])*0.5;       
+    hd[2] = (B[6] + B[7] + B[8])*0.5;
+    
+    Matrix<float> vetices(8,3,0);
+    
+    vetices[3*0+0] = 0 - hd[0];
+    vetices[3*0+1] = 0 - hd[1];
+    vetices[3*0+2] = 0 - hd[2];
+    
+    vetices[3*1+0] = B[0] - hd[0];
+    vetices[3*1+1] = B[3] - hd[1];
+    vetices[3*1+2] = B[6] - hd[2];
+    
+    vetices[3*2+0] = B[1] - hd[0];
+    vetices[3*2+1] = B[4] - hd[1];
+    vetices[3*2+2] = B[7] - hd[2];
+    
+    vetices[3*3+0] = B[2] - hd[0];
+    vetices[3*3+1] = B[5] - hd[1];
+    vetices[3*3+2] = B[8] - hd[2];
+    
+    vetices[3*4+0] = B[0] + B[1] - hd[0];
+    vetices[3*4+1] = B[3] + B[4] - hd[1];
+    vetices[3*4+2] = B[6] + B[7] - hd[2];
+    
+    vetices[3*5+0] = B[1] + B[2] - hd[0];
+    vetices[3*5+1] = B[4] + B[5] - hd[1];
+    vetices[3*5+2] = B[7] + B[8] - hd[2];
+    
+    vetices[3*6+0] = B[0] + B[2] - hd[0];
+    vetices[3*6+1] = B[3] + B[5] - hd[1];
+    vetices[3*6+2] = B[6] + B[8] - hd[2];
+    
+    vetices[3*7+0] = B[0] + B[1] + B[2] - hd[0];
+    vetices[3*7+1] = B[3] + B[4] + B[5] - hd[1];
+    vetices[3*7+2] = B[6] + B[7] + B[8] - hd[2];
+    
+    
+    // Scaling. The cell has four diagonals. We find the longest one  and scale the cell to it
+    Matrix<float> diagonal_one(1,3);
+    diagonal_one[0] = vetices[3*0+0] - vetices[3*7+0];
+    diagonal_one[1] = vetices[3*0+1] - vetices[3*7+1];
+    diagonal_one[2] = vetices[3*0+1] - vetices[3*7+2];
+    
+    Matrix<float> diagonal_two(1,3);
+    diagonal_two[0] = vetices[3*1+0] - vetices[3*5+0];
+    diagonal_two[1] = vetices[3*1+1] - vetices[3*5+1];
+    diagonal_two[2] = vetices[3*1+2] - vetices[3*5+2];
+
+    Matrix<float> diagonal_three(1,3);
+    diagonal_three[0] = vetices[3*2+0] - vetices[3*6+0];
+    diagonal_three[1] = vetices[3*2+1] - vetices[3*6+1];
+    diagonal_three[2] = vetices[3*2+2] - vetices[3*6+2];
+    
+    Matrix<float> diagonal_four(1,3);
+    diagonal_four[0] = vetices[3*3+0] - vetices[3*4+0];
+    diagonal_four[1] = vetices[3*3+1] - vetices[3*4+1];
+    diagonal_four[2] = vetices[3*3+2] - vetices[3*4+2];
+    
+//    qDebug() << vecLength(diagonal_one) << vecLength(diagonal_two) << vecLength(diagonal_three) << vecLength(diagonal_four); 
+    double scale_factor = 1.5/std::max(vecLength(diagonal_one),std::max(vecLength(diagonal_two),std::max(vecLength(diagonal_three),vecLength(diagonal_four))));
+    
+    minicell_scaling[0] = scale_factor;
+    minicell_scaling[5] = scale_factor;
+    minicell_scaling[10] = scale_factor;
+    
+    
+    setVbo(minicell_vbo, vetices.data(), vetices.size(), GL_STATIC_DRAW);
+    
+    
+    
+    
+    // Generate indices for glDrawElements
+    Matrix<GLuint> a_indices(1,2,0);
+    a_indices[1] = 1;
+    Matrix<GLuint> b_indices(1,2,0);
+    b_indices[1] = 2;
+    Matrix<GLuint> c_indices(1,2,0);
+    c_indices[1] = 3;
+    Matrix<GLuint> wire;
+    unsigned int wire_buf[] = {1,4, 2,4, 1,6, 4,7, 2,5, 3,6, 3,5, 5,7, 6,7};
+    wire.setDeep(1,18,wire_buf);
+    
+    // Draw it
+    glViewport(0,render_surface->height()-200,200,200);
+    glLineWidth(3.0);
+    
+    shared_window->std_3d_col_program->bind();
+    
+    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, minicell_view_matrix.getColMajor().toFloat().data());
+    
+    glBindBuffer(GL_ARRAY_BUFFER, minicell_vbo);
+    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    glUniform4fv(shared_window->std_3d_col_color, 1, red.data());
+    glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, a_indices.data());
+    glUniform4fv(shared_window->std_3d_col_color, 1, green.data());
+    glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, b_indices.data());
+    glUniform4fv(shared_window->std_3d_col_color, 1, blue.data());
+    glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, c_indices.data());
+    glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
+    glLineWidth(1.5);
+    glDrawElements(GL_LINES,  18, GL_UNSIGNED_INT, wire.data());
+    
+    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    
+    glLineWidth(1.0);
+    
+    shared_window->std_3d_col_program->release();
+    
+    glViewport(0,0,render_surface->width(),render_surface->height());
+}
+
+
 void VolumeRenderWorker::drawMarkers()
 {
     glLineWidth(3.0);
@@ -757,7 +941,7 @@ void VolumeRenderWorker::drawMarkers()
     
     glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, marker_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
     
     for (int i = 0; i < markers.size(); i++)
     {
@@ -796,7 +980,7 @@ void VolumeRenderWorker::drawHklText(QPainter * painter)
     {
         Matrix<double> pos2d(1,2);
         
-        getPosition2D(pos2d.data(), hkl_text.data()+i*6+3, &unitcell_view_matrix);
+        getPosition2D(pos2d.data(), hkl_text.data()+i*6+3, &view_matrix);
         
         QString text = "("+QString::number((int) hkl_text[i*6+0])+","+QString::number((int) hkl_text[i*6+1])+","+QString::number((int) hkl_text[i*6+2])+")";
         
@@ -917,7 +1101,7 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
 
                 data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
                 
-                updateUnitCell();
+                updateUnitCellText();
             }
             
         }
@@ -956,7 +1140,8 @@ void VolumeRenderWorker::initialize()
     initializePaintTools();
     
     // Initial drawings
-    updateUnitCell();
+    updateUnitCellVertices();
+    updateUnitCellText();
 }
 
 void VolumeRenderWorker::initializePaintTools()
@@ -1003,6 +1188,7 @@ void VolumeRenderWorker::initResourcesGL()
     glGenBuffers(1, &unitcell_vbo);
 //    glGenBuffers(10, marker_vbo);
     glGenBuffers(1, &marker_centers_vbo);
+    glGenBuffers(1, &minicell_vbo);
 }
 
 void VolumeRenderWorker::initResourcesCL()
@@ -1093,16 +1279,17 @@ void VolumeRenderWorker::initResourcesCL()
 
 void VolumeRenderWorker::setViewMatrices()
 {
-//    qDebug() << "Setting view matrix";
-
-    normalization_scaling[0] = bbox_scaling[0] * projection_scaling[0] * 2.0 / (data_extent[1] - data_extent[0]);
-    normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
-    normalization_scaling[10] = bbox_scaling[10] * projection_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
+    normalization_scaling[0] = bbox_scaling[0] * 2.0 / (data_extent[1] - data_extent[0]);
+    normalization_scaling[5] = bbox_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
+    normalization_scaling[10] = bbox_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
 
     view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation * data_translation;
     unitcell_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
-    marker_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
+    ctc_matrix.setWindow(200, 200);
+    minicell_view_matrix = ctc_matrix * bbox_translation * minicell_scaling * rotation * U;
+    ctc_matrix.setWindow(render_surface->width(),render_surface->height());
+//    marker_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_view_matrix_inverse,
@@ -1461,6 +1648,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isScalebarActive) drawPositionScalebars();
     if (isCenterlineActive) drawCenterLine();
     if (isUnitcellActive) drawUnitCell();
+    if (isUnitcellActive) drawMiniCell(painter);
     
     isDataExtentReadOnly = false;
 
@@ -1490,8 +1678,6 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isOrthoGridActive) drawGrid(painter);
     if (isRulerActive) drawRuler(painter);
     drawCountScalebar(painter);
-    
-    painter->setPen(*normal_pen);
     
     drawOverlay(painter);
     if (isUnitcellActive) drawHklText(painter);
@@ -2103,32 +2289,7 @@ void VolumeRenderWorker::computePixelSize()
 
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
-    // Draw text to indicate lab reference frame directions
-    if (isScalebarActive)
-    {
-        Matrix<float> x_high(1,3,0), y_high(1,3,0), z_high(1,3,0);
-        float length = data_view_extent[1] - data_view_extent[0];
-        x_high[0] = data_view_extent[1] + length * 0.05;
-        x_high[1] = data_view_extent[2] + length * 0.5;
-        x_high[2] = data_view_extent[4] + length * 0.5;
-        
-        y_high[0] = data_view_extent[0] + length * 0.5;
-        y_high[1] = data_view_extent[3] + length * 0.05;
-        y_high[2] = data_view_extent[4] + length * 0.5;
-    
-        z_high[0] = data_view_extent[0] + length * 0.5;
-        z_high[1] = data_view_extent[2] + length * 0.5;
-        z_high[2] = data_view_extent[5] + length * 0.05;
-        
-        Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
-        getPosition2D(x_2d.data(), x_high.data(), &view_matrix);
-        getPosition2D(y_2d.data(), y_high.data(), &view_matrix);
-        getPosition2D(z_2d.data(), z_high.data(), &view_matrix);
-        
-        painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("X (towards source)"));
-        painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y (up)"));
-        painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Z"));
-    }
+     painter->setPen(*normal_pen);
     
     // Position scalebar tick labels
     if (isScalebarActive)
