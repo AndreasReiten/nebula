@@ -521,6 +521,15 @@ void MainWindow::initializeEmit()
     kappaCorrectionSpinBox->setValue(0.0);
     phiCorrectionSpinBox->setValue(0.0);
     
+    alphaNormSpinBox->setValue(90);
+    betaNormSpinBox->setValue(90);
+    gammaNormSpinBox->setValue(90);
+    
+    aNormSpinBox->setValue(1);
+    bNormSpinBox->setValue(1);
+    cNormSpinBox->setValue(1);
+    
+    
 //    alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
 //    betaNormSpinBox->setValue(UB.beta()*180.0/pi);
 //    gammaNormSpinBox->setValue(UB.gamma()*180.0/pi);
@@ -996,13 +1005,13 @@ void MainWindow::initializeConnects()
     connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setLCurrent(int)));
     
     /* this <-> this */
-    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_a(double)));
-    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_b(double)));
-    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_c(double)));
+    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_a(double)), Qt::QueuedConnection);
+    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_b(double)), Qt::QueuedConnection);
+    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_c(double)), Qt::QueuedConnection);
     
-    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_alpha(double)));
-    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_beta(double)));
-    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_gamma(double)));
+    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_alpha(double)), Qt::QueuedConnection);
+    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_beta(double)), Qt::QueuedConnection);
+    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_gamma(double)), Qt::QueuedConnection);
     
     
     connect(this->scriptingAct, SIGNAL(toggled(bool)), fileBrowserWidget, SLOT(setHidden(bool)));

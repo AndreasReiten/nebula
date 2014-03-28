@@ -157,6 +157,9 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     scalebar_view_matrix.setIdentity(4);
     scalebar_rotation.setIdentity(4);
     projection_scaling.setIdentity(4);
+    projection_scaling[0] = 0.7;
+    projection_scaling[5] = 0.7;
+    projection_scaling[10] = 0.7;
     unitcell_view_matrix.setIdentity(4);
 
     double N = 0.1;
@@ -570,40 +573,58 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 void VolumeRenderWorker::setUB_a(double value)
 {
     UB.setA(value);
-    updateUnitCellVertices();
-    updateUnitCellText();
+    if (isInitialized)
+    {
+        updateUnitCellVertices();
+        updateUnitCellText();
+    }
 }
 
 void VolumeRenderWorker::setUB_b(double value)
 {
     UB.setB(value);
-    updateUnitCellVertices();
-    updateUnitCellText();
+    if (isInitialized)
+    {
+        updateUnitCellVertices();
+        updateUnitCellText();
+    }
 }
 void VolumeRenderWorker::setUB_c(double value)
 {
     UB.setC(value);
-    updateUnitCellVertices();
-    updateUnitCellText();
+    if (isInitialized)
+    {
+        updateUnitCellVertices();
+        updateUnitCellText();
+    }
 }
 
 void VolumeRenderWorker::setUB_alpha(double value)
 {
     UB.setAlpha(value*pi/180.0);
-    updateUnitCellVertices();
-    updateUnitCellText();
+    if (isInitialized)
+    {
+        updateUnitCellVertices();
+        updateUnitCellText();
+    }
 }
 void VolumeRenderWorker::setUB_beta(double value)
 {
     UB.setBeta(value*pi/180.0);
-    updateUnitCellVertices();
-    updateUnitCellText();
+    if (isInitialized)
+    {
+        updateUnitCellVertices();
+        updateUnitCellText();
+    }
 }
 void VolumeRenderWorker::setUB_gamma(double value)
 {
     UB.setGamma(value*pi/180.0);
-    updateUnitCellVertices();
-    updateUnitCellText();
+    if (isInitialized)
+    {
+        updateUnitCellVertices();
+        updateUnitCellText();
+    }
 }
 
 
@@ -750,7 +771,7 @@ void VolumeRenderWorker::updateUnitCellVertices()
 
 void VolumeRenderWorker::drawUnitCell()
 {
-//    glLineWidth(5.0);
+    glLineWidth(0.7);
     shared_window->unitcell_program->bind();
     glEnableVertexAttribArray(shared_window->unitcell_fragpos);
 
@@ -796,20 +817,11 @@ void VolumeRenderWorker::drawUnitCell()
     shared_window->unitcell_program->release();
     
     
-//    glLineWidth(1.0);
+    glLineWidth(1.0);
 }
 
 void VolumeRenderWorker::drawMiniCell(QPainter * painter)
 {
-    // Minicell backdrop
-    endRawGLCalls(painter);
-    QRect minicell_rect(0,0,200,200);
-
-    painter->setPen(*normal_pen);
-    painter->setBrush(*fill_brush);
-    painter->drawRoundedRect(minicell_rect, 5, 5, Qt::AbsoluteSize);
-    beginRawGLCalls(painter);
-    
     // Generate the vertices for the minicell
     Matrix<double> B = UB.getBMatrix();
     
@@ -875,13 +887,24 @@ void VolumeRenderWorker::drawMiniCell(QPainter * painter)
     diagonal_four[1] = vetices[3*3+1] - vetices[3*4+1];
     diagonal_four[2] = vetices[3*3+2] - vetices[3*4+2];
     
-//    qDebug() << vecLength(diagonal_one) << vecLength(diagonal_two) << vecLength(diagonal_three) << vecLength(diagonal_four); 
     double scale_factor = 1.5/std::max(vecLength(diagonal_one),std::max(vecLength(diagonal_two),std::max(vecLength(diagonal_three),vecLength(diagonal_four))));
     
     minicell_scaling[0] = scale_factor;
     minicell_scaling[5] = scale_factor;
     minicell_scaling[10] = scale_factor;
     
+    endRawGLCalls(painter);
+    
+    // Minicell backdrop
+    QRect minicell_rect(0,0,200,200);
+
+    painter->setPen(*normal_pen);
+    painter->setBrush(*fill_brush);
+    painter->drawRoundedRect(minicell_rect, 5, 5, Qt::AbsoluteSize);
+    
+    
+    
+    beginRawGLCalls(painter);
     
     setVbo(minicell_vbo, vetices.data(), vetices.size(), GL_STATIC_DRAW);
     
@@ -930,6 +953,26 @@ void VolumeRenderWorker::drawMiniCell(QPainter * painter)
     shared_window->std_3d_col_program->release();
     
     glViewport(0,0,render_surface->width(),render_surface->height());
+    
+    
+    endRawGLCalls(painter);
+    
+    // Minicell text
+    
+    Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
+    getPosition2D(x_2d.data(), vetices.data()+3, &minicell_view_matrix);
+    getPosition2D(y_2d.data(), vetices.data()+6, &minicell_view_matrix);
+    getPosition2D(z_2d.data(), vetices.data()+9, &minicell_view_matrix);
+    
+    painter->setFont(*minicell_font);
+    
+    painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( x_2d[1]+ 1.0) * 0.5) *200), QString("a*"));
+    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( y_2d[1]+ 1.0) * 0.5) *200), QString("b*"));
+    painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( z_2d[1]+ 1.0) * 0.5) *200), QString("c*"));
+    
+    painter->setFont(*normal_font);
+    
+    beginRawGLCalls(painter);
 }
 
 
@@ -1150,7 +1193,13 @@ void VolumeRenderWorker::initializePaintTools()
     normal_pen->setWidthF(1.0);
     border_pen = new QPen;
     border_pen->setWidth(1);
-
+    
+    minicell_font = new QFont;
+    minicell_font->setBold(true);
+    minicell_font->setItalic(true);
+    
+    
+    
     whatever_pen = new QPen;
 
     normal_font = new QFont();
@@ -1279,9 +1328,9 @@ void VolumeRenderWorker::initResourcesCL()
 
 void VolumeRenderWorker::setViewMatrices()
 {
-    normalization_scaling[0] = bbox_scaling[0] * 2.0 / (data_extent[1] - data_extent[0]);
-    normalization_scaling[5] = bbox_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
-    normalization_scaling[10] = bbox_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
+    normalization_scaling[0] = bbox_scaling[0] * projection_scaling[0] *2.0 / (data_extent[1] - data_extent[0]);
+    normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
+    normalization_scaling[10] = bbox_scaling[10] * projection_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
 
     view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation * data_translation;
@@ -2291,6 +2340,33 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
      painter->setPen(*normal_pen);
     
+     // Draw text to indicate lab reference frame directions
+     if (isScalebarActive)
+     {
+         Matrix<float> x_high(1,3,0), y_high(1,3,0), z_high(1,3,0);
+         float length = data_view_extent[1] - data_view_extent[0];
+         x_high[0] = data_view_extent[1] + length * 0.05;
+         x_high[1] = data_view_extent[2] + length * 0.5;
+         x_high[2] = data_view_extent[4] + length * 0.5;
+         
+         y_high[0] = data_view_extent[0] + length * 0.5;
+         y_high[1] = data_view_extent[3] + length * 0.05;
+         y_high[2] = data_view_extent[4] + length * 0.5;
+     
+         z_high[0] = data_view_extent[0] + length * 0.5;
+         z_high[1] = data_view_extent[2] + length * 0.5;
+         z_high[2] = data_view_extent[5] + length * 0.05;
+         
+         Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
+         getPosition2D(x_2d.data(), x_high.data(), &view_matrix);
+         getPosition2D(y_2d.data(), y_high.data(), &view_matrix);
+         getPosition2D(z_2d.data(), z_high.data(), &view_matrix);
+         
+         painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("X (towards source)"));
+         painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y (up)"));
+         painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Z"));
+     } 
+     
     // Position scalebar tick labels
     if (isScalebarActive)
     {
@@ -2957,8 +3033,8 @@ void VolumeRenderWorker::setProjection()
     ctc_matrix.setProjection(isOrthonormal);
 
     float f;
-    if (isOrthonormal) f = 1;
-    else f = 1.0/1.1;
+    if (isOrthonormal) f = 0.9;
+    else f = 0.7;
 
     projection_scaling[0] = f;
     projection_scaling[5] = f;

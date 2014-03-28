@@ -361,6 +361,7 @@ private:
     QPen * normal_pen;
     QPen * border_pen;
     QPen * whatever_pen;
+    QFont * minicell_font;
     QBrush * fill_brush;
     QBrush * histogram_brush;
     QBrush * normal_brush;
