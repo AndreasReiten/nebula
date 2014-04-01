@@ -400,9 +400,9 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
     alpha =  0.8735582;
     beta =  0.000891863;
     
-    qDebug() << "Omega" << omega*180/pi << offset_omega*180/pi;
-    qDebug() << "Kappa" << kappa*180/pi << offset_kappa*180/pi;
-    qDebug() << "Phi" << phi*180/pi << offset_phi*180/pi;
+//    qDebug() << "Omega" << omega*180/pi << offset_omega*180/pi;
+//    qDebug() << "Kappa" << kappa*180/pi << offset_kappa*180/pi;
+//    qDebug() << "Phi" << phi*180/pi << offset_phi*180/pi;
     
 //    qDebug() << "PHI";
     PHI.setArbRotation(beta, 0, -(phi+offset_phi)); 

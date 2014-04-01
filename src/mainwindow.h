@@ -258,8 +258,8 @@ private:
     
     QLabel * imageLabel;
     
-    QWidget * imageRawWidget;
-    QWidget * imageCorrectedWidget;
+    QWidget * imageDisplayWidget;
+//    QWidget * imageCorrectedWidget;
     
     QPushButton * imageFastBackButton;
     QPushButton * imageSlowBackButton;
@@ -269,8 +269,9 @@ private:
     QPushButton * imageFastForwardButton;
     QPushButton * imageSlowForwardButton;
     
-    QCheckBox * imageRawCeckBox;
-    QCheckBox * imageCorrectedCeckBox;
+//    QCheckBox * imageRawCeckBox;
+//    QCheckBox * imageCorrectedCeckBox;
+    QComboBox * imageModeCB;
     
     // Actions
     QAction *shadowAct;
@@ -309,6 +310,7 @@ private:
     QAction *rotateDownAct;
     QAction *rulerAct;
     QAction *markAct;
+    QAction *labFrameAct;
     
     
     int current_svo;

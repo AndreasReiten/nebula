@@ -1,18 +1,21 @@
 float model(float3 k, __constant float * param)
 {
     // Calculate the model
+    float pi = 3.14159; 
+//float pi = 0.5;
 
-    float a = param[0] * (2.0f - native_cos(k.x)*(native_cos(k.y) + native_cos(k.z))) + (2.0f*param[2] - param[0])*(1.0f - native_cos(k.y)*native_cos(k.z));
 
-    float b = param[0] * (2.0f - native_cos(k.y)*(native_cos(k.x) + native_cos(k.z))) + (2.0f*param[2] - param[0])*(1.0f - native_cos(k.x)*native_cos(k.z));
+    float a = param[0] * (2.0f - native_cos(k.x*2*pi)*(native_cos(k.y*2*pi) + native_cos(k.z*2*pi))) + (2.0f*param[2] - param[0])*(1.0f - native_cos(k.y*2*pi)*native_cos(k.z*2*pi));
 
-    float c = param[0] * (2.0f - native_cos(k.z)*(native_cos(k.y) + native_cos(k.x))) + (2.0f*param[2] - param[0])*(1.0f - native_cos(k.y)*native_cos(k.x));
+    float b = param[0] * (2.0f - native_cos(k.y*2*pi)*(native_cos(k.x*2*pi) + native_cos(k.z*2*pi))) + (2.0f*param[2] - param[0])*(1.0f - native_cos(k.x*2*pi)*native_cos(k.z*2*pi));
 
-    float d = (param[1] + param[2]) * native_sin(k.x) * native_sin(k.y);
+    float c = param[0] * (2.0f - native_cos(k.z*2*pi)*(native_cos(k.y*2*pi) + native_cos(k.x*2*pi))) + (2.0f*param[2] - param[0])*(1.0f - native_cos(k.y*2*pi)*native_cos(k.x*2*pi));
 
-    float e = (param[1] + param[2]) * native_sin(k.z) * native_sin(k.y);
+    float d = (param[1] + param[2]) * native_sin(k.x*2*pi) * native_sin(k.y*2*pi);
 
-    float f = (param[1] + param[2]) * native_sin(k.x) * native_sin(k.z);
+    float e = (param[1] + param[2]) * native_sin(k.z*2*pi) * native_sin(k.y*2*pi);
+
+    float f = (param[1] + param[2]) * native_sin(k.x*2*pi) * native_sin(k.z*2*pi);
 
 
     float3 Ak = (float3)(

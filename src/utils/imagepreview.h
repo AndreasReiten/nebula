@@ -16,7 +16,7 @@ public:
     explicit ImagePreview(QObject *parent = 0);
     
 signals:
-    
+//    setImage();
 public slots:
     
 };

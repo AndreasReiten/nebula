@@ -95,6 +95,8 @@ public slots:
     void setHCurrent(int value);
     void setKCurrent(int value);
     void setLCurrent(int value);
+    void setMiniCell();
+    void setLabFrame();
     
 //    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
@@ -156,12 +158,14 @@ private:
     bool isRulerActive;
     bool isLMBDown;
     bool isURotationActive;
+    bool isLabFrameActive;
+    bool isMiniCellActive;
 //    bool isUBActive;
     
     // Markers
     QVector<Marker> markers;
     QVector<GLuint> marker_vbo;
-    void drawMarkers();
+    void drawMarkers(QPainter *painter);
     
     GLuint marker_centers_vbo;
     int n_marker_indices;
@@ -206,8 +210,12 @@ private:
     cl_mem integration_tex_alpha_cl;
     cl_mem integration_tex_beta_cl;
     
+    // Lab frame
+    void drawLabFrame(QPainter * painter);
+    GLuint lab_frame_vbo;
+    
     // UB matrix implementation
-    void drawUnitCell();
+    void drawUnitCell(QPainter *painter);
     
     GLuint unitcell_vbo;
     int unitcell_nodes;
@@ -223,14 +231,14 @@ private:
     GLuint point_vbo;
     
     // Drawing functions
-    void drawRayTex();
-    void drawPositionScalebars();
+    void drawRayTex(QPainter *painter);
+    void drawPositionScalebars(QPainter *painter);
     void drawOverlay(QPainter *painter);
     void drawIntegral(QPainter *painter);
     void drawRuler(QPainter *painter);
     void drawGrid(QPainter *painter);
     void drawCountScalebar(QPainter *painter);
-    void drawCenterLine();
+    void drawCenterLine(QPainter *painter);
     void beginRawGLCalls(QPainter * painter);
     void endRawGLCalls(QPainter * painter);
     void drawSenseOfRotation(double zeta, double eta, double rpm);
@@ -289,6 +297,8 @@ private:
     // Mouse
     int last_mouse_pos_x;
     int last_mouse_pos_y;
+    
+    
 
     // View matrices
     Matrix<double> view_matrix;
@@ -304,6 +314,7 @@ private:
     Matrix<double> scalebar_view_matrix;
     Matrix<double> unitcell_view_matrix;
     Matrix<double> minicell_view_matrix;
+//    Matrix<double> lab_frame_view_matrix;
     RotationMatrix<double> scalebar_rotation;
     Matrix<double> projection_scaling;
     RotationMatrix<double> U;
@@ -345,16 +356,20 @@ private:
     cl_sampler cl_svo_pool_sampler;
 
     // Colors
-    Matrix<GLfloat> marker_line_color;
-    Matrix<GLfloat> white;
-    Matrix<GLfloat> black;
-    Matrix<GLfloat> yellow;
-    Matrix<GLfloat> red;
-    Matrix<GLfloat> green;
-    Matrix<GLfloat> blue;
-    Matrix<GLfloat> clear_color;
-    Matrix<GLfloat> clear_color_inverse;
-    Matrix<GLfloat> centerline_color;
+    Color<GLfloat> marker_line_color;
+    Color<GLfloat> white;
+    Color<GLfloat> black;
+    Color<GLfloat> yellow;
+    Color<GLfloat> red;
+    Color<GLfloat> green;
+    Color<GLfloat> green_light;
+    Color<GLfloat> blue_light;
+    Color<GLfloat> magenta;
+    Color<GLfloat> magenta_light;
+    Color<GLfloat> blue;
+    Color<GLfloat> clear_color;
+    Color<GLfloat> clear_color_inverse;
+    Color<GLfloat> centerline_color;
 
     // Pens
     void initializePaintTools();

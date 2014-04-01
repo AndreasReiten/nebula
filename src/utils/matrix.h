@@ -13,6 +13,7 @@
 #include <limits>
 #include <cstring>
 #include <QDebug>
+#include <QColor>
 #include <vector>
 
 const double pi = 4.0*std::atan(1.0);
@@ -839,7 +840,11 @@ class RotationMatrix : public Matrix<T>{
         const RotationMatrix<T> getYRotation(double value);
         const RotationMatrix<T> getZRotation(double value);
         const RotationMatrix<T> getArbRotation(double zeta, double eta, double gamma);
+        
+        void setFrom3x3(Matrix<T> mat);
 };
+
+
 
 template <class T>
 RotationMatrix<T>::RotationMatrix()
@@ -880,6 +885,7 @@ RotationMatrix<T>::~RotationMatrix()
 }
 
 
+
 template <class T>
 RotationMatrix<T>& RotationMatrix<T>::operator = (Matrix<T> other)
 {
@@ -894,6 +900,22 @@ RotationMatrix<T>& RotationMatrix<T>::operator = (RotationMatrix<T> other)
     this->swap(*this, other);
 
     return * this;
+}
+
+template <class T>
+void RotationMatrix<T>::setFrom3x3(Matrix<T> mat)
+{
+    this->setIdentity(4);
+    this->data()[0] = mat[0];
+    this->data()[1] = mat[1];
+    this->data()[2] = mat[2];
+    this->data()[4] = mat[3];
+    this->data()[5] = mat[4];
+    this->data()[6] = mat[5];
+    this->data()[8] = mat[6];
+    this->data()[9] = mat[7];
+    this->data()[10] = mat[8];
+    
 }
 
 template <class T>
@@ -1453,6 +1475,81 @@ template <class T>
 T UBMatrix<T>::gammaStar()
 {
     return acos(vecDot(aStarVec(),bStarVec()) / (vecLength(aStarVec())*vecLength(bStarVec())));
+}
+
+/* UB matrix */
+template <class T>
+class Color : public Matrix<T>{
+    public:
+        Color();
+        Color(T R, T G, T B, T A);
+        ~Color();
+
+        Color<T>& operator = (Matrix<T> other);
+        Color<T>& operator = (Color<T> other);
+        
+        QColor toQColor();
+        
+        void set(T R, T G, T B, T A);
+};
+
+template <class T>
+Color<T>::Color()
+{
+    this->reserve(1,4);
+}
+
+template <class T>
+Color<T>::Color(T R, T G, T B, T A)
+{
+    this->reserve(1,4);
+    this->data[0] = R;
+    this->data[1] = G;
+    this->data[2] = B;
+    this->data[3] = A;
+}
+
+template <class T>
+Color<T>::~Color()
+{
+    ;
+}
+
+template <class T>
+Color<T>& Color<T>::operator = (Matrix<T> other)
+{
+    if (other.size() != this->size()) qWarning() << "Sizes do not match: "<< other.size() << "!=" << this->size();
+    this->swap(*this, other);
+    return * this;
+}
+
+template <class T>
+Color<T>& Color<T>::operator = (Color<T> other)
+{
+    this->swap(*this, other);
+    return * this;
+}
+
+template <class T>
+QColor Color<T>::toQColor()
+{
+    QColor color;
+    color.setRedF(this->at(0));
+    color.setGreenF(this->at(1));
+    color.setBlueF(this->at(2));
+    color.setAlphaF(this->at(3));
+    
+    return color;
+}
+
+template <class T>
+void Color<T>::set(T R, T G, T B, T A)
+{
+    this->reserve(1,4);
+    this->data()[0] = R;
+    this->data()[1] = G;
+    this->data()[2] = B;
+    this->data()[3] = A;
 }
 
 #endif

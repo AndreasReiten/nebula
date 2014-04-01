@@ -52,5 +52,6 @@
         <file>src/shaders/unitcell.f.glsl</file>
         <file>src/shaders/unitcell.v.glsl</file>
         <file>art/marker.png</file>
+        <file>art/labframe.png</file>
     </qresource>
 </RCC>

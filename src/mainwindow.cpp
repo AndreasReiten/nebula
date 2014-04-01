@@ -498,9 +498,9 @@ void MainWindow::initializeEmit()
     projectThresholdLow->setValue(10);
     projectThresholdHigh->setValue(1e9);
 
-    dataMinSpinBox->setValue(10);
+    dataMinSpinBox->setValue(1);
     dataMaxSpinBox->setValue(1000);
-    alphaSpinBox->setValue(0.5);
+    alphaSpinBox->setValue(1.0);
     brightnessSpinBox->setValue(2.0);
 
     funcParamASpinBox->setValue(13.5);
@@ -639,6 +639,9 @@ void MainWindow::initializeActions()
     rulerAct->setCheckable(true);
     
     markAct = new QAction(QIcon(":/art/marker.png"), tr("&Add marker"), this);
+    labFrameAct = new QAction(QIcon(":/art/labframe.png"), tr("&View Lab Frame"), this);
+    labFrameAct->setCheckable(true);
+    labFrameAct->setChecked(true);
     
     alignLabXtoSliceXAct = new QAction(QIcon(":/art/align_x.png"), tr("Align lab frame to slice frame x"), this);
     alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), tr("Align lab frame to slice frame y"), this);
@@ -997,6 +1000,7 @@ void MainWindow::initializeConnects()
     connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
     connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
     connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(addMarker()));
+    connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLabFrame()));
 //    connect(this, SIGNAL(changedUB()), volumeRenderWindow->getWorker(), SLOT(updateUnitCell()));
     connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setURotation()));
     connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
@@ -1401,16 +1405,19 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(projectionAct);
         
         viewToolBar->addAction(markAct);
-        viewToolBar->addAction(rulerAct);
+//        viewToolBar->addAction(rulerAct);
         viewToolBar->addAction(scalebarAct);
+        viewToolBar->addAction(labFrameAct);
         viewToolBar->addAction(sliceAct);
-        viewToolBar->addAction(orthoGridAct);
+//        viewToolBar->addAction(orthoGridAct);
         
-        viewToolBar->addAction(integrate3DAct);
-        viewToolBar->addAction(log3DAct);
+        
         
         viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(dataStructureAct);
+        
+        viewToolBar->addAction(integrate3DAct);
+        viewToolBar->addAction(log3DAct);
         viewToolBar->addSeparator();
         
         viewToolBar->addAction(integrate2DAct);
@@ -1456,18 +1463,18 @@ void MainWindow::initializeInteractives()
         
         imageLabel = new QLabel("---");
         
-        imageRawWidget = new QWidget;
-        imageRawWidget->setFixedSize(200,150);
-        imageCorrectedWidget = new QWidget;
-        imageCorrectedWidget->setFixedSize(200,200);
+        imageDisplayWidget = new QWidget;
+//        imageDisplayWidget->setFixedSize(200,150);
+//        imageCorrectedWidget = new QWidget;
+//        imageCorrectedWidget->setFixedSize(200,200);
         
-        QWidget * frameWidget = new QWidget; 
+//        QWidget * frameWidget = new QWidget; 
         
-        QHBoxLayout * frameLayout = new QHBoxLayout;
+//        QHBoxLayout * frameLayout = new QHBoxLayout;
         
-        frameLayout->addWidget(imageRawWidget);
-        frameLayout->addWidget(imageCorrectedWidget);
-        frameWidget->setLayout(frameLayout);    
+//        frameLayout->addWidget(imageRawWidget);
+//        frameLayout->addWidget(imageCorrectedWidget);
+//        frameWidget->setLayout(frameLayout);    
         
         imageFastBackButton = new QPushButton;
         imageFastBackButton->setIcon(QIcon(":art/fast_back.png"));
@@ -1485,24 +1492,28 @@ void MainWindow::initializeInteractives()
         imageSlowForwardButton->setIcon(QIcon(":art/forward.png"));
         imageSlowForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         
-        imageRawCeckBox = new QCheckBox("Raw");
-        imageCorrectedCeckBox = new QCheckBox("Corrected");
-        connect(imageRawCeckBox, SIGNAL(clicked(bool)), imageRawWidget, SLOT(setVisible(bool)));
-        connect(imageCorrectedCeckBox, SIGNAL(clicked(bool)), imageCorrectedWidget, SLOT(setVisible(bool)));
-        imageRawCeckBox->setChecked(true);
-        imageCorrectedCeckBox->setChecked(true);
+//        imageRawCeckBox = new QCheckBox("Raw");
+//        imageCorrectedCeckBox = new QCheckBox("Corrected");
+//        connect(imageRawCeckBox, SIGNAL(clicked(bool)), imageRawWidget, SLOT(setVisible(bool)));
+//        connect(imageCorrectedCeckBox, SIGNAL(clicked(bool)), imageCorrectedWidget, SLOT(setVisible(bool)));
+//        imageRawCeckBox->setChecked(true);
+//        imageCorrectedCeckBox->setChecked(true);
+        
+        imageModeCB = new QComboBox;
+        imageModeCB->addItem("Raw");
+        imageModeCB->addItem("Corrected");
                 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setRowStretch(1,1);
         imageLayout->addWidget(imageLabel,0,0,1,8);
-        imageLayout->addWidget(frameWidget,1,0,1,8);
+        imageLayout->addWidget(imageDisplayWidget,1,0,1,8);
         imageLayout->addWidget(imageFastBackButton,2,0,1,2);
         imageLayout->addWidget(imageSlowBackButton,2,2,1,1);
         imageLayout->addWidget(imageSpinBox,2,3,1,2);
         imageLayout->addWidget(imageSlowForwardButton,2,5,1,1);
         imageLayout->addWidget(imageFastForwardButton,2,6,1,2);
-        imageLayout->addWidget(imageRawCeckBox,3,0,1,1);
-        imageLayout->addWidget(imageCorrectedCeckBox,3,1,1,1);
+        imageLayout->addWidget(imageModeCB,3,0,1,8);
+//        imageLayout->addWidget(imageCorrectedCeckBox,3,1,1,1);
         
         imageWidget->setLayout(imageLayout);
         
@@ -1640,12 +1651,17 @@ void MainWindow::initializeInteractives()
         alignAlongBStarButton = new QPushButton("Align b*");
         alignAlongCStarButton = new QPushButton("Align c*");
         
-        helpCellOverlayButton = new QPushButton("Overlay");
+        helpCellOverlayButton = new QPushButton("Help Cell");
         rotateCellButton = new QPushButton("Rotation");
         toggleCellButton = new QPushButton("Toggle");
         
         rotateCellButton->setCheckable(true);
         rotateCellButton->setChecked(false);
+        
+        helpCellOverlayButton->setCheckable(true);
+        helpCellOverlayButton->setChecked(true);
+        
+        connect(helpCellOverlayButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setMiniCell()));
         
         QLabel * aLabel = new QLabel("<i>a<i>");
         QLabel * bLabel = new QLabel("<i>b<i>");
@@ -1654,12 +1670,12 @@ void MainWindow::initializeInteractives()
         QLabel * betaLabel = new QLabel(trUtf8( "<i>β<i>"));
         QLabel * gammaLabel = new QLabel(trUtf8( "<i>γ<i>"));
 
-        QLabel * aStarLabel = new QLabel("<i>a*<i>");
-        QLabel * bStarLabel = new QLabel("<i>b*<i>");
-        QLabel * cStarLabel = new QLabel("<i>c*<i>");
-        QLabel * alphaStarLabel = new QLabel(trUtf8("<i>α*<i>"));
-        QLabel * betaStarLabel = new QLabel(trUtf8( "<i>β*<i>"));
-        QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
+//        QLabel * aStarLabel = new QLabel("<i>a*<i>");
+//        QLabel * bStarLabel = new QLabel("<i>b*<i>");
+//        QLabel * cStarLabel = new QLabel("<i>c*<i>");
+//        QLabel * alphaStarLabel = new QLabel(trUtf8("<i>α*<i>"));
+//        QLabel * betaStarLabel = new QLabel(trUtf8( "<i>β*<i>"));
+//        QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
         
         QLabel * hLabel = new QLabel("<i>h<i>");
         QLabel * kLabel = new QLabel("<i>k<i>");
@@ -1681,19 +1697,19 @@ void MainWindow::initializeInteractives()
         unitCellLayout->addWidget(gammaLabel,1,4,1,1);
         unitCellLayout->addWidget(gammaNormSpinBox,1,5,1,1);
         
-        unitCellLayout->addWidget(aStarLabel,2,0,1,1);
-        unitCellLayout->addWidget(aStarSpinBox,2,1,1,1);
-        unitCellLayout->addWidget(bStarLabel,2,2,1,1);
-        unitCellLayout->addWidget(bStarSpinBox,2,3,1,1);
-        unitCellLayout->addWidget(cStarLabel,2,4,1,1);
-        unitCellLayout->addWidget(cStarSpinBox,2,5,1,1);
+//        unitCellLayout->addWidget(aStarLabel,2,0,1,1);
+//        unitCellLayout->addWidget(aStarSpinBox,2,1,1,1);
+//        unitCellLayout->addWidget(bStarLabel,2,2,1,1);
+//        unitCellLayout->addWidget(bStarSpinBox,2,3,1,1);
+//        unitCellLayout->addWidget(cStarLabel,2,4,1,1);
+//        unitCellLayout->addWidget(cStarSpinBox,2,5,1,1);
         
-        unitCellLayout->addWidget(alphaStarLabel,3,0,1,1);
-        unitCellLayout->addWidget(alphaStarSpinBox,3,1,1,1);
-        unitCellLayout->addWidget(betaStarLabel,3,2,1,1);
-        unitCellLayout->addWidget(betaStarSpinBox,3,3,1,1);
-        unitCellLayout->addWidget(gammaStarLabel,3,4,1,1);
-        unitCellLayout->addWidget(gammaStarSpinBox,3,5,1,1);
+//        unitCellLayout->addWidget(alphaStarLabel,3,0,1,1);
+//        unitCellLayout->addWidget(alphaStarSpinBox,3,1,1,1);
+//        unitCellLayout->addWidget(betaStarLabel,3,2,1,1);
+//        unitCellLayout->addWidget(betaStarSpinBox,3,3,1,1);
+//        unitCellLayout->addWidget(gammaStarLabel,3,4,1,1);
+//        unitCellLayout->addWidget(gammaStarSpinBox,3,5,1,1);
         
         unitCellLayout->addWidget(hLabel,4,0,1,1);
         unitCellLayout->addWidget(hSpinBox,4,1,1,1);
