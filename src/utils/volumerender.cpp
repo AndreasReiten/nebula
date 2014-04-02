@@ -293,15 +293,17 @@ void VolumeRenderWorker::setLCurrent(int value)
 
 void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
 {
+    hkl.print(0,"hkl");
+    
     Matrix<double> hkl_focus(1,3,0);
     
     hkl_focus[0] = hkl[0]*UB[0] + hkl[1]*UB[1] + hkl[2]*UB[2];
     hkl_focus[1] = hkl[0]*UB[3] + hkl[1]*UB[4] + hkl[2]*UB[5];
     hkl_focus[2] = hkl[0]*UB[6] + hkl[1]*UB[7] + hkl[2]*UB[8];
     
-    data_translation[3] = hkl_focus[0];
-    data_translation[7] = hkl_focus[1];
-    data_translation[11] = hkl_focus[2];
+    data_translation[3] = -hkl_focus[0];
+    data_translation[7] = -hkl_focus[1];
+    data_translation[11] = -hkl_focus[2];
     
     data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
     
@@ -1494,15 +1496,8 @@ void VolumeRenderWorker::setRayTexture()
     {
         // Scale down the change in quality factor a bit so that a stable resolution will be easier to reach. If not we risk having the resolution jump between two states that both fullfill the if-criterion enclosing this code
         
-//        if (quality_factor < 1.0)
-//        {
-//            quality_factor = 1.0 + (quality_factor - 1.0)*0.50; 
-//        }
-//        else
-//        {
-            // If the quality factor is greater than one, it means the program wants to increase the resolution of the rendering texture. It can be beneficial to downscale the quality factor a bit in such cases
-            quality_factor = 1.0 + (quality_factor - 1.0)*0.25;
-//        }
+        // If the quality factor is greater than one, it means the program wants to increase the resolution of the rendering texture. It can be beneficial to downscale the quality factor a bit in such cases
+        quality_factor = 1.0 + (quality_factor - 1.0)*0.25;
         // Set a texture for the volume rendering kernel
         Matrix<int> ray_tex_new(1, 2);
         ray_tex_new[0] = (int)((float)render_surface->width()*(weird_parameter*0.01)*std::pow(quality_factor, 1.0/3.0));
@@ -1519,8 +1514,6 @@ void VolumeRenderWorker::setRayTexture()
         quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(weird_parameter*0.01)), 3.0);
 
         weird_parameter *= std::pow(quality_factor, 1.0/3.0);
-//        weird_parameter =  100.0*(ray_tex_new[0]*ray_tex_new[1])/(render_surface->width()*render_surface->height());
-//        qDebug() << weird_parameter <<  100.0*(ray_tex_new[0]*ray_tex_new[1])/(render_surface->width()*render_surface->height()) <<  100.0*(ray_tex_new[1])/(render_surface->height());
         
         ray_tex_dim = ray_tex_new;
 
