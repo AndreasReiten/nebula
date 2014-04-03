@@ -36,13 +36,13 @@
 
 /* This is the file to edit/append if you would like to add your own file formats */
 
-class PilatusFile
+class DetectorFile
 {
     /* Refer to PILATUS CBF header specs for details */
     public:
-        ~PilatusFile();
-        PilatusFile();
-        PilatusFile(QString path, OpenCLContext * context);
+        ~DetectorFile();
+        DetectorFile();
+        DetectorFile(QString path, OpenCLContext * context);
 
         QString getPath() const;
 

@@ -98,6 +98,7 @@ public slots:
     void setMiniCell();
     void setLabFrame();
     
+    
 //    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
@@ -111,10 +112,17 @@ public slots:
     void alignLabYtoSliceY();
     void alignLabZtoSliceZ();
     void alignSliceToLab();
+    
+    void alignAStartoZ();
+    void alignBStartoZ();
+    void alignCStartoZ();
+    
     void rotateLeft();
     void rotateRight();
     void rotateUp();
     void rotateDown();
+    
+    
     void toggleRuler();
     
     // UB matrix help slots
@@ -173,7 +181,7 @@ private:
 //    Matrix<double> marker_centers;
     
     // Mini unit cell
-    void drawMiniCell(QPainter *painter);
+    void drawHelpCell(QPainter *painter);
     GLuint minicell_vbo;
     
     

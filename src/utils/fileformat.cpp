@@ -1,10 +1,10 @@
 #include "fileformat.h"
 
-PilatusFile::~PilatusFile()
+DetectorFile::~DetectorFile()
 {
 
 }
-PilatusFile::PilatusFile() :
+DetectorFile::DetectorFile() :
     active_angle(2)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
@@ -16,7 +16,7 @@ PilatusFile::PilatusFile() :
     offset_kappa = 0;
     offset_phi = 0;
 }
-PilatusFile::PilatusFile(QString path, OpenCLContext *context):
+DetectorFile::DetectorFile(QString path, OpenCLContext *context):
     active_angle(2)
 {
     context_cl = context;
@@ -26,25 +26,25 @@ PilatusFile::PilatusFile(QString path, OpenCLContext *context):
     STATUS_OK = this->set(path, context_cl);
 }
 
-void PilatusFile::setOffsetOmega(double value)
+void DetectorFile::setOffsetOmega(double value)
 {
     offset_omega = value*pi/180.0;
 }
-void PilatusFile::setOffsetKappa(double value)
+void DetectorFile::setOffsetKappa(double value)
 {
     offset_kappa = value*pi/180.0;
 }
-void PilatusFile::setOffsetPhi(double value)
+void DetectorFile::setOffsetPhi(double value)
 {
     offset_phi = value*pi/180.0;
 }
 
-void PilatusFile::setActiveAngle(int value)
+void DetectorFile::setActiveAngle(int value)
 {
     active_angle = value;
 }
 
-QString PilatusFile::getHeaderText()
+QString DetectorFile::getHeaderText()
 {
     std::stringstream ss;
     ss << "__Detector___________" << std::endl;
@@ -73,7 +73,7 @@ QString PilatusFile::getHeaderText()
     return text;
 }
 
-int PilatusFile::set(QString path, OpenCLContext *context)
+int DetectorFile::set(QString path, OpenCLContext *context)
 {
     this->context_cl = context;
 
@@ -112,54 +112,54 @@ int PilatusFile::set(QString path, OpenCLContext *context)
 
 
 
-float PilatusFile::getSearchRadiusLowSuggestion()
+float DetectorFile::getSearchRadiusLowSuggestion()
 {
     return srchrad_sugg_low;
 }
-float PilatusFile::getSearchRadiusHighSuggestion()
+float DetectorFile::getSearchRadiusHighSuggestion()
 {
     return srchrad_sugg_high;
 }
-float PilatusFile::getQSuggestion()
+float DetectorFile::getQSuggestion()
 {
     return 1.0/wavelength;
 }
 
-int PilatusFile::getWidth() const
+int DetectorFile::getWidth() const
 {
     return fast_dimension;
 }
-int PilatusFile::getHeight() const
+int DetectorFile::getHeight() const
 {
     return slow_dimension;
 }
 
-size_t PilatusFile::getBytes() const
+size_t DetectorFile::getBytes() const
 {
     return data_buf.bytes();
 }
 
-Matrix<float> PilatusFile::getTest()
+Matrix<float> DetectorFile::getTest()
 {
     return data_buf;
 }
 
-float PilatusFile::getMaxCount()
+float DetectorFile::getMaxCount()
 {
     return max_counts;
 }
 
 
-float PilatusFile::getFlux()
+float DetectorFile::getFlux()
 {
     return flux;
 }
-float PilatusFile::getExpTime()
+float DetectorFile::getExpTime()
 {
     return exposure_time;
 }
 
-int PilatusFile::readHeader()
+int DetectorFile::readHeader()
 {
     const float pi = 4.0*atan(1.0);
 
@@ -255,12 +255,12 @@ int PilatusFile::readHeader()
     return 1;
 }
 
-QString PilatusFile::getPath() const
+QString DetectorFile::getPath() const
 {
     return path;
 }
 
-QString PilatusFile::regExp(QString * regular_expression, QString * source, size_t offset, size_t i)
+QString DetectorFile::regExp(QString * regular_expression, QString * source, size_t offset, size_t i)
 {
     QRegExp tmp(*regular_expression);
     int pos = tmp.indexIn(*source, offset);
@@ -275,13 +275,13 @@ QString PilatusFile::regExp(QString * regular_expression, QString * source, size
     }
 }
 
-void PilatusFile::clearData()
+void DetectorFile::clearData()
 {
     data_buf.clear();
 }
 
 
-//void PilatusFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex)
+//void DetectorFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex)
 //{
 //    this->cl_img_alpha = cl_img_alpha;
 //    this->cl_img_beta = cl_img_beta;
@@ -289,7 +289,7 @@ void PilatusFile::clearData()
 //    this->cl_tsf_tex = cl_tsf_tex;
 //}
 
-void PilatusFile::print()
+void DetectorFile::print()
 {
     std::stringstream ss;
     ss << "__________ PILATUS FILE __________" << std::endl;
@@ -328,7 +328,7 @@ void PilatusFile::print()
     qDebug() << ss.str().c_str();
 }
 
-int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive)
+int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive)
 {
 
     this->threshold_reduce_low = threshold_reduce_low;
@@ -540,19 +540,19 @@ int PilatusFile::filterData(size_t * n, float * outBuf, float threshold_reduce_l
     return 1;
 }
 
-void PilatusFile::setBackground(float flux, float exposure_time)
+void DetectorFile::setBackground(float flux, float exposure_time)
 {
 //    this->background = buffer;
     this->background_flux = flux;
     this->backgroundExpTime = exposure_time;
 }
 
-void PilatusFile::setProjectionKernel(cl_kernel * kernel)
+void DetectorFile::setProjectionKernel(cl_kernel * kernel)
 {
     this->project_kernel = kernel;
 }
 
-int PilatusFile::readData()
+int DetectorFile::readData()
 {
     // Open file
     std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
@@ -642,7 +642,7 @@ int PilatusFile::readData()
 }
 
 
-void PilatusFile::suggestSearchRadius()
+void DetectorFile::suggestSearchRadius()
 {
     /* A search radius can be found based on the projected size of a pixel in reciprocal space. The following calculations assume a detector that can be translated but not rotated. Could give a fair estimate even for a rotating detector*/
 

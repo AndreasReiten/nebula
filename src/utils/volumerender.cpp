@@ -293,7 +293,7 @@ void VolumeRenderWorker::setLCurrent(int value)
 
 void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
 {
-    hkl.print(0,"hkl");
+//    hkl.print(0,"hkl");
     
     Matrix<double> hkl_focus(1,3,0);
     
@@ -488,6 +488,8 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 //                scalebar_rotation = roll_rotation * scalebar_rotation;
 //                rotation.print(2,"after");
             }
+            
+            rotation.print(4,"rotation");
 
         }
         else if (left_button && right_button && !mid_button && !isRulerActive)// && (ev->buttons() & Qt::RightButton))
@@ -564,7 +566,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
         }
 
     }
-
+    
     last_mouse_pos_x = x;
     last_mouse_pos_y = y;
 }
@@ -825,7 +827,7 @@ void VolumeRenderWorker::drawUnitCell(QPainter * painter)
     endRawGLCalls(painter);
 }
 
-void VolumeRenderWorker::drawMiniCell(QPainter * painter)
+void VolumeRenderWorker::drawHelpCell(QPainter * painter)
 {
     // Generate the vertices for the minicell
     Matrix<double> B = UB.getBMatrix();
@@ -1714,7 +1716,6 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isScalebarActive) drawPositionScalebars(painter);
     if (isLabFrameActive) drawCenterLine(painter);
     if (isUnitcellActive) drawUnitCell(painter);
-    if (isMiniCellActive) drawMiniCell(painter);
     if (isLabFrameActive) drawLabFrame(painter);
     
     isDataExtentReadOnly = false;
@@ -1731,6 +1732,8 @@ void VolumeRenderWorker::render(QPainter *painter)
     drawOverlay(painter);
     if (isUnitcellActive) drawHklText(painter);
     drawMarkers(painter);
+    
+    if (isMiniCellActive) drawHelpCell(painter);
     
     isRendering = false;
 }
@@ -2204,6 +2207,89 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
         normal_pen->setWidthF(1.0);
     }
 }
+
+void VolumeRenderWorker::alignAStartoZ()
+{
+    Matrix<double> vec(4,1,1);
+    vec[0] = UB[0];
+    vec[1] = UB[3];
+    vec[2] = UB[6];
+    
+//    vec = rotation*vec;
+    
+//    qDebug() << "----------";
+//    qDebug() << "Zeta" << zeta(vec);
+//    qDebug() << "Eta" << eta(vec);
+    
+    RotationMatrix<double> zeta_rotation;
+    zeta_rotation.setYRotation(-zeta(vec));
+    
+    RotationMatrix<double> eta_rotation;
+    eta_rotation.setXRotation(-eta(vec));
+    
+    rotation = eta_rotation * zeta_rotation;
+    
+    setViewMatrices();
+    
+    rotation.print(4,"rotation");
+    view_matrix.toFloat().print(4,"view mat");
+    view_matrix.getInverse().toFloat().print(4,"view mat inv");
+    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+//    vec[0] = UB[0];
+//    vec[1] = UB[3];
+//    vec[2] = UB[6];
+    
+//    vec = rotation*vec;
+    
+//    qDebug() << "Zeta" << zeta(vec);
+//    qDebug() << "Eta" << eta(vec);
+    
+}
+void VolumeRenderWorker::alignBStartoZ()
+{
+    Matrix<double> vec(4,1,1);
+    vec[0] = UB[1];
+    vec[1] = UB[4];
+    vec[2] = UB[7];
+    
+    RotationMatrix<double> zeta_rotation;
+    zeta_rotation.setYRotation(-zeta(vec));
+    
+    RotationMatrix<double> eta_rotation;
+    eta_rotation.setXRotation(-eta(vec));
+    
+    rotation = eta_rotation * zeta_rotation;
+    
+    setViewMatrices();
+    
+    rotation.print(4,"rotation");
+    view_matrix.toFloat().print(4,"view mat");
+    view_matrix.getInverse().toFloat().print(4,"view mat inv");
+    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+}
+void VolumeRenderWorker::alignCStartoZ()
+{
+    Matrix<double> vec(4,1,1);
+    vec[0] = UB[2];
+    vec[1] = UB[5];
+    vec[2] = UB[8];
+    
+    RotationMatrix<double> zeta_rotation;
+    zeta_rotation.setYRotation(-zeta(vec));
+    
+    RotationMatrix<double> eta_rotation;
+    eta_rotation.setXRotation(-eta(vec));
+    
+    rotation = eta_rotation * zeta_rotation;
+
+    setViewMatrices();
+    
+    rotation.print(4,"rotation");
+    view_matrix.toFloat().print(4,"view mat");
+    view_matrix.getInverse().toFloat().print(4,"view mat inv");
+    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+}
+
 
 void VolumeRenderWorker::alignLabXtoSliceX()
 {
@@ -2892,7 +2978,7 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
 void VolumeRenderWorker::resetViewMatrix()
 {
     data_scaling.setIdentity(4);
-    rotation.setIdentity(4);
+//    rotation.setXRotation(0.1);
     scalebar_rotation.setIdentity (4);
     data_translation.setIdentity(4);
 }

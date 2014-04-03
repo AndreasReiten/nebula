@@ -5,7 +5,7 @@ MainWindow::MainWindow()
     //     Set some default values
     current_svo = 0;
     display_file = 0;
-    svo_loaded.append(SparseVoxelOcttree());
+//    svo_loaded.append(SparseVoxelOcttree());
     
     //     Set stylesheet
     QFile styleFile( ":/src/stylesheets/plain.qss" );
@@ -1070,7 +1070,7 @@ void MainWindow::saveSvo()
 
 void MainWindow::saveLoadedSvo()
 {
-    if (svo_loaded[current_svo].getBrickNumber() > 0)
+    if (svo_loaded.getBrickNumber() > 0)
     {
         QFileDialog dialog;
         dialog.setDefaultSuffix("svo");
@@ -1078,9 +1078,9 @@ void MainWindow::saveLoadedSvo()
 
         if (file_name != "")
         {
-            svo_loaded[current_svo].setUB(volumeRenderWindow->getWorker()->getUBMatrix());
-            svo_loaded[current_svo].setMetaData(svoHeaderEdit->toPlainText());
-            svo_loaded[current_svo].save(file_name);
+            svo_loaded.setUB(volumeRenderWindow->getWorker()->getUBMatrix());
+            svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
+            svo_loaded.save(file_name);
         }
     }
 }
@@ -1092,17 +1092,17 @@ void MainWindow::openSvo()
 
     if ((current_svo_path != ""))
     {
-        svo_loaded[current_svo].open(current_svo_path);
-        volumeRenderWindow->getWorker()->setSvo(&(svo_loaded[current_svo]));
+        svo_loaded.open(current_svo_path);
+        volumeRenderWindow->getWorker()->setSvo(&(svo_loaded));
 
         alphaSpinBox->setValue(0.05);
         brightnessSpinBox->setValue(2.0);
-        dataMinSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(0));
-        dataMaxSpinBox->setValue(svo_loaded[current_svo].getMinMax()->at(1));
+        dataMinSpinBox->setValue(svo_loaded.getMinMax()->at(0));
+        dataMaxSpinBox->setValue(svo_loaded.getMinMax()->at(1));
         
         UBMatrix<double> UB;
         
-        UB = svo_loaded[current_svo].getUB();
+        UB = svo_loaded.getUB();
         
         if (UB.size() == 3*3)
         {
@@ -1120,7 +1120,7 @@ void MainWindow::openSvo()
         }
         
         svoHeaderEdit->setDocumentTitle(current_svo_path);
-        svoHeaderEdit->setPlainText(svo_loaded[current_svo].getMetaData());
+        svoHeaderEdit->setPlainText(svo_loaded.getMetaData());
 
         print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+current_svo_path+"\"");
         
@@ -1650,6 +1650,10 @@ void MainWindow::initializeInteractives()
         alignAlongAStarButton = new QPushButton("Align a*");
         alignAlongBStarButton = new QPushButton("Align b*");
         alignAlongCStarButton = new QPushButton("Align c*");
+        
+        connect(alignAlongAStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignAStartoZ()));
+        connect(alignAlongBStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignBStartoZ()));
+        connect(alignAlongCStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignCStartoZ()));
         
         helpCellOverlayButton = new QPushButton("Help Cell");
         rotateCellButton = new QPushButton("Rotation");

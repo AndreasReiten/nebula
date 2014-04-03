@@ -116,6 +116,8 @@ __kernel void modelRayTrace(
             cone_diameter_increment = 2.0f*native_divide( length(a2Far - a2Near), length(ray_delta - a1Near + a1Far) );
             cone_diameter_near = 2.0f*length(a2Near); // small approximation
         }
+        
+        // Bug: For some configurations of the view matrix, it seems that the software struggles to compute the correct geometry of the rays. Debug this by painting ray parameters
 
         int hit;
         float t_near, t_far;
@@ -142,6 +144,8 @@ __kernel void modelRayTrace(
 
 //        float4 max_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(1.0f, 0.5f));
 //        float4 min_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(0.0f, 0.5f));
+        
+float3 rayBoxDelta;
 
         if(hit)
         {
@@ -151,7 +155,7 @@ __kernel void modelRayTrace(
 
             float3 rayBoxOrigin = ray_near.xyz + t_near * ray_delta.xyz;
             float3 rayBoxEnd = ray_near.xyz + t_far * ray_delta.xyz;
-            float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
+            rayBoxDelta = rayBoxEnd - rayBoxOrigin;
             float3 direction = normalize(rayBoxDelta);
             float3 ray_add_box;
             float rayBoxLength = fast_length(rayBoxDelta);
@@ -297,7 +301,15 @@ __kernel void modelRayTrace(
     
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
         }
-        else write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+        else
+        {
+//            if (!(id_glb.x%16))
+//            {
+                color.x = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
+                color.w = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
+//            }
+            write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+        }
 //        if (isIntegration2DActive && !isSlicingActive)
 //        {
 //            if(isLogActive)

@@ -109,7 +109,7 @@ void BaseWorker::setQSpaceInfo(float * suggested_search_radius_low, float * sugg
 }
 
 
-void BaseWorker::setFiles(QList<PilatusFile> * files)
+void BaseWorker::setFiles(QList<DetectorFile> * files)
 {
 
     this->files = files;
@@ -271,7 +271,7 @@ void SetFileWorker::process()
         }
 
         // Set file and get status
-        files->append(PilatusFile());
+        files->append(DetectorFile());
         int STATUS_OK = files->back().set(file_paths->at(i), context_cl);
 //        files->back().setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
         if (STATUS_OK)
@@ -649,7 +649,7 @@ void AllInOneWorker::process()
         }
 
         // Set file and get status
-        PilatusFile file;
+        DetectorFile file;
         int STATUS_OK = file.set(file_paths->at(i), context_cl);
 //        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
 
@@ -1307,7 +1307,7 @@ void DisplayFileWorker::process()
      * This function updates the image buffers that are shown in the reconstruction tab according to a given file index (display_file)*/
     QCoreApplication::processEvents();
     
-    PilatusFile file;
+    DetectorFile file;
 
     int STATUS_OK = file.set(file_paths->at(display_file), context_cl);
     if (STATUS_OK)

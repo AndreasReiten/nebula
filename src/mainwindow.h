@@ -320,7 +320,7 @@ private:
     float suggested_q;
 
     SparseVoxelOcttree svo_inprocess;
-    QList<SparseVoxelOcttree> svo_loaded;
+    SparseVoxelOcttree svo_loaded;
 
     void closeEvent(QCloseEvent *event);
     void initializeActions();
@@ -458,8 +458,8 @@ protected:
 
     // Main resources
     QStringList file_paths;
-    QList<PilatusFile> files;
-//    QList<PilatusFile> background_files;
+    QList<DetectorFile> files;
+//    QList<DetectorFile> background_files;
     Matrix<float> reduced_pixels;
 
     // Related to file treatment

@@ -77,7 +77,13 @@ class Matrix {
         friend Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B);
         
         template <class F>
-        F vecDot(const Matrix<F> A, const Matrix<F> B);
+        friend F vecDot(const Matrix<F> A, const Matrix<F> B);
+        
+        template <class F>
+        friend F zeta(const Matrix<F> A);
+        
+        template <class F>
+        friend F eta(const Matrix<F> A);
         
         // Other friends
         template <class F>
@@ -173,6 +179,20 @@ F vecLength(const Matrix<F> A)
     }
     
     return sqrt(sum);
+}
+
+template <class F>
+F zeta(const Matrix<F> A)
+{
+    F x = A[0], z = A[2];
+    return atan2(-x,z);
+}
+
+template <class F>
+F eta(const Matrix<F> A)
+{
+    F x = A[0], y = A[1], z = A[2];
+    return asin(y/sqrt(x*x + y*y + z*z));
 }
 
 template <class F>
@@ -351,99 +371,166 @@ template <class T>
 const Matrix<T> Matrix<T>::getInverse()  const
 {
     if(m != n) qDebug() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
-    Matrix<double> L;
-    L.reserve(m, n);
+    Matrix<T> L, y, I, U, x;
+    L.reserve(n, n);
+    y.reserve(n, n);
+    I.setIdentity(4);
+    
+    U.reserve(n, n);
+    x.reserve(n, n);
 
-    Matrix<double> U;
-    U.reserve(m, n);
-
+    // Ax = LUx = I method
+    
     /* LU Decomposition */
-    {
-        size_t i, j, k;
-        double sum = 0;
-
-        for (i = 0; i < n; i++)
-        {
-                U[i*n+i] = 1;
+    size_t i, j, k;
+    T sum = 0;
+ 
+    for (i = 0; i < n; i++) {
+        U[i*n+i] = 1;
+    }
+ 
+    for (j = 0; j < n; j++) {
+        for(i = j; i < n; i++) {
+            sum = 0;
+            for(k = 0; k < j; k++) {
+                sum = sum + L[i*n+k] * U[k*n+j];	
+            }
+            L[i*n+j] = buffer[i*n+j] - sum;
         }
-
-        for (j = 0; j < n; j++)
-        {
-            for(i = j; i < n; i++)
-            {
-                sum = 0;
-                for(k = 0; k < j; k++)
-                {
-                        sum += L[i*n+k] * U[k*n+j];
-                }
-                L[i*n+j] = (double) buffer[i*n+j] - sum;
+ 
+        for(i = j; i < n; i++){
+            sum = 0;
+            for(k = 0; k < j; k++){
+                sum = sum +  L[j*n+k]*U[k*n+i];
             }
-
-            for(i = j; i < n; i++){
-                sum = 0;
-                for(k = 0; k < j; k++)
-                {
-                    sum +=  L[j*n+k]*U[k*n+i];
-                }
-                if(L[j*n+j] == 0)
-                {
-                    qWarning("Encountered determinant close to zero");
-                }
-                U[j*n+i]=(double)(buffer[j*n+i]-sum)/(double)L[j*n+j];
+            if(L[j*n+j] == 0) {
+                qWarning() << "det(L) close to 0!\n Can't divide by 0...";
             }
+            U[j*n+i] = (buffer[j*n+i]-sum)/L[j*n+j];
         }
     }
-
-
-    /* Forward-backward substitution */
-    Matrix<double> I;
-    I.setIdentity(n);
-
-    /* Compute Y = UX in LY = I */
-    Matrix<double> Y;
-    Y.reserve(L.getN(), I.getN());
-
-    // For each column
-    for (size_t j = 0; j < I.getN(); j++)
+        
+    /* Solve LY = I for Y = UX */
+    for(i = 0; i < n; i++)
     {
-        // Do forward substitution
-        Y[j] = I[j] / L[0];
-
-        for (size_t i = 1; i < L.getN(); i++)
+        for(j = 0; j < n; j++)
         {
-            double sum = 0;
-
-            for (size_t k = 0; k <= i - 1; k++)
+            T sum = 0;
+            
+            for (k = 0; k < n; k++)
             {
-                sum += L[i*L.getN()+k] * Y[k*Y.getN()+j];
+                if (k != i) sum += y[i*n+i] * L[i*n+i];
             }
-            Y[i*Y.getN()+j] = (I[i*I.getN()+j] - sum) / L[i*L.getN()+i];
+            
+            y[i*n+j] = (I[i*n+j] - sum)/L[i*n+i];
         }
     }
-
-    /* Compute X in UX = Y */
-    Matrix<T> X;
-    X.reserve(U.getN(), Y.getN());
-
-    // For each column
-    for (size_t j = 0; j < Y.getN(); j++)
+    
+    /* Solve UX = Y for X */
+    for(i = 0; i < n; i++)
     {
-        // Do backward substitution
-        X[(X.getN()-1)*X.getN()+j] = Y[(Y.getN()-1)*Y.getN()+j] / U[(X.getN()-1)*X.getN()+(X.getN()-1)];
-
-        for (size_t i = U.getN() - 1; i-- != 0;)
+        for(j = 0; j < n; j++)
         {
-            double sum = 0;
-
-            for (size_t k = i+1; k < U.getN(); k++)
+            T sum = 0;
+            
+            for (k = 0; k < n; k++)
             {
-                sum += U[i*U.getN()+k] * X[k*X.getN()+j];
+                if (k != i) sum += x[i*n+i] * U[i*n+i];
             }
-            X[i*X.getN()+j] = (Y[i*Y.getN()+j] - sum) / U[i*U.getN()+i];
+            
+            x[i*n+j] = (y[i*n+j] - sum)/U[i*n+i];
         }
     }
+    
+    qDebug() << "New one";
+    
+    return x;
+//    {
+//        size_t i, j, k;
+//        double sum = 0;
 
-    return X;
+//        for (i = 0; i < n; i++)
+//        {
+//                U[i*n+i] = 1;
+//        }
+
+//        for (j = 0; j < n; j++)
+//        {
+//            for(i = j; i < n; i++)
+//            {
+//                sum = 0;
+//                for(k = 0; k < j; k++)
+//                {
+//                        sum += L[i*n+k] * U[k*n+j];
+//                }
+//                L[i*n+j] = (double) buffer[i*n+j] - sum;
+//            }
+
+//            for(i = j; i < n; i++){
+//                sum = 0;
+//                for(k = 0; k < j; k++)
+//                {
+//                    sum +=  L[j*n+k]*U[k*n+i];
+//                }
+//                if(L[j*n+j] == 0)
+//                {
+//                    qWarning("Encountered determinant close to zero");
+//                }
+//                U[j*n+i]=(double)(buffer[j*n+i]-sum)/(double)L[j*n+j];
+//            }
+//        }
+//    }
+
+
+//    /* Forward-backward substitution */
+//    Matrix<double> I;
+//    I.setIdentity(n);
+
+//    /* Compute Y = UX in LY = I */
+//    Matrix<double> Y;
+//    Y.reserve(L.getN(), I.getN());
+
+//    // For each column
+//    for (size_t j = 0; j < I.getN(); j++)
+//    {
+//        // Do forward substitution
+//        Y[j] = I[j] / L[0];
+
+//        for (size_t i = 1; i < L.getN(); i++)
+//        {
+//            double sum = 0;
+
+//            for (size_t k = 0; k <= i - 1; k++)
+//            {
+//                sum += L[i*L.getN()+k] * Y[k*Y.getN()+j];
+//            }
+//            Y[i*Y.getN()+j] = (I[i*I.getN()+j] - sum) / L[i*L.getN()+i];
+//        }
+//    }
+
+//    /* Compute X in UX = Y */
+//    Matrix<T> X;
+//    X.reserve(U.getN(), Y.getN());
+
+//    // For each column
+//    for (size_t j = 0; j < Y.getN(); j++)
+//    {
+//        // Do backward substitution
+//        X[(X.getN()-1)*X.getN()+j] = Y[(Y.getN()-1)*Y.getN()+j] / U[(X.getN()-1)*X.getN()+(X.getN()-1)];
+
+//        for (size_t i = U.getN() - 1; i-- != 0;)
+//        {
+//            double sum = 0;
+
+//            for (size_t k = i+1; k < U.getN(); k++)
+//            {
+//                sum += U[i*U.getN()+k] * X[k*X.getN()+j];
+//            }
+//            X[i*X.getN()+j] = (Y[i*Y.getN()+j] - sum) / U[i*U.getN()+i];
+//        }
+//    }
+
+//    return X;
 }
 
 template <class T>

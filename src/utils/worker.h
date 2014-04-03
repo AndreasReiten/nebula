@@ -50,7 +50,7 @@ class BaseWorker : public QObject
 
         void setFilePaths(QStringList * file_paths);
         void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
-        void setFiles(QList<PilatusFile> * files);
+        void setFiles(QList<DetectorFile> * files);
         void setReducedPixels(Matrix<float> *reduced_pixels);
         void setOpenCLContext(OpenCLContext * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
@@ -109,8 +109,8 @@ class BaseWorker : public QObject
         float threshold_project_low;
         float threshold_project_high;
         QStringList * file_paths;
-        QList<PilatusFile> * files;
-//        QList<PilatusFile> * background_files;
+        QList<DetectorFile> * files;
+//        QList<DetectorFile> * background_files;
         Matrix<float> * reduced_pixels;
         
         double offset_omega;
