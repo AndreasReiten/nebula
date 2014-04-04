@@ -43,6 +43,8 @@ class Matrix {
 
         // Utility
         const Matrix<T> getInverse() const;
+        const Matrix<T> getL() const;
+        const Matrix<T> getU() const;
         const Matrix<T> getColMajor() const;
         Matrix<float> toFloat() const;
 
@@ -100,12 +102,6 @@ class Matrix {
         /* Swap function as per C++11 idiom */
         void swap(Matrix &first, Matrix &second);
 };
-
-//template<class T>
-//Matrix<T> operator* (T factor, const Matrix<T> &M)
-//{
-//    return M * factor;
-//}
 
 template <class T>
 Matrix<T>::Matrix(size_t m, size_t n, T value)
@@ -368,51 +364,152 @@ const Matrix<T> Matrix<T>::getColMajor()  const
 }
 
 template <class T>
-const Matrix<T> Matrix<T>::getInverse()  const
+const Matrix<T> Matrix<T>::getL()  const
 {
-    qDebug() << "LU decomp";
+//    qDebug() << "LU decomp" << m << n;
 
     if(m != n) qDebug() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
     Matrix<T> L, y, I, U, x;
-    L.reserve(n, n);
-    y.reserve(n, n);
-    I.setIdentity(4);
-    
-    U.reserve(n, n);
-    x.reserve(n, n);
+    L.set(n, n, 0);
+    y.set(n, n, 0);
+    I.setIdentity(n);
+
+    U.set(n, n, 0);
+    x.set(n, n, 0);
 
     // Ax = LUx = I method
-    
+
     /* LU Decomposition */
-    size_t i, j, k;
-    T sum = 0;
- 
+    int i, j, k;
+    T sum;
+
     for (i = 0; i < n; i++) {
         U[i*n+i] = 1;
     }
- 
+
     for (j = 0; j < n; j++) {
         for(i = j; i < n; i++) {
             sum = 0;
             for(k = 0; k < j; k++) {
-                sum = sum + L[i*n+k] * U[k*n+j];	
+                sum += L[i*n+k] * U[k*n+j];
             }
             L[i*n+j] = buffer[i*n+j] - sum;
         }
- 
+
         for(i = j; i < n; i++){
             sum = 0;
             for(k = 0; k < j; k++){
-                sum = sum +  L[j*n+k]*U[k*n+i];
+                sum +=  L[j*n+k]*U[k*n+i];
             }
             if(L[j*n+j] == 0) {
-                qWarning() << "det(L) close to 0!\n Can't divide by 0...";
+                qFatal("det(L) close to 0!\n Can't divide by 0...");
             }
             U[j*n+i] = (buffer[j*n+i]-sum)/L[j*n+j];
         }
     }
-        
-    /* Solve LY = I for Y = UX */
+
+    return L;
+}
+
+template <class T>
+const Matrix<T> Matrix<T>::getU()  const
+{
+//    qDebug() << "LU decomp" << m << n;
+
+    if(m != n) qDebug() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
+    Matrix<T> L, y, I, U, x;
+    L.set(n, n, 0);
+    y.set(n, n, 0);
+    I.setIdentity(n);
+
+    U.set(n, n, 0);
+    x.set(n, n, 0);
+
+    // Ax = LUx = I method
+
+    /* LU Decomposition */
+    int i, j, k;
+    T sum;
+
+    for (i = 0; i < n; i++) {
+        U[i*n+i] = 1;
+    }
+
+    for (j = 0; j < n; j++) {
+        for(i = j; i < n; i++) {
+            sum = 0;
+            for(k = 0; k < j; k++) {
+                sum += L[i*n+k] * U[k*n+j];
+            }
+            L[i*n+j] = buffer[i*n+j] - sum;
+        }
+
+        for(i = j; i < n; i++){
+            sum = 0;
+            for(k = 0; k < j; k++){
+                sum +=  L[j*n+k]*U[k*n+i];
+            }
+            if(L[j*n+j] == 0) {
+                qFatal("det(L) close to 0!\n Can't divide by 0...");
+            }
+            U[j*n+i] = (buffer[j*n+i]-sum)/L[j*n+j];
+        }
+    }
+
+    return U;
+}
+
+template <class T>
+const Matrix<T> Matrix<T>::getInverse()  const
+{
+//    qDebug() << "LU decomp" << m << n;
+
+    if(m != n) qDebug() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
+    Matrix<T> L, y, I, U, x;
+    L.set(n, n, 0);
+    y.set(n, n, 0);
+    I.setIdentity(n);
+    
+    U.set(n, n, 0);
+    x.set(n, n, 0);
+
+    /* Ax = LUx = I method */
+    
+    /* LU Decomposition */
+    int i, j, k;
+    T sum;
+
+    for (i = 0; i < n; i++) {
+        U[i*n+i] = 1;
+    }
+
+    for (j = 0; j < n; j++) {
+        for(i = j; i < n; i++) {
+            sum = 0;
+            for(k = 0; k < j; k++) {
+                sum += L[i*n+k] * U[k*n+j];
+            }
+            L[i*n+j] = buffer[i*n+j] - sum;
+        }
+
+        for(i = j; i < n; i++){
+            sum = 0;
+            for(k = 0; k < j; k++){
+                sum +=  L[j*n+k]*U[k*n+i];
+            }
+            if(L[j*n+j] == 0) {
+                qFatal("det(L) close to 0!\n Can't divide by 0...");
+            }
+            U[j*n+i] = (buffer[j*n+i]-sum)/L[j*n+j];
+        }
+    }
+
+//    L.print(2,"L");
+//    U.print(2,"U");
+
+//    (L*U).print(2,"L*U");
+
+    /* Solve LY = I for Y (= UX) */
     for(i = 0; i < n; i++)
     {
         for(j = 0; j < n; j++)
@@ -424,30 +521,36 @@ const Matrix<T> Matrix<T>::getInverse()  const
                 if (k != i) sum += y[k*n+j] * L[i*n+k];
             }
             
-            qDebug() << i << j << n;
-
             y[i*n+j] = (I[i*n+j] - sum)/L[i*n+i];
         }
     }
     
+//    (L*y).print(2,"LY = I");
+
+//    y.print(2,"Y");
+
     /* Solve UX = Y for X */
-    for(i = 0; i < n; i++)
+    for(i = n-1; i >= 0; --i)
     {
-        for(j = 0; j < n; j++)
+        for(j = n-1; j >= 0; --j)
         {
             T sum = 0;
             
             for (k = 0; k < n; k++)
             {
-                if (k != i) sum += x[k*n+j] * U[k*n+j];
+                if (k != i) sum += x[k*n+j] * U[i*n+k];
             }
             
             x[i*n+j] = (y[i*n+j] - sum)/U[i*n+i];
         }
     }
+
+//    (U*x).print(2,"UX = Y");
     
-    qDebug() << "Alpha";
+//    qDebug() << "Alpha";
     
+//    (*this*x).print(2,"I");
+
     return x;
 
 }

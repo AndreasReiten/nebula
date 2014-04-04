@@ -63,7 +63,16 @@ MainWindow::MainWindow()
     outputDockWidget->show();
     
     
-    
+    // For some reason this must be included in order to compile matrix.h correctly =(
+    Matrix<double> A(4,4,0);
+    A.setIdentity(4);
+    A[3] = 3;
+    A[9] = 2;
+    A[12] = 4;
+
+    A.print(2,"A");
+
+    A.getInverse().print(2,"A inv");
 }
 
 MainWindow::~MainWindow()

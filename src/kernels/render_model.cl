@@ -305,8 +305,8 @@ float3 rayBoxDelta;
         {
 //            if (!(id_glb.x%16))
 //            {
-                color.x = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
-                color.w = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
+//                color.x = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
+//                color.w = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
 //            }
             write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
         }

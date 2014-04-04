@@ -489,7 +489,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 //                rotation.print(2,"after");
             }
             
-            rotation.print(4,"rotation");
+//            rotation.print(4,"rotation");
 
         }
         else if (left_button && right_button && !mid_button && !isRulerActive)// && (ev->buttons() & Qt::RightButton))
@@ -2231,10 +2231,14 @@ void VolumeRenderWorker::alignAStartoZ()
     
     setViewMatrices();
     
-    rotation.print(4,"rotation");
-    view_matrix.toFloat().print(4,"view mat");
-    view_matrix.getInverse().toFloat().print(4,"view mat inv");
-    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+//    rotation.print(4,"rotation");
+//    view_matrix.toFloat().print(4,"view mat");
+//    view_matrix.getInverse().toFloat().print(4,"view mat inv");
+//    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+
+//    view_matrix.getL().print(2,"L");
+//    view_matrix.getU().print(2,"U");
+//    (view_matrix.getL()*view_matrix.getU()).print(2,"L*U");
 //    vec[0] = UB[0];
 //    vec[1] = UB[3];
 //    vec[2] = UB[6];
@@ -2262,10 +2266,10 @@ void VolumeRenderWorker::alignBStartoZ()
     
     setViewMatrices();
     
-    rotation.print(4,"rotation");
-    view_matrix.toFloat().print(4,"view mat");
-    view_matrix.getInverse().toFloat().print(4,"view mat inv");
-    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+//    rotation.print(4,"rotation");
+//    view_matrix.toFloat().print(4,"view mat");
+//    view_matrix.getInverse().toFloat().print(4,"view mat inv");
+//    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
 }
 void VolumeRenderWorker::alignCStartoZ()
 {
@@ -2284,10 +2288,10 @@ void VolumeRenderWorker::alignCStartoZ()
 
     setViewMatrices();
     
-    rotation.print(4,"rotation");
-    view_matrix.toFloat().print(4,"view mat");
-    view_matrix.getInverse().toFloat().print(4,"view mat inv");
-    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+//    rotation.print(4,"rotation");
+//    view_matrix.toFloat().print(4,"view mat");
+//    view_matrix.getInverse().toFloat().print(4,"view mat inv");
+//    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
 }
 
 
