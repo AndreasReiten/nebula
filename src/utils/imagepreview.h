@@ -9,11 +9,12 @@
 #include "openglwindow.h"
 
 
-//class ImagePreview : public OpenGLWorker
-//{
-//    Q_OBJECT
-//public:
-//    explicit ImagePreview(QObject *parent = 0);
+class ImagePreview : public OpenGLWorker
+{
+    Q_OBJECT
+public:
+    explicit ImagePreview(QObject *parent = 0);
+    ~ImagePreview();
 //    int setImageFromPath(QString path);
         
 //signals:
@@ -29,7 +30,7 @@
     
 //private:
     
-//};
+};
 
 //class ImagePreviewWindow : public OpenGLWindow
 //{
