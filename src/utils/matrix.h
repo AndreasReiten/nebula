@@ -42,10 +42,11 @@ class Matrix {
         
 
         // Utility
-        const Matrix<T> getInverse() const;
+        Matrix<T> getInverse(int verbose = false) const;
+        Matrix<T> getInverse4x4(int verbose = false) const;
         const Matrix<T> getL() const;
         const Matrix<T> getU() const;
-        const Matrix<T> getColMajor() const;
+        Matrix<T> getColMajor() const;
         Matrix<float> toFloat() const;
 
         T sum();
@@ -103,12 +104,25 @@ class Matrix {
         void swap(Matrix &first, Matrix &second);
 };
 
+//template <class T>
+//Matrix<T> Matrix<T>::getInverse()  const
+//{
+//    Matrix<T> x;
+//    x.setIdentity(n);
+//    qDebug() << "I think it may crash now too so";
+
+//    return x;
+
+//}
+
 template <class T>
 Matrix<T>::Matrix(size_t m, size_t n, T value)
 {
     this->m = 0;
     this->n = 0;
     this->set(m, n, value);
+
+//    qDebug() << "Constructor";
 }
 template <class T>
 Matrix<T>::Matrix(size_t m, size_t n)
@@ -131,11 +145,11 @@ template <class F>
 Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B)
 {
     Matrix<F> C(1,3,0);
-    
+
     if ((A.getM()*A.getN() != 3) || (B.getM()*B.getN() != 3))
     {
-        qWarning() << "Attempt to take cross product of vectors with dimensions" << A.getM() << "x" << A.getN() << "and" << B.getM() << "x" << B.getN(); 
-    }    
+        qWarning() << "Attempt to take cross product of vectors with dimensions" << A.getM() << "x" << A.getN() << "and" << B.getM() << "x" << B.getN();
+    }
     else
     {
         C[0] = A[1]*B[2] - A[2]*B[1];
@@ -149,12 +163,12 @@ template <class F>
 F vecDot(const Matrix<F> A, const Matrix<F> B)
 {
     F value = 0;
-    
+
     for (size_t i = 0; i < A.size(); i++)
     {
         value += A[i]*B[i];
     }
-    
+
     return value;
 }
 
@@ -168,12 +182,12 @@ template <class F>
 F vecLength(const Matrix<F> A)
 {
     F sum = 0;
-    
+
     for (int i = 0; i < A.getM()*A.getN(); i++)
     {
-        sum += A[i]*A[i];    
+        sum += A[i]*A[i];
     }
-    
+
     return sqrt(sum);
 }
 
@@ -325,6 +339,8 @@ Matrix<float> Matrix<T>::toFloat() const
         buf[i] = (float) this->buffer[i];
     }
 
+//    qDebug() << "tofloat";
+
     return buf;
 }
 
@@ -345,7 +361,7 @@ size_t Matrix<T>::bytes() const
 }
 
 template <class T>
-const Matrix<T> Matrix<T>::getColMajor()  const
+Matrix<T> Matrix<T>::getColMajor()  const
 {
     Matrix<T> ColMajor;
     ColMajor.reserve(this->getN(), this->getM());
@@ -359,6 +375,8 @@ const Matrix<T> Matrix<T>::getColMajor()  const
             count++;
         }
     }
+
+//    qDebug() << "colmajor";
 
     return ColMajor;
 }
@@ -459,8 +477,145 @@ const Matrix<T> Matrix<T>::getU()  const
     return U;
 }
 
+
+
 template <class T>
-const Matrix<T> Matrix<T>::getInverse()  const
+Matrix<T> Matrix<T>::getInverse4x4(int verbose)  const
+{
+    if((m != 4) || (n != 4)) qWarning() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
+
+    Matrix<T> INV(4,4);
+    Matrix<T> M = this->getColMajor();
+
+    T det;
+    INV[0] = M[5]  * M[10] * M[15] -
+             M[5]  * M[11] * M[14] -
+             M[9]  * M[6]  * M[15] +
+             M[9]  * M[7]  * M[14] +
+             M[13] * M[6]  * M[11] -
+             M[13] * M[7]  * M[10];
+
+    INV[4] = -M[4]  * M[10] * M[15] +
+              M[4]  * M[11] * M[14] +
+              M[8]  * M[6]  * M[15] -
+              M[8]  * M[7]  * M[14] -
+              M[12] * M[6]  * M[11] +
+              M[12] * M[7]  * M[10];
+
+    INV[8] = M[4]  * M[9] * M[15] -
+             M[4]  * M[11] * M[13] -
+             M[8]  * M[5] * M[15] +
+             M[8]  * M[7] * M[13] +
+             M[12] * M[5] * M[11] -
+             M[12] * M[7] * M[9];
+
+    INV[12] = -M[4]  * M[9] * M[14] +
+               M[4]  * M[10] * M[13] +
+               M[8]  * M[5] * M[14] -
+               M[8]  * M[6] * M[13] -
+               M[12] * M[5] * M[10] +
+               M[12] * M[6] * M[9];
+
+    INV[1] = -M[1]  * M[10] * M[15] +
+              M[1]  * M[11] * M[14] +
+              M[9]  * M[2] * M[15] -
+              M[9]  * M[3] * M[14] -
+              M[13] * M[2] * M[11] +
+              M[13] * M[3] * M[10];
+
+    INV[5] = M[0]  * M[10] * M[15] -
+             M[0]  * M[11] * M[14] -
+             M[8]  * M[2] * M[15] +
+             M[8]  * M[3] * M[14] +
+             M[12] * M[2] * M[11] -
+             M[12] * M[3] * M[10];
+
+    INV[9] = -M[0]  * M[9] * M[15] +
+              M[0]  * M[11] * M[13] +
+              M[8]  * M[1] * M[15] -
+              M[8]  * M[3] * M[13] -
+              M[12] * M[1] * M[11] +
+              M[12] * M[3] * M[9];
+
+    INV[13] = M[0]  * M[9] * M[14] -
+              M[0]  * M[10] * M[13] -
+              M[8]  * M[1] * M[14] +
+              M[8]  * M[2] * M[13] +
+              M[12] * M[1] * M[10] -
+              M[12] * M[2] * M[9];
+
+    INV[2] = M[1]  * M[6] * M[15] -
+             M[1]  * M[7] * M[14] -
+             M[5]  * M[2] * M[15] +
+             M[5]  * M[3] * M[14] +
+             M[13] * M[2] * M[7] -
+             M[13] * M[3] * M[6];
+
+    INV[6] = -M[0]  * M[6] * M[15] +
+              M[0]  * M[7] * M[14] +
+              M[4]  * M[2] * M[15] -
+              M[4]  * M[3] * M[14] -
+              M[12] * M[2] * M[7] +
+              M[12] * M[3] * M[6];
+
+    INV[10] = M[0]  * M[5] * M[15] -
+              M[0]  * M[7] * M[13] -
+              M[4]  * M[1] * M[15] +
+              M[4]  * M[3] * M[13] +
+              M[12] * M[1] * M[7] -
+              M[12] * M[3] * M[5];
+
+    INV[14] = -M[0]  * M[5] * M[14] +
+               M[0]  * M[6] * M[13] +
+               M[4]  * M[1] * M[14] -
+               M[4]  * M[2] * M[13] -
+               M[12] * M[1] * M[6] +
+               M[12] * M[2] * M[5];
+
+    INV[3] = -M[1] * M[6] * M[11] +
+              M[1] * M[7] * M[10] +
+              M[5] * M[2] * M[11] -
+              M[5] * M[3] * M[10] -
+              M[9] * M[2] * M[7] +
+              M[9] * M[3] * M[6];
+
+    INV[7] = M[0] * M[6] * M[11] -
+             M[0] * M[7] * M[10] -
+             M[4] * M[2] * M[11] +
+             M[4] * M[3] * M[10] +
+             M[8] * M[2] * M[7] -
+             M[8] * M[3] * M[6];
+
+    INV[11] = -M[0] * M[5] * M[11] +
+               M[0] * M[7] * M[9] +
+               M[4] * M[1] * M[11] -
+               M[4] * M[3] * M[9] -
+               M[8] * M[1] * M[7] +
+               M[8] * M[3] * M[5];
+
+    INV[15] = M[0] * M[5] * M[10] -
+              M[0] * M[6] * M[9] -
+              M[4] * M[1] * M[10] +
+              M[4] * M[2] * M[9] +
+              M[8] * M[1] * M[6] -
+              M[8] * M[2] * M[5];
+
+    det = M[0] * INV[0] + M[1] * INV[4] + M[2] * INV[8] + M[3] * INV[12];
+
+    if (det == 0) qWarning("Determinant is zero");
+
+    det = 1.0 / det;
+
+    INV = INV * det;
+
+    return INV.getColMajor();
+//        for (i = 0; i < 16; i++)
+//            INVOut[i] = INV[i] * det;
+}
+
+
+template <class T>
+Matrix<T> Matrix<T>::getInverse(int verbose)  const
 {
 //    qDebug() << "LU decomp" << m << n;
 
@@ -478,6 +633,11 @@ const Matrix<T> Matrix<T>::getInverse()  const
     /* LU Decomposition */
     int i, j, k;
     T sum;
+
+    if (verbose)
+    {
+        this->print(3,"M");
+    }
 
     for (i = 0; i < n; i++) {
         U[i*n+i] = 1;
@@ -504,10 +664,13 @@ const Matrix<T> Matrix<T>::getInverse()  const
         }
     }
 
-//    L.print(2,"L");
-//    U.print(2,"U");
+    if (verbose)
+    {
+        L.print(3,"L");
+        U.print(3,"U");
 
-//    (L*U).print(2,"L*U");
+        (L*U).print(3,"L*U");
+    }
 
     /* Solve LY = I for Y (= UX) */
     for(i = 0; i < n; i++)
@@ -525,9 +688,12 @@ const Matrix<T> Matrix<T>::getInverse()  const
         }
     }
     
-//    (L*y).print(2,"LY = I");
+    if (verbose)
+    {
+        y.print(3,"Y");
 
-//    y.print(2,"Y");
+        (L*y).print(3,"LY = I");
+    }
 
     /* Solve UX = Y for X */
     for(i = n-1; i >= 0; --i)
@@ -545,12 +711,14 @@ const Matrix<T> Matrix<T>::getInverse()  const
         }
     }
 
-//    (U*x).print(2,"UX = Y");
-    
-//    qDebug() << "Alpha";
-    
-//    (*this*x).print(2,"I");
+    if (verbose)
+    {
+        x.print(3,"X");
 
+        (U*x).print(3,"UX = Y");
+
+        (*this*x).print(3,"I");
+    }
     return x;
 
 }
@@ -685,8 +853,8 @@ void Matrix<T>::print(int precision, const char * id) const
     if (strlen(id) > 0) ss << id << "("<< this->m << ", " << this->n << "):"<<std::endl;
     for (int i = 0; i < m; i++)
     {
-        if (i == 0) ss << "{{ ";
-        else ss << " { ";
+        if (i == 0) ss << " [ ";
+        else ss << " [ ";
 
         for (int j = 0; j < n; j++)
         {
@@ -694,8 +862,8 @@ void Matrix<T>::print(int precision, const char * id) const
             if (j != n-1) ss << ", ";
         }
 
-        if (i == m-1) ss << " }}" << std::endl;
-        else ss << " }," << std::endl;
+        if (i == m-1) ss << " ]" << std::endl;
+        else ss << " ]" << std::endl;
     }
 
     qDebug() << ss.str().c_str();
@@ -721,6 +889,8 @@ void Matrix<T>::set(size_t m, size_t n, T value)
     {
         this->buffer[i] = value;
     }
+
+//    qDebug() << "set";
 }
 
 template <class T>

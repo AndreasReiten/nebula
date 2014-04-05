@@ -47,7 +47,8 @@
 #include "utils/sharedcontext.h"
 #include "utils/texthighlighter.h"
 #include "utils/volumerender.h"
-//#include "utils/imagerender.h"
+#include "utils/imagepreview.h"
+#include "utils/matrix.h"
 #include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
@@ -422,14 +423,14 @@ protected:
     VolumeRenderWindow *volumeRenderWindow;
     QWidget *volumeRenderWidget;
 
-//    ImageRenderWorker *imageRenderWorker;
-//    ImageRenderWindow *imageRenderWindow;
-//    QWidget *imageRenderWidget;
+    // Image Preview Widget
+    ImagePreviewWindow * imagePreviewWindow;
+    int display_file;
+
 
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;
     QDockWidget *functionDockWidget;
-//    QDockWidget *unitcellDockWidget;
 
     QString svoDir;
 //    QString scriptDir;
@@ -474,6 +475,6 @@ protected:
 
     QGridLayout * mainLayout;
 
-    int display_file;
+
 };
 #endif

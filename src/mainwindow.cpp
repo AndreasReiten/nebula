@@ -64,15 +64,15 @@ MainWindow::MainWindow()
     
     
     // For some reason this must be included in order to compile matrix.h correctly =(
-    Matrix<double> A(4,4,0);
-    A.setIdentity(4);
-    A[3] = 3;
-    A[9] = 2;
-    A[12] = 4;
+//    Matrix<double> A(4,4,0);
+//    A.setIdentity(4);
+//    A[3] = 3;
+//    A[9] = 2;
+//    A[12] = 4;
 
-    A.print(2,"A");
+//    A.print(2,"A");
 
-    A.getInverse().print(2,"A inv");
+//    A.getInverse().print(2,"A inv");
 }
 
 MainWindow::~MainWindow()
@@ -411,27 +411,32 @@ void MainWindow::voxelizeButtonFinish()
 
 void MainWindow::incrementDisplayFile1()
 {
-    int value = display_file + 1;
-    runDisplayFileThread(value);
+    imageSpinBox->setValue(imageSpinBox->value()+1);
 }
 void MainWindow::incrementDisplayFile10()
 {
-    int value = display_file + 10;
-    runDisplayFileThread(value);
+    imageSpinBox->setValue(imageSpinBox->value()+10);
 }
 void MainWindow::decrementDisplayFile1()
 {
-    int value = display_file - 1;
-    runDisplayFileThread(value);
+    imageSpinBox->setValue(imageSpinBox->value()-1);
 }
 void MainWindow::decrementDisplayFile10()
 {
-    int value = display_file - 10;
-    runDisplayFileThread(value);
+    imageSpinBox->setValue(imageSpinBox->value()-10);
 }
 void MainWindow::setDisplayFile(int value)
 {
-    runDisplayFileThread(value);
+    if ((value >= 0) && (value < files.size()))
+    {
+        QString path = files[value].getPath();
+
+        imagePreviewWindow->getWorker()->setImageFromPath(path);
+    }
+    else
+    {
+        print("\nThe files does not exist. Did you forget to press \"Set\"?");
+    }
 }
 
 void MainWindow::runDisplayFileThread(int value)
@@ -456,7 +461,6 @@ void MainWindow::updateFileHeader(int value)
 {
     if ((file_paths.size() > value ))
     {
-//        qDebug() << files.size() << value;
         if (files.size() > value) fileHeaderEdit->setPlainText(files[value].getHeaderText());
     }
 }
@@ -1468,45 +1472,52 @@ void MainWindow::initializeInteractives()
     {
 //        imageDock = new QDockWidget(tr("Image Browser"));
         
+        QSurfaceFormat format_gl;
+        format_gl.setSamples(16);
+        format_gl.setRedBufferSize(8);
+        format_gl.setGreenBufferSize(8);
+        format_gl.setBlueBufferSize(8);
+        format_gl.setAlphaBufferSize(8);
+
+        imagePreviewWindow = new ImagePreviewWindow();
+        imagePreviewWindow->setMultiThreading(true);
+        imagePreviewWindow->setSharedWindow(sharedContextWindow);
+        imagePreviewWindow->setFormat(format_gl);
+        imagePreviewWindow->setOpenCLContext(context_cl);
+        imagePreviewWindow->setAnimating(true);
+        imagePreviewWindow->initializeWorker();
+
+        imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
+        imageDisplayWidget->setFocusPolicy(Qt::TabFocus);
+
         imageWidget = new QWidget;
-        
+
         imageLabel = new QLabel("---");
-        
-        imageDisplayWidget = new QWidget;
-//        imageDisplayWidget->setFixedSize(200,150);
-//        imageCorrectedWidget = new QWidget;
-//        imageCorrectedWidget->setFixedSize(200,200);
-        
-//        QWidget * frameWidget = new QWidget; 
-        
-//        QHBoxLayout * frameLayout = new QHBoxLayout;
-        
-//        frameLayout->addWidget(imageRawWidget);
-//        frameLayout->addWidget(imageCorrectedWidget);
-//        frameWidget->setLayout(frameLayout);    
         
         imageFastBackButton = new QPushButton;
         imageFastBackButton->setIcon(QIcon(":art/fast_back.png"));
         imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
+
         imageSlowBackButton = new QPushButton;
         imageSlowBackButton->setIcon(QIcon(":art/back.png"));
         imageSlowBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        
+        connect(imageSlowBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
+
         imageSpinBox = new QSpinBox;
+        imageSpinBox->setRange(0,100000);
         
+        connect(imageSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
+
         imageFastForwardButton = new QPushButton;
         imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
         imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
+
         imageSlowForwardButton = new QPushButton;
         imageSlowForwardButton->setIcon(QIcon(":art/forward.png"));
         imageSlowForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        
-//        imageRawCeckBox = new QCheckBox("Raw");
-//        imageCorrectedCeckBox = new QCheckBox("Corrected");
-//        connect(imageRawCeckBox, SIGNAL(clicked(bool)), imageRawWidget, SLOT(setVisible(bool)));
-//        connect(imageCorrectedCeckBox, SIGNAL(clicked(bool)), imageCorrectedWidget, SLOT(setVisible(bool)));
-//        imageRawCeckBox->setChecked(true);
-//        imageCorrectedCeckBox->setChecked(true);
+        connect(imageSlowForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
         
         imageModeCB = new QComboBox;
         imageModeCB->addItem("Raw");
@@ -1522,14 +1533,8 @@ void MainWindow::initializeInteractives()
         imageLayout->addWidget(imageSlowForwardButton,2,5,1,1);
         imageLayout->addWidget(imageFastForwardButton,2,6,1,2);
         imageLayout->addWidget(imageModeCB,3,0,1,8);
-//        imageLayout->addWidget(imageCorrectedCeckBox,3,1,1,1);
         
         imageWidget->setLayout(imageLayout);
-        
-//        imageDock->setWidget(imageWidget);
-//        imageDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
-//        viewMenu->addAction(imageDock->toggleViewAction());
-//        this->addDockWidget(Qt::TopDockWidgetArea, imageDock);
     }
     
     /* Graphics dock widget */
@@ -1592,18 +1597,18 @@ void MainWindow::initializeInteractives()
 //        graphicsLayout->setMargin(0);
 //        graphicsLayout->setContentsMargins(0,0,0,0);
 
-        graphicsLayout->addWidget(label_texture,0,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_texture,0,0,1,2);
         graphicsLayout->addWidget(tsfComboBox,0,2,1,1);
         graphicsLayout->addWidget(tsfAlphaComboBox,0,3,1,1);
-        graphicsLayout->addWidget(label_data_min,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_data_min,1,0,1,2);
         graphicsLayout->addWidget(dataMinSpinBox,1,2,1,2);
-        graphicsLayout->addWidget(label_data_max,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_data_max,2,0,1,2);
         graphicsLayout->addWidget(dataMaxSpinBox,2,2,1,2);
-        graphicsLayout->addWidget(label_alpha,3,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_alpha,3,0,1,2);
         graphicsLayout->addWidget(alphaSpinBox,3,2,1,2);
-        graphicsLayout->addWidget(label_brightness,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_brightness,4,0,1,2);
         graphicsLayout->addWidget(brightnessSpinBox,4,2,1,2);
-        graphicsLayout->addWidget(label_quality,5,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        graphicsLayout->addWidget(label_quality,5,0,1,2);
         graphicsLayout->addWidget(qualitySlider,5,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);

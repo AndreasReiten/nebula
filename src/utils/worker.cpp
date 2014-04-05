@@ -273,7 +273,6 @@ void SetFileWorker::process()
         // Set file and get status
         files->append(DetectorFile());
         int STATUS_OK = files->back().set(file_paths->at(i), context_cl);
-//        files->back().setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -283,8 +282,7 @@ void SetFileWorker::process()
             // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
             if ((*suggested_q) < files->back().getQSuggestion()) (*suggested_q) = files->back().getQSuggestion();
             
-            emit changedFile(files->size()-1); 
-//            qDebug() <<  files->size()-1;
+            emit changedFile(files->size()-1);
         }
         else
         {
@@ -651,7 +649,6 @@ void AllInOneWorker::process()
         // Set file and get status
         DetectorFile file;
         int STATUS_OK = file.set(file_paths->at(i), context_cl);
-//        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
 
         if (STATUS_OK)
         {
@@ -679,16 +676,10 @@ void AllInOneWorker::process()
                     file.setOffsetKappa(offset_kappa);
                     file.setOffsetPhi(offset_phi);
 
-//                    emit aquireSharedBuffers();
                     int STATUS_OK = file.filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
-//                    emit releaseSharedBuffers();
-//                    emit updateRequest();
-//                    emit changedImage(i);
                     
                     if (STATUS_OK)
                     {
-//                        emit repaintImageWidget();
-
                         // Get suggestions on the minimum search radius that can safely be applied during interpolation
                         if ((*suggested_search_radius_low) > file.getSearchRadiusLowSuggestion()) (*suggested_search_radius_low) = file.getSearchRadiusLowSuggestion();
                         if ((*suggested_search_radius_high) < file.getSearchRadiusHighSuggestion()) (*suggested_search_radius_high) = file.getSearchRadiusHighSuggestion();

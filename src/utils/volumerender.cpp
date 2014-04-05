@@ -305,7 +305,7 @@ void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
     data_translation[7] = -hkl_focus[1];
     data_translation[11] = -hkl_focus[2];
     
-    data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+    data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
     
     updateUnitCellText();
 }
@@ -351,7 +351,7 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
         xyz_clip[1] = 2.0 * (double) (render_surface->height() - y)/ (double) render_surface->height() - 1.0;
         xyz_clip[2] = 2.0 * depth - 1.0;
             
-        Matrix<double> xyz = view_matrix.getInverse() * xyz_clip;
+        Matrix<double> xyz = view_matrix.getInverse4x4() * xyz_clip;
         
         xyz[0] /= xyz[3];
         xyz[1] /= xyz[3];
@@ -382,7 +382,7 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
         
         if (ctrl_button)
         {
-            qDebug() << "Removing" << closest << "of" << markers.size();
+//            qDebug() << "Removing" << closest << "of" << markers.size();
             markers.remove(closest);
             glDeleteBuffers(1, &marker_vbo[closest]);
             marker_vbo.remove(closest);
@@ -473,13 +473,13 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             if (shift_button && isURotationActive && isUnitcellActive)
             {
 //                U = roll_rotation * U; 
-                U = rotation.getInverse() * roll_rotation * rotation * U;
+                U = rotation.getInverse4x4() * roll_rotation * rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
             else if(shift_button) 
             {
-                scalebar_rotation = rotation.getInverse() * roll_rotation * rotation * scalebar_rotation;
+                scalebar_rotation = rotation.getInverse4x4() * roll_rotation * rotation * scalebar_rotation;
             }
             else
             {
@@ -510,13 +510,13 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             {
 //                U = roll_rotation * U; 
 //                unitcell_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
-                U = rotation.getInverse() * roll_rotation *  rotation * U; 
+                U = rotation.getInverse4x4() * roll_rotation *  rotation * U; 
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
             else if(shift_button) 
             {
-                scalebar_rotation = rotation.getInverse() * roll_rotation *  rotation * scalebar_rotation;
+                scalebar_rotation = rotation.getInverse4x4() * roll_rotation *  rotation * scalebar_rotation;
             }
             else
             {
@@ -540,9 +540,9 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             data_translation[3] = dx;
             data_translation[7] = dy;
 
-            data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
+            data_translation = ( rotation.getInverse4x4() * data_translation * rotation) * data_translation_prev;
 
-            this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            this->data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
             
             updateUnitCellText();
         }
@@ -558,9 +558,9 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             data_translation.setIdentity(4);
             data_translation[11] = dz;
 
-            data_translation = ( rotation.getInverse() * data_translation * rotation) * data_translation_prev;
+            data_translation = ( rotation.getInverse4x4() * data_translation * rotation) * data_translation_prev;
 
-            this->data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+            this->data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
             
             updateUnitCellText();
         }
@@ -791,7 +791,7 @@ void VolumeRenderWorker::drawUnitCell(QPainter * painter)
     
     float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
     
-    if (alpha > 0.5) alpha = 0.5;
+    if (alpha > 0.3) alpha = 0.3;
     
 //    qDebug() << alpha;
     
@@ -1166,7 +1166,7 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
                 data_scaling[5] += data_scaling[5]*delta;
                 data_scaling[10] += data_scaling[10]*delta;
 
-                data_view_extent =  (data_scaling * data_translation).getInverse() * data_extent;
+                data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
                 
                 updateUnitCellText();
             }
@@ -1371,7 +1371,7 @@ void VolumeRenderWorker::setViewMatrices()
         CL_TRUE,
         0,
         view_matrix.bytes()/2,
-        view_matrix.getInverse().toFloat().data(),
+        view_matrix.getInverse4x4().toFloat().data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -2231,18 +2231,31 @@ void VolumeRenderWorker::alignAStartoZ()
     
     setViewMatrices();
     
-//    rotation.print(4,"rotation");
-//    view_matrix.toFloat().print(4,"view mat");
-//    view_matrix.getInverse().toFloat().print(4,"view mat inv");
-//    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+    view_matrix.getInverse4x4(1);
 
-//    view_matrix.getL().print(2,"L");
-//    view_matrix.getU().print(2,"U");
-//    (view_matrix.getL()*view_matrix.getU()).print(2,"L*U");
+//    rotation.print(4,"rotation");
+//    view_matrix.print(4,"view mat");
+//    view_matrix.getInverse4x4().print(4,"view mat inv");
+//    (view_matrix.getInverse4x4() * view_matrix).print(6,"1");
+
+
 //    vec[0] = UB[0];
 //    vec[1] = UB[3];
 //    vec[2] = UB[6];
     
+//    Matrix<double> L2 = view_matrix.getL();
+//    Matrix<double> U2 = view_matrix.getU();
+
+//    Matrix<double> LU2 = L2*U2;
+
+//    view_matrix.getL().print(2,"L");
+//    view_matrix.getU().print(2,"U");
+//    (view_matrix.getL()*view_matrix.getU()).print(2,"L*U");
+
+//    LU2.print(2,"L2");
+//    LU2.print(2,"U2");
+//    LU2.print(2,"L2*U2");
+
 //    vec = rotation*vec;
     
 //    qDebug() << "Zeta" << zeta(vec);
@@ -2268,8 +2281,8 @@ void VolumeRenderWorker::alignBStartoZ()
     
 //    rotation.print(4,"rotation");
 //    view_matrix.toFloat().print(4,"view mat");
-//    view_matrix.getInverse().toFloat().print(4,"view mat inv");
-//    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+//    view_matrix.getInverse4x4().toFloat().print(4,"view mat inv");
+//    (view_matrix.getInverse4x4().toFloat() * view_matrix.toFloat()).print(6,"1");
 }
 void VolumeRenderWorker::alignCStartoZ()
 {
@@ -2290,8 +2303,8 @@ void VolumeRenderWorker::alignCStartoZ()
     
 //    rotation.print(4,"rotation");
 //    view_matrix.toFloat().print(4,"view mat");
-//    view_matrix.getInverse().toFloat().print(4,"view mat inv");
-//    (view_matrix.getInverse().toFloat() * view_matrix.toFloat()).print(6,"1");
+//    view_matrix.getInverse4x4().toFloat().print(4,"view mat inv");
+//    (view_matrix.getInverse4x4().toFloat() * view_matrix.toFloat()).print(6,"1");
 }
 
 
@@ -2302,7 +2315,7 @@ void VolumeRenderWorker::alignLabXtoSliceX()
     RotationMatrix<double> x_aligned;
     x_aligned.setYRotation(pi*0.5);
     
-    rotation =  x_aligned * scalebar_rotation.getInverse();
+    rotation =  x_aligned * scalebar_rotation.getInverse4x4();
     
 //    rotation.print(2,"After");
 }
@@ -2312,7 +2325,7 @@ void VolumeRenderWorker::alignLabYtoSliceY()
     RotationMatrix<double> y_aligned;
     y_aligned.setXRotation(-pi*0.5);
     
-    rotation =  y_aligned * scalebar_rotation.getInverse();
+    rotation =  y_aligned * scalebar_rotation.getInverse4x4();
 }
 void VolumeRenderWorker::alignLabZtoSliceZ()
 {
@@ -2321,7 +2334,7 @@ void VolumeRenderWorker::alignLabZtoSliceZ()
     RotationMatrix<double> z_aligned;
     z_aligned.setYRotation(0.0);
     
-    rotation =  z_aligned * scalebar_rotation.getInverse();
+    rotation =  z_aligned * scalebar_rotation.getInverse4x4();
     
 //    rotation.print(2,"After");
 }
@@ -2398,9 +2411,9 @@ void VolumeRenderWorker::computePixelSize()
     Matrix<double> xyz_01(4,1);
     Matrix<double> xyz_10(4,1);
 
-    xyz_00 = view_matrix.getInverse()*ndc00;
-    xyz_01 = view_matrix.getInverse()*ndc01;
-    xyz_10 = view_matrix.getInverse()*ndc10;
+    xyz_00 = view_matrix.getInverse4x4()*ndc00;
+    xyz_01 = view_matrix.getInverse4x4()*ndc01;
+    xyz_10 = view_matrix.getInverse4x4()*ndc10;
 
     Matrix<double> w_vec = xyz_00 - xyz_10;
     Matrix<double> h_vec = xyz_00 - xyz_01;
@@ -3229,7 +3242,7 @@ void VolumeRenderWorker::setShadowVector()
 
     shadow_kernel_arg = shadow_vector;
 
-    shadow_kernel_arg = rotation.getInverse().toFloat()*shadow_kernel_arg;
+    shadow_kernel_arg = rotation.getInverse4x4().toFloat()*shadow_kernel_arg;
 
     clSetKernelArg(cl_model_raytrace, 11, sizeof(cl_float4),  shadow_kernel_arg.data());
 }
