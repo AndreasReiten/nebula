@@ -53,5 +53,7 @@
         <file>src/shaders/unitcell.v.glsl</file>
         <file>art/marker.png</file>
         <file>art/labframe.png</file>
+        <file>art/roll_ccw.png</file>
+        <file>art/roll_cw.png</file>
     </qresource>
 </RCC>

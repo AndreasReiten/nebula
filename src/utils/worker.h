@@ -208,22 +208,22 @@ class ProjectFileWorker : public BaseWorker
         cl_kernel project_kernel;
 };
 
-class DisplayFileWorker: public ProjectFileWorker
-{
-    Q_OBJECT
+//class DisplayFileWorker: public ProjectFileWorker
+//{
+//    Q_OBJECT
 
-    public:
-        DisplayFileWorker();
-        ~DisplayFileWorker();
-        void setDisplayFile(int value);
+//    public:
+//        DisplayFileWorker();
+//        ~DisplayFileWorker();
+//        void setDisplayFile(int value);
 
-    private slots:
-        void process();
+//    private slots:
+//        void process();
 
-    private:
-        int display_file;
-//        Matrix<float> test_background;
-};
+//    private:
+//        int display_file;
+////        Matrix<float> test_background;
+//};
 
 
 class VoxelizeWorker : public BaseWorker

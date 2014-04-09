@@ -302,29 +302,29 @@ void MainWindow::initializeWorkers()
 
 
     //### displayFileWorker ###
-    displayFileWorker = new DisplayFileWorker();
-    displayFileWorker->setOpenCLContext(context_cl);
+//    displayFileWorker = new DisplayFileWorker();
+//    displayFileWorker->setOpenCLContext(context_cl);
 //    displayFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
-    displayFileWorker->setFilePaths(&file_paths);
-    displayFileWorker->setFiles(&files);
-    displayFileWorker->initializeCLKernel();
+//    displayFileWorker->setFilePaths(&file_paths);
+//    displayFileWorker->setFiles(&files);
+//    displayFileWorker->initializeCLKernel();
 //    displayFileWorker->setReduceThresholdLow(&threshold_reduce_low);
 //    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
 //    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
 //    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
-    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), displayFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
-    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
-    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
+//    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), displayFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
+//    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
+//    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
+//    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
+//    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
     
-    displayFileWorker->moveToThread(displayFileThread);
-    connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
-    connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
-    connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+//    displayFileWorker->moveToThread(displayFileThread);
+//    connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
+//    connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
+//    connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
 //    connect(displayFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
 //    connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
-    connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+//    connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 //    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
 //    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 //    connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
@@ -431,7 +431,7 @@ void MainWindow::setDisplayFile(int value)
     {
         QString path = files[value].getPath();
 
-        imagePreviewWindow->getWorker()->setImageFromPath(path);
+        emit imagePreviewChanged(path);
     }
     else
     {
@@ -439,23 +439,23 @@ void MainWindow::setDisplayFile(int value)
     }
 }
 
-void MainWindow::runDisplayFileThread(int value)
-{
-    if (value < 0) value = 0;
-    if (value >= file_paths.size()) value = file_paths.size() - 1;
+//void MainWindow::runDisplayFileThread(int value)
+//{
+//    if (value < 0) value = 0;
+//    if (value >= file_paths.size()) value = file_paths.size() - 1;
 
-    if ((file_paths.size() > 0 ) && (display_file != value))
-    {
-        display_file = value;
+//    if ((file_paths.size() > 0 ) && (display_file != value))
+//    {
+//        display_file = value;
         
-        updateFileHeader(display_file);
-//        imageNumberSpinBox->setValue(display_file);
-//        imageNumberSpinBox->setMaximum(files.size());
-        displayFileWorker->setDisplayFile(display_file);
+//        updateFileHeader(display_file);
+////        imageNumberSpinBox->setValue(display_file);
+////        imageNumberSpinBox->setMaximum(files.size());
+//        displayFileWorker->setDisplayFile(display_file);
         
-        displayFileThread->start();
-    }
-}
+//        displayFileThread->start();
+//    }
+//}
 
 void MainWindow::updateFileHeader(int value)
 {
@@ -666,6 +666,8 @@ void MainWindow::initializeActions()
     rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), tr("Rotate left"), this);
     rotateUpAct = new QAction(QIcon(":/art/rotate_up.png"), tr("Rotate up"), this);
     rotateDownAct = new QAction(QIcon(":/art/rotate_down.png"), tr("Rotate down"), this);
+    rollCW = new QAction(QIcon(":/art/roll_cw.png"), tr("Roll clockwise"), this);
+    rollCCW = new QAction(QIcon(":/art/roll_ccw.png"), tr("Roll counterclockwise"), this);
     
     
     // Action Tips
@@ -689,6 +691,17 @@ void MainWindow::initializeActions()
     exitAct->setShortcuts(QKeySequence::Quit);
 }
 
+void MainWindow::omitFile()
+{
+    size_t index = imageSpinBox->value();
+
+    if ((index >= 0) && (index < files.size()))
+    {
+        files.removeAt(index);
+
+        print("\nRemoved file "+QString::number(index)+"of"+QString::number(files.size()));
+    }
+}
 
 void MainWindow::saveScript()
 {
@@ -1011,6 +1024,8 @@ void MainWindow::initializeConnects()
     connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateRight()));
     connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
     connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
+    connect(this->rollCW, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rollCW()));
+    connect(this->rollCCW, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rollCCW()));
     connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
     connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(addMarker()));
     connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLabFrame()));
@@ -1445,6 +1460,8 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(rotateRightAct);
         viewToolBar->addAction(rotateDownAct);
         viewToolBar->addAction(rotateUpAct);
+        viewToolBar->addAction(rollCW);
+        viewToolBar->addAction(rollCCW);
         viewToolBar->addSeparator();
         
         viewToolBar->addAction(backgroundAct);
@@ -1478,7 +1495,7 @@ void MainWindow::initializeInteractives()
         format_gl.setGreenBufferSize(8);
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
-
+        
         imagePreviewWindow = new ImagePreviewWindow();
         imagePreviewWindow->setMultiThreading(true);
         imagePreviewWindow->setSharedWindow(sharedContextWindow);
@@ -1486,6 +1503,8 @@ void MainWindow::initializeInteractives()
         imagePreviewWindow->setOpenCLContext(context_cl);
         imagePreviewWindow->setAnimating(true);
         imagePreviewWindow->initializeWorker();
+
+        connect(this, SIGNAL(imagePreviewChanged(QString)), imagePreviewWindow->getWorker(), SLOT(setImageFromPath(QString)));
 
         imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
         imageDisplayWidget->setFocusPolicy(Qt::TabFocus);
@@ -1518,10 +1537,18 @@ void MainWindow::initializeInteractives()
         imageSlowForwardButton->setIcon(QIcon(":art/forward.png"));
         imageSlowForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         connect(imageSlowForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
+
         
+        omitFrameButton = new QPushButton("Remove");
+        omitFrameButton->setIcon(QIcon(":art/kill.png"));
+        omitFrameButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(omitFrameButton, SIGNAL(clicked()), this, SLOT(omitFile()));
+
+
         imageModeCB = new QComboBox;
         imageModeCB->addItem("Raw");
         imageModeCB->addItem("Corrected");
+        connect(imageModeCB, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setMode(int)));
                 
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setRowStretch(1,1);
@@ -1532,7 +1559,8 @@ void MainWindow::initializeInteractives()
         imageLayout->addWidget(imageSpinBox,2,3,1,2);
         imageLayout->addWidget(imageSlowForwardButton,2,5,1,1);
         imageLayout->addWidget(imageFastForwardButton,2,6,1,2);
-        imageLayout->addWidget(imageModeCB,3,0,1,8);
+        imageLayout->addWidget(imageModeCB,3,0,1,4);
+        imageLayout->addWidget(omitFrameButton,3,4,1,4);
         
         imageWidget->setLayout(imageLayout);
     }
@@ -1850,6 +1878,8 @@ void MainWindow::initializeInteractives()
         svoHeaderDock->setWidget(svoHeaderEdit);
         
         this->addDockWidget(Qt::RightDockWidgetArea, svoHeaderDock);
+
+        svoHeaderDock->hide();
     }
     
     /* File Controls Widget */

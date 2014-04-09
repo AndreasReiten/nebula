@@ -41,7 +41,6 @@ __kernel void FRAME_FILTER(
     //         |
     //         |
     //       (slow)
-
     int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
     int2 target_dim = get_image_dim(xyzi_target);
 

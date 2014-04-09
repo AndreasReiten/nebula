@@ -67,6 +67,7 @@ public:
 private slots:
     void updateFileHeader(int value);
     void displayPopup(QString title, QString text);
+    void omitFile();
 //    void toggleScriptView();
 
     void test();
@@ -114,7 +115,7 @@ private slots:
 //    void setProjectThresholdHigh(double value);
     void runProjectFileThread();
     void runAllInOneThread();
-    void runDisplayFileThread(int value);
+//    void runDisplayFileThread(int value);
     void incrementDisplayFile1();
     void incrementDisplayFile10();
     void decrementDisplayFile1();
@@ -131,10 +132,11 @@ signals:
 
     void changedDetector(int value);
     void changedFormat(int value);
-    void changedActiveAngle(int value);
+//    void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
     void captureFrameBuffer(QString path);
     void changedUB();
+    void imagePreviewChanged(QString path);
     
 private:
     /* UI elements for UB matrix */
@@ -235,7 +237,7 @@ private:
     ProjectFileWorker * projectFileWorker;
     AllInOneWorker * allInOneWorker;
     VoxelizeWorker * voxelizeWorker;
-    DisplayFileWorker * displayFileWorker;
+//    DisplayFileWorker * displayFileWorker;
 
     // Boolean checks
 //    bool isInScriptMode;
@@ -269,11 +271,11 @@ private:
     
     QPushButton * imageFastForwardButton;
     QPushButton * imageSlowForwardButton;
-    
+    QPushButton * omitFrameButton;
 //    QCheckBox * imageRawCeckBox;
 //    QCheckBox * imageCorrectedCeckBox;
     QComboBox * imageModeCB;
-    
+
     // Actions
     QAction *shadowAct;
     QAction *integrate3DAct;
@@ -312,6 +314,8 @@ private:
     QAction *rulerAct;
     QAction *markAct;
     QAction *labFrameAct;
+    QAction *rollCW;
+    QAction *rollCCW;
     
     
     int current_svo;

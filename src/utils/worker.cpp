@@ -489,7 +489,6 @@ void ProjectFileWorker::process()
             emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
             (*files)[i].setActiveAngle(active_angle);
             (*files)[i].setProjectionKernel(&project_kernel);
-            (*files)[i].setBackground(files->front().getFlux(), files->front().getExpTime());
             (*files)[i].setOffsetOmega(offset_omega);
             (*files)[i].setOffsetKappa(offset_kappa);
             (*files)[i].setOffsetPhi(offset_phi);
@@ -671,7 +670,6 @@ void AllInOneWorker::process()
 
                     file.setActiveAngle(active_angle);
                     file.setProjectionKernel(&project_kernel);
-                    file.setBackground(file.getFlux(), file.getExpTime());
                     file.setOffsetOmega(offset_omega);
                     file.setOffsetKappa(offset_kappa);
                     file.setOffsetPhi(offset_phi);
@@ -1275,50 +1273,49 @@ void VoxelizeWorker::process()
  *
  */
 
-DisplayFileWorker::DisplayFileWorker()
-{
-    this->isCLInitialized = false;
-}
+//DisplayFileWorker::DisplayFileWorker()
+//{
+//    this->isCLInitialized = false;
+//}
 
-DisplayFileWorker::~DisplayFileWorker()
-{
+//DisplayFileWorker::~DisplayFileWorker()
+//{
 
-    if (isCLInitialized) clReleaseKernel(project_kernel);
-}
+//    if (isCLInitialized) clReleaseKernel(project_kernel);
+//}
 
-void DisplayFileWorker::setDisplayFile(int value)
-{
-    display_file = value;
-}
+//void DisplayFileWorker::setDisplayFile(int value)
+//{
+//    display_file = value;
+//}
 
 
-void DisplayFileWorker::process()
-{
-    /* 
-     * This function updates the image buffers that are shown in the reconstruction tab according to a given file index (display_file)*/
-    QCoreApplication::processEvents();
+//void DisplayFileWorker::process()
+//{
+//    /* 
+//     * This function updates the image buffers that are shown in the reconstruction tab according to a given file index (display_file)*/
+//    QCoreApplication::processEvents();
     
-    DetectorFile file;
+//    DetectorFile file;
 
-    int STATUS_OK = file.set(file_paths->at(display_file), context_cl);
-    if (STATUS_OK)
-    {
-//        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
-        STATUS_OK = file.readData();
-        if (STATUS_OK)
-        {
-            emit changedImageSize(file.getWidth(), file.getHeight());
-            file.setActiveAngle(active_angle);
-            file.setProjectionKernel(&project_kernel);
-            file.setBackground(file.getFlux(), file.getExpTime());
+//    int STATUS_OK = file.set(file_paths->at(display_file), context_cl);
+//    if (STATUS_OK)
+//    {
+////        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
+//        STATUS_OK = file.readData();
+//        if (STATUS_OK)
+//        {
+//            emit changedImageSize(file.getWidth(), file.getHeight());
+//            file.setActiveAngle(active_angle);
+//            file.setProjectionKernel(&project_kernel);
 
-            size_t n;
-//            emit aquireSharedBuffers();
-            STATUS_OK = file.filterData( &n, NULL, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high, 0);
-//            emit releaseSharedBuffers();
+//            size_t n;
+////            emit aquireSharedBuffers();
+//            STATUS_OK = file.filterData( &n, NULL, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high, 0);
+////            emit releaseSharedBuffers();
             
-//            emit updateRequest();
-        }
-    }
-    emit finished();
-}
+////            emit updateRequest();
+//        }
+//    }
+//    emit finished();
+//}

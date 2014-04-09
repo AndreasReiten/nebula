@@ -52,7 +52,7 @@ class DetectorFile
         int filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive = true);
         //~int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
 
-        Matrix<float> getTest();
+        Matrix<float> & data();
         int getWidth() const;
         int getHeight() const;
         size_t getBytes() const;
@@ -61,9 +61,15 @@ class DetectorFile
         float getQSuggestion();
         float getMaxCount();
         void clearData();
-        void setBackground(float flux, float exposure_time);
+//        void setBackground(float flux, float exposure_time);
         float getFlux();
         float getExpTime();
+        float getWavelength();
+        float getDetectorDist();
+        float getBeamX();
+        float getBeamY();
+        float getPixSizeX();
+        float getPixSizeY();
         void setProjectionKernel(cl_kernel * kernel);
         void print();
         QString getHeaderText();

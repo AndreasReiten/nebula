@@ -44,6 +44,11 @@ void DetectorFile::setActiveAngle(int value)
     active_angle = value;
 }
 
+float DetectorFile::getWavelength()
+{
+    return wavelength;
+}
+
 QString DetectorFile::getHeaderText()
 {
     std::stringstream ss;
@@ -139,7 +144,7 @@ size_t DetectorFile::getBytes() const
     return data_buf.bytes();
 }
 
-Matrix<float> DetectorFile::getTest()
+Matrix<float> & DetectorFile::data()
 {
     return data_buf;
 }
@@ -371,23 +376,12 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//    cl_mem background_cl = clCreateImage2D ( *context_cl->getContext(),
-//        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-//        &source_format,
-//        fast_dimension,
-//        slow_dimension,
-//        fast_dimension*sizeof(cl_float),
-//        background->data(),
-//        &err);
-//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
     // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
     cl_sampler intensity_sampler = clCreateSampler(*context_cl->getContext(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
 
-//    qDebug() << "The active angle is " << active_angle;
     if(active_angle == 0) phi = start_angle + 0.5*angle_increment;
     else if(active_angle == 1) kappa = start_angle + 0.5*angle_increment;
     else if(active_angle == 2) omega = start_angle + 0.5*angle_increment;
@@ -411,7 +405,7 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
 //    qDebug() << "OMEGA";
     OMEGA.setZRotation(-(omega+offset_omega));
 
-//    qDebug() << phi;
+    qDebug() << phi << kappa << omega;
 //    PHI.print(5);
     
     // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
@@ -540,11 +534,32 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
     return 1;
 }
 
-void DetectorFile::setBackground(float flux, float exposure_time)
+//void DetectorFile::setBackground(float flux, float exposure_time)
+//{
+//    this->background_flux = flux;
+//    this->backgroundExpTime = exposure_time;
+//}
+
+float DetectorFile::getDetectorDist()
 {
-//    this->background = buffer;
-    this->background_flux = flux;
-    this->backgroundExpTime = exposure_time;
+    return detector_distance;
+}
+
+float DetectorFile::getBeamX()
+{
+    return beam_x;
+}
+float DetectorFile::getBeamY()
+{
+    return beam_y;
+}
+float DetectorFile::getPixSizeX()
+{
+    return pixel_size_x;
+}
+float DetectorFile::getPixSizeY()
+{
+    return pixel_size_y;
 }
 
 void DetectorFile::setProjectionKernel(cl_kernel * kernel)
@@ -627,15 +642,10 @@ int DetectorFile::readData()
 
             data_buf[i*fast_dimension+j] = (float) counts;
 
-//            if ((i < 10) && (j < 10)) qDebug() << "i,j" << i << j << "data" << data_buf[i*fast_dimension+j] << "prev" << prev;
-            
             if (max_counts < counts) max_counts = counts;
         }
     }
     delete[] buf;
-    
-//    data_buf.print(0);
-//    qDebug() << "offset" << offset;
     
     
     return 1;

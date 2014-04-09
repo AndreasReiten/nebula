@@ -121,6 +121,8 @@ public slots:
     void rotateRight();
     void rotateUp();
     void rotateDown();
+    void rollCW();
+    void rollCCW();
     
     
     void toggleRuler();

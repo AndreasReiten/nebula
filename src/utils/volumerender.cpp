@@ -1363,8 +1363,6 @@ void VolumeRenderWorker::setViewMatrices()
     ctc_matrix.setWindow(200, 200);
     minicell_view_matrix = ctc_matrix * bbox_translation * minicell_scaling * rotation * U;
     ctc_matrix.setWindow(render_surface->width(),render_surface->height());
-//    lab_frame_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation;
-//    marker_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
     
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_view_matrix_inverse,
@@ -1375,8 +1373,6 @@ void VolumeRenderWorker::setViewMatrices()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    RotationMatrix<float> dummy;
-    
     err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
         cl_scalebar_rotation,
         CL_TRUE,
@@ -1392,7 +1388,6 @@ void VolumeRenderWorker::setViewMatrices()
     err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
     err |= clSetKernelArg(cl_svo_raytrace, 12, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//    qDebug() << "Done setting view matrix";
 }
 
 void VolumeRenderWorker::setDataExtent()
@@ -2349,16 +2344,12 @@ void VolumeRenderWorker::rotateLeft()
     RotationMatrix<double> rot;
     rot.setYRotation(pi*0.25);
     
-    scalebar_rotation = rot * scalebar_rotation;
-    
     rotation = rot * rotation;
 }
 void VolumeRenderWorker::rotateRight()
 {
     RotationMatrix<double> rot;
     rot.setYRotation(-pi*0.25);
-    
-    scalebar_rotation = rot * scalebar_rotation;
     
     rotation = rot * rotation;
 }
@@ -2367,8 +2358,6 @@ void VolumeRenderWorker::rotateUp()
     RotationMatrix<double> rot;
     rot.setXRotation(pi*0.25);
     
-    scalebar_rotation = rot * scalebar_rotation;
-    
     rotation = rot * rotation;
 }
 void VolumeRenderWorker::rotateDown()
@@ -2376,11 +2365,23 @@ void VolumeRenderWorker::rotateDown()
     RotationMatrix<double> rot;
     rot.setXRotation(-pi*0.25);
     
-    scalebar_rotation = rot * scalebar_rotation;
-    
     rotation = rot * rotation;
 }
 
+void VolumeRenderWorker::rollCW()
+{
+    RotationMatrix<double> rot;
+    rot.setZRotation(pi*0.25);
+    
+    rotation = rot * rotation;
+}
+void VolumeRenderWorker::rollCCW()
+{
+    RotationMatrix<double> rot;
+    rot.setZRotation(-pi*0.25);
+    
+    rotation = rot * rotation;
+}
 
 void VolumeRenderWorker::computePixelSize()
 {
@@ -2509,23 +2510,23 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
     
     // Draw accumulated roll for a mouse move event
-    QString roll_string("Roll: "+QString::number(accumulated_roll*180/pi, 'g', 5)+" deg");
+    /*QString roll_string("Roll: "+QString::number(accumulated_roll*180/pi, 'g', 5)+" deg");
     QRect roll_string_rect = emph_fontmetric->boundingRect(roll_string);
     roll_string_rect += QMargins(5,5,5,5);
     roll_string_rect.moveBottomLeft(QPoint(5,render_surface->height() -10 -resolution_string_rect.height()));
 
     painter->setBrush(*fill_brush);
     painter->drawRoundedRect(roll_string_rect, 5, 5, Qt::AbsoluteSize);
-    painter->drawText(roll_string_rect, Qt::AlignCenter, roll_string);
+    painter->drawText(roll_string_rect, Qt::AlignCenter, roll_string);*/
     
     // Scalebar multiplier
-    QString multiplier_string("x"+QString::number(scalebar_multiplier)+" 1/Å");
+    /*QString multiplier_string("x"+QString::number(scalebar_multiplier)+" 1/Å");
     multiplier_string_rect = emph_fontmetric->boundingRect(multiplier_string);
     multiplier_string_rect += QMargins(5,5,5,5);
     multiplier_string_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
 
     painter->drawRoundedRect(multiplier_string_rect, 5, 5, Qt::AbsoluteSize);
-    painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);
+    painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);*/
 }
 
 void VolumeRenderWorker::drawPositionScalebars(QPainter * painter)
@@ -3090,27 +3091,27 @@ size_t VolumeRenderWorker::setScaleBars()
                     // Get positions for tick text
                     if (tick_levels == tick_levels_max - 1)
                     {
+                        scalebar_multiplier = tick_interdistance * 10.0;
                         if ((size_t) n_position_scalebar_ticks+3 < position_scalebar_ticks.getM())
                         {
                             getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1;
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
                             n_position_scalebar_ticks++;
 
                             getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+4)*3, &scalebar_view_matrix);
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1;
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
                             n_position_scalebar_ticks++;
 
                             getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+8)*3, &scalebar_view_matrix);
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1;
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
                             n_position_scalebar_ticks++;
                         }
-                        scalebar_multiplier = tick_interdistance * 10.0;
                     }
                     coord_counter += 12;
                 }
