@@ -1,0 +1,22 @@
+QWidget
+{
+    font: bold;
+}
+
+QPlainTextEdit
+{
+    font: 14px "Monospace";
+}
+
+QDockWidget
+{
+    font: bold;
+}
+
+
+QDockWidget::title
+{
+    text-align: center;
+    border: 1px solid black;
+}
+
