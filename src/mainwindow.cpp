@@ -429,33 +429,14 @@ void MainWindow::setDisplayFile(int value)
 {
     if ((value >= 0) && (value < files.size()))
     {
-        QString path = files[value].getPath();
-
-        emit imagePreviewChanged(path);
+        emit imagePreviewChanged(files[value].getPath());
+        emit updateFileHeader(value);
     }
     else
     {
         print("\nThe files does not exist. Did you forget to press \"Set\"?");
     }
 }
-
-//void MainWindow::runDisplayFileThread(int value)
-//{
-//    if (value < 0) value = 0;
-//    if (value >= file_paths.size()) value = file_paths.size() - 1;
-
-//    if ((file_paths.size() > 0 ) && (display_file != value))
-//    {
-//        display_file = value;
-        
-//        updateFileHeader(display_file);
-////        imageNumberSpinBox->setValue(display_file);
-////        imageNumberSpinBox->setMaximum(files.size());
-//        displayFileWorker->setDisplayFile(display_file);
-        
-//        displayFileThread->start();
-//    }
-//}
 
 void MainWindow::updateFileHeader(int value)
 {
@@ -480,26 +461,7 @@ void MainWindow::runAllInOneThread()
 void MainWindow::setFilesFromSelectionModel()
 {
     if (!scriptingAct->isChecked()) file_paths = fileSelectionModel->getFiles();
-    
-//    qDebug() << file_paths;
 }
-
-//void MainWindow::setReduceThresholdLow(double value)
-//{
-//    this->threshold_reduce_low = (float) value;
-//}
-//void MainWindow::setReduceThresholdHigh(double value)
-//{
-//    this->threshold_reduce_high = (float) value;
-//}
-//void MainWindow::setProjectThresholdLow(double value)
-//{
-//    this->threshold_project_low = (float) value;
-//}
-//void MainWindow::setProjectThresholdHigh(double value)
-//{
-//    this->threshold_project_high = (float) value;
-//}
 
 void MainWindow::initializeEmit()
 {

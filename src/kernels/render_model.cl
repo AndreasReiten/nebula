@@ -69,6 +69,7 @@ __kernel void modelRayTrace(
 
     // The color of "shadow", or rather the color associated with gradient matching
     float4 shadow_color = (float4)(0.0f,0.0f,0.0f,1.0f);
+    float4 shadow_inv_color = (float4)(1.0f,1.0f,1.0f,1.0f);
     shadow_vector = normalize(shadow_vector);
 
     // If the global id corresponds to a texel
@@ -265,8 +266,12 @@ float3 rayBoxDelta;
                                     - model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z - step_length), parameters)
                                     + model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z + step_length), parameters),
                                     step_length));
-                            float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f; // Simplest form. Can multiply with shadow_magnitude*(1.0f - color.w)*sample.w or the like, but can it be justified, and does it provide better results? Thus far I am inclined to say no.
+                            // float strength = (dot(shadow_vector.xyz, normalize(gradient_vector))); 
+                            float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f; 
+                            // Simplest form. Can multiply with shadow_magnitude*(1.0f - color.w)*sample.w or the like, but can it be justified, and does it provide better results? Thus far I am inclined to say no.
     //                        float strength = native_powr((dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f, 2.0f); // Scaled with some power to increase contrast between shadow and no shadow
+                            //if (strength > 0) sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
+                            //else if (strength <= 0) sample.w = mix(sample.w, 1.0, -strength);
                             sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
                         }
     
