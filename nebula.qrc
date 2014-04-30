@@ -7,7 +7,6 @@
         <file>src/shaders/std_3d_col.v.glsl</file>
         <file>src/shaders/std_3d_col.f.glsl</file>
         <file>art/app.png</file>
-        <file>src/stylesheets/gosutheme.qss</file>
         <file>art/placeholder.png</file>
         <file>art/new.png</file>
         <file>art/save.png</file>
