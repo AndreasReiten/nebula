@@ -431,6 +431,7 @@ void MainWindow::setDisplayFile(int value)
     {
         emit imagePreviewChanged(files[value].getPath());
         emit updateFileHeader(value);
+        imageLabel->setText(files[value].getPath());
     }
     else
     {
@@ -1465,11 +1466,11 @@ void MainWindow::initializeInteractives()
         imagePreviewWindow->setOpenCLContext(context_cl);
         imagePreviewWindow->setAnimating(true);
         imagePreviewWindow->initializeWorker();
-
-        connect(this, SIGNAL(imagePreviewChanged(QString)), imagePreviewWindow->getWorker(), SLOT(setImageFromPath(QString)));
-
+        
         imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
         imageDisplayWidget->setFocusPolicy(Qt::TabFocus);
+        
+        connect(this, SIGNAL(imagePreviewChanged(QString)), imagePreviewWindow->getWorker(), SLOT(setImageFromPath(QString)));
 
         imageWidget = new QWidget;
 
@@ -1902,7 +1903,12 @@ void MainWindow::initializeInteractives()
         projectThresholdHigh->setAccelerated(1);
         projectThresholdHigh->setDecimals(2);
         projectThresholdHigh->setFocusPolicy(Qt::ClickFocus);
-
+        
+        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAlow(double)));
+        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAhigh(double)));
+        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBlow(double)));
+        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBhigh(double)));
+        
         omegaCorrectionSpinBox = new QDoubleSpinBox;
         omegaCorrectionSpinBox->setRange(-180, 180);
         omegaCorrectionSpinBox->setDecimals(3);

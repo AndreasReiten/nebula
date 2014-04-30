@@ -2,7 +2,8 @@
 
 ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
     isImageTexInitialized(false),
-    isTsfTexInitialized(false)
+    isTsfTexInitialized(false),
+    isCLInitialized(false)
 {
     Q_UNUSED(parent);
     
@@ -183,7 +184,9 @@ void ImagePreviewWorker::initResourcesCL()
     
     err = clSetKernelArg(cl_image_preview, 3, sizeof(cl_mem), &parameter_cl);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
+    
+    isCLInitialized = true;
+    
     setParameter(parameter);
 }
 
@@ -233,14 +236,20 @@ void ImagePreviewWorker::initialize()
     
     setTsf(tsf);
     
+    
+    
     setMode(0);
     
-    setThresholdAlow(0);
-    setThresholdAhigh(1000);
-    setThresholdBlow(0);
-    setThresholdBhigh(1000);
+    
+    
+//    setThresholdAlow(0);
+//    setThresholdAhigh(1000);
+//    setThresholdBlow(0);
+//    setThresholdBhigh(1000);
     setIntensityMin(1);
     setIntensityMax(1000);
+    
+    
 }
 
 void ImagePreviewWorker::setThresholdAlow(double value)
@@ -348,14 +357,17 @@ void ImagePreviewWorker::setMode(int value)
 
 void ImagePreviewWorker::setParameter(Matrix<float> & data)
 {
-    err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
-        parameter_cl,
-        CL_TRUE,
-        0,
-        data.bytes(),
-        data.data(),
-        0,0,0);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    if (isCLInitialized)
+    {
+        err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
+            parameter_cl,
+            CL_TRUE,
+            0,
+            data.bytes(),
+            data.data(),
+            0,0,0);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 }
 
 void ImagePreviewWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)

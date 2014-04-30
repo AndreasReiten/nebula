@@ -73,6 +73,7 @@ private:
 
     bool isImageTexInitialized;
     bool isTsfTexInitialized;
+    bool isCLInitialized;
     
 protected:
     void initialize();
