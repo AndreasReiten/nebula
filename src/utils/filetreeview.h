@@ -44,12 +44,9 @@ public:
     int columnCount(const QModelIndex& parent = QModelIndex()) const;
     
 private:
-//	QStringList directories;
     QStringList files;
     
     QList<QModelIndex> indices;
-//    bool addPath(QModelIndex index);
-//    bool removePath(QModelIndex index);
     void addIndex(QModelIndex index);
     void removeIndex(QModelIndex index);
     void refreshFiles();

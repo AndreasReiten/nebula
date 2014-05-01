@@ -235,17 +235,8 @@ void ImagePreviewWorker::initialize()
     tsf.setSpline(256);
     
     setTsf(tsf);
-    
-    
-    
     setMode(0);
     
-    
-    
-//    setThresholdAlow(0);
-//    setThresholdAhigh(1000);
-//    setThresholdBlow(0);
-//    setThresholdBhigh(1000);
     setIntensityMin(1);
     setIntensityMax(1000);
     

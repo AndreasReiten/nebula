@@ -20,10 +20,6 @@ Marker::Marker()
     untagged_color[1] = 0.2;
     untagged_color[2] = 0.7;
     untagged_color[3] = 0.3;
-    
-//    glGenBuffers(1, &vbo);
-    
-//    generateVbo();  
 }
 
 Marker::Marker(double x, double y, double z)
@@ -46,21 +42,11 @@ Marker::Marker(double x, double y, double z)
     untagged_color[1] = 0.3;
     untagged_color[2] = 0.3;
     untagged_color[3] = 0.8;
-    
-//    glGenBuffers(1, &vbo);
-    
-//    generateVbo();
 }
 
 Marker::~Marker()
 {
-//    glDeleteBuffers(1, &vbo);
 }
-
-//GLuint Marker::getVbo()
-//{
-//    return vbo;
-//}
 
 float * Marker::getColor()
 {
@@ -124,7 +110,4 @@ Matrix<float> & Marker::getVerts()
     vertices[17] = xyz[2]+l;
     
     return vertices;
-//    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*vbo_dummy.size(), vbo_dummy.data(), GL_STATIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

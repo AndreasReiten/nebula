@@ -54,7 +54,6 @@ __kernel void integrateImage(
         }        
         
         float4 sample = (float4)(addition_array[0]);
-//        sample = (float4)((float)id_glb[!direction]);
 
         // Write to target 
         if (id_loc[direction] == 0) write_imagef(target, id_out, sample);
@@ -62,8 +61,6 @@ __kernel void integrateImage(
     else
     {
         float4 sample = (float4)(addition_array[0]);
-//        sample = (float4)(0.0f);
-//        sample = (float4)((float)id_glb[!direction]);
 
         if (id_loc[direction] == 0) write_imagef(target, id_out, sample);
     }

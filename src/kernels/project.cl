@@ -1,10 +1,5 @@
 __kernel void FRAME_FILTER(
     __write_only image2d_t xyzi_target,
-//    __write_only image2d_t raw_target_clgl,
-//    __write_only image2d_t corrected_target_clgl,
-//    __write_only image2d_t gamma_target_clgl,
-//    __read_only image2d_t tsf_source_clgl,
-//    __read_only image2d_t background,
     __read_only image2d_t source,
     sampler_t tsf_sampler,
     sampler_t intensity_sampler,

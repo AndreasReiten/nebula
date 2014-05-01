@@ -13,7 +13,6 @@
 #include <CL/opencl.h>
 
 #include "contextcl.h"
-//#include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
 
@@ -68,7 +67,6 @@ class SearchNode {
         Matrix<double> extent;
 
         float distance(float * a, float * b);
-//        void writeLog(QString str);
 
         unsigned int level;
         unsigned int n_children;

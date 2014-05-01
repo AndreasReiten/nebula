@@ -35,8 +35,6 @@ class SparseVoxelOcttree
         void open(QString path);
 
         Matrix<double> * getExtent();
-//        Matrix<double> * getDataHistogram();
-//        Matrix<double> * getDataHistogramLog();
         Matrix<double> *getMinMax();
 
         unsigned int getLevels();
@@ -54,8 +52,6 @@ class SparseVoxelOcttree
         Matrix<float> pool;
 
     private:
-//        Matrix<double> data_histogram;
-//        Matrix<double> data_histogram_log;
         Matrix<double> minmax;
         Matrix<double> extent;
 
@@ -71,7 +67,5 @@ class SparseVoxelOcttree
         QString metadata;
         
         UBMatrix<double> UB;
-        
-//        float max, min;
 };
 #endif

@@ -56,7 +56,6 @@ public:
     UBMatrix<double> & getUBMatrix();
 
 signals:
-//    void renderState(int value);
     void changedMessageString(QString str);
 
 public slots:
@@ -99,11 +98,9 @@ public slots:
     void setLabFrame();
     
     
-//    void metaMouseMoveEventCompact(QMouseEvent ev);
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
-//    void mouseMoveEvent(QMouseEvent* ev);
     void wheelEvent(QWheelEvent* ev);
     void resizeEvent(QResizeEvent * ev);
     
@@ -170,7 +167,6 @@ private:
     bool isURotationActive;
     bool isLabFrameActive;
     bool isMiniCellActive;
-//    bool isUBActive;
     
     // Markers
     QVector<Marker> markers;
@@ -180,7 +176,6 @@ private:
     GLuint marker_centers_vbo;
     int n_marker_indices;
     Matrix<GLuint> markers_selected_indices;
-//    Matrix<double> marker_centers;
     
     // Mini unit cell
     void drawHelpCell(QPainter *painter);
@@ -312,7 +307,6 @@ private:
 
     // View matrices
     Matrix<double> view_matrix;
-//    Matrix<double> marker_matrix;
     CameraToClipMatrix<double> ctc_matrix;
     RotationMatrix<double> rotation;
     Matrix<double> data_translation;
@@ -324,7 +318,6 @@ private:
     Matrix<double> scalebar_view_matrix;
     Matrix<double> unitcell_view_matrix;
     Matrix<double> minicell_view_matrix;
-//    Matrix<double> lab_frame_view_matrix;
     RotationMatrix<double> scalebar_rotation;
     Matrix<double> projection_scaling;
     RotationMatrix<double> U;

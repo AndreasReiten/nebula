@@ -118,7 +118,6 @@ void SearchNode::insert(float * point)
 
         unsigned int id = getOctant(point, &isOutofBounds);
         if (!isOutofBounds) this->children[id]->insert(point);
-//        else qDebug() << point[0] << point[1] << point[2] << point[3];
     }
     else if ((n_points == 0) && isMsd)
     {
@@ -176,7 +175,6 @@ void SearchNode::insert(float * point)
         n_points++;
     }
     
-//    return isOutofBounds;
 }
 
 void SearchNode::weighSamples(float * sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)
@@ -291,7 +289,6 @@ void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
 {
     if ((this->isMsd) && (!this->isEmpty))
     {
-//        int tmp = 0;
         for (unsigned int i = 0; i < n_points; i++)
         {
             if (
@@ -304,8 +301,6 @@ void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
                 point_data[*accumulated_points*4+2] = points[i*4+2];
                 point_data[*accumulated_points*4+3] = points[i*4+3];
                 
-//                qDebug() << i << "/" << n_points << " (" << *accumulated_points << ")";
-//                qDebug() << "   Point found: " << point_data[*accumulated_points*4+0] << point_data[*accumulated_points*4+1] << point_data[*accumulated_points*4+2] <<point_data[*accumulated_points*4+3];
                 (*accumulated_points)++;
             }
         }
@@ -323,11 +318,6 @@ void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
 }
 
 
-//void SearchNode::writeLog(QString str)
-//{
-//    writeToLogAndPrint(str.toStdString().c_str(), "nebula.log", 1);
-//}
-
 void SearchNode::getData(double * brick_extent,
     float * point_data,
     size_t * accumulated_points,
@@ -340,12 +330,6 @@ void SearchNode::getData(double * brick_extent,
     effective_extent[3] = brick_extent[3] + search_radius;
     effective_extent[4] = brick_extent[4] - search_radius;
     effective_extent[5] = brick_extent[5] + search_radius;
-    
-//    qDebug() << "In we go! Using eff. extent: " << "\n " <<  effective_extent[0] << "to" << effective_extent[1] << "\n " <<  effective_extent[2] << "to" << effective_extent[3] << "\n " <<  effective_extent[4] << "to" << effective_extent[5];
-//    for (int i = 0; i < 6; i++)
-//    {
-//        qDebug() << effective_extent[i];
-//    }
     
     getIntersectedItems(&effective_extent, accumulated_points, point_data);
 }
@@ -429,8 +413,6 @@ int SearchNode::getBrick(Matrix<double> * brick_extent, float search_radius, uns
     }
     else
     {
-        qDebug() << "CPU";
-
         float idw[1];
         Matrix<float> sample(1,3);
         float brick_step = (brick_extent->at(1) - brick_extent->at(0)) / ((float)(brick_outer_dimension-1));

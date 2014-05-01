@@ -22,9 +22,6 @@
  * Extract base fileformat for subclassing
  * The performance formula is off
  * 
- * Debugging:
- * Is the projected image flipped in some way, shape or form?
- * 
  * */
 
 #include <QCoreApplication>

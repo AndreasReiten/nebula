@@ -5,8 +5,6 @@
 #include <iostream>
 #include <sstream>
 
-//#include <QMatrix4x4>
-
 #include <QtGlobal>
 
 
@@ -15,10 +13,8 @@
 
 
 /* QT */
-//#include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
 
-//#include "miniarray.h"
 #include "tools.h"
 #include "openglwindow.h"
 
@@ -53,7 +49,6 @@ public:
     GLint unitcell_lim_low;
     GLint unitcell_lim_high;
     GLint unitcell_u;
-//    GLint unitcell_diagonal;
     QOpenGLShaderProgram *unitcell_program;
 
     GLint std_blend_fragpos;

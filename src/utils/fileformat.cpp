@@ -285,24 +285,12 @@ void DetectorFile::clearData()
     data_buf.clear();
 }
 
-
-//void DetectorFile::setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex)
-//{
-//    this->cl_img_alpha = cl_img_alpha;
-//    this->cl_img_beta = cl_img_beta;
-//    this->cl_img_gamma = cl_img_gamma;
-//    this->cl_tsf_tex = cl_tsf_tex;
-//}
-
 void DetectorFile::print()
 {
     std::stringstream ss;
     ss << "__________ PILATUS FILE __________" << std::endl;
     ss << "Path: " << path.toStdString().c_str() << std::endl;
     ss << "CL context: " << context_cl << std::endl;
-//    ss << "CL image alpha: " << cl_img_alpha << std::endl;
-//    ss << "CL image beta: " << cl_img_beta << std::endl;
-//    ss << "CL image gamma: " << cl_img_gamma << std::endl;
     ss << "CL kernel: " << project_kernel << std::endl;
     ss << "CL local work dim: " << loc_ws[0] << " " << loc_ws[1] << std::endl;
     ss << "CL global work dim: " << glb_ws[0] << " " << glb_ws[1] << std::endl;
@@ -341,11 +329,6 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
     this->threshold_project_low = threshold_project_low;
     this->threshold_project_high = threshold_project_high;
     
-//    qDebug() << threshold_reduce_low;
-//    qDebug() << threshold_reduce_high;
-//    qDebug() << threshold_project_low;
-//    qDebug() << threshold_project_high;
-
     cl_image_format target_format;
     target_format.image_channel_order = CL_RGBA;
     target_format.image_channel_data_type = CL_FLOAT;
@@ -405,8 +388,6 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
 //    qDebug() << "OMEGA";
     OMEGA.setZRotation(-(omega+offset_omega));
 
-//    qDebug() << phi << kappa << omega;
-//    PHI.print(5);
     
     // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
     
@@ -425,11 +406,6 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
 
     // Set kernel arguments
     err = clSetKernelArg(*project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-//    err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) cl_img_alpha);
-//    err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_mem), (void *) cl_img_beta);
-//    err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_mem), (void *) cl_img_gamma);
-//    err |= clSetKernelArg(*project_kernel, 4, sizeof(cl_mem), (void *) cl_tsf_tex);
-//    err |= clSetKernelArg(*project_kernel, 5, sizeof(cl_mem), (void *) &background_cl);
     err |= clSetKernelArg(*project_kernel, 1, sizeof(cl_mem), (void *) &source_cl);
     err |= clSetKernelArg(*project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
     err |= clSetKernelArg(*project_kernel, 3, sizeof(cl_sampler), &intensity_sampler);
@@ -499,10 +475,6 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
         err = clReleaseMemObject(source_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
-//    if (background_cl){
-//        err = clReleaseMemObject(background_cl);
-//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//    }
     if (sample_rotation_matrix_cl){
         err = clReleaseMemObject(sample_rotation_matrix_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -533,12 +505,6 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
 
     return 1;
 }
-
-//void DetectorFile::setBackground(float flux, float exposure_time)
-//{
-//    this->background_flux = flux;
-//    this->backgroundExpTime = exposure_time;
-//}
 
 float DetectorFile::getDetectorDist()
 {

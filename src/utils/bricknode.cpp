@@ -1,4 +1,11 @@
 #include "bricknode.h"
+
+// Bitwise operations used here:
+// X / 2^n = X >> n
+// X % 2^n = X & (2^n - 1)
+// 2^n = 1 << n
+
+
 BrickNode::BrickNode()
 {
     this->dataFlag = 0;
@@ -22,25 +29,15 @@ void BrickNode::print()
 
 void BrickNode::calcPoolId(unsigned int poolPower, unsigned int brickNumber)
 {
-    // Bitwise operations used here:
-    // X / 2^n = X >> n
-    // X % 2^n = X & (2^n - 1)
-    // 2^n = 1 << n
-
     poolId[0] = (brickNumber & ((1 << poolPower) - 1));
     poolId[1] = (brickNumber & ((1 << poolPower*2) - 1)) >> poolPower;
     poolId[2] = brickNumber >> (poolPower*2);
-
-    //~ std::cout << "Calculated pool id from brick number " <<brickNumber<<": [" << poolId[0] << " "<< poolId[1] << " "<< poolId[2] << "]" << std::endl;
 }
 
 
 void BrickNode::calcBrickId(unsigned int octant, BrickNode * par)
 {
-    // Bitwise operations used here:
-    // X / 2^n = X >> n
-    // X % 2^n = X & (2^n - 1)
-    // 2^n = 1 << n
+
 
     if (this != par)
     {

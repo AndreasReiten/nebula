@@ -117,8 +117,6 @@ __kernel void modelRayTrace(
             cone_diameter_near = 2.0f*length(a2Near); // small approximation
         }
         
-        // Bug: For some configurations of the view matrix, it seems that the software struggles to compute the correct geometry of the rays. Debug this by painting ray parameters
-
         int hit;
         float t_near, t_far;
         {
@@ -142,9 +140,7 @@ __kernel void modelRayTrace(
         float4 color = (float4)(0.0f);
         float4 sample = (float4)(0.0f);
 
-//        float4 max_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(1.0f, 0.5f));
-//        float4 min_sample = read_imagef(tsf_tex, tsf_sampler, (float2)(0.0f, 0.5f));
-        
+
 float3 rayBoxDelta;
 
         if(hit)
@@ -265,8 +261,7 @@ float3 rayBoxDelta;
                                     - model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z - step_length), parameters)
                                     + model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z + step_length), parameters),
                                     step_length));
-                            float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f; // Simplest form. Can multiply with shadow_magnitude*(1.0f - color.w)*sample.w or the like, but can it be justified, and does it provide better results? Thus far I am inclined to say no.
-    //                        float strength = native_powr((dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f, 2.0f); // Scaled with some power to increase contrast between shadow and no shadow
+                            float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f;
                             sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
                         }
     
@@ -285,7 +280,7 @@ float3 rayBoxDelta;
                 color *= brightness;
             }
         }
-//        if ( (id_glb.x == 5) || (id_glb.y == 15))color = (float4)(1.0,0.0,0.0,1.0);
+
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
         if (isIntegration3DActive)
         {
@@ -303,30 +298,7 @@ float3 rayBoxDelta;
         }
         else
         {
-//            if (!(id_glb.x%16))
-//            {
-//                color.x = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
-//                color.w = length(rayBoxDelta)/(data_view_extent[1]-data_view_extent[0]);
-//            }
             write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
         }
-//        if (isIntegration2DActive && !isSlicingActive)
-//        {
-//            if(isLogActive)
-//            {
-//                if (integrated_intensity < 1.f) integrated_intensity = 1.f;
-//                integrated_intensity = log10(integrated_intensity);
-//            }
-
-//            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-
-//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-
-//            write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
-//        }
-//        else
-//        {
-//            write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
-//        }
     }
 }

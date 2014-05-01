@@ -174,7 +174,6 @@ void TransferFunction::setSpline(size_t resolution)
 
     // Calculate the second derivative for the function in all points
     Matrix<double> secondDerivatives(tsf_base.getM(), tsf_base.getN());
-//    double step_length = 1.0/((double) (tsf_base.getN() - 1));
 
     for (size_t i = 0; i < tsf_base.getM(); i++)
     {
@@ -189,9 +188,9 @@ void TransferFunction::setSpline(size_t resolution)
         B[tsf_base.getN()-1] = 0.0;
         for (size_t j = 1; j < tsf_base.getN() - 1; j++)
         {
-            double x_prev = x_position[j-1];//(j - 1) * step_length;
-            double x = x_position[j];//j * step_length;
-            double x_next = x_position[j+1];//(j + 1) * step_length;
+            double x_prev = x_position[j-1];
+            double x = x_position[j];
+            double x_next = x_position[j+1];
 
             double f_prev = tsf_base[i*tsf_base.getN()+j-1];
             double f = tsf_base[i*tsf_base.getN()+j];
@@ -237,8 +236,8 @@ void TransferFunction::setSpline(size_t resolution)
             if ( k >= tsf_base.getN()) k = tsf_base.getN() - 1;
             if (k <= 0) k = 1;
 
-            double x_k = x_position[k-1];//(k) * step_length;
-            double x_k_next = x_position[k];// (k + 1) * step_length;
+            double x_k = x_position[k-1];
+            double x_k_next = x_position[k];
 
             double f_k = tsf_base[i*tsf_base.getN()+k-1];
             double f_k_next = tsf_base[i*tsf_base.getN()+k];

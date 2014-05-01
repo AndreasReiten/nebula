@@ -44,8 +44,6 @@ class Matrix {
         // Utility
         Matrix<T> getInverse(int verbose = false) const;
         Matrix<T> getInverse4x4(int verbose = false) const;
-        const Matrix<T> getL() const;
-        const Matrix<T> getU() const;
         Matrix<T> getColMajor() const;
         Matrix<float> toFloat() const;
 
@@ -104,25 +102,12 @@ class Matrix {
         void swap(Matrix &first, Matrix &second);
 };
 
-//template <class T>
-//Matrix<T> Matrix<T>::getInverse()  const
-//{
-//    Matrix<T> x;
-//    x.setIdentity(n);
-//    qDebug() << "I think it may crash now too so";
-
-//    return x;
-
-//}
-
 template <class T>
 Matrix<T>::Matrix(size_t m, size_t n, T value)
 {
     this->m = 0;
     this->n = 0;
     this->set(m, n, value);
-
-//    qDebug() << "Constructor";
 }
 template <class T>
 Matrix<T>::Matrix(size_t m, size_t n)
@@ -339,8 +324,6 @@ Matrix<float> Matrix<T>::toFloat() const
         buf[i] = (float) this->buffer[i];
     }
 
-//    qDebug() << "tofloat";
-
     return buf;
 }
 
@@ -376,108 +359,8 @@ Matrix<T> Matrix<T>::getColMajor()  const
         }
     }
 
-//    qDebug() << "colmajor";
-
     return ColMajor;
 }
-
-template <class T>
-const Matrix<T> Matrix<T>::getL()  const
-{
-//    qDebug() << "LU decomp" << m << n;
-
-    if(m != n) qDebug() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
-    Matrix<T> L, y, I, U, x;
-    L.set(n, n, 0);
-    y.set(n, n, 0);
-    I.setIdentity(n);
-
-    U.set(n, n, 0);
-    x.set(n, n, 0);
-
-    // Ax = LUx = I method
-
-    /* LU Decomposition */
-    int i, j, k;
-    T sum;
-
-    for (i = 0; i < n; i++) {
-        U[i*n+i] = 1;
-    }
-
-    for (j = 0; j < n; j++) {
-        for(i = j; i < n; i++) {
-            sum = 0;
-            for(k = 0; k < j; k++) {
-                sum += L[i*n+k] * U[k*n+j];
-            }
-            L[i*n+j] = buffer[i*n+j] - sum;
-        }
-
-        for(i = j; i < n; i++){
-            sum = 0;
-            for(k = 0; k < j; k++){
-                sum +=  L[j*n+k]*U[k*n+i];
-            }
-            if(L[j*n+j] == 0) {
-                qFatal("det(L) close to 0!\n Can't divide by 0...");
-            }
-            U[j*n+i] = (buffer[j*n+i]-sum)/L[j*n+j];
-        }
-    }
-
-    return L;
-}
-
-template <class T>
-const Matrix<T> Matrix<T>::getU()  const
-{
-//    qDebug() << "LU decomp" << m << n;
-
-    if(m != n) qDebug() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
-    Matrix<T> L, y, I, U, x;
-    L.set(n, n, 0);
-    y.set(n, n, 0);
-    I.setIdentity(n);
-
-    U.set(n, n, 0);
-    x.set(n, n, 0);
-
-    // Ax = LUx = I method
-
-    /* LU Decomposition */
-    int i, j, k;
-    T sum;
-
-    for (i = 0; i < n; i++) {
-        U[i*n+i] = 1;
-    }
-
-    for (j = 0; j < n; j++) {
-        for(i = j; i < n; i++) {
-            sum = 0;
-            for(k = 0; k < j; k++) {
-                sum += L[i*n+k] * U[k*n+j];
-            }
-            L[i*n+j] = buffer[i*n+j] - sum;
-        }
-
-        for(i = j; i < n; i++){
-            sum = 0;
-            for(k = 0; k < j; k++){
-                sum +=  L[j*n+k]*U[k*n+i];
-            }
-            if(L[j*n+j] == 0) {
-                qFatal("det(L) close to 0!\n Can't divide by 0...");
-            }
-            U[j*n+i] = (buffer[j*n+i]-sum)/L[j*n+j];
-        }
-    }
-
-    return U;
-}
-
-
 
 template <class T>
 Matrix<T> Matrix<T>::getInverse4x4(int verbose)  const
@@ -836,7 +719,7 @@ const Matrix<T> Matrix<T>::operator * (const Matrix& M) const
         {
             for (size_t k = 0; k < this->n; k++)
             {
-                c[i*c.getN()+j] += this->buffer[i*this->n+k] * M[k*c.getN()+j]; // Got an error here =(, like suddenly
+                c[i*c.getN()+j] += this->buffer[i*this->n+k] * M[k*c.getN()+j];
             }
         }
     }
@@ -889,8 +772,6 @@ void Matrix<T>::set(size_t m, size_t n, T value)
     {
         this->buffer[i] = value;
     }
-
-//    qDebug() << "set";
 }
 
 template <class T>
@@ -1100,9 +981,7 @@ void CameraToClipMatrix<T>::setProjection(bool value)
 template <class T>
 class RotationMatrix : public Matrix<T>{
     public:
-//        using Matrix<T>::Matrix;
         RotationMatrix();
-//        RotationMatrix(size_t value);
         ~RotationMatrix();
 
 
@@ -1130,12 +1009,6 @@ RotationMatrix<T>::RotationMatrix()
 {
     this->setIdentity(4);
 }
-
-//template <class T>
-//RotationMatrix<T>::RotationMatrix(size_t value)
-//{
-//    this->setIdentity(value);
-//}
 
 template <class T>
 const RotationMatrix<T> RotationMatrix<T>::to3x3()
@@ -1421,8 +1294,6 @@ void UBMatrix<T>::setUMatrix(RotationMatrix<T> mat)
     
     U.print(2,"U set");
     *this = U*getBMatrix();
-    
-//    this->print(2,"UB new");
 }
 template <class T>
 Matrix<T> UBMatrix<T>::getUMatrix()

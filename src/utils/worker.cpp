@@ -49,44 +49,36 @@ void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
 void BaseWorker::setOffsetOmega(double value)
 {
     offset_omega = value;
-//    qDebug() << "setOffsetOmega" << value;
 }
 void BaseWorker::setOffsetKappa(double value)
 {
     offset_kappa = value;
-//    qDebug() << "setOffsetKappa" << value;
 }
 void BaseWorker::setOffsetPhi(double value)
 {
     offset_phi = value;
-//    qDebug() << "setOffsetPhi" << value;
 }
 
 void BaseWorker::setActiveAngle(int value)
 {
     active_angle = value;
-//    qDebug() << "Active angle:" << active_angle;
 }
 
 void BaseWorker::setReduceThresholdLow(double value)
 {
     this->threshold_reduce_low = (float) value;
-//    qDebug() << value;
 }
 void BaseWorker::setReduceThresholdHigh(double value)
 {
     this->threshold_reduce_high = (float) value;
-//    qDebug() << value;
 }
 void BaseWorker::setProjectThresholdLow(double value)
 {
     this->threshold_project_low = (float) value;
-//    qDebug() << value;
 }
 void BaseWorker::setProjectThresholdHigh(double value)
 {
     this->threshold_project_high = (float) value;
-//    qDebug() << value;
 }
 
 void BaseWorker::killProcess()
@@ -144,8 +136,6 @@ void ReadScriptWorker::setInput(QPlainTextEdit * widget)
 
 void ReadScriptWorker::process()
 {
-//    qDebug() << GLOBAL_VRAM_ALLOC_MAX;
-    
     QCoreApplication::processEvents();
     
     kill_flag = false;
@@ -464,8 +454,6 @@ void ProjectFileWorker::process()
     size_t n = 0;
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
     
-//    qDebug() << "Worker:" << offset_omega << offset_kappa << offset_phi;
-    
     for (size_t i = 0; i < (size_t) files->size(); i++)
     {
         // Kill process if requested
@@ -493,19 +481,7 @@ void ProjectFileWorker::process()
             (*files)[i].setOffsetKappa(offset_kappa);
             (*files)[i].setOffsetPhi(offset_phi);
 
-//            emit aquireSharedBuffers();
-            
-//            std::cout << threshold_reduce_low << " " << threshold_reduce_high << " " << threshold_project_low << " " << threshold_project_high << std::endl;
-            
             int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
-            
-//            (*files)[i].print();
-            
-//            emit releaseSharedBuffers();
-
-//            emit updateRequest();
-//            emit changedImage(i);
-            
             if (!STATUS_OK)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: could not process data \""+files->at(i).getPath()+"\"");
@@ -521,7 +497,6 @@ void ProjectFileWorker::process()
     reduced_pixels->resize(1, n);
 
     /* Create dummy dataset for debugging purposes.
-     *
     */
     if (0) // A sphere
     {
@@ -616,7 +591,6 @@ void AllInOneWorker::process()
     emit changedTabWidget(1);
 
     // Parameters for Ewald's projection
-    //    std::cout << "RESERVING for reduced_pixels: " << REDUCED_PIXELS_MAX_BYTES/sizeof(float) << std::endl;
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
@@ -629,8 +603,6 @@ void AllInOneWorker::process()
     size_t n_ok_files = 0;
     size_t n = 0;
     size_t size_raw = 0;
-    
-//    qDebug() << "Worker:" << offset_omega << offset_kappa << offset_phi;
     
     for (size_t i = 0; i < (size_t) file_paths->size(); i++)
     {
@@ -802,28 +774,6 @@ void VoxelizeWorker::process()
         emit changedMessageString(str);
         kill_flag = true;
     }
-    else
-    {
-//        float x_avg = 0, y_avg = 0, z_avg = 0, i_avg = 0;
-        
-//        for (size_t i = 0; i < reduced_pixels->size()/4; i++)
-//        {
-//            x_avg += reduced_pixels->at(i*4+0);
-//            y_avg += reduced_pixels->at(i*4+1);
-//            z_avg += reduced_pixels->at(i*4+2);
-//            i_avg += reduced_pixels->at(i*4+3);
-//        }
-        
-//        x_avg /= (float)reduced_pixels->size()/4;
-//        y_avg /= (float)reduced_pixels->size()/4;
-//        z_avg /= (float)reduced_pixels->size()/4;
-//        i_avg /= (float)reduced_pixels->size()/4;
-        
-//        qDebug() << reduced_pixels->size() << "points";
-//        qDebug() << x_avg << y_avg << z_avg << i_avg;
-        
-//        svo->print();
-    }
     if (!kill_flag)
     {
         // Emit to appropriate slots
@@ -852,7 +802,6 @@ void VoxelizeWorker::process()
         if (pool_dimension[2] < 1) pool_dimension[2] = 1;
         pool_dimension[2] *= svo->getBrickOuterDimension();
 
-//        svo->pool.set(, 0);
         size_t BRICK_POOL_HARD_MAX_BYTES = pool_dimension[0]*pool_dimension[1]*pool_dimension[2]*sizeof(float);
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
@@ -911,8 +860,6 @@ void VoxelizeWorker::process()
         SearchNode root(NULL, svo->getExtent()->data());
         root.setOpenCLContext(context_cl);
         
-//        qDebug() << "reduced pixels: " << reduced_pixels->size()/4;
-        
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
             if (kill_flag)
@@ -951,7 +898,6 @@ void VoxelizeWorker::process()
             
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
-//                qDebug() << " ___ Level" << lvl << "___";
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
@@ -1158,7 +1104,7 @@ void VoxelizeWorker::process()
                             err |= clSetKernelArg( fill_kernel, 2, sizeof(cl_int4), pool_dimension.data());
                             int tmp = svo->getBrickOuterDimension();
                             err |= clSetKernelArg( fill_kernel, 3, sizeof(cl_uint), &tmp);
-                            err |= clSetKernelArg( fill_kernel, 4, sizeof(cl_uint), &non_empty_node_counter); // only arg. that needs to be this deep inside the loop
+                            err |= clSetKernelArg( fill_kernel, 4, sizeof(cl_uint), &non_empty_node_counter);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                             // Launch kernel to write data to pool
@@ -1182,10 +1128,6 @@ void VoxelizeWorker::process()
                             err = clFinish(*context_cl->getCommandQueue());
                             if ( err != CL_SUCCESS)
                             {
-//                                qDebug() << empty_check[j];
-//                                qDebug() << glb_offset[2];
-//                                qDebug() << lvl << i << j << non_empty_node_counter;
-//                                qDebug() << "Space:" << non_empty_node_counter << "vs" << n_max_bricks;
                                 qFatal(cl_error_cstring(err));
                             }
                         }
@@ -1264,58 +1206,3 @@ void VoxelizeWorker::process()
     emit finished();
 }
 
-/***
- *         dBBBBb  dBP.dBBBBP dBBBBBb  dBP dBBBBBb dBP dBP
- *            dB'     BP          dB'           BB    dBP
- *       dBP dB' dBP  `BBBBb  dBBBP' dBP    dBP BB   dBP
- *      dBP dB' dBP      dBP dBP    dBP    dBP  BB  dBP
- *     dBBBBB' dBP  dBBBBP' dBP    dBBBBP dBBBBBBB dBP
- *
- */
-
-//DisplayFileWorker::DisplayFileWorker()
-//{
-//    this->isCLInitialized = false;
-//}
-
-//DisplayFileWorker::~DisplayFileWorker()
-//{
-
-//    if (isCLInitialized) clReleaseKernel(project_kernel);
-//}
-
-//void DisplayFileWorker::setDisplayFile(int value)
-//{
-//    display_file = value;
-//}
-
-
-//void DisplayFileWorker::process()
-//{
-//    /* 
-//     * This function updates the image buffers that are shown in the reconstruction tab according to a given file index (display_file)*/
-//    QCoreApplication::processEvents();
-    
-//    DetectorFile file;
-
-//    int STATUS_OK = file.set(file_paths->at(display_file), context_cl);
-//    if (STATUS_OK)
-//    {
-////        file.setOpenCLBuffers(alpha_img_clgl, beta_img_clgl, gamma_img_clgl, tsf_img_clgl);
-//        STATUS_OK = file.readData();
-//        if (STATUS_OK)
-//        {
-//            emit changedImageSize(file.getWidth(), file.getHeight());
-//            file.setActiveAngle(active_angle);
-//            file.setProjectionKernel(&project_kernel);
-
-//            size_t n;
-////            emit aquireSharedBuffers();
-//            STATUS_OK = file.filterData( &n, NULL, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high, 0);
-////            emit releaseSharedBuffers();
-            
-////            emit updateRequest();
-//        }
-//    }
-//    emit finished();
-//}

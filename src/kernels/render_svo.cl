@@ -534,24 +534,5 @@ __kernel void svoRayTrace(
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
         }
         else write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
-
-//        if (isIntegration2DActive && !isSlicingActive && !isDsActive)
-//        {
-//            if(isLogActive)
-//            {
-//                if (integrated_intensity < 1.f) integrated_intensity = 1.f;
-//                integrated_intensity = log10(integrated_intensity);
-//            }
-
-//            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-
-//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-
-//            write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f));
-//        }
-//        else
-//        {
-//            write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
-//        }
     }
 }

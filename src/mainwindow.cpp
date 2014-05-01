@@ -5,7 +5,6 @@ MainWindow::MainWindow()
     //     Set some default values
     current_svo = 0;
     display_file = 0;
-//    svo_loaded.append(SparseVoxelOcttree());
     
     //     Set stylesheet
     QFile styleFile( ":/src/stylesheets/plain.qss" );
@@ -19,13 +18,11 @@ MainWindow::MainWindow()
 
     // Set the format of the rendering context
     QSurfaceFormat format_gl;
-//    format_gl.setVersion(4, 3);
     format_gl.setSamples(16);
     format_gl.setRedBufferSize(8);
     format_gl.setGreenBufferSize(8);
     format_gl.setBlueBufferSize(8);
     format_gl.setAlphaBufferSize(8);
-//    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     
 
     sharedContextWindow = new SharedContextWindow();
@@ -61,18 +58,6 @@ MainWindow::MainWindow()
     fileDockWidget->hide();
     toolChainWidget->show();
     outputDockWidget->show();
-    
-    
-    // For some reason this must be included in order to compile matrix.h correctly =(
-//    Matrix<double> A(4,4,0);
-//    A.setIdentity(4);
-//    A[3] = 3;
-//    A[9] = 2;
-//    A[12] = 4;
-
-//    A.print(2,"A");
-
-//    A.getInverse().print(2,"A inv");
 }
 
 MainWindow::~MainWindow()
@@ -146,7 +131,6 @@ void MainWindow::initializeWorkers()
     setFileWorker->setSVOFile(&svo_inprocess);
     setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     setFileWorker->setOpenCLContext(context_cl);
-//    setFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
@@ -187,15 +171,10 @@ void MainWindow::initializeWorkers()
     //### projectFileWorker ###
     projectFileWorker = new ProjectFileWorker();
     projectFileWorker->setOpenCLContext(context_cl);
-//    projectFileWorker->setOpenGLContext(imageRenderWindow->getGLContext());
     projectFileWorker->setFilePaths(&file_paths);
     projectFileWorker->setFiles(&files);
     projectFileWorker->setReducedPixels(&reduced_pixels);
     projectFileWorker->initializeCLKernel();
-//    projectFileWorker->setReduceThresholdLow(&threshold_reduce_low);
-//    projectFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
-//    projectFileWorker->setProjectThresholdLow(&threshold_project_low);
-//    projectFileWorker->setProjectThresholdHigh(&threshold_project_high);
     connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), projectFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
     connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
@@ -206,16 +185,10 @@ void MainWindow::initializeWorkers()
     connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     projectFileWorker->moveToThread(projectFileThread);
-//    connect(projectFileThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-//    connect(projectFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
-//    connect(projectFileWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int)));
-//    connect(projectFileWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
-//    connect(projectFileWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -223,30 +196,14 @@ void MainWindow::initializeWorkers()
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
-//    connect(projectFileWorker, SIGNAL(test()), this, SLOT(test()), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow, SLOT(test()), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()),  Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(test()), imageRenderWindow->getWorker(), SLOT(test()), Qt::BlockingQueuedConnection);
-
-
-//    connect(projectFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
-
-//    connect(projectFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(projectFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
-
     //### allInOneWorker ###
     allInOneWorker = new AllInOneWorker();
     allInOneWorker->setFilePaths(&file_paths);
     allInOneWorker->setSVOFile(&svo_inprocess);
     allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     allInOneWorker->setOpenCLContext(context_cl);
-//    allInOneWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
     allInOneWorker->setReducedPixels(&reduced_pixels);
     allInOneWorker->initializeCLKernel();
-//    allInOneWorker->setReduceThresholdLow(&threshold_reduce_low);
-//    allInOneWorker->setReduceThresholdHigh(&threshold_reduce_high);
-//    allInOneWorker->setProjectThresholdLow(&threshold_project_low);
-//    allInOneWorker->setProjectThresholdHigh(&threshold_project_high);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
     connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), allInOneWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
@@ -258,24 +215,16 @@ void MainWindow::initializeWorkers()
     connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     allInOneWorker->moveToThread(allInOneThread);
-//    connect(allInOneThread, SIGNAL(started()), imageRenderWindow, SLOT(stopAnimating()));
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-//    connect(allInOneWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
     connect(allInOneWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
-//    connect(allInOneWorker, SIGNAL(changedImage(int)), this->imageNumberSpinBox, SLOT(setValue(int)));
-//    connect(allInOneWorker, SIGNAL(changedImage(int)), this, SLOT(updateFileHeader(int))); // Cant use this one until there is an implementation that is independent of [files]
-//    connect(allInOneWorker, SIGNAL(finished()), imageRenderWindow, SLOT(startAnimating()));
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-//    connect(allInOneWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
     connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(allInOneWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(allInOneWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
 
 
     //### voxelizeWorker ###
@@ -299,39 +248,6 @@ void MainWindow::initializeWorkers()
     connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
-
-
-    //### displayFileWorker ###
-//    displayFileWorker = new DisplayFileWorker();
-//    displayFileWorker->setOpenCLContext(context_cl);
-//    displayFileWorker->setOpenCLBuffers(imageRenderWindow->getWorker()->getAlphaImgCLGL(), imageRenderWindow->getWorker()->getBetaImgCLGL(), imageRenderWindow->getWorker()->getGammaImgCLGL(), imageRenderWindow->getWorker()->getTsfImgCLGL());
-//    displayFileWorker->setFilePaths(&file_paths);
-//    displayFileWorker->setFiles(&files);
-//    displayFileWorker->initializeCLKernel();
-//    displayFileWorker->setReduceThresholdLow(&threshold_reduce_low);
-//    displayFileWorker->setReduceThresholdHigh(&threshold_reduce_high);
-//    displayFileWorker->setProjectThresholdLow(&threshold_project_low);
-//    displayFileWorker->setProjectThresholdHigh(&threshold_project_high);
-//    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), displayFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
-//    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
-//    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
-//    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
-//    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), displayFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
-    
-//    displayFileWorker->moveToThread(displayFileThread);
-//    connect(displayFileThread, SIGNAL(started()), displayFileWorker, SLOT(process()));
-//    connect(displayFileWorker, SIGNAL(finished()), displayFileThread, SLOT(quit()));
-//    connect(displayFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(displayFileWorker, SIGNAL(updateRequest()), imageRenderWindow, SLOT(renderNow()), Qt::BlockingQueuedConnection);
-//    connect(displayFileWorker, SIGNAL(changedImageSize(int,int)), imageRenderWindow->getWorker(), SLOT(setImageSize(int,int)), Qt::BlockingQueuedConnection);
-//    connect(killButton, SIGNAL(clicked()), displayFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(displayFileWorker, SIGNAL(aquireSharedBuffers()), imageRenderWindow->getWorker(), SLOT(aquireSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(displayFileWorker, SIGNAL(releaseSharedBuffers()), imageRenderWindow->getWorker(), SLOT(releaseSharedBuffers()), Qt::BlockingQueuedConnection);
-//    connect(this->imageForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile1()));
-//    connect(this->imageFastForwardButton, SIGNAL(clicked()), this, SLOT(incrementDisplayFile10()));
-//    connect(this->imageBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile1()));
-//    connect(this->imageFastBackButton, SIGNAL(clicked()), this, SLOT(decrementDisplayFile10()));
-//    connect(this->imageNumberSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
 }
 
 void MainWindow::test()
@@ -504,19 +420,6 @@ void MainWindow::initializeEmit()
     aNormSpinBox->setValue(1);
     bNormSpinBox->setValue(1);
     cNormSpinBox->setValue(1);
-    
-    
-//    alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
-//    betaNormSpinBox->setValue(UB.beta()*180.0/pi);
-//    gammaNormSpinBox->setValue(UB.gamma()*180.0/pi);
-    
-//    aNormSpinBox->setValue(UB.a());
-//    bNormSpinBox->setValue(UB.b());
-//    cNormSpinBox->setValue(UB.c());
-    
-//    volumeRenderWindow->getWorker()->setUBMatrix(UB);
-    
-//    emit changedUB();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -579,7 +482,6 @@ void MainWindow::initializeActions()
     aboutQtAct = new QAction(tr("About &Qt"), this);
     aboutOpenCLAct = new QAction(tr("About OpenCL"), this);
     aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
-    //~aboutHDF5Act = new QAction(tr("About HDF"), this);
     openSvoAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
     saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
     saveLoadedSvoAct = new QAction(QIcon(":/art/save.png"), tr("Save Current SVO"), this);
@@ -623,7 +525,6 @@ void MainWindow::initializeActions()
     alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), tr("Align lab frame to slice frame y"), this);
     alignLabZtoSliceZAct = new QAction(QIcon(":/art/align_z.png"), tr("Align lab frame to slice frame z"), this);
     alignSliceToLabAct = new QAction(QIcon(":/art/placeholder.png"), tr("Align slice frame to lab frame"), this);
-//    alignSliceToLabAct = new QAction(QIcon(":/art/placeholder.png"), tr("Align slice frame to lab frame"), this);
     
     rotateRightAct = new QAction(QIcon(":/art/rotate_right.png"), tr("Rotate right"), this);
     rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), tr("Rotate left"), this);
@@ -644,7 +545,6 @@ void MainWindow::initializeActions()
     aboutQtAct->setStatusTip(tr("About Qt"));
     aboutOpenCLAct->setStatusTip(tr("About OpenCL"));
     aboutOpenGLAct->setStatusTip(tr("About OpenGL"));
-    //~aboutHDF5Act->setStatusTip(tr("About HDF"));
 
     // Shortcuts
     newAct->setShortcuts(QKeySequence::New);
@@ -702,12 +602,6 @@ void MainWindow::aboutOpenGL()
     QMessageBox::about(this, tr("About OpenGL"),
         tr("<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>"));
 }
-
-////~void MainWindow::aboutHDF5()
-////~{
-//    //~QMessageBox::about(this, tr("About HDF"),
-//        //~tr("<h1>About HDF</h1> <b>Hierarchical Data Format</b>  (HDF, HDF4, or HDF5) is the name of a set of file formats and libraries designed to store and organize large amounts of numerical data. Originally developed at the National Center for Supercomputing Applications, it is currently supported by the non-profit HDF Group, whose mission is to ensure continued development of HDF technologies, and the continued accessibility of data currently stored in HDF. <br> In keeping with this goal, the HDF format, libraries and associated tools are available under a liberal, BSD-like license for general use. <br> <a href=\"http://www.hdfgroup.org/\">www.hdfgroup.org/</a>"));
-////~}
 
 void MainWindow::documentWasModified()
 {
@@ -846,9 +740,6 @@ void MainWindow::openUnitcellFile()
 
         Matrix<float> U(3,3);
         U = UB * B.getInverse();
-
-//        volumeRenderWidget->setMatrixU(U.data());
-//        volumeRenderWidget->setMatrixB(B.data());
     }
 }
 
@@ -889,67 +780,9 @@ void MainWindow::setTab(int tab)
     
     if (tab==2) svoHeaderDock->show();
     else svoHeaderDock->hide();
-
-    
-//    switch (tab)
-//    {
-//        case 0:
-//            graphicsDockWidget->hide();
-//            unitCellDock->hide();
-//            functionDockWidget->hide();
-//            fileDockWidget->hide();
-//            toolChainWidget->show();
-//            outputDockWidget->show();
-//            fileHeaderDock->show();
-//            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
-//            break;
-
-//        case 1:
-//            graphicsDockWidget->hide();
-//            unitCellDock->hide();
-//            functionDockWidget->hide();
-//            toolChainWidget->show();
-//            fileDockWidget->show();
-//            outputDockWidget->show();
-//            fileHeaderDock->show();
-//            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
-//            break;
-
-//        case 2:
-//            toolChainWidget->hide();
-//            fileDockWidget->hide();
-//            outputDockWidget->hide();
-//            fileHeaderDock->hide();
-//            graphicsDockWidget->show();
-//            unitCellDock->show();
-//            functionDockWidget->show();
-//            setWindowTitle(tr("Nebula[*] (")+current_svo_path+")");
-//            break;
-
-//        default:
-//            qDebug("Reverting to Default Tab");
-//            break;
-//    }
 }
 
 
-//void MainWindow::toggleScriptView()
-//{
-//    isInScriptMode = !isInScriptMode;
-
-//    if (isInScriptMode)
-//    {
-//        scriptTextEdit->show();
-//        readScriptButton->show();
-//        fileBrowserWidget->hide();
-//    }
-//    else
-//    {
-//        scriptTextEdit->hide();
-//        readScriptButton->hide();
-//        fileBrowserWidget->show();
-//    }
-//}
 void MainWindow::initializeConnects()
 {
     /* this <-> volumeRenderWidget */
@@ -992,7 +825,6 @@ void MainWindow::initializeConnects()
     connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
     connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(addMarker()));
     connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLabFrame()));
-//    connect(this, SIGNAL(changedUB()), volumeRenderWindow->getWorker(), SLOT(updateUnitCell()));
     connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setURotation()));
     connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
     connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setHCurrent(int)));
@@ -1169,7 +1001,6 @@ void MainWindow::initializeInteractives()
         setFileButton->setIcon(QIcon(":/art/proceed.png"));
         setFileButton->setIconSize(QSize(24,24));
         setFileButton->setText("Set ");
-//        setFileButton->setEnabled(false);
 
         readFileButton = new QPushButton;
         readFileButton->setIcon(QIcon(":/art/proceed.png"));
@@ -1183,18 +1014,10 @@ void MainWindow::initializeInteractives()
         projectFileButton->setText("Correction and Projection ");
         projectFileButton->setEnabled(false);
 
-//        voxelizeButton = new QPushButton;
-//        voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
-//        voxelizeButton->setText("Voxelize ");
-//        voxelizeButton->setIconSize(QSize(32,32));
-//        voxelizeButton->setEnabled(false);
-//        voxelizeButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-
         allInOneButton = new QPushButton;
         allInOneButton->setIcon(QIcon(":/art/fast_proceed.png"));
         allInOneButton->setText("All of Above (reduced memory consumption) ");
         allInOneButton->setIconSize(QSize(24,24));
-//        allInOneButton->setEnabled(false);
 
         killButton = new QPushButton;
         killButton->setIcon(QIcon(":/art/kill.png"));
@@ -1205,7 +1028,6 @@ void MainWindow::initializeInteractives()
         toolChainWidget = new QWidget;
         QGridLayout * toolChainLayout = new QGridLayout;
         toolChainLayout->setSpacing(0);
-//        toolChainLayout->setMargin(0);
         toolChainLayout->setContentsMargins(0,0,0,0);
         toolChainLayout->setColumnStretch(1,1);
         toolChainLayout->setColumnStretch(2,1);
@@ -1215,7 +1037,6 @@ void MainWindow::initializeInteractives()
         toolChainLayout->addWidget(setFileButton,0,1,1,1);
         toolChainLayout->addWidget(readFileButton,0,2,1,1);
         toolChainLayout->addWidget(projectFileButton,0,3,1,1);
-//        toolChainLayout->addWidget(voxelizeButton,0,4,2,1);
         toolChainLayout->addWidget(killButton,0,4,2,1);
         toolChainLayout->addWidget(allInOneButton,1,1,1,3);
         toolChainWidget->setLayout(toolChainLayout);
@@ -1223,7 +1044,6 @@ void MainWindow::initializeInteractives()
         // Layout
         QGridLayout * topLayout = new QGridLayout;
         topLayout->setSpacing(0);
-//        topLayout->setMargin(0);
         topLayout->setContentsMargins(0,0,0,0);
         topLayout->addWidget(mainMenu,0,0,1,1);
         topLayout->addWidget(toolChainWidget,1,0,1,1);
@@ -1239,8 +1059,6 @@ void MainWindow::initializeInteractives()
         scriptTextEdit = new QPlainTextEdit;
         scriptTextEdit->hide();
         script_highlighter = new Highlighter(scriptTextEdit->document());
-//        scriptHelp = "/* Add file paths using this Javascript window. \n* Do this by appedning paths to the variable 'files'. \n* For example:\n*/ \n\n files = ";
-//        scriptTextEdit->setPlainText(scriptHelp);
         loadFile(":/default/example_script.txt");
         
         
@@ -1265,7 +1083,6 @@ void MainWindow::initializeInteractives()
 
         QGridLayout * fileBrowserLayout = new QGridLayout;
         fileBrowserLayout->setSpacing(0);
-//        fileBrowserLayout->setMargin(0);
         fileBrowserLayout->setContentsMargins(0,0,0,0);
         fileBrowserLayout->addWidget(fileSelectionTree,0,0,1,1);
 
@@ -1274,7 +1091,6 @@ void MainWindow::initializeInteractives()
         // Layout
         QGridLayout * scriptLayout = new QGridLayout;
         scriptLayout->setSpacing(0);
-//        scriptLayout->setMargin(0);
         scriptLayout->setContentsMargins(0,0,0,0);
         scriptLayout->addWidget(fileSelectionToolBar,0,0,1,2);
         scriptLayout->addWidget(scriptTextEdit,1,0,1,2);
@@ -1283,101 +1099,17 @@ void MainWindow::initializeInteractives()
         setFilesWidget->setLayout(scriptLayout);
     }
 
-
-    /* Image Widget */
-//    {
-//        imageControlsWidget = new QWidget;
-
-//        imageForwardButton = new QPushButton;
-//        imageForwardButton->setIcon(QIcon(":/art/forward.png"));
-//        imageForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-
-//        imageFastForwardButton = new QPushButton;
-//        imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
-//        imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-
-//        imageBackButton = new QPushButton;
-//        imageBackButton->setIcon(QIcon(":/art/back.png"));
-//        imageBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-
-//        imageFastBackButton = new QPushButton;
-//        imageFastBackButton->setIcon(QIcon(":/art/fast_back.png"));
-//        imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-
-//        imageNumberSpinBox = new QSpinBox;
-//        imageNumberSpinBox->setRange(0,1e9);
-//        imageNumberSpinBox->setAccelerated(true);
-
-
-//        QSurfaceFormat format_gl;
-//        format_gl.setVersion(4, 3);
-//        format_gl.setSamples(16);
-//        format_gl.setRedBufferSize(8);
-//        format_gl.setGreenBufferSize(8);
-//        format_gl.setBlueBufferSize(8);
-//        format_gl.setAlphaBufferSize(8);
-
-//        imageRenderWorker = new ImageRenderWorker();
-//        imageRenderWorker->setMultiThreading(false);
-//        imageRenderWorker->setOpenCLContext(context_cl);
-//        imageRenderWorker->setSharedWindow(sharedContextWindow);
-
-//        imageRenderWindow = new ImageRenderWindow();
-//        imageRenderWindow->setMultiThreading(false);
-//        imageRenderWindow->setOpenGLWorker(imageRenderWorker);
-//        imageRenderWindow->setSharedWindow(sharedContextWindow);
-//        imageRenderWindow->setFormat(format_gl);
-//        imageRenderWindow->setOpenCLContext(context_cl);
-//        imageRenderWindow->setAnimating(false);
-//        imageRenderWindow->initializeWorker();
-
-//        imageRenderWidget = QWidget::createWindowContainer(imageRenderWindow);
-//        imageRenderWidget->setFocusPolicy(Qt::TabFocus);
-
-//        imageHint = new QLabel("(Images are visualized looking from the detector and toward the source)");
-//        QLabel * imageLabel = new QLabel("");
-                                        
-//        QGridLayout * imageLayout = new QGridLayout;
-//        imageLayout->setSpacing(0);
-////        imageLayout->setMargin(0);
-//        imageLayout->setContentsMargins(0,0,0,0);
-//        imageLayout->setRowStretch(0,1);
-//        imageLayout->setColumnStretch(0,1);
-//        imageLayout->setColumnStretch(6,1);
-////        imageLayout->addWidget(imageRenderWidget,0,0,1,7);
-//        imageLayout->addWidget(imageHint,1,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        imageLayout->addWidget(imageFastBackButton,1,1,1,1);
-//        imageLayout->addWidget(imageBackButton,1,2,1,1);
-//        imageLayout->addWidget(imageNumberSpinBox,1,3,1,1);
-//        imageLayout->addWidget(imageForwardButton,1,4,1,1);
-//        imageLayout->addWidget(imageFastForwardButton,1,5,1,1);
-////        imageLayout->addWidget(imageLabel,6,1,1,1);
-        
-//        imageWidget = new QWidget;
-//        imageWidget->setLayout(imageLayout);
-//    }
-    
-    
-    
     /*      3D View widget      */
     {
         QSurfaceFormat format_gl;
-//        format_gl.setVersion(4, 3);
         format_gl.setSamples(16);
         format_gl.setRedBufferSize(8);
         format_gl.setGreenBufferSize(8);
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
-//        format_gl.setDepthBufferSize(8);
-
-//        volumeRenderWorker = new VolumeRenderWorker();
-//        volumeRenderWorker->setMultiThreading(true);
-//        volumeRenderWorker->setOpenCLContext(context_cl);
-//        volumeRenderWorker->setSharedWindow(sharedContextWindow);
 
         volumeRenderWindow = new VolumeRenderWindow();
         volumeRenderWindow->setMultiThreading(true);
-//        volumeRenderWindow->setOpenGLWorker(volumeRenderWorker);
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);
         volumeRenderWindow->setOpenCLContext(context_cl);
@@ -1396,13 +1128,9 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(projectionAct);
         
         viewToolBar->addAction(markAct);
-//        viewToolBar->addAction(rulerAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(labFrameAct);
         viewToolBar->addAction(sliceAct);
-//        viewToolBar->addAction(orthoGridAct);
-        
-        
         
         viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(dataStructureAct);
@@ -1434,9 +1162,7 @@ void MainWindow::initializeInteractives()
         // Layout
         QGridLayout * viewLayout = new QGridLayout;
         viewLayout->setSpacing(0);
-//        viewLayout->setMargin(0);
         viewLayout->setContentsMargins(0,0,0,0);
-//        viewLayout->setAlignment(Qt::AlignTop);
         viewLayout->addWidget(viewToolBar,0,0,1,1);
         viewLayout->addWidget(volumeRenderWidget,1,0,1,1);
 
@@ -1450,8 +1176,6 @@ void MainWindow::initializeInteractives()
     
     /* Image browser widget */
     {
-//        imageDock = new QDockWidget(tr("Image Browser"));
-        
         QSurfaceFormat format_gl;
         format_gl.setSamples(16);
         format_gl.setRedBufferSize(8);
@@ -1584,9 +1308,6 @@ void MainWindow::initializeInteractives()
         graphicsWidget = new QWidget;
 
         QGridLayout * graphicsLayout = new QGridLayout;
-//        graphicsLayout->setSpacing(0);
-//        graphicsLayout->setMargin(0);
-//        graphicsLayout->setContentsMargins(0,0,0,0);
 
         graphicsLayout->addWidget(label_texture,0,0,1,2);
         graphicsLayout->addWidget(tsfComboBox,0,2,1,1);
@@ -1603,10 +1324,7 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(qualitySlider,5,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
-//        graphicsDockWidget->setFixedHeight(graphicsWidget->minimumSizeHint().height());
         graphicsDockWidget->setFixedSize(graphicsWidget->minimumSizeHint());
-////        graphicsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-////        graphicsWidget->setMaximumHeight(graphicsLayout->minimumSize().rheight());
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
@@ -1679,13 +1397,6 @@ void MainWindow::initializeInteractives()
         QLabel * betaLabel = new QLabel(trUtf8( "<i>β<i>"));
         QLabel * gammaLabel = new QLabel(trUtf8( "<i>γ<i>"));
 
-//        QLabel * aStarLabel = new QLabel("<i>a*<i>");
-//        QLabel * bStarLabel = new QLabel("<i>b*<i>");
-//        QLabel * cStarLabel = new QLabel("<i>c*<i>");
-//        QLabel * alphaStarLabel = new QLabel(trUtf8("<i>α*<i>"));
-//        QLabel * betaStarLabel = new QLabel(trUtf8( "<i>β*<i>"));
-//        QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
-        
         QLabel * hLabel = new QLabel("<i>h<i>");
         QLabel * kLabel = new QLabel("<i>k<i>");
         QLabel * lLabel = new QLabel("<i>l<i>");
@@ -1705,20 +1416,6 @@ void MainWindow::initializeInteractives()
         unitCellLayout->addWidget(betaNormSpinBox,1,3,1,1);
         unitCellLayout->addWidget(gammaLabel,1,4,1,1);
         unitCellLayout->addWidget(gammaNormSpinBox,1,5,1,1);
-        
-//        unitCellLayout->addWidget(aStarLabel,2,0,1,1);
-//        unitCellLayout->addWidget(aStarSpinBox,2,1,1,1);
-//        unitCellLayout->addWidget(bStarLabel,2,2,1,1);
-//        unitCellLayout->addWidget(bStarSpinBox,2,3,1,1);
-//        unitCellLayout->addWidget(cStarLabel,2,4,1,1);
-//        unitCellLayout->addWidget(cStarSpinBox,2,5,1,1);
-        
-//        unitCellLayout->addWidget(alphaStarLabel,3,0,1,1);
-//        unitCellLayout->addWidget(alphaStarSpinBox,3,1,1,1);
-//        unitCellLayout->addWidget(betaStarLabel,3,2,1,1);
-//        unitCellLayout->addWidget(betaStarSpinBox,3,3,1,1);
-//        unitCellLayout->addWidget(gammaStarLabel,3,4,1,1);
-//        unitCellLayout->addWidget(gammaStarSpinBox,3,5,1,1);
         
         unitCellLayout->addWidget(hLabel,4,0,1,1);
         unitCellLayout->addWidget(hSpinBox,4,1,1,1);
@@ -1740,95 +1437,10 @@ void MainWindow::initializeInteractives()
         
         unitCellDock->setWidget(unitCellWidget);
         
-//        unitCellDock->setFixedHeight(unitCellWidget->minimumSizeHint().height());
         unitCellDock->setFixedSize(unitCellWidget->minimumSizeHint());
         
         viewMenu->addAction(unitCellDock->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, unitCellDock);
-        
-  
-        
-        /* OLD */
-        
-//        unitcellDockWidget = new QDockWidget(tr("Unitcell Settings"), this);
-//        unitcellDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-//        unitcellWidget = new QWidget;
-
-//        QLabel * aLabel = new QLabel("<i>a<i>");
-//        a = new QLabel(tr("-"));
-//        QLabel * bLabel = new QLabel("<i>b<i>");
-//        b = new QLabel(tr("-"));
-//        QLabel * cLabel = new QLabel("<i>c<i>");
-//        c = new QLabel(tr("-"));
-//        QLabel * alphaLabel = new QLabel(trUtf8("<i>α<i>"));
-//        alpha = new QLabel(tr("-"));
-//        QLabel * betaLabel = new QLabel(trUtf8( "<i>β<i>"));
-//        beta = new QLabel(tr("-"));
-//        QLabel * gammaLabel = new QLabel(trUtf8( "<i>γ<i>"));
-//        gamma = new QLabel(tr("-"));
-
-
-//        QLabel * aStarLabel = new QLabel("<i>a*<i>");
-//        aStar = new QLabel(tr("-"));
-//        QLabel * bStarLabel = new QLabel("<i>b*<i>");
-//        bStar = new QLabel(tr("-"));
-//        QLabel * cStarLabel = new QLabel("<i>c*<i>");
-//        cStar = new QLabel(tr("-"));
-//        QLabel * alphaStarLabel = new QLabel(trUtf8("<i>α*<i>"));
-//        alphaStar = new QLabel(tr("-"));
-//        QLabel * betaStarLabel = new QLabel(trUtf8( "<i>β*<i>"));
-//        betaStar = new QLabel(tr("-"));
-//        QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
-//        gammaStar = new QLabel(tr("-"));
-
-//        unitcellButton = new QPushButton(tr("Toggle Unitcell"));
-//        loadParButton = new QPushButton(tr("Load Unitcell File"));
-
-//        QLabel * hklEditLabel = new QLabel(trUtf8( "<i>hkl: <i>"));
-//        hklEdit = new QLineEdit;
-//        //~ hklEdit->setFixedWidth(100);
-//        hklEdit->setValidator( new QRegExpValidator(QRegExp("(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)(?:\\D+)?(?:[-+]?\\d+)")) );
-
-//        QGridLayout * unitcellLayout = new QGridLayout;
-//        unitcellLayout->setSpacing(0);
-////        unitcellLayout->setMargin(0);
-//        unitcellLayout->setContentsMargins(0,0,0,0);
-//        unitcellLayout->addWidget(unitcellButton,0,0,1,4);
-//        unitcellLayout->addWidget(loadParButton,1,0,1,4);
-//        unitcellLayout->addWidget(hklEditLabel,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(hklEdit,2,2,1,2);
-//        unitcellLayout->addWidget(aLabel,3,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(a,3,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(alphaLabel,3,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(alpha,3,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(bLabel,4,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(b,4,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(betaLabel,4,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(beta,4,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(cLabel,5,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(c,5,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(gammaLabel,5,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(gamma,5,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-
-//        unitcellLayout->addWidget(aStarLabel,6,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(aStar,6,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(alphaStarLabel,6,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(alphaStar,6,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(bStarLabel,7,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(bStar,7,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(betaStarLabel,7,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(betaStar,7,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(cStarLabel,8,0,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(cStar,8,1,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(gammaStarLabel,8,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-//        unitcellLayout->addWidget(gammaStar,8,3,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
-
-//        unitcellWidget->setLayout(unitcellLayout);
-////        //~unitcellWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//////        unitcellWidget->setMaximumHeight(unitcellLayout->minimumSize().rheight());
-//        unitcellDockWidget->setWidget(unitcellWidget);
-//        viewMenu->addAction(unitcellDockWidget->toggleViewAction());
-//        this->addDockWidget(Qt::RightDockWidgetArea, unitcellDockWidget);
     }
 
     
@@ -1859,9 +1471,6 @@ void MainWindow::initializeInteractives()
         QLabel * labelG = new QLabel("<i>κ</i>:");
         QLabel * labelH = new QLabel("<i>φ</i>:");
         QLabel * labelI = new QLabel("Correction:");
-        
-//        trUtf8( "<i>β*<i>"));
-//                QLabel * gammaStarLabel = new QLabel(trUtf8( "<i>γ*<i>"));
         
         // Combo boxes and their labels
         formatComboBox = new QComboBox;
@@ -1904,25 +1513,22 @@ void MainWindow::initializeInteractives()
         projectThresholdHigh->setDecimals(2);
         projectThresholdHigh->setFocusPolicy(Qt::ClickFocus);
         
-        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAlow(double)));
-        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAhigh(double)));
-        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBlow(double)));
-        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBhigh(double)));
+        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAlow(double)),Qt::QueuedConnection);
+        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAhigh(double)),Qt::QueuedConnection);
+        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBlow(double)),Qt::QueuedConnection);
+        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBhigh(double)),Qt::QueuedConnection);
         
         omegaCorrectionSpinBox = new QDoubleSpinBox;
         omegaCorrectionSpinBox->setRange(-180, 180);
         omegaCorrectionSpinBox->setDecimals(3);
-//        omegaCorrectionSpinBox->setValue(0);
         
         kappaCorrectionSpinBox = new QDoubleSpinBox;
         kappaCorrectionSpinBox->setRange(-180, 180);
         kappaCorrectionSpinBox->setDecimals(3);
-//        kappaCorrectionSpinBox->setValue(0);
         
         phiCorrectionSpinBox = new QDoubleSpinBox;
         phiCorrectionSpinBox->setRange(-180, 180);
         phiCorrectionSpinBox->setDecimals(3);
-//        phiCorrectionSpinBox->setValue(0);
         
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
@@ -1935,18 +1541,13 @@ void MainWindow::initializeInteractives()
         voxelizeButton = new QPushButton;
         voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
         voxelizeButton->setText("Voxelize");
-//        voxelizeButton->setIconSize(QSize(32,32));
         voxelizeButton->setEnabled(false);
-//        voxelizeButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
         
         saveSvoButton = new QPushButton;
         saveSvoButton->setIcon(QIcon(":/art/save.png"));
         saveSvoButton->setText("Save Octtree");
 
         QGridLayout * reconstructLayout = new QGridLayout;
-//        reconstructLayout->setSpacing(0);
-//        reconstructLayout->setMargin(0);
-//        reconstructLayout->setContentsMargins(0,0,0,0);
         reconstructLayout->addWidget(labelA,0,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
         reconstructLayout->addWidget(formatComboBox,0,4,1,4);
         reconstructLayout->addWidget(labelE,1,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
@@ -1969,13 +1570,10 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(voxelizeButton,8,0,1,8);
         reconstructLayout->addWidget(saveSvoButton,9,0,1,8);
         fileControlsWidget->setLayout(reconstructLayout);
-//        fileControlsWidget->setMaximumHeight(reconstructLayout->minimumSize().rheight());
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileDockWidget->setWidget(fileControlsWidget);
-//        fileDockWidget->setFixedHeight(fileControlsWidget->minimumSizeHint().height());
         fileDockWidget->setFixedSize(fileControlsWidget->minimumSizeHint());
-//        fileDockWidget->setMaximumWidth(reconstructLayout->minimumSize().rwidth());
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         this->addDockWidget(Qt::BottomDockWidgetArea, fileDockWidget);
     }
@@ -2027,9 +1625,6 @@ void MainWindow::initializeInteractives()
         functionWidget = new QWidget;
 
         QGridLayout * functionLayout = new QGridLayout;
-//        functionLayout->setSpacing(0);
-//        functionLayout->setMargin(0);
-//        functionLayout->setContentsMargins(0,0,0,0);
         functionLayout->addWidget(p0,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
         functionLayout->addWidget(funcParamASpinBox,1,2,1,2);
         functionLayout->addWidget(p1,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
@@ -2040,11 +1635,8 @@ void MainWindow::initializeInteractives()
         functionLayout->addWidget(funcParamDSpinBox,4,2,1,2);
         functionLayout->addWidget(functionToggleButton,5,0,1,4);
         functionWidget->setLayout(functionLayout);
-//        functionWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-//        functionWidget->setMaximumHeight(functionLayout->minimumSize().rheight());
         functionDockWidget->setWidget(functionWidget);
         functionDockWidget->setFixedHeight(functionWidget->minimumSizeHint().height());
-//        functionDockWidget->setFixedSize(functionWidget->minimumSizeHint());
         functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         viewMenu->addAction(functionDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, functionDockWidget);
@@ -2061,7 +1653,6 @@ void MainWindow::initializeInteractives()
         // Progress Bar
         progressBar = new QProgressBar;
         progressBar->setRange( 0, 100 );
-//        progressBar->hide();
 
         // Text output
         errorTextEdit = new QPlainTextEdit;
@@ -2071,7 +1662,6 @@ void MainWindow::initializeInteractives()
         // Layout
         QGridLayout * botLayout = new QGridLayout;
         botLayout->setSpacing(0);
-//        botLayout->setMargin(0);
         botLayout->setContentsMargins(0,0,0,0);
         botLayout->addWidget(errorTextEdit, 0, 0, 1, 1);
         botLayout->addWidget(progressBar, 1, 0, 1, 1);
@@ -2092,7 +1682,6 @@ void MainWindow::initializeInteractives()
     tabWidget->addTab(viewWidget, tr("Visualization"));
 
     // Put into main layout
-//    mainLayout->setMargin(0);
     mainLayout->setContentsMargins(3,3,3,3);
     mainLayout->addWidget(topWidget,0,0,1,1);
     mainLayout->addWidget(tabWidget,1,0,1,1);
@@ -2224,13 +1813,6 @@ void MainWindow::setCurrentFile(const QString &fileName)
 
 void MainWindow::takeScreenshot()
 {
-    // NB: The only safe way to do this is to render to a framebuffer and grab the corresponding QPixMap
-
-//    QScreen * screen = QGuiApplication::primaryScreen();
-//    if (screen)
-//    {
-//        QPixmap screenshot = screen->grabWindow(volumeRenderWindow->winId());
-
     QString format = "jpg";
     QDateTime dateTime = dateTime.currentDateTime();
     QString initialPath = QDir::currentPath() + QString("/screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
@@ -2239,10 +1821,6 @@ void MainWindow::takeScreenshot()
                                                 tr("%1 Files (*.%2);;All Files (*)")
                                                 .arg(format.toUpper())
                                                 .arg(format));
-    
     emit captureFrameBuffer(fileName);
-//    if (!fileName.isEmpty()) screenshot.save(fileName, format.toLatin1().constData(), 100);
-//    print(QString("\n Saved: "+fileName));
-//    }
 }
 

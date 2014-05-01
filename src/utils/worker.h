@@ -30,15 +30,12 @@
 
 /* Project files */
 #include "tools.h"
-//#include "miniarray.h"
 #include "matrix.h"
 #include "fileformat.h"
-//#include "imagerender.h"
 #include "searchnode.h"
 #include "bricknode.h"
 #include "sparsevoxelocttree.h"
 #include "contextcl.h"
-//#include "globalvar.h"
 
 class BaseWorker : public QObject
 {
@@ -55,7 +52,6 @@ class BaseWorker : public QObject
         void setOpenCLContext(OpenCLContext * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
-//        void setOpenGLContext(QOpenGLContext *context);
 
     signals:
         void finished();
@@ -64,9 +60,6 @@ class BaseWorker : public QObject
         void changedGenericProgress(int value);
         void changedFormatGenericProgress(QString str);
         void changedTabWidget(int value);
-//        void repaintImageWidget();
-//        void aquireSharedBuffers();
-//        void releaseSharedBuffers();
         void changedFile(int file);
         void popup(QString title, QString text);
 
@@ -80,7 +73,6 @@ class BaseWorker : public QObject
         void setReduceThresholdHigh(double value);
         void setProjectThresholdLow(double value);
         void setProjectThresholdHigh(double value);
-//        void enableOpenGLContext();
 
     protected:
         // Runtime
@@ -110,7 +102,6 @@ class BaseWorker : public QObject
         float threshold_project_high;
         QStringList * file_paths;
         QList<DetectorFile> * files;
-//        QList<DetectorFile> * background_files;
         Matrix<float> * reduced_pixels;
         
         double offset_omega;
@@ -118,8 +109,6 @@ class BaseWorker : public QObject
         double offset_phi;
         
         size_t GLOBAL_VRAM_ALLOC_MAX;
-        // OpenGL
-//        QOpenGLContext * context_gl;
 };
 
 class ReadScriptWorker : public BaseWorker
@@ -142,7 +131,6 @@ class ReadScriptWorker : public BaseWorker
     private:
         QScriptEngine * engine;
         QPlainTextEdit * inputWidget;
-        // add your variables here
 };
 
 
@@ -156,9 +144,6 @@ class SetFileWorker : public BaseWorker
 
     private slots:
         void process();
-
-    private:
-        // add your variables here
 };
 
 
@@ -173,9 +158,6 @@ class ReadFileWorker : public BaseWorker
     private slots:
         void test();
         void process();
-
-    private:
-        // add your variables here
 };
 
 
@@ -188,14 +170,9 @@ class ProjectFileWorker : public BaseWorker
         ~ProjectFileWorker();
 
     signals:
-//        void changedImageWidth(int value);
-//        void changedImageHeight(int value);
         void changedImageSize(int w, int h);
         void testToWindow();
         void testToMain();
-//        void updateRequest();
-//        void changedImage(int value);
-//        void test();
 
     public slots:
         void initializeCLKernel();
@@ -208,23 +185,6 @@ class ProjectFileWorker : public BaseWorker
         cl_kernel project_kernel;
 };
 
-//class DisplayFileWorker: public ProjectFileWorker
-//{
-//    Q_OBJECT
-
-//    public:
-//        DisplayFileWorker();
-//        ~DisplayFileWorker();
-//        void setDisplayFile(int value);
-
-//    private slots:
-//        void process();
-
-//    private:
-//        int display_file;
-////        Matrix<float> test_background;
-//};
-
 
 class VoxelizeWorker : public BaseWorker
 {
@@ -233,7 +193,6 @@ class VoxelizeWorker : public BaseWorker
     public:
         VoxelizeWorker();
         ~VoxelizeWorker();
-//        void setResources(Matrix<unsigned int> * gpuIndices, Matrix<unsigned int> * gpuBricks, Matrix<float> * gpuBrickPool);
 
     public slots:
         void process();
@@ -257,9 +216,6 @@ class AllInOneWorker : public ProjectFileWorker
 
     public slots:
         void process();
-
-    private:
-        // add your variables here
 };
 
 #endif

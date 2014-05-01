@@ -102,6 +102,7 @@ __kernel void imagePreview(
     
             float2 tsf_position = (float2)(native_divide(log10(tmp) - log10(intensity_min), log10(intensity_max)-log10(intensity_min)), 0.5f);
             float4 sample = read_imagef(tsf_source, tsf_sampler, tsf_position);
+
             write_imagef(preview, id_glb, sample);
         }
     }

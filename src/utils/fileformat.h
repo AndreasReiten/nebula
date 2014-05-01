@@ -25,8 +25,6 @@
 #include <QFileInfo>
 
 
-//#include "imagerender.h"
-//#include "miniarray.h"
 #include "matrix.h"
 #include "tools.h"
 #include "sharedcontext.h"
@@ -48,9 +46,7 @@ class DetectorFile
 
         int set(QString path, OpenCLContext * context);
         int readData();
-//        void setOpenCLBuffers(cl_mem * cl_img_alpha, cl_mem * cl_img_beta, cl_mem * cl_img_gamma, cl_mem * cl_tsf_tex);
         int filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive = true);
-        //~int project(size_t * n, float * outBuf, int threshold_project_low, int threshold_project_high);
 
         Matrix<float> & data();
         int getWidth() const;
@@ -61,7 +57,6 @@ class DetectorFile
         float getQSuggestion();
         float getMaxCount();
         void clearData();
-//        void setBackground(float flux, float exposure_time);
         float getFlux();
         float getExpTime();
         float getWavelength();
@@ -82,15 +77,7 @@ class DetectorFile
     private:
         // Misc
         int active_angle;
-        
-        
         OpenCLContext * context_cl;
-//        cl_mem * cl_img_alpha;
-//        cl_mem * cl_img_beta;
-//        cl_mem * cl_img_gamma;
-//        cl_mem * cl_tsf_tex;
-//        cl_command_queue * queue;
-//        cl_context * context;
         cl_kernel * project_kernel;
         cl_int err;
 
@@ -98,7 +85,6 @@ class DetectorFile
         size_t glb_ws[2];
 
         Matrix<float> data_buf;
-//        Matrix<float> * background;
         float background_flux;
         float backgroundExpTime;
 

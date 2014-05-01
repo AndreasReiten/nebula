@@ -41,7 +41,6 @@
 #include <QList>
 #include <QFileSystemModel>
 #include <QStandardItemModel>
-//#include <QTreeView>
 
 #include "utils/contextcl.h"
 #include "utils/sharedcontext.h"
@@ -68,7 +67,6 @@ private slots:
     void updateFileHeader(int value);
     void displayPopup(QString title, QString text);
     void omitFile();
-//    void toggleScriptView();
 
     void test();
 
@@ -102,20 +100,14 @@ private slots:
     void aboutOpenCL();
     void aboutOpenGL();
 
-//    void runReadScript();
 
     void print(QString str);
     void setGenericProgressFormat(QString str);
     void openUnitcellFile();
     void initializeWorkers();
 
-//    void setReduceThresholdLow(double value);
-//    void setReduceThresholdHigh(double value);
-//    void setProjectThresholdLow(double value);
-//    void setProjectThresholdHigh(double value);
     void runProjectFileThread();
     void runAllInOneThread();
-//    void runDisplayFileThread(int value);
     void incrementDisplayFile1();
     void incrementDisplayFile10();
     void decrementDisplayFile1();
@@ -132,7 +124,6 @@ signals:
 
     void changedDetector(int value);
     void changedFormat(int value);
-//    void changedActiveAngle(int value);
     void changedPaths(QStringList strlist);
     void captureFrameBuffer(QString path);
     void changedUB();
@@ -144,9 +135,6 @@ private:
     QWidget * unitCellWidget;
     
     void loadParFile();
-    
-//    UBMatrix<double> UB; 
-    
     
     // SVO metadata editor
     QPlainTextEdit * svoHeaderEdit;
@@ -202,10 +190,6 @@ private:
 
     // Buttons
     QPushButton *allInOneButton;
-//    QPushButton *imageForwardButton;
-//    QPushButton *imageFastForwardButton;
-//    QPushButton *imageBackButton;
-//    QPushButton *imageFastBackButton;
     QPushButton *readScriptButton;
     QPushButton *setFileButton;
     QPushButton *readFileButton;
@@ -237,22 +221,11 @@ private:
     ProjectFileWorker * projectFileWorker;
     AllInOneWorker * allInOneWorker;
     VoxelizeWorker * voxelizeWorker;
-//    DisplayFileWorker * displayFileWorker;
-
-    // Boolean checks
-//    bool isInScriptMode;
-
 
     // File browser
     QWidget * fileBrowserWidget;
     FileSelectionModel * fileSelectionModel;
-//    FileSourceModel * fileSelectedModel;
     FileTreeView *fileSelectionTree;
-//    FileTreeView *fileSelectedTree;
-    
-    // Image toolbar
-//    QLabel * imageHint;
-    
     
     // Image browser QDockWidget
     QDockWidget * imageDock;
@@ -262,7 +235,6 @@ private:
     QLabel * imageLabel;
     
     QWidget * imageDisplayWidget;
-//    QWidget * imageCorrectedWidget;
     
     QPushButton * imageFastBackButton;
     QPushButton * imageSlowBackButton;
@@ -272,8 +244,6 @@ private:
     QPushButton * imageFastForwardButton;
     QPushButton * imageSlowForwardButton;
     QPushButton * omitFrameButton;
-//    QCheckBox * imageRawCeckBox;
-//    QCheckBox * imageCorrectedCeckBox;
     QComboBox * imageModeCB;
 
     // Actions
@@ -404,11 +374,8 @@ private:
     QTabWidget *tabWidget;
 
     
-//    QSpinBox *imageNumberSpinBox;
     QDockWidget *fileDockWidget;
     QWidget *fileControlsWidget;
-//    QWidget *imageWidget;
-//    QWidget *imageControlsWidget;
 
     QWidget *toolChainWidget;
     QWidget *mainWidget;
@@ -423,7 +390,6 @@ private:
 protected:
     // OpenGL rendering widgets
     SharedContextWindow *sharedContextWindow;
-//    VolumeRenderWorker *volumeRenderWorker;
     VolumeRenderWindow *volumeRenderWindow;
     QWidget *volumeRenderWidget;
 
@@ -437,7 +403,6 @@ protected:
     QDockWidget *functionDockWidget;
 
     QString svoDir;
-//    QString scriptDir;
 
     QPlainTextEdit *scriptTextEdit;
     QPlainTextEdit *errorTextEdit;
@@ -455,16 +420,12 @@ protected:
     QToolBar *viewToolBar;
 
 
-//    QScriptValue rawFilesValue;
     QScriptEngine engine;
     QScriptValue rawFilesQs;
-
-    // Utility
 
     // Main resources
     QStringList file_paths;
     QList<DetectorFile> files;
-//    QList<DetectorFile> background_files;
     Matrix<float> reduced_pixels;
 
     // Related to file treatment

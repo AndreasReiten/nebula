@@ -51,13 +51,6 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
     rule.format = errorFormat;
     highlightingRules.append(rule);
 
-    /* STAMPS */
-//    stampFormat.setForeground(stamp_color);
-    //~ rule.pattern = QRegExp("(?:[Script])?(?:[Set])?(?:[Read])?(?:[Project])?(?:[Voxelize])?");
-//    rule.pattern = QRegExp("\\[\\S+\\]");
-//    rule.format = stampFormat;
-//    highlightingRules.append(rule);
-
     /* CLASSES */
     classFormat.setFontWeight(QFont::Bold);
     classFormat.setForeground(class_color);

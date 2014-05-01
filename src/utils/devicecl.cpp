@@ -73,7 +73,6 @@ std::string DeviceCL::getDeviceInfoString()
     ss << "__________________ OpenCL Device Info ____________________" << std::endl;
     ss << "CL_DEVICE_NAME:                      " << name << std::endl;
     ss << "CL_DEVICE_VERSION:                   " << version << std::endl;
-//    ss << "CL_DEVICE_TYPE:                      " << type << std::endl;
     ss << "CL_DRIVER_VERSION:                   " << driver_version << std::endl;
     ss << "CL_DEVICE_VENDOR:                    " << vendor << std::endl;
     ss << "CL_DEVICE_VENDOR_ID:                 " << vendor_id << std::endl;

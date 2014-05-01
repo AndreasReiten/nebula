@@ -73,11 +73,9 @@ void VolumeRenderWindow::initializeWorker()
         connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
 
         // Transfering mouse events
-//        connect(this, SIGNAL(metaMouseMoveEventCaughtCompact(QMouseEvent)), gl_worker, SLOT(metaMouseMoveEventCompact(QMouseEvent)));
         connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
         connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
         connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
-//        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)));//,, Qt::DirectConnection);
         connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
         connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
     }
@@ -127,7 +125,6 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isURotationActive(false),
       isLabFrameActive(true),
       isMiniCellActive(true),
-//      isUBActive(true),
       weird_parameter(20)
 {
     // Marker
@@ -252,8 +249,6 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     
     // Roll
     accumulated_roll = 0;
-    
-//    updateUnitCell();
 }
 
 VolumeRenderWorker::~VolumeRenderWorker()
@@ -267,7 +262,6 @@ VolumeRenderWorker::~VolumeRenderWorker()
         glDeleteBuffers(1, &point_vbo);
         glDeleteBuffers(1, &point_vbo);
         glDeleteBuffers(1, &unitcell_vbo);
-//        glDeleteBuffers(10, marker_vbo);
         glDeleteBuffers(1, &marker_centers_vbo);
         glDeleteBuffers(1, &minicell_vbo);
     }
@@ -293,8 +287,6 @@ void VolumeRenderWorker::setLCurrent(int value)
 
 void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
 {
-//    hkl.print(0,"hkl");
-    
     Matrix<double> hkl_focus(1,3,0);
     
     hkl_focus[0] = hkl[0]*UB[0] + hkl[1]*UB[1] + hkl[2]*UB[2];
@@ -330,19 +322,8 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
     
     accumulated_roll = 0;
     
-//    GLbyte color[4];
     GLfloat depth;
-//    GLuint index;
-    
-//    glReadPixels(x, render_surface->height() - y - 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, color);
     glReadPixels(x, render_surface->height() - y - 1, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-//    glReadPixels(x, render_surface->height() - y - 1, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
-    
-//    qDebug() << color[0] <<  color[1] << color[2] << color[3] << depth;
-    
-    // Select the closest marker given a valid depth
-    
-    
     
     if (( depth < 1.0) && (markers.size() > 0) && left_button && !right_button && !mid_button)
     {
@@ -357,16 +338,6 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
         xyz[1] /= xyz[3];
         xyz[2] /= xyz[3];
         
-//        xyz[2] *= xyz[3];
-        
-        
-//        xyz_clip.print(2,"xyz_clip");
-        
-//        xyz.print(2,"xyz");
-        
-//        Matrix<double> tmp = view_matrix*xyz;
-//        tmp.print(2,"clip back again");
-            
         int closest = 0;  
         double min_distance = 1e9;
             
@@ -382,7 +353,6 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
         
         if (ctrl_button)
         {
-//            qDebug() << "Removing" << closest << "of" << markers.size();
             markers.remove(closest);
             glDeleteBuffers(1, &marker_vbo[closest]);
             marker_vbo.remove(closest);
@@ -465,14 +435,11 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             double eta = std::atan2((double)x - last_mouse_pos_x, (double)y - last_mouse_pos_y) - pi*1.0;
             double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(x - last_mouse_pos_x)*(x - last_mouse_pos_x) + (y - last_mouse_pos_y)*(y - last_mouse_pos_y));
             
-//            accumulated_roll += roll;
-            
             RotationMatrix<double> roll_rotation;
             roll_rotation.setArbRotation(-0.5*pi, eta, roll);
             
             if (shift_button && isURotationActive && isUnitcellActive)
             {
-//                U = roll_rotation * U; 
                 U = rotation.getInverse4x4() * roll_rotation * rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
@@ -483,16 +450,10 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             }
             else
             {
-//                rotation.print(2,"before");
                 rotation = roll_rotation * rotation;
-//                scalebar_rotation = roll_rotation * scalebar_rotation;
-//                rotation.print(2,"after");
             }
-            
-//            rotation.print(4,"rotation");
-
         }
-        else if (left_button && right_button && !mid_button && !isRulerActive)// && (ev->buttons() & Qt::RightButton))
+        else if (left_button && right_button && !mid_button && !isRulerActive)
         {
             /* Rotation happens multiplicatively around a rolling axis given
              * by the mouse move direction and magnitude.
@@ -508,9 +469,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             if (shift_button && isURotationActive && isUnitcellActive)
             {
-//                U = roll_rotation * U; 
-//                unitcell_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
-                U = rotation.getInverse4x4() * roll_rotation *  rotation * U; 
+                U = rotation.getInverse4x4() * roll_rotation *  rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
@@ -521,7 +480,6 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             else
             {
                 rotation = roll_rotation * rotation;
-//                scalebar_rotation = roll_rotation * scalebar_rotation;
             }
 
         }
@@ -631,21 +589,14 @@ void VolumeRenderWorker::setUB_gamma(double value)
 
 void VolumeRenderWorker::setUBMatrix(UBMatrix<double> & mat)
 {
-//    alpha = 
     this->UB = mat;
     this->U.setIdentity(4);
     U.setFrom3x3(UB.getUMatrix());
-    
-    
-//    qDebug() << "Attempring to set UB";
-//    UB.print(2,"UB");
 }
 
 UBMatrix<double> & VolumeRenderWorker::getUBMatrix()
 {
     return UB;
-//    qDebug() << "Attempring to set UB";
-//    UB.print(2,"UB");
 }
 
 void VolumeRenderWorker::updateUnitCellText()
@@ -666,8 +617,6 @@ void VolumeRenderWorker::updateUnitCellText()
     hkl_text_counter = 0;
     
     Matrix<double> B = UB; // Why B and not UB?
-    
-//    UB.print(2,"UB UC txt");
     
     for(int h = hkl_limits[0]; h < hkl_limits[1]; h++)
     {
@@ -767,7 +716,6 @@ void VolumeRenderWorker::updateUnitCellVertices()
         }
     }
     
-//    qDebug() << "Attempring to set VBO";
     setVbo(unitcell_vbo, vertices.data(), vertices.size(), GL_STATIC_DRAW);
     unitcell_nodes = n_basis*6;
 }
@@ -792,8 +740,6 @@ void VolumeRenderWorker::drawUnitCell(QPainter * painter)
     float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
     
     if (alpha > 0.3) alpha = 0.3;
-    
-//    qDebug() << alpha;
     
     Matrix<float> color = clear_color_inverse;
     
@@ -900,8 +846,6 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     minicell_scaling[5] = scale_factor;
     minicell_scaling[10] = scale_factor;
     
-//    endRawGLCalls(painter);
-    
     // Minicell backdrop
     QRect minicell_rect(0,0,200,200);
 
@@ -909,13 +853,9 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     painter->setBrush(*fill_brush);
     painter->drawRoundedRect(minicell_rect, 5, 5, Qt::AbsoluteSize);
     
-    
-    
     beginRawGLCalls(painter);
     
     setVbo(minicell_vbo, vetices.data(), vetices.size(), GL_STATIC_DRAW);
-    
-    
     
     
     // Generate indices for glDrawElements
@@ -965,7 +905,6 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     endRawGLCalls(painter);
     
     // Minicell text
-    
     Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
     getPosition2D(x_2d.data(), vetices.data()+3, &minicell_view_matrix);
     getPosition2D(y_2d.data(), vetices.data()+6, &minicell_view_matrix);
@@ -1028,14 +967,6 @@ void VolumeRenderWorker::drawMarkers(QPainter * painter)
 void VolumeRenderWorker::drawHklText(QPainter * painter)
 {
     painter->setFont(*tiny_font);
-//    QPen tick_pen;
-    
-//    QColor golden(255,249,150,230);
-    
-//    if (isBackgroundBlack) tick_pen.setColor(green_light.toQColor());
-//    else tick_pen.setColor(blue.toQColor());
-    
-//    painter->setPen(tick_pen);
     
     for (size_t i = 0; i < hkl_text_counter; i++)
     {
@@ -1229,7 +1160,6 @@ void VolumeRenderWorker::initializePaintTools()
     normal_font = new QFont();
     tiny_font = new QFont;
     tiny_font->setPixelSize(12);
-//    normal_font->setStyleHint(QFont::Monospace);
     emph_font = new QFont;
     emph_font->setBold(true);
 
@@ -1260,7 +1190,6 @@ void VolumeRenderWorker::initResourcesGL()
     glGenBuffers(1, &centerline_vbo);
     glGenBuffers(1, &point_vbo);
     glGenBuffers(1, &unitcell_vbo);
-//    glGenBuffers(10, marker_vbo);
     glGenBuffers(1, &marker_centers_vbo);
     glGenBuffers(1, &minicell_vbo);
 }
@@ -1495,6 +1424,7 @@ void VolumeRenderWorker::setRayTexture()
         
         // If the quality factor is greater than one, it means the program wants to increase the resolution of the rendering texture. It can be beneficial to downscale the quality factor a bit in such cases
         quality_factor = 1.0 + (quality_factor - 1.0)*0.25;
+
         // Set a texture for the volume rendering kernel
         Matrix<int> ray_tex_new(1, 2);
         ray_tex_new[0] = (int)((float)render_surface->width()*(weird_parameter*0.01)*std::pow(quality_factor, 1.0/3.0));
@@ -1767,8 +1697,6 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
     // __ROWS__
 
-    // sum along w (rows, x): direction = 0
-    // sum along h (columns, y): direction = 1
     int direction = 0;
     int block_size = 128;
 
@@ -1960,7 +1888,6 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Sum up the partially reduced array
-//    qDebug() << "_____________________Control:" << ray_tex_dim[0];
     Matrix<float> column_sum(1, ray_tex_dim[0], 0.0f);
     max = 0;
     min = 1e9;
@@ -1970,7 +1897,6 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     {
         for(size_t j = 0; j < output2.getM(); j++)
         {
-//            qDebug() << "Loop:" << ray_tex_dim[0];
             column_sum[i] += output2[j*output2.getN() + i];
         }
 
@@ -2040,7 +1966,6 @@ void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
 {
     painter->beginNativePainting();
     glEnable(GL_BLEND);
-//    glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
 }
@@ -2048,7 +1973,6 @@ void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
 void VolumeRenderWorker::endRawGLCalls(QPainter * painter)
 {
     glDisable(GL_BLEND);
-//    glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
 }
@@ -2065,9 +1989,6 @@ void VolumeRenderWorker::setOrthoGrid()
 
 void VolumeRenderWorker::drawRuler(QPainter * painter)
 {
-//    double screen_width = pixel_size[0]* (double) render_surface->width();
-//    double screen_height = pixel_size[1]* (double) render_surface->height();
-    
     // Draw ruler and alignment crosses 
     QVector<QLine> lines;
     
@@ -2169,13 +2090,8 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
 
             if (i == 0)
             {
-//                QVector<qreal> dashes;
-//                dashes << 6 << 6;
-                
                 whatever_pen->setWidthF(1.0);
                 whatever_pen->setStyle(Qt::SolidLine);
-//                whatever_pen->setDashPattern(dashes);
-//                whatever_pen->setColor(QColor(40,255,40,255));
                 whatever_pen->setColor(QColor(50,50,255,255));
                 painter->setPen(*whatever_pen);
             }
@@ -2187,7 +2103,6 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
                 whatever_pen->setWidthF(0.3);
                 whatever_pen->setStyle(Qt::CustomDashLine);
                 whatever_pen->setDashPattern(dashes);
-//                whatever_pen->setColor(QColor(50,50,255,255));
                 whatever_pen->setColor(QColor(255.0*clear_color_inverse[0],
                                         255.0*clear_color_inverse[1],
                                         255.0*clear_color_inverse[2],
@@ -2210,12 +2125,6 @@ void VolumeRenderWorker::alignAStartoZ()
     vec[1] = UB[3];
     vec[2] = UB[6];
     
-//    vec = rotation*vec;
-    
-//    qDebug() << "----------";
-//    qDebug() << "Zeta" << zeta(vec);
-//    qDebug() << "Eta" << eta(vec);
-    
     RotationMatrix<double> zeta_rotation;
     zeta_rotation.setYRotation(-zeta(vec));
     
@@ -2227,35 +2136,6 @@ void VolumeRenderWorker::alignAStartoZ()
     setViewMatrices();
     
     view_matrix.getInverse4x4(1);
-
-//    rotation.print(4,"rotation");
-//    view_matrix.print(4,"view mat");
-//    view_matrix.getInverse4x4().print(4,"view mat inv");
-//    (view_matrix.getInverse4x4() * view_matrix).print(6,"1");
-
-
-//    vec[0] = UB[0];
-//    vec[1] = UB[3];
-//    vec[2] = UB[6];
-    
-//    Matrix<double> L2 = view_matrix.getL();
-//    Matrix<double> U2 = view_matrix.getU();
-
-//    Matrix<double> LU2 = L2*U2;
-
-//    view_matrix.getL().print(2,"L");
-//    view_matrix.getU().print(2,"U");
-//    (view_matrix.getL()*view_matrix.getU()).print(2,"L*U");
-
-//    LU2.print(2,"L2");
-//    LU2.print(2,"U2");
-//    LU2.print(2,"L2*U2");
-
-//    vec = rotation*vec;
-    
-//    qDebug() << "Zeta" << zeta(vec);
-//    qDebug() << "Eta" << eta(vec);
-    
 }
 void VolumeRenderWorker::alignBStartoZ()
 {
@@ -2273,11 +2153,6 @@ void VolumeRenderWorker::alignBStartoZ()
     rotation = eta_rotation * zeta_rotation;
     
     setViewMatrices();
-    
-//    rotation.print(4,"rotation");
-//    view_matrix.toFloat().print(4,"view mat");
-//    view_matrix.getInverse4x4().toFloat().print(4,"view mat inv");
-//    (view_matrix.getInverse4x4().toFloat() * view_matrix.toFloat()).print(6,"1");
 }
 void VolumeRenderWorker::alignCStartoZ()
 {
@@ -2295,24 +2170,15 @@ void VolumeRenderWorker::alignCStartoZ()
     rotation = eta_rotation * zeta_rotation;
 
     setViewMatrices();
-    
-//    rotation.print(4,"rotation");
-//    view_matrix.toFloat().print(4,"view mat");
-//    view_matrix.getInverse4x4().toFloat().print(4,"view mat inv");
-//    (view_matrix.getInverse4x4().toFloat() * view_matrix.toFloat()).print(6,"1");
 }
 
 
 void VolumeRenderWorker::alignLabXtoSliceX()
 {
-//    rotation.print(2,"Before");
-    
     RotationMatrix<double> x_aligned;
     x_aligned.setYRotation(pi*0.5);
     
     rotation =  x_aligned * scalebar_rotation.getInverse4x4();
-    
-//    rotation.print(2,"After");
 }
 
 void VolumeRenderWorker::alignLabYtoSliceY()
@@ -2324,14 +2190,10 @@ void VolumeRenderWorker::alignLabYtoSliceY()
 }
 void VolumeRenderWorker::alignLabZtoSliceZ()
 {
-//    rotation.print(2,"Before");
-    
     RotationMatrix<double> z_aligned;
     z_aligned.setYRotation(0.0);
     
     rotation =  z_aligned * scalebar_rotation.getInverse4x4();
-    
-//    rotation.print(2,"After");
 }
 
 void VolumeRenderWorker::alignSliceToLab()
@@ -2419,28 +2281,12 @@ void VolumeRenderWorker::computePixelSize()
     Matrix<double> w_vec = xyz_00 - xyz_10;
     Matrix<double> h_vec = xyz_00 - xyz_01;
 
-
-//    w_vec.print(2, "w_vec");
-//    h_vec.print(2, "h_vec");
-    
     pixel_size[0] = std::sqrt(w_vec[0]*w_vec[0] + w_vec[1]*w_vec[1] + w_vec[2]*w_vec[2]);
     pixel_size[1] = std::sqrt(h_vec[0]*h_vec[0] + h_vec[1]*h_vec[1] + h_vec[2]*h_vec[2]);
-
-//    qDebug() << "The width is " << pixel_size[0]*render_surface->width();
-//    qDebug() << "The height is " << pixel_size[1]*render_surface->height();
-//    ray_tex_dim.print(0,"ray_tex_dim");
-//    pixel_size.print(4,"Pixel Size");
 }
 
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
-//    QPen tick_pen;
-            
-//    if (isBackgroundBlack) tick_pen.setColor(magenta.toQColor());
-//    else tick_pen.setColor(blue.toQColor());
-    
-//    painter->setPen(tick_pen);
-     
     painter->setPen(*normal_pen);
     
     // Position scalebar tick labels
@@ -2451,9 +2297,6 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
             painter->drawText(QPointF(position_scalebar_ticks[i*3+0], position_scalebar_ticks[i*3+1]), QString::number(position_scalebar_ticks[i*3+2]));
         }
     }
-    
-    
-    
     
     // Count scalebar tick labels
     if (n_count_scalebar_ticks >= 2)
@@ -2483,11 +2326,6 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawRoundedRect(centerline_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(centerline_string_rect, Qt::AlignCenter, centerline_string);
 
-    // Draw some text at the (000) position
-//    Matrix<float> zero_position(1,4);
-//    getPosition2D(zero_position.data(), centerline_coords.data(), &view_matrix);
-//    painter->drawText(QPointF(zero_position[0]*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height() - (zero_position[1]*render_surface->height()*0.5 + render_surface->height()*0.5)), "(000)");
-
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
     QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);
@@ -2501,7 +2339,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
 
     // Texture resolution
-    QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(render_surface->width()*render_surface->height()), 'f', 1)+"%");//+"%, Volume Rendering Fps: "+QString::number(fps_requested));
+    QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(render_surface->width()*render_surface->height()), 'f', 1)+"%");
     QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
     resolution_string_rect += QMargins(5,5,5,5);
     resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
@@ -2612,7 +2450,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
      * Based on the current display values (min and max), draw ticks on the counts scalebar. There are major and minor ticks.
      * */
     
-    double data_min, data_max;//, data_delta;
+    double data_min, data_max;
     double tick_interdist_min = 10; // pixels
     double exponent;
     
@@ -2620,9 +2458,6 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     QRect tsf_rect(0, 0, 20, render_surface->height() - (multiplier_string_rect.bottom() + 5) - 50);
     tsf_rect += QMargins(30,5,5,5);
     tsf_rect.moveTopRight(QPoint(render_surface->width()-5, multiplier_string_rect.bottom() + 5));
-
-//    painter->setBrush(*fill_brush);
-//    painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
 
     tsf_rect -= QMargins(30,5,5,5);
     Matrix<GLfloat> gl_tsf_rect(4,2);
@@ -2780,9 +2615,6 @@ void VolumeRenderWorker::addMarker()
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         
         marker_vbo.append(vbo);
-//        glBindBuffer(GL_ARRAY_BUFFER, marker_centers_vbo[markers.size()-1]);
-//        glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*xyz.size(), xyz.toFloat().data(), GL_STATIC_DRAW);
-//        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 }
 
@@ -2815,8 +2647,6 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
     // Draw texture given one of the above is true
     if (isModelActive || isSvoInitialized)
     {
-//        glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA);
-
         shared_window->std_2d_tex_program->bind();
 
         glActiveTexture(GL_TEXTURE0);
@@ -2852,8 +2682,6 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
         glBindTexture(GL_TEXTURE_2D, 0);
 
         shared_window->std_2d_tex_program->release();
-
-//        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
     
     endRawGLCalls(painter);
@@ -2862,8 +2690,6 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
 void VolumeRenderWorker::raytrace(cl_kernel kernel)
 {
     setRayTexture();
-
-//    if (isShadowActive) setShadowVector();
     setShadowVector();
 
     // Aquire shared CL/GL objects
@@ -2996,7 +2822,6 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
 void VolumeRenderWorker::resetViewMatrix()
 {
     data_scaling.setIdentity(4);
-//    rotation.setXRotation(0.1);
     scalebar_rotation.setIdentity (4);
     data_translation.setIdentity(4);
 }
@@ -3198,12 +3023,6 @@ void VolumeRenderWorker::setBackground()
     normal_pen->setColor(normal_color);
     whatever_pen->setColor(normal_color);
     fill_brush->setColor(fill_color);
-    
-//    clear_color_inverse.print(2,"inv");
-//    clear_color.print(2,"norm");
-    
-//    qDebug() << clear_color_inverse.toQColor() << clear_color.toQColor();
-//    normal_pen->setWidth(1);
 }
 
 void VolumeRenderWorker::setURotation()
@@ -3258,8 +3077,6 @@ void VolumeRenderWorker::setIntegration2D()
 }
 void VolumeRenderWorker::setIntegration3D()
 {
-//    qDebug();
-
     isIntegration3DActive = !isIntegration3DActive;
 
     if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
@@ -3373,6 +3190,5 @@ void VolumeRenderWorker::setScalebar()
 void VolumeRenderWorker::toggleRuler()
 {
     isRulerActive = !isRulerActive;
-    qDebug() << isRulerActive;
 }
 

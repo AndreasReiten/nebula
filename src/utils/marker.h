@@ -16,7 +16,6 @@ public:
     float *getColor();
     double getDistance(double x, double y, double z);
     void setTagged(bool value);
-//    GLuint getVbo();
     Matrix<float> &  getVerts();
     bool getTagged();
     Matrix<double> &getCenter();
@@ -29,7 +28,6 @@ private:
     Matrix<float> untagged_color;
     
     Matrix<float> vertices;
-//    GLuint vbo;
 };
 
 #endif // MARKER_H
