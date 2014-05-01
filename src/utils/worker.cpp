@@ -956,6 +956,12 @@ void VoxelizeWorker::process()
                                      &accumulated_points,
                                      search_radius);
                         
+                        /* TODO:
+                         * Check how self-similar the data is. If it is deemed sufficiently self-similar, set the corresponding node's max subdivision flag to true.
+                         * */
+
+
+
                         // Number of points accumulated thus far
                         point_data_count[j] = accumulated_points - point_data_offset[j];
                         

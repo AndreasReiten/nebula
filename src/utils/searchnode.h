@@ -35,18 +35,6 @@ class SearchNode {
         /* gets and sets */
         void setParent(SearchNode * parent);
 
-        int getBrick(
-            Matrix<double> * brick_extent,
-            float search_radius,
-            unsigned int brick_outer_dimension,
-            unsigned int level,
-            cl_mem * items_cl,
-            cl_mem * pool_cl,
-            cl_kernel * voxelize_kernel,
-            int * method,
-            unsigned int brick_counter,
-            unsigned int brick_pool_power);
-        
         void getData(double *brick_extent,
                      float * point_data,
                      size_t *accumulated_points,
@@ -59,7 +47,6 @@ class SearchNode {
         double * getExtent();
 
     private:
-        void getIntersectedItems(Matrix<double> * effective_extent, unsigned int * item_counter, cl_mem * items);
         void getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, float * point_data);
         SearchNode * parent;
         SearchNode ** children;

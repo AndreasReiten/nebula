@@ -241,50 +241,6 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     else return 0;
 }
 
-void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, unsigned int * item_counter, cl_mem * items)
-{
-    if ((this->isMsd) && (!this->isEmpty))
-    {
-        int tmp = 0;
-        for (unsigned int i = 0; i < n_points; i++)
-        {
-            if (
-            ((points[i*4+0] >= effective_extent->at(0)) && (points[i*4+0] <= effective_extent->at(1))) &&
-            ((points[i*4+1] >= effective_extent->at(2)) && (points[i*4+1] <= effective_extent->at(3))) &&
-            ((points[i*4+2] >= effective_extent->at(4)) && (points[i*4+2] <= effective_extent->at(5))))
-            {
-                if (*item_counter < CL_MAX_ITEMS)
-                {
-                    err = clEnqueueWriteBuffer(*context->getCommandQueue(),
-                        *items,
-                        CL_FALSE,
-                        (*item_counter)*sizeof(cl_float4),
-                        sizeof(cl_float4),
-                        points + i*4,
-                        0, NULL, NULL);
-                    if (err != CL_SUCCESS)
-                    {
-                        qFatal(cl_error_cstring(err));
-                        return;
-                    }
-                    tmp++;
-                }
-                (*item_counter)++;
-            }
-        }
-    }
-    else if ((n_children > 0))
-    {
-        for (unsigned int i = 0; i < 8; i++)
-        {
-            if(children[i]->isIntersected(effective_extent->data()))
-            {
-                children[i]->getIntersectedItems(effective_extent, item_counter, items);
-            }
-        }
-    }
-}
-
 void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, float * point_data)
 {
     if ((this->isMsd) && (!this->isEmpty))
@@ -318,10 +274,11 @@ void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
 }
 
 
-void SearchNode::getData(double * brick_extent,
-    float * point_data,
-    size_t * accumulated_points,
-    float search_radius)
+void SearchNode::getData(
+        double * brick_extent,
+        float * point_data,
+        size_t * accumulated_points,
+        float search_radius)
 {
     Matrix<double> effective_extent(1,6);
     effective_extent[0] = brick_extent[0] - search_radius;
@@ -332,131 +289,6 @@ void SearchNode::getData(double * brick_extent,
     effective_extent[5] = brick_extent[5] + search_radius;
     
     getIntersectedItems(&effective_extent, accumulated_points, point_data);
-}
-
-int SearchNode::getBrick(Matrix<double> * brick_extent, float search_radius, unsigned int brick_outer_dimension, unsigned int level, cl_mem * items_cl, cl_mem * pool_cl, cl_kernel * voxelize_kernel, int * method, unsigned int brick_counter, unsigned int brick_pool_power)
-{
-    QElapsedTimer timer;
-    timer.start();
-
-    int isEmptyBrick = 1;
-
-    Matrix<double> effective_extent(1,6);
-    effective_extent[0] = brick_extent->at(0) - search_radius;
-    effective_extent[1] = brick_extent->at(1) + search_radius;
-    effective_extent[2] = brick_extent->at(2) - search_radius;
-    effective_extent[3] = brick_extent->at(3) + search_radius;
-    effective_extent[4] = brick_extent->at(4) - search_radius;
-    effective_extent[5] = brick_extent->at(5) + search_radius;
-
-    // Here we count the number of items in the volume intersected by the brick and the octtree. If this number is less than CL_MAX_ITEMS the calculations are carried out in parallel by OpenCL employing fast shared memory. Also, to be realistic, the check is only done for bricks deeper than CL_LEVEL
-    unsigned int item_counter = 0;
-
-    getIntersectedItems(&effective_extent, &item_counter, items_cl);
-    if (item_counter == 0)
-    {
-        isEmptyBrick = 1;
-        *method = 2;
-    }
-    else if ((level >= CL_LEVEL) && (item_counter <= CL_MAX_ITEMS))
-    {
-        qDebug() << "GPU";
-
-        clFinish(*context->getCommandQueue());
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-        cl_mem isEmpty_cl =  clCreateBuffer(*context->getContext(),
-            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            sizeof(cl_int),
-            NULL,
-            &err);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-        qDebug() << __LINE__ << ": "<< timer.elapsed();
-
-        // Set kernel arguments
-        err |= clSetKernelArg(*voxelize_kernel, 2, sizeof(cl_mem), (void *) &isEmpty_cl);
-        err |= clSetKernelArg(*voxelize_kernel, 3, sizeof(cl_int), &brick_outer_dimension);
-        err |= clSetKernelArg(*voxelize_kernel, 4, sizeof(cl_int), &item_counter);
-        err |= clSetKernelArg(*voxelize_kernel, 5, sizeof(cl_float), &search_radius);
-        err |= clSetKernelArg(*voxelize_kernel, 6, brick_outer_dimension*brick_outer_dimension*brick_outer_dimension*sizeof(cl_float), NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-        qDebug() << __LINE__ << ": "<< timer.elapsed();
-        // Launch kernel
-        size_t loc_ws[3] = {8,8,8};
-        size_t glb_ws[3] = {8,8,8};
-        err = clEnqueueNDRangeKernel(*context->getCommandQueue(), *voxelize_kernel, 3, NULL, glb_ws, loc_ws, 0, NULL, NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-
-        clFinish(*context->getCommandQueue());
-        qDebug() << __LINE__ << ": "<< timer.elapsed();
-        // Read results
-        int tmp[1];
-        err = clEnqueueReadBuffer ( *context->getCommandQueue(),
-            isEmpty_cl,
-            CL_TRUE,
-            0,
-            sizeof(cl_int),
-            tmp,
-            0, NULL, NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-        qDebug() << __LINE__ << ": "<< timer.elapsed();
-        isEmptyBrick = tmp[0];
-
-        err = clReleaseMemObject(isEmpty_cl);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-        qDebug() << __LINE__ << ": "<< timer.elapsed();
-        *method = 0;
-    }
-    else
-    {
-        float idw[1];
-        Matrix<float> sample(1,3);
-        float brick_step = (brick_extent->at(1) - brick_extent->at(0)) / ((float)(brick_outer_dimension-1));
-
-        // If not, however, the calculations are simply carried out on the CPU instead
-        for (unsigned int z = 0; z < brick_outer_dimension; z++)
-        {
-            for (unsigned int y = 0; y < brick_outer_dimension; y++)
-            {
-                for (unsigned int x = 0; x < brick_outer_dimension; x++)
-                {
-                    sample[0] = brick_extent->at(0) + brick_step * x;
-                    sample[1] = brick_extent->at(2) + brick_step * y;
-                    sample[2] = brick_extent->at(4) + brick_step * z;
-                    idw[0] = this->getIDW(sample.data(), 1.0, search_radius);
-
-                    Matrix<int> brick_offset(1,3);
-                    brick_offset[2] = brick_counter / ((1 << brick_pool_power) * (1 << brick_pool_power));
-                    brick_offset[1] = (brick_counter % ((1 << brick_pool_power) * (1 << brick_pool_power))) / (1 << brick_pool_power);
-                    brick_offset[0] = (brick_counter % ((1 << brick_pool_power) * (1 << brick_pool_power))) % (1 << brick_pool_power);
-
-                    Matrix<int> index3d(1,3);
-                    index3d[2] = brick_offset[2]*brick_outer_dimension + z;
-                    index3d[1] = brick_offset[1]*brick_outer_dimension + y;
-                    index3d[0] = brick_offset[0]*brick_outer_dimension + x;
-
-                    size_t id_1D = index3d[0] + index3d[1] * (1 << brick_pool_power) * brick_outer_dimension + index3d[2] * (1 << brick_pool_power) * brick_outer_dimension * (1 << brick_pool_power) * brick_outer_dimension;
-
-                    err = clEnqueueWriteBuffer(*context->getCommandQueue(),
-                        *pool_cl ,
-                        CL_TRUE,
-                        id_1D*sizeof(cl_float),
-                        sizeof(cl_float),
-                        idw,
-                        0, NULL, NULL);
-                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-                    if (idw[0] > 0) isEmptyBrick = 0;
-                }
-            }
-        }
-        *method = 1;
-    }
-    return isEmptyBrick;
 }
 
 float SearchNode::distance(float * a, float * b)
