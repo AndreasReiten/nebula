@@ -1003,6 +1003,9 @@ void VoxelizeWorker::process()
                             // The relative magnitude of the deviation
                             double magnitude = max_deviation/average;
 
+                            if (magnitude < 0.1) gpuHelpOcttree[currentId].setMsdFlag(1);
+                            else gpuHelpOcttree[currentId].setMsdFlag(0);
+
 //                            qDebug() << magnitude << max_deviation << average << accumulated_points - point_data_offset[j];
 //                            if (accumulated_points - point_data_offset[j] == 1) qDebug() << point_data[point_data_offset[j]];
 
@@ -1122,7 +1125,7 @@ void VoxelizeWorker::process()
                         // The id of the octnode in the octnode array
                         currentId = confirmed_nodes+i+j;
                         
-                        if (empty_check[j] <= 0.0)
+                        if ((empty_check[j] <= 0.0) || gpuHelpOcttree[currentId].getMsdFlag())
                         {
                             gpuHelpOcttree[currentId].setDataFlag(0);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
