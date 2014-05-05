@@ -492,8 +492,10 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
     {
         for (size_t i = 0; i < fast_dimension*slow_dimension; i++)
         {
-            if (projected_data_buf[i*4+3] != 0.0)
+            if (projected_data_buf[i*4+3] != 0.0) // Above 0 check?
             {
+//                if (projected_data_buf[i*4+3] < 0.0) qDebug() <<  projected_data_buf[i*4+3] << i;
+
                 outBuf[(*n)+0] = projected_data_buf[i*4+0];
                 outBuf[(*n)+1] = projected_data_buf[i*4+1];
                 outBuf[(*n)+2] = projected_data_buf[i*4+2];

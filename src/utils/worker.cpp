@@ -909,7 +909,7 @@ void VoxelizeWorker::process()
 
                 double tmp = (svo->getExtent()->at(1) - svo->getExtent()->at(0)) / (1 << lvl);
 
-                // For each node
+                // For each cluster of nodes
                 size_t iter = 0;
                 for (size_t i = 0; i < nodes[lvl]; i += nodes_per_kernel_call)
                 {
@@ -956,9 +956,61 @@ void VoxelizeWorker::process()
                                      &accumulated_points,
                                      search_radius);
                         
+//                        for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
+//                        {
+//                            if (point_data[k] < 0)
+//                            {
+//                                qDebug() << "-- Abnormal data point detected in node" << i+j;
+//                                qDebug() << "point_data[" << k << "] =" << point_data[k];
+//                                qDebug() << "point_data_offset[j] =" << point_data_offset[j];
+//                                qDebug() << "accumulated_points =" << accumulated_points;
+//                            }
+//                        }
+
                         /* TODO:
                          * Check how self-similar the data is. If it is deemed sufficiently self-similar, set the corresponding node's max subdivision flag to true.
                          * */
+
+                        if (accumulated_points - point_data_offset[j] > 0)
+                        {
+                            // Find the average
+                            double average = 0;
+                            double count = 0;
+                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
+                            {
+                                average += point_data[k*4+3];
+                                count += 1.0;
+//                                qDebug() << point_data[k];
+//                                if (point_data[k] < 0)
+//                                {
+//                                    qDebug() << "Abnormal data point detected";
+//                                    qDebug() << "point_data[" << k << "] =" << point_data[k];
+//                                    qDebug() << "point_data_offset[j] =" << point_data_offset[j];
+//                                    qDebug() << "accumulated_points =" << accumulated_points;
+//                                }
+                            }
+
+                            average /= count;
+
+                            // Find the most deviating point of data
+                            double max_deviation = 0;
+                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
+                            {
+                                double deviation = fabs(average - point_data[k*4+3]);
+                                if (deviation > max_deviation) max_deviation = deviation;
+                            }
+
+                            // The relative magnitude of the deviation
+                            double magnitude = max_deviation/average;
+
+//                            qDebug() << magnitude << max_deviation << average << accumulated_points - point_data_offset[j];
+//                            if (accumulated_points - point_data_offset[j] == 1) qDebug() << point_data[point_data_offset[j]];
+
+                            // Save the result so it can be used later to determine if a node is self-similar.
+
+
+                        }
+
 
 
 

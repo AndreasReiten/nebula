@@ -257,6 +257,8 @@ void SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
                 point_data[*accumulated_points*4+2] = points[i*4+2];
                 point_data[*accumulated_points*4+3] = points[i*4+3];
                 
+//                if (points[i*4+3] < 0.0) qDebug() << points[i*4+3] << *accumulated_points;
+
                 (*accumulated_points)++;
             }
         }
