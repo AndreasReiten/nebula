@@ -4,7 +4,8 @@ __kernel void voxelize(
     __constant int * point_data_count,
     __global float * brick_extent,
     __global float * pool_cluster,
-    __global float * empty_check,
+    __global float * sum_check,
+    __global float * variance_check,
     __local float * addition_array,
     uint brick_outer_dimension,
     float search_radius
@@ -52,7 +53,7 @@ __kernel void voxelize(
     // Pass result to output array
     pool_cluster[id_wg*brick_outer_dimension*brick_outer_dimension*brick_outer_dimension + id_output] = xyzw.w;
 
-    // Parallel reduction to find if there is nonzero data
+    // Parallel reduction to find the sum
     addition_array[id_output] = xyzw.w;
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -67,7 +68,28 @@ __kernel void voxelize(
 
     if (id_output == 0)
     {
-        empty_check[id_wg] = addition_array[0];
+        sum_check[id_wg] = addition_array[0];
+    }
+
+
+    // Parallel reduction to find the variance
+    float average = sum_check[id_wg]/(float)(brick_outer_dimension*brick_outer_dimension*brick_outer_dimension);
+
+    addition_array[id_output] = (xyzw.w - average)*(xyzw.w - average);
+
+    barrier(CLK_LOCAL_MEM_FENCE);
+    for (unsigned int i = 256; i > 0; i >>= 1)
+    {
+        if (id_output < i)
+        {
+            addition_array[id_output] += addition_array[i + id_output];
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    if (id_output == 0)
+    {
+        variance_check[id_wg] = addition_array[0]/(float)(brick_outer_dimension*brick_outer_dimension*brick_outer_dimension);
     }
 }
 

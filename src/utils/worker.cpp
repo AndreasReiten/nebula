@@ -848,11 +848,19 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                            
-        Matrix<float> empty_check(1, nodes_per_kernel_call, 0);
-        cl_mem empty_check_cl = clCreateBuffer(*context_cl->getContext(),
+        Matrix<float> sum_check(1, nodes_per_kernel_call, 0);
+        cl_mem sum_check_cl = clCreateBuffer(*context_cl->getContext(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(float),
-            empty_check.data(),
+            sum_check.data(),
+            &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+        Matrix<float> variance_check(1, nodes_per_kernel_call, 0);
+        cl_mem variance_check_cl = clCreateBuffer(*context_cl->getContext(),
+            CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+            nodes_per_kernel_call*sizeof(float),
+            variance_check.data(),
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
@@ -971,48 +979,51 @@ void VoxelizeWorker::process()
                          * Check how self-similar the data is. If it is deemed sufficiently self-similar, set the corresponding node's max subdivision flag to true.
                          * */
 
-                        if (accumulated_points - point_data_offset[j] > 0)
-                        {
-                            // Find the average
-                            double average = 0;
-                            double count = 0;
-                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
-                            {
-                                average += point_data[k*4+3];
-                                count += 1.0;
-//                                qDebug() << point_data[k];
-//                                if (point_data[k] < 0)
-//                                {
-//                                    qDebug() << "Abnormal data point detected";
-//                                    qDebug() << "point_data[" << k << "] =" << point_data[k];
-//                                    qDebug() << "point_data_offset[j] =" << point_data_offset[j];
-//                                    qDebug() << "accumulated_points =" << accumulated_points;
-//                                }
-                            }
+//                        if (accumulated_points - point_data_offset[j] > 0)
+//                        {
+//                            // Find the average
+//                            double average = 0;
+//                            double count = 0;
+//                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
+//                            {
+//                                average += point_data[k*4+3];
+//                                count += 1.0;
+////                                qDebug() << point_data[k];
+////                                if (point_data[k] < 0)
+////                                {
+////                                    qDebug() << "Abnormal data point detected";
+////                                    qDebug() << "point_data[" << k << "] =" << point_data[k];
+////                                    qDebug() << "point_data_offset[j] =" << point_data_offset[j];
+////                                    qDebug() << "accumulated_points =" << accumulated_points;
+////                                }
+//                            }
 
-                            average /= count;
+//                            average /= count;
 
-                            // Find the most deviating point of data
-                            double max_deviation = 0;
-                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
-                            {
-                                double deviation = fabs(average - point_data[k*4+3]);
-                                if (deviation > max_deviation) max_deviation = deviation;
-                            }
+//                            // Find the most deviating point of data
+//                            double max_intensity = 0;
 
-                            // The relative magnitude of the deviation
-                            double magnitude = max_deviation/average;
+//                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
+//                            {
+//                                if (point_data[k*4+3] > max_intensity) max_intensity = point_data[k*4+3];
+//                            }
 
-                            if (magnitude < 0.1) gpuHelpOcttree[currentId].setMsdFlag(1);
-                            else gpuHelpOcttree[currentId].setMsdFlag(0);
+//                            double max_deviation = fabs(average - max_intensity);
 
-//                            qDebug() << magnitude << max_deviation << average << accumulated_points - point_data_offset[j];
-//                            if (accumulated_points - point_data_offset[j] == 1) qDebug() << point_data[point_data_offset[j]];
+//                            // The relative magnitude of the deviation
+//                            double magnitude = max_deviation/average;
+//                            double noise_level = 10.0;
 
-                            // Save the result so it can be used later to determine if a node is self-similar.
+//                            if (magnitude < 0.1) gpuHelpOcttree[currentId].setMsdFlag(1);
+//                            else gpuHelpOcttree[currentId].setMsdFlag(0);
+
+////                            qDebug() << magnitude << max_deviation << average << accumulated_points - point_data_offset[j];
+////                            if (accumulated_points - point_data_offset[j] == 1) qDebug() << point_data[point_data_offset[j]];
+
+//                            // Save the result so it can be used later to determine if a node is self-similar.
 
 
-                        }
+//                        }
 
 
 
@@ -1072,11 +1083,13 @@ void VoxelizeWorker::process()
                     err |= clSetKernelArg( voxelize_kernel, 2, sizeof(cl_mem), (void *) &point_data_count_cl);
                     err |= clSetKernelArg( voxelize_kernel, 3, sizeof(cl_mem), (void *) &brick_extent_cl);
                     err |= clSetKernelArg( voxelize_kernel, 4, sizeof(cl_mem), (void *) &pool_cluster_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &empty_check_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 6, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
+                    err |= clSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &sum_check_cl);
+                    err |= clSetKernelArg( voxelize_kernel, 6, sizeof(cl_mem), (void *) &variance_check_cl);
+                    err |= clSetKernelArg( voxelize_kernel, 7, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
                     int tmp = svo->getBrickOuterDimension();
-                    err |= clSetKernelArg( voxelize_kernel, 7, sizeof(cl_int), &tmp);
-                    err |= clSetKernelArg( voxelize_kernel, 8, sizeof(cl_float), &search_radius);
+                    err |= clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), &tmp);
+                    err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_float), &search_radius);
+
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     err = clFinish(*context_cl->getCommandQueue());
@@ -1104,13 +1117,22 @@ void VoxelizeWorker::process()
                     err = clFinish(*context_cl->getCommandQueue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
-                    // Read currently relevant data
+                    // Read relevant data
                     err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-                        empty_check_cl,
+                        sum_check_cl,
                         CL_TRUE,
                         0,
                         nodes_per_kernel_call*sizeof(float),
-                        empty_check.data(),
+                        sum_check.data(),
+                        0, NULL, NULL);
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+                    err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+                        variance_check_cl,
+                        CL_TRUE,
+                        0,
+                        nodes_per_kernel_call*sizeof(float),
+                        variance_check.data(),
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
@@ -1122,15 +1144,28 @@ void VoxelizeWorker::process()
                     // Third pass: transfer non-empty nodes to svo data structure (OpenCL)
                     for (size_t j = 0; j < nodes_per_kernel_call; j++)
                     {
+                        /* TODO:
+                         * Check how self-similar the interpolated data in each node is. If it is deemed sufficiently self-similar, set the corresponding node's max subdivision flag to true.
+                         * */
+
                         // The id of the octnode in the octnode array
                         currentId = confirmed_nodes+i+j;
                         
-                        if ((empty_check[j] <= 0.0) || gpuHelpOcttree[currentId].getMsdFlag())
+                        // If a node simply has no data
+                        if ((sum_check[j] <= 0.0))
                         {
                             gpuHelpOcttree[currentId].setDataFlag(0);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].setChild(0);
                         }
+                        // Else if a node has data but is self-similar
+                        else if (sqrt(variance_check[j]) <= 0.5)
+                        {
+                            gpuHelpOcttree[currentId].setDataFlag(1);
+                            gpuHelpOcttree[currentId].setMsdFlag(1);
+                            gpuHelpOcttree[currentId].setChild(0);
+                        }
+                        // Else treat the node normally
                         else
                         {
                             if (non_empty_node_counter + 1 >= n_max_bricks)
@@ -1140,7 +1175,7 @@ void VoxelizeWorker::process()
                                 break;
                             }
                             
-                            if (empty_check[j] > max_brick_sum) max_brick_sum = empty_check[j];
+                            if (sum_check[j] > max_brick_sum) max_brick_sum = sum_check[j];
                             
                             gpuHelpOcttree[currentId].setDataFlag(1);
                             gpuHelpOcttree[currentId].setMsdFlag(0);
@@ -1261,7 +1296,7 @@ void VoxelizeWorker::process()
         clReleaseMemObject(brick_extent_cl);
         clReleaseMemObject(pool_cluster_cl);
         clReleaseMemObject(pool_cl);
-        clReleaseMemObject(empty_check_cl);
+        clReleaseMemObject(sum_check_cl);
     }
 
     emit finished();

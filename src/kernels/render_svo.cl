@@ -365,7 +365,7 @@ __kernel void svoRayTrace(
                     step_length = cone_diameter * 0.25f;
                     ray_add_box = direction * step_length;
 
-                     // We use a normalized convention during octtree traversal. The normalized convention makes it easier to think about the octtree traversal.
+                     // We use a normalized convention. The normalized convention makes it easier to think about the octtree traversal.
                     norm_xyz = native_divide( (float3)(ray_xyz_box.x - data_extent[0], ray_xyz_box.y - data_extent[2], ray_xyz_box.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
 
                     normIndex = convert_int3(norm_xyz);
