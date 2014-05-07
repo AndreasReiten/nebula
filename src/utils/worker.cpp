@@ -615,7 +615,7 @@ void MultiWorker::process()
             break;
         }
 
-        // Set file and get status (hi)
+        // Set file and get status
         DetectorFile file;
         int STATUS_OK = file.set(file_paths->at(i), context_cl);
 
