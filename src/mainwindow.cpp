@@ -557,11 +557,18 @@ void MainWindow::omitFile()
 {
     int index = imageSpinBox->value();
 
+    if (index < file_paths.size())
+    {
+        file_paths.removeAt(index);
+
+        print("\nRemoved file "+QString::number(index)+"of"+QString::number(files.size()));
+
+        // Feature/Bug: Should also un-select the file in question in the file browser, or use a "load files" explicit button. Also, the file_paths array is superfluous
+    }
+
     if (index < files.size())
     {
         files.removeAt(index);
-
-        print("\nRemoved file "+QString::number(index)+"of"+QString::number(files.size()));
     }
 }
 
