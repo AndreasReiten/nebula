@@ -219,7 +219,7 @@ private:
     SetFileWorker * setFileWorker;
     ReadFileWorker * readFileWorker;
     ProjectFileWorker * projectFileWorker;
-    AllInOneWorker * allInOneWorker;
+    MultiWorker * allInOneWorker;
     VoxelizeWorker * voxelizeWorker;
 
     // File browser

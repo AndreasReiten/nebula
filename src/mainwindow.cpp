@@ -143,7 +143,7 @@ void MainWindow::initializeWorkers()
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    connect(setFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+//    connect(setFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(setFileButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
@@ -197,7 +197,7 @@ void MainWindow::initializeWorkers()
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
     //### allInOneWorker ###
-    allInOneWorker = new AllInOneWorker();
+    allInOneWorker = new MultiWorker();
     allInOneWorker->setFilePaths(&file_paths);
     allInOneWorker->setSVOFile(&svo_inprocess);
     allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
@@ -343,24 +343,24 @@ void MainWindow::decrementDisplayFile10()
 }
 void MainWindow::setDisplayFile(int value)
 {
-    if ((value >= 0) && (value < files.size()))
+    if ((value >= 0) && (value < file_paths.size()))
     {
-        emit imagePreviewChanged(files[value].getPath());
+        emit imagePreviewChanged(file_paths[value]);
         emit updateFileHeader(value);
-        imageLabel->setText(files[value].getPath());
+        imageLabel->setText(file_paths[value]);
     }
     else
     {
-        print("\nThe files does not exist. Did you forget to press \"Set\"?");
+        print("\n[Nebula] File does not exist");
     }
 }
 
 void MainWindow::updateFileHeader(int value)
 {
-    if ((file_paths.size() > value ))
-    {
+//    if (file_paths.size() > value)
+//    {
         if (files.size() > value) fileHeaderEdit->setPlainText(files[value].getHeaderText());
-    }
+//    }
 }
 
 void MainWindow::runProjectFileThread()
@@ -556,9 +556,9 @@ void MainWindow::initializeActions()
 
 void MainWindow::omitFile()
 {
-    size_t index = imageSpinBox->value();
+    int index = imageSpinBox->value();
 
-    if ((index >= 0) && (index < files.size()))
+    if (index < files.size())
     {
         files.removeAt(index);
 
@@ -756,7 +756,9 @@ void MainWindow::setTab(int tab)
     functionDockWidget->hide();
     svoHeaderDock->hide();
     
-    
+    if (tab==1) file_paths = fileSelectionModel->getFiles();
+
+
     if ((tab==0) || (tab==1)) toolChainWidget->show();
     else toolChainWidget->hide();
     
