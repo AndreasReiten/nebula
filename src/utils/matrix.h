@@ -516,7 +516,7 @@ Matrix<T> Matrix<T>::getInverse(int verbose)  const
     /* Ax = LUx = I method */
     
     /* LU Decomposition */
-    int i, j, k;
+    size_t i, j, k;
     T sum;
 
     if (verbose)
