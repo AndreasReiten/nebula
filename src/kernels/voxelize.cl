@@ -73,8 +73,9 @@ __kernel void voxelize(
 
 
     // Parallel reduction to find the variance
-    float average = sum_check[id_wg]/(float)(brick_outer_dimension*brick_outer_dimension*brick_outer_dimension);
+    float average = addition_array[0]/(float)(brick_outer_dimension*brick_outer_dimension*brick_outer_dimension);
 
+    barrier(CLK_LOCAL_MEM_FENCE);
     addition_array[id_output] = (xyzw.w - average)*(xyzw.w - average);
 
     barrier(CLK_LOCAL_MEM_FENCE);

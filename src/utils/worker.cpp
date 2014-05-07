@@ -1151,6 +1151,8 @@ void VoxelizeWorker::process()
                         // The id of the octnode in the octnode array
                         currentId = confirmed_nodes+i+j;
                         
+//                        qDebug() << "Sum" << sum_check[j] << "Variance"<< sqrt(variance_check[j]);
+
                         // If a node simply has no data
                         if ((sum_check[j] <= 0.0))
                         {
@@ -1159,8 +1161,9 @@ void VoxelizeWorker::process()
                             gpuHelpOcttree[currentId].setChild(0);
                         }
                         // Else if a node has data but is self-similar
-                        else if (sqrt(variance_check[j]) <= 0.5)
+                        else if (sqrt(variance_check[j]) <= 0.01)
                         {
+
                             gpuHelpOcttree[currentId].setDataFlag(1);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].setChild(0);
