@@ -168,7 +168,7 @@ void ReadScriptWorker::process()
         {
             if (kill_flag)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"]  Warning: process killed after finding "+QString::number(i)+" files");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size()));
                 file_paths->clear();
                 break;
             }
@@ -252,9 +252,7 @@ void SetFileWorker::process()
         // Kill process if requested
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
-
-            emit changedMessageString(str);
+            emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size()));
             files->clear();
 
             break;
@@ -357,8 +355,7 @@ void ReadFileWorker::process()
         // Kill process if requested
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
-            emit changedMessageString(str);
+            emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size()));
             break;
         }
 
@@ -459,9 +456,7 @@ void ProjectFileWorker::process()
         // Kill process if requested
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size())+"!");
-
-            emit changedMessageString(str);
+            emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size()));
             break;
         }
 
@@ -562,31 +557,33 @@ void ProjectFileWorker::process()
  */
 
 
-AllInOneWorker::AllInOneWorker()
+MultiWorker::MultiWorker()
 {
     this->isCLInitialized = false;
 }
 
-AllInOneWorker::~AllInOneWorker()
+MultiWorker::~MultiWorker()
 {
 
 }
 
-void AllInOneWorker::process()
+void MultiWorker::process()
 {
     QCoreApplication::processEvents();
+
+    int verbose = 0;
 
     kill_flag = false;
     if (file_paths->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No paths specified!");
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No file paths have been specified");
 
         emit changedMessageString(str);
         kill_flag = true;
     }
 
     // Emit to appropriate slots
-    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Treating "+QString::number(file_paths->size())+" files...");
+    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Processing "+QString::number(file_paths->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
     emit changedTabWidget(1);
 
@@ -609,9 +606,7 @@ void AllInOneWorker::process()
         // Kill process if requested
         if (kill_flag)
         {
-            QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(file_paths->size())+"!");
-
-            emit changedMessageString(str);
+            emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size()));
             reduced_pixels->clear();
 
             break;
@@ -689,23 +684,23 @@ void AllInOneWorker::process()
 
     if (!kill_flag)
     {
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" of "+QString::number(file_paths->size())+" files were successfully set (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" of "+QString::number(file_paths->size())+" files were successfully processed ("+QString::number(size_raw/1000000.0, 'f', 3)+" -> "+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB, " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
+//        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" files were successfully read ("+QString::number(size_raw/1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" files were successfully projected and merged ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
+//        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" files were successfully projected and merged ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'g', 3)+" MB) (time: " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
         // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
         float resolution_min = 2*(*suggested_q)/(*suggested_search_radius_high);
         float resolution_max = 2*(*suggested_q)/(*suggested_search_radius_low);
 
-        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2.0);
+//        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2.0);
         float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2.0);
 
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number((*suggested_q), 'g', 3)+" inverse "+trUtf8("Å"));
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number((*suggested_search_radius_low), 'g', 2)+" to "+QString::number((*suggested_search_radius_high), 'g', 2)+" inverse "+trUtf8("Å"));
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggesting minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggesting minimum octtree level: "+QString::number(level_min, 'f', 2)+" to "+QString::number(level_max, 'f', 2)+"");
+        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number((*suggested_q), 'g', 3)+" inverse "+trUtf8("Å"));
+        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number((*suggested_search_radius_low), 'g', 2)+" to "+QString::number((*suggested_search_radius_high), 'g', 2)+" inverse "+trUtf8("Å"));
+        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggested minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Use at least octree level "+QString::number((int)level_max)+" to achieve good resolution");
     }
 
     emit finished();
@@ -872,9 +867,7 @@ void VoxelizeWorker::process()
         {
             if (kill_flag)
             {
-                QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(reduced_pixels->size()/4)+"!");
-
-                emit changedMessageString(str);
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i)+" of "+QString::number(files->size()));
                 break;
             }
             root.insert(reduced_pixels->data()+i*4);
@@ -964,70 +957,6 @@ void VoxelizeWorker::process()
                                      &accumulated_points,
                                      search_radius);
                         
-//                        for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
-//                        {
-//                            if (point_data[k] < 0)
-//                            {
-//                                qDebug() << "-- Abnormal data point detected in node" << i+j;
-//                                qDebug() << "point_data[" << k << "] =" << point_data[k];
-//                                qDebug() << "point_data_offset[j] =" << point_data_offset[j];
-//                                qDebug() << "accumulated_points =" << accumulated_points;
-//                            }
-//                        }
-
-                        /* TODO:
-                         * Check how self-similar the data is. If it is deemed sufficiently self-similar, set the corresponding node's max subdivision flag to true.
-                         * */
-
-//                        if (accumulated_points - point_data_offset[j] > 0)
-//                        {
-//                            // Find the average
-//                            double average = 0;
-//                            double count = 0;
-//                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
-//                            {
-//                                average += point_data[k*4+3];
-//                                count += 1.0;
-////                                qDebug() << point_data[k];
-////                                if (point_data[k] < 0)
-////                                {
-////                                    qDebug() << "Abnormal data point detected";
-////                                    qDebug() << "point_data[" << k << "] =" << point_data[k];
-////                                    qDebug() << "point_data_offset[j] =" << point_data_offset[j];
-////                                    qDebug() << "accumulated_points =" << accumulated_points;
-////                                }
-//                            }
-
-//                            average /= count;
-
-//                            // Find the most deviating point of data
-//                            double max_intensity = 0;
-
-//                            for (size_t k = point_data_offset[j]; k < accumulated_points; k++)
-//                            {
-//                                if (point_data[k*4+3] > max_intensity) max_intensity = point_data[k*4+3];
-//                            }
-
-//                            double max_deviation = fabs(average - max_intensity);
-
-//                            // The relative magnitude of the deviation
-//                            double magnitude = max_deviation/average;
-//                            double noise_level = 10.0;
-
-//                            if (magnitude < 0.1) gpuHelpOcttree[currentId].setMsdFlag(1);
-//                            else gpuHelpOcttree[currentId].setMsdFlag(0);
-
-////                            qDebug() << magnitude << max_deviation << average << accumulated_points - point_data_offset[j];
-////                            if (accumulated_points - point_data_offset[j] == 1) qDebug() << point_data[point_data_offset[j]];
-
-//                            // Save the result so it can be used later to determine if a node is self-similar.
-
-
-//                        }
-
-
-
-
                         // Number of points accumulated thus far
                         point_data_count[j] = accumulated_points - point_data_offset[j];
                         
@@ -1144,15 +1073,9 @@ void VoxelizeWorker::process()
                     // Third pass: transfer non-empty nodes to svo data structure (OpenCL)
                     for (size_t j = 0; j < nodes_per_kernel_call; j++)
                     {
-                        /* TODO:
-                         * Check how self-similar the interpolated data in each node is. If it is deemed sufficiently self-similar, set the corresponding node's max subdivision flag to true.
-                         * */
-
                         // The id of the octnode in the octnode array
                         currentId = confirmed_nodes+i+j;
                         
-//                        qDebug() << "Sum" << sum_check[j] << "Variance"<< sqrt(variance_check[j]);
-
                         // If a node simply has no data
                         if ((sum_check[j] <= 0.0))
                         {
@@ -1160,11 +1083,9 @@ void VoxelizeWorker::process()
                             gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].setChild(0);
                         }
-                        // Else if a node has data but is self-similar
+                        // Else if a node has data but is sufficiently self-similar (low variance)
                         else if (sqrt(variance_check[j]) <= 0.01)
                         {
-
-                            gpuHelpOcttree[currentId].setDataFlag(1);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].setChild(0);
                         }

@@ -168,7 +168,7 @@ F vecLength(const Matrix<F> A)
 {
     F sum = 0;
 
-    for (int i = 0; i < A.getM()*A.getN(); i++)
+    for (size_t i = 0; i < A.getM()*A.getN(); i++)
     {
         sum += A[i]*A[i];
     }
@@ -203,12 +203,12 @@ std::ostream & operator << (std::ostream & stream, const Matrix<F> M)
     ss << std::endl;
 
     ss << "("<< M.getM() << ", " << M.getN() << "):"<<std::endl;
-    for (int i = 0; i < M.getM(); i++)
+    for (size_t i = 0; i < M.getM(); i++)
     {
         if (i == 0) ss << "{{ ";
         else ss << " { ";
 
-        for (int j = 0; j < M.getN(); j++)
+        for (size_t j = 0; j < M.getN(); j++)
         {
             ss << std::setprecision(2) << std::fixed << M.data()[i*M.getN()+j];
             if (j != M.getN()-1) ss << ", ";
@@ -271,9 +271,9 @@ void Matrix<T>::resize(size_t m, size_t n)
     // This resize function retains any old values and fills voids with zeros
     Matrix<T> temp(m,n);
     
-    for (int i = 0; i < m; i++)
+    for (size_t i = 0; i < m; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (size_t j = 0; j < n; j++)
         {
             if ((i < this->m) && (j < this->n))
             {
@@ -365,6 +365,8 @@ Matrix<T> Matrix<T>::getColMajor()  const
 template <class T>
 Matrix<T> Matrix<T>::getInverse4x4(int verbose)  const
 {
+    Q_UNUSED(verbose);
+
     if((m != 4) || (n != 4)) qWarning() << "Matrix is can not be inverted: m (= " << m  << ") != n (=" << n << ")";
 
     Matrix<T> INV(4,4);
@@ -514,7 +516,7 @@ Matrix<T> Matrix<T>::getInverse(int verbose)  const
     /* Ax = LUx = I method */
     
     /* LU Decomposition */
-    int i, j, k;
+    size_t i, j, k;
     T sum;
 
     if (verbose)
@@ -734,12 +736,12 @@ void Matrix<T>::print(int precision, const char * id) const
     ss << std::endl;
 
     if (strlen(id) > 0) ss << id << "("<< this->m << ", " << this->n << "):"<<std::endl;
-    for (int i = 0; i < m; i++)
+    for (size_t i = 0; i < m; i++)
     {
         if (i == 0) ss << " [ ";
         else ss << " [ ";
 
-        for (int j = 0; j < n; j++)
+        for (size_t j = 0; j < n; j++)
         {
             ss << std::setprecision(precision) << std::fixed << this->buffer[i*n+j];
             if (j != n-1) ss << ", ";

@@ -197,7 +197,7 @@ void MainWindow::initializeWorkers()
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
     //### allInOneWorker ###
-    allInOneWorker = new AllInOneWorker();
+    allInOneWorker = new MultiWorker();
     allInOneWorker->setFilePaths(&file_paths);
     allInOneWorker->setSVOFile(&svo_inprocess);
     allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
@@ -556,9 +556,9 @@ void MainWindow::initializeActions()
 
 void MainWindow::omitFile()
 {
-    size_t index = imageSpinBox->value();
+    int index = imageSpinBox->value();
 
-    if ((index >= 0) && (index < files.size()))
+    if (index < files.size())
     {
         files.removeAt(index);
 

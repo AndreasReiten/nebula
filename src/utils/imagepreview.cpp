@@ -363,23 +363,41 @@ void ImagePreviewWorker::setParameter(Matrix<float> & data)
 
 void ImagePreviewWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
-
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
 }
 void ImagePreviewWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
-
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
 }
 void ImagePreviewWorker::metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
-
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(left_button);
+    Q_UNUSED(mid_button);
+    Q_UNUSED(right_button);
+    Q_UNUSED(ctrl_button);
+    Q_UNUSED(shift_button);
 }
 void ImagePreviewWorker::wheelEvent(QWheelEvent* ev)
 {
-
+    Q_UNUSED(ev);
 }
 void ImagePreviewWorker::resizeEvent(QResizeEvent * ev)
 {
-
+    Q_UNUSED(ev);
 }
 
 ImagePreviewWindow::ImagePreviewWindow()

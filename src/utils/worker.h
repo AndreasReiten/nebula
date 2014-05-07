@@ -206,13 +206,13 @@ class VoxelizeWorker : public BaseWorker
         unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);
 };
 
-class AllInOneWorker : public ProjectFileWorker
+class MultiWorker : public ProjectFileWorker
 {
     Q_OBJECT
 
     public:
-        AllInOneWorker();
-        ~AllInOneWorker();
+        MultiWorker();
+        ~MultiWorker();
 
     public slots:
         void process();
