@@ -617,7 +617,7 @@ void AllInOneWorker::process()
             break;
         }
 
-        // Set file and get status
+        // Set file and get status (hi)
         DetectorFile file;
         int STATUS_OK = file.set(file_paths->at(i), context_cl);
 
