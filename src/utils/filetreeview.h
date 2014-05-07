@@ -25,6 +25,9 @@ public:
 
 public slots:
     void itemChanged(const QModelIndex & item);
+//    void itemClicked(const QModelIndex & index);
+signals:
+    void fileChanged(QString path);
 };
 
 

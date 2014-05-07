@@ -139,7 +139,7 @@ void MainWindow::initializeWorkers()
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
     connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
-    connect(setFileWorker, SIGNAL(changedFile(int)), this, SLOT(updateFileHeader(int)));
+    connect(setFileWorker, SIGNAL(changedFile(QString)), this, SLOT(updateFileHeader(QString)));
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -159,7 +159,7 @@ void MainWindow::initializeWorkers()
     connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
     connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
-    connect(readFileWorker, SIGNAL(changedFile(int)), this, SLOT(updateFileHeader(int)));
+    connect(readFileWorker, SIGNAL(changedFile(QString)), this, SLOT(updateFileHeader(QString)));
     connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(readFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -222,6 +222,7 @@ void MainWindow::initializeWorkers()
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(allInOneWorker, SIGNAL(changedFile(QString)), this, SLOT(updateFileHeader(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
     connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
@@ -346,7 +347,7 @@ void MainWindow::setDisplayFile(int value)
     if ((value >= 0) && (value < file_paths.size()))
     {
         emit imagePreviewChanged(file_paths[value]);
-        emit updateFileHeader(value);
+        emit updateFileHeader(file_paths[value]);
         imageLabel->setText(file_paths[value]);
     }
     else
@@ -355,12 +356,10 @@ void MainWindow::setDisplayFile(int value)
     }
 }
 
-void MainWindow::updateFileHeader(int value)
+void MainWindow::updateFileHeader(QString path)
 {
-//    if (file_paths.size() > value)
-//    {
-        if (files.size() > value) fileHeaderEdit->setPlainText(files[value].getHeaderText());
-//    }
+    DetectorFile file(path, NULL);
+    fileHeaderEdit->setPlainText(file.getHeaderText());
 }
 
 void MainWindow::runProjectFileThread()
@@ -1082,6 +1081,8 @@ void MainWindow::initializeInteractives()
 
         fileSelectionTree = new FileTreeView;
         fileSelectionTree->setModel(fileSelectionModel);
+
+        connect(fileSelectionTree, SIGNAL(fileChanged(QString)), this, SLOT(updateFileHeader(QString)));
 
         QGridLayout * fileBrowserLayout = new QGridLayout;
         fileBrowserLayout->setSpacing(0);

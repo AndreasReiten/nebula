@@ -11,7 +11,17 @@ FileTreeView::FileTreeView(QWidget *parent) :
 void FileTreeView::itemChanged(const QModelIndex & item)
 {
     if (item.column() == 0) resizeColumnToContents(item.column());
+
+    QFileSystemModel mod;
+
+    if ((item.isValid()) &&  mod.fileInfo(item).isFile() && mod.fileInfo(item).isReadable() && mod.fileInfo(item).exists()) emit fileChanged(mod.filePath(item));
+
 }
+
+//void itemClicked(const QModelIndex & index)
+//{
+//    if (item.column() == 0) resizeColumnToContents(item.column());
+//}
 
 FileSelectionModel::FileSelectionModel(QWidget *parent) :
     QFileSystemModel(parent)

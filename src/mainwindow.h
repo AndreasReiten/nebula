@@ -64,7 +64,7 @@ public:
 
 
 private slots:
-    void updateFileHeader(int value);
+    void updateFileHeader(QString path);
     void displayPopup(QString title, QString text);
     void omitFile();
 

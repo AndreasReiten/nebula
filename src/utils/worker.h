@@ -60,7 +60,7 @@ class BaseWorker : public QObject
         void changedGenericProgress(int value);
         void changedFormatGenericProgress(QString str);
         void changedTabWidget(int value);
-        void changedFile(int file);
+        void changedFile(QString path);
         void popup(QString title, QString text);
 
     public slots:

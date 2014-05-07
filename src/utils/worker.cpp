@@ -273,7 +273,7 @@ void SetFileWorker::process()
             // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
             if ((*suggested_q) < files->back().getQSuggestion()) (*suggested_q) = files->back().getQSuggestion();
             
-            emit changedFile(files->size()-1);
+            emit changedFile(files->last().getPath());
         }
         else
         {
@@ -366,7 +366,7 @@ void ReadFileWorker::process()
         int STATUS_OK = (*files)[i].readData();
         size_raw += (*files)[i].getBytes();
         
-        emit changedFile(i);
+        emit changedFile(files->at(i).getPath());
         
         if (!STATUS_OK)
         {
@@ -621,6 +621,8 @@ void MultiWorker::process()
 
         if (STATUS_OK)
         {
+            emit changedFile(file_paths->at(i));
+
             // Read file and get status
             int STATUS_OK = file.readData();
             if (STATUS_OK)
