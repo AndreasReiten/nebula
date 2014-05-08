@@ -128,6 +128,7 @@ signals:
     void captureFrameBuffer(QString path);
     void changedUB();
     void imagePreviewChanged(QString path);
+    void omitFile(QString str);
     
 private:
     /* UI elements for UB matrix */

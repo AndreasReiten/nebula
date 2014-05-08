@@ -555,21 +555,30 @@ void MainWindow::initializeActions()
 
 void MainWindow::omitFile()
 {
-    int index = imageSpinBox->value();
+    int value = imageSpinBox->value();
 
-    if (index < file_paths.size())
+    emit omitFile(file_paths[value]);
+
+    if (value < file_paths.size())
     {
-        file_paths.removeAt(index);
+        file_paths.removeAt(value);
 
-        print("\nRemoved file "+QString::number(index)+"of"+QString::number(files.size()));
+
 
         // Feature/Bug: Should also un-select the file in question in the file browser, or use a "load files" explicit button. Also, the file_paths array is superfluous
     }
 
-    if (index < files.size())
+    if (value < files.size())
     {
-        files.removeAt(index);
+        files.removeAt(value);
+
+        print("\nRemoved file "+QString::number(value)+"of"+QString::number(files.size()));
     }
+
+    if (value >= file_paths.size()) value = file_paths.size() - 1;
+    emit imagePreviewChanged(file_paths[value]);
+    emit updateFileHeader(file_paths[value]);
+    imageLabel->setText(file_paths[value]);
 }
 
 void MainWindow::saveScript()
@@ -1019,7 +1028,7 @@ void MainWindow::initializeInteractives()
         projectFileButton = new QPushButton;
         projectFileButton->setIcon(QIcon(":/art/proceed.png"));
         projectFileButton->setIconSize(QSize(24,24));
-        projectFileButton->setText("Correction and Projection ");
+        projectFileButton->setText("Project ");
         projectFileButton->setEnabled(false);
 
         allInOneButton = new QPushButton;
@@ -1090,6 +1099,7 @@ void MainWindow::initializeInteractives()
         fileSelectionTree->setModel(fileSelectionModel);
 
         connect(fileSelectionTree, SIGNAL(fileChanged(QString)), this, SLOT(updateFileHeader(QString)));
+        connect(this, SIGNAL(omitFile(QString)), fileSelectionModel, SLOT(removeFile(QString)));
 
         QGridLayout * fileBrowserLayout = new QGridLayout;
         fileBrowserLayout->setSpacing(0);
@@ -1558,24 +1568,24 @@ void MainWindow::initializeInteractives()
         saveSvoButton->setText("Save Octtree");
 
         QGridLayout * reconstructLayout = new QGridLayout;
-        reconstructLayout->addWidget(labelA,0,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelA,0,0,1,4);
         reconstructLayout->addWidget(formatComboBox,0,4,1,4);
-        reconstructLayout->addWidget(labelE,1,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelE,1,0,1,4);
         reconstructLayout->addWidget(activeAngleComboBox,1,4,1,4);
-        reconstructLayout->addWidget(labelB,2,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelB,2,0,1,4);
         reconstructLayout->addWidget(reduceThresholdLow,2,4,1,2);
         reconstructLayout->addWidget(reduceThresholdHigh,2,6,1,2);
-        reconstructLayout->addWidget(labelC,3,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelC,3,0,1,4);
         reconstructLayout->addWidget(projectThresholdLow,3,4,1,2);
         reconstructLayout->addWidget(projectThresholdHigh,3,6,1,2);
-        reconstructLayout->addWidget(labelD,4,0,1,4,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelD,4,0,1,4);
         reconstructLayout->addWidget(svoLevelSpinBox,4,4,1,4);
-        reconstructLayout->addWidget(labelI,5,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
-        reconstructLayout->addWidget(labelF,5,2,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelI,5,0,1,2);
+        reconstructLayout->addWidget(labelF,5,2,1,1);
         reconstructLayout->addWidget(omegaCorrectionSpinBox,5,3,1,1);
-        reconstructLayout->addWidget(labelG,5,4,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelG,5,4,1,1);
         reconstructLayout->addWidget(kappaCorrectionSpinBox,5,5,1,1);
-        reconstructLayout->addWidget(labelH,5,6,1,1,Qt::AlignHCenter | Qt::AlignVCenter);
+        reconstructLayout->addWidget(labelH,5,6,1,1);
         reconstructLayout->addWidget(phiCorrectionSpinBox,5,7,1,1);
         reconstructLayout->addWidget(voxelizeButton,8,0,1,8);
         reconstructLayout->addWidget(saveSvoButton,9,0,1,8);
@@ -1601,10 +1611,10 @@ void MainWindow::initializeInteractives()
     
     /* Function dock widget */
     {
-        QLabel * p0= new QLabel(QString("Var 1: "));
-        QLabel * p1= new QLabel(QString("Var 2: "));
-        QLabel * p2= new QLabel(QString("Var 3: "));
-        QLabel * p3= new QLabel(QString("Var 4: "));
+        QLabel * p0= new QLabel(QString("Variable 1: "));
+        QLabel * p1= new QLabel(QString("Variable 2: "));
+        QLabel * p2= new QLabel(QString("Variable 3: "));
+        QLabel * p3= new QLabel(QString("Variable 4: "));
 
         functionToggleButton = new QPushButton(tr("Toggle"));
         funcParamASpinBox = new QDoubleSpinBox;
@@ -1631,17 +1641,17 @@ void MainWindow::initializeInteractives()
         funcParamDSpinBox->setSingleStep(0.01);
         funcParamDSpinBox->setAccelerated(1);
 
-        functionDockWidget = new QDockWidget(tr("Function Settings"), this);
+        functionDockWidget = new QDockWidget(tr("Model Settings"), this);
         functionWidget = new QWidget;
 
         QGridLayout * functionLayout = new QGridLayout;
-        functionLayout->addWidget(p0,1,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        functionLayout->addWidget(p0,1,0,1,2);
         functionLayout->addWidget(funcParamASpinBox,1,2,1,2);
-        functionLayout->addWidget(p1,2,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        functionLayout->addWidget(p1,2,0,1,2);
         functionLayout->addWidget(funcParamBSpinBox,2,2,1,2);
-        functionLayout->addWidget(p2,3,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        functionLayout->addWidget(p2,3,0,1,2);
         functionLayout->addWidget(funcParamCSpinBox,3,2,1,2);
-        functionLayout->addWidget(p3,4,0,1,2,Qt::AlignHCenter | Qt::AlignVCenter);
+        functionLayout->addWidget(p3,4,0,1,2);
         functionLayout->addWidget(funcParamDSpinBox,4,2,1,2);
         functionLayout->addWidget(functionToggleButton,5,0,1,4);
         functionWidget->setLayout(functionLayout);

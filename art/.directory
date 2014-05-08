@@ -1,4 +1,6 @@
 [Dolphin]
-Timestamp=2014,4,5,12,39,27
+SortOrder=1
+SortRole=size
+Timestamp=2014,5,8,17,30,44
 Version=3
-ViewMode=2
+ViewMode=1

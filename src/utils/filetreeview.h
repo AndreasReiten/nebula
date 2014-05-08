@@ -25,7 +25,6 @@ public:
 
 public slots:
     void itemChanged(const QModelIndex & item);
-//    void itemClicked(const QModelIndex & index);
 signals:
     void fileChanged(QString path);
 };
@@ -37,22 +36,27 @@ class FileSelectionModel : public QFileSystemModel
     
 public slots:
     void setStringFilter(QString str);
-    
+//    void findMarkedIndices(QModelIndex& index);
+    void removeFile(QString path);
+    void updateAll(QModelIndex& index);
+
 public:
     explicit FileSelectionModel(QWidget *parent = 0);
 	Qt::ItemFlags flags(const QModelIndex& index) const;
-	QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
-	bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);    
-    QStringList getFiles();
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
+    bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);
     int columnCount(const QModelIndex& parent = QModelIndex()) const;
-    
+    QStringList getFiles();
+
+
 private:
-    QStringList files;
+    QStringList paths;
+    QStringList other;
     
-    QList<QModelIndex> indices;
+    QList<QModelIndex> marked;
     void addIndex(QModelIndex index);
     void removeIndex(QModelIndex index);
-    void refreshFiles();
+//    void refreshFiles();
 };
 
 #endif // FILETREEVIEW_H
