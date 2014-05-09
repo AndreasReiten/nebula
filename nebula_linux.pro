@@ -44,7 +44,7 @@ SOURCES = \
 
 RESOURCES     = nebula.qrc
 
-QMAKE_CXXFLAGS += -std=c++0x # C++11 features are needed for MiniArray and Matrix the way they are currently implemented
+QMAKE_CXXFLAGS += -std=c++0x # C++11 features are needed for Matrix
 QT += core gui opengl widgets script
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile

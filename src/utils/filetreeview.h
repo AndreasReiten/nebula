@@ -36,7 +36,6 @@ class FileSelectionModel : public QFileSystemModel
     
 public slots:
     void setStringFilter(QString str);
-//    void findMarkedIndices(QModelIndex& index);
     void removeFile(QString path);
     void updateAll(QModelIndex& index);
 
@@ -56,7 +55,6 @@ private:
     QList<QModelIndex> marked;
     void addIndex(QModelIndex index);
     void removeIndex(QModelIndex index);
-//    void refreshFiles();
 };
 
 #endif // FILETREEVIEW_H
