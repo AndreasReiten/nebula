@@ -50,8 +50,8 @@ public:
 
 
 private:
-    QStringList paths;
-    QStringList other;
+    QStringList file_paths;
+    QStringList other_paths;
     
     QList<QModelIndex> marked;
     void addIndex(QModelIndex index);

@@ -50,41 +50,43 @@ Qt::ItemFlags FileSelectionModel::flags(const QModelIndex& index) const
 	return f;
 }
 
+/* This function is used to set the data of an index, such as wether it should be
+ * shown as marked or not (Qt::CheckStateRole)
+ * */
 QVariant FileSelectionModel::data(const QModelIndex& index, int role) const
 {
-    // Returns state depending on role (for example, is this index checked or not?)
+    // Return a state depending on role
     if (index.isValid() && (index.column() == 0) && (role == Qt::CheckStateRole))
     {
         QVariant state;
-        if (other.contains(filePath(index)))
-        {
-//            if (rowCount(index))
-//            {
-                int checked_files = 0;
-                int checked_other = 0;
-                int total_files = 0;
-                int total_other = 0;
-                for (int i = 0; i < rowCount(index); i++)
-                {
-                    QModelIndex child = index.child(i,0);
 
-                    if (fileInfo(child).isFile() && fileInfo(child).isReadable() && fileInfo(child).exists())
-                    {
-                        if (child.data(Qt::CheckStateRole) == Qt::Checked) checked_files++;
-                        total_files++;
-                    }
-                    else
-                    {
-                        if (child.data(Qt::CheckStateRole) == Qt::Checked) checked_other++;
-                        total_other++;
-                    }
-                }
-                if (checked_other + checked_files == 0) state = Qt::Unchecked;
-                else if ((checked_files == total_files) && (checked_files > 0)) state = Qt::Checked;
-                else state = Qt::PartiallyChecked;
+        // If the index is not a file and has been added to other_paths
+        if (other_paths.contains(filePath(index))) state = Qt::Checked;
+//        {
+//            int checked_files = 0;
+//            int checked_other = 0;
+//            int total_files = 0;
+//            int total_other = 0;
+//            for (int i = 0; i < rowCount(index); i++)
+//            {
+//                QModelIndex child = index.child(i,0);
+
+//                if (fileInfo(child).isFile() && fileInfo(child).isReadable() && fileInfo(child).exists())
+//                {
+//                    if (child.data(Qt::CheckStateRole) == Qt::Checked) checked_files++;
+//                    total_files++;
+//                }
+//                else
+//                {
+//                    if (child.data(Qt::CheckStateRole) == Qt::Checked) checked_other++;
+//                    total_other++;
+//                }
 //            }
-        }
-        else if (paths.contains(filePath(index))) state = Qt::Checked;
+//            if ((checked_files == total_files) && (checked_files > 0)) state = Qt::Checked;
+//            else state = Qt::Checked;
+//        }
+        // Else if the index is a file and has been added to file paths
+        else if (file_paths.contains(filePath(index))) state = Qt::Checked;
         else state = Qt::Unchecked;
         
         return state;
@@ -93,6 +95,9 @@ QVariant FileSelectionModel::data(const QModelIndex& index, int role) const
     else return QFileSystemModel::data(index, role);
 }
 
+/* This function is called whenever the data of an index is changed.
+ * Emits the signal dataChanged() which calls data().
+ * */
 bool FileSelectionModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
     // Set data depending on role and corresponding value
@@ -115,8 +120,15 @@ bool FileSelectionModel::setData(const QModelIndex& index, const QVariant& value
 
 void FileSelectionModel::addIndex(QModelIndex index)
 {
-    if (fileInfo(index).isFile() && fileInfo(index).isReadable() && fileInfo(index).exists()) paths << filePath(index);
-    else other << filePath(index);
+    if (fileInfo(index).isFile() && fileInfo(index).isReadable() && fileInfo(index).exists())
+    {
+        file_paths << filePath(index);
+    }
+    else
+    {
+        other_paths << filePath(index);
+        other_paths.removeDuplicates();
+    }
 
     if (hasChildren(index))
     {
@@ -137,8 +149,8 @@ void FileSelectionModel::addIndex(QModelIndex index)
 
 void FileSelectionModel::removeIndex(QModelIndex index)
 {
-    paths.removeAll(filePath(index)); // If the index of an item changes it cannot be removed. This can occur if the number of items in a folder change.
-    other.removeAll(filePath(index));
+    file_paths.removeAll(filePath(index)); // If the index of an item changes it cannot be removed. This can occur if the number of items in a folder change.
+    other_paths.removeAll(filePath(index));
 
     if (hasChildren(index))
     {
@@ -157,18 +169,18 @@ void FileSelectionModel::removeIndex(QModelIndex index)
 
 QStringList FileSelectionModel::getFiles()
 {
-//    paths.clear();
+//    file_paths.clear();
 
 //    QModelIndex ix = index(0,0);
 
 //    findMarkedIndices(ix);
 
-    return paths;
+    return file_paths;
 }
 
 void FileSelectionModel::removeFile(QString path)
 {
-    paths.removeAll(path);
+    file_paths.removeAll(path);
 
     QModelIndex ix = index(0,0);
     updateAll(ix);
@@ -197,7 +209,7 @@ void FileSelectionModel::updateAll(QModelIndex &index)
 //{
 //    QMap<int, QVariant> m = itemData(index);
 
-//    if ((m[Qt::CheckStateRole] == Qt::Checked) && fileInfo(index).isFile() && fileInfo(index).isReadable() && fileInfo(index).exists()) paths << filePath(index);
+//    if ((m[Qt::CheckStateRole] == Qt::Checked) && fileInfo(index).isFile() && fileInfo(index).isReadable() && fileInfo(index).exists()) file_paths << filePath(index);
 
 //    if (hasChildren(index))
 //    {
