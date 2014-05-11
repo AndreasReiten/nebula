@@ -71,4 +71,6 @@ OTHER_FILES += \
     src/shaders/std_2d_col.f.glsl \ 
     src/shaders/unitcell.f.glsl \
     src/shaders/unitcell.v.glsl \
-    src/kernels/image_preview.cl
+    src/kernels/image_preview.cl \
+    src/kernels/parallel_reduction.cl \
+    src/kernels/box_sampler.cl

@@ -339,6 +339,8 @@ private:
     cl_kernel cl_svo_raytrace;
     cl_kernel cl_model_raytrace;
     cl_kernel cl_integrate_image;
+    cl_kernel cl_box_sample;
+    cl_kernel cl_parallel_reduce;
 
     cl_mem cl_glb_work;
     cl_mem cl_view_matrix_inverse;
