@@ -940,14 +940,14 @@ void VoxelizeWorker::process()
                         gpuHelpOcttree[currentId].calcBrickId((i+j)%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
 
                         // Based on brick id calculate the brick extent 
-                        unsigned int * brickId = gpuHelpOcttree[currentId].getBrickId();
+                        unsigned int * brick_id = gpuHelpOcttree[currentId].getBrickId();
                         
-                        brick_extent[j*6 + 0] = svo->getExtent()->at(0) + tmp*brickId[0];
-                        brick_extent[j*6 + 1] = svo->getExtent()->at(0) + tmp*(brickId[0]+1);
-                        brick_extent[j*6 + 2] = svo->getExtent()->at(2) + tmp*brickId[1];
-                        brick_extent[j*6 + 3] = svo->getExtent()->at(2) + tmp*(brickId[1]+1);
-                        brick_extent[j*6 + 4] = svo->getExtent()->at(4) + tmp*brickId[2];
-                        brick_extent[j*6 + 5] = svo->getExtent()->at(4) + tmp*(brickId[2]+1);
+                        brick_extent[j*6 + 0] = svo->getExtent()->at(0) + tmp*brick_id[0];
+                        brick_extent[j*6 + 1] = svo->getExtent()->at(0) + tmp*(brick_id[0]+1);
+                        brick_extent[j*6 + 2] = svo->getExtent()->at(2) + tmp*brick_id[1];
+                        brick_extent[j*6 + 3] = svo->getExtent()->at(2) + tmp*(brick_id[1]+1);
+                        brick_extent[j*6 + 4] = svo->getExtent()->at(4) + tmp*brick_id[2];
+                        brick_extent[j*6 + 5] = svo->getExtent()->at(4) + tmp*(brick_id[2]+1);
                         
                         // Offset of points accumulated thus far
                         point_data_offset[j] = accumulated_points;

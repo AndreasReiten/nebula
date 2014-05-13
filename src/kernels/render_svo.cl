@@ -21,16 +21,16 @@ __kernel void svoRayTrace(
     int2 tsf_tex_dim = get_image_dim(tsf_tex);
     int4 bricks_dim = get_image_dim(bricks);
 
-    int numOctLevels = misc_int[0];
-    int brickSize = misc_int[1];
+    int n_tree_levels = misc_int[0];
+    int brick_dim = misc_int[1];
     int isLogActive = misc_int[2];
     int isDsActive = misc_int[3];
     int isSlicingActive = misc_int[4];
     int isIntegration2DActive = misc_int[5];
     int isIntegration3DActive = misc_int[7];
 
-    float tsfOffsetLow = tsf_var[0];
-    float tsfOffsetHigh = tsf_var[1];
+    float tsf_offset_low = tsf_var[0];
+    float tsf_offset_high = tsf_var[1];
     float data_offset_low = tsf_var[2];
     float data_offset_high = tsf_var[3];
     float alpha = tsf_var[4];
@@ -122,28 +122,28 @@ __kernel void svoRayTrace(
         if(hit)
         {
             // The geometry of the intersecting part of the ray
-            float3 rayBoxOrigin = ray_near.xyz + t_near * ray_delta.xyz;
-            float3 rayBoxEnd = ray_near.xyz + t_far * ray_delta.xyz;
-            float3 rayBoxDelta = rayBoxEnd - rayBoxOrigin;
+            float3 box_ray_origin = ray_near.xyz + t_near * ray_delta.xyz;
+            float3 box_ray_end = ray_near.xyz + t_far * ray_delta.xyz;
+            float3 box_ray_delta = box_ray_end - box_ray_origin;
 
-            float3 direction = normalize(rayBoxDelta);
+            float3 direction = normalize(box_ray_delta);
 
             // Some variables we will need during ray traversal
-            float skip_length, intensity, voxelSize, voxelSizeUp;
+            float skip_length, intensity, voxel_size_this_lvl, voxel_size_prev_lvl;
             float cone_diameter;
-            float cone_diameter_low = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (numOctLevels-1))));
-            float cone_diameter_high = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (0))));
-            uint index, index_prev, brick, isMsd, isLowEnough, isEmpty;
-            float3 ray_xyz_box, rayBoxXyzPrev, ray_add_box;
-            float3 norm_xyz, norm_xyz_prev;
+            float cone_diameter_low = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (n_tree_levels-1))));
+            float cone_diameter_high = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (0))));
+            uint index_this_lvl, index_prev_lvl, brick, isMsd, isLowEnough, isEmpty;
+            float3 box_ray_xyz, box_ray_xyz_prev, ray_add_box;
+            float3 norm_pos_this_lvl, norm_pos_prev_lvl;
             float3 tmp_a, tmp_b;
             float4 lookup_pos;
-            uint4 brickId;
-            int3 normIndex;
+            uint4 brick_id;
+            int3 norm_index;
 
             // The traversal coordinate. We keep track of the previous position as well
-            ray_xyz_box = rayBoxOrigin;
-            rayBoxXyzPrev = rayBoxOrigin;
+            box_ray_xyz = box_ray_origin;
+            box_ray_xyz_prev = box_ray_origin;
 
             // Merged bits in the octtree can be read using these bitmasks:
             uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
@@ -179,8 +179,8 @@ __kernel void svoRayTrace(
                     normal[i] = matrixMultiply4x4X1x4(scalebar_rotation, normal[i]);
 
                     // Compute number of meaningful intersections (i.e. not parallel to plane, intersection, and within bounding box)
-                    float nominator = dot(center - (float4)(rayBoxOrigin, 0.0f), normal[i]);
-                    float denominator = dot((float4)(rayBoxDelta, 0.0f), normal[i]);
+                    float nominator = dot(center - (float4)(box_ray_origin, 0.0f), normal[i]);
+                    float denominator = dot((float4)(box_ray_delta, 0.0f), normal[i]);
 
                     if (denominator != 0.0f)  d[i] = nominator / denominator;
                     else d[i] = -1.0f;
@@ -196,15 +196,15 @@ __kernel void svoRayTrace(
                 {
                     if ((d[i] >= 0.0f) && (d[i] <= 1.0f))
                     {
-                        ray_xyz_box = rayBoxOrigin + d[i] * rayBoxDelta;
+                        box_ray_xyz = box_ray_origin + d[i] * box_ray_delta;
 
                         // Descend into the octtree data structure
                         // Index trackers for the traversal.
-                        index = 0;
-                        index_prev = 0;
+                        index_this_lvl = 0;
+                        index_prev_lvl = 0;
 
                         // Calculate the cone diameter at the current ray position
-                        cone_diameter = (cone_diameter_near + length(ray_xyz_box - ray_near.xyz) * cone_diameter_increment);
+                        cone_diameter = (cone_diameter_near + length(box_ray_xyz - ray_near.xyz) * cone_diameter_increment);
                         cone_diameter = clamp(cone_diameter, cone_diameter_low, cone_diameter_high);
 
                         // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
@@ -212,20 +212,20 @@ __kernel void svoRayTrace(
                         ray_add_box = direction * step_length;
 
                          // We use a normalized convention during octtree traversal. The normalized convention makes it easier to think about the octtree traversal.
-                        norm_xyz = native_divide( (float3)(ray_xyz_box.x - data_extent[0], ray_xyz_box.y - data_extent[2], ray_xyz_box.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
+                        norm_pos_this_lvl = native_divide( (float3)(box_ray_xyz.x - data_extent[0], box_ray_xyz.y - data_extent[2], box_ray_xyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
 
-                        normIndex = convert_int3(norm_xyz);
-                        normIndex = clamp(normIndex, 0, 1);
+                        norm_index = convert_int3(norm_pos_this_lvl);
+                        norm_index = clamp(norm_index, 0, 1);
 
                         // Traverse the octtree
-                        for (int j = 0; j < numOctLevels; j++)
+                        for (int j = 0; j < n_tree_levels; j++)
                         {
-                            voxelSize = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << j)));
-                            if (j > 0) voxelSizeUp = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (j-1))));
+                            voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
+                            if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
 
-                            isMsd = (oct_index[index] & mask_msd_flag) >> 31;
-                            isEmpty = !((oct_index[index] & mask_data_flag) >> 30);
-                            isLowEnough = (cone_diameter > voxelSize);
+                            isMsd = (oct_index[index_this_lvl] & mask_msd_flag) >> 31;
+                            isEmpty = !((oct_index[index_this_lvl] & mask_data_flag) >> 30);
+                            isLowEnough = (cone_diameter > voxel_size_this_lvl);
 
                             if (isEmpty)
                             {
@@ -239,7 +239,7 @@ __kernel void svoRayTrace(
                                 }
 
                                 // This ugly shit needs to go
-                                tmp_a = norm_xyz - 5.0f*direction;
+                                tmp_a = norm_pos_this_lvl - 5.0f*direction;
                                 tmp_b = 15.0f*direction;
                                 hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
 
@@ -256,30 +256,30 @@ __kernel void svoRayTrace(
                                     /* Quadrilinear interpolation between two bricks */
 
                                     // The brick in the level above
-                                    brick = oct_brick[index_prev];
-                                    brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                    brick = oct_brick[index_prev_lvl];
+                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz_prev, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                    float intensity_prev = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                    float intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                     // The brick in the current level
-                                    brick = oct_brick[index];
-                                    brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                    brick = oct_brick[index_this_lvl];
+                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                    float intensity_now = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                    float intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                     // Linear interpolation between the two intensities
-                                    intensity = intensity_prev + (intensity_now - intensity_prev)*native_divide(cone_diameter - voxelSizeUp, voxelSize - voxelSizeUp);
+                                    intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
                                 }
                                 else
                                 {
-                                    brick = oct_brick[index];
-                                    brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                    brick = oct_brick[index_this_lvl];
+                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
                                     intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
                                 }
@@ -314,7 +314,7 @@ __kernel void svoRayTrace(
                                     intensity = log10(intensity);
                                 }
 
-                                float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
@@ -326,17 +326,17 @@ __kernel void svoRayTrace(
                             else
                             {
                                 // Save values from this level to enable quadrilinear interpolation between levels
-                                index_prev = index;
-                                norm_xyz_prev = norm_xyz;
+                                index_prev_lvl = index_this_lvl;
+                                norm_pos_prev_lvl = norm_pos_this_lvl;
 
                                 // Descend to the next level
-                                index = (oct_index[index] & mask_child_index);
-                                index += normIndex.x + normIndex.y*2 + normIndex.z*4;
+                                index_this_lvl = (oct_index[index_this_lvl] & mask_child_index);
+                                index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
 
-                                //norm_xyz = (norm_xyz - convert_float(normIndex))*2.0f;
-                    norm_xyz = (norm_xyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
-                                normIndex = convert_int3(norm_xyz);
-                                normIndex = clamp(normIndex, 0, 1);
+                                //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
+                    norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
+                                norm_index = convert_int3(norm_pos_this_lvl);
+                                norm_index = clamp(norm_index, 0, 1);
                             }
                         }
                     }
@@ -345,7 +345,7 @@ __kernel void svoRayTrace(
             else
             {
                 // Ray-volume intersection
-                while ( fast_length(ray_xyz_box - rayBoxOrigin) < fast_length(rayBoxDelta) )
+                while ( fast_length(box_ray_xyz - box_ray_origin) < fast_length(box_ray_delta) )
                 {
                     // Break off early if the accumulated alpha is high enough
                     if (!isIntegration3DActive) 
@@ -354,11 +354,11 @@ __kernel void svoRayTrace(
                     }
                     
                     // Index trackers for the traversal.
-                    index = 0;
-                    index_prev = 0;
+                    index_this_lvl = 0;
+                    index_prev_lvl = 0;
 
                     // Calculate the cone diameter at the current ray position
-                    cone_diameter = (cone_diameter_near + length(ray_xyz_box - ray_near.xyz) * cone_diameter_increment);
+                    cone_diameter = (cone_diameter_near + length(box_ray_xyz - ray_near.xyz) * cone_diameter_increment);
                     cone_diameter = clamp(cone_diameter, cone_diameter_low, cone_diameter_high);
 
                     // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
@@ -366,20 +366,20 @@ __kernel void svoRayTrace(
                     ray_add_box = direction * step_length;
 
                      // We use a normalized convention. The normalized convention makes it easier to think about the octtree traversal.
-                    norm_xyz = native_divide( (float3)(ray_xyz_box.x - data_extent[0], ray_xyz_box.y - data_extent[2], ray_xyz_box.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
+                    norm_pos_this_lvl = native_divide( (float3)(box_ray_xyz.x - data_extent[0], box_ray_xyz.y - data_extent[2], box_ray_xyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
 
-                    normIndex = convert_int3(norm_xyz);
-                    normIndex = clamp(normIndex, 0, 1);
+                    norm_index = convert_int3(norm_pos_this_lvl);
+                    norm_index = clamp(norm_index, 0, 1);
 
                     // Traverse the octtree
-                    for (int j = 0; j < numOctLevels; j++)
+                    for (int j = 0; j < n_tree_levels; j++)
                     {
-                        voxelSize = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << j)));
-                        if (j > 0) voxelSizeUp = (data_extent[1] - data_extent[0])/((float)((brickSize-1) * (1 << (j-1))));
+                        voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
+                        if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
 
-                        isMsd = (oct_index[index] & mask_msd_flag) >> 31;
-                        isEmpty = !((oct_index[index] & mask_data_flag) >> 30);
-                        isLowEnough = (cone_diameter > voxelSize);
+                        isMsd = (oct_index[index_this_lvl] & mask_msd_flag) >> 31;
+                        isEmpty = !((oct_index[index_this_lvl] & mask_data_flag) >> 30);
+                        isLowEnough = (cone_diameter > voxel_size_this_lvl);
 
                         if (isEmpty)
                         {
@@ -392,14 +392,14 @@ __kernel void svoRayTrace(
                                 color.w = color.w +(1.0f - color.w)*sample.w;
                             }
 
-                            tmp_a = norm_xyz - 5.0f*direction;
+                            tmp_a = norm_pos_this_lvl - 5.0f*direction;
                             tmp_b = 15.0f*direction;
                             hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
 
                             if (hit)
                             {
-                                skip_length =  ceil(native_divide(0.5f * fast_length((tmp_a + t_far*tmp_b) - norm_xyz) * (brickSize-1) * voxelSize, step_length))* step_length;
-                                ray_xyz_box += skip_length * direction;
+                                skip_length =  ceil(native_divide(0.5f * fast_length((tmp_a + t_far*tmp_b) - norm_pos_this_lvl) * (brick_dim-1) * voxel_size_this_lvl, step_length))* step_length;
+                                box_ray_xyz += skip_length * direction;
                                 break;
                             }
                         }
@@ -426,7 +426,7 @@ __kernel void svoRayTrace(
 
                                 color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
                                 color.w = color.w +(1.f - color.w)*sample.w;
-                                ray_xyz_box += ray_add_box;
+                                box_ray_xyz += ray_add_box;
                                 break;
                             }
 
@@ -435,30 +435,30 @@ __kernel void svoRayTrace(
                                 /* Quadrilinear interpolation between two bricks */
 
                                 // The brick in the level above
-                                brick = oct_brick[index_prev];
-                                brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                brick = oct_brick[index_prev_lvl];
+                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz_prev, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                float intensity_prev = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                float intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                 // The brick in the current level
-                                brick = oct_brick[index];
-                                brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                brick = oct_brick[index_this_lvl];
+                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                float intensity_now = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                float intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                 // Linear interpolation between the two intensities
-                                intensity = intensity_prev + (intensity_now - intensity_prev)*native_divide(cone_diameter - voxelSizeUp, voxelSize - voxelSizeUp);
+                                intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
                             }
                             else
                             {
-                                brick = oct_brick[index];
-                                brickId = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                brick = oct_brick[index_this_lvl];
+                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brickId * brickSize)  + (float4)(norm_xyz, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
                                 intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
                             }
@@ -479,7 +479,7 @@ __kernel void svoRayTrace(
                                     intensity = log10(intensity);
                                 }
     
-                                    float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                                    float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
                                     sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
     
@@ -490,30 +490,30 @@ __kernel void svoRayTrace(
                                 }
 //                            }
 
-                            ray_xyz_box += ray_add_box;
+                            box_ray_xyz += ray_add_box;
                             break;
                         }
                         else
                         {
                             // Save values from this level to enable quadrilinear interpolation between levels
-                            index_prev = index;
-                            norm_xyz_prev = norm_xyz;
+                            index_prev_lvl = index_this_lvl;
+                            norm_pos_prev_lvl = norm_pos_this_lvl;
 
                             // Descend to the next level
-                            index = (oct_index[index] & mask_child_index);
-                            index += normIndex.x + normIndex.y*2 + normIndex.z*4;
+                            index_this_lvl = (oct_index[index_this_lvl] & mask_child_index);
+                            index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
 
-                            //norm_xyz = (norm_xyz - convert_float(normIndex))*2.0f;
-                            norm_xyz = (norm_xyz - (float3)((float)normIndex.x, (float)normIndex.y, (float)normIndex.z))*2.0f;
-                            normIndex = convert_int3(norm_xyz);
-                            normIndex = clamp(normIndex, 0, 1);
+                            //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
+                            norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
+                            norm_index = convert_int3(norm_pos_this_lvl);
+                            norm_index = clamp(norm_index, 0, 1);
                         }
                     }
 
                     // Help the ray progress in case it gets stuck between two bricks
-                    if (fast_distance(ray_xyz_box, rayBoxXyzPrev) < step_length*0.5f) ray_xyz_box += ray_add_box;
+                    if (fast_distance(box_ray_xyz, box_ray_xyz_prev) < step_length*0.5f) box_ray_xyz += ray_add_box;
 
-                    rayBoxXyzPrev = ray_xyz_box;
+                    box_ray_xyz_prev = box_ray_xyz;
                 }
             }
             if (!isDsActive)color *= brightness;
@@ -527,7 +527,7 @@ __kernel void svoRayTrace(
                 integrated_intensity = log10(integrated_intensity);
             }
     
-            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+            float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
             sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
     

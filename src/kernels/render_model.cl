@@ -46,8 +46,8 @@ __kernel void modelRayTrace(
     int2 ray_tex_dim = get_image_dim(ray_tex);
     int2 tsf_tex_dim = get_image_dim(tsf_tex);
 
-    float tsfOffsetLow = tsf_var[0];
-    float tsfOffsetHigh = tsf_var[1];
+    float tsf_offset_low = tsf_var[0];
+    float tsf_offset_high = tsf_var[1];
     float data_offset_low = tsf_var[2];
     float data_offset_high = tsf_var[3];
     float alpha = tsf_var[4];
@@ -141,7 +141,7 @@ __kernel void modelRayTrace(
         float4 sample = (float4)(0.0f);
 
 
-float3 rayBoxDelta;
+float3 box_ray_delta;
 
         if(hit)
         {
@@ -149,14 +149,14 @@ float3 rayBoxDelta;
             float cone_diameter, step_length;
             float cone_diameter_low = 0.05; // Only acts as a scaling factor
 
-            float3 rayBoxOrigin = ray_near.xyz + t_near * ray_delta.xyz;
-            float3 rayBoxEnd = ray_near.xyz + t_far * ray_delta.xyz;
-            rayBoxDelta = rayBoxEnd - rayBoxOrigin;
-            float3 direction = normalize(rayBoxDelta);
+            float3 box_ray_origin = ray_near.xyz + t_near * ray_delta.xyz;
+            float3 box_ray_end = ray_near.xyz + t_far * ray_delta.xyz;
+            box_ray_delta = box_ray_end - box_ray_origin;
+            float3 direction = normalize(box_ray_delta);
             float3 ray_add_box;
-            float rayBoxLength = fast_length(rayBoxDelta);
+            float rayBoxLength = fast_length(box_ray_delta);
 
-            float3 ray_xyz_box = rayBoxOrigin;
+            float3 box_ray_xyz = box_ray_origin;
             float intensity;
 
             if (isSlicingActive)
@@ -182,8 +182,8 @@ float3 rayBoxDelta;
                     normal[i] = matrixMultiply4x4X1x4(scalebar_rotation, normal[i]);
 
                     // Compute number of meaningful intersections (i.e. not parallel to plane, intersection, and within bounding box)
-                    float nominator = dot(center - (float4)(rayBoxOrigin, 0.0f), normal[i]);
-                    float denominator = dot((float4)(rayBoxDelta, 0.0f), normal[i]);
+                    float nominator = dot(center - (float4)(box_ray_origin, 0.0f), normal[i]);
+                    float denominator = dot((float4)(box_ray_delta, 0.0f), normal[i]);
 
                     if (denominator != 0.0f)  d[i] = nominator / denominator;
                     else d[i] = -1.0f;
@@ -199,9 +199,9 @@ float3 rayBoxDelta;
                 {
                     if ((d[i] >= 0.0f) && (d[i] <= 1.0f))
                     {
-                        ray_xyz_box = rayBoxOrigin + d[i] * rayBoxDelta;
+                        box_ray_xyz = box_ray_origin + d[i] * box_ray_delta;
 
-                        intensity = model(ray_xyz_box, parameters);
+                        intensity = model(box_ray_xyz, parameters);
 
                         if(isLogActive)
                         {
@@ -209,7 +209,7 @@ float3 rayBoxDelta;
                             intensity = log10(intensity);
                         }
 
-                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                        float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
                         sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
                         color.xyz += (1.0f - color.w)*sample.xyz*sample.w;
@@ -220,16 +220,16 @@ float3 rayBoxDelta;
             else
             {
                 // Ray-volume intersection
-                while ( fast_length(ray_xyz_box - rayBoxOrigin) < rayBoxLength )
+                while ( fast_length(box_ray_xyz - box_ray_origin) < rayBoxLength )
                 {
                     // Calculate the cone diameter at the current ray position
-                    cone_diameter = (cone_diameter_near + length(ray_xyz_box - ray_near.xyz) * cone_diameter_increment);
+                    cone_diameter = (cone_diameter_near + length(box_ray_xyz - ray_near.xyz) * cone_diameter_increment);
 
                     // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
                     step_length = cone_diameter;
                     ray_add_box = direction * step_length;
 
-                    intensity = model(ray_xyz_box, parameters);
+                    intensity = model(box_ray_xyz, parameters);
 
                     integrated_intensity += intensity * step_length;
                     
@@ -241,7 +241,7 @@ float3 rayBoxDelta;
                             intensity = log10(intensity);
                         }
     
-                        float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                        float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
                         sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
                         sample.w *= alpha;
@@ -250,16 +250,16 @@ float3 rayBoxDelta;
                         {
                             float3 gradient_vector = (float3)(
                                 native_divide(
-                                    - model((float3)(ray_xyz_box.x - step_length, ray_xyz_box.y, ray_xyz_box.z), parameters)
-                                    + model((float3)(ray_xyz_box.x + step_length, ray_xyz_box.y, ray_xyz_box.z), parameters),
+                                    - model((float3)(box_ray_xyz.x - step_length, box_ray_xyz.y, box_ray_xyz.z), parameters)
+                                    + model((float3)(box_ray_xyz.x + step_length, box_ray_xyz.y, box_ray_xyz.z), parameters),
                                     step_length),
                                 native_divide(
-                                    - model((float3)(ray_xyz_box.x, ray_xyz_box.y - step_length, ray_xyz_box.z), parameters)
-                                    + model((float3)(ray_xyz_box.x, ray_xyz_box.y + step_length, ray_xyz_box.z), parameters),
+                                    - model((float3)(box_ray_xyz.x, box_ray_xyz.y - step_length, box_ray_xyz.z), parameters)
+                                    + model((float3)(box_ray_xyz.x, box_ray_xyz.y + step_length, box_ray_xyz.z), parameters),
                                     step_length),
                                 native_divide(
-                                    - model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z - step_length), parameters)
-                                    + model((float3)(ray_xyz_box.x, ray_xyz_box.y, ray_xyz_box.z + step_length), parameters),
+                                    - model((float3)(box_ray_xyz.x, box_ray_xyz.y, box_ray_xyz.z - step_length), parameters)
+                                    + model((float3)(box_ray_xyz.x, box_ray_xyz.y, box_ray_xyz.z + step_length), parameters),
                                     step_length));
                             float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f;
                             sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
@@ -275,7 +275,7 @@ float3 rayBoxDelta;
     
                         if (color.w > 0.999f) break;
                     }
-                    ray_xyz_box += ray_add_box;
+                    box_ray_xyz += ray_add_box;
                 }
                 color *= brightness;
             }
@@ -290,7 +290,7 @@ float3 rayBoxDelta;
                 integrated_intensity = log10(integrated_intensity);
             }
     
-            float2 tsfPosition = (float2)(tsfOffsetLow + (tsfOffsetHigh - tsfOffsetLow) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+            float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
     
             sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
     

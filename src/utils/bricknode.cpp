@@ -23,7 +23,7 @@ void BrickNode::print()
     std::cout << "Child: "<< child <<  std::endl;
     std::cout << "Msd: "<< msdFlag <<  std::endl;
     std::cout << "Data: "<< dataFlag <<  std::endl;
-    std::cout << "Brick id: ["<< brickId[0] << ", "<< brickId[1] << ", "<< brickId[2] << "]" << std::endl;
+    std::cout << "Brick id: ["<< brick_id[0] << ", "<< brick_id[1] << ", "<< brick_id[2] << "]" << std::endl;
     std::cout << "Pool id: ["<< poolId[0] << ", "<< poolId[1] << ", "<< poolId[2] << "]" << std::endl;
 }
 
@@ -50,15 +50,15 @@ void BrickNode::calcBrickId(unsigned int octant, BrickNode * par)
         unsigned int * parentBrickId = par->getBrickId();
 
         // The brick id of this brick
-        this->brickId[0] = parentBrickId[0]*2 + oct_x;
-        this->brickId[1] = parentBrickId[1]*2 + oct_y;
-        this->brickId[2] = parentBrickId[2]*2 + oct_z;
+        this->brick_id[0] = parentBrickId[0]*2 + oct_x;
+        this->brick_id[1] = parentBrickId[1]*2 + oct_y;
+        this->brick_id[2] = parentBrickId[2]*2 + oct_z;
     }
     else
     {
-        this->brickId[0] = 0;
-        this->brickId[1] = 0;
-        this->brickId[2] = 0;
+        this->brick_id[0] = 0;
+        this->brick_id[1] = 0;
+        this->brick_id[2] = 0;
     }
 }
 
@@ -84,9 +84,9 @@ void BrickNode::setLevel(unsigned int index)
 }
 void BrickNode::setBrickId(unsigned int x, unsigned int y, unsigned int z)
 {
-    this->brickId[0] = x;
-    this->brickId[1] = y;
-    this->brickId[2] = z;
+    this->brick_id[0] = x;
+    this->brick_id[1] = y;
+    this->brick_id[2] = z;
 }
 void BrickNode::setPoolId(unsigned int x, unsigned int y, unsigned int z)
 {
@@ -119,13 +119,13 @@ unsigned int BrickNode::getLevel()
 }
 unsigned int * BrickNode::getBrickId()
 {
-    return this->brickId;
+    return this->brick_id;
 }
 unsigned int BrickNode::getBrickId1D()
 {
     // Requires the correct level to be set first
 
-    unsigned int brickId1D = brickId[0] + brickId[1]*(1 << level) + brickId[2]*(1 << level)*(1 << level);
+    unsigned int brickId1D = brick_id[0] + brick_id[1]*(1 << level) + brick_id[2]*(1 << level)*(1 << level);
 
     return brickId1D;
 }

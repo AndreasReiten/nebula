@@ -46,7 +46,7 @@ class BrickNode {
         unsigned int child;
 
         unsigned int level;
-        unsigned int brickId[3];
+        unsigned int brick_id[3];
         unsigned int poolId[3];
 };
 #endif
