@@ -139,7 +139,13 @@ protected:
 
 private:
     SharedContextWindow * shared_window;
-    
+
+    // Sum
+    float sumGpuArray(cl_mem cl_data_array, unsigned int read_size);
+
+    // Box integral
+    float boxIntegral();
+
     // Boolean checks
     bool isInitialized;
     bool isRayTexInitialized;

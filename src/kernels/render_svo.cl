@@ -140,6 +140,7 @@ __kernel void svoRayTrace(
             float4 lookup_pos;
             uint4 brick_id;
             int3 norm_index;
+            float intensity_this_lvl, intensity_prev_lvl;
 
             // The traversal coordinate. We keep track of the previous position as well
             box_ray_xyz = box_ray_origin;
@@ -261,7 +262,7 @@ __kernel void svoRayTrace(
 
                                     lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                    float intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                    intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                     // The brick in the current level
                                     brick = oct_brick[index_this_lvl];
@@ -269,7 +270,7 @@ __kernel void svoRayTrace(
 
                                     lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                    float intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                    intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                     // Linear interpolation between the two intensities
                                     intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
@@ -381,56 +382,41 @@ __kernel void svoRayTrace(
                         isEmpty = !((oct_index[index_this_lvl] & mask_data_flag) >> 30);
                         isLowEnough = (cone_diameter > voxel_size_this_lvl);
 
-                        if (isEmpty)
-                        {
-                            // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
-
-                            if (isDsActive)
-                            {
-                                sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
-                                color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
-                                color.w = color.w +(1.0f - color.w)*sample.w;
-                            }
-
-                            tmp_a = norm_pos_this_lvl - 5.0f*direction;
-                            tmp_b = 15.0f*direction;
-                            hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
-
-                            if (hit)
-                            {
-                                skip_length =  ceil(native_divide(0.5f * fast_length((tmp_a + t_far*tmp_b) - norm_pos_this_lvl) * (brick_dim-1) * voxel_size_this_lvl, step_length))* step_length;
-                                box_ray_xyz += skip_length * direction;
-                                break;
-                            }
-                        }
-                        else if (isMsd || isLowEnough)
+                        if (isMsd || isLowEnough || isEmpty)
                         {
                             // Sample brick
                             if (isDsActive)
                             {
+                                /* Color the data structure*/
+                                if (!isEmpty)
+                                {
+                                    if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 0.50f);
+                                    else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
+                                    else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 0.60f);
+                                    else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 0.60f);
+                                    else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
+                                    else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 0.65f);
+                                    else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 0.70f);
+                                    else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 0.75f);
+                                    else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 0.80f);
+                                    else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 0.85f);
+                                    else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 0.90f);
+                                    else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 0.95f);
+                                    else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                    else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
 
-                                if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 1.00f);
-                                else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                                else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                                else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                                else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                                else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-
-                                color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
-                                color.w = color.w +(1.f - color.w)*sample.w;
-                                box_ray_xyz += ray_add_box;
-                                break;
+                                    color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
+                                    color.w = color.w +(1.f - color.w)*sample.w;
+                                    box_ray_xyz += ray_add_box;
+                                }
+                                else
+                                {
+                                    sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
+                                    color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
+                                    color.w = color.w +(1.0f - color.w)*sample.w;
+                                }
                             }
-
-                            if (isLowEnough && (j >= 1))
+                            else if (j >= 1)
                             {
                                 /* Quadrilinear interpolation between two bricks */
 
@@ -440,7 +426,7 @@ __kernel void svoRayTrace(
 
                                 lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                float intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                 // The brick in the current level
                                 brick = oct_brick[index_this_lvl];
@@ -448,13 +434,15 @@ __kernel void svoRayTrace(
 
                                 lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
 
-                                float intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                if (isEmpty) intensity_this_lvl = 0;
+                                else intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                 // Linear interpolation between the two intensities
                                 intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
                             }
                             else
                             {
+                                /* No interpolation */
                                 brick = oct_brick[index_this_lvl];
                                 brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
@@ -464,33 +452,46 @@ __kernel void svoRayTrace(
                             }
 
 
-                            // Sample color
-//                            if (isIntegration2DActive && !isDsActive)
-//                            {
-                                integrated_intensity += intensity * step_length;
-//                            }
-//                            else
-//                            {
-                                if (!isIntegration3DActive)
-                                {
+                            integrated_intensity += intensity * step_length;
+                            if (!isIntegration3DActive)
+                            {
                                 if(isLogActive)
                                 {
                                     if (intensity < 0.f) intensity = 0.f;
                                     intensity = log10(intensity);
                                 }
-    
-                                    float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-    
-                                    sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-    
-                                    sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);
-    
-                                    color.xyz += (1.f - color.w)*sample.xyz*sample.w;
-                                    color.w += (1.f - color.w)*sample.w;
-                                }
-//                            }
 
-                            box_ray_xyz += ray_add_box;
+                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+
+                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+
+                                sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);
+
+                                color.xyz += (1.f - color.w)*sample.xyz*sample.w;
+                                color.w += (1.f - color.w)*sample.w;
+                            }
+
+
+                            /* Traverse to the next sample along the ray */
+                            if (isEmpty)
+                            {
+                                // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
+
+                                tmp_a = norm_pos_this_lvl - 5.0f*direction;
+                                tmp_b = 15.0f*direction;
+                                hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
+
+                                if (hit)
+                                {
+                                    skip_length =  ceil(native_divide(0.5f * fast_length((tmp_a + t_far*tmp_b) - norm_pos_this_lvl) * (brick_dim-1) * voxel_size_this_lvl, step_length))* step_length;
+                                    box_ray_xyz += skip_length * direction;
+                                }
+                            }
+                            else
+                            {
+                                box_ray_xyz += ray_add_box;
+                            }
+
                             break;
                         }
                         else
