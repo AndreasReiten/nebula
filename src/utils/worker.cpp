@@ -92,7 +92,7 @@ void BaseWorker::setFilePaths(QStringList * file_paths)
     this->file_paths = file_paths;
 }
 
-void BaseWorker::setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q)
+void BaseWorker::setQSpaceInfo(float suggested_search_radius_low, float suggested_search_radius_high, float suggested_q)
 {
 
     this->suggested_search_radius_low = suggested_search_radius_low;
@@ -106,7 +106,7 @@ void BaseWorker::setFiles(QList<DetectorFile> * files)
 
     this->files = files;
 }
-void BaseWorker::setReducedPixels(Matrix<float> * reduced_pixels)
+void BaseWorker::setReducedPixels(Matrix<float> *reduced_pixels)
 {
 
     this->reduced_pixels = reduced_pixels;
@@ -234,14 +234,14 @@ void SetFileWorker::process()
     }
 
     // Emit to appropriate slots
-    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Setting "+QString::number(file_paths->size())+" files (headers etc.)...");
+    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Processing "+QString::number(file_paths->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
     emit changedTabWidget(0);
 
     // Reset suggested values
-    (*suggested_q) = std::numeric_limits<float>::min();
-    (*suggested_search_radius_low) = std::numeric_limits<float>::max();
-    (*suggested_search_radius_high) = std::numeric_limits<float>::min();
+    suggested_q = std::numeric_limits<float>::min();
+    suggested_search_radius_low = std::numeric_limits<float>::max();
+    suggested_search_radius_high = std::numeric_limits<float>::min();
 
     // Clear previous data
     files->clear();
@@ -267,11 +267,11 @@ void SetFileWorker::process()
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
-            if ((*suggested_search_radius_low) > files->back().getSearchRadiusLowSuggestion()) (*suggested_search_radius_low) = files->back().getSearchRadiusLowSuggestion();
-            if ((*suggested_search_radius_high) < files->back().getSearchRadiusHighSuggestion()) (*suggested_search_radius_high) = files->back().getSearchRadiusHighSuggestion();
+            if (suggested_search_radius_low > files->back().getSearchRadiusLowSuggestion()) suggested_search_radius_low = files->back().getSearchRadiusLowSuggestion();
+            if (suggested_search_radius_high < files->back().getSearchRadiusHighSuggestion()) suggested_search_radius_high = files->back().getSearchRadiusHighSuggestion();
 
             // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
-            if ((*suggested_q) < files->back().getQSuggestion()) (*suggested_q) = files->back().getQSuggestion();
+            if (suggested_q < files->back().getQSuggestion()) suggested_q = files->back().getQSuggestion();
             
             emit changedFile(files->last().getPath());
         }
@@ -288,21 +288,22 @@ void SetFileWorker::process()
 
     if (!kill_flag)
     {
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were successfully set (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
+        emit changedMessageString(" "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were processed successfully (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
 
         // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
-        float resolution_min = 2*(*suggested_q)/(*suggested_search_radius_high);
-        float resolution_max = 2*(*suggested_q)/(*suggested_search_radius_low);
+        float resolution_min = 2*suggested_q/suggested_search_radius_high;
+        float resolution_max = 2*suggested_q/suggested_search_radius_low;
 
 //        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2.0);
         float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2.0);
 
-        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number((*suggested_q), 'g', 3)+" inverse "+trUtf8("Å"));
-        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number((*suggested_search_radius_low), 'g', 2)+" to "+QString::number((*suggested_search_radius_high), 'g', 2)+" inverse "+trUtf8("Å"));
+        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
+        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
         if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggested minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Use at least octree level "+QString::number((int)level_max)+" to achieve good resolution");
     }
 
+    emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
     emit finished();
 }
 
@@ -384,7 +385,7 @@ void ReadFileWorker::process()
 
     if (!kill_flag)
     {
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully read ("+QString::number(size_raw/1000000.0, 'f', 3)+" MB) (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'f', 3)+" ms/file)");
+        emit changedMessageString(" "+QString::number(files->size())+" files were read successfully ("+QString::number(size_raw/1000000.0, 'f', 3)+" MB) (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'f', 3)+" ms/file)");
     }
 
     emit finished();
@@ -436,7 +437,7 @@ void ProjectFileWorker::process()
     
     if (files->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No files specified!");
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No files have been specified!");
 
         emit changedMessageString(str);
 
@@ -444,7 +445,7 @@ void ProjectFileWorker::process()
     }
 
     // Emit to appropriate slots
-    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Correcting and Projecting "+QString::number(files->size())+" files...");
+    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Processing "+QString::number(files->size())+" files...");
     emit changedFormatGenericProgress(QString("Progress: %p%"));
 
     QElapsedTimer stopwatch;
@@ -452,6 +453,7 @@ void ProjectFileWorker::process()
     kill_flag = false;
 
     size_t n = 0;
+
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
     
     for (size_t i = 0; i < (size_t) files->size(); i++)
@@ -464,7 +466,7 @@ void ProjectFileWorker::process()
         }
 
         // Project and correct file and get status
-        if (n > reduced_pixels->size())
+        if (n >= reduced_pixels->size())
         {
             // Break if there is too much data.
             emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Warning: There was too much data!"));
@@ -479,7 +481,7 @@ void ProjectFileWorker::process()
             (*files)[i].setOffsetKappa(offset_kappa);
             (*files)[i].setOffsetPhi(offset_phi);
 
-            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
+            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
             if (!STATUS_OK)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: could not process data \""+files->at(i).getPath()+"\"");
@@ -520,7 +522,7 @@ void ProjectFileWorker::process()
             }
         }
     }
-    else if (0) // A gradiented box
+    else if (1) // A box
     {
         int res = 32;
         reduced_pixels->resize(1, res*res*res*4);
@@ -534,7 +536,8 @@ void ProjectFileWorker::process()
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (((float)i/(float)(res-1)) - 0.5)*2.0*1.25;
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*1.25;
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*1.25;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = 10.0;
+//                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
                 }
             }
         }
@@ -542,7 +545,7 @@ void ProjectFileWorker::process()
 
     if (!kill_flag)
     {
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(files->size())+" files were successfully projected and merged ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB) (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'f', 3)+" ms/file)");
+        emit changedMessageString(" "+QString::number(files->size())+" files were processed successfully ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB) (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'f', 3)+" ms/file)");
     }
 
     emit finished();
@@ -579,7 +582,7 @@ void MultiWorker::process()
     kill_flag = false;
     if (file_paths->size() <= 0)
     {
-        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No file paths have been specified");
+        QString str("\n["+QString(this->metaObject()->className())+"] Warning: No files have been specified");
 
         emit changedMessageString(str);
         kill_flag = true;
@@ -594,9 +597,9 @@ void MultiWorker::process()
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
-    (*suggested_q) = std::numeric_limits<float>::min();
-    (*suggested_search_radius_low) = std::numeric_limits<float>::max();
-    (*suggested_search_radius_high) = std::numeric_limits<float>::min();
+    suggested_q = std::numeric_limits<float>::min();
+    suggested_search_radius_low = std::numeric_limits<float>::max();
+    suggested_search_radius_high = std::numeric_limits<float>::min();
 
     QElapsedTimer stopwatch;
     stopwatch.start();
@@ -646,16 +649,16 @@ void MultiWorker::process()
                     file.setOffsetKappa(offset_kappa);
                     file.setOffsetPhi(offset_phi);
 
-                    int STATUS_OK = file.filterData( &n, reduced_pixels->data(), threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
+                    int STATUS_OK = file.filterData( &n, reduced_pixels, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
                     
                     if (STATUS_OK)
                     {
                         // Get suggestions on the minimum search radius that can safely be applied during interpolation
-                        if ((*suggested_search_radius_low) > file.getSearchRadiusLowSuggestion()) (*suggested_search_radius_low) = file.getSearchRadiusLowSuggestion();
-                        if ((*suggested_search_radius_high) < file.getSearchRadiusHighSuggestion()) (*suggested_search_radius_high) = file.getSearchRadiusHighSuggestion();
+                        if (suggested_search_radius_low > file.getSearchRadiusLowSuggestion()) suggested_search_radius_low = file.getSearchRadiusLowSuggestion();
+                        if (suggested_search_radius_high < file.getSearchRadiusHighSuggestion()) suggested_search_radius_high = file.getSearchRadiusHighSuggestion();
 
                         // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
-                        if ((*suggested_q) < file.getQSuggestion()) (*suggested_q) = file.getQSuggestion();
+                        if (suggested_q < file.getQSuggestion()) suggested_q = file.getQSuggestion();
 
                         n_ok_files++;
                     }
@@ -689,21 +692,22 @@ void MultiWorker::process()
 
     if (!kill_flag)
     {
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+QString::number(n_ok_files)+" of "+QString::number(file_paths->size())+" files were successfully processed ("+QString::number(size_raw/1000000.0, 'f', 3)+" MB -> "+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB, " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
+        emit changedMessageString(" "+QString::number(n_ok_files)+" of "+QString::number(file_paths->size())+" files were successfully processed ("+QString::number(size_raw/1000000.0, 'f', 3)+" MB -> "+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB, " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
         // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
-        float resolution_min = 2*(*suggested_q)/(*suggested_search_radius_high);
-        float resolution_max = 2*(*suggested_q)/(*suggested_search_radius_low);
+        float resolution_min = 2*suggested_q/suggested_search_radius_high;
+        float resolution_max = 2*suggested_q/suggested_search_radius_low;
 
 //        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2.0);
         float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2.0);
 
-        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number((*suggested_q), 'g', 3)+" inverse "+trUtf8("Å"));
-        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number((*suggested_search_radius_low), 'g', 2)+" to "+QString::number((*suggested_search_radius_high), 'g', 2)+" inverse "+trUtf8("Å"));
+        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
+        if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
         if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggested minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Use at least octree level "+QString::number((int)level_max)+" to achieve good resolution");
     }
 
+    emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
     emit finished();
 }
 
@@ -782,9 +786,7 @@ void VoxelizeWorker::process()
         size_t n_points_brick = svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension();
 
         // The extent of the volume
-        svo->setExtent(*suggested_q);
-        
-        svo->print();
+        svo->setExtent(suggested_q);
         
         // The extent of the volume
         svo->setMetaData("You can write notes about the dataset here.");
@@ -907,7 +909,7 @@ void VoxelizeWorker::process()
 
                 // Find the correct range search radius
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
-                if (search_radius < (*suggested_search_radius_high)) search_radius = (*suggested_search_radius_high);
+                if (search_radius < suggested_search_radius_high) search_radius = suggested_search_radius_high;
 
                 double tmp = (svo->getExtent()->at(1) - svo->getExtent()->at(0)) / (1 << lvl);
 
@@ -1214,6 +1216,8 @@ void VoxelizeWorker::process()
 
             }
         }
+
+        svo->print();
 
         clReleaseMemObject(point_data_cl);
         clReleaseMemObject(point_data_offset_cl);

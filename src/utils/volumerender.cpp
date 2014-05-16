@@ -275,13 +275,10 @@ float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, si
     Matrix<size_t> global_size(1,1);
     unsigned int read_offset = 0;
     unsigned int write_offset;
-//  qDebug() << __LINE__;
+
     global_size[0] = read_size + (read_size % local_size[0] ? local_size[0] - (read_size % local_size[0]) : 0);
     write_offset = global_size[0];
 
-
-
-//qDebug() << __LINE__;
     bool forth = true;
     float sum;
 
@@ -292,23 +289,17 @@ float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, si
     err |= clSetKernelArg(cl_parallel_reduce, 3, sizeof(cl_uint), &read_offset);
     err |= clSetKernelArg(cl_parallel_reduce, 4, sizeof(cl_uint), &write_offset);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//qDebug() << __LINE__;
+
     /* Launch kernel repeatedly until the summing is done */
     while (read_size > 1)
     {
-//        qDebug() << global_size[0] << local_size[0] << read_size << read_offset << write_offset;
-
         err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_parallel_reduce, 1, 0, global_size.data(), local_size.data(), 0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         err = clFinish(*context_cl->getCommandQueue());
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-
-
         /* Extract the sum */
-
-//        qDebug() << "yoyo";
         err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
             cl_data,
             CL_TRUE,
@@ -317,11 +308,6 @@ float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, si
             &sum,
             0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-        /* Extract the sum */
-
-//        qDebug() << "sum->" << sum << forth;
-
-        // E det at global size bli feil te avlesning i siste iterasjon for !forth
 
         /* Prepare the kernel parameters for the next iteration */
         forth = !forth;
@@ -353,8 +339,6 @@ float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, si
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     }
-//qDebug() << __LINE__;
-
 
     return sum;
 }
@@ -1725,7 +1709,7 @@ float VolumeRenderWorker::sumViewBox()
     int global_size = read_size + (read_size % local_size ? local_size - (read_size % local_size) : 0);
     int padded_size = global_size + global_size/local_size;
 
-qDebug() << read_size << global_size << padded_size;
+//qDebug() << read_size << global_size << padded_size;
 
     /* Prepare array */
     cl_mem  cl_data_array = clCreateBuffer(*context_cl->getContext(),
@@ -1735,74 +1719,57 @@ qDebug() << read_size << global_size << padded_size;
                                  &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-qDebug() << __LINE__;
     /* Prepare and launch the kernel */
     Matrix<size_t> box_global_size(1,3,samples_per_side);
     Matrix<size_t> box_local_size(1,3,4);
 
     unsigned int n_tree_levels = misc_ints[0];
     unsigned int brick_dim = misc_ints[1];
-qDebug() << __LINE__;
+
     err = clSetKernelArg(cl_box_sampler, 0, sizeof(cl_mem), (void *) &cl_svo_pool);
     err |= clSetKernelArg(cl_box_sampler, 1, sizeof(cl_mem), (void *) &cl_svo_index);
     err |= clSetKernelArg(cl_box_sampler, 2, sizeof(cl_mem), (void *) &cl_svo_brick);
     err |= clSetKernelArg(cl_box_sampler, 3, sizeof(cl_mem), (void *) &cl_data_view_extent);
-    err |= clSetKernelArg(cl_box_sampler, 4, sizeof(cl_sampler), &cl_svo_pool_sampler);
-    err |= clSetKernelArg(cl_box_sampler, 5, sizeof(cl_uint), &n_tree_levels);
-    err |= clSetKernelArg(cl_box_sampler, 6, sizeof(cl_uint), &brick_dim);
-    err |= clSetKernelArg(cl_box_sampler, 7, sizeof(cl_mem), (void *) &cl_data_array);
+    err |= clSetKernelArg(cl_box_sampler, 4, sizeof(cl_mem), (void *) &cl_data_extent);
+    err |= clSetKernelArg(cl_box_sampler, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
+    err |= clSetKernelArg(cl_box_sampler, 6, sizeof(cl_uint), &n_tree_levels);
+    err |= clSetKernelArg(cl_box_sampler, 7, sizeof(cl_uint), &brick_dim);
+    err |= clSetKernelArg(cl_box_sampler, 8, sizeof(cl_mem), (void *) &cl_data_array);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-qDebug() << __LINE__;
-    box_global_size.print();
-    box_local_size.print();
 
     err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), cl_box_sampler, 3, 0, box_global_size.data(), box_local_size.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-qDebug() << __LINE__;
+
     err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-qDebug() << __LINE__;
+//    data_view_extent.print(2,"Data View Extent");
 
+//Matrix<float> tmp(1,read_size,0);
 
-Matrix<float> tmp(1,read_size,0);
-
-//err = clEnqueueWriteBuffer (*context_cl->getCommandQueue(),
+//err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
 //    cl_data_array,
 //    CL_TRUE,
 //    0,
 //    tmp.bytes(),
 //    tmp.data(),
-//    0,0,0);
+//    0, NULL, NULL);
 //if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
+//    double zum = 0;
 
-err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-    cl_data_array,
-    CL_TRUE,
-    0,
-    tmp.bytes(),
-    tmp.data(),
-    0, NULL, NULL);
-if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    for (int i = 0; i < read_size; i++)
+//    {
+//        zum += tmp[i];
+//    }
 
-    double zum = 0;
-
-    for (int i = 0; i < read_size; i++)
-    {
-        zum += tmp[i];
-    }
-
-    qDebug() << "Sum should be:" << zum;
-
-    /* Sum the array */
     float sum = sumGpuArray(cl_data_array, read_size, local_size);
-    qDebug() << "The sum is:" << sum;
+    qDebug() << "SUM"  << "GPU" << sum;
 
     /* Clean up */
     err = clReleaseMemObject(cl_data_array);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-qDebug() << __LINE__;
+
     return sum;
 }
 

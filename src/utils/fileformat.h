@@ -46,7 +46,7 @@ class DetectorFile
 
         int set(QString path, OpenCLContext * context);
         int readData();
-        int filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive = true);
+        int filterData(size_t * n, Matrix<float> *outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive = true);
 
         Matrix<float> & data();
         int getWidth() const;

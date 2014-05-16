@@ -46,9 +46,9 @@ class BaseWorker : public QObject
         ~BaseWorker();
 
         void setFilePaths(QStringList * file_paths);
-        void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
+//        void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
         void setFiles(QList<DetectorFile> * files);
-        void setReducedPixels(Matrix<float> *reduced_pixels);
+        void setReducedPixels(Matrix<float> * reduced_pixels);
         void setOpenCLContext(OpenCLContext * context);
         void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
@@ -62,6 +62,7 @@ class BaseWorker : public QObject
         void changedTabWidget(int value);
         void changedFile(QString path);
         void popup(QString title, QString text);
+        void qSpaceInfoChanged(float suggested_search_radius_low, float suggested_search_radius_high, float suggested_q);
 
     public slots:
         void killProcess();
@@ -73,6 +74,7 @@ class BaseWorker : public QObject
         void setReduceThresholdHigh(double value);
         void setProjectThresholdLow(double value);
         void setProjectThresholdHigh(double value);
+        void setQSpaceInfo(float suggested_search_radius_low, float suggested_search_radius_high, float suggested_q);
 
     protected:
         // Runtime
@@ -90,9 +92,9 @@ class BaseWorker : public QObject
 
         // Voxelize
         SparseVoxelOcttree * svo;
-        float * suggested_search_radius_low;
-        float * suggested_search_radius_high;
-        float * suggested_q;
+        float  suggested_search_radius_low;
+        float  suggested_search_radius_high;
+        float  suggested_q;
 
         // File treatment
         int active_angle;

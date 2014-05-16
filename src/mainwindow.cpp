@@ -129,7 +129,7 @@ void MainWindow::initializeWorkers()
     setFileWorker->setFilePaths(&file_paths);
     setFileWorker->setFiles(&files);
     setFileWorker->setSVOFile(&svo_inprocess);
-    setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+//    setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     setFileWorker->setOpenCLContext(context_cl);
 
     setFileWorker->moveToThread(setFileThread);
@@ -196,11 +196,12 @@ void MainWindow::initializeWorkers()
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
+
     //### allInOneWorker ###
     allInOneWorker = new MultiWorker();
     allInOneWorker->setFilePaths(&file_paths);
     allInOneWorker->setSVOFile(&svo_inprocess);
-    allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+//    allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     allInOneWorker->setOpenCLContext(context_cl);
     allInOneWorker->setReducedPixels(&reduced_pixels);
     allInOneWorker->initializeCLKernel();
@@ -233,7 +234,7 @@ void MainWindow::initializeWorkers()
     voxelizeWorker->setOpenCLContext(context_cl);
     voxelizeWorker->moveToThread(voxelizeThread);
     voxelizeWorker->setSVOFile(&svo_inprocess);
-    voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
+//    voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     voxelizeWorker->setReducedPixels(&reduced_pixels);
     voxelizeWorker->initializeCLKernel();
 
@@ -249,12 +250,14 @@ void MainWindow::initializeWorkers()
     connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(allInOneWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
+    connect(projectFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
 
-void MainWindow::test()
-{
-    qDebug("Test");
-}
+//void MainWindow::test()
+//{
+//    qDebug("Test");
+//}
 
 void MainWindow::anyButtonStart()
 {

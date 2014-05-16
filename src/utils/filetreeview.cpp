@@ -100,6 +100,7 @@ void FileSelectionModel::addIndex(QModelIndex index)
     if (fileInfo(index).isFile() && fileInfo(index).isReadable() && fileInfo(index).exists())
     {
         file_paths << filePath(index);
+        file_paths.removeDuplicates();
     }
     else
     {

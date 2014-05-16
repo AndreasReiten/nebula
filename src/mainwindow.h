@@ -68,7 +68,7 @@ private slots:
     void displayPopup(QString title, QString text);
     void omitFile();
 
-    void test();
+//    void test();
 
 
     // Toolchain button stuff
@@ -291,9 +291,9 @@ private:
     
     int current_svo;
 
-    float suggested_search_radius_high;
-    float suggested_search_radius_low;
-    float suggested_q;
+//    float suggested_search_radius_high;
+//    float suggested_search_radius_low;
+//    float suggested_q;
 
     SparseVoxelOcttree svo_inprocess;
     SparseVoxelOcttree svo_loaded;

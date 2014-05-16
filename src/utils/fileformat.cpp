@@ -321,7 +321,7 @@ void DetectorFile::print()
     qDebug() << ss.str().c_str();
 }
 
-int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive)
+int DetectorFile::filterData(size_t * n, Matrix<float> * outBuf, float threshold_reduce_low, float threshold_reduce_high, float threshold_project_low, float threshold_project_high, bool isProjectionActive)
 {
 
     this->threshold_reduce_low = threshold_reduce_low;
@@ -492,15 +492,21 @@ int DetectorFile::filterData(size_t * n, float * outBuf, float threshold_reduce_
     {
         for (size_t i = 0; i < fast_dimension*slow_dimension; i++)
         {
-            if (projected_data_buf[i*4+3] != 0.0) // Above 0 check?
+            if (projected_data_buf[i*4+3] > 0.0) // Above 0 check?
             {
 //                if (projected_data_buf[i*4+3] < 0.0) qDebug() <<  projected_data_buf[i*4+3] << i;
-
-                outBuf[(*n)+0] = projected_data_buf[i*4+0];
-                outBuf[(*n)+1] = projected_data_buf[i*4+1];
-                outBuf[(*n)+2] = projected_data_buf[i*4+2];
-                outBuf[(*n)+3] = projected_data_buf[i*4+3];
-                (*n)+=4;
+                if ((*n)+3 < outBuf->size())
+                {
+                    (*outBuf)[(*n)+0] = projected_data_buf[i*4+0];
+                    (*outBuf)[(*n)+1] = projected_data_buf[i*4+1];
+                    (*outBuf)[(*n)+2] = projected_data_buf[i*4+2];
+                    (*outBuf)[(*n)+3] = projected_data_buf[i*4+3];
+                    (*n)+=4;
+                }
+                else
+                {
+                    qDebug() << "TODO: send proper warning";
+                }
             }
         }
     }
