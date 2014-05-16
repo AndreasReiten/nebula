@@ -141,10 +141,10 @@ private:
     SharedContextWindow * shared_window;
 
     // Sum
-    float sumGpuArray(cl_mem cl_data_array, unsigned int read_size);
+    float sumGpuArray(cl_mem cl_data, unsigned int read_size, size_t work_group_size);
 
     // Box integral
-    float boxIntegral();
+    float sumViewBox();
 
     // Boolean checks
     bool isInitialized;
@@ -345,7 +345,7 @@ private:
     cl_kernel cl_svo_raytrace;
     cl_kernel cl_model_raytrace;
     cl_kernel cl_integrate_image;
-    cl_kernel cl_box_sample;
+    cl_kernel cl_box_sampler;
     cl_kernel cl_parallel_reduce;
 
     cl_mem cl_glb_work;

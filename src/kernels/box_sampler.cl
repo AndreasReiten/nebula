@@ -2,13 +2,13 @@ __kernel void boxSample(
     __read_only image3d_t bricks,
     __global uint * oct_index,
     __global uint * oct_brick,
-    sampler_t brick_sampler,
     __constant float * data_view_extent,
-    __global float * output,
-    int n_tree_levels,
-    int brick_dim)
+    sampler_t brick_sampler,
+    unsigned int n_tree_levels,
+    unsigned int brick_dim,
+    __global float * output)
 {
-    // Variables needed for sampling
+//     Variables needed for sampling
     int4 bricks_dim = get_image_dim(bricks);
 
     float3 pos;
@@ -113,4 +113,6 @@ __kernel void boxSample(
             norm_index = clamp(norm_index, 0, 1);
         }
     }
+//    unsigned int id = get_global_id(0) + get_global_id(1)*get_global_size(0) + get_global_id(2)*get_global_size(0)*get_global_size(1);
+//    output[id] = 1.0f;
 }
