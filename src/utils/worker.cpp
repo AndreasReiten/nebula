@@ -454,6 +454,8 @@ void ProjectFileWorker::process()
 
     size_t n = 0;
 
+//    qDebug() << reduced_pixels->size();
+
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
     
     for (size_t i = 0; i < (size_t) files->size(); i++)
@@ -594,6 +596,7 @@ void MultiWorker::process()
     emit changedTabWidget(1);
 
     // Parameters for Ewald's projection
+//    qDebug() << reduced_pixels->size();
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
