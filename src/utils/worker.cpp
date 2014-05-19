@@ -897,7 +897,7 @@ void VoxelizeWorker::process()
             nodes.set(1, 64, (unsigned int) 0);
             nodes[0] = 1;
 
-            unsigned int confirmed_nodes = 0, non_empty_node_counter = 0;
+            unsigned int nodes_prev_lvls = 0, non_empty_node_counter = 0;
 
             // Cycle through the levels
             QElapsedTimer timer;
@@ -925,7 +925,6 @@ void VoxelizeWorker::process()
                 double tmp = (svo->getExtent()->at(1) - svo->getExtent()->at(0)) / (1 << lvl);
 
                 // For each cluster of nodes
-                size_t iter = 0;
                 for (size_t i = 0; i < nodes[lvl]; i += nodes_per_kernel_call)
                 {
                     if((non_empty_node_counter+1) >= n_max_bricks)
@@ -944,7 +943,7 @@ void VoxelizeWorker::process()
                     {
                         
                         // The id of the octnode in the octnode array
-                        currentId = confirmed_nodes+i+j;
+                        currentId = nodes_prev_lvls+i+j;
                         
                         // Set the level
                         gpuHelpOcttree[currentId].setLevel(lvl);
@@ -1088,7 +1087,7 @@ void VoxelizeWorker::process()
                     for (size_t j = 0; j < nodes_per_kernel_call; j++)
                     {
                         // The id of the octnode in the octnode array
-                        currentId = confirmed_nodes+i+j;
+                        currentId = nodes_prev_lvls+i+j;
                         
                         // If a node simply has no data
                         if ((sum_check[j] <= 0.0))
@@ -1097,21 +1096,7 @@ void VoxelizeWorker::process()
                             gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].setChild(0);
                         }
-                        // Else if a node has data but is sufficiently self-similar (low variance)
-                        else if (sqrt(variance_check[j]) <= 0.01)
-                        {
-                            gpuHelpOcttree[currentId].setDataFlag(1);
-                            gpuHelpOcttree[currentId].setMsdFlag(1);
-                            gpuHelpOcttree[currentId].setChild(0);
-
-                            qDebug() << "Node" << currentId << "is self-similar with sum" << sum_check[j] << "and var" << variance_check[j];
-
-                            if (sum_check[j] > max_brick_sum) max_brick_sum = sum_check[j];
-
-                            non_empty_node_counter++;
-                            iter++;
-                        }
-                        // Else treat the node as a parent with children
+                        // Else a node has data
                         else
                         {
                             if (non_empty_node_counter + 1 >= n_max_bricks)
@@ -1120,29 +1105,46 @@ void VoxelizeWorker::process()
                                 kill_flag = true;
                                 break;
                             }
-                            
-                            if (sum_check[j] > max_brick_sum) max_brick_sum = sum_check[j];
-                            
-                            gpuHelpOcttree[currentId].setDataFlag(1);
-                            gpuHelpOcttree[currentId].setMsdFlag(0);
-
-                            if (lvl >= svo->getLevels() - 1) gpuHelpOcttree[currentId].setMsdFlag(1);
-                            gpuHelpOcttree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
-
-                            if (!gpuHelpOcttree[currentId].getMsdFlag())
+                            // If a node has data but is sufficiently self-similar (low variance)
+                            if (sqrt(variance_check[j]) <= 0.01)
                             {
-                                unsigned int childId = confirmed_nodes + nodes[lvl] + iter*8;
-                                gpuHelpOcttree[currentId].setChild(childId); // Index points to first child only
-    
-                                // For each child
-                                for (size_t k = 0; k < 8; k++)
+                                gpuHelpOcttree[currentId].setDataFlag(1);
+                                gpuHelpOcttree[currentId].setMsdFlag(1);
+                                gpuHelpOcttree[currentId].setChild(0);
+
+                                qDebug() << "Node" << currentId << "is self-similar with sum" << sum_check[j] << "and var" << variance_check[j];
+                            }
+                            // Else the node is a parent with children
+                            else
+                            {
+                                gpuHelpOcttree[currentId].setDataFlag(1);
+                                gpuHelpOcttree[currentId].setMsdFlag(0);
+
+                                if (lvl >= svo->getLevels() - 1) gpuHelpOcttree[currentId].setMsdFlag(1);
+
+                                // Account for children
+                                if (!gpuHelpOcttree[currentId].getMsdFlag())
                                 {
-                                    gpuHelpOcttree[childId+k].setParent(currentId);
-                                    nodes[lvl+1]++;
+                                    unsigned int childId = nodes_prev_lvls + nodes[lvl] + nodes[lvl+1];
+                                    gpuHelpOcttree[currentId].setChild(childId); // Index points to first child only
+
+                                    // For each child
+                                    for (size_t k = 0; k < 8; k++)
+                                    {
+                                        gpuHelpOcttree[childId+k].setParent(currentId);
+                                        nodes[lvl+1]++;
+                                    }
                                 }
                             }
+
+                            // Set the pool id of the brick corresponding to the node
+                            gpuHelpOcttree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
+
+                            // Find the max sum of a brick
+                            if (sum_check[j] > max_brick_sum) max_brick_sum = sum_check[j];
+
                             
-                            // Transfer data to pool
+                            // Transfer brick data to pool
                             err = clSetKernelArg( fill_kernel, 0, sizeof(cl_mem), (void *) &pool_cluster_cl);
                             err |= clSetKernelArg( fill_kernel, 1, sizeof(cl_mem), (void *) &pool_cl);
                             err |= clSetKernelArg( fill_kernel, 2, sizeof(cl_int4), pool_dimension.data());
@@ -1167,7 +1169,6 @@ void VoxelizeWorker::process()
                             
                             
                             non_empty_node_counter++;
-                            iter++;
                             
                             err = clFinish(*context_cl->getCommandQueue());
                             if ( err != CL_SUCCESS)
@@ -1189,7 +1190,7 @@ void VoxelizeWorker::process()
                     break;
                 }
 
-                confirmed_nodes += nodes[lvl];
+                nodes_prev_lvls += nodes[lvl];
                 
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done ("+QString::number(t)+" ms)");
@@ -1201,15 +1202,15 @@ void VoxelizeWorker::process()
             {
                 // Use the node structure to populate the GPU arrays
                 emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"]"+QString(" Transforming: %p%"));
-                svo->index.reserve(1, confirmed_nodes);
-                svo->brick.reserve(1, confirmed_nodes);
+                svo->index.reserve(1, nodes_prev_lvls);
+                svo->brick.reserve(1, nodes_prev_lvls);
 
-                for (size_t i = 0; i < confirmed_nodes; i++)
+                for (size_t i = 0; i < nodes_prev_lvls; i++)
                 {
                     svo->index[i] = getOctIndex(gpuHelpOcttree[i].getMsdFlag(), gpuHelpOcttree[i].getDataFlag(), gpuHelpOcttree[i].getChild());
                     svo->brick[i] = getOctBrick(gpuHelpOcttree[i].getPoolId()[0], gpuHelpOcttree[i].getPoolId()[1], gpuHelpOcttree[i].getPoolId()[2]);
 
-                    emit changedGenericProgress((i+1)*100/confirmed_nodes);
+                    emit changedGenericProgress((i+1)*100/nodes_prev_lvls);
                 }
 
                 // Round up to the lowest number of bricks that is multiple of the brick pool dimensions. Use this value to reserve data for the data pool
@@ -1233,7 +1234,7 @@ void VoxelizeWorker::process()
 
             if (!kill_flag)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Finished successfully. The dataset consists of "+QString::number(confirmed_nodes)+" bricks and is approxiamtely "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Finished successfully. The dataset consists of "+QString::number(nodes_prev_lvls)+" bricks and is approxiamtely "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
 
             }
         }
