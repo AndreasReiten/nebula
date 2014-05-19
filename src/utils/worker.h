@@ -158,7 +158,7 @@ class ReadFileWorker : public BaseWorker
         ~ReadFileWorker();
 
     private slots:
-        void test();
+//        void test();
         void process();
 };
 

@@ -303,6 +303,8 @@ void SetFileWorker::process()
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Use at least octree level "+QString::number((int)level_max)+" to achieve good resolution");
     }
 
+    qDebug() << suggested_q;
+
     emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
     emit finished();
 }
@@ -327,10 +329,10 @@ ReadFileWorker::~ReadFileWorker()
 
 }
 
-void ReadFileWorker::test()
-{
-    qDebug("Test");
-}
+//void ReadFileWorker::test()
+//{
+//    qDebug("Test");
+//}
 
 void ReadFileWorker::process()
 {
@@ -498,6 +500,8 @@ void ProjectFileWorker::process()
 
     reduced_pixels->resize(1, n);
 
+//    qDebug() << "Reduced pixel size" << reduced_pixels->size();
+//    reduced_pixels->print(2,"Projworker");
     /* Create dummy dataset for debugging purposes.
     */
     if (0) // A sphere
@@ -538,8 +542,8 @@ void ProjectFileWorker::process()
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (((float)i/(float)(res-1)) - 0.5)*2.0*1.25;
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*1.25;
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*1.25;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = 10.0;
-//                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
+//                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = 10.0;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
                 }
             }
         }
@@ -691,6 +695,8 @@ void MultiWorker::process()
     }
     reduced_pixels->resize(1, n);
 
+//    reduced_pixels->print(2,"Multiworker");
+
     size_t t = stopwatch.restart();
 
     if (!kill_flag)
@@ -768,9 +774,11 @@ void VoxelizeWorker::initializeCLKernel()
 void VoxelizeWorker::process()
 {
     QCoreApplication::processEvents();
+//qDebug() << "Before";
+//    svo->print();
 
     kill_flag = false;
-
+    qDebug() << suggested_q;
     if (reduced_pixels->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Warning: No data available!");
@@ -1220,7 +1228,7 @@ void VoxelizeWorker::process()
             }
         }
 
-        svo->print();
+
 
         clReleaseMemObject(point_data_cl);
         clReleaseMemObject(point_data_offset_cl);
@@ -1230,7 +1238,8 @@ void VoxelizeWorker::process()
         clReleaseMemObject(pool_cl);
         clReleaseMemObject(sum_check_cl);
     }
-
+//    qDebug() << "After";
+//        svo->print();
     emit finished();
 }
 

@@ -129,8 +129,8 @@ void MainWindow::initializeWorkers()
     setFileWorker->setFilePaths(&file_paths);
     setFileWorker->setFiles(&files);
     setFileWorker->setSVOFile(&svo_inprocess);
-//    setFileWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     setFileWorker->setOpenCLContext(context_cl);
+    setFileWorker->setSVOFile(&svo_inprocess);
 
     setFileWorker->moveToThread(setFileThread);
     connect(setFileButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
@@ -143,7 +143,6 @@ void MainWindow::initializeWorkers()
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
     connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(setFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(setFileButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
@@ -152,6 +151,7 @@ void MainWindow::initializeWorkers()
     readFileWorker = new ReadFileWorker();
     readFileWorker->setFilePaths(&file_paths);
     readFileWorker->setFiles(&files);
+    readFileWorker->setSVOFile(&svo_inprocess);
 
     readFileWorker->moveToThread(readFileThread);
     connect(readFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -170,9 +170,10 @@ void MainWindow::initializeWorkers()
 
     //### projectFileWorker ###
     projectFileWorker = new ProjectFileWorker();
-    projectFileWorker->setOpenCLContext(context_cl);
     projectFileWorker->setFilePaths(&file_paths);
+    projectFileWorker->setSVOFile(&svo_inprocess);
     projectFileWorker->setFiles(&files);
+    projectFileWorker->setOpenCLContext(context_cl);
     projectFileWorker->setReducedPixels(&reduced_pixels);
     projectFileWorker->initializeCLKernel();
     connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), projectFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
@@ -201,7 +202,6 @@ void MainWindow::initializeWorkers()
     allInOneWorker = new MultiWorker();
     allInOneWorker->setFilePaths(&file_paths);
     allInOneWorker->setSVOFile(&svo_inprocess);
-//    allInOneWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     allInOneWorker->setOpenCLContext(context_cl);
     allInOneWorker->setReducedPixels(&reduced_pixels);
     allInOneWorker->initializeCLKernel();
@@ -251,7 +251,7 @@ void MainWindow::initializeWorkers()
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
     connect(allInOneWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
-    connect(projectFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
+    connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
 
 //void MainWindow::test()
