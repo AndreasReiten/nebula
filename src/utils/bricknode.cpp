@@ -64,6 +64,7 @@ void BrickNode::calcBrickId(unsigned int octant, BrickNode * par)
 
 void BrickNode::setDataFlag(unsigned int flag)
 {
+    // A false here indicates an empty brick
     this->dataFlag = flag;
 }
 void BrickNode::setMsdFlag(unsigned int flag)

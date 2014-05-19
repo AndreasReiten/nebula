@@ -524,7 +524,7 @@ void ProjectFileWorker::process()
                 (*reduced_pixels)[(i*phi_max+j)*4+0] = radius * std::sin(theta)*std::cos(phi);
                 (*reduced_pixels)[(i*phi_max+j)*4+1] = radius * std::sin(theta)*std::sin(phi);
                 (*reduced_pixels)[(i*phi_max+j)*4+2] = radius * std::cos(theta);
-                (*reduced_pixels)[(i*phi_max+j)*4+3] = 10;
+                (*reduced_pixels)[(i*phi_max+j)*4+3] = 100;
             }
         }
     }
@@ -539,11 +539,11 @@ void ProjectFileWorker::process()
             {
                 for (int k = 0; k < res; k++)
                 {
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (((float)i/(float)(res-1)) - 0.5)*2.0*1.25;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*1.25;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*1.25;
-//                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = 10.0;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (((float)i/(float)(res-1)) - 0.5)*2.0*0.25;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*0.25;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*0.25;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = 100.0;
+//                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
                 }
             }
         }
@@ -1100,10 +1100,18 @@ void VoxelizeWorker::process()
                         // Else if a node has data but is sufficiently self-similar (low variance)
                         else if (sqrt(variance_check[j]) <= 0.01)
                         {
+                            gpuHelpOcttree[currentId].setDataFlag(1);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].setChild(0);
+
+                            qDebug() << "Node" << currentId << "is self-similar with sum" << sum_check[j] << "and var" << variance_check[j];
+
+                            if (sum_check[j] > max_brick_sum) max_brick_sum = sum_check[j];
+
+                            non_empty_node_counter++;
+                            iter++;
                         }
-                        // Else treat the node normally
+                        // Else treat the node as a parent with children
                         else
                         {
                             if (non_empty_node_counter + 1 >= n_max_bricks)
@@ -1117,12 +1125,14 @@ void VoxelizeWorker::process()
                             
                             gpuHelpOcttree[currentId].setDataFlag(1);
                             gpuHelpOcttree[currentId].setMsdFlag(0);
+
                             if (lvl >= svo->getLevels() - 1) gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
+
                             if (!gpuHelpOcttree[currentId].getMsdFlag())
                             {
                                 unsigned int childId = confirmed_nodes + nodes[lvl] + iter*8;
-                                gpuHelpOcttree[currentId].setChild(childId);
+                                gpuHelpOcttree[currentId].setChild(childId); // Index points to first child only
     
                                 // For each child
                                 for (size_t k = 0; k < 8; k++)
@@ -1223,7 +1233,7 @@ void VoxelizeWorker::process()
 
             if (!kill_flag)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Finished successfully. The dataset consists of "+QString::number(confirmed_nodes)+" bricks and is approxiamtely "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\n The dataset can now be saved");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Finished successfully. The dataset consists of "+QString::number(confirmed_nodes)+" bricks and is approxiamtely "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
 
             }
         }

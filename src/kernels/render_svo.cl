@@ -19,7 +19,7 @@ __kernel void svoRayTrace(
 
     int2 ray_tex_dim = get_image_dim(ray_tex);
     int2 tsf_tex_dim = get_image_dim(tsf_tex);
-    int4 bricks_dim = get_image_dim(bricks);
+    int4 pool_dim = get_image_dim(bricks);
 
     int n_tree_levels = misc_int[0];
     int brick_dim = misc_int[1];
@@ -224,8 +224,9 @@ __kernel void svoRayTrace(
                             voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
                             if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
 
-                            isMsd = (oct_index[index_this_lvl] & mask_msd_flag) >> 31;
-                            isEmpty = !((oct_index[index_this_lvl] & mask_data_flag) >> 30);
+                            brick = oct_index[index_this_lvl];
+                            isMsd = (brick & mask_msd_flag) >> 31;
+                            isEmpty = !((brick & mask_data_flag) >> 30);
                             isLowEnough = (cone_diameter > voxel_size_this_lvl);
 
                             if (isEmpty)
@@ -260,7 +261,7 @@ __kernel void svoRayTrace(
                                     brick = oct_brick[index_prev_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
 
                                     intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
@@ -268,7 +269,7 @@ __kernel void svoRayTrace(
                                     brick = oct_brick[index_this_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
 
                                     intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
@@ -280,28 +281,31 @@ __kernel void svoRayTrace(
                                     brick = oct_brick[index_this_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
 
                                     intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
                                 }
 
                                 if (isDsActive)
                                 {
-
-                                    if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 1.00f);
-                                    else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                    else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                                    else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                    else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                    else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                                    else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                    else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                    else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
-                                    else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                    else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 1.00f);
-                                    else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 1.00f);
+                                    if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 0.50f);
+                                    else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
+                                    else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 0.60f);
+                                    else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 0.60f);
+                                    else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
+                                    else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 0.65f);
+                                    else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 0.70f);
+                                    else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 0.75f);
+                                    else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 0.80f);
+                                    else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 0.85f);
+                                    else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 0.90f);
+                                    else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 0.95f);
                                     else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
                                     else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+
+                                    float dist = fast_length(norm_pos_this_lvl-(float3)(1.0f));
+                                    sample = mix(sample,(float4)(0.0f,0.0f,0.0f,1.0f), dist*dist-0.7);
+
 
                                     color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
                                     color.w = color.w +(1.f - color.w)*sample.w;
@@ -331,7 +335,7 @@ __kernel void svoRayTrace(
                                 norm_pos_prev_lvl = norm_pos_this_lvl;
 
                                 // Descend to the next level
-                                index_this_lvl = (oct_index[index_this_lvl] & mask_child_index);
+                                index_this_lvl = (brick & mask_child_index);
                                 index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
 
                                 //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
@@ -377,9 +381,10 @@ __kernel void svoRayTrace(
                     {
                         voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
                         if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
+                        brick = oct_index[index_this_lvl];
 
-                        isMsd = (oct_index[index_this_lvl] & mask_msd_flag) >> 31;
-                        isEmpty = !((oct_index[index_this_lvl] & mask_data_flag) >> 30);
+                        isMsd = (brick & mask_msd_flag) >> 31;
+                        isEmpty = !((brick & mask_data_flag) >> 30);
                         isLowEnough = (cone_diameter > voxel_size_this_lvl);
 
                         if (isMsd || isLowEnough || isEmpty)
@@ -405,6 +410,9 @@ __kernel void svoRayTrace(
                                     else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
                                     else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
 
+                                    float dist = fast_length(norm_pos_this_lvl-(float3)(1.0f));
+                                    sample = mix(sample,(float4)(0.0f,0.0f,0.0f,1.0f), dist*dist-0.7);
+
                                     color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
                                     color.w = color.w +(1.f - color.w)*sample.w;
                                     box_ray_xyz += ray_add_box;
@@ -416,39 +424,46 @@ __kernel void svoRayTrace(
                                     color.w = color.w +(1.0f - color.w)*sample.w;
                                 }
                             }
-                            else if (j >= 1)
-                            {
-                                /* Quadrilinear interpolation between two bricks */
+//                            else if (j >= 1)
+//                            {
+//                                /* Quadrilinear interpolation between two bricks */
 
-                                // The brick in the level above
-                                brick = oct_brick[index_prev_lvl];
-                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+//                                // The brick in the level above
+//                                brick = oct_brick[index_prev_lvl];
+//                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
+//                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
 
-                                intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
+//                                intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
-                                // The brick in the current level
-                                brick = oct_brick[index_this_lvl];
-                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+//                                // The brick in the current level
+//                                brick = oct_brick[index_this_lvl];
+//                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
+//                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
 
-                                if (isEmpty) intensity_this_lvl = 0;
-                                else intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
+//                                if (isEmpty) intensity_this_lvl = 0;
+//                                else intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
-                                // Linear interpolation between the two intensities
-                                intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
-                            }
+//                                // Linear interpolation between the two intensities
+//                                intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
+//                            }
                             else
                             {
                                 /* No interpolation */
-                                brick = oct_brick[index_this_lvl];
-                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                if (isEmpty)
+                                {
+                                    intensity = 0.0f;
+                                }
+                                else
+                                {
+                                    brick = oct_brick[index_this_lvl];
+                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(bricks_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
 
-                                intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                    intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                }
                             }
 
 
@@ -501,7 +516,7 @@ __kernel void svoRayTrace(
                             norm_pos_prev_lvl = norm_pos_this_lvl;
 
                             // Descend to the next level
-                            index_this_lvl = (oct_index[index_this_lvl] & mask_child_index);
+                            index_this_lvl = (brick & mask_child_index);
                             index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
 
                             //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
