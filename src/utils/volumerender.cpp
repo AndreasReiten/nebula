@@ -125,6 +125,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isURotationActive(false),
       isLabFrameActive(true),
       isMiniCellActive(true),
+      isCountIntegrationActive(false),
       weird_parameter(20),
       n_marker_indices(0)
 {
@@ -1042,6 +1043,20 @@ void VolumeRenderWorker::drawMarkers(QPainter * painter)
 }
 
 
+void VolumeRenderWorker::drawCountIntegral(QPainter * painter)
+{
+    float sum = sumViewBox();
+
+    QString sum_string("Integrated intensity: "+QString::number(sum, 'e',3)+" 1/Å^3");
+    QRect sum_string_rect = emph_fontmetric->boundingRect(sum_string);
+    sum_string_rect += QMargins(5,5,5,5);
+    sum_string_rect.moveTopLeft(QPoint(5,205));
+
+    painter->setBrush(*fill_brush);
+    painter->drawRoundedRect(sum_string_rect, 5, 5, Qt::AbsoluteSize);
+    painter->drawText(sum_string_rect, Qt::AlignCenter, sum_string);
+}
+
 void VolumeRenderWorker::drawHklText(QPainter * painter)
 {
     painter->setFont(*tiny_font);
@@ -1702,25 +1717,25 @@ void VolumeRenderWorker::setTsfTexture()
 
 float VolumeRenderWorker::sumViewBox()
 {
-    /* Sample the viewing box and put the values in an array */
-    int samples_per_side = 64; // Power of two. Has constraints depending on GPU
-    int read_size = samples_per_side*samples_per_side*samples_per_side;
-    int local_size = 64; // Power of two. Has constraints depending on GPU
-    int global_size = read_size + (read_size % local_size ? local_size - (read_size % local_size) : 0);
-    int padded_size = global_size + global_size/local_size;
+    /* Sample the viewing box and put the values in an array. pr = parallel reduction */
+    int box_samples_per_side = 256; // Power of two. Has constraints depending on GPU
+    int pr_read_size = box_samples_per_side*box_samples_per_side*box_samples_per_side;
+    int pr_local_size = 64; // Power of two. Has constraints depending on GPU
+    int pr_global_size = pr_read_size + (pr_read_size % pr_local_size ? pr_local_size - (pr_read_size % pr_local_size) : 0);
+    int pr_padded_size = pr_global_size + pr_global_size/pr_local_size;
 
-//qDebug() << read_size << global_size << padded_size;
+//qDebug() << pr_read_size << pr_global_size << pr_padded_size;
 
     /* Prepare array */
     cl_mem  cl_data_array = clCreateBuffer(*context_cl->getContext(),
                                  CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-                                 padded_size*sizeof(cl_float),
+                                 pr_padded_size*sizeof(cl_float),
                                  NULL,
                                  &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Prepare and launch the kernel */
-    Matrix<size_t> box_global_size(1,3,samples_per_side);
+    Matrix<size_t> box_global_size(1,3,box_samples_per_side);
     Matrix<size_t> box_local_size(1,3,4);
 
     unsigned int n_tree_levels = misc_ints[0];
@@ -1729,8 +1744,8 @@ float VolumeRenderWorker::sumViewBox()
     err = clSetKernelArg(cl_box_sampler, 0, sizeof(cl_mem), (void *) &cl_svo_pool);
     err |= clSetKernelArg(cl_box_sampler, 1, sizeof(cl_mem), (void *) &cl_svo_index);
     err |= clSetKernelArg(cl_box_sampler, 2, sizeof(cl_mem), (void *) &cl_svo_brick);
-    err |= clSetKernelArg(cl_box_sampler, 3, sizeof(cl_mem), (void *) &cl_data_view_extent);
-    err |= clSetKernelArg(cl_box_sampler, 4, sizeof(cl_mem), (void *) &cl_data_extent);
+    err |= clSetKernelArg(cl_box_sampler, 3, sizeof(cl_mem), (void *) &cl_data_extent);
+    err |= clSetKernelArg(cl_box_sampler, 4, sizeof(cl_mem), (void *) &cl_data_view_extent);
     err |= clSetKernelArg(cl_box_sampler, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
     err |= clSetKernelArg(cl_box_sampler, 6, sizeof(cl_uint), &n_tree_levels);
     err |= clSetKernelArg(cl_box_sampler, 7, sizeof(cl_uint), &brick_dim);
@@ -1745,7 +1760,7 @@ float VolumeRenderWorker::sumViewBox()
 
 //    data_view_extent.print(2,"Data View Extent");
 
-//Matrix<float> tmp(1,read_size,0);
+//Matrix<float> tmp(1,pr_read_size,0);
 
 //err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
 //    cl_data_array,
@@ -1758,12 +1773,12 @@ float VolumeRenderWorker::sumViewBox()
 
 //    double zum = 0;
 
-//    for (int i = 0; i < read_size; i++)
+//    for (int i = 0; i < pr_read_size; i++)
 //    {
 //        zum += tmp[i];
 //    }
 
-    float sum = sumGpuArray(cl_data_array, read_size, local_size);
+    float sum = sumGpuArray(cl_data_array, pr_read_size, pr_local_size);
     qDebug() << "SUM"  << "GPU" << sum;
 
     /* Clean up */
@@ -1816,7 +1831,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isUnitcellActive) drawHklText(painter);
     if (n_marker_indices > 0) drawMarkers(painter);
     if (isMiniCellActive) drawHelpCell(painter);
-    if (isSvoInitialized) sumViewBox();
+    if (isSvoInitialized && isCountIntegrationActive) drawCountIntegral(painter);
     
     isRendering = false;
 }
@@ -3141,6 +3156,11 @@ size_t VolumeRenderWorker::setScaleBars()
 void VolumeRenderWorker::setQuality(int value)
 {
    fps_requested = (float) value;
+}
+
+void VolumeRenderWorker::setCountIntegration()
+{
+    isCountIntegrationActive = !isCountIntegrationActive;
 }
 
 void VolumeRenderWorker::setProjection()

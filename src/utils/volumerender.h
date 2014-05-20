@@ -59,6 +59,7 @@ signals:
     void changedMessageString(QString str);
 
 public slots:
+    void setCountIntegration();
     void addMarker();
     void setQuality(int value);
     void setScalebar();
@@ -173,6 +174,7 @@ private:
     bool isURotationActive;
     bool isLabFrameActive;
     bool isMiniCellActive;
+    bool isCountIntegrationActive;
     
     // Markers
     QVector<Marker> markers;
@@ -254,6 +256,7 @@ private:
     void endRawGLCalls(QPainter * painter);
     void drawSenseOfRotation(double zeta, double eta, double rpm);
     void drawHklText(QPainter * painter);
+    void drawCountIntegral(QPainter *painter);
     
     
     int fps_string_width_prev;

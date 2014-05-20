@@ -54,5 +54,7 @@
         <file>art/labframe.png</file>
         <file>art/roll_ccw.png</file>
         <file>art/roll_cw.png</file>
+        <file>art/align_slice_frame_to_lab_frame.png</file>
+        <file>art/integrate_counts.png</file>
     </qresource>
 </RCC>

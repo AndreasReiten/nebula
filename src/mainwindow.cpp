@@ -526,7 +526,7 @@ void MainWindow::initializeActions()
     alignLabXtoSliceXAct = new QAction(QIcon(":/art/align_x.png"), tr("Align lab frame to slice frame x"), this);
     alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), tr("Align lab frame to slice frame y"), this);
     alignLabZtoSliceZAct = new QAction(QIcon(":/art/align_z.png"), tr("Align lab frame to slice frame z"), this);
-    alignSliceToLabAct = new QAction(QIcon(":/art/placeholder.png"), tr("Align slice frame to lab frame"), this);
+    alignSliceToLabAct = new QAction(QIcon(":/art/align_slice_frame_to_lab_frame"), tr("Align slice frame to lab frame"), this);
     
     rotateRightAct = new QAction(QIcon(":/art/rotate_right.png"), tr("Rotate right"), this);
     rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), tr("Rotate left"), this);
@@ -534,7 +534,9 @@ void MainWindow::initializeActions()
     rotateDownAct = new QAction(QIcon(":/art/rotate_down.png"), tr("Rotate down"), this);
     rollCW = new QAction(QIcon(":/art/roll_cw.png"), tr("Roll clockwise"), this);
     rollCCW = new QAction(QIcon(":/art/roll_ccw.png"), tr("Roll counterclockwise"), this);
-    
+    integrateCountsAct = new QAction(QIcon(":/art/integrate_counts.png"), tr("Integrate intensity in the view box"), this);
+    integrateCountsAct->setCheckable(true);
+    integrateCountsAct->setChecked(false);
     
     // Action Tips
     newAct->setStatusTip(tr("Create a new file"));
@@ -850,6 +852,7 @@ void MainWindow::initializeConnects()
     connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setHCurrent(int)));
     connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setKCurrent(int)));
     connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setLCurrent(int)));
+    connect(this->integrateCountsAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setCountIntegration()));
     
     /* this <-> this */
     connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_a(double)), Qt::QueuedConnection);
@@ -1158,6 +1161,8 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(dataStructureAct);
         
+        viewToolBar->addSeparator();
+        viewToolBar->addAction(integrateCountsAct);
         viewToolBar->addAction(integrate3DAct);
         viewToolBar->addAction(log3DAct);
         viewToolBar->addSeparator();

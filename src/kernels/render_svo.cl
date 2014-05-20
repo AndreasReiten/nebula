@@ -339,7 +339,7 @@ __kernel void svoRayTrace(
                                 index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
 
                                 //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
-                    norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
+                                norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
                                 norm_index = convert_int3(norm_pos_this_lvl);
                                 norm_index = clamp(norm_index, 0, 1);
                             }
@@ -424,46 +424,41 @@ __kernel void svoRayTrace(
                                     color.w = color.w +(1.0f - color.w)*sample.w;
                                 }
                             }
-//                            else if (j >= 1)
-//                            {
-//                                /* Quadrilinear interpolation between two bricks */
-
-//                                // The brick in the level above
-//                                brick = oct_brick[index_prev_lvl];
-//                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
-
-//                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
-
-//                                intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
-
-//                                // The brick in the current level
-//                                brick = oct_brick[index_this_lvl];
-//                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
-
-//                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
-
-//                                if (isEmpty) intensity_this_lvl = 0;
-//                                else intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
-
-//                                // Linear interpolation between the two intensities
-//                                intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
-//                            }
-                            else
+                            else if (j >= 1)
                             {
-                                /* No interpolation */
-                                if (isEmpty)
-                                {
-                                    intensity = 0.0f;
-                                }
+                                /* Quadrilinear interpolation between two bricks */
+
+                                // The brick in the level above
+                                brick = oct_brick[index_prev_lvl];
+                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                                intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
+
+                                // The brick in the current level
+                                if (isEmpty) intensity_this_lvl = 0;
                                 else
                                 {
                                     brick = oct_brick[index_this_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
                                     lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
-
-                                    intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                                    intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
                                 }
+
+                                // Linear interpolation between the two intensities
+                                clamp(cone_diameter, voxel_size_this_lvl, voxel_size_prev_lvl);
+
+                                intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
+                            }
+                            else
+                            {
+                                brick = oct_brick[index_this_lvl];
+                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+
+                                intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
                             }
 
 
@@ -516,7 +511,7 @@ __kernel void svoRayTrace(
                             norm_pos_prev_lvl = norm_pos_this_lvl;
 
                             // Descend to the next level
-                            index_this_lvl = (brick & mask_child_index);
+                            index_this_lvl = (oct_index[index_this_lvl] & mask_child_index);
                             index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
 
                             //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;

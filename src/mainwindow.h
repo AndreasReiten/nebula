@@ -118,7 +118,6 @@ private slots:
     void setFilesFromSelectionModel();
     
     
-    
 signals:
     void testToWindow();
 
@@ -287,6 +286,7 @@ private:
     QAction *labFrameAct;
     QAction *rollCW;
     QAction *rollCCW;
+    QAction *integrateCountsAct;
     
     
     int current_svo;

@@ -528,9 +528,9 @@ void ProjectFileWorker::process()
             }
         }
     }
-    else if (1) // A box
+    else if (0) // A box
     {
-        int res = 32;
+        int res = 64;
         reduced_pixels->resize(1, res*res*res*4);
 
         for (int i = 0; i < res; i++)
@@ -539,9 +539,9 @@ void ProjectFileWorker::process()
             {
                 for (int k = 0; k < res; k++)
                 {
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (((float)i/(float)(res-1)) - 0.5)*2.0*0.25;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*0.25;
-                    (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*0.25;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+0] = (((float)i/(float)(res-1)) - 0.5)*2.0*0.5;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*0.5;
+                    (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*0.5;
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = 100.0;
 //                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
                 }
@@ -1112,7 +1112,7 @@ void VoxelizeWorker::process()
                                 gpuHelpOcttree[currentId].setMsdFlag(1);
                                 gpuHelpOcttree[currentId].setChild(0);
 
-                                qDebug() << "Node" << currentId << "is self-similar with sum" << sum_check[j] << "and var" << variance_check[j];
+//                                qDebug() << "Node" << currentId << "is self-similar with sum" << sum_check[j] << "and var" << variance_check[j];
                             }
                             // Else the node is a parent with children
                             else
