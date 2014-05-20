@@ -1718,13 +1718,11 @@ void VolumeRenderWorker::setTsfTexture()
 float VolumeRenderWorker::sumViewBox()
 {
     /* Sample the viewing box and put the values in an array. pr = parallel reduction */
-    int box_samples_per_side = 256; // Power of two. Has constraints depending on GPU
+    int box_samples_per_side = 256; // Power of two. This dictates the integration resolution
     int pr_read_size = box_samples_per_side*box_samples_per_side*box_samples_per_side;
     int pr_local_size = 64; // Power of two. Has constraints depending on GPU
     int pr_global_size = pr_read_size + (pr_read_size % pr_local_size ? pr_local_size - (pr_read_size % pr_local_size) : 0);
     int pr_padded_size = pr_global_size + pr_global_size/pr_local_size;
-
-//qDebug() << pr_read_size << pr_global_size << pr_padded_size;
 
     /* Prepare array */
     cl_mem  cl_data_array = clCreateBuffer(*context_cl->getContext(),
@@ -1758,28 +1756,7 @@ float VolumeRenderWorker::sumViewBox()
     err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//    data_view_extent.print(2,"Data View Extent");
-
-//Matrix<float> tmp(1,pr_read_size,0);
-
-//err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
-//    cl_data_array,
-//    CL_TRUE,
-//    0,
-//    tmp.bytes(),
-//    tmp.data(),
-//    0, NULL, NULL);
-//if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//    double zum = 0;
-
-//    for (int i = 0; i < pr_read_size; i++)
-//    {
-//        zum += tmp[i];
-//    }
-
     float sum = sumGpuArray(cl_data_array, pr_read_size, pr_local_size);
-    qDebug() << "SUM"  << "GPU" << sum;
 
     /* Clean up */
     err = clReleaseMemObject(cl_data_array);
