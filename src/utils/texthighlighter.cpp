@@ -14,7 +14,7 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
     QColor multicomment_color(195, 83, 20, 255);
     QColor number_color(40, 140, 255, 255);
     QColor quote_color(40, 100, 20, 255);
-    QColor paranthesis_color(255, 93, 60, 255);
+    QColor paranthesis_color(255, 93, 255, 255);
     QColor function_color(150, 70, 224, 255);
 
 
@@ -81,7 +81,7 @@ Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
 
     /* PARANTHESES */
     paranthesisFormat.setForeground(paranthesis_color);
-    rule.pattern = QRegExp("[()]");
+    rule.pattern = QRegExp("[()\\[\\]]");
     rule.format = paranthesisFormat;
     highlightingRules.append(rule);
 

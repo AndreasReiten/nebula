@@ -113,6 +113,7 @@ private slots:
     void decrementDisplayFile1();
     void decrementDisplayFile10();
     void setDisplayFile(int value);
+    void refreshDisplayFile();
     
     // File selection
     void setFilesFromSelectionModel();

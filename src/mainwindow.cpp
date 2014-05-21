@@ -355,7 +355,19 @@ void MainWindow::setDisplayFile(int value)
     }
     else
     {
-        print("\n[Nebula] File does not exist");
+        print("\n[Nebula] File #"+QString::number(value)+" could not be found");
+    }
+}
+
+void MainWindow::refreshDisplayFile()
+{
+    int value = imageSpinBox->value();
+    
+    if ((value >= 0) && (value < file_paths.size()))
+    {
+        emit imagePreviewChanged(file_paths[value]);
+        emit updateFileHeader(file_paths[value]);
+        imageLabel->setText(file_paths[value]);
     }
 }
 
@@ -387,16 +399,19 @@ void MainWindow::initializeEmit()
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(11);
 
-    reduceThresholdLow->setValue(10);
+    reduceThresholdLow->setValue(5);
     reduceThresholdHigh->setValue(1e9);
     projectThresholdLow->setValue(10);
     projectThresholdHigh->setValue(1e9);
 
-    dataMinSpinBox->setValue(1);
+    dataMinSpinBox->setValue(1.0);
     dataMaxSpinBox->setValue(1000);
     alphaSpinBox->setValue(1.0);
     brightnessSpinBox->setValue(2.0);
 
+    tsfAlphaComboBox->setCurrentIndex(2);
+    tsfComboBox->setCurrentIndex(1);
+    
     funcParamASpinBox->setValue(13.5);
     funcParamBSpinBox->setValue(10.5);
     funcParamCSpinBox->setValue(10.0);
@@ -1264,7 +1279,8 @@ void MainWindow::initializeInteractives()
         imageModeCB->addItem("Raw");
         imageModeCB->addItem("Corrected");
         connect(imageModeCB, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setMode(int)));
-                
+        connect(imageModeCB, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshDisplayFile()));
+        
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setRowStretch(1,1);
         imageLayout->addWidget(imageLabel,0,0,1,8);
@@ -1491,8 +1507,8 @@ void MainWindow::initializeInteractives()
 
         // Labels
         QLabel * labelA = new QLabel(QString("Detector file format:"));
-        QLabel * labelB = new QLabel(QString("Pre correction threshold:"));
-        QLabel * labelC = new QLabel(QString("Post correction threshold:"));
+        QLabel * labelB = new QLabel(QString("Noise cutoff:"));
+        QLabel * labelC = new QLabel(QString("Post correction cutoff:"));
         QLabel * labelD = new QLabel(QString("Octtree levels: "));
         QLabel * labelE = new QLabel(QString("Active angle:"));
         QLabel * labelF = new QLabel("<i>ω</i>:");
@@ -1545,6 +1561,11 @@ void MainWindow::initializeInteractives()
         connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAhigh(double)),Qt::QueuedConnection);
         connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBlow(double)),Qt::QueuedConnection);
         connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBhigh(double)),Qt::QueuedConnection);
+        
+        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
+        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
+        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
+        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
         
         omegaCorrectionSpinBox = new QDoubleSpinBox;
         omegaCorrectionSpinBox->setRange(-180, 180);

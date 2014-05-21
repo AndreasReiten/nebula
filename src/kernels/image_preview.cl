@@ -62,47 +62,46 @@ __kernel void imagePreview(
 
             write_imagef(preview, id_glb, sample);
         }
-        
-        float4 Q = (float4)(0.0f);
-        if (intensity > 0.0f)
+        else if (mode == 1)
         {
-            float k = 1.0f/wavelength; // Multiply with 2pi if desired
-
-            float3 k_i = (float3)(-k,0,0);
-            float3 k_f = k*normalize((float3)(
-                -det_dist,
-                pix_size_x * ((float) id_glb.y - beam_x), /* DANGER */
-                pix_size_y * ((float) id_glb.x - beam_y))); /* DANGER */
-
-            Q.xyz = k_f - k_i;
-            Q.w = intensity;
-
+            float4 Q = (float4)(0.0f);
+            if (intensity > 0.0f)
             {
-                float lab_theta = asin(native_divide(Q.y, k));
-                float lab_phi = atan2(Q.z,-Q.x);
-
-                // Assuming rotation around the z-axis of the lab frame:
-                float L = fabs(native_sin(lab_theta));
-
-                // The polarization correction needs a bit more work...
-                Q.w *= L;
+                float k = 1.0f/wavelength; // Multiply with 2pi if desired
+    
+                float3 k_i = (float3)(-k,0,0);
+                float3 k_f = k*normalize((float3)(
+                    -det_dist,
+                    pix_size_x * ((float) id_glb.y - beam_x), /* DANGER */
+                    pix_size_y * ((float) id_glb.x - beam_y))); /* DANGER */
+    
+                Q.xyz = k_f - k_i;
+                Q.w = intensity;
+    
+                {
+                    float lab_theta = asin(native_divide(Q.y, k));
+                    float lab_phi = atan2(Q.z,-Q.x);
+    
+                    // Assuming rotation around the z-axis of the lab frame:
+                    float L = fabs(native_sin(lab_theta));
+    
+                    // The polarization correction needs a bit more work...
+                    Q.w *= L;
+                }
+    
+                // Flat min/max filter (threshold_two)
+                if (((Q.w < th_b_low) || (Q.w > th_b_high)))
+                {
+                    Q.w = 0.0f;
+                }
             }
 
-            // Flat min/max filter (threshold_two)
-            if (((Q.w < th_b_low) || (Q.w > th_b_high)))
-            {
-                Q.w = 0.0f;
-            }
-        }
-
-        if (mode == 1)
-        {
-            float tmp = intensity;
+            float tmp = Q.w;
             if (tmp < 1) tmp = 1;
     
             float2 tsf_position = (float2)(native_divide(log10(tmp) - log10(intensity_min), log10(intensity_max)-log10(intensity_min)), 0.5f);
             float4 sample = read_imagef(tsf_source, tsf_sampler, tsf_position);
-
+            
             write_imagef(preview, id_glb, sample);
         }
     }

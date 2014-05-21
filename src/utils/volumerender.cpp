@@ -112,7 +112,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isScalebarActive(true),
       isSlicingActive(false),
       isIntegration2DActive(false),
-      isIntegration3DActive(false),
+      isIntegration3DActive(true),
       isRendering(true),
       isShadowActive(false),
       isLogarithmic2D(false),
@@ -3249,7 +3249,7 @@ void VolumeRenderWorker::setIntegration2D()
 {
     isIntegration2DActive = !isIntegration2DActive;
 
-    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
+//    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
 
     if (isInitialized) setMiscArrays();
 }
@@ -3257,7 +3257,7 @@ void VolumeRenderWorker::setIntegration3D()
 {
     isIntegration3DActive = !isIntegration3DActive;
 
-    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
+//    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
 
     if (isInitialized) setMiscArrays();
 }
