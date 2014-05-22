@@ -73,4 +73,5 @@ OTHER_FILES += \
     src/shaders/unitcell.v.glsl \
     src/kernels/image_preview.cl \
     src/kernels/parallel_reduction.cl \
-    src/kernels/box_sampler.cl
+    src/kernels/box_sampler.cl \
+    src/kernels/models.cl
