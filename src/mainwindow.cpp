@@ -523,6 +523,7 @@ void MainWindow::initializeActions()
     integrate2DAct->setCheckable(true);
     integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D integration"), this);
     integrate3DAct->setCheckable(true);
+    integrate3DAct->setChecked(true);
     logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), tr("&Toggle logarithmic"), this);
     logIntegrate2DAct->setCheckable(true);
     shadowAct = new QAction(QIcon(":/art/shadow.png"), tr("&Toggle shadows"), this);

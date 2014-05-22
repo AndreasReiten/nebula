@@ -232,7 +232,7 @@ float3 box_ray_delta;
                                     - model((float3)(box_ray_xyz.x, box_ray_xyz.y, box_ray_xyz.z - step_length), parameters)
                                     + model((float3)(box_ray_xyz.x, box_ray_xyz.y, box_ray_xyz.z + step_length), parameters),
                                     step_length));
-                            float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f;
+                            float strength = (dot(shadow_vector.xyz, normalize(gradient_vector)) + 1.0f) * 0.5f * sample.w;
                             sample.xyz = mix(sample.xyz, shadow_color.xyz, strength);
                         }
     
