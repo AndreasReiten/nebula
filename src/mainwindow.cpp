@@ -417,7 +417,7 @@ void MainWindow::initializeEmit()
     funcParamCSpinBox->setValue(10.0);
     funcParamDSpinBox->setValue(0.005);
 
-    qualitySlider->setValue(100);
+    qualitySlider->setValue(20);
     
     fileSelectionFilter->setText("*.cbf");
     
@@ -825,6 +825,7 @@ void MainWindow::initializeConnects()
 {
     /* this <-> volumeRenderWidget */
     connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setQuality(int)));
+    connect(this->qualitySlider, SIGNAL(sliderReleased()), volumeRenderWindow->getWorker(), SLOT(refreshTexture()));
     connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setScalebar()));
     connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setSlicing()));
     connect(this->integrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration2D()));
@@ -1304,7 +1305,7 @@ void MainWindow::initializeInteractives()
         QLabel * label_data_max= new QLabel(QString("Max: "));
         QLabel * label_alpha= new QLabel(QString("Alpha: "));
         QLabel * label_brightness = new QLabel(QString("Brightness: "));
-        QLabel * label_quality = new QLabel(QString("Performance: "));
+        QLabel * label_quality = new QLabel(QString("Texture quality: "));
 
         dataMinSpinBox = new QDoubleSpinBox;
         dataMinSpinBox->setDecimals(2);
@@ -1345,7 +1346,7 @@ void MainWindow::initializeInteractives()
 
         qualitySlider = new QSlider(Qt::Horizontal);
         qualitySlider->setRange(1,100);
-        qualitySlider->setToolTip("Set quality versus performance");
+        qualitySlider->setToolTip("Set texture resolution");
         qualitySlider->setTickPosition(QSlider::NoTicks);
 
         graphicsDockWidget = new QDockWidget(tr("View Settings"), this);

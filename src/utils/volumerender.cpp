@@ -126,7 +126,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isLabFrameActive(true),
       isMiniCellActive(true),
       isCountIntegrationActive(false),
-      weird_parameter(20),
+      quality_percentage(20),
       n_marker_indices(0)
 {
     // Marker
@@ -206,10 +206,10 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     tsf_parameters_svo[5] = 2.0; // brightness
 
     // Ray texture timing
-    fps_requested = 60;
-    work = 1.0;
-    work_time = 0.0;
-    quality_factor = 0.5;
+//    fps_requested = 60;
+//    work = 1.0;
+//    work_time = 0.0;
+//    quality_factor = 0.5;
 
     // Scalebars
     position_scalebar_ticks.reserve(100,3);
@@ -1218,7 +1218,7 @@ void VolumeRenderWorker::initialize()
     isInitialized = true;
 
     // Textures
-    setRayTexture();
+    setRayTexture(20);
     setTsfTexture();
 
     // Core set functions
@@ -1515,35 +1515,28 @@ void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 
     if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
     ctc_matrix.setWindow(render_surface->width(), render_surface->height());
+
+    setRayTexture(quality_percentage);
 }
 
-void VolumeRenderWorker::setRayTexture()
+void VolumeRenderWorker::setRayTexture(int percentage)
 {
-    // Only resize the texture if the change is somewhat significant (in terms of area changed)
-    if (isInitialized && ((!isRayTexInitialized) || (fabs(1.0 - quality_factor) > 0.15)))
+    if (isInitialized)
     {
-        // Scale down the change in quality factor a bit so that a stable resolution will be easier to reach. If not we risk having the resolution jump between two states that both fullfill the if-criterion enclosing this code
-        
-        // If the quality factor is greater than one, it means the program wants to increase the resolution of the rendering texture. It can be beneficial to downscale the quality factor a bit in such cases
-        quality_factor = 1.0 + (quality_factor - 1.0)*0.25;
-
         // Set a texture for the volume rendering kernel
         Matrix<int> ray_tex_new(1, 2);
-        ray_tex_new[0] = (int)((float)render_surface->width()*(weird_parameter*0.01)*std::pow(quality_factor, 1.0/3.0));
-        ray_tex_new[1] = (int)((float)render_surface->height()*(weird_parameter*0.01)*std::pow(quality_factor, 1.0/3.0));
+
+        ray_tex_new[0] = (int)(sqrt((double) percentage * 0.01) * (float)render_surface->width());
+        ray_tex_new[1] = (int)(sqrt((double) percentage * 0.01) * (float)render_surface->height());
 
         // Clamp
-        if (ray_tex_new[0] < 32) ray_tex_new[0] = 32;
-        if (ray_tex_new[1] < 32) ray_tex_new[1] = 32;
+        if (ray_tex_new[0] < 16) ray_tex_new[0] = 16;
+        if (ray_tex_new[1] < 16) ray_tex_new[1] = 16;
 
         if (ray_tex_new[0] > render_surface->width()) ray_tex_new[0] = render_surface->width();
         if (ray_tex_new[1] > render_surface->height()) ray_tex_new[1] = render_surface->height();
 
         // Calculate the actual quality factor multiplier
-        quality_factor = std::pow((double) ray_tex_new[0] / ((double)render_surface->width()*(weird_parameter*0.01)), 3.0);
-
-        weird_parameter *= std::pow(quality_factor, 1.0/3.0);
-        
         ray_tex_dim = ray_tex_new;
 
         // Global work size
@@ -1831,7 +1824,6 @@ void VolumeRenderWorker::takeScreenShot(QString path)
 
     // Render into buffer using max quality
     QPainter painter(paint_device_gl);
-    quality_factor = 1.0e9;
 
     render(&painter);
 
@@ -2840,7 +2832,6 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
 
 void VolumeRenderWorker::raytrace(cl_kernel kernel)
 {
-    setRayTexture();
     setShadowVector();
 
     // Aquire shared CL/GL objects
@@ -2874,13 +2865,6 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel)
 
     err = clFinish(*context_cl->getCommandQueue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-    work_time = (double) ray_kernel_timer.nsecsElapsed();
-
-    // Calculate how much the quality must be reduced (if any) in order to achieve the requested fps. This fps does not take into account the time spent on other rendering details.
-    double actual_time = work_time * 1.0e-9;
-    double requested_time = 1.0 / fps_requested;
-    quality_factor = requested_time / actual_time;
 
     // Release shared CL/GL objects
     err = clEnqueueReleaseGLObjects(*context_cl->getCommandQueue(), 1, &ray_tex_cl, 0, 0, 0);
@@ -3133,7 +3117,12 @@ size_t VolumeRenderWorker::setScaleBars()
 
 void VolumeRenderWorker::setQuality(int value)
 {
-   fps_requested = (float) value;
+   quality_percentage = value;
+}
+
+void VolumeRenderWorker::refreshTexture()
+{
+   setRayTexture(quality_percentage);
 }
 
 void VolumeRenderWorker::setCountIntegration()

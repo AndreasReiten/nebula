@@ -62,6 +62,7 @@ public slots:
     void setCountIntegration();
     void addMarker();
     void setQuality(int value);
+    void refreshTexture();
     void setScalebar();
     void setProjection();
     void setBackground();
@@ -195,12 +196,13 @@ private:
     Matrix<int> ray_tex_dim;
     Matrix<size_t> ray_glb_ws;
     Matrix<size_t> ray_loc_ws;
-    float weird_parameter;
+//    float weird_parameter;
+    int quality_percentage;
     cl_mem ray_tex_cl;
     GLuint ray_tex_gl;
-    void setRayTexture();
+    void setRayTexture(int percentage);
     void raytrace(cl_kernel kernel);
-    double work, work_time, quality_factor;
+//    double work, work_time, quality_factor;
     
     // Center line
     GLuint centerline_vbo;
@@ -305,7 +307,7 @@ private:
     QElapsedTimer session_age;
     
     // Ray texture timing
-    float fps_requested;
+//    float fps_requested;
     QElapsedTimer ray_kernel_timer;
 
     // Mouse
