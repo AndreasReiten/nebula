@@ -19,7 +19,11 @@ HEADERS = \
     src/utils/transferfunction.h \
     src/utils/filetreeview.h \
     src/utils/imagepreview.h \
-    src/utils/marker.h
+    src/utils/marker.h \
+    src/utils/ccmatrix.h \
+    src/utils/colormatrix.h \
+    src/utils/rotationmatrix.h \
+    src/utils/ubmatrix.h
 
 SOURCES = \
     src/main.cpp \
@@ -30,7 +34,6 @@ SOURCES = \
     src/utils/worker.cpp \
     src/utils/texthighlighter.cpp \
     src/utils/tools.cpp \
-    src/utils/matrix.cpp \
     src/utils/searchnode.cpp \
     src/utils/bricknode.cpp \
     src/utils/sparsevoxelocttree.cpp \

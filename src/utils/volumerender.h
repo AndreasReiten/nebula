@@ -37,6 +37,9 @@
 #include "openglwindow.h"
 #include "sharedcontext.h"
 #include "transferfunction.h"
+#include "ubmatrix.h"
+#include "colormatrix.h"
+#include "ccmatrix.h"
 
 #include <QScreen>
 #include <QPainter>
@@ -318,7 +321,7 @@ private:
 
     // View matrices
     Matrix<double> view_matrix;
-    CameraToClipMatrix<double> ctc_matrix;
+    CCMatrix<double> ctc_matrix;
     RotationMatrix<double> rotation;
     Matrix<double> data_translation;
     Matrix<double> data_scaling;
@@ -372,20 +375,20 @@ private:
     cl_sampler cl_svo_pool_sampler;
 
     // Colors
-    Color<GLfloat> marker_line_color;
-    Color<GLfloat> white;
-    Color<GLfloat> black;
-    Color<GLfloat> yellow;
-    Color<GLfloat> red;
-    Color<GLfloat> green;
-    Color<GLfloat> green_light;
-    Color<GLfloat> blue_light;
-    Color<GLfloat> magenta;
-    Color<GLfloat> magenta_light;
-    Color<GLfloat> blue;
-    Color<GLfloat> clear_color;
-    Color<GLfloat> clear_color_inverse;
-    Color<GLfloat> centerline_color;
+    ColorMatrix<GLfloat> marker_line_color;
+    ColorMatrix<GLfloat> white;
+    ColorMatrix<GLfloat> black;
+    ColorMatrix<GLfloat> yellow;
+    ColorMatrix<GLfloat> red;
+    ColorMatrix<GLfloat> green;
+    ColorMatrix<GLfloat> green_light;
+    ColorMatrix<GLfloat> blue_light;
+    ColorMatrix<GLfloat> magenta;
+    ColorMatrix<GLfloat> magenta_light;
+    ColorMatrix<GLfloat> blue;
+    ColorMatrix<GLfloat> clear_color;
+    ColorMatrix<GLfloat> clear_color_inverse;
+    ColorMatrix<GLfloat> centerline_color;
 
     // Pens
     void initializePaintTools();

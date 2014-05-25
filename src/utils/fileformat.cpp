@@ -377,15 +377,8 @@ int DetectorFile::filterData(size_t * n, Matrix<float> * outBuf, float threshold
     alpha =  0.8735582;
     beta =  0.000891863;
     
-//    qDebug() << "Omega" << omega*180/pi << offset_omega*180/pi;
-//    qDebug() << "Kappa" << kappa*180/pi << offset_kappa*180/pi;
-//    qDebug() << "Phi" << phi*180/pi << offset_phi*180/pi;
-    
-//    qDebug() << "PHI";
     PHI.setArbRotation(beta, 0, -(phi+offset_phi)); 
-//    qDebug() << "KAPPA";
     KAPPA.setArbRotation(alpha, 0, -(kappa+offset_kappa));
-//    qDebug() << "OMEGA";
     OMEGA.setZRotation(-(omega+offset_omega));
 
     

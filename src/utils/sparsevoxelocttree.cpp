@@ -1,4 +1,6 @@
 #include "sparsevoxelocttree.h"
+#include "ubmatrix.h"
+
 SparseVoxelOcttree::SparseVoxelOcttree()
 {
     this->filesize = 0;
