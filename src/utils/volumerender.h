@@ -267,7 +267,8 @@ private:
     int fps_string_width_prev;
     
     // Drawing rectangles
-    QRect multiplier_string_rect;
+//    QRect multiplier_string_rect;
+    QRect fps_string_rect;
     
     // Core set functions
     void setDataExtent();

@@ -1810,6 +1810,9 @@ void VolumeRenderWorker::render(QPainter *painter)
 
 void VolumeRenderWorker::takeScreenShot(QString path)
 {
+    // Set resolution back to former value
+    setRayTexture(100);
+    
     QOpenGLFramebufferObjectFormat format;
 
     format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
@@ -1821,7 +1824,7 @@ void VolumeRenderWorker::takeScreenShot(QString path)
     QOpenGLFramebufferObject buffy(render_surface->width(), render_surface->height(), format);
 
     buffy.bind();
-
+    
     // Render into buffer using max quality
     QPainter painter(paint_device_gl);
 
@@ -1831,6 +1834,9 @@ void VolumeRenderWorker::takeScreenShot(QString path)
     
     // Save buffer as image
     buffy.toImage().save(path);
+    
+    // Set resolution back to former value
+    setRayTexture(quality_percentage);
 }
 
 
@@ -2471,7 +2477,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
 
     // Fps
     QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
-    QRect fps_string_rect = emph_fontmetric->boundingRect(fps_string);
+    fps_string_rect = emph_fontmetric->boundingRect(fps_string);
     fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
     fps_string_width_prev = fps_string_rect.width();
     fps_string_rect += QMargins(5,5,5,5);
@@ -2598,9 +2604,9 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     double exponent;
     
     // Draw transfer function bounding box
-    QRect tsf_rect(0, 0, 20, render_surface->height() - (multiplier_string_rect.bottom() + 5) - 50);
+    QRect tsf_rect(0, 0, 20, render_surface->height() - (fps_string_rect.bottom() + 5) - 50);
     tsf_rect += QMargins(30,5,5,5);
-    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, multiplier_string_rect.bottom() + 5));
+    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
 
     tsf_rect -= QMargins(30,5,5,5);
     Matrix<GLfloat> gl_tsf_rect(4,2);
