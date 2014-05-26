@@ -530,7 +530,7 @@ __kernel void svoRayTrace(
             if (!isDsActive)color *= brightness;
         }
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
-        if (isIntegration3DActive)
+        if (isIntegration3DActive  && !isSlicingActive && !isDsActive)
         {
             if(isLogActive)
             {

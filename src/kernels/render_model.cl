@@ -112,7 +112,7 @@ __kernel void modelRayTrace(
         float4 sample = (float4)(0.0f);
 
 
-float3 box_ray_delta;
+        float3 box_ray_delta;
 
         if(hit)
         {
@@ -253,7 +253,7 @@ float3 box_ray_delta;
         }
 
         write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
-        if (isIntegration3DActive)
+        if (isIntegration3DActive && !isSlicingActive)
         {
             if(isLogActive)
             {
