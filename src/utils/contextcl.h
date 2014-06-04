@@ -19,6 +19,7 @@
 
 #include "devicecl.h"
 #include "tools.h"
+#include "matrix.h"
 
 #ifdef Q_OS_WIN
     #include <windows.h>

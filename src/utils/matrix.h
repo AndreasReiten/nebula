@@ -801,6 +801,8 @@ void Matrix<T>::reserve(size_t m, size_t n)
 template <class T>
 T& Matrix<T>::operator[] (const size_t index)
 {
+    if (index >= m*n) qDebug() << index << ">=" << m << "x" << n;
+    
     assert(index < m*n);
 
     return buffer[index];
@@ -809,6 +811,8 @@ T& Matrix<T>::operator[] (const size_t index)
 template <class T>
 const T& Matrix<T>::operator[] (const size_t index) const
 {
+    if (index >= m*n) qDebug() << index << ">=" << m << "x" << n;
+    
     assert(index < m*n);
 
     return buffer[index];

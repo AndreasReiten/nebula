@@ -2901,8 +2901,12 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
     Matrix<size_t> pool_dim(1,3);
     pool_dim[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
     pool_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-    pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())))*svo->getBrickOuterDimension();
-
+    pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())) + 1)*svo->getBrickOuterDimension();
+    
+    qDebug() << n_bricks << pool_dim[0] << pool_dim[1] << pool_dim[2] << pool_dim[0]*pool_dim[1]*pool_dim[2];
+    
+//    unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
+    
     // Load the contents into a CL texture
     if (isSvoInitialized){
         err = clReleaseMemObject(cl_svo_brick);
@@ -2935,6 +2939,15 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
     cl_pool_format.image_channel_order = CL_INTENSITY;
     cl_pool_format.image_channel_data_type = CL_FLOAT;
 
+    Matrix<float> tmp(1, pool_dim[0]*pool_dim[1]*pool_dim[2], 0);
+    
+    qDebug() << tmp.size() << svo->pool.size();
+    
+    for (int i = 0; i < svo->pool.size(); i++)
+    {
+        tmp[i] = svo->pool[i];    
+    }
+    
     cl_svo_pool = clCreateImage3D ( *context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &cl_pool_format,
@@ -2943,7 +2956,7 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
         pool_dim[2],
         0,
         0,
-        svo->pool.data(),
+        tmp.data(),
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 

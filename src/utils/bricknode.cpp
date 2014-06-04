@@ -27,11 +27,19 @@ void BrickNode::print()
     std::cout << "Pool id: ["<< poolId[0] << ", "<< poolId[1] << ", "<< poolId[2] << "]" << std::endl;
 }
 
-void BrickNode::calcPoolId(unsigned int poolPower, unsigned int brickNumber)
+void BrickNode::calcPoolId(unsigned int pp, unsigned int n)
 {
-    poolId[0] = (brickNumber & ((1 << poolPower) - 1));
-    poolId[1] = (brickNumber & ((1 << poolPower*2) - 1)) >> poolPower;
-    poolId[2] = brickNumber >> (poolPower*2);
+    // n = current number of bricks
+    // pp = the power of the brick pool (power of two)
+    
+    // Bitwise operations used here:
+    // X / 2^n = X >> n
+    // X % 2^n = X & (2^n - 1)
+    // 2^n = 1 << n
+    
+    poolId[0] = (n & ((1 << pp) - 1));
+    poolId[1] = (n & ((1 << pp*2) - 1)) >> pp;
+    poolId[2] = n >> (pp*2);
 }
 
 

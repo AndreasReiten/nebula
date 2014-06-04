@@ -504,14 +504,14 @@ void ProjectFileWorker::process()
 //    reduced_pixels->print(2,"Projworker");
     /* Create dummy dataset for debugging purposes.
     */
-    if (0) // A sphere
+    if (1) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
 
         reduced_pixels->resize(1, theta_max*phi_max*4);
 
-        float radius = 1.15;
+        float radius = 0.7;
         double pi = 4.0*std::atan(1.0);
 
         for (int i = 0; i < theta_max; i++)
@@ -1105,15 +1105,7 @@ void VoxelizeWorker::process()
                                 kill_flag = true;
                                 break;
                             }
-                            // If a node has data but is sufficiently self-similar (low variance)
-                            if (sqrt(variance_check[j]) <= 0.01)
-                            {
-                                gpuHelpOcttree[currentId].setDataFlag(1);
-                                gpuHelpOcttree[currentId].setMsdFlag(1);
-                                gpuHelpOcttree[currentId].setChild(0);
-
-//                                qDebug() << "Node" << currentId << "is self-similar with sum" << sum_check[j] << "and var" << variance_check[j];
-                            }
+                            
                             // Else the node is a parent with children
                             else
                             {
