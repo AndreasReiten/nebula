@@ -37,9 +37,9 @@ void BrickNode::calcPoolId(unsigned int pp, unsigned int n)
     // X % 2^n = X & (2^n - 1)
     // 2^n = 1 << n
     
-    poolId[0] = (n & ((1 << pp) - 1));
-    poolId[1] = (n & ((1 << pp*2) - 1)) >> pp;
-    poolId[2] = n >> (pp*2);
+    poolId[0] = (n & ((1 << pp) - 1));         // n % 2^pp // Change
+    poolId[1] = (n & ((1 << pp*2) - 1)) >> pp; // (n % 2^(pp*2)) / 2^pp // Change
+    poolId[2] = n >> (pp*2);                   // n / 2^(pp*2) // Change
 }
 
 

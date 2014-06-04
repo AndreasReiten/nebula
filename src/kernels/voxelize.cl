@@ -99,9 +99,13 @@ uint target_index(int4 target_dimension, int4 id_loc ,uint brick_outer_dimension
     int4 target_brick_dimension = target_dimension/(int4)(brick_outer_dimension);
 
     int4 brick_offset;
-    brick_offset.z = brick_count / (target_brick_dimension.x * target_brick_dimension.y);
-    brick_offset.y = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) / target_brick_dimension.x;
-    brick_offset.x = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) % target_brick_dimension.x;
+    brick_offset.z = brick_count / (target_brick_dimension.x * target_brick_dimension.y); // Change
+    brick_offset.y = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) / target_brick_dimension.x; // Change
+    brick_offset.x = (brick_count % (target_brick_dimension.x * target_brick_dimension.y)) % target_brick_dimension.x; // Change
+    
+//    poolId[0] = (n & ((1 << pp) - 1));         // n % 2^pp // Change
+//    poolId[1] = (n & ((1 << pp*2) - 1)) >> pp; // (n % 2^(pp*2)) / 2^pp // Change
+//    poolId[2] = n >> (pp*2);                   // n / 2^(pp*2) // Change
 
     int4 index3d = brick_offset*(int4)(brick_outer_dimension) + id_loc;
 

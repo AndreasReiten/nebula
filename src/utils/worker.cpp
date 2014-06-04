@@ -1206,7 +1206,7 @@ void VoxelizeWorker::process()
                 }
 
                 // Round up to the lowest number of bricks that is multiple of the brick pool dimensions. Use this value to reserve data for the data pool
-                unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
+                unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())))); // Change
 
                 // Read results
                 svo->pool.reserve(1, non_empty_node_counter_rounded_up*n_points_brick);
@@ -1218,7 +1218,7 @@ void VoxelizeWorker::process()
                     pool_cl,
                     CL_TRUE,
                     0,
-                    non_empty_node_counter_rounded_up*n_points_brick*sizeof(float),
+                    non_empty_node_counter_rounded_up*n_points_brick*sizeof(float), // Change
                     svo->pool.data(),
                     0, NULL, NULL);
                 if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
