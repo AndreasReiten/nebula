@@ -1,80 +1,6 @@
 # QMAKE PROJECT FILE
 LIBS += -lOpenCL
 
-HEADERS = \
-    src/mainwindow.h \
-    src/utils/openglwindow.h \
-    src/utils/volumerender.h \
-    src/utils/fileformat.h \
-    src/utils/worker.h \
-    src/utils/texthighlighter.h \
-    src/utils/tools.h \
-    src/utils/matrix.h \
-    src/utils/searchnode.h \
-    src/utils/bricknode.h \
-    src/utils/sparsevoxelocttree.h \
-    src/utils/contextcl.h \
-    src/utils/devicecl.h \
-    src/utils/sharedcontext.h \
-    src/utils/transferfunction.h \
-    src/utils/filetreeview.h \
-    src/utils/imagepreview.h \
-    src/utils/marker.h \
-    src/utils/ccmatrix.h \
-    src/utils/colormatrix.h \
-    src/utils/rotationmatrix.h \
-    src/utils/ubmatrix.h \
-    lib/qxlib/qxfile/utils/fileformat.h \
-    lib/qxlib/qxfile/utils/filetreeview.h \
-    lib/qxlib/qxfile/qxfilelib.h \
-    lib/qxlib/qximage/utils/imagepreview.h \
-    lib/qxlib/qximage/qximagelib.h \
-    lib/qxlib/qxmath/utils/ccmatrix.h \
-    lib/qxlib/qxmath/utils/colormatrix.h \
-    lib/qxlib/qxmath/utils/matrix.h \
-    lib/qxlib/qxmath/utils/rotationmatrix.h \
-    lib/qxlib/qxmath/utils/ubmatrix.h \
-    lib/qxlib/qxmath/qxmathlib.h \
-    lib/qxlib/qxopencl/utils/contextcl.h \
-    lib/qxlib/qxopencl/utils/devicecl.h \
-    lib/qxlib/qxopencl/qxopencllib.h \
-    lib/qxlib/qxopengl/qxopengllib.h \
-    lib/qxlib/qxsvo/qxsvolib.h \
-    lib/qxlib/qxlib.h \
-    src/utils/imagerender.h
-
-SOURCES = \
-    src/main.cpp \
-    src/mainwindow.cpp \
-    src/utils/openglwindow.cpp \
-    src/utils/volumerender.cpp \
-    src/utils/fileformat.cpp \
-    src/utils/worker.cpp \
-    src/utils/texthighlighter.cpp \
-    src/utils/tools.cpp \
-    src/utils/searchnode.cpp \
-    src/utils/bricknode.cpp \
-    src/utils/sparsevoxelocttree.cpp \
-    src/utils/contextcl.cpp \
-    src/utils/devicecl.cpp \
-    src/utils/sharedcontext.cpp \
-    src/utils/transferfunction.cpp \
-    src/utils/filetreeview.cpp \
-    src/utils/imagepreview.cpp \
-    src/utils/marker.cpp \
-    lib/qxlib/qxfile/utils/fileformat.cpp \
-    lib/qxlib/qxfile/utils/filetreeview.cpp \
-    lib/qxlib/qxfile/qxfilelib.cpp \
-    lib/qxlib/qximage/utils/imagepreview.cpp \
-    lib/qxlib/qximage/qximagelib.cpp \
-    lib/qxlib/qxmath/qxmathlib.cpp \
-    lib/qxlib/qxopencl/utils/contextcl.cpp \
-    lib/qxlib/qxopencl/utils/devicecl.cpp \
-    lib/qxlib/qxopencl/qxopencllib.cpp \
-    lib/qxlib/qxopengl/qxopengllib.cpp \
-    lib/qxlib/qxsvo/qxsvolib.cpp \
-    src/utils/imagerender.cpp
-
 RESOURCES     = nebula.qrc
 
 QMAKE_CXXFLAGS += -std=c++0x # C++11 
@@ -108,3 +34,60 @@ OTHER_FILES += \
     src/kernels/parallel_reduction.cl \
     src/kernels/box_sampler.cl \
     src/kernels/models.cl
+
+HEADERS += \
+    lib/qxlib/qxfile/utils/fileformat.h \
+    lib/qxlib/qxfile/utils/filetreeview.h \
+    lib/qxlib/qxfile/qxfilelib.h \
+    lib/qxlib/qximage/utils/imagepreview.h \
+    lib/qxlib/qximage/qximagelib.h \
+    lib/qxlib/qxmath/utils/ccmatrix.h \
+    lib/qxlib/qxmath/utils/colormatrix.h \
+    lib/qxlib/qxmath/utils/matrix.h \
+    lib/qxlib/qxmath/utils/rotationmatrix.h \
+    lib/qxlib/qxmath/utils/ubmatrix.h \
+    lib/qxlib/qxmath/qxmathlib.h \
+    lib/qxlib/qxopencl/utils/contextcl.h \
+    lib/qxlib/qxopencl/utils/devicecl.h \
+    lib/qxlib/qxopencl/qxopencllib.h \
+    lib/qxlib/qxopengl/utils/openglwindow.h \
+    lib/qxlib/qxopengl/utils/sharedcontext.h \
+    lib/qxlib/qxopengl/utils/transferfunction.h \
+    lib/qxlib/qxopengl/qxopengllib.h \
+    lib/qxlib/qxsvo/qxsvolib.h \
+    lib/qxlib/qxlib.h \
+    src/utils/bricknode.h \
+    src/utils/marker.h \
+    src/utils/searchnode.h \
+    src/utils/sparsevoxelocttree.h \
+    src/utils/texthighlighter.h \
+    src/utils/tools.h \
+    src/utils/volumerender.h \
+    src/utils/worker.h \
+    src/mainwindow.h
+
+SOURCES += \
+    lib/qxlib/qxfile/utils/fileformat.cpp \
+    lib/qxlib/qxfile/utils/filetreeview.cpp \
+    lib/qxlib/qxfile/qxfilelib.cpp \
+    lib/qxlib/qximage/utils/imagepreview.cpp \
+    lib/qxlib/qximage/qximagelib.cpp \
+    lib/qxlib/qxmath/qxmathlib.cpp \
+    lib/qxlib/qxopencl/utils/contextcl.cpp \
+    lib/qxlib/qxopencl/utils/devicecl.cpp \
+    lib/qxlib/qxopencl/qxopencllib.cpp \
+    lib/qxlib/qxopengl/utils/openglwindow.cpp \
+    lib/qxlib/qxopengl/utils/sharedcontext.cpp \
+    lib/qxlib/qxopengl/utils/transferfunction.cpp \
+    lib/qxlib/qxopengl/qxopengllib.cpp \
+    lib/qxlib/qxsvo/qxsvolib.cpp \
+    src/utils/bricknode.cpp \
+    src/utils/marker.cpp \
+    src/utils/searchnode.cpp \
+    src/utils/sparsevoxelocttree.cpp \
+    src/utils/texthighlighter.cpp \
+    src/utils/tools.cpp \
+    src/utils/volumerender.cpp \
+    src/utils/worker.cpp \
+    src/main.cpp \
+    src/mainwindow.cpp

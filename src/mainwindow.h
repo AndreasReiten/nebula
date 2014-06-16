@@ -42,16 +42,12 @@
 #include <QFileSystemModel>
 #include <QStandardItemModel>
 
-#include "utils/contextcl.h"
-#include "utils/sharedcontext.h"
+#include "lib/qxlib/qxlib.h"
 #include "utils/texthighlighter.h"
 #include "utils/volumerender.h"
-#include "utils/imagepreview.h"
-#include "utils/matrix.h"
 #include "utils/worker.h"
 #include "utils/sparsevoxelocttree.h"
 #include "utils/tools.h"
-#include "utils/filetreeview.h"
 
 
 class MainWindow : public QMainWindow

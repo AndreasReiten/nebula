@@ -11,9 +11,9 @@
 #include <QString>
 #include <QDebug>
 
+#include "lib/qxlib/qxlib.h"
 #include "tools.h"
-#include "matrix.h"
-#include "ubmatrix.h"
+
 
 class SparseVoxelOcttree
 {

@@ -20,7 +20,7 @@
 #include <cmath>
 #include <cstring>
 
-#include "matrix.h"
+#include "lib/qxlib/qxlib.h"
 
 QString openResource(const char * path);
 //QByteArray openFile(const char * path);

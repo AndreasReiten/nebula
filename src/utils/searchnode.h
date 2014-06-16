@@ -12,8 +12,7 @@
 
 #include <CL/opencl.h>
 
-#include "contextcl.h"
-#include "matrix.h"
+#include "lib/qxlib/qxlib.h"
 #include "tools.h"
 
 class SearchNode {

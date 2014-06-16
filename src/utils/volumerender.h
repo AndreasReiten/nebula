@@ -30,16 +30,9 @@
 
 
 #include "tools.h"
-//#include "miniarray.h"
-#include "matrix.h"
+#include "lib/qxlib/qxlib.h"
 #include "marker.h"
 #include "sparsevoxelocttree.h"
-#include "openglwindow.h"
-#include "sharedcontext.h"
-#include "transferfunction.h"
-#include "ubmatrix.h"
-#include "colormatrix.h"
-#include "ccmatrix.h"
 
 #include <QScreen>
 #include <QPainter>
