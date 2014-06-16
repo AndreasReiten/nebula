@@ -23,9 +23,9 @@
 #include "matrix.h"
 
 QString openResource(const char * path);
-QByteArray openFile(const char * path);
+//QByteArray openFile(const char * path);
 
 QString timeString(size_t ms);
-const char * cl_error_cstring(cl_int error);
+
 void writeToLogAndPrint(QString text, QString file, bool append);
 #endif

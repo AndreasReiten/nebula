@@ -27,8 +27,8 @@
 
 #include "matrix.h"
 #include "rotationmatrix.h"
-#include "tools.h"
-#include "sharedcontext.h"
+//#include "tools.h"
+//#include "sharedcontext.h"
 #include "contextcl.h"
 
 

@@ -33,7 +33,24 @@ cl_program OpenCLContext::createProgram(Matrix<const char *> * paths, cl_int * e
 
     for (size_t i = 0; i < paths->size(); i++)
     {
-        qsources[i] = openFile(paths->at(i));
+        std::ifstream in(paths->at(i), std::ios::in | std::ios::binary);
+        std::string contents;
+    
+        if (in)
+        {
+            in.seekg(0, std::ios::end);
+            contents.resize(in.tellg());
+            in.seekg(0, std::ios::beg);
+            in.read(&contents[0], contents.size());
+            in.close();
+        }
+        else
+        {
+            qDebug(QString("Could not open file: " + QString(paths->at(i))).toStdString().c_str());
+        }
+    
+        qsources[i] = QString(contents.c_str()).toUtf8();
+        
         sources[i] = qsources[i].data();
         lengths[i] = strlen(sources[i]);
     }

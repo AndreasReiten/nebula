@@ -11,7 +11,7 @@
 #include <limits>
 
 #include <QtGlobal>
-
+#include <QCoreApplication>
 
 /* GL and CL */
 #include <CL/opencl.h>

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <fstream>
 
 #include <CL/opencl.h>
 #include <CL/cl_gl.h>
@@ -18,7 +19,7 @@
 #include <QDebug>
 
 #include "devicecl.h"
-#include "tools.h"
+//#include "tools.h"
 #include "matrix.h"
 
 #ifdef Q_OS_WIN
