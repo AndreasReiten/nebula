@@ -1,0 +1,3 @@
+[submodule "lib/qxlib"]
+	path = lib/qxlib
+	url = https://github.com/Natnux/qxlib.git

@@ -23,7 +23,25 @@ HEADERS = \
     src/utils/ccmatrix.h \
     src/utils/colormatrix.h \
     src/utils/rotationmatrix.h \
-    src/utils/ubmatrix.h
+    src/utils/ubmatrix.h \
+    lib/qxlib/qxfile/utils/fileformat.h \
+    lib/qxlib/qxfile/utils/filetreeview.h \
+    lib/qxlib/qxfile/qxfilelib.h \
+    lib/qxlib/qximage/utils/imagepreview.h \
+    lib/qxlib/qximage/qximagelib.h \
+    lib/qxlib/qxmath/utils/ccmatrix.h \
+    lib/qxlib/qxmath/utils/colormatrix.h \
+    lib/qxlib/qxmath/utils/matrix.h \
+    lib/qxlib/qxmath/utils/rotationmatrix.h \
+    lib/qxlib/qxmath/utils/ubmatrix.h \
+    lib/qxlib/qxmath/qxmathlib.h \
+    lib/qxlib/qxopencl/utils/contextcl.h \
+    lib/qxlib/qxopencl/utils/devicecl.h \
+    lib/qxlib/qxopencl/qxopencllib.h \
+    lib/qxlib/qxopengl/qxopengllib.h \
+    lib/qxlib/qxsvo/qxsvolib.h \
+    lib/qxlib/qxlib.h \
+    src/utils/imagerender.h
 
 SOURCES = \
     src/main.cpp \
@@ -43,11 +61,23 @@ SOURCES = \
     src/utils/transferfunction.cpp \
     src/utils/filetreeview.cpp \
     src/utils/imagepreview.cpp \
-    src/utils/marker.cpp
+    src/utils/marker.cpp \
+    lib/qxlib/qxfile/utils/fileformat.cpp \
+    lib/qxlib/qxfile/utils/filetreeview.cpp \
+    lib/qxlib/qxfile/qxfilelib.cpp \
+    lib/qxlib/qximage/utils/imagepreview.cpp \
+    lib/qxlib/qximage/qximagelib.cpp \
+    lib/qxlib/qxmath/qxmathlib.cpp \
+    lib/qxlib/qxopencl/utils/contextcl.cpp \
+    lib/qxlib/qxopencl/utils/devicecl.cpp \
+    lib/qxlib/qxopencl/qxopencllib.cpp \
+    lib/qxlib/qxopengl/qxopengllib.cpp \
+    lib/qxlib/qxsvo/qxsvolib.cpp \
+    src/utils/imagerender.cpp
 
 RESOURCES     = nebula.qrc
 
-QMAKE_CXXFLAGS += -std=c++0x # C++11 features are needed for Matrix
+QMAKE_CXXFLAGS += -std=c++0x # C++11 
 QT += core gui opengl widgets script
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
