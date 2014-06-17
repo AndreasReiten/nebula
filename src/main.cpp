@@ -28,7 +28,20 @@
 #include <QApplication>
 #include <QIcon>
 #include "mainwindow.h"
-#include "utils/tools.h"
+
+void writeToLogAndPrint(QString text, QString file, bool append)
+{
+    QDateTime dateTime = dateTime.currentDateTime();
+    QString dateTimeString = QString("["+dateTime.toString("hh:mm:ss")+"] ");
+
+    std::ofstream myfile (file.toStdString().c_str(), std::ios::out | ((append == true) ? std::ios::app : std::ios::trunc));
+    if (myfile.is_open())
+    {
+        myfile << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
+        std::cout << "[Log]"<< dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
+    }
+    else std::cout << "Unable to open log file" << std::endl;
+}
 
 void appOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {

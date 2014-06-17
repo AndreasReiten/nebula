@@ -2,8 +2,7 @@
 #define MARKER_H
 
 #include <QOpenGLFunctions>
-#include "lib/qxlib/qxlib.h"
-#include "tools.h"
+#include "../../lib/qxlib/qxlib.h"
 
 class Marker : protected QOpenGLFunctions
 {

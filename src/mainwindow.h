@@ -42,12 +42,10 @@
 #include <QFileSystemModel>
 #include <QStandardItemModel>
 
-#include "lib/qxlib/qxlib.h"
+#include "../lib/qxlib/qxlib.h"
 #include "utils/texthighlighter.h"
 #include "utils/volumerender.h"
 #include "utils/worker.h"
-#include "utils/sparsevoxelocttree.h"
-#include "utils/tools.h"
 
 
 class MainWindow : public QMainWindow

@@ -56,15 +56,14 @@ HEADERS += \
     lib/qxlib/qxopengl/qxopengllib.h \
     lib/qxlib/qxsvo/qxsvolib.h \
     lib/qxlib/qxlib.h \
-    src/utils/bricknode.h \
     src/utils/marker.h \
-    src/utils/searchnode.h \
-    src/utils/sparsevoxelocttree.h \
     src/utils/texthighlighter.h \
-    src/utils/tools.h \
     src/utils/volumerender.h \
     src/utils/worker.h \
-    src/mainwindow.h
+    src/mainwindow.h \
+    lib/qxlib/qxsvo/utils/bricknode.h \
+    lib/qxlib/qxsvo/utils/searchnode.h \
+    lib/qxlib/qxsvo/utils/sparsevoxelocttree.h
 
 SOURCES += \
     lib/qxlib/qxfile/utils/fileformat.cpp \
@@ -81,13 +80,12 @@ SOURCES += \
     lib/qxlib/qxopengl/utils/transferfunction.cpp \
     lib/qxlib/qxopengl/qxopengllib.cpp \
     lib/qxlib/qxsvo/qxsvolib.cpp \
-    src/utils/bricknode.cpp \
     src/utils/marker.cpp \
-    src/utils/searchnode.cpp \
-    src/utils/sparsevoxelocttree.cpp \
     src/utils/texthighlighter.cpp \
-    src/utils/tools.cpp \
     src/utils/volumerender.cpp \
     src/utils/worker.cpp \
     src/main.cpp \
-    src/mainwindow.cpp
+    src/mainwindow.cpp \
+    lib/qxlib/qxsvo/utils/bricknode.cpp \
+    lib/qxlib/qxsvo/utils/searchnode.cpp \
+    lib/qxlib/qxsvo/utils/sparsevoxelocttree.cpp

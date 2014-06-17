@@ -29,10 +29,8 @@
 #include <QPolygonF>
 
 
-#include "tools.h"
-#include "lib/qxlib/qxlib.h"
+#include "../../lib/qxlib/qxlib.h"
 #include "marker.h"
-#include "sparsevoxelocttree.h"
 
 #include <QScreen>
 #include <QPainter>

@@ -29,11 +29,7 @@
 #include <QOpenGLContext>
 
 /* Project files */
-#include "lib/qxlib/qxlib.h"
-#include "tools.h"
-#include "searchnode.h"
-#include "bricknode.h"
-#include "sparsevoxelocttree.h"
+#include "../../lib/qxlib/qxlib.h"
 
 class BaseWorker : public QObject
 {
