@@ -1,5 +1,34 @@
 ﻿#include "volumerender.h"
 
+/* Useful C++ libs */
+#include <cmath>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
+#include <algorithm>
+//#include <cstdio>
+
+#include <QDebug>
+
+/* GL and CL*/
+#include <CL/opencl.h>
+
+/* QT */
+#include <QTimer>
+#include <QElapsedTimer>
+#include <QString>
+#include <QByteArray>
+#include <QDateTime>
+#include <QMouseEvent>
+#include <QOpenGLShaderProgram>
+#include <QResizeEvent>
+#include <QPolygonF>
+#include <QScreen>
+#include <QPainter>
+#include <QOpenGLFramebufferObject>
+
 VolumeRenderWindow::VolumeRenderWindow()
     : isInitialized(false)
     , gl_worker(0)

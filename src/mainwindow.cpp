@@ -1,5 +1,34 @@
 #include "mainwindow.h"
 
+#include <iostream>
+
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <cmath>
+
+#include <QThread>
+#include <QMenu>
+#include <QMenuBar>
+#include <QToolBar>
+#include <QTimer>
+#include <QLineEdit>
+#include <QGroupBox>
+#include <QMessageBox>
+#include <QFile>
+#include <QFileDialog>
+#include <QToolButton>
+#include <QtScript>
+#include <QVBoxLayout>
+#include <QPlainTextEdit>
+#include <QStatusBar>
+#include <QSettings>
+#include <QTextStream>
+#include <QSlider>
+#include <QList>
+#include <QApplication>
+
 MainWindow::MainWindow() 
 {
     //     Set some default values

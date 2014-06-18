@@ -1,23 +1,11 @@
 #ifndef TEXT_HIGHLIGHTER_H
 #define TEXT_HIGHLIGHTER_H
 
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <fstream>
-#include <cmath>
-#include <cerrno>
-#include <vector>
-#include <limits>
 
-#include <QStringList>
-#include <QObject>
-#include <QWidget>
-#include <QPainter>
+
 #include <QSyntaxHighlighter>
-#include <QHash>
-#include <QChar>
-#include <QString>
+#include <QVector>
+#include <QRegExp>
 #include <QTextCharFormat>
 
 class Highlighter : public QSyntaxHighlighter

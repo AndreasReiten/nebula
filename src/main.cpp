@@ -14,19 +14,17 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
- * Lines drawn by QPainter are thick and ugly. Let OpenGL do such jobs.
- * The rotation angle is set to omega. There should be a detection mechanism to determine the actual rotation angle.
- * UB marix and orientation
  * Radial integration
- * Brick merging (performance and storage consumption)
- * Extract base fileformat for subclassing
- * The performance formula is off
  * 
  * */
 
-#include <QCoreApplication>
 #include <QApplication>
 #include <QIcon>
+#include <QDateTime>
+#include <QString>
+#include <QDebug>
+#include <QByteArray>
+
 #include "mainwindow.h"
 
 void writeToLogAndPrint(QString text, QString file, bool append)

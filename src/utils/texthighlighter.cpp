@@ -1,5 +1,22 @@
 #include "texthighlighter.h"
 
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <fstream>
+#include <cmath>
+//#include <cerrno>
+#include <vector>
+#include <limits>
+
+#include <QStringList>
+#include <QWidget>
+#include <QPainter>
+
+#include <QHash>
+#include <QChar>
+#include <QString>
+
 Highlighter::Highlighter(QTextDocument *parent): QSyntaxHighlighter(parent)
 {
     HighlightingRule rule;

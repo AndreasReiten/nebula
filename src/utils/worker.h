@@ -1,32 +1,8 @@
 #ifndef WORKER_H
 #define WORKER_H
 
-/* C++ libs */
-#include <cmath>
-#include <sstream>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <ctime>
-#include <limits>
-
-#include <QtGlobal>
-#include <QCoreApplication>
-
-/* GL and CL */
-#include <CL/opencl.h>
-
-/* QT */
-#include <QTimer>
-#include <QElapsedTimer>
-#include <QObject>
-#include <QString>
-#include <QStringList>
-#include <QByteArray>
-#include <QDateTime>
 #include <QScriptEngine>
 #include <QPlainTextEdit>
-#include <QOpenGLContext>
 
 /* Project files */
 #include "../../lib/qxlib/qxlib.h"

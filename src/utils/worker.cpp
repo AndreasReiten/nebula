@@ -1,5 +1,32 @@
 #include "worker.h"
 
+/* C++ libs */
+#include <cmath>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
+#include <limits>
+
+//#include <QtGlobal>
+#include <QCoreApplication>
+
+/* GL and CL */
+#include <CL/opencl.h>
+
+/* QT */
+#include <QTimer>
+#include <QElapsedTimer>
+#include <QObject>
+#include <QString>
+#include <QStringList>
+#include <QByteArray>
+#include <QDateTime>
+
+
+#include <QOpenGLContext>
+
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.7e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU during pool construction. 3D image can be used with OpenCL 1.2, allowing you to use the entire VRAM.
 static const size_t nodes_per_kernel_call = 1024;
@@ -875,7 +902,7 @@ void VoxelizeWorker::process()
         
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
-        root.setOpenCLContext(context_cl);
+//        root.setOpenCLContext(context_cl);
         
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
