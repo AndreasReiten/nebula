@@ -20,20 +20,20 @@ OTHER_FILES += \
     src/kernels/render_shared.cl \
     src/kernels/render_model.cl \
     src/kernels/integrate.cl \
-    src/shaders/std_2d_tex.f.glsl \
-    src/shaders/std_2d_tex.v.glsl \
-    src/shaders/std_blend.f.glsl \
-    src/shaders/std_blend.v.glsl \
-    src/shaders/std_3d_col.f.glsl \
-    src/shaders/std_3d_col.v.glsl \
-    src/shaders/std_2d_col.v.glsl \
-    src/shaders/std_2d_col.f.glsl \ 
-    src/shaders/unitcell.f.glsl \
-    src/shaders/unitcell.v.glsl \
     src/kernels/image_preview.cl \
     src/kernels/parallel_reduction.cl \
     src/kernels/box_sampler.cl \
-    src/kernels/models.cl
+    src/kernels/models.cl \
+    lib/qxlib/qxopengl/glsl/std_2d_col.f.glsl \
+    lib/qxlib/qxopengl/glsl/std_2d_col.v.glsl \
+    lib/qxlib/qxopengl/glsl/std_2d_tex.f.glsl \
+    lib/qxlib/qxopengl/glsl/std_2d_tex.v.glsl \
+    lib/qxlib/qxopengl/glsl/std_3d_col.f.glsl \
+    lib/qxlib/qxopengl/glsl/std_3d_col.v.glsl \
+    lib/qxlib/qxopengl/glsl/std_blend.f.glsl \
+    lib/qxlib/qxopengl/glsl/std_blend.v.glsl \
+    lib/qxlib/qxopengl/glsl/unitcell.f.glsl \
+    lib/qxlib/qxopengl/glsl/unitcell.v.glsl
 
 HEADERS += \
     lib/qxlib/qxfile/utils/fileformat.h \
