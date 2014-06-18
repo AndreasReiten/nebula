@@ -290,7 +290,7 @@ void SetFileWorker::process()
 
         // Set file and get status
         files->append(DetectorFile());
-        int STATUS_OK = files->back().set(file_paths->at(i), context_cl);
+        int STATUS_OK = files->back().set(file_paths->at(i));
         if (STATUS_OK)
         {
             // Get suggestions on the minimum search radius that can safely be applied during interpolation
@@ -433,6 +433,9 @@ void ReadFileWorker::process()
 ProjectFileWorker::ProjectFileWorker()
 {
     this->isCLInitialized = false;
+    offset_omega = 0;
+    offset_kappa = 0;
+    offset_phi = 0;
 }
 
 ProjectFileWorker::~ProjectFileWorker()
@@ -481,7 +484,7 @@ void ProjectFileWorker::process()
     stopwatch.start();
     kill_flag = false;
 
-    size_t n = 0;
+    n_reduced_pixels = 0;
 
 //    qDebug() << reduced_pixels->size();
 
@@ -497,7 +500,7 @@ void ProjectFileWorker::process()
         }
 
         // Project and correct file and get status
-        if (n >= reduced_pixels->size())
+        if (n_reduced_pixels + 3 >= reduced_pixels->size())
         {
             // Break if there is too much data.
             emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Warning: There was too much data!"));
@@ -505,14 +508,16 @@ void ProjectFileWorker::process()
         }
         else
         {
-            emit changedImageSize(files->at(i).getWidth(), files->at(i).getHeight());
-            (*files)[i].setActiveAngle(active_angle);
-            (*files)[i].setProjectionKernel(&project_kernel);
-            (*files)[i].setOffsetOmega(offset_omega);
-            (*files)[i].setOffsetKappa(offset_kappa);
-            (*files)[i].setOffsetPhi(offset_phi);
+            int STATUS_OK = projectFile(&(*files)[i]);
+//            qDebug() << n_reduced_pixels;
+//            emit changedImageSize(files->at(i).getFastDimension(), files->at(i).getSlowDimension());
+//            (*files)[i].setActiveAngle(active_angle);
+//            (*files)[i].setProjectionKernel(&project_kernel);
+//            (*files)[i].setOffsetOmega(offset_omega);
+//            (*files)[i].setOffsetKappa(offset_kappa);
+//            (*files)[i].setOffsetPhi(offset_phi);
 
-            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
+//            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
             if (!STATUS_OK)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: could not process data \""+files->at(i).getPath()+"\"");
@@ -525,13 +530,13 @@ void ProjectFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-    reduced_pixels->resize(1, n);
+    reduced_pixels->resize(1, n_reduced_pixels);
 
 //    qDebug() << "Reduced pixel size" << reduced_pixels->size();
 //    reduced_pixels->print(2,"Projworker");
     /* Create dummy dataset for debugging purposes.
     */
-    if (1) // A sphere
+    if (0) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
@@ -584,7 +589,213 @@ void ProjectFileWorker::process()
     emit finished();
 }
 
+int ProjectFileWorker::projectFile(DetectorFile * file)
+{
+    // Project and correct the data
+    cl_image_format target_format;
+    target_format.image_channel_order = CL_RGBA;
+    target_format.image_channel_data_type = CL_FLOAT;
 
+    // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
+    cl_mem xyzi_target_cl = clCreateImage2D ( *context_cl->getContext(),
+        CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+        &target_format,
+        file->getFastDimension(),
+        file->getSlowDimension(),
+        0,
+        NULL,
+        &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Load data into a CL texture
+    cl_image_format source_format;
+    source_format.image_channel_order = CL_INTENSITY;
+    source_format.image_channel_data_type = CL_FLOAT;
+
+    cl_mem source_cl = clCreateImage2D ( *context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        &source_format,
+        file->getFastDimension(),
+        file->getSlowDimension(),
+        file->getFastDimension()*sizeof(cl_float),
+        file->getData().data(),
+        &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
+    cl_sampler intensity_sampler = clCreateSampler(*context_cl->getContext(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
+    
+    double phi, kappa, omega;
+    if(active_angle == 0)
+    {
+        phi = file->start_angle + 0.5*file->angle_increment;
+        kappa = file->kappa;
+        omega = file->omega;
+    }
+    else if(active_angle == 1) 
+    {
+        phi = file->phi;
+        kappa = file->start_angle + 0.5*file->angle_increment;
+        omega = file->omega;
+    }
+    else if(active_angle == 2) 
+    {
+        phi = file->phi;
+        kappa = file->kappa;
+        omega = file->start_angle + 0.5*file->angle_increment;
+    }
+    
+    RotationMatrix<double> PHI;
+    RotationMatrix<double> KAPPA;
+    RotationMatrix<double> OMEGA;
+    RotationMatrix<double> sampleRotMat;
+
+    file->alpha =  0.8735582;
+    file->beta =  0.000891863;
+    
+    PHI.setArbRotation(file->beta, 0, -(phi+offset_phi)); 
+    KAPPA.setArbRotation(file->alpha, 0, -(kappa+offset_kappa));
+    OMEGA.setZRotation(-(omega+offset_omega));
+    
+    // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
+    
+    sampleRotMat = PHI*KAPPA*OMEGA;
+
+    cl_mem sample_rotation_matrix_cl = clCreateBuffer(*context_cl->getContext(),
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+        sampleRotMat.toFloat().bytes(),
+        sampleRotMat.toFloat().data(),
+        &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // The sampler for cl_tsf_tex
+    cl_sampler tsf_sampler = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Set kernel arguments
+    err = clSetKernelArg(project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
+    err |= clSetKernelArg(project_kernel, 1, sizeof(cl_mem), (void *) &source_cl);
+    err |= clSetKernelArg(project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
+    err |= clSetKernelArg(project_kernel, 3, sizeof(cl_sampler), &intensity_sampler);
+    err |= clSetKernelArg(project_kernel, 4, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    float threshold_one[2], threshold_two[2];
+    threshold_one[0] = this->threshold_reduce_low;
+    threshold_one[1] = this->threshold_reduce_high;
+    threshold_two[0] = this->threshold_project_low;
+    threshold_two[1] = this->threshold_project_high;
+//    qDebug() << "Reduce" << threshold_reduce_low << threshold_reduce_high;
+//    qDebug() << "Project" << threshold_project_low << threshold_project_high;
+    
+    err |= clSetKernelArg(project_kernel, 5, 2*sizeof(cl_float), threshold_one);
+    err |= clSetKernelArg(project_kernel, 6, 2*sizeof(cl_float), threshold_two);
+    err |= clSetKernelArg(project_kernel, 7, sizeof(cl_float), &file->background_flux);
+    err |= clSetKernelArg(project_kernel, 8, sizeof(cl_float), &file->backgroundExpTime);
+    err |= clSetKernelArg(project_kernel, 9, sizeof(cl_float), &file->pixel_size_x);
+    err |= clSetKernelArg(project_kernel, 10, sizeof(cl_float), &file->pixel_size_y);
+    err |= clSetKernelArg(project_kernel, 11, sizeof(cl_float), &file->exposure_time);
+    err |= clSetKernelArg(project_kernel, 12, sizeof(cl_float), &file->wavelength);
+    err |= clSetKernelArg(project_kernel, 13, sizeof(cl_float), &file->detector_distance);
+    err |= clSetKernelArg(project_kernel, 14, sizeof(cl_float), &file->beam_x);
+    err |= clSetKernelArg(project_kernel, 15, sizeof(cl_float), &file->beam_y);
+    err |= clSetKernelArg(project_kernel, 16, sizeof(cl_float), &file->flux);
+    err |= clSetKernelArg(project_kernel, 17, sizeof(cl_float), &file->start_angle);
+    err |= clSetKernelArg(project_kernel, 18, sizeof(cl_float), &file->angle_increment);
+    err |= clSetKernelArg(project_kernel, 19, sizeof(cl_float), &file->kappa);
+    err |= clSetKernelArg(project_kernel, 20, sizeof(cl_float), &file->phi);
+    err |= clSetKernelArg(project_kernel, 21, sizeof(cl_float), &file->omega);
+    err |= clSetKernelArg(project_kernel, 22, sizeof(cl_float), &file->max_counts);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    /* Launch rendering kernel */
+    size_t area_per_call[2] = {128, 128};
+    size_t call_offset[2] = {0,0};
+    size_t loc_ws[2];
+    size_t glb_ws[2];
+    
+    loc_ws[0] = 16;
+    loc_ws[1] = 16;
+    glb_ws[0] = file->getFastDimension() + loc_ws[0] - (file->getFastDimension()%loc_ws[0]);
+    glb_ws[1] = file->getSlowDimension() + loc_ws[1] - (file->getSlowDimension()%loc_ws[1]);
+    
+    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
+    {
+        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
+        {
+            call_offset[0] = glb_x;
+            call_offset[1] = glb_y;
+
+            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        }
+    }
+    clFinish(*context_cl->getCommandQueue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Read the data
+    size_t origin[3];
+    origin[0] = 0;
+    origin[1] = 0;
+    origin[2] = 0;
+
+    size_t region[3];
+    region[0] = file->getFastDimension();
+    region[1] = file->getSlowDimension();
+    region[2] = 1;
+
+    Matrix<float> projected_data_buf(1,file->getFastDimension()*file->getSlowDimension()*4);
+    err = clEnqueueReadImage ( *context_cl->getCommandQueue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    if (xyzi_target_cl){
+        err = clReleaseMemObject(xyzi_target_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (source_cl){
+        err = clReleaseMemObject(source_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (sample_rotation_matrix_cl){
+        err = clReleaseMemObject(sample_rotation_matrix_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (intensity_sampler){
+        err = clReleaseSampler(intensity_sampler);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+    if (tsf_sampler){
+        err = clReleaseSampler(tsf_sampler);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
+
+//    if (isProjectionActive)
+//    {
+    for (size_t i = 0; i < file->getFastDimension()*file->getSlowDimension(); i++)
+    {
+        if (projected_data_buf[i*4+3] > 0.0) // Above 0 check?
+        {
+//                if (projected_data_buf[i*4+3] < 0.0) qDebug() <<  projected_data_buf[i*4+3] << i;
+            if ((n_reduced_pixels)+3 < reduced_pixels->size())
+            {
+                (*reduced_pixels)[(n_reduced_pixels)+0] = projected_data_buf[i*4+0];
+                (*reduced_pixels)[(n_reduced_pixels)+1] = projected_data_buf[i*4+1];
+                (*reduced_pixels)[(n_reduced_pixels)+2] = projected_data_buf[i*4+2];
+                (*reduced_pixels)[(n_reduced_pixels)+3] = projected_data_buf[i*4+3];
+                (n_reduced_pixels)+=4;
+            }
+            else
+            {
+                qDebug() << "TODO: send proper warning";
+                return 0;
+            }
+        }
+    }
+//    }
+    
+    return 1;
+}
 
 /***
  *      dBBBBBb     dBP    dBP
@@ -638,7 +849,7 @@ void MultiWorker::process()
     QElapsedTimer stopwatch;
     stopwatch.start();
     size_t n_ok_files = 0;
-    size_t n = 0;
+    n_reduced_pixels = 0;
     size_t size_raw = 0;
     
     for (size_t i = 0; i < (size_t) file_paths->size(); i++)
@@ -654,7 +865,7 @@ void MultiWorker::process()
 
         // Set file and get status
         DetectorFile file;
-        int STATUS_OK = file.set(file_paths->at(i), context_cl);
+        int STATUS_OK = file.set(file_paths->at(i));
 
         if (STATUS_OK)
         {
@@ -667,7 +878,7 @@ void MultiWorker::process()
                 size_raw += file.getBytes();
 
                 // Project and correct file and get status
-                if (n > REDUCED_PIXELS_MAX_BYTES/sizeof(float))
+                if (n_reduced_pixels > REDUCED_PIXELS_MAX_BYTES/sizeof(float))
                 {
                     // Break if there is too much data.
                     emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Warning: There was too much data!"));
@@ -675,15 +886,15 @@ void MultiWorker::process()
                 }
                 else
                 {
-                    emit changedImageSize(file.getWidth(), file.getHeight());
+//                    emit changedImageSize(file.getFastDimension(), file.getSlowDimension());
 
-                    file.setActiveAngle(active_angle);
-                    file.setProjectionKernel(&project_kernel);
-                    file.setOffsetOmega(offset_omega);
-                    file.setOffsetKappa(offset_kappa);
-                    file.setOffsetPhi(offset_phi);
+//                    file.setActiveAngle(active_angle);
+//                    file.setProjectionKernel(&project_kernel);
+//                    file.setOffsetOmega(offset_omega);
+//                    file.setOffsetKappa(offset_kappa);
+//                    file.setOffsetPhi(offset_phi);
 
-                    int STATUS_OK = file.filterData( &n, reduced_pixels, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
+                    int STATUS_OK = projectFile(&file);
                     
                     if (STATUS_OK)
                     {
@@ -720,7 +931,7 @@ void MultiWorker::process()
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/file_paths->size());
     }
-    reduced_pixels->resize(1, n);
+    reduced_pixels->resize(1, n_reduced_pixels);
 
 //    reduced_pixels->print(2,"Multiworker");
 

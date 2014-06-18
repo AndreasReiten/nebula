@@ -49,7 +49,7 @@ class BaseWorker : public QObject
     protected:
         // Runtime
         bool kill_flag;
-
+        
         // OpenCL
         OpenCLContext * context_cl;
         cl_mem * alpha_img_clgl;
@@ -140,9 +140,10 @@ class ProjectFileWorker : public BaseWorker
     public:
         ProjectFileWorker();
         ~ProjectFileWorker();
-
+        int projectFile(DetectorFile * file);
+        
     signals:
-        void changedImageSize(int w, int h);
+//        void changedImageSize(int w, int h);
         void testToWindow();
         void testToMain();
 
@@ -155,6 +156,7 @@ class ProjectFileWorker : public BaseWorker
     protected:
         // Related to OpenCL
         cl_kernel project_kernel;
+        size_t n_reduced_pixels;
 };
 
 

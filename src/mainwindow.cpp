@@ -402,7 +402,7 @@ void MainWindow::refreshDisplayFile()
 
 void MainWindow::updateFileHeader(QString path)
 {
-    DetectorFile file(path, NULL);
+    DetectorFile file(path);
     fileHeaderEdit->setPlainText(file.getHeaderText());
 }
 
