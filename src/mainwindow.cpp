@@ -434,7 +434,7 @@ void MainWindow::initializeEmit()
     projectThresholdHigh->setValue(1e9);
 
     dataMinSpinBox->setValue(1.0);
-    dataMaxSpinBox->setValue(1000);
+    dataMaxSpinBox->setValue(10);
     alphaSpinBox->setValue(1.0);
     brightnessSpinBox->setValue(2.0);
 
