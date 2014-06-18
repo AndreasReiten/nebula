@@ -628,7 +628,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
     
-    double phi, kappa, omega;
+    double phi = 0, kappa = 0, omega = 0;
     if(active_angle == 0)
     {
         phi = file->start_angle + 0.5*file->angle_increment;
@@ -772,7 +772,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
 
 //    if (isProjectionActive)
 //    {
-    for (size_t i = 0; i < file->getFastDimension()*file->getSlowDimension(); i++)
+    for (int i = 0; i < file->getFastDimension()*file->getSlowDimension(); i++)
     {
         if (projected_data_buf[i*4+3] > 0.0) // Above 0 check?
         {
@@ -810,6 +810,10 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
 MultiWorker::MultiWorker()
 {
     this->isCLInitialized = false;
+    
+    offset_omega = 0;
+    offset_kappa = 0;
+    offset_phi = 0;
 }
 
 MultiWorker::~MultiWorker()

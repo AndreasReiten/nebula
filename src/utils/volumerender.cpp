@@ -155,8 +155,8 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isLabFrameActive(true),
       isMiniCellActive(true),
       isCountIntegrationActive(false),
-      quality_percentage(20),
-      n_marker_indices(0)
+      n_marker_indices(0),
+      quality_percentage(20)
 {
     // Marker
     markers_selected_indices.set(100,1,0);
@@ -2970,8 +2970,9 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
 
     Matrix<float> tmp(1, pool_dim[0]*pool_dim[1]*pool_dim[2], 0);
     
-    qDebug() << tmp.size() << svo->pool.size();
+//    qDebug() << tmp.size() << svo->pool.size();
     
+    // This will be obsolete when the voxels are stored in a better way
     for (int i = 0; i < svo->pool.size(); i++)
     {
         tmp[i] = svo->pool[i];    
