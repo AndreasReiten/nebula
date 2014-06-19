@@ -409,12 +409,37 @@ void MainWindow::updateFileHeader(QString path)
 void MainWindow::runProjectFileThread()
 {
     tabWidget->setCurrentIndex(1);
+    
+    // Creation settings
+    svo_inprocess.creation_date = QDateTime::currentDateTime();
+    svo_inprocess.creation_noise_cutoff_low = reduceThresholdLow->value();
+    svo_inprocess.creation_noise_cutoff_high = reduceThresholdHigh->value();
+    svo_inprocess.creation_post_cutoff_low = projectThresholdLow->value();
+    svo_inprocess.creation_post_cutoff_high = projectThresholdHigh->value();
+    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
+    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
+    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
+    svo_inprocess.creation_file_paths = file_paths;
+    
     projectFileThread->start();
 }
 
 void MainWindow::runAllInOneThread()
 {
     tabWidget->setCurrentIndex(1);
+    
+    // Creation settings
+    svo_inprocess.creation_date = QDateTime::currentDateTime();
+    svo_inprocess.creation_noise_cutoff_low = reduceThresholdLow->value();
+    svo_inprocess.creation_noise_cutoff_high = reduceThresholdHigh->value();
+    svo_inprocess.creation_post_cutoff_low = projectThresholdLow->value();
+    svo_inprocess.creation_post_cutoff_high = projectThresholdHigh->value();
+    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
+    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
+    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
+    svo_inprocess.creation_file_paths = file_paths;
+    
+    
     allInOneThread->start();
 }
 
@@ -437,7 +462,8 @@ void MainWindow::initializeEmit()
     dataMaxSpinBox->setValue(10);
     alphaSpinBox->setValue(1.0);
     brightnessSpinBox->setValue(2.0);
-
+    
+    viewModeComboBox->setCurrentIndex(0);
     tsfAlphaComboBox->setCurrentIndex(2);
     tsfComboBox->setCurrentIndex(1);
     
@@ -867,6 +893,7 @@ void MainWindow::initializeConnects()
     connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic2D()));
     connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setDataStructure()));
     connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
+    connect(this->viewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setViewMode(int)));
     connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
     connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMin(double)));
     connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
@@ -954,6 +981,17 @@ void MainWindow::saveSvo()
 
         if (file_name != "")
         {
+            // View settings
+            svo_inprocess.view_mode = 0;
+            svo_inprocess.view_tsf_style = 2;
+            svo_inprocess.view_tsf_texture = 1;
+            svo_inprocess.view_data_min = 0;
+            svo_inprocess.view_data_max = 100;
+            svo_inprocess.view_alpha = 0.05;
+            svo_inprocess.view_brightness = 2.0;
+            
+            qDebug() << "Get saved! Creation";
+            
             svo_inprocess.save(file_name);
         }
     }
@@ -970,6 +1008,17 @@ void MainWindow::saveLoadedSvo()
 
         if (file_name != "")
         {
+            // View settings
+            svo_loaded.view_mode = viewModeComboBox->currentIndex();
+            svo_loaded.view_tsf_style = tsfAlphaComboBox->currentIndex();
+            svo_loaded.view_tsf_texture = tsfComboBox->currentIndex();
+            svo_loaded.view_data_min = dataMinSpinBox->value();
+            svo_loaded.view_data_max = dataMaxSpinBox->value();
+            svo_loaded.view_alpha = alphaSpinBox->value();
+            svo_loaded.view_brightness = brightnessSpinBox->value();
+            
+            qDebug() << "Get saved!Soft" << svo_loaded.view_data_min;
+            
             svo_loaded.setUB(volumeRenderWindow->getWorker()->getUBMatrix());
             svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
             svo_loaded.save(file_name);
@@ -986,11 +1035,14 @@ void MainWindow::openSvo()
     {
         svo_loaded.open(current_svo_path);
         volumeRenderWindow->getWorker()->setSvo(&(svo_loaded));
-
-        alphaSpinBox->setValue(0.05);
-        brightnessSpinBox->setValue(2.0);
-        dataMinSpinBox->setValue(svo_loaded.getMinMax()->at(0));
-        dataMaxSpinBox->setValue(svo_loaded.getMinMax()->at(1));
+        
+        viewModeComboBox->setCurrentIndex(svo_loaded.view_mode);
+        tsfAlphaComboBox->setCurrentIndex(svo_loaded.view_tsf_style);
+        tsfComboBox->setCurrentIndex(svo_loaded.view_tsf_texture);
+        alphaSpinBox->setValue(svo_loaded.view_alpha);
+        brightnessSpinBox->setValue(svo_loaded.view_brightness);
+        dataMinSpinBox->setValue(svo_loaded.view_data_min);
+        dataMaxSpinBox->setValue(svo_loaded.view_data_max);
         
         UBMatrix<double> UB;
         
@@ -1000,7 +1052,7 @@ void MainWindow::openSvo()
         {
             volumeRenderWindow->getWorker()->setUBMatrix(UB);
         
-            UB.print(2,"UB loaded");
+//            UB.print(2,"UB loaded");
         
             alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
             betaNormSpinBox->setValue(UB.beta()*180.0/pi);
@@ -1202,15 +1254,15 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(markAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(labFrameAct);
-        viewToolBar->addAction(sliceAct);
+//        viewToolBar->addAction(sliceAct);
         
         viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(dataStructureAct);
         
-        viewToolBar->addSeparator();
-        viewToolBar->addAction(integrateCountsAct);
-        viewToolBar->addAction(integrate3DAct);
-        viewToolBar->addAction(log3DAct);
+//        viewToolBar->addSeparator();
+//        viewToolBar->addAction(integrateCountsAct);
+//        viewToolBar->addAction(integrate3DAct);
+//        viewToolBar->addAction(log3DAct);
         viewToolBar->addSeparator();
         
         viewToolBar->addAction(integrate2DAct);
@@ -1335,6 +1387,7 @@ void MainWindow::initializeInteractives()
         QLabel * label_alpha= new QLabel(QString("Alpha: "));
         QLabel * label_brightness = new QLabel(QString("Brightness: "));
         QLabel * label_quality = new QLabel(QString("Texture quality: "));
+        QLabel * label_mode = new QLabel(QString("View mode: "));
 
         dataMinSpinBox = new QDoubleSpinBox;
         dataMinSpinBox->setDecimals(2);
@@ -1359,7 +1412,12 @@ void MainWindow::initializeInteractives()
         brightnessSpinBox->setRange(0, 10);
         brightnessSpinBox->setSingleStep(0.1);
         brightnessSpinBox->setAccelerated(1);
-
+        
+        viewModeComboBox = new QComboBox;
+        viewModeComboBox->addItem(trUtf8("Integrate"));
+        viewModeComboBox->addItem(trUtf8("Blend"));
+        viewModeComboBox->addItem(trUtf8("Slice"));
+        
         tsfComboBox = new QComboBox;
         tsfComboBox->addItem(trUtf8("Rainbow"));
         tsfComboBox->addItem(trUtf8("Hot"));
@@ -1383,20 +1441,22 @@ void MainWindow::initializeInteractives()
         graphicsWidget = new QWidget;
 
         QGridLayout * graphicsLayout = new QGridLayout;
-
-        graphicsLayout->addWidget(label_texture,0,0,1,2);
-        graphicsLayout->addWidget(tsfComboBox,0,2,1,1);
-        graphicsLayout->addWidget(tsfAlphaComboBox,0,3,1,1);
-        graphicsLayout->addWidget(label_data_min,1,0,1,2);
-        graphicsLayout->addWidget(dataMinSpinBox,1,2,1,2);
-        graphicsLayout->addWidget(label_data_max,2,0,1,2);
-        graphicsLayout->addWidget(dataMaxSpinBox,2,2,1,2);
-        graphicsLayout->addWidget(label_alpha,3,0,1,2);
-        graphicsLayout->addWidget(alphaSpinBox,3,2,1,2);
-        graphicsLayout->addWidget(label_brightness,4,0,1,2);
-        graphicsLayout->addWidget(brightnessSpinBox,4,2,1,2);
-        graphicsLayout->addWidget(label_quality,5,0,1,2);
-        graphicsLayout->addWidget(qualitySlider,5,2,1,2);
+        
+        graphicsLayout->addWidget(label_mode,0,0,1,2);
+        graphicsLayout->addWidget(viewModeComboBox,0,2,1,2);
+        graphicsLayout->addWidget(label_texture,1,0,1,2);
+        graphicsLayout->addWidget(tsfComboBox,1,2,1,1);
+        graphicsLayout->addWidget(tsfAlphaComboBox,1,3,1,1);
+        graphicsLayout->addWidget(label_data_min,2,0,1,2);
+        graphicsLayout->addWidget(dataMinSpinBox,2,2,1,2);
+        graphicsLayout->addWidget(label_data_max,3,0,1,2);
+        graphicsLayout->addWidget(dataMaxSpinBox,3,2,1,2);
+        graphicsLayout->addWidget(label_alpha,4,0,1,2);
+        graphicsLayout->addWidget(alphaSpinBox,4,2,1,2);
+        graphicsLayout->addWidget(label_brightness,5,0,1,2);
+        graphicsLayout->addWidget(brightnessSpinBox,5,2,1,2);
+        graphicsLayout->addWidget(label_quality,6,0,1,2);
+        graphicsLayout->addWidget(qualitySlider,6,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
         graphicsDockWidget->setFixedSize(graphicsWidget->minimumSizeHint());

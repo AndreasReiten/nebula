@@ -2932,7 +2932,7 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
     pool_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
     pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())) + 1)*svo->getBrickOuterDimension();
     
-    qDebug() << n_bricks << pool_dim[0] << pool_dim[1] << pool_dim[2] << pool_dim[0]*pool_dim[1]*pool_dim[2];
+//    qDebug() << n_bricks << pool_dim[0] << pool_dim[1] << pool_dim[2] << pool_dim[0]*pool_dim[1]*pool_dim[2];
     
 //    unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
     
@@ -2973,7 +2973,7 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
 //    qDebug() << tmp.size() << svo->pool.size();
     
     // This will be obsolete when the voxels are stored in a better way
-    for (int i = 0; i < svo->pool.size(); i++)
+    for (size_t i = 0; i < svo->pool.size(); i++)
     {
         tmp[i] = svo->pool[i];    
     }
@@ -3277,6 +3277,25 @@ void VolumeRenderWorker::setIntegration3D()
 
     if (isInitialized) setMiscArrays();
 }
+void VolumeRenderWorker::setViewMode(int value)
+{
+    if (value == 0)
+    {
+        isIntegration3DActive = true;
+    }
+    else if (value == 1)
+    {
+        isIntegration3DActive = false;
+        isSlicingActive = false;
+    }
+    else if (value == 2)
+    {
+        isSlicingActive = true;
+    }
+    
+    if (isInitialized) setMiscArrays();
+}
+
 void VolumeRenderWorker::setTsfColor(int value)
 {
     tsf_color_scheme = value;

@@ -59,6 +59,7 @@ public slots:
     void setLCurrent(int value);
     void setMiniCell();
     void setLabFrame();
+    void setViewMode(int value);
     
     
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);

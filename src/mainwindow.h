@@ -164,8 +164,8 @@ private:
     QPushButton *saveSvoButton;
     QPushButton *killButton;
     QPushButton *functionToggleButton;
-    QPushButton * loadParButton;
-    QPushButton * unitcellButton;
+    QPushButton *loadParButton;
+    QPushButton *unitcellButton;
 
 
     // OpenCL
@@ -331,6 +331,7 @@ private:
 
     QComboBox * tsfComboBox;
     QComboBox * tsfAlphaComboBox;
+    QComboBox * viewModeComboBox;
 
     QSlider * qualitySlider;
 
