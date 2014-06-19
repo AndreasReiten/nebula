@@ -536,7 +536,7 @@ void ProjectFileWorker::process()
 //    reduced_pixels->print(2,"Projworker");
     /* Create dummy dataset for debugging purposes.
     */
-    if (1) // A sphere
+    if (0) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
@@ -648,7 +648,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
         omega = file->start_angle + 0.5*file->angle_increment;
     }
     
-    qDebug() << "Using" << phi << "(" << offset_phi << ")"<< kappa << "(" << offset_kappa << ")" << omega << "(" << offset_omega << ")";
+//    qDebug() << "Using" << phi << "(" << offset_phi << ")"<< kappa << "(" << offset_kappa << ")" << omega << "(" << offset_omega << ")";
     
     RotationMatrix<double> PHI;
     RotationMatrix<double> KAPPA;
@@ -1454,6 +1454,7 @@ void VoxelizeWorker::process()
 
                 // Read results
                 svo->pool.reserve(1, non_empty_node_counter_rounded_up*n_points_brick);
+//                svo->pool.set(1, non_empty_node_counter_rounded_up*n_points_brick,0.0);
                 
                 svo->setMin(0.0f);
                 svo->setMax(max_brick_sum/(float)(n_points_brick));
