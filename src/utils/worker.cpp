@@ -75,15 +75,15 @@ void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
 
 void BaseWorker::setOffsetOmega(double value)
 {
-    offset_omega = value;
+    offset_omega = value*pi/180.0;
 }
 void BaseWorker::setOffsetKappa(double value)
 {
-    offset_kappa = value;
+    offset_kappa = value*pi/180.0;
 }
 void BaseWorker::setOffsetPhi(double value)
 {
-    offset_phi = value;
+    offset_phi = value*pi/180.0;
 }
 
 void BaseWorker::setActiveAngle(int value)
@@ -536,7 +536,7 @@ void ProjectFileWorker::process()
 //    reduced_pixels->print(2,"Projworker");
     /* Create dummy dataset for debugging purposes.
     */
-    if (0) // A sphere
+    if (1) // A sphere
     {
         int theta_max = 180; // Up to 180
         int phi_max = 360; // Up to 360
@@ -647,6 +647,8 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
         kappa = file->kappa;
         omega = file->start_angle + 0.5*file->angle_increment;
     }
+    
+    qDebug() << "Using" << phi << "(" << offset_phi << ")"<< kappa << "(" << offset_kappa << ")" << omega << "(" << offset_omega << ")";
     
     RotationMatrix<double> PHI;
     RotationMatrix<double> KAPPA;

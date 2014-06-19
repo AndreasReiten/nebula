@@ -1546,6 +1546,7 @@ void MainWindow::initializeInteractives()
         QLabel * labelG = new QLabel("<i>κ</i>:");
         QLabel * labelH = new QLabel("<i>φ</i>:");
         QLabel * labelI = new QLabel("Correction:");
+        QLabel * labelJ = new QLabel("Voxelize settings");
         
         // Combo boxes and their labels
         formatComboBox = new QComboBox;
@@ -1638,17 +1639,19 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(labelC,3,0,1,4);
         reconstructLayout->addWidget(projectThresholdLow,3,4,1,2);
         reconstructLayout->addWidget(projectThresholdHigh,3,6,1,2);
-        reconstructLayout->addWidget(labelD,4,0,1,4);
-        reconstructLayout->addWidget(svoLevelSpinBox,4,4,1,4);
-        reconstructLayout->addWidget(labelI,5,0,1,2);
-        reconstructLayout->addWidget(labelF,5,2,1,1);
-        reconstructLayout->addWidget(omegaCorrectionSpinBox,5,3,1,1);
-        reconstructLayout->addWidget(labelG,5,4,1,1);
-        reconstructLayout->addWidget(kappaCorrectionSpinBox,5,5,1,1);
-        reconstructLayout->addWidget(labelH,5,6,1,1);
-        reconstructLayout->addWidget(phiCorrectionSpinBox,5,7,1,1);
-        reconstructLayout->addWidget(voxelizeButton,8,0,1,8);
-        reconstructLayout->addWidget(saveSvoButton,9,0,1,8);
+        reconstructLayout->addWidget(labelI,4,0,1,2);
+        reconstructLayout->addWidget(labelF,4,2,1,1);
+        reconstructLayout->addWidget(omegaCorrectionSpinBox,4,3,1,1);
+        reconstructLayout->addWidget(labelG,4,4,1,1);
+        reconstructLayout->addWidget(kappaCorrectionSpinBox,4,5,1,1);
+        reconstructLayout->addWidget(labelH,4,6,1,1);
+        reconstructLayout->addWidget(phiCorrectionSpinBox,4,7,1,1);
+        
+        reconstructLayout->addWidget(labelJ,5,0,1,8, Qt::AlignHCenter);
+        reconstructLayout->addWidget(labelD,6,0,1,4);
+        reconstructLayout->addWidget(svoLevelSpinBox,6,4,1,4);
+        reconstructLayout->addWidget(voxelizeButton,7,0,1,8);
+        reconstructLayout->addWidget(saveSvoButton,8,0,1,8);
         fileControlsWidget->setLayout(reconstructLayout);
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);

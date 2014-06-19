@@ -6,12 +6,12 @@ RESOURCES     = nebula.qrc
 QMAKE_CXXFLAGS += -std=c++0x # C++11 
 QT += core gui opengl widgets script
 TARGET = nebula
-#QMAKE_MAKEFILE = Makefile
+QMAKE_MAKEFILE = Makefile
 
-#OBJECTS_DIR = .obj
-#MOC_DIR = .moc
-#RCC_DIR = .rcc
-#UI_DIR = .ui
+OBJECTS_DIR = .obj
+MOC_DIR = .moc
+RCC_DIR = .rcc
+UI_DIR = .ui
 
 OTHER_FILES += \
     src/kernels/project.cl \
