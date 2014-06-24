@@ -1459,7 +1459,7 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(qualitySlider,6,2,1,2);
 
         graphicsWidget->setLayout(graphicsLayout);
-        graphicsDockWidget->setFixedSize(graphicsWidget->minimumSizeHint());
+        graphicsDockWidget->setFixedHeight(graphicsWidget->minimumSizeHint().height()*1.1);
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
@@ -1572,7 +1572,7 @@ void MainWindow::initializeInteractives()
         
         unitCellDock->setWidget(unitCellWidget);
         
-        unitCellDock->setFixedSize(unitCellWidget->minimumSizeHint());
+        unitCellDock->setFixedHeight(unitCellWidget->minimumSizeHint().height()*1.15);
         
         viewMenu->addAction(unitCellDock->toggleViewAction());
         this->addDockWidget(Qt::RightDockWidgetArea, unitCellDock);
@@ -1716,7 +1716,7 @@ void MainWindow::initializeInteractives()
         fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileDockWidget->setWidget(fileControlsWidget);
-        fileDockWidget->setFixedSize(fileControlsWidget->minimumSizeHint());
+        fileDockWidget->setFixedHeight(fileControlsWidget->minimumSizeHint().height()*1.1);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         this->addDockWidget(Qt::BottomDockWidgetArea, fileDockWidget);
     }
