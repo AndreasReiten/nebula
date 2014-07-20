@@ -1254,7 +1254,6 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(markAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(labFrameAct);
-//        viewToolBar->addAction(sliceAct);
         
         viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(dataStructureAct);

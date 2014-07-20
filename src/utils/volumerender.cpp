@@ -2745,7 +2745,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         
         // Draw the ticks
         RotationMatrix<double> identity;
-        identity.setIdentity(2);
+        identity.setIdentity(4);
         
         shared_window->std_2d_col_program->bind();
         glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
@@ -2754,7 +2754,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         glVertexAttribPointer(shared_window->std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-        glUniformMatrix2fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.getColMajor().toFloat().data());
+        glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.getColMajor().toFloat().data());
     
         glUniform4fv(shared_window->std_2d_col_color, 1, clear_color_inverse.data());
     
