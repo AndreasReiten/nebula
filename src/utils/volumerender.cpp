@@ -2633,13 +2633,13 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     double exponent;
     
     // Draw transfer function bounding box
-    QRect tsf_rect(0, 0, 20, render_surface->height() - (fps_string_rect.bottom() + 5) - 50);
+    QRectF tsf_rect(0, 0, 20, render_surface->height() - (fps_string_rect.bottom() + 5) - 50);
     tsf_rect += QMargins(30,5,5,5);
     tsf_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
 
     tsf_rect -= QMargins(30,5,5,5);
-    Matrix<GLfloat> gl_tsf_rect(4,2);
-    glRect(&gl_tsf_rect, &tsf_rect);
+    Matrix<GLfloat> gl_tsf_rect;
+    gl_tsf_rect = glRect(tsf_rect);
     
     
     // Find appropriate tick positions

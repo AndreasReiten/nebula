@@ -270,7 +270,7 @@ private:
     void initializeInteractives();
     void initializeMenus();
 
-    void initializeEmit();
+    void setStartConditions();
 
     void readSettings();
     void writeSettings();

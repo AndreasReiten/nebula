@@ -77,9 +77,11 @@ MainWindow::MainWindow()
     setCentralWidget(mainWidget);
     readSettings();
     setCurrentFile("");
-    initializeEmit();
     print("[Nebula] Welcome to Nebula!");
     setWindowTitle(tr("Nebula[*]"));
+    
+    // Set start conditions
+    setStartConditions();
 
     graphicsDockWidget->hide();
     unitCellDock->hide();
@@ -448,7 +450,7 @@ void MainWindow::setFilesFromSelectionModel()
     if (!scriptingAct->isChecked()) file_paths = fileSelectionModel->getFiles();
 }
 
-void MainWindow::initializeEmit()
+void MainWindow::setStartConditions()
 {
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(11);
@@ -466,6 +468,16 @@ void MainWindow::initializeEmit()
     viewModeComboBox->setCurrentIndex(0);
     tsfAlphaComboBox->setCurrentIndex(2);
     tsfComboBox->setCurrentIndex(1);
+    
+    imagePreviewWindow->getWorker()->setTsfTexture(1);
+    imagePreviewWindow->getWorker()->setTsfAlpha(2);
+    imagePreviewWindow->getWorker()->setDataMin(0);
+    imagePreviewWindow->getWorker()->setDataMin(1000);
+    imagePreviewWindow->getWorker()->setLog(true);
+    imagePreviewWindow->getWorker()->setCorrection(true);
+    imagePreviewWindow->getWorker()->setMode(0);
+    
+    
     
     funcParamASpinBox->setValue(13.5);
     funcParamBSpinBox->setValue(10.5);
@@ -1647,11 +1659,11 @@ void MainWindow::initializeInteractives()
         projectThresholdHigh->setAccelerated(1);
         projectThresholdHigh->setDecimals(2);
         projectThresholdHigh->setFocusPolicy(Qt::ClickFocus);
-        
-        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAlow(double)),Qt::QueuedConnection);
-        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdAhigh(double)),Qt::QueuedConnection);
-        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBlow(double)),Qt::QueuedConnection);
-        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdBhigh(double)),Qt::QueuedConnection);
+
+        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)),Qt::QueuedConnection);
+        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseHigh(double)),Qt::QueuedConnection);
+        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionLow(double)),Qt::QueuedConnection);
+        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionHigh(double)),Qt::QueuedConnection);
         
         connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
         connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
