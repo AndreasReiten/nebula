@@ -29,9 +29,9 @@ public:
 
 
 private slots:
-    void updateFileHeader(QString path);
+//    void setHeader(QString path);
     void displayPopup(QString title, QString text);
-    void omitFile();
+//    void omitFile();
 
 //    void test();
 
@@ -73,12 +73,28 @@ private slots:
 
     void runProjectFileThread();
     void runAllInOneThread();
-    void incrementDisplayFile1();
-    void incrementDisplayFile10();
-    void decrementDisplayFile1();
-    void decrementDisplayFile10();
-    void setDisplayFile(int value);
-    void refreshDisplayFile();
+//    void incrementDisplayFile1();
+//    void incrementDisplayFile10();
+//    void decrementDisplayFile1();
+//    void decrementDisplayFile10();
+//    void setDisplayFile(int value);
+//    void refreshDisplayFile();
+    
+    void loadPaths();
+    void removeImage();
+    void nextFrame();
+    void previousFrame();
+    void batchForward();
+    void batchBackward();
+    void nextFolder();
+    void previousFolder();
+    
+    void setHeader(QString path);
+    
+    void saveProject();
+    void loadProject();
+    
+    void setSelection(QRectF rect);
     
     // File selection
     void setFilesFromSelectionModel();
@@ -92,8 +108,12 @@ signals:
     void changedPaths(QStringList strlist);
     void captureFrameBuffer(QString path);
     void changedUB();
-    void imagePreviewChanged(QString path);
-    void omitFile(QString str);
+//    void imagePreviewChanged(QString path);
+//    void omitFile(QString str);
+    void pathRemoved(QString path);
+    void pathChanged(QString path);
+    void centerImage();
+    void selectionChanged(QRectF rect);
     
 private:
     /* UI elements for UB matrix */
@@ -166,6 +186,8 @@ private:
     QPushButton *functionToggleButton;
     QPushButton *loadParButton;
     QPushButton *unitcellButton;
+    QPushButton * loadPathsPushButton;
+    QPushButton * removeCurrentPushButton;
 
 
     // OpenCL
@@ -192,25 +214,29 @@ private:
     QWidget * fileBrowserWidget;
     FileSelectionModel * fileSelectionModel;
     FileTreeView *fileSelectionTree;
+    void setFiles(QMap<QString, QStringList> folder_map);
+    
     
     // Image browser QDockWidget
     QDockWidget * imageDock;
     
-    QWidget * imageWidget;
+    QMainWindow * imageWidget;
+    QWidget * imageCentralWidget;
     
-    QLabel * imageLabel;
+//    QLabel * imageLabel;
+    QLineEdit * pathLineEdit;
     
     QWidget * imageDisplayWidget;
     
     QPushButton * imageFastBackButton;
     QPushButton * imageSlowBackButton;
     
-    QSpinBox * imageSpinBox;
+//    QSpinBox * imageSpinBox;
     
     QPushButton * imageFastForwardButton;
     QPushButton * imageSlowForwardButton;
-    QPushButton * omitFrameButton;
-    QComboBox * imageModeCB;
+//    QPushButton * omitFrameButton;
+//    QComboBox * imageModeCB;
 
     // Actions
     QAction *shadowAct;
@@ -287,7 +313,8 @@ private:
 
     QLineEdit * hklEdit;
 
-
+    bool hasPendingChanges;
+    size_t batch_size;
 
 
     QLabel * alpha;
@@ -361,6 +388,29 @@ protected:
     VolumeRenderWindow *volumeRenderWindow;
     QWidget *volumeRenderWidget;
 
+    /* Image browser toolbar */
+    QToolBar * imageToolBar;
+    
+    QAction * saveProjectAction;
+    QAction * loadProjectAction;
+    QAction * squareAreaSelectAction;
+    QAction * centerImageAction;
+    
+    
+    /* Image browser settings widget */
+    QComboBox * imageModeComboBox;
+    QComboBox * imageTsfTextureComboBox;
+    QComboBox * imageTsfAlphaComboBox;
+
+    QDoubleSpinBox * imageDataMinDoubleSpinBox;
+    QDoubleSpinBox * imageDataMaxDoubleSpinBox;
+
+    QCheckBox * imageLogCheckBox;
+    QCheckBox * imageCorrectionCheckBox;
+
+    QWidget * imageSettingsWidget;
+    QDockWidget * imageSettingsDock;
+    
     // Image Preview Widget
     ImagePreviewWindow * imagePreviewWindow;
     int display_file;
@@ -394,6 +444,7 @@ protected:
     // Main resources
     QStringList file_paths;
     QList<DetectorFile> files;
+    FolderSet folderSet;
     Matrix<float> reduced_pixels;
 
     // Related to file treatment

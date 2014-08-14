@@ -46,5 +46,8 @@
         <file>art/roll_cw.png</file>
         <file>art/align_slice_frame_to_lab_frame.png</file>
         <file>art/integrate_counts.png</file>
+        <file>art/download.png</file>
+        <file>art/center.png</file>
+        <file>art/select.png</file>
     </qresource>
 </RCC>

@@ -36,7 +36,9 @@ OTHER_FILES += \
     lib/qxlib/qxopengl/glsl/unitcell.v.glsl \
     lib/qxlib/qxopengl/glsl/rect_hl_2d_tex.f.glsl \
     lib/qxlib/qxopengl/glsl/rect_hl_2d_tex.v.glsl \
-    lib/qxlib/qxopencl/cl/image_preview.cl
+    lib/qxlib/qxopencl/cl/image_preview.cl \
+    lib/qxlib/qxopencl/cl/mem_functions.cl \
+    lib/qxlib/qxopencl/cl/parallel_reduce.cl
 
 HEADERS += \
     lib/qxlib/qxfile/utils/fileformat.h \
@@ -66,7 +68,8 @@ HEADERS += \
     src/utils/texthighlighter.h \
     src/utils/volumerender.h \
     src/utils/worker.h \
-    src/mainwindow.h
+    src/mainwindow.h \
+    lib/qxlib/qxfile/utils/framecontainer.h
 
 SOURCES += \
     lib/qxlib/qxfile/utils/fileformat.cpp \
@@ -91,4 +94,5 @@ SOURCES += \
     src/utils/volumerender.cpp \
     src/utils/worker.cpp \
     src/main.cpp \
-    src/mainwindow.cpp
+    src/mainwindow.cpp \
+    lib/qxlib/qxfile/utils/framecontainer.cpp

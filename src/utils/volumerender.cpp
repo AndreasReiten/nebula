@@ -1319,16 +1319,16 @@ void VolumeRenderWorker::initResourcesGL()
 void VolumeRenderWorker::initResourcesCL()
 {
     // Build program from OpenCL kernel source
-    Matrix<const char *> paths(1,7);
-    paths[0] = "kernels/models.cl";
-    paths[1] = "kernels/render_shared.cl";
-    paths[2] = "kernels/render_svo.cl";
-    paths[3] = "kernels/render_model.cl";
-    paths[4] = "kernels/integrate.cl";
-    paths[5] = "kernels/box_sampler.cl";
-    paths[6] = "kernels/parallel_reduction.cl";
+    QStringList paths;
+    paths << "kernels/models.cl";
+    paths << "kernels/render_shared.cl";
+    paths << "kernels/render_svo.cl";
+    paths << "kernels/render_model.cl";
+    paths << "kernels/integrate.cl";
+    paths << "kernels/box_sampler.cl";
+    paths << "kernels/parallel_reduction.cl";
 
-    program = context_cl->createProgram(&paths, &err);
+    program = context_cl->createProgram(paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     context_cl->buildProgram(&program, "-Werror");
