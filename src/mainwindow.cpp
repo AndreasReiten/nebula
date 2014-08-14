@@ -432,7 +432,15 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 
         ++i;
     }
-
+    
+    if (folderSet.size() > 0) 
+    {
+        emit pathChanged(folderSet.current()->current()->path());
+        emit selectionChanged(folderSet.current()->current()->selection());
+        emit centerImage();
+    }
+//    centerImage();
+    
 //    hasPendingChanges = true;
 }
 
@@ -640,14 +648,20 @@ void MainWindow::setStartConditions()
     tsfAlphaComboBox->setCurrentIndex(2);
     tsfComboBox->setCurrentIndex(1);
     
-    imagePreviewWindow->getWorker()->setTsfTexture(1);
-    imagePreviewWindow->getWorker()->setTsfAlpha(2);
-    imagePreviewWindow->getWorker()->setDataMin(0);
-    imagePreviewWindow->getWorker()->setDataMin(1000);
-    imagePreviewWindow->getWorker()->setLog(true);
-    imagePreviewWindow->getWorker()->setCorrection(true);
-    imagePreviewWindow->getWorker()->setMode(0);
-    
+//    imagePreviewWindow->getWorker()->setTsfTexture(1);
+//    imagePreviewWindow->getWorker()->setTsfAlpha(2);
+//    imagePreviewWindow->getWorker()->setDataMin(0);
+//    imagePreviewWindow->getWorker()->setDataMax(1000);
+//    imagePreviewWindow->getWorker()->setLog(true);
+//    imagePreviewWindow->getWorker()->setCorrection(true);
+//    imagePreviewWindow->getWorker()->setMode(0);
+    imageTsfTextureComboBox->setCurrentIndex(1);
+    imageTsfAlphaComboBox->setCurrentIndex(2);
+    imageDataMinDoubleSpinBox->setValue(5);
+    imageDataMaxDoubleSpinBox->setValue(1000);
+    imageLogCheckBox->setChecked(true);
+    imageCorrectionCheckBox->setChecked(true);
+    imageModeComboBox->setCurrentIndex(0);
     
     
     funcParamASpinBox->setValue(13.5);
@@ -676,13 +690,7 @@ void MainWindow::setStartConditions()
     bNormSpinBox->setValue(1);
     cNormSpinBox->setValue(1);
     
-    imageTsfTextureComboBox->setCurrentIndex(1);
-    imageTsfAlphaComboBox->setCurrentIndex(2);
-    imageDataMinDoubleSpinBox->setValue(0);
-    imageDataMaxDoubleSpinBox->setValue(1000);
-    imageLogCheckBox->setChecked(true);
-    imageCorrectionCheckBox->setChecked(true);
-    imageModeComboBox->setCurrentIndex(0);
+    
     
 }
 
@@ -1464,7 +1472,9 @@ void MainWindow::initializeInteractives()
         fileSelectionTree = new FileTreeView;
         fileSelectionTree->setModel(fileSelectionModel);
         
-        loadPathsPushButton = new QPushButton(QIcon(":/art/download.png"),"Load selected files"); 
+        loadPathsPushButton = new QPushButton;//(QIcon(":/art/download.png"),"Load selected files"); //QIcon(":/art/rotate_down.png"),
+        loadPathsPushButton->setIcon(QIcon(":/art/download.png"));
+        loadPathsPushButton->setIconSize(QSize(86,86));
         connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadPaths()));
         
         connect(fileSelectionTree, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
@@ -1740,6 +1750,9 @@ void MainWindow::initializeInteractives()
         connect(this, SIGNAL(centerImage()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
         connect(this, SIGNAL(selectionChanged(QRectF)), imagePreviewWindow->getWorker(), SLOT(setSelection(QRectF)));
         connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(QRectF)), this, SLOT(setSelection(QRectF)));
+        connect(squareAreaSelectAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setSelectionActive(bool)));
+//        connect(loadPathsPushButton,SIGNAL(clicked()),imagePreviewWindow->getWorker(),SLOT(centerImage()));
+//        connect(loadPathsPushButton,SIGNAL(clicked()),imagePreviewWindow->getWorker(),SLOT(centerImage()));
     }
     
     /* Graphics dock widget */
@@ -1977,13 +1990,13 @@ void MainWindow::initializeInteractives()
 
         // Labels
         QLabel * labelA = new QLabel(QString("File format:"));
-        QLabel * labelB = new QLabel(QString("Noise cutoff:"));
-        QLabel * labelC = new QLabel(QString("Post corr. cutoff:"));
-        QLabel * labelD = new QLabel(QString("Octtree levels: "));
+//        QLabel * labelB = new QLabel(QString("Noise cutoff:"));
+//        QLabel * labelC = new QLabel(QString("Post corr. cutoff:"));
+//        QLabel * labelD = new QLabel(QString("Octtree levels: "));
         QLabel * labelE = new QLabel(QString("Active angle:"));
-        QLabel * labelF = new QLabel("Δ<i>ω</i>:");
-        QLabel * labelG = new QLabel("Δ<i>κ</i>:");
-        QLabel * labelH = new QLabel("Δ<i>φ</i>:");
+//        QLabel * labelF = new QLabel("Δ<i>ω</i>:");
+//        QLabel * labelG = new QLabel("Δ<i>κ</i>:");
+//        QLabel * labelH = new QLabel("Δ<i>φ</i>:");
 //        QLabel * labelI = new QLabel("Correction:");
         QLabel * labelJ = new QLabel("Voxelize settings");
         
@@ -2058,6 +2071,7 @@ void MainWindow::initializeInteractives()
                                      
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
+        svoLevelSpinBox->setPrefix("Octtree levels: ");
         
         
         
@@ -2093,8 +2107,8 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(phiCorrectionSpinBox,6,0,1,8);
         
         reconstructLayout->addWidget(labelJ,7,0,1,8, Qt::AlignHCenter);
-        reconstructLayout->addWidget(labelD,8,0,1,4);
-        reconstructLayout->addWidget(svoLevelSpinBox,8,4,1,4);
+//        reconstructLayout->addWidget(labelD,8,0,1,4);
+        reconstructLayout->addWidget(svoLevelSpinBox,8,0,1,8);
         reconstructLayout->addWidget(voxelizeButton,9,0,1,8);
         reconstructLayout->addWidget(saveSvoButton,10,0,1,8);
         fileControlsWidget->setLayout(reconstructLayout);

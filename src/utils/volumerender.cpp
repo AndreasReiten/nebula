@@ -64,7 +64,7 @@ void VolumeRenderWindow::renderNow()
 
         if (gl_worker)
         {
-            if (isMultiThreaded)
+            if (isThreaded)
             {
                 isWorkerBusy = true;
                 worker_thread->start();
@@ -91,9 +91,9 @@ void VolumeRenderWindow::initializeWorker()
     gl_worker->setGLContext(context_gl);
     gl_worker->setOpenCLContext(context_cl);
     gl_worker->setSharedWindow(shared_window);
-    gl_worker->setMultiThreading(isMultiThreaded);
+    gl_worker->setMultiThreading(isThreaded);
 
-    if (isMultiThreaded)
+    if (isThreaded)
     {
         // Set up worker thread
         gl_worker->moveToThread(worker_thread);
@@ -107,16 +107,20 @@ void VolumeRenderWindow::initializeWorker()
         connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
         connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
         connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+        
+        emit render();
     }
-    else
-    {
-        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
-        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
-        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+//    else
+//    {
+//        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
+//        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
+//        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
 
-        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-    }
-
+//        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
+//    }
+    
+    
+    
     isInitialized = true;
 }
 
@@ -280,6 +284,8 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     
     // Roll
     accumulated_roll = 0;
+    
+    identity.setIdentity(4);
 }
 
 VolumeRenderWorker::~VolumeRenderWorker()
@@ -1507,6 +1513,9 @@ void VolumeRenderWorker::setTsfParameters()
 
 void VolumeRenderWorker::setMiscArrays()
 {
+//    model_misc_floats.print(2,"misc floats");
+    
+    
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
     misc_ints[4] = isSlicingActive;
@@ -1657,11 +1666,13 @@ void VolumeRenderWorker::setRayTexture(int percentage)
 
 void VolumeRenderWorker::setTsfTexture()
 {
+//    if (1) qDebug() << "setting tsf" << tsf_color_scheme << tsf_alpha_scheme;
+    
     if (isTsfTexInitialized){
         err = clReleaseSampler(tsf_tex_sampler);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-    }
-    if (isTsfTexInitialized){
+//    }
+//    if (isTsfTexInitialized){
         err = clReleaseMemObject(tsf_tex_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
@@ -1689,7 +1700,7 @@ void VolumeRenderWorker::setTsfTexture()
         tsf.getSplined()->getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Buffer for tsf_tex_gl
+    // Buffer for tsf_tex_gl_thumb
     glDeleteTextures(1, &tsf_tex_gl_thumb);
     glGenTextures(1, &tsf_tex_gl_thumb);
     glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
@@ -1708,7 +1719,9 @@ void VolumeRenderWorker::setTsfTexture()
         GL_FLOAT,
         tsf.getThumb()->getColMajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
-
+    
+//    tsf.getThumb()->getColMajor().print(2);
+    
     // Buffer for tsf_tex_cl
     cl_image_format tsf_format;
     tsf_format.image_channel_order = CL_RGBA;
@@ -2727,7 +2740,10 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         };
     
         GLuint indices[] = {0,1,3,1,2,3};
-    
+        
+//        gl_tsf_rect.print(2,"gl_tsf_rect");
+        glUniformMatrix4fv(shared_window->std_2d_tex_transform, 1, GL_FALSE, identity.data());
+        
         glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
         glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
     
@@ -2744,8 +2760,8 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         
         
         // Draw the ticks
-        RotationMatrix<double> identity;
-        identity.setIdentity(4);
+//        RotationMatrix<double> identity;
+//        identity.setIdentity(4);
         
         shared_window->std_2d_col_program->bind();
         glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
@@ -2754,7 +2770,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         glVertexAttribPointer(shared_window->std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-        glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.getColMajor().toFloat().data());
+        glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.data());
     
         glUniform4fv(shared_window->std_2d_col_color, 1, clear_color_inverse.data());
     
@@ -2846,6 +2862,8 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
         };
 
         GLuint indices[] = {0,1,3,1,2,3};
+        
+        glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.data());
 
         glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
         glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);

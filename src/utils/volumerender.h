@@ -368,6 +368,9 @@ private:
 
     // Shadow
     Matrix<float> shadow_vector;
+    
+    
+    Matrix<float> identity;
 };
 
 class VolumeRenderWindow : public OpenGLWindow
