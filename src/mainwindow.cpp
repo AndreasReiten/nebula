@@ -2148,10 +2148,10 @@ void MainWindow::initializeInteractives()
     
     /* Function dock widget */
     {
-        QLabel * p0= new QLabel(QString("Variable 1: "));
-        QLabel * p1= new QLabel(QString("Variable 2: "));
-        QLabel * p2= new QLabel(QString("Variable 3: "));
-        QLabel * p3= new QLabel(QString("Variable 4: "));
+//        QLabel * p0= new QLabel(QString("Variable 1: "));
+//        QLabel * p1= new QLabel(QString("Variable 2: "));
+//        QLabel * p2= new QLabel(QString("Variable 3: "));
+//        QLabel * p3= new QLabel(QString("Variable 4: "));
 
         functionToggleButton = new QPushButton(tr("Toggle"));
         funcParamASpinBox = new QDoubleSpinBox;
