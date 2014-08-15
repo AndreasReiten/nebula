@@ -330,7 +330,7 @@ void SetFileWorker::process()
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Use at least octree level "+QString::number((int)level_max)+" to achieve good resolution");
     }
 
-    qDebug() << suggested_q;
+//    qDebug() << suggested_q;
 
     emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
     emit finished();
@@ -1031,6 +1031,9 @@ void VoxelizeWorker::process()
     }
     if (!kill_flag)
     {
+        QElapsedTimer totaltime;
+        totaltime.start();
+
         // Emit to appropriate slots
         emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"]"+QString(" Creating Interpolation Data Structure: %p%"));
 
@@ -1143,7 +1146,6 @@ void VoxelizeWorker::process()
 
             unsigned int nodes_prev_lvls = 0, non_empty_node_counter = 0;
 
-            // Cycle through the levels
             QElapsedTimer timer;
             
             // Keep track of the maximum sum returned by a brick and use it later to estimate max value in data set
@@ -1155,6 +1157,7 @@ void VoxelizeWorker::process()
             Matrix<int> point_data_offset(1, nodes_per_kernel_call);
             Matrix<int> point_data_count(1, nodes_per_kernel_call);
             
+            // Cycle through the levels
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
@@ -1471,7 +1474,7 @@ void VoxelizeWorker::process()
 
             if (!kill_flag)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Finished successfully. The dataset consists of "+QString::number(nodes_prev_lvls)+" bricks and is approxiamtely "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Done ("+QString::number(totaltime.elapsed())+" ms).n\The dataset consists of "+QString::number(nodes_prev_lvls)+" bricks and is approxiamtely "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
 
             }
         }

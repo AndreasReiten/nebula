@@ -626,7 +626,7 @@ void MainWindow::runAllInOneThread()
 
 void MainWindow::setFilesFromSelectionModel()
 {
-    if (!scriptingAct->isChecked()) file_paths = fileSelectionModel->getFiles();
+    if (!scriptingAct->isChecked()) file_paths = folderSet.paths();
 }
 
 void MainWindow::setStartConditions()
@@ -764,6 +764,12 @@ void MainWindow::loadProject()
             imageCorrectionCheckBox->setChecked(correction);
             
             file.close();
+
+            if (folderSet.size() > 0)
+            {
+                emit pathChanged(folderSet.current()->current()->path());
+                emit selectionChanged(folderSet.current()->current()->selection());
+            }
         }
     }
 }
@@ -1854,20 +1860,26 @@ void MainWindow::initializeInteractives()
         // Real space unit cell
         aNormSpinBox = new QDoubleSpinBox;
         aNormSpinBox->setPrefix("a: ");
+        aNormSpinBox->setSuffix(" °");
         bNormSpinBox = new QDoubleSpinBox;
         bNormSpinBox->setPrefix("b: ");
+        bNormSpinBox->setSuffix(" °");
         cNormSpinBox = new QDoubleSpinBox;
         cNormSpinBox->setPrefix("c: ");
+        cNormSpinBox->setSuffix(" °");
         
         alphaNormSpinBox = new QDoubleSpinBox;
         alphaNormSpinBox->setPrefix("α: ");
         alphaNormSpinBox->setRange(0,180);
+        alphaNormSpinBox->setSuffix(" °");
         betaNormSpinBox = new QDoubleSpinBox;
         betaNormSpinBox->setPrefix("β: ");
         betaNormSpinBox->setRange(0,180);
+        betaNormSpinBox->setSuffix(" °");
         gammaNormSpinBox = new QDoubleSpinBox;
         gammaNormSpinBox->setPrefix("γ: ");
         gammaNormSpinBox->setRange(0,180);
+        gammaNormSpinBox->setSuffix(" °");
         
         // Reciprocal space unit cell
         aStarSpinBox = new QDoubleSpinBox;
@@ -2058,16 +2070,19 @@ void MainWindow::initializeInteractives()
         omegaCorrectionSpinBox->setRange(-180, 180);
         omegaCorrectionSpinBox->setDecimals(3);
         omegaCorrectionSpinBox->setPrefix("Δω: ");
+        omegaCorrectionSpinBox->setSuffix(" °");
         
         kappaCorrectionSpinBox = new QDoubleSpinBox;
         kappaCorrectionSpinBox->setRange(-180, 180);
         kappaCorrectionSpinBox->setDecimals(3);
         kappaCorrectionSpinBox->setPrefix("Δκ: ");
+        kappaCorrectionSpinBox->setSuffix(" °");
                                      
         phiCorrectionSpinBox = new QDoubleSpinBox;
         phiCorrectionSpinBox->setRange(-180, 180);
         phiCorrectionSpinBox->setDecimals(3);
         phiCorrectionSpinBox->setPrefix("Δφ: ");
+        phiCorrectionSpinBox->setSuffix(" °");
                                      
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
