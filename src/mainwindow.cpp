@@ -438,6 +438,7 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
         emit pathChanged(folderSet.current()->current()->path());
         emit selectionChanged(folderSet.current()->current()->selection());
         emit centerImage();
+        emit processImage();
     }
 //    centerImage();
     
