@@ -63,6 +63,7 @@ public slots:
     
     
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
+//    void mouseMoveEvent(QMouseEvent ev);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void wheelEvent(QWheelEvent* ev);
@@ -125,7 +126,7 @@ private:
     bool isSlicingActive;
     bool isIntegration2DActive;
     bool isIntegration3DActive;
-    bool isRendering;
+//    bool isRendering;
     bool isShadowActive;
     bool isLogarithmic2D;
     bool isOrthoGridActive;

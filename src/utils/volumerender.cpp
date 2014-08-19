@@ -53,12 +53,12 @@ void VolumeRenderWindow::renderNow()
         emit stopRendering();
         return;
     }
-    if (isWorkerBusy)
-    {
-        if (isAnimating) renderLater();
-        return;
-    }
-    else
+//    if (isWorkerBusy)
+//    {
+//        if (isAnimating) renderLater();
+//        return;
+//    }
+    else if (!isWorkerBusy)
     {
         if (!isInitialized) initializeWorker();
 
@@ -66,20 +66,22 @@ void VolumeRenderWindow::renderNow()
         {
             if (isThreaded)
             {
+//                qDebug() << "render";
                 isWorkerBusy = true;
                 worker_thread->start();
                 emit render();
             }
-            else
-            {
-                context_gl->makeCurrent(this);
-                gl_worker->process();
-                emit render();
-            }
+//            else
+//            {
+//                context_gl->makeCurrent(this);
+//                gl_worker->process();
+//                emit render();
+//            }
 
         }
     }
-    if (isAnimating) renderLater();
+//    if (isAnimating) renderLater();
+    renderLater();
 }
 
 void VolumeRenderWindow::initializeWorker()
@@ -103,6 +105,7 @@ void VolumeRenderWindow::initializeWorker()
 
         // Transfering mouse events
         connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
+//        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent)));
         connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
         connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
         connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
@@ -146,7 +149,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isSlicingActive(false),
       isIntegration2DActive(false),
       isIntegration3DActive(true),
-      isRendering(true),
+//      isRendering(true),
       isShadowActive(false),
       isLogarithmic2D(false),
       isOrthoGridActive(false),
@@ -521,6 +524,12 @@ void VolumeRenderWorker::metaMouseReleaseEvent(int x, int y, int left_button, in
     Q_UNUSED(shift_button);
 }
 
+
+//void VolumeRenderWorker::mouseMoveEvent(QMouseEvent ev)
+//{
+//    qDebug() << ev.x() << ev.y();
+//}
+
 void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
     if (left_button) isLMBDown = true;
@@ -532,7 +541,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
         ruler[3] = y;
     }
     
-    if (!isRendering && (std::abs(last_mouse_pos_x - x) < 50) && (std::abs(last_mouse_pos_y - y) < 50))
+    if ((std::abs(last_mouse_pos_x - x) < 50) && (std::abs(last_mouse_pos_y - y) < 50))
     {
         float move_scaling = 0.6;
         if(ctrl_button) move_scaling = 0.1;
@@ -1808,7 +1817,7 @@ void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWorker::render(QPainter *painter)
 {
-    isRendering = true;
+//    isRendering = true;
     isDataExtentReadOnly = true;
     setDataExtent();
     setViewMatrices();
@@ -1846,7 +1855,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isMiniCellActive) drawHelpCell(painter);
     if (isSvoInitialized && isCountIntegrationActive) drawCountIntegral(painter);
     
-    isRendering = false;
+//    isRendering = false;
 }
 
 

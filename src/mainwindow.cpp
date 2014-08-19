@@ -49,6 +49,8 @@ MainWindow::MainWindow() :
 
     // Set the format of the rendering context
     QSurfaceFormat format_gl;
+    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+    format_gl.setSwapInterval(1);
     format_gl.setSamples(16);
     format_gl.setRedBufferSize(8);
     format_gl.setGreenBufferSize(8);
@@ -438,7 +440,7 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
         emit pathChanged(folderSet.current()->current()->path());
         emit selectionChanged(folderSet.current()->current()->selection());
         emit centerImage();
-        emit processImage();
+//        emit processImage();
     }
 //    centerImage();
     
@@ -1508,6 +1510,8 @@ void MainWindow::initializeInteractives()
     /*      3D View widget      */
     {
         QSurfaceFormat format_gl;
+        format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+        format_gl.setSwapInterval(1);
         format_gl.setSamples(16);
         format_gl.setRedBufferSize(8);
         format_gl.setGreenBufferSize(8);
@@ -1519,7 +1523,7 @@ void MainWindow::initializeInteractives()
         volumeRenderWindow->setSharedWindow(sharedContextWindow);
         volumeRenderWindow->setFormat(format_gl);
         volumeRenderWindow->setOpenCLContext(context_cl);
-        volumeRenderWindow->setAnimating(true);
+//        volumeRenderWindow->setAnimating(true);
         volumeRenderWindow->initializeWorker();
 
         volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
@@ -1586,6 +1590,8 @@ void MainWindow::initializeInteractives()
     /* Image browser widget */
     {
         QSurfaceFormat format_gl;
+        format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+        format_gl.setSwapInterval(1);
         format_gl.setSamples(16);
         format_gl.setRedBufferSize(8);
         format_gl.setGreenBufferSize(8);
@@ -1597,7 +1603,7 @@ void MainWindow::initializeInteractives()
         imagePreviewWindow->setSharedWindow(sharedContextWindow);
         imagePreviewWindow->setFormat(format_gl);
         imagePreviewWindow->setOpenCLContext(context_cl);
-        imagePreviewWindow->setAnimating(true);
+//        imagePreviewWindow->setAnimating(true);
         imagePreviewWindow->initializeWorker();
         
         imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
