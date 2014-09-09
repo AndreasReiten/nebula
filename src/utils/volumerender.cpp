@@ -90,7 +90,7 @@ void VolumeRenderWindow::initializeWorker()
 
     gl_worker = new VolumeRenderWorker;
     gl_worker->setRenderSurface(this);
-    gl_worker->setGLContext(context_gl);
+    gl_worker->setOpenGLContext(context_gl);
     gl_worker->setOpenCLContext(context_cl);
     gl_worker->setSharedWindow(shared_window);
     gl_worker->setMultiThreading(isThreaded);
@@ -412,7 +412,7 @@ void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
     data_translation[7] = -hkl_focus[1];
     data_translation[11] = -hkl_focus[2];
     
-    data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
+    data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
     
     updateUnitCellText();
 }
@@ -447,7 +447,7 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
         xyz_clip[1] = 2.0 * (double) (render_surface->height() - y)/ (double) render_surface->height() - 1.0;
         xyz_clip[2] = 2.0 * depth - 1.0;
             
-        Matrix<double> xyz = view_matrix.getInverse4x4() * xyz_clip;
+        Matrix<double> xyz = view_matrix.inverse4x4() * xyz_clip;
         
         xyz[0] /= xyz[3];
         xyz[1] /= xyz[3];
@@ -561,13 +561,13 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             
             if (shift_button && isURotationActive && isUnitcellActive)
             {
-                U = rotation.getInverse4x4() * roll_rotation * rotation * U;
+                U = rotation.inverse4x4() * roll_rotation * rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
             else if(shift_button) 
             {
-                scalebar_rotation = rotation.getInverse4x4() * roll_rotation * rotation * scalebar_rotation;
+                scalebar_rotation = rotation.inverse4x4() * roll_rotation * rotation * scalebar_rotation;
             }
             else
             {
@@ -590,13 +590,13 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             if (shift_button && isURotationActive && isUnitcellActive)
             {
-                U = rotation.getInverse4x4() * roll_rotation *  rotation * U;
+                U = rotation.inverse4x4() * roll_rotation *  rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
             else if(shift_button) 
             {
-                scalebar_rotation = rotation.getInverse4x4() * roll_rotation *  rotation * scalebar_rotation;
+                scalebar_rotation = rotation.inverse4x4() * roll_rotation *  rotation * scalebar_rotation;
             }
             else
             {
@@ -619,9 +619,9 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             data_translation[3] = dx;
             data_translation[7] = dy;
 
-            data_translation = ( rotation.getInverse4x4() * data_translation * rotation) * data_translation_prev;
+            data_translation = ( rotation.inverse4x4() * data_translation * rotation) * data_translation_prev;
 
-            this->data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
+            this->data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
             
             updateUnitCellText();
         }
@@ -637,9 +637,9 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             data_translation.setIdentity(4);
             data_translation[11] = dz;
 
-            data_translation = ( rotation.getInverse4x4() * data_translation * rotation) * data_translation_prev;
+            data_translation = ( rotation.inverse4x4() * data_translation * rotation) * data_translation_prev;
 
-            this->data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
+            this->data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
             
             updateUnitCellText();
         }
@@ -853,9 +853,9 @@ void VolumeRenderWorker::drawUnitCell(QPainter * painter)
     glVertexAttribPointer(shared_window->unitcell_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniformMatrix4fv(shared_window->unitcell_transform, 1, GL_FALSE, unitcell_view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->unitcell_transform, 1, GL_FALSE, unitcell_view_matrix.colmajor().toFloat().data());
     
-    glUniformMatrix4fv(shared_window->unitcell_u, 1, GL_FALSE, U.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->unitcell_u, 1, GL_FALSE, U.colmajor().toFloat().data());
     
     
     float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
@@ -998,7 +998,7 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     
     glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, minicell_view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, minicell_view_matrix.colmajor().toFloat().data());
     
     glBindBuffer(GL_ARRAY_BUFFER, minicell_vbo);
     glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -1051,7 +1051,7 @@ void VolumeRenderWorker::drawMarkers(QPainter * painter)
     
     glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
 
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
     
     for (int i = 0; i < markers.size(); i++)
     {
@@ -1144,7 +1144,7 @@ void VolumeRenderWorker::drawCenterLine(QPainter * painter)
     glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
 
     glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
@@ -1201,11 +1201,11 @@ void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm
     glPointSize(5);
     
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_around_axis.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_around_axis.colmajor().toFloat().data());
     glDrawArrays(GL_POINTS,  2, 98);
     
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_on_axis.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_on_axis.colmajor().toFloat().data());
     glDrawArrays(GL_LINE_STRIP,  0, 2);
     
     glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
@@ -1234,7 +1234,7 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
                 data_scaling[5] += data_scaling[5]*delta;
                 data_scaling[10] += data_scaling[10]*delta;
 
-                data_view_extent =  (data_scaling * data_translation).getInverse4x4() * data_extent;
+                data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
                 
                 updateUnitCellText();
             }
@@ -1444,7 +1444,7 @@ void VolumeRenderWorker::setViewMatrices()
         CL_TRUE,
         0,
         view_matrix.bytes()/2,
-        view_matrix.getInverse4x4().toFloat().data(),
+        view_matrix.inverse4x4().toFloat().data(),
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -1701,12 +1701,12 @@ void VolumeRenderWorker::setTsfTexture()
         GL_TEXTURE_2D,
         0,
         GL_RGBA32F,
-        tsf.getSplined()->getN(),
+        tsf.getSplined()->n(),
         1,
         0,
         GL_RGBA,
         GL_FLOAT,
-        tsf.getSplined()->getColMajor().toFloat().data());
+        tsf.getSplined()->colmajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Buffer for tsf_tex_gl_thumb
@@ -1721,15 +1721,15 @@ void VolumeRenderWorker::setTsfTexture()
         GL_TEXTURE_2D,
         0,
         GL_RGB,
-        tsf.getThumb()->getN(),
+        tsf.getThumb()->n(),
         1,
         0,
         GL_RGB,
         GL_FLOAT,
-        tsf.getThumb()->getColMajor().toFloat().data());
+        tsf.getThumb()->colmajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
     
-//    tsf.getThumb()->getColMajor().print(2);
+//    tsf.getThumb()->colmajor().print(2);
     
     // Buffer for tsf_tex_cl
     cl_image_format tsf_format;
@@ -1739,10 +1739,10 @@ void VolumeRenderWorker::setTsfTexture()
     tsf_tex_cl = clCreateImage2D ( *context_cl->getContext(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &tsf_format,
-        tsf.getSplined()->getN(),
+        tsf.getSplined()->n(),
         1,
         0,
-        tsf.getSplined()->getColMajor().toFloat().data(),
+        tsf.getSplined()->colmajor().toFloat().data(),
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -1964,11 +1964,11 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     float max = 0;
     float min = 1e9;
     double sum = 0;
-    for (size_t i = 0; i < output.getM(); i++)
+    for (size_t i = 0; i < output.m(); i++)
     {
-        for(size_t j = 0; j < output.getN(); j++)
+        for(size_t j = 0; j < output.n(); j++)
         {
-            row_sum[i] += output[i*output.getN() + j];
+            row_sum[i] += output[i*output.n() + j];
         }
 
         if (row_sum[i] > max) max = row_sum[i];
@@ -1979,7 +1979,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
     if (sum > 0)
     {
-        for (size_t i = 0; i < row_sum.getM(); i++)
+        for (size_t i = 0; i < row_sum.m(); i++)
         {
             row_sum[i] *= 100000.0/sum;
         }
@@ -1988,7 +1988,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         if (isLogarithmic2D)
         {
-            for (size_t i = 0; i < row_sum.getM(); i++)
+            for (size_t i = 0; i < row_sum.m(); i++)
             {
                 if (row_sum[i] <= 0) row_sum[i] = min;
                 row_sum[i] = log10(row_sum[i]);
@@ -1999,17 +1999,17 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         QPolygonF row_polygon;
         row_polygon << QPointF(0,0);
-        for (size_t i = 0; i < row_sum.getM(); i++)
+        for (size_t i = 0; i < row_sum.m(); i++)
         {
             QPointF point_top, point_bottom;
 
-            float value = ((row_sum[row_sum.getM() - i - 1] - min) / (max - min))*render_surface->width()/10.0;
+            float value = ((row_sum[row_sum.m() - i - 1] - min) / (max - min))*render_surface->width()/10.0;
 
             point_top.setX(value);
-            point_top.setY(((float) i / (float) row_sum.getM())*render_surface->height());
+            point_top.setY(((float) i / (float) row_sum.m())*render_surface->height());
 
             point_bottom.setX(value);
-            point_bottom.setY((((float) i + 1) / (float) row_sum.getM())*render_surface->height());
+            point_bottom.setY((((float) i + 1) / (float) row_sum.m())*render_surface->height());
             row_polygon << point_top << point_bottom;
         }
         row_polygon << QPointF(0,render_surface->height());
@@ -2093,11 +2093,11 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     min = 1e9;
     sum = 0;
 
-    for (size_t i = 0; i < output2.getN(); i++)
+    for (size_t i = 0; i < output2.n(); i++)
     {
-        for(size_t j = 0; j < output2.getM(); j++)
+        for(size_t j = 0; j < output2.m(); j++)
         {
-            column_sum[i] += output2[j*output2.getN() + i];
+            column_sum[i] += output2[j*output2.n() + i];
         }
 
         if (column_sum[i] > max) max = column_sum[i];
@@ -2108,7 +2108,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
     if (sum > 0)
     {
-        for (size_t i = 0; i < column_sum.getN(); i++)
+        for (size_t i = 0; i < column_sum.n(); i++)
         {
             column_sum[i] *= 100000.0/sum;
         }
@@ -2117,7 +2117,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         if (isLogarithmic2D)
         {
-            for (size_t i = 0; i < column_sum.getN(); i++)
+            for (size_t i = 0; i < column_sum.n(); i++)
             {
                 if (column_sum[i] <= 0) column_sum[i] = min;
                 column_sum[i] = log10(column_sum[i]);
@@ -2128,16 +2128,16 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 
         QPolygonF column_polygon;
         column_polygon << QPointF(0,render_surface->height());
-        for (size_t i = 0; i < column_sum.getN(); i++)
+        for (size_t i = 0; i < column_sum.n(); i++)
         {
             QPointF point_top, point_bottom;
 
             float value = render_surface->height() - (column_sum[i] - min) / (max - min)*render_surface->height()*0.1;
 
-            point_top.setX(((float) i / (float) column_sum.getN())*render_surface->width());
+            point_top.setX(((float) i / (float) column_sum.n())*render_surface->width());
             point_top.setY(value);
 
-            point_bottom.setX((((float) i + 1) / (float) column_sum.getN())*render_surface->width());
+            point_bottom.setX((((float) i + 1) / (float) column_sum.n())*render_surface->width());
             point_bottom.setY(value);
             column_polygon << point_top << point_bottom;
         }
@@ -2335,7 +2335,7 @@ void VolumeRenderWorker::alignAStartoZ()
     
     setViewMatrices();
     
-    view_matrix.getInverse4x4(1);
+    view_matrix.inverse4x4(1);
 }
 void VolumeRenderWorker::alignBStartoZ()
 {
@@ -2378,7 +2378,7 @@ void VolumeRenderWorker::alignLabXtoSliceX()
     RotationMatrix<double> x_aligned;
     x_aligned.setYRotation(pi*0.5);
     
-    rotation =  x_aligned * scalebar_rotation.getInverse4x4();
+    rotation =  x_aligned * scalebar_rotation.inverse4x4();
 }
 
 void VolumeRenderWorker::alignLabYtoSliceY()
@@ -2386,14 +2386,14 @@ void VolumeRenderWorker::alignLabYtoSliceY()
     RotationMatrix<double> y_aligned;
     y_aligned.setXRotation(-pi*0.5);
     
-    rotation =  y_aligned * scalebar_rotation.getInverse4x4();
+    rotation =  y_aligned * scalebar_rotation.inverse4x4();
 }
 void VolumeRenderWorker::alignLabZtoSliceZ()
 {
     RotationMatrix<double> z_aligned;
     z_aligned.setYRotation(0.0);
     
-    rotation =  z_aligned * scalebar_rotation.getInverse4x4();
+    rotation =  z_aligned * scalebar_rotation.inverse4x4();
 }
 
 void VolumeRenderWorker::alignSliceToLab()
@@ -2474,9 +2474,9 @@ void VolumeRenderWorker::computePixelSize()
     Matrix<double> xyz_01(4,1);
     Matrix<double> xyz_10(4,1);
 
-    xyz_00 = view_matrix.getInverse4x4()*ndc00;
-    xyz_01 = view_matrix.getInverse4x4()*ndc01;
-    xyz_10 = view_matrix.getInverse4x4()*ndc10;
+    xyz_00 = view_matrix.inverse4x4()*ndc00;
+    xyz_01 = view_matrix.inverse4x4()*ndc01;
+    xyz_10 = view_matrix.inverse4x4()*ndc10;
 
     Matrix<double> w_vec = xyz_00 - xyz_10;
     Matrix<double> h_vec = xyz_00 - xyz_01;
@@ -2583,7 +2583,7 @@ void VolumeRenderWorker::drawPositionScalebars(QPainter * painter)
     if (isBackgroundBlack) glUniform4fv(shared_window->std_3d_col_color, 1, magenta_light.data());
     else glUniform4fv(shared_window->std_3d_col_color, 1, blue_light.data());
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, scalebar_view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, scalebar_view_matrix.colmajor().toFloat().data());
     
     glDrawArrays(GL_LINES,  0, scalebar_coord_count);
     
@@ -2619,7 +2619,7 @@ void VolumeRenderWorker::drawLabFrame(QPainter *painter)
     if (isBackgroundBlack) glUniform4fv(shared_window->std_3d_col_color, 1, magenta_light.data());
     else glUniform4fv(shared_window->std_3d_col_color, 1, blue_light.data());
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.getColMajor().toFloat().data());
+    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
     
     GLuint indices[] = {0,1,0,2,0,3};
     glDrawElements(GL_LINES,  6, GL_UNSIGNED_INT, indices);
@@ -3128,7 +3128,7 @@ size_t VolumeRenderWorker::setScaleBars()
                     if (tick_levels == tick_levels_max - 1)
                     {
                         scalebar_multiplier = tick_interdistance * 10.0;
-                        if ((size_t) n_position_scalebar_ticks+3 < position_scalebar_ticks.getM())
+                        if ((size_t) n_position_scalebar_ticks+3 < position_scalebar_ticks.m())
                         {
                             getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
@@ -3283,7 +3283,7 @@ void VolumeRenderWorker::setShadowVector()
 
     shadow_kernel_arg = shadow_vector;
 
-    shadow_kernel_arg = rotation.getInverse4x4().toFloat()*shadow_kernel_arg;
+    shadow_kernel_arg = rotation.inverse4x4().toFloat()*shadow_kernel_arg;
 
     clSetKernelArg(cl_model_raytrace, 11, sizeof(cl_float4),  shadow_kernel_arg.data());
 }

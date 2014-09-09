@@ -215,10 +215,10 @@ void MainWindow::initializeWorkers()
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
     connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
     connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
-    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
-    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -245,10 +245,10 @@ void MainWindow::initializeWorkers()
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
     connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
     connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
-    connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
-    connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
 
     allInOneWorker->moveToThread(allInOneThread);
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -422,7 +422,7 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 
         while (j != image_strings.constEnd())
         {
-            Image image;
+            ImageInfo image;
 
             image.setPath(*j);
 
@@ -437,14 +437,9 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
     
     if (folderSet.size() > 0) 
     {
-        emit pathChanged(folderSet.current()->current()->path());
-        emit selectionChanged(folderSet.current()->current()->selection());
+        emit imageChanged(*folderSet.current()->current());
         emit centerImage();
-//        emit processImage();
     }
-//    centerImage();
-    
-//    hasPendingChanges = true;
 }
 
 
@@ -462,8 +457,9 @@ void MainWindow::removeImage()
         
         if (folderSet.size() > 0)
         {
-            emit pathChanged(folderSet.current()->next()->path());
-            emit selectionChanged(folderSet.current()->current()->selection());
+            emit imageChanged(*folderSet.current()->next());
+//            emit pathChanged(folderSet.current()->next()->path());
+//            emit selectionChanged(folderSet.current()->current()->selection());
         }
     }
 }
@@ -472,30 +468,14 @@ void MainWindow::nextFrame()
 {
     if (folderSet.size() > 0)
     {
-        if (folderSet.current()->i() == folderSet.current()->size() - 1)
-        {
-            nextFolder();
-        }
-        else
-        {
-            emit pathChanged(folderSet.current()->next()->path());
-            emit selectionChanged(folderSet.current()->current()->selection());
-        }
+        emit imageChanged(*folderSet.current()->next());
     }
 }
 void MainWindow::previousFrame()
 {
     if (folderSet.size() > 0)
     {
-        if (folderSet.current()->i() == 0)
-        {
-            previousFolder();
-        }
-        else 
-        {
-            emit pathChanged(folderSet.current()->previous()->path());
-            emit selectionChanged(folderSet.current()->current()->selection());
-        }
+        emit imageChanged(*folderSet.current()->previous());
     }
 }
 void MainWindow::batchForward()
@@ -507,8 +487,7 @@ void MainWindow::batchForward()
             folderSet.current()->next();
         }
         
-        emit pathChanged(folderSet.current()->current()->path());
-        emit selectionChanged(folderSet.current()->current()->selection());
+        emit imageChanged(*folderSet.current()->current());
     }
 }
 void MainWindow::batchBackward()
@@ -520,8 +499,7 @@ void MainWindow::batchBackward()
             folderSet.current()->previous();
         }
         
-        emit pathChanged(folderSet.current()->current()->path());
-        emit selectionChanged(folderSet.current()->current()->selection());
+        emit imageChanged(*folderSet.current()->current());
     }
 }
 
@@ -529,16 +507,14 @@ void MainWindow::nextFolder()
 {
     if (folderSet.size() > 0)
     {
-        emit pathChanged(folderSet.next()->current()->path());
-        emit selectionChanged(folderSet.current()->current()->selection());
+        emit imageChanged(*folderSet.next()->current());
     }
 }
 void MainWindow::previousFolder()
 {
     if (folderSet.size() > 0)
     {
-        emit pathChanged(folderSet.previous()->current()->path());
-        emit selectionChanged(folderSet.current()->current()->selection());
+        emit imageChanged(*folderSet.previous()->current());
     }
 }
 
@@ -596,10 +572,10 @@ void MainWindow::runProjectFileThread()
     
     // Creation settings
     svo_inprocess.creation_date = QDateTime::currentDateTime();
-    svo_inprocess.creation_noise_cutoff_low = reduceThresholdLow->value();
-    svo_inprocess.creation_noise_cutoff_high = reduceThresholdHigh->value();
-    svo_inprocess.creation_post_cutoff_low = projectThresholdLow->value();
-    svo_inprocess.creation_post_cutoff_high = projectThresholdHigh->value();
+    svo_inprocess.creation_noise_cutoff_low = noiseCorrectionMinDoubleSpinBox->value();
+    svo_inprocess.creation_noise_cutoff_high = noiseCorrectionMaxDoubleSpinBox->value();
+    svo_inprocess.creation_post_cutoff_low = postCorrectionMinDoubleSpinBox->value();
+    svo_inprocess.creation_post_cutoff_high = postCorrectionMaxDoubleSpinBox->value();
     svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
     svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
     svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
@@ -614,10 +590,10 @@ void MainWindow::runAllInOneThread()
     
     // Creation settings
     svo_inprocess.creation_date = QDateTime::currentDateTime();
-    svo_inprocess.creation_noise_cutoff_low = reduceThresholdLow->value();
-    svo_inprocess.creation_noise_cutoff_high = reduceThresholdHigh->value();
-    svo_inprocess.creation_post_cutoff_low = projectThresholdLow->value();
-    svo_inprocess.creation_post_cutoff_high = projectThresholdHigh->value();
+    svo_inprocess.creation_noise_cutoff_low = noiseCorrectionMinDoubleSpinBox->value();
+    svo_inprocess.creation_noise_cutoff_high = noiseCorrectionMaxDoubleSpinBox->value();
+    svo_inprocess.creation_post_cutoff_low = postCorrectionMinDoubleSpinBox->value();
+    svo_inprocess.creation_post_cutoff_high = postCorrectionMaxDoubleSpinBox->value();
     svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
     svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
     svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
@@ -637,33 +613,26 @@ void MainWindow::setStartConditions()
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(11);
 
-    reduceThresholdLow->setValue(5);
-    reduceThresholdHigh->setValue(1e9);
-    projectThresholdLow->setValue(10);
-    projectThresholdHigh->setValue(1e9);
+    noiseCorrectionMinDoubleSpinBox->setValue(5);
+    noiseCorrectionMaxDoubleSpinBox->setValue(1e9);
+    postCorrectionMinDoubleSpinBox->setValue(10);
+    postCorrectionMaxDoubleSpinBox->setValue(1e9);
 
-    dataMinSpinBox->setValue(1.0);
-    dataMaxSpinBox->setValue(10);
-    alphaSpinBox->setValue(1.0);
-    brightnessSpinBox->setValue(2.0);
+    volumeRenderDataMinSpinBox->setValue(1.0);
+    volumeRenderDataMaxSpinBox->setValue(10);
+    volumeRenderAlphaSpinBox->setValue(1.0);
+    volumeRenderBrightnessSpinBox->setValue(2.0);
     
-    viewModeComboBox->setCurrentIndex(0);
+    volumeRenderViewModeComboBox->setCurrentIndex(0);
     tsfAlphaComboBox->setCurrentIndex(2);
-    tsfComboBox->setCurrentIndex(1);
+    volumeRenderTsfComboBox->setCurrentIndex(1);
     
-//    imagePreviewWindow->getWorker()->setTsfTexture(1);
-//    imagePreviewWindow->getWorker()->setTsfAlpha(2);
-//    imagePreviewWindow->getWorker()->setDataMin(0);
-//    imagePreviewWindow->getWorker()->setDataMax(1000);
-//    imagePreviewWindow->getWorker()->setLog(true);
-//    imagePreviewWindow->getWorker()->setCorrection(true);
-//    imagePreviewWindow->getWorker()->setMode(0);
-    imageTsfTextureComboBox->setCurrentIndex(1);
-    imageTsfAlphaComboBox->setCurrentIndex(2);
-    imageDataMinDoubleSpinBox->setValue(5);
-    imageDataMaxDoubleSpinBox->setValue(1000);
-    imageLogCheckBox->setChecked(true);
-    imageCorrectionCheckBox->setChecked(true);
+    tsfTextureComboBox->setCurrentIndex(1);
+    tsfAlphaComboBox->setCurrentIndex(2);
+    dataMinDoubleSpinBox->setValue(5);
+    dataMaxDoubleSpinBox->setValue(1000);
+    logCheckBox->setChecked(true);
+    correctionLorentzCheckBox->setChecked(true);
     imageModeComboBox->setCurrentIndex(0);
     
     
@@ -710,7 +679,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-
 void MainWindow::saveProject()
 {
     QFileDialog dialog;
@@ -725,12 +693,13 @@ void MainWindow::saveProject()
             QDataStream out(&file);
             
             out << folderSet;
-            out << imageTsfTextureComboBox->currentText();
-            out << imageTsfAlphaComboBox->currentText();
-            out << (double) imageDataMinDoubleSpinBox->value();
-            out << (double) imageDataMaxDoubleSpinBox->value();
-            out << (bool) imageLogCheckBox->isChecked();
-            out << (bool) imageCorrectionCheckBox->isChecked();            
+            out << tsfTextureComboBox->currentText();
+            out << tsfAlphaComboBox->currentText();
+            out << (double) dataMinDoubleSpinBox->value();
+            out << (double) dataMaxDoubleSpinBox->value();
+            out << (bool) logCheckBox->isChecked();
+            out << (bool) correctionLorentzCheckBox->isChecked();  
+            out << (bool) autoBackgroundCorrectionCheckBox->isChecked();  
             
             file.close();
         }
@@ -753,31 +722,100 @@ void MainWindow::loadProject()
             double dataMin;
             double dataMax;
             bool log;
-            bool correction;
+            bool lorentzCorrection;
+            bool autoBackgroundCorrection;
             
             QDataStream in(&file);
             
-            in >> folderSet >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> correction;
+            in >> folderSet >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> lorentzCorrection >> autoBackgroundCorrection;
             
-            imageTsfTextureComboBox->setCurrentText(tsfTexture);
-            imageTsfAlphaComboBox->setCurrentText(tsfAlpha);
-            imageDataMinDoubleSpinBox->setValue(dataMin);
-            imageDataMaxDoubleSpinBox->setValue(dataMax);
-            imageLogCheckBox->setChecked(log);
-            imageCorrectionCheckBox->setChecked(correction);
+            
+            tsfTextureComboBox->setCurrentText(tsfTexture);
+            tsfAlphaComboBox->setCurrentText(tsfAlpha);
+            dataMinDoubleSpinBox->setValue(dataMin);
+            dataMaxDoubleSpinBox->setValue(dataMax);
+            logCheckBox->setChecked(log);
+            correctionLorentzCheckBox->setChecked(lorentzCorrection);
+            autoBackgroundCorrectionCheckBox->setChecked(autoBackgroundCorrection);
             
             file.close();
 
             if (folderSet.size() > 0)
             {
-                emit pathChanged(folderSet.current()->current()->path());
-                emit selectionChanged(folderSet.current()->current()->selection());
+                emit imageChanged(*folderSet.current()->current());
+                emit centerImage();
             }
         }
     }
 }
 
-void MainWindow::setSelection(QRectF rect)
+//void MainWindow::saveProject()
+//{
+//    QFileDialog dialog;
+//    dialog.setDefaultSuffix("txt");
+//    QString path = dialog.getSaveFileName(this, tr("Save project"), "", tr(".qt (*.qt);; All Files (*)"));
+
+//    if (path != "")
+//    {
+//        QFile file(path);
+//        if (file.open(QIODevice::WriteOnly))
+//        {
+//            QDataStream out(&file);
+            
+//            out << folderSet;
+//            out << tsfTextureComboBox->currentText();
+//            out << tsfAlphaComboBox->currentText();
+//            out << (double) dataMinDoubleSpinBox->value();
+//            out << (double) dataMaxDoubleSpinBox->value();
+//            out << (bool) imageLogCheckBox->isChecked();
+//            out << (bool) correctionLorentzCheckBox->isChecked();            
+            
+//            file.close();
+//        }
+//    }
+    
+//    hasPendingChanges = false;
+//}
+
+//void MainWindow::loadProject()
+//{
+//    QString path = QFileDialog::getOpenFileName(this, tr("Open project"), "", tr(".qt (*.qt);; All Files (*)"));
+
+//    if (path != "")
+//    {
+//        QFile file(path);
+//        if (file.open(QIODevice::ReadOnly))
+//        {
+//            QString tsfTexture;
+//            QString tsfAlpha;
+//            double dataMin;
+//            double dataMax;
+//            bool log;
+//            bool correction;
+            
+//            QDataStream in(&file);
+            
+//            in >> folderSet >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> correction;
+            
+//            tsfTextureComboBox->setCurrentText(tsfTexture);
+//            tsfAlphaComboBox->setCurrentText(tsfAlpha);
+//            dataMinDoubleSpinBox->setValue(dataMin);
+//            dataMaxDoubleSpinBox->setValue(dataMax);
+//            imageLogCheckBox->setChecked(log);
+//            correctionLorentzCheckBox->setChecked(correction);
+            
+//            file.close();
+
+//            if (folderSet.size() > 0)
+//            {
+//                emit pathChanged(folderSet.current()->current()->path());
+//                emit selectionChanged(folderSet.current()->current()->selection());
+//            }
+//        }
+//    }
+//}
+
+void MainWindow::setSelection(Selection rect)
 {
     if (folderSet.size() > 0)
     {
@@ -1109,7 +1147,7 @@ void MainWindow::openUnitcellFile()
 
 
         Matrix<float> U(3,3);
-        U = UB * B.getInverse();
+        U = UB * B.inverse();
     }
 }
 
@@ -1171,13 +1209,13 @@ void MainWindow::initializeConnects()
     connect(this->log3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
     connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic2D()));
     connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setDataStructure()));
-    connect(this->tsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
-    connect(this->viewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setViewMode(int)));
+    connect(this->volumeRenderTsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
+    connect(this->volumeRenderViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setViewMode(int)));
     connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
-    connect(this->dataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMin(double)));
-    connect(this->dataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
-    connect(this->alphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setAlpha(double)));
-    connect(this->brightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setBrightness(double)));
+    connect(this->volumeRenderDataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMin(double)));
+    connect(this->volumeRenderDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
+    connect(this->volumeRenderAlphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setAlpha(double)));
+    connect(this->volumeRenderBrightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setBrightness(double)));
     connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setModel()));
     connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam0(double)));
     connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam1(double)));
@@ -1288,13 +1326,13 @@ void MainWindow::saveLoadedSvo()
         if (file_name != "")
         {
             // View settings
-            svo_loaded.view_mode = viewModeComboBox->currentIndex();
+            svo_loaded.view_mode = volumeRenderViewModeComboBox->currentIndex();
             svo_loaded.view_tsf_style = tsfAlphaComboBox->currentIndex();
-            svo_loaded.view_tsf_texture = tsfComboBox->currentIndex();
-            svo_loaded.view_data_min = dataMinSpinBox->value();
-            svo_loaded.view_data_max = dataMaxSpinBox->value();
-            svo_loaded.view_alpha = alphaSpinBox->value();
-            svo_loaded.view_brightness = brightnessSpinBox->value();
+            svo_loaded.view_tsf_texture = volumeRenderTsfComboBox->currentIndex();
+            svo_loaded.view_data_min = volumeRenderDataMinSpinBox->value();
+            svo_loaded.view_data_max = volumeRenderDataMaxSpinBox->value();
+            svo_loaded.view_alpha = volumeRenderAlphaSpinBox->value();
+            svo_loaded.view_brightness = volumeRenderBrightnessSpinBox->value();
             
             qDebug() << "Get saved!Soft" << svo_loaded.view_data_min;
             
@@ -1315,13 +1353,13 @@ void MainWindow::openSvo()
         svo_loaded.open(current_svo_path);
         volumeRenderWindow->getWorker()->setSvo(&(svo_loaded));
         
-        viewModeComboBox->setCurrentIndex(svo_loaded.view_mode);
+        volumeRenderViewModeComboBox->setCurrentIndex(svo_loaded.view_mode);
         tsfAlphaComboBox->setCurrentIndex(svo_loaded.view_tsf_style);
-        tsfComboBox->setCurrentIndex(svo_loaded.view_tsf_texture);
-        alphaSpinBox->setValue(svo_loaded.view_alpha);
-        brightnessSpinBox->setValue(svo_loaded.view_brightness);
-        dataMinSpinBox->setValue(svo_loaded.view_data_min);
-        dataMaxSpinBox->setValue(svo_loaded.view_data_max);
+        volumeRenderTsfComboBox->setCurrentIndex(svo_loaded.view_tsf_texture);
+        volumeRenderAlphaSpinBox->setValue(svo_loaded.view_alpha);
+        volumeRenderBrightnessSpinBox->setValue(svo_loaded.view_brightness);
+        volumeRenderDataMinSpinBox->setValue(svo_loaded.view_data_min);
+        volumeRenderDataMaxSpinBox->setValue(svo_loaded.view_data_max);
         
         UBMatrix<double> UB;
         
@@ -1609,7 +1647,7 @@ void MainWindow::initializeInteractives()
         imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
         imageDisplayWidget->setFocusPolicy(Qt::TabFocus);
         
-        connect(this, SIGNAL(pathChanged(QString)), imagePreviewWindow->getWorker(), SLOT(setImageFromPath(QString)));
+        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->getWorker(), SLOT(setFrame(ImageInfo)));
 
         imageWidget = new QMainWindow;
 
@@ -1703,59 +1741,57 @@ void MainWindow::initializeInteractives()
         imageModeComboBox->addItem("Variance");
         imageModeComboBox->addItem("Skewness");
     
-        imageTsfTextureComboBox = new QComboBox;
-        imageTsfTextureComboBox->addItem(trUtf8("Rainbow"));
-        imageTsfTextureComboBox->addItem(trUtf8("Hot"));
-        imageTsfTextureComboBox->addItem(trUtf8("Hsv"));
-        imageTsfTextureComboBox->addItem(trUtf8("Galaxy"));
-        imageTsfTextureComboBox->addItem(trUtf8("Binary"));
-        imageTsfTextureComboBox->addItem(trUtf8("Yranib"));
+        tsfTextureComboBox = new QComboBox;
+        tsfTextureComboBox->addItem(trUtf8("Rainbow"));
+        tsfTextureComboBox->addItem(trUtf8("Hot"));
+        tsfTextureComboBox->addItem(trUtf8("Hsv"));
+        tsfTextureComboBox->addItem(trUtf8("Galaxy"));
+        tsfTextureComboBox->addItem(trUtf8("Binary"));
+        tsfTextureComboBox->addItem(trUtf8("Yranib"));
     
-        imageTsfAlphaComboBox = new QComboBox;
-        imageTsfAlphaComboBox->addItem("Linear");
-        imageTsfAlphaComboBox->addItem("Exponential");
-        imageTsfAlphaComboBox->addItem("Uniform");
-        imageTsfAlphaComboBox->addItem("Opaque");
+        tsfAlphaComboBox = new QComboBox;
+        tsfAlphaComboBox->addItem("Linear");
+        tsfAlphaComboBox->addItem("Exponential");
+        tsfAlphaComboBox->addItem("Uniform");
+        tsfAlphaComboBox->addItem("Opaque");
     
-        imageDataMinDoubleSpinBox = new QDoubleSpinBox;
-        imageDataMinDoubleSpinBox->setRange(-1e9,1e9);
-        imageDataMinDoubleSpinBox->setAccelerated(true);
-        imageDataMinDoubleSpinBox->setPrefix("Data min: ");
+        dataMinDoubleSpinBox = new QDoubleSpinBox;
+        dataMinDoubleSpinBox->setRange(-1e9,1e9);
+        dataMinDoubleSpinBox->setAccelerated(true);
+        dataMinDoubleSpinBox->setPrefix("Data min: ");
     
-        imageDataMaxDoubleSpinBox = new QDoubleSpinBox;
-        imageDataMaxDoubleSpinBox->setRange(-1e9,1e9);
-        imageDataMaxDoubleSpinBox->setAccelerated(true);
-        imageDataMaxDoubleSpinBox->setPrefix("Data max: ");
+        dataMaxDoubleSpinBox = new QDoubleSpinBox;
+        dataMaxDoubleSpinBox->setRange(-1e9,1e9);
+        dataMaxDoubleSpinBox->setAccelerated(true);
+        dataMaxDoubleSpinBox->setPrefix("Data max: ");
         
-        imageLogCheckBox = new QCheckBox("Log");
-        imageCorrectionCheckBox = new QCheckBox("Corrections");
+        logCheckBox = new QCheckBox("Log");
     
         QGridLayout * settingsLayout = new QGridLayout;
-        settingsLayout->addWidget(imageModeComboBox,0,0,1,2);
-        settingsLayout->addWidget(imageTsfTextureComboBox,1,0,1,1);
-        settingsLayout->addWidget(imageTsfAlphaComboBox,1,1,1,1);
-        settingsLayout->addWidget(imageDataMinDoubleSpinBox,2,0,1,2);
-        settingsLayout->addWidget(imageDataMaxDoubleSpinBox,3,0,1,2);
-        settingsLayout->addWidget(imageLogCheckBox,4,0,1,1);
-        settingsLayout->addWidget(imageCorrectionCheckBox,4,1,1,1);
+        settingsLayout->addWidget(imageModeComboBox,0,1,1,2);
+        settingsLayout->addWidget(tsfTextureComboBox,1,1,1,1);
+        settingsLayout->addWidget(tsfAlphaComboBox,1,2,1,1);
+        settingsLayout->addWidget(dataMinDoubleSpinBox,2,1,1,2);
+        settingsLayout->addWidget(dataMaxDoubleSpinBox,3,1,1,2);
+        settingsLayout->addWidget(logCheckBox,4,1,1,1);
+        
     
     
         imageSettingsWidget = new QWidget;
         imageSettingsWidget->setLayout(settingsLayout);
     
     
-        imageSettingsDock =  new QDockWidget("Display Settings");
+        imageSettingsDock =  new QDockWidget("Display settings");
         imageSettingsDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
         imageSettingsDock->setWidget(imageSettingsWidget);
         imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
         imageWidget->addDockWidget(Qt::RightDockWidgetArea, imageSettingsDock);
         
-        connect(imageTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfTexture(int)));
-        connect(imageTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfAlpha(int)));
-        connect(imageDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setDataMin(double)));
-        connect(imageDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setDataMax(double)));
-        connect(imageLogCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setLog(bool)));
-        connect(imageCorrectionCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setCorrection(bool)));
+        connect(tsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfTexture(int)));
+        connect(tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfAlpha(int)));
+        connect(dataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setDataMin(double)));
+        connect(dataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setDataMax(double)));
+        connect(logCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setLog(bool)));
         connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setMode(int)));
         connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(saveProject()));
         connect(loadProjectAction, SIGNAL(triggered()), this, SLOT(loadProject()));
@@ -1768,61 +1804,102 @@ void MainWindow::initializeInteractives()
 //        connect(loadPathsPushButton,SIGNAL(clicked()),imagePreviewWindow->getWorker(),SLOT(centerImage()));
     }
     
+    // Corrections dock widget
+    {
+        noiseCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
+        noiseCorrectionMinDoubleSpinBox->setRange(-1e6,1e6);
+        noiseCorrectionMinDoubleSpinBox->setPrefix("Noise: ");
+        
+        noiseCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
+        noiseCorrectionMaxDoubleSpinBox->setRange(-1e6,1e6);
+        
+        postCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
+        postCorrectionMinDoubleSpinBox->setRange(-1e6,1e6);
+        postCorrectionMinDoubleSpinBox->setPrefix("PCT: ");
+        
+        postCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
+        postCorrectionMaxDoubleSpinBox->setRange(-1e6,1e6);
+        
+        correctionLorentzCheckBox = new QCheckBox("Lorentz correction");
+        autoBackgroundCorrectionCheckBox = new QCheckBox("Automatic background subtraction");
+        
+        connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setCorrection(bool)));
+        
+        QGridLayout * correctionLayout = new QGridLayout;
+        correctionLayout->addWidget(noiseCorrectionMinDoubleSpinBox,0,0,1,1);
+        correctionLayout->addWidget(noiseCorrectionMaxDoubleSpinBox,0,1,1,1);
+        correctionLayout->addWidget(postCorrectionMinDoubleSpinBox,1,0,1,1);
+        correctionLayout->addWidget(postCorrectionMaxDoubleSpinBox,1,1,1,1);
+        correctionLayout->addWidget(correctionLorentzCheckBox,2,0,1,2);
+        correctionLayout->addWidget(autoBackgroundCorrectionCheckBox,3,0,1,2);
+        
+        correctionWidget = new QWidget;
+        correctionWidget->setLayout(correctionLayout);
+        
+        correctionDock =  new QDockWidget("Corrections");
+        correctionDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
+        correctionDock->setWidget(correctionWidget);
+        correctionDock->setFixedHeight(correctionWidget->minimumSizeHint().height()*1.2);
+        imageWidget->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
+        
+        
+        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)),Qt::QueuedConnection);
+        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseHigh(double)),Qt::QueuedConnection);
+        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionLow(double)),Qt::QueuedConnection);
+        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionHigh(double)),Qt::QueuedConnection);
+    }
+    
     /* Graphics dock widget */
     {
         QLabel * label_texture= new QLabel(QString("Texture "));
-//        QLabel * label_data_min= new QLabel(QString("Min: "));
-//        QLabel * label_data_max= new QLabel(QString("Max: "));
-//        QLabel * label_alpha= new QLabel(QString("Alpha: "));
-//        QLabel * label_brightness = new QLabel(QString("Brightness: "));
         QLabel * label_quality = new QLabel(QString("Texture quality: "));
         QLabel * label_mode = new QLabel(QString("View mode: "));
 
-        dataMinSpinBox = new QDoubleSpinBox;
-        dataMinSpinBox->setDecimals(2);
-        dataMinSpinBox->setRange(0, 1e9);
-        dataMinSpinBox->setSingleStep(1);
-        dataMinSpinBox->setAccelerated(1);
-        dataMinSpinBox->setPrefix("Data min: ");
+        volumeRenderDataMinSpinBox = new QDoubleSpinBox;
+        volumeRenderDataMinSpinBox->setDecimals(2);
+        volumeRenderDataMinSpinBox->setRange(0, 1e9);
+        volumeRenderDataMinSpinBox->setSingleStep(1);
+        volumeRenderDataMinSpinBox->setAccelerated(1);
+        volumeRenderDataMinSpinBox->setPrefix("Data min: ");
 
-        dataMaxSpinBox = new QDoubleSpinBox;
-        dataMaxSpinBox->setDecimals(1);
-        dataMaxSpinBox->setRange(0, 1e9);
-        dataMaxSpinBox->setSingleStep(1);
-        dataMaxSpinBox->setAccelerated(1);
-        dataMaxSpinBox->setPrefix("Data max: ");
+        volumeRenderDataMaxSpinBox = new QDoubleSpinBox;
+        volumeRenderDataMaxSpinBox->setDecimals(1);
+        volumeRenderDataMaxSpinBox->setRange(0, 1e9);
+        volumeRenderDataMaxSpinBox->setSingleStep(1);
+        volumeRenderDataMaxSpinBox->setAccelerated(1);
+        volumeRenderDataMaxSpinBox->setPrefix("Data max: ");
 
-        alphaSpinBox = new QDoubleSpinBox;
-        alphaSpinBox->setDecimals(4);
-        alphaSpinBox->setRange(0, 10);
-        alphaSpinBox->setSingleStep(0.1);
-        alphaSpinBox->setAccelerated(1);
-        alphaSpinBox->setPrefix("Alpha: ");
+        volumeRenderAlphaSpinBox = new QDoubleSpinBox;
+        volumeRenderAlphaSpinBox->setDecimals(4);
+        volumeRenderAlphaSpinBox->setRange(0, 10);
+        volumeRenderAlphaSpinBox->setSingleStep(0.1);
+        volumeRenderAlphaSpinBox->setAccelerated(1);
+        volumeRenderAlphaSpinBox->setPrefix("Alpha: ");
 
-        brightnessSpinBox = new QDoubleSpinBox;
-        brightnessSpinBox->setDecimals(4);
-        brightnessSpinBox->setRange(0, 10);
-        brightnessSpinBox->setSingleStep(0.1);
-        brightnessSpinBox->setAccelerated(1);
-        brightnessSpinBox->setPrefix("Brightness: ");
+        volumeRenderBrightnessSpinBox = new QDoubleSpinBox;
+        volumeRenderBrightnessSpinBox->setDecimals(4);
+        volumeRenderBrightnessSpinBox->setRange(0, 10);
+        volumeRenderBrightnessSpinBox->setSingleStep(0.1);
+        volumeRenderBrightnessSpinBox->setAccelerated(1);
+        volumeRenderBrightnessSpinBox->setPrefix("Brightness: ");
         
-        viewModeComboBox = new QComboBox;
-        viewModeComboBox->addItem(trUtf8("Integrate"));
-        viewModeComboBox->addItem(trUtf8("Blend"));
-        viewModeComboBox->addItem(trUtf8("Slice"));
+        volumeRenderViewModeComboBox = new QComboBox;
+        volumeRenderViewModeComboBox->addItem(trUtf8("Integrate"));
+        volumeRenderViewModeComboBox->addItem(trUtf8("Blend"));
+        volumeRenderViewModeComboBox->addItem(trUtf8("Slice"));
         
-        tsfComboBox = new QComboBox;
-        tsfComboBox->addItem(trUtf8("Rainbow"));
-        tsfComboBox->addItem(trUtf8("Hot"));
-        tsfComboBox->addItem(trUtf8("Hsv"));
-        tsfComboBox->addItem(trUtf8("Galaxy"));
-        tsfComboBox->addItem(trUtf8("Binary"));
-        tsfComboBox->addItem(trUtf8("Yranib"));
+        volumeRenderTsfComboBox = new QComboBox;
+        volumeRenderTsfComboBox->addItem(trUtf8("Rainbow"));
+        volumeRenderTsfComboBox->addItem(trUtf8("Hot"));
+        volumeRenderTsfComboBox->addItem(trUtf8("Hsv"));
+        volumeRenderTsfComboBox->addItem(trUtf8("Galaxy"));
+        volumeRenderTsfComboBox->addItem(trUtf8("Binary"));
+        volumeRenderTsfComboBox->addItem(trUtf8("Yranib"));
 
-        tsfAlphaComboBox = new QComboBox;
-        tsfAlphaComboBox->addItem(trUtf8("Linear"));
-        tsfAlphaComboBox->addItem(trUtf8("Exponential"));
-        tsfAlphaComboBox->addItem(trUtf8("Uniform"));
+        volumeRenderTsfAlphaComboBox = new QComboBox;
+        volumeRenderTsfAlphaComboBox->addItem(trUtf8("Linear"));
+        volumeRenderTsfAlphaComboBox->addItem(trUtf8("Exponential"));
+        volumeRenderTsfAlphaComboBox->addItem(trUtf8("Uniform"));
 
         qualitySlider = new QSlider(Qt::Horizontal);
         qualitySlider->setRange(1,100);
@@ -1836,18 +1913,14 @@ void MainWindow::initializeInteractives()
         QGridLayout * graphicsLayout = new QGridLayout;
         
         graphicsLayout->addWidget(label_mode,0,0,1,2);
-        graphicsLayout->addWidget(viewModeComboBox,0,2,1,2);
+        graphicsLayout->addWidget(volumeRenderViewModeComboBox,0,2,1,2);
         graphicsLayout->addWidget(label_texture,1,0,1,2);
-        graphicsLayout->addWidget(tsfComboBox,1,2,1,1);
-        graphicsLayout->addWidget(tsfAlphaComboBox,1,3,1,1);
-//        graphicsLayout->addWidget(label_data_min,2,0,1,2);
-        graphicsLayout->addWidget(dataMinSpinBox,2,0,1,4);
-//        graphicsLayout->addWidget(label_data_max,3,0,1,2);
-        graphicsLayout->addWidget(dataMaxSpinBox,3,0,1,4);
-//        graphicsLayout->addWidget(label_alpha,4,0,1,2);
-        graphicsLayout->addWidget(alphaSpinBox,4,0,1,4);
-//        graphicsLayout->addWidget(label_brightness,5,0,1,2);
-        graphicsLayout->addWidget(brightnessSpinBox,5,0,1,4);
+        graphicsLayout->addWidget(volumeRenderTsfComboBox,1,2,1,1);
+        graphicsLayout->addWidget(volumeRenderTsfAlphaComboBox,1,3,1,1);
+        graphicsLayout->addWidget(volumeRenderDataMinSpinBox,2,0,1,4);
+        graphicsLayout->addWidget(volumeRenderDataMaxSpinBox,3,0,1,4);
+        graphicsLayout->addWidget(volumeRenderAlphaSpinBox,4,0,1,4);
+        graphicsLayout->addWidget(volumeRenderBrightnessSpinBox,5,0,1,4);
         graphicsLayout->addWidget(label_quality,6,0,1,2);
         graphicsLayout->addWidget(qualitySlider,6,2,1,2);
 
@@ -2009,14 +2082,7 @@ void MainWindow::initializeInteractives()
 
         // Labels
         QLabel * labelA = new QLabel(QString("File format:"));
-//        QLabel * labelB = new QLabel(QString("Noise cutoff:"));
-//        QLabel * labelC = new QLabel(QString("Post corr. cutoff:"));
-//        QLabel * labelD = new QLabel(QString("Octtree levels: "));
         QLabel * labelE = new QLabel(QString("Active angle:"));
-//        QLabel * labelF = new QLabel("Δ<i>ω</i>:");
-//        QLabel * labelG = new QLabel("Δ<i>κ</i>:");
-//        QLabel * labelH = new QLabel("Δ<i>φ</i>:");
-//        QLabel * labelI = new QLabel("Correction:");
         QLabel * labelJ = new QLabel("Voxelize settings");
         
         // Combo boxes and their labels
@@ -2031,45 +2097,42 @@ void MainWindow::initializeInteractives()
         activeAngleComboBox->addItem("Given by file");
 
         // Spin Boxes
-        reduceThresholdLow = new QDoubleSpinBox;
-        reduceThresholdLow->setRange(0, 1e9);
-        reduceThresholdLow->setSingleStep(1);
-        reduceThresholdLow->setAccelerated(1);
-        reduceThresholdLow->setDecimals(2);
-        reduceThresholdLow->setFocusPolicy(Qt::ClickFocus);
-        reduceThresholdLow->setPrefix("Noise cutoff: ");
+//        noiseCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
+//        noiseCorrectionMinDoubleSpinBox->setRange(0, 1e9);
+//        noiseCorrectionMinDoubleSpinBox->setSingleStep(1);
+//        noiseCorrectionMinDoubleSpinBox->setAccelerated(1);
+//        noiseCorrectionMinDoubleSpinBox->setDecimals(2);
+//        noiseCorrectionMinDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
+//        noiseCorrectionMinDoubleSpinBox->setPrefix("Noise cutoff: ");
         
-        reduceThresholdHigh = new QDoubleSpinBox;
-        reduceThresholdHigh->setRange(0, 1e9);
-        reduceThresholdHigh->setSingleStep(1);
-        reduceThresholdHigh->setAccelerated(1);
-        reduceThresholdHigh->setDecimals(2);
-        reduceThresholdHigh->setFocusPolicy(Qt::ClickFocus);
+//        noiseCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
+//        noiseCorrectionMaxDoubleSpinBox->setRange(0, 1e9);
+//        noiseCorrectionMaxDoubleSpinBox->setSingleStep(1);
+//        noiseCorrectionMaxDoubleSpinBox->setAccelerated(1);
+//        noiseCorrectionMaxDoubleSpinBox->setDecimals(2);
+//        noiseCorrectionMaxDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
 
-        projectThresholdLow = new QDoubleSpinBox;
-        projectThresholdLow->setRange(0, 1e9);
-        projectThresholdLow->setSingleStep(1);
-        projectThresholdLow->setAccelerated(1);
-        projectThresholdLow->setDecimals(2);
-        projectThresholdLow->setFocusPolicy(Qt::ClickFocus);
-        projectThresholdLow->setPrefix("Post corr. cutoff: ");
+//        postCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
+//        postCorrectionMinDoubleSpinBox->setRange(0, 1e9);
+//        postCorrectionMinDoubleSpinBox->setSingleStep(1);
+//        postCorrectionMinDoubleSpinBox->setAccelerated(1);
+//        postCorrectionMinDoubleSpinBox->setDecimals(2);
+//        postCorrectionMinDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
+//        postCorrectionMinDoubleSpinBox->setPrefix("Post corr. cutoff: ");
 
-        projectThresholdHigh = new QDoubleSpinBox;
-        projectThresholdHigh->setRange(0, 1e9);
-        projectThresholdHigh->setSingleStep(1);
-        projectThresholdHigh->setAccelerated(1);
-        projectThresholdHigh->setDecimals(2);
-        projectThresholdHigh->setFocusPolicy(Qt::ClickFocus);
+//        postCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
+//        postCorrectionMaxDoubleSpinBox->setRange(0, 1e9);
+//        postCorrectionMaxDoubleSpinBox->setSingleStep(1);
+//        postCorrectionMaxDoubleSpinBox->setAccelerated(1);
+//        postCorrectionMaxDoubleSpinBox->setDecimals(2);
+//        postCorrectionMaxDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
 
-        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)),Qt::QueuedConnection);
-        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseHigh(double)),Qt::QueuedConnection);
-        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionLow(double)),Qt::QueuedConnection);
-        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionHigh(double)),Qt::QueuedConnection);
         
-//        connect(this->reduceThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
-//        connect(this->reduceThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
-//        connect(this->projectThresholdLow, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
-//        connect(this->projectThresholdHigh, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
+        
+//        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
+//        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
+//        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
+//        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
 //        QLabel * labelF = new QLabel("Δ<i>ω</i>:");
 //        QLabel * labelG = new QLabel("Δ<i>κ</i>:");
 //        QLabel * labelH = new QLabel("Δ<i>φ</i>:");
@@ -2115,11 +2178,11 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(labelE,1,0,1,4);
         reconstructLayout->addWidget(activeAngleComboBox,1,4,1,4);
 //        reconstructLayout->addWidget(labelB,2,0,1,4);
-        reconstructLayout->addWidget(reduceThresholdLow,2,0,1,8);
-//        reconstructLayout->addWidget(reduceThresholdHigh,2,6,1,2);
+//        reconstructLayout->addWidget(noiseCorrectionMinDoubleSpinBox,2,0,1,8);
+//        reconstructLayout->addWidget(noiseCorrectionMaxDoubleSpinBox,2,6,1,2);
 //        reconstructLayout->addWidget(labelC,3,0,1,4);
-        reconstructLayout->addWidget(projectThresholdLow,3,0,1,8);
-//        reconstructLayout->addWidget(projectThresholdHigh,3,6,1,2);
+//        reconstructLayout->addWidget(postCorrectionMinDoubleSpinBox,3,0,1,8);
+//        reconstructLayout->addWidget(postCorrectionMaxDoubleSpinBox,3,6,1,2);
 //        reconstructLayout->addWidget(labelI,4,0,1,2);
 //        reconstructLayout->addWidget(labelF,4,0,1,4);
         reconstructLayout->addWidget(omegaCorrectionSpinBox,4,0,1,8);

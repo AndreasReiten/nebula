@@ -69,7 +69,8 @@ HEADERS += \
     src/utils/volumerender.h \
     src/utils/worker.h \
     src/mainwindow.h \
-    lib/qxlib/qxfile/utils/framecontainer.h
+    lib/qxlib/qxfile/utils/framecontainer.h \
+    lib/qxlib/qxfile/utils/selection.h
 
 SOURCES += \
     lib/qxlib/qxfile/utils/fileformat.cpp \
@@ -95,4 +96,5 @@ SOURCES += \
     src/utils/worker.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
-    lib/qxlib/qxfile/utils/framecontainer.cpp
+    lib/qxlib/qxfile/utils/framecontainer.cpp \
+    lib/qxlib/qxfile/utils/selection.cpp

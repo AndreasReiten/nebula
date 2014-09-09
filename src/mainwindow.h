@@ -94,7 +94,7 @@ private slots:
     void saveProject();
     void loadProject();
     
-    void setSelection(QRectF rect);
+    void setSelection(Selection rect);
     
     // File selection
     void setFilesFromSelectionModel();
@@ -112,8 +112,9 @@ signals:
 //    void omitFile(QString str);
     void pathRemoved(QString path);
     void pathChanged(QString path);
+    void imageChanged(ImageInfo image);
     void centerImage();
-    void selectionChanged(QRectF rect);
+//    void selectionChanged(Selection rect);
     
 private:
     /* UI elements for UB matrix */
@@ -336,10 +337,10 @@ private:
 
     QSpinBox * svoLevelSpinBox;
 
-    QDoubleSpinBox *reduceThresholdLow;
-    QDoubleSpinBox *reduceThresholdHigh;
-    QDoubleSpinBox *projectThresholdLow;
-    QDoubleSpinBox *projectThresholdHigh;
+    QDoubleSpinBox *noiseCorrectionMinDoubleSpinBox;
+    QDoubleSpinBox *noiseCorrectionMaxDoubleSpinBox;
+    QDoubleSpinBox *postCorrectionMinDoubleSpinBox;
+    QDoubleSpinBox *postCorrectionMaxDoubleSpinBox;
     
     QDoubleSpinBox *omegaCorrectionSpinBox;
     QDoubleSpinBox *kappaCorrectionSpinBox;
@@ -351,14 +352,14 @@ private:
     QDoubleSpinBox * funcParamCSpinBox;
     QDoubleSpinBox * funcParamDSpinBox;
 
-    QDoubleSpinBox * dataMinSpinBox;
-    QDoubleSpinBox * dataMaxSpinBox;
-    QDoubleSpinBox * alphaSpinBox;
-    QDoubleSpinBox * brightnessSpinBox;
+    QDoubleSpinBox * volumeRenderDataMinSpinBox;
+    QDoubleSpinBox * volumeRenderDataMaxSpinBox;
+    QDoubleSpinBox * volumeRenderAlphaSpinBox;
+    QDoubleSpinBox * volumeRenderBrightnessSpinBox;
 
-    QComboBox * tsfComboBox;
-    QComboBox * tsfAlphaComboBox;
-    QComboBox * viewModeComboBox;
+    QComboBox * volumeRenderTsfComboBox;
+    QComboBox * volumeRenderTsfAlphaComboBox;
+    QComboBox * volumeRenderViewModeComboBox;
 
     QSlider * qualitySlider;
 
@@ -397,19 +398,25 @@ protected:
     QAction * centerImageAction;
     
     
-    /* Image browser settings widget */
+    /* Image browser view settings widget */
     QComboBox * imageModeComboBox;
-    QComboBox * imageTsfTextureComboBox;
-    QComboBox * imageTsfAlphaComboBox;
+    QComboBox * tsfTextureComboBox;
+    QComboBox * tsfAlphaComboBox;
 
-    QDoubleSpinBox * imageDataMinDoubleSpinBox;
-    QDoubleSpinBox * imageDataMaxDoubleSpinBox;
+    QDoubleSpinBox * dataMinDoubleSpinBox;
+    QDoubleSpinBox * dataMaxDoubleSpinBox;
 
-    QCheckBox * imageLogCheckBox;
-    QCheckBox * imageCorrectionCheckBox;
-
+    QCheckBox * logCheckBox;
+    
     QWidget * imageSettingsWidget;
     QDockWidget * imageSettingsDock;
+    
+    /* Image corrections widget */
+    QCheckBox * autoBackgroundCorrectionCheckBox;
+    QWidget * correctionWidget;
+    QDockWidget * correctionDock;
+    QCheckBox * correctionLorentzCheckBox;
+    
     
     // Image Preview Widget
     ImagePreviewWindow * imagePreviewWindow;
