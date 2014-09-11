@@ -49,5 +49,7 @@
         <file>art/download.png</file>
         <file>art/center.png</file>
         <file>art/select.png</file>
+        <file>art/select2.png</file>
+        <file>art/weight_center.png</file>
     </qresource>
 </RCC>

@@ -88,6 +88,12 @@ int main(int argc, char **argv)
     // Handle Qt messages
     qInstallMessageHandler(appOutput);
 
+    // Register custom objects for signal/slot transfer
+    qRegisterMetaType<ImageInfo>();
+    qRegisterMetaType<ImageFolder>();
+    qRegisterMetaType<FolderSet>();
+    qRegisterMetaType<Selection>();
+
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));
 

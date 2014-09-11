@@ -79,7 +79,7 @@ private slots:
 //    void decrementDisplayFile10();
 //    void setDisplayFile(int value);
 //    void refreshDisplayFile();
-    
+    void setImage(ImageInfo image);
     void loadPaths();
     void removeImage();
     void nextFrame();
@@ -394,8 +394,10 @@ protected:
     
     QAction * saveProjectAction;
     QAction * loadProjectAction;
-    QAction * squareAreaSelectAction;
+    QAction * squareAreaSelectAlphaAction;
+    QAction * squareAreaSelectBetaAction;
     QAction * centerImageAction;
+    QAction * showWeightCenterAction;
     
     
     /* Image browser view settings widget */

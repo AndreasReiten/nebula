@@ -364,6 +364,20 @@ void MainWindow::voxelizeButtonFinish()
     voxelizeButton->setDisabled(false);
 }
 
+void MainWindow::setImage(ImageInfo image)
+{
+    if (folderSet.size() > 0)
+    {
+        *folderSet.current()->current() = image;
+
+        pathLineEdit->setText(folderSet.current()->current()->path());
+
+        setHeader(folderSet.current()->current()->path());
+
+        hasPendingChanges = true;
+    }
+}
+
 void MainWindow::loadPaths()
 {
     QMessageBox confirmationMsgBox;
@@ -613,9 +627,9 @@ void MainWindow::setStartConditions()
     tabWidget->setCurrentIndex(0);
     svoLevelSpinBox->setValue(11);
 
-    noiseCorrectionMinDoubleSpinBox->setValue(5);
+    noiseCorrectionMinDoubleSpinBox->setValue(0);
     noiseCorrectionMaxDoubleSpinBox->setValue(1e9);
-    postCorrectionMinDoubleSpinBox->setValue(10);
+    postCorrectionMinDoubleSpinBox->setValue(0);
     postCorrectionMaxDoubleSpinBox->setValue(1e9);
 
     volumeRenderDataMinSpinBox->setValue(1.0);
@@ -629,7 +643,7 @@ void MainWindow::setStartConditions()
     
     tsfTextureComboBox->setCurrentIndex(1);
     tsfAlphaComboBox->setCurrentIndex(2);
-    dataMinDoubleSpinBox->setValue(5);
+    dataMinDoubleSpinBox->setValue(0);
     dataMaxDoubleSpinBox->setValue(1000);
     logCheckBox->setChecked(true);
     correctionLorentzCheckBox->setChecked(true);
@@ -1691,42 +1705,49 @@ void MainWindow::initializeInteractives()
         connect(removeCurrentPushButton, SIGNAL(clicked()), this, SLOT(removeImage()));
         connect(this, SIGNAL(pathRemoved(QString)), fileSelectionModel, SLOT(removeFile(QString)));
 
-//        imageModeCB = new QComboBox;
-//        imageModeCB->addItem("Raw");
-//        imageModeCB->addItem("Corrected");
-//        connect(imageModeCB, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setMode(int)));
-//        connect(imageModeCB, SIGNAL(currentIndexChanged(int)), this, SLOT(refreshDisplayFile()));
-        
         imageToolBar = new QToolBar("Image");
     
         saveProjectAction = new QAction(QIcon(":/art/save.png"), tr("Save project"), this);
         loadProjectAction = new QAction(QIcon(":/art/open.png"), tr("Load project"), this);
-        
-        squareAreaSelectAction = new QAction(QIcon(":/art/select.png"), tr("Toggle pixel selection"), this);
-        squareAreaSelectAction->setCheckable(true);
-        squareAreaSelectAction->setChecked(false);
-        
+
+        squareAreaSelectAlphaAction = new QAction(QIcon(":/art/select.png"), tr("Toggle pixel selection"), this);
+        squareAreaSelectAlphaAction->setCheckable(true);
+        squareAreaSelectAlphaAction->setChecked(false);
+
+        squareAreaSelectBetaAction = new QAction(QIcon(":/art/select2.png"), tr("Toggle background selection"), this);
+        squareAreaSelectBetaAction->setCheckable(true);
+        squareAreaSelectBetaAction->setChecked(false);
+
         centerImageAction = new QAction(QIcon(":/art/center.png"), tr("Center image"), this);
         centerImageAction->setCheckable(false);
-    
+
+        showWeightCenterAction = new QAction(QIcon(":/art/weight_center.png"), tr("Toggle weight center visual"), this);
+        showWeightCenterAction->setCheckable(true);
+        showWeightCenterAction->setChecked(false);
+
         imageToolBar->addAction(saveProjectAction);
         imageToolBar->addAction(loadProjectAction);
         imageToolBar->addAction(centerImageAction);
-        imageToolBar->addAction(squareAreaSelectAction);
+        imageToolBar->addAction(showWeightCenterAction);
+        imageToolBar->addAction(squareAreaSelectAlphaAction);
+        imageToolBar->addAction(squareAreaSelectBetaAction);
         imageToolBar->addWidget(pathLineEdit);
     
+        connect(showWeightCenterAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(showWeightCenter(bool)));
+        connect(squareAreaSelectAlphaAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setSelectionAlphaActive(bool)));
+        connect(squareAreaSelectBetaAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setSelectionBetaActive(bool)));
+        connect(imagePreviewWindow->getWorker(), SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
+        connect(imagePreviewWindow->getWorker(), SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
+
         imageWidget->addToolBar(Qt::TopToolBarArea, imageToolBar);
         
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setRowStretch(1,1);
-//        imageLayout->addWidget(imageToolBar,0,0,1,8);
         imageLayout->addWidget(imageDisplayWidget,1,0,1,8);
         imageLayout->addWidget(imageFastBackButton,2,0,1,2);
         imageLayout->addWidget(imageSlowBackButton,2,2,1,1);
-//        imageLayout->addWidget(imageSpinBox,2,3,1,2);
         imageLayout->addWidget(imageSlowForwardButton,2,5,1,1);
         imageLayout->addWidget(imageFastForwardButton,2,6,1,2);
-//        imageLayout->addWidget(imageModeCB,3,0,1,4);
         imageLayout->addWidget(removeCurrentPushButton,3,0,1,8);
         
         imageCentralWidget = new QWidget;
@@ -1797,11 +1818,9 @@ void MainWindow::initializeInteractives()
         connect(loadProjectAction, SIGNAL(triggered()), this, SLOT(loadProject()));
         connect(centerImageAction, SIGNAL(triggered()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
         connect(this, SIGNAL(centerImage()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
-        connect(this, SIGNAL(selectionChanged(QRectF)), imagePreviewWindow->getWorker(), SLOT(setSelection(QRectF)));
-        connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(QRectF)), this, SLOT(setSelection(QRectF)));
-        connect(squareAreaSelectAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setSelectionActive(bool)));
-//        connect(loadPathsPushButton,SIGNAL(clicked()),imagePreviewWindow->getWorker(),SLOT(centerImage()));
-//        connect(loadPathsPushButton,SIGNAL(clicked()),imagePreviewWindow->getWorker(),SLOT(centerImage()));
+        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->getWorker(), SLOT(setFrame(ImageInfo)));
+        connect(imagePreviewWindow->getWorker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
+        connect(imagePreviewWindow->getWorker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
     }
     
     // Corrections dock widget
