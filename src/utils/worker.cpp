@@ -91,21 +91,21 @@ void BaseWorker::setActiveAngle(int value)
     active_angle = value;
 }
 
-void BaseWorker::setReduceThresholdLow(double value)
+void BaseWorker::setNoiseLow(double value)
 {
-    this->threshold_reduce_low = (float) value;
+    this->thld_noise_low = (float) value;
 }
-void BaseWorker::setReduceThresholdHigh(double value)
+void BaseWorker::setNoiseHigh(double value)
 {
-    this->threshold_reduce_high = (float) value;
+    this->thld_noise_high = (float) value;
 }
-void BaseWorker::setProjectThresholdLow(double value)
+void BaseWorker::setThldProjectLow(double value)
 {
-    this->threshold_project_low = (float) value;
+    this->thld_project_low = (float) value;
 }
-void BaseWorker::setProjectThresholdHigh(double value)
+void BaseWorker::setThldProjectHigh(double value)
 {
-    this->threshold_project_high = (float) value;
+    this->thld_project_high = (float) value;
 }
 
 void BaseWorker::killProcess()
@@ -486,8 +486,6 @@ void ProjectFileWorker::process()
 
     n_reduced_pixels = 0;
 
-//    qDebug() << reduced_pixels->size();
-
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
     
     for (size_t i = 0; i < (size_t) files->size(); i++)
@@ -509,15 +507,6 @@ void ProjectFileWorker::process()
         else
         {
             int STATUS_OK = projectFile(&(*files)[i]);
-//            qDebug() << n_reduced_pixels;
-//            emit changedImageSize(files->at(i).getFastDimension(), files->at(i).getSlowDimension());
-//            (*files)[i].setActiveAngle(active_angle);
-//            (*files)[i].setProjectionKernel(&project_kernel);
-//            (*files)[i].setOffsetOmega(offset_omega);
-//            (*files)[i].setOffsetKappa(offset_kappa);
-//            (*files)[i].setOffsetPhi(offset_phi);
-
-//            int STATUS_OK = (*files)[i].filterData( &n, reduced_pixels, threshold_reduce_low, threshold_reduce_high, threshold_project_low, threshold_project_high,1);
             if (!STATUS_OK)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: could not process data \""+files->at(i).getPath()+"\"");
@@ -532,8 +521,6 @@ void ProjectFileWorker::process()
 
     reduced_pixels->resize(1, n_reduced_pixels);
 
-//    qDebug() << "Reduced pixel size" << reduced_pixels->size();
-//    reduced_pixels->print(2,"Projworker");
     /* Create dummy dataset for debugging purposes.
     */
     if (0) // A sphere
@@ -575,7 +562,6 @@ void ProjectFileWorker::process()
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+1] = (((float)j/(float)(res-1)) - 0.5)*2.0*0.5;
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+2] = (((float)k/(float)(res-1)) - 0.5)*2.0*0.5;
                     (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = 100.0;
-//                    (*reduced_pixels)[(i+j*res+k*res*res)*4+3] = (1.0 + std::sin(std::sqrt((float)(i*i+j*j+k*k))/std::sqrt((float)(3*res*res))*50))*1000;
                 }
             }
         }
@@ -648,8 +634,6 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
         omega = file->start_angle + 0.5*file->angle_increment;
     }
     
-//    qDebug() << "Using" << phi << "(" << offset_phi << ")"<< kappa << "(" << offset_kappa << ")" << omega << "(" << offset_omega << ")";
-    
     RotationMatrix<double> PHI;
     RotationMatrix<double> KAPPA;
     RotationMatrix<double> OMEGA;
@@ -684,12 +668,10 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     err |= clSetKernelArg(project_kernel, 3, sizeof(cl_sampler), &intensity_sampler);
     err |= clSetKernelArg(project_kernel, 4, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
     float threshold_one[2], threshold_two[2];
-    threshold_one[0] = this->threshold_reduce_low;
-    threshold_one[1] = this->threshold_reduce_high;
-    threshold_two[0] = this->threshold_project_low;
-    threshold_two[1] = this->threshold_project_high;
-//    qDebug() << "Reduce" << threshold_reduce_low << threshold_reduce_high;
-//    qDebug() << "Project" << threshold_project_low << threshold_project_high;
+    threshold_one[0] = this->thld_noise_low;
+    threshold_one[1] = this->thld_noise_high;
+    threshold_two[0] = this->thld_project_low;
+    threshold_two[1] = this->thld_project_high;
     
     err |= clSetKernelArg(project_kernel, 5, 2*sizeof(cl_float), threshold_one);
     err |= clSetKernelArg(project_kernel, 6, 2*sizeof(cl_float), threshold_two);

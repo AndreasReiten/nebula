@@ -1341,7 +1341,7 @@ void VolumeRenderWorker::initResourcesCL()
     paths << "kernels/render_model.cl";
     paths << "kernels/integrate.cl";
     paths << "kernels/box_sampler.cl";
-    paths << "kernels/parallel_reduction.cl";
+    paths << "cl/parallel_reduce.cl";
 
     program = context_cl->createProgram(paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));

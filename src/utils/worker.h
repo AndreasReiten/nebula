@@ -40,10 +40,10 @@ class BaseWorker : public QObject
         void setOffsetOmega(double value);
         void setOffsetKappa(double value);
         void setOffsetPhi(double value);
-        void setReduceThresholdLow(double value);
-        void setReduceThresholdHigh(double value);
-        void setProjectThresholdLow(double value);
-        void setProjectThresholdHigh(double value);
+        void setNoiseLow(double value);
+        void setNoiseHigh(double value);
+        void setThldProjectLow(double value);
+        void setThldProjectHigh(double value);
         void setQSpaceInfo(float suggested_search_radius_low, float suggested_search_radius_high, float suggested_q);
 
     protected:
@@ -68,10 +68,10 @@ class BaseWorker : public QObject
 
         // File treatment
         int active_angle;
-        float threshold_reduce_low;
-        float threshold_reduce_high;
-        float threshold_project_low;
-        float threshold_project_high;
+        float thld_noise_low;
+        float thld_noise_high;
+        float thld_project_low;
+        float thld_project_high;
         QStringList * file_paths;
         QList<DetectorFile> * files;
         Matrix<float> * reduced_pixels;

@@ -215,10 +215,12 @@ void MainWindow::initializeWorkers()
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
     connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
     connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseHigh(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectLow(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectHigh(double)), Qt::QueuedConnection);
+    connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
+    
 
     projectFileWorker->moveToThread(projectFileThread);
     connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -245,10 +247,11 @@ void MainWindow::initializeWorkers()
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
     connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
     connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setReduceThresholdHigh(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdLow(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setProjectThresholdHigh(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseLow(double)), Qt::QueuedConnection);
+    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseHigh(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectLow(double)), Qt::QueuedConnection);
+    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectHigh(double)), Qt::QueuedConnection);
+    connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), allInOneWorker, SLOT(setNoiseLow(double)));
 
     allInOneWorker->moveToThread(allInOneThread);
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -1843,6 +1846,9 @@ void MainWindow::initializeInteractives()
         autoBackgroundCorrectionCheckBox = new QCheckBox("Automatic background subtraction");
         
         connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setCorrection(bool)));
+        connect(autoBackgroundCorrectionCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setAutoBackgroundCorrection(bool)));
+        connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), noiseCorrectionMinDoubleSpinBox, SLOT(setValue(double)));
+        
         
         QGridLayout * correctionLayout = new QGridLayout;
         correctionLayout->addWidget(noiseCorrectionMinDoubleSpinBox,0,0,1,1);
