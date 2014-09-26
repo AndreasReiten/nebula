@@ -68,6 +68,7 @@ private slots:
 
     void print(QString str);
     void setGenericProgressFormat(QString str);
+    void setMemoryUsageFormat(QString str);
     void openUnitcellFile();
     void initializeWorkers();
 
@@ -433,7 +434,8 @@ protected:
 
     QPlainTextEdit *scriptTextEdit;
     QPlainTextEdit *errorTextEdit;
-    QProgressBar *progressBar;
+    QProgressBar *genericProgressBar;
+    QProgressBar *memoryUsageProgressBar;
 
 
 

@@ -28,7 +28,9 @@ class BaseWorker : public QObject
         void abort();
         void changedMessageString(QString str);
         void changedGenericProgress(int value);
+        void changedMemoryUsage(int value);
         void changedFormatGenericProgress(QString str);
+        void changedFormatMemoryUsage(QString str);
         void changedTabWidget(int value);
         void changedFile(QString path);
         void popup(QString title, QString text);

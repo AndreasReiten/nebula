@@ -153,7 +153,7 @@ void MainWindow::initializeWorkers()
     connect(readScriptWorker, SIGNAL(abort()), readScriptThread, SLOT(quit()));
     connect(readScriptWorker, SIGNAL(finished()), readScriptThread, SLOT(quit()));
     connect(readScriptWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
-    connect(readScriptWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(readScriptWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(readScriptWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(readScriptWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readScriptButton, SIGNAL(clicked()), readScriptThread, SLOT(start()));
@@ -176,7 +176,7 @@ void MainWindow::initializeWorkers()
     connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
     connect(setFileWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(setFileButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
@@ -196,7 +196,8 @@ void MainWindow::initializeWorkers()
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+    connect(readFileWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readFileButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
@@ -228,7 +229,7 @@ void MainWindow::initializeWorkers()
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
@@ -259,7 +260,8 @@ void MainWindow::initializeWorkers()
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+    connect(allInOneWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(allInOneWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
@@ -283,8 +285,9 @@ void MainWindow::initializeWorkers()
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
     connect(voxelizeWorker, SIGNAL(popup(QString,QString)), this, SLOT(displayPopup(QString,QString)));
+    connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), progressBar, SLOT(setValue(int)));
+    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
@@ -1302,7 +1305,12 @@ void MainWindow::initializeConnects()
 
 void MainWindow::setGenericProgressFormat(QString str)
 {
-    progressBar->setFormat(str);
+    genericProgressBar->setFormat(str);
+}
+
+void MainWindow::setMemoryUsageFormat(QString str)
+{
+    memoryUsageProgressBar->setFormat(str);
 }
 
 void MainWindow::saveSvo()
@@ -1806,10 +1814,10 @@ void MainWindow::initializeInteractives()
     
     
         imageSettingsDock =  new QDockWidget("Display settings");
-        imageSettingsDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
+        imageSettingsDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
         imageSettingsDock->setWidget(imageSettingsWidget);
         imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
-        imageWidget->addDockWidget(Qt::RightDockWidgetArea, imageSettingsDock);
+        imageWidget->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
         
         connect(tsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfTexture(int)));
         connect(tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfAlpha(int)));
@@ -1819,9 +1827,10 @@ void MainWindow::initializeInteractives()
         connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setMode(int)));
         connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(saveProject()));
         connect(loadProjectAction, SIGNAL(triggered()), this, SLOT(loadProject()));
+        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->getWorker(), SLOT(setFrame(ImageInfo)));
         connect(centerImageAction, SIGNAL(triggered()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
         connect(this, SIGNAL(centerImage()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
-        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->getWorker(), SLOT(setFrame(ImageInfo)));
+        
         connect(imagePreviewWindow->getWorker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
         connect(imagePreviewWindow->getWorker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
     }
@@ -2238,7 +2247,7 @@ void MainWindow::initializeInteractives()
         fileHeaderDock = new QDockWidget(tr("Header Info"), this);
         fileHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileHeaderDock->setWidget(fileHeaderEdit);
-        this->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDock);
+        this->addDockWidget(Qt::LeftDockWidgetArea, fileHeaderDock);
     }
     
     /* Function dock widget */
@@ -2307,8 +2316,12 @@ void MainWindow::initializeInteractives()
         botWidget = new QWidget;
 
         // Progress Bar
-        progressBar = new QProgressBar;
-        progressBar->setRange( 0, 100 );
+        genericProgressBar = new QProgressBar;
+        genericProgressBar->setRange( 0, 100 );
+        
+        memoryUsageProgressBar = new QProgressBar;
+        genericProgressBar->setRange( 0, 1);
+        
 
         // Text output
         errorTextEdit = new QPlainTextEdit;
@@ -2320,7 +2333,8 @@ void MainWindow::initializeInteractives()
         botLayout->setSpacing(0);
         botLayout->setContentsMargins(0,0,0,0);
         botLayout->addWidget(errorTextEdit, 0, 0, 1, 1);
-        botLayout->addWidget(progressBar, 1, 0, 1, 1);
+        botLayout->addWidget(genericProgressBar, 1, 0, 1, 1);
+        botLayout->addWidget(memoryUsageProgressBar, 2, 0, 1, 1);
 
         botWidget->setLayout(botLayout);
         outputDockWidget->setWidget(botWidget);
