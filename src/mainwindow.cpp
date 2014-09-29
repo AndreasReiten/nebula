@@ -2112,7 +2112,7 @@ void MainWindow::initializeInteractives()
 
     /* Output Widget */
     {
-        outputDockWidget = new QDockWidget(tr("Output Terminal"), this);
+        outputDockWidget = new QDockWidget(tr("Message log"), this);
         outputDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         botWidget = new QWidget;
 
