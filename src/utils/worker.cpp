@@ -169,7 +169,8 @@ void ReadScriptWorker::process()
 
     // Set the corresponding tab
     emit changedTabWidget(0);
-    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit changedRangeGenericProcess(1,file_paths->size());
+    emit changedFormatGenericProgress(QString("Reading file %v of %m (%p%)"));
 
     // Evaluate the script input
     engine->evaluate("var files = [];");
@@ -199,7 +200,10 @@ void ReadScriptWorker::process()
                 file_paths->clear();
                 break;
             }
-
+            
+            // Update the progress bar
+            if (file_paths->size() > 0) emit changedGenericProgress(i + 1);
+            
             if(i >= file_paths->size()) break;
 
             QString fileName = file_paths->at(i);
@@ -212,9 +216,6 @@ void ReadScriptWorker::process()
                 file_paths->removeAt(i);
                 i--;
             }
-
-            // Update the progress bar
-            if (file_paths->size() > 0) emit changedGenericProgress(100*(i+1)/file_paths->size());
         }
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths->size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths->size())+"  missing or no access)");
     }
@@ -262,7 +263,8 @@ void SetFileWorker::process()
 
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Processing "+QString::number(file_paths->size())+" files...");
-    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit changedRangeGenericProcess(1, file_paths->size());
+    emit changedFormatGenericProgress(QString("Set file %v of %m (%p%)"));
     emit changedTabWidget(0);
 
     // Reset suggested values
@@ -287,6 +289,9 @@ void SetFileWorker::process()
 
             break;
         }
+        
+        // Update the progress bar
+        emit changedGenericProgress(i+1);
 
         // Set file and get status
         files->append(DetectorFile());
@@ -308,8 +313,7 @@ void SetFileWorker::process()
             emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not process \""+QString(file_paths->at(i))+"\"");
         }
 
-        // Update the progress bar
-        emit changedGenericProgress(100*(i+1)/file_paths->size());
+        
     }
     size_t t = stopwatch.restart();
 
@@ -374,7 +378,8 @@ void ReadFileWorker::process()
 
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Reading "+QString::number(files->size())+" files...");
-    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit changedRangeGenericProcess(1, files->size());
+    emit changedFormatGenericProgress(QString("Reading file %v of %m (%p%)"));
     emit changedTabWidget(1);
 
 
@@ -408,7 +413,7 @@ void ReadFileWorker::process()
         }
 
         // Update the progress bar
-        emit changedGenericProgress(100*(i+1)/files->size());
+        emit changedGenericProgress(i+1);
     }
     size_t t = stopwatch.restart();
 
@@ -478,7 +483,8 @@ void ProjectFileWorker::process()
 
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Processing "+QString::number(files->size())+" files...");
-    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit changedRangeGenericProcess(1, file_paths->size());
+    emit changedFormatGenericProgress(QString("Projecting file %v of %m (%p%)"));
 
     QElapsedTimer stopwatch;
     stopwatch.start();
@@ -515,7 +521,7 @@ void ProjectFileWorker::process()
             }
         }
         // Update the progress bar
-        emit changedGenericProgress(100*(i+1)/files->size());
+        emit changedGenericProgress(i+1);
 
     }
     size_t t = stopwatch.restart();
@@ -829,7 +835,8 @@ void MultiWorker::process()
 
     // Emit to appropriate slots
     emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Processing "+QString::number(file_paths->size())+" files...");
-    emit changedFormatGenericProgress(QString("Progress: %p%"));
+    emit changedRangeGenericProcess(1, file_paths->size());
+    emit changedFormatGenericProgress(QString("Processing file %v of %m (%p%)"));
     emit changedTabWidget(1);
 
     // Parameters for Ewald's projection
@@ -906,7 +913,7 @@ void MultiWorker::process()
         }
 
         // Update the progress bar
-        emit changedGenericProgress(100*(i+1)/file_paths->size());
+        emit changedGenericProgress(i+1);
     }
 
 
@@ -1008,7 +1015,8 @@ void VoxelizeWorker::process()
         totaltime.start();
 
         // Emit to appropriate slots
-        emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"]"+QString(" Creating Interpolation Data Structure: %p%"));
+        emit changedFormatGenericProgress(QString(" Creating Interpolation Data Structure: %p%"));
+        emit changedRangeGenericProcess(0, 100);
 
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Generating Sparse Voxel Octtree "+QString::number(svo->getLevels())+" levels deep.");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] The source data is "+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB");
@@ -1137,7 +1145,7 @@ void VoxelizeWorker::process()
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
-                emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
+                emit changedFormatGenericProgress("Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
                 timer.start();
 
@@ -1418,7 +1426,7 @@ void VoxelizeWorker::process()
             if (!kill_flag)
             {
                 // Use the node structure to populate the GPU arrays
-                emit changedFormatGenericProgress("["+QString(this->metaObject()->className())+"]"+QString(" Transforming: %p%"));
+                emit changedFormatGenericProgress(QString(" Transforming: %p%"));
                 svo->index.reserve(1, nodes_prev_lvls);
                 svo->brick.reserve(1, nodes_prev_lvls);
 

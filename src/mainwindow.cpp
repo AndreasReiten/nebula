@@ -205,6 +205,7 @@ void MainWindow::initializeWorkers()
 
     connect(readFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(readFileWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
 
     connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readFileButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
@@ -243,6 +244,7 @@ void MainWindow::initializeWorkers()
 
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(projectFileWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
 
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
@@ -280,6 +282,8 @@ void MainWindow::initializeWorkers()
 
     connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(allInOneWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
+    
 
     connect(allInOneWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
@@ -311,6 +315,7 @@ void MainWindow::initializeWorkers()
 
     connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(voxelizeWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
 
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
@@ -390,13 +395,13 @@ void MainWindow::voxelizeButtonFinish()
 
 void MainWindow::setImage(ImageInfo image)
 {
-    if (folderSet.size() > 0)
+    if (image_folder.size() > 0)
     {
-        *folderSet.current()->current() = image;
+        *image_folder.current() = image;
 
-        pathLineEdit->setText(folderSet.current()->current()->path());
+        pathLineEdit->setText(image_folder.current()->path());
 
-        setHeader(folderSet.current()->current()->path());
+        setHeader(image_folder.current()->path());
 
         hasPendingChanges = true;
     }
@@ -445,14 +450,11 @@ void MainWindow::setHeader(QString path)
 
 void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 {
-    folderSet.clear();
+    image_folder.clear();
     
     QMap<QString, QStringList>::const_iterator i = folder_map.constBegin();
     while (i != folder_map.constEnd())
     {
-        ImageFolder folder;
-        folder.setPath(i.key());
-
         QStringList image_strings(i.value());
         QStringList::const_iterator j = image_strings.constBegin();
 
@@ -462,18 +464,17 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 
             image.setPath(*j);
 
-            folder << image;
+            image_folder << image;
             ++j;
         }
-            
-        folderSet << folder;
-
         ++i;
     }
     
-    if (folderSet.size() > 0) 
+    imageSpinBox->setRange(0,image_folder.size()-1);
+    
+    if (image_folder.size() > 0) 
     {
-        emit imageChanged(*folderSet.current()->current());
+        emit imageChanged(*image_folder.current());
         emit centerImage();
     }
 }
@@ -481,74 +482,93 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 
 void MainWindow::removeImage()
 {
-    if (folderSet.size() > 0)
+    if (image_folder.size() > 0)
     {
-        emit pathRemoved(folderSet.current()->current()->path());
+        emit pathRemoved(image_folder.current()->path());
         
-        folderSet.current()->removeCurrent();
+        image_folder.removeCurrent();
 
-        if (folderSet.current()->size() == 0) folderSet.removeCurrent();
+        if (image_folder.size() == 0) image_folder.removeCurrent();
         
-        if (folderSet.size() > 0)
+        if (image_folder.size() > 0)
         {
-            emit imageChanged(*folderSet.current()->next());
+            emit imageChanged(*image_folder.next());
         }
     }
 }
+
+void MainWindow::setFrame(int value)
+{
+    if (image_folder.size() > 0)
+    {
+        emit imageChanged(*image_folder.at(value));
+    }
+}
+
+
 
 void MainWindow::nextFrame()
 {
-    if (folderSet.size() > 0)
-    {
-        emit imageChanged(*folderSet.current()->next());
-    }
+    imageSpinBox->setValue(imageSpinBox->value()+1);
+    
+    
+//    if (image_folder.size() > 0)
+//    {
+//        emit imageChanged(*image_folder.next());
+//    }
 }
 void MainWindow::previousFrame()
 {
-    if (folderSet.size() > 0)
-    {
-        emit imageChanged(*folderSet.current()->previous());
-    }
+    imageSpinBox->setValue(imageSpinBox->value()-1);
+    
+//    if (image_folder.size() > 0)
+//    {
+//        emit imageChanged(*image_folder.previous());
+//    }
 }
 void MainWindow::batchForward()
 {
-    if (folderSet.size() > 0)
-    {
-        for (size_t i = 0; i < batch_size; i++)
-        {
-            folderSet.current()->next();
-        }
+    imageSpinBox->setValue(imageSpinBox->value()+10);
+    
+//    if (image_folder.size() > 0)
+//    {
+//        for (size_t i = 0; i < batch_size; i++)
+//        {
+//            image_folder.next();
+//        }
         
-        emit imageChanged(*folderSet.current()->current());
-    }
+//        emit imageChanged(*image_folder.current());
+//    }
 }
 void MainWindow::batchBackward()
 {
-    if (folderSet.size() > 0)
-    {
-        for (size_t i = 0; i < batch_size; i++)
-        {
-            folderSet.current()->previous();
-        }
+    imageSpinBox->setValue(imageSpinBox->value()-10);
+    
+//    if (image_folder.size() > 0)
+//    {
+//        for (size_t i = 0; i < batch_size; i++)
+//        {
+//            image_folder.previous();
+//        }
         
-        emit imageChanged(*folderSet.current()->current());
-    }
+//        emit imageChanged(*image_folder.current());
+//    }
 }
 
-void MainWindow::nextFolder()
-{
-    if (folderSet.size() > 0)
-    {
-        emit imageChanged(*folderSet.next()->current());
-    }
-}
-void MainWindow::previousFolder()
-{
-    if (folderSet.size() > 0)
-    {
-        emit imageChanged(*folderSet.previous()->current());
-    }
-}
+//void MainWindow::nextFolder()
+//{
+//    if (image_folder.size() > 0)
+//    {
+//        emit imageChanged(*folderSet.next()->current());
+//    }
+//}
+//void MainWindow::previousFolder()
+//{
+//    if (image_folder.size() > 0)
+//    {
+//        emit imageChanged(*folderSet.previous()->current());
+//    }
+//}
 
 void MainWindow::runProjectFileThread()
 {
@@ -589,7 +609,7 @@ void MainWindow::runAllInOneThread()
 
 void MainWindow::setFilesFromSelectionModel()
 {
-    if (!scriptingAct->isChecked()) file_paths = folderSet.paths();
+    if (!scriptingAct->isChecked()) file_paths = image_folder.paths();
 }
 
 void MainWindow::setStartConditions()
@@ -676,7 +696,7 @@ void MainWindow::saveProject()
         {
             QDataStream out(&file);
             
-            out << folderSet;
+            out << image_folder;
             out << tsfTextureComboBox->currentText();
             out << tsfAlphaComboBox->currentText();
             out << (double) dataMinDoubleSpinBox->value();
@@ -711,7 +731,9 @@ void MainWindow::loadProject()
             
             QDataStream in(&file);
             
-            in >> folderSet >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> lorentzCorrection >> autoBackgroundCorrection;
+            in >> image_folder >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> lorentzCorrection >> autoBackgroundCorrection;
+            
+            imageSpinBox->setRange(0,image_folder.size()-1);
             
             
             tsfTextureComboBox->setCurrentText(tsfTexture);
@@ -724,9 +746,9 @@ void MainWindow::loadProject()
             
             file.close();
 
-            if (folderSet.size() > 0)
+            if (image_folder.size() > 0)
             {
-                emit imageChanged(*folderSet.current()->current());
+                emit imageChanged(*image_folder.current());
                 emit centerImage();
             }
         }
@@ -737,9 +759,9 @@ void MainWindow::loadProject()
 
 void MainWindow::setSelection(Selection rect)
 {
-    if (folderSet.size() > 0)
+    if (image_folder.size() > 0)
     {
-        folderSet.current()->current()->setSelection(rect);
+        image_folder.current()->setSelection(rect);
         
         hasPendingChanges = true;
     }
@@ -1565,6 +1587,9 @@ void MainWindow::initializeInteractives()
         imageSlowForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         connect(imageSlowForwardButton, SIGNAL(clicked()), this, SLOT(nextFrame()));
 
+        imageSpinBox = new QSpinBox;
+        imageSpinBox->setRange(0,1);
+        connect(imageSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setFrame(int)));        
         
         removeCurrentPushButton = new QPushButton(QIcon(":/art/kill.png"),"Remove frame");
         connect(removeCurrentPushButton, SIGNAL(clicked()), this, SLOT(removeImage()));
@@ -1611,6 +1636,7 @@ void MainWindow::initializeInteractives()
         imageLayout->addWidget(imageDisplayWidget,1,0,1,8);
         imageLayout->addWidget(imageFastBackButton,2,0,1,2);
         imageLayout->addWidget(imageSlowBackButton,2,2,1,1);
+        imageLayout->addWidget(imageSpinBox,2,3,1,2);
         imageLayout->addWidget(imageSlowForwardButton,2,5,1,1);
         imageLayout->addWidget(imageFastForwardButton,2,6,1,2);
         imageLayout->addWidget(removeCurrentPushButton,3,0,1,8);
@@ -2092,10 +2118,10 @@ void MainWindow::initializeInteractives()
 
         // Progress Bar
         genericProgressBar = new QProgressBar;
-        genericProgressBar->setRange( 0, 100 );
+        genericProgressBar->setRange( 0, 100);
         
         memoryUsageProgressBar = new QProgressBar;
-        genericProgressBar->setRange( 0, 1);
+        memoryUsageProgressBar->setRange( 0, 1);
         
 
         // Text output

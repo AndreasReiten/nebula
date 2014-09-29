@@ -74,21 +74,16 @@ private slots:
 
     void runProjectFileThread();
     void runAllInOneThread();
-//    void incrementDisplayFile1();
-//    void incrementDisplayFile10();
-//    void decrementDisplayFile1();
-//    void decrementDisplayFile10();
-//    void setDisplayFile(int value);
-//    void refreshDisplayFile();
     void setImage(ImageInfo image);
     void loadPaths();
     void removeImage();
+    void setFrame(int value);
     void nextFrame();
     void previousFrame();
     void batchForward();
     void batchBackward();
-    void nextFolder();
-    void previousFolder();
+//    void nextFolder();
+//    void previousFolder();
     
     void setHeader(QString path);
     
@@ -109,13 +104,10 @@ signals:
     void changedPaths(QStringList strlist);
     void captureFrameBuffer(QString path);
     void changedUB();
-//    void imagePreviewChanged(QString path);
-//    void omitFile(QString str);
     void pathRemoved(QString path);
     void pathChanged(QString path);
     void imageChanged(ImageInfo image);
     void centerImage();
-//    void selectionChanged(Selection rect);
     
 private:
     /* UI elements for UB matrix */
@@ -225,7 +217,6 @@ private:
     QMainWindow * imageWidget;
     QWidget * imageCentralWidget;
     
-//    QLabel * imageLabel;
     QLineEdit * pathLineEdit;
     
     QWidget * imageDisplayWidget;
@@ -233,12 +224,9 @@ private:
     QPushButton * imageFastBackButton;
     QPushButton * imageSlowBackButton;
     
-//    QSpinBox * imageSpinBox;
-    
     QPushButton * imageFastForwardButton;
     QPushButton * imageSlowForwardButton;
-//    QPushButton * omitFrameButton;
-//    QComboBox * imageModeCB;
+    QSpinBox * imageSpinBox;
 
     // Actions
     QAction *shadowAct;
@@ -284,10 +272,6 @@ private:
     
     
     int current_svo;
-
-//    float suggested_search_radius_high;
-//    float suggested_search_radius_low;
-//    float suggested_q;
 
     SparseVoxelOcttree svo_inprocess;
     SparseVoxelOcttree svo_loaded;
@@ -455,7 +439,7 @@ protected:
     // Main resources
     QStringList file_paths;
     QList<DetectorFile> files;
-    FolderSet folderSet;
+    ImageFolder image_folder;
     Matrix<float> reduced_pixels;
 
     // Related to file treatment

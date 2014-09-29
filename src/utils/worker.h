@@ -32,6 +32,7 @@ class BaseWorker : public QObject
         void changedFormatGenericProgress(QString str);
         void changedFormatMemoryUsage(QString str);
         void changedRangeMemoryUsage(int min, int max);
+        void changedRangeGenericProcess(int min, int max);
         void changedTabWidget(int value);
         void changedFile(QString path);
         void popup(QString title, QString text);
