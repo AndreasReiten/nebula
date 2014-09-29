@@ -33,11 +33,12 @@ MainWindow::MainWindow() :
     hasPendingChanges(0),
     batch_size(10)
 {
-    //     Set some default values
+    // Set some default values
     current_svo = 0;
     display_file = 0;
+    reduced_pixels.set(0,0,0);
     
-    //     Set stylesheet
+    // Set stylesheet
     QFile styleFile( ":/src/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
@@ -93,6 +94,7 @@ MainWindow::MainWindow() :
     fileDockWidget->hide();
     toolChainWidget->show();
     outputDockWidget->show();
+
 }
 
 MainWindow::~MainWindow()
@@ -196,9 +198,14 @@ void MainWindow::initializeWorkers()
     connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
     connect(readFileWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+
     connect(readFileWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+    connect(readFileWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
+    connect(readFileWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+
+    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+
     connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readFileButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
@@ -229,8 +236,14 @@ void MainWindow::initializeWorkers()
     connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
     connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
     connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+
+    connect(projectFileWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+    connect(projectFileWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
+    connect(projectFileWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+
     connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
@@ -260,9 +273,14 @@ void MainWindow::initializeWorkers()
     connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
     connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
     connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+
     connect(allInOneWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+    connect(allInOneWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
+    connect(allInOneWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+
+    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+
     connect(allInOneWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
@@ -274,7 +292,6 @@ void MainWindow::initializeWorkers()
     voxelizeWorker->setOpenCLContext(context_cl);
     voxelizeWorker->moveToThread(voxelizeThread);
     voxelizeWorker->setSVOFile(&svo_inprocess);
-//    voxelizeWorker->setQSpaceInfo(&suggested_search_radius_low, &suggested_search_radius_high, &suggested_q);
     voxelizeWorker->setReducedPixels(&reduced_pixels);
     voxelizeWorker->initializeCLKernel();
 
@@ -287,18 +304,19 @@ void MainWindow::initializeWorkers()
     connect(voxelizeWorker, SIGNAL(popup(QString,QString)), this, SLOT(displayPopup(QString,QString)));
     connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+
+    connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+    connect(voxelizeWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
+    connect(voxelizeWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+
     connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
     connect(allInOneWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
     connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
-
-//void MainWindow::test()
-//{
-//    qDebug("Test");
-//}
 
 void MainWindow::anyButtonStart()
 {
@@ -404,12 +422,10 @@ void MainWindow::loadPaths()
         case QMessageBox::Save:
             // Save was clicked
             saveSvo();
-//            tabWidget->setCurrentIndex(1);
             setFiles(fileSelectionModel->getPaths());
             break;
         case QMessageBox::Discard:
             // Discard was clicked
-//            tabWidget->setCurrentIndex(1);
             setFiles(fileSelectionModel->getPaths());
             break;
         case QMessageBox::Cancel:
@@ -473,13 +489,9 @@ void MainWindow::removeImage()
 
         if (folderSet.current()->size() == 0) folderSet.removeCurrent();
         
-//        qDebug() << folders.size() << folderSet.current()->size() << folderSet.current()->i();
-        
         if (folderSet.size() > 0)
         {
             emit imageChanged(*folderSet.current()->next());
-//            emit pathChanged(folderSet.current()->next()->path());
-//            emit selectionChanged(folderSet.current()->current()->selection());
         }
     }
 }
@@ -537,54 +549,6 @@ void MainWindow::previousFolder()
         emit imageChanged(*folderSet.previous()->current());
     }
 }
-
-//void MainWindow::incrementDisplayFile1()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()+1);
-//}
-//void MainWindow::incrementDisplayFile10()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()+10);
-//}
-//void MainWindow::decrementDisplayFile1()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()-1);
-//}
-//void MainWindow::decrementDisplayFile10()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()-10);
-//}
-//void MainWindow::setDisplayFile(int value)
-//{
-//    if ((value >= 0) && (value < file_paths.size()))
-//    {
-//        emit imagePreviewChanged(file_paths[value]);
-//        emit setHeader(file_paths[value]);
-//        imageLabel->setText(file_paths[value]);
-//    }
-//    else
-//    {
-//        print("\n[Nebula] File #"+QString::number(value)+" could not be found");
-//    }
-//}
-
-//void MainWindow::refreshDisplayFile()
-//{
-//    int value = imageSpinBox->value();
-    
-//    if ((value >= 0) && (value < file_paths.size()))
-//    {
-//        emit imagePreviewChanged(file_paths[value]);
-//        emit setHeader(file_paths[value]);
-//        imageLabel->setText(file_paths[value]);
-//    }
-//}
-
-//void MainWindow::setHeader(QString path)
-//{
-//    DetectorFile file(path);
-//    fileHeaderEdit->setPlainText(file.getHeaderText());
-//}
 
 void MainWindow::runProjectFileThread()
 {
@@ -769,71 +733,7 @@ void MainWindow::loadProject()
     }
 }
 
-//void MainWindow::saveProject()
-//{
-//    QFileDialog dialog;
-//    dialog.setDefaultSuffix("txt");
-//    QString path = dialog.getSaveFileName(this, tr("Save project"), "", tr(".qt (*.qt);; All Files (*)"));
 
-//    if (path != "")
-//    {
-//        QFile file(path);
-//        if (file.open(QIODevice::WriteOnly))
-//        {
-//            QDataStream out(&file);
-            
-//            out << folderSet;
-//            out << tsfTextureComboBox->currentText();
-//            out << tsfAlphaComboBox->currentText();
-//            out << (double) dataMinDoubleSpinBox->value();
-//            out << (double) dataMaxDoubleSpinBox->value();
-//            out << (bool) imageLogCheckBox->isChecked();
-//            out << (bool) correctionLorentzCheckBox->isChecked();            
-            
-//            file.close();
-//        }
-//    }
-    
-//    hasPendingChanges = false;
-//}
-
-//void MainWindow::loadProject()
-//{
-//    QString path = QFileDialog::getOpenFileName(this, tr("Open project"), "", tr(".qt (*.qt);; All Files (*)"));
-
-//    if (path != "")
-//    {
-//        QFile file(path);
-//        if (file.open(QIODevice::ReadOnly))
-//        {
-//            QString tsfTexture;
-//            QString tsfAlpha;
-//            double dataMin;
-//            double dataMax;
-//            bool log;
-//            bool correction;
-            
-//            QDataStream in(&file);
-            
-//            in >> folderSet >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> correction;
-            
-//            tsfTextureComboBox->setCurrentText(tsfTexture);
-//            tsfAlphaComboBox->setCurrentText(tsfAlpha);
-//            dataMinDoubleSpinBox->setValue(dataMin);
-//            dataMaxDoubleSpinBox->setValue(dataMax);
-//            imageLogCheckBox->setChecked(log);
-//            correctionLorentzCheckBox->setChecked(correction);
-            
-//            file.close();
-
-//            if (folderSet.size() > 0)
-//            {
-//                emit pathChanged(folderSet.current()->current()->path());
-//                emit selectionChanged(folderSet.current()->current()->selection());
-//            }
-//        }
-//    }
-//}
 
 void MainWindow::setSelection(Selection rect)
 {
@@ -965,34 +865,6 @@ void MainWindow::initializeActions()
     saveAsAct->setShortcuts(QKeySequence::SaveAs);
     exitAct->setShortcuts(QKeySequence::Quit);
 }
-
-//void MainWindow::omitFile()
-//{
-//    int value = imageSpinBox->value();
-
-//    emit omitFile(file_paths[value]);
-
-//    if (value < file_paths.size())
-//    {
-//        file_paths.removeAt(value);
-
-
-
-//        // Feature/Bug: Should also un-select the file in question in the file browser, or use a "load files" explicit button. Also, the file_paths array is superfluous
-//    }
-
-//    if (value < files.size())
-//    {
-//        files.removeAt(value);
-
-//        print("\nRemoved file "+QString::number(value)+"of"+QString::number(files.size()));
-//    }
-
-//    if (value >= file_paths.size()) value = file_paths.size() - 1;
-//    emit imagePreviewChanged(file_paths[value]);
-//    emit setHeader(file_paths[value]);
-//    imageLabel->setText(file_paths[value]);
-//}
 
 void MainWindow::saveScript()
 {
@@ -1550,7 +1422,6 @@ void MainWindow::initializeInteractives()
         connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadPaths()));
         
         connect(fileSelectionTree, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
-//        connect(this, SIGNAL(omitFile(QString)), fileSelectionModel, SLOT(removeFile(QString)));
 
         QGridLayout * fileBrowserLayout = new QGridLayout;
         fileBrowserLayout->setSpacing(0);
@@ -1607,10 +1478,6 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(dataStructureAct);
         
-//        viewToolBar->addSeparator();
-//        viewToolBar->addAction(integrateCountsAct);
-//        viewToolBar->addAction(integrate3DAct);
-//        viewToolBar->addAction(log3DAct);
         viewToolBar->addSeparator();
         
         viewToolBar->addAction(integrate2DAct);
@@ -1666,17 +1533,13 @@ void MainWindow::initializeInteractives()
         imagePreviewWindow->setSharedWindow(sharedContextWindow);
         imagePreviewWindow->setFormat(format_gl);
         imagePreviewWindow->setOpenCLContext(context_cl);
-//        imagePreviewWindow->setAnimating(true);
         imagePreviewWindow->initializeWorker();
         
         imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
         imageDisplayWidget->setFocusPolicy(Qt::TabFocus);
         
-        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->getWorker(), SLOT(setFrame(ImageInfo)));
-
         imageWidget = new QMainWindow;
 
-//        imageLabel = new QLabel("---");
         // Toolbar
         pathLineEdit = new QLineEdit("/path/to/file");
         pathLineEdit->setReadOnly(true);
@@ -1692,11 +1555,6 @@ void MainWindow::initializeInteractives()
         imageSlowBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         connect(imageSlowBackButton, SIGNAL(clicked()), this, SLOT(previousFrame()));
 
-//        imageSpinBox = new QSpinBox;
-//        imageSpinBox->setRange(0,100000);
-        
-//        connect(imageSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setDisplayFile(int)));
-
         imageFastForwardButton = new QPushButton;
         imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
         imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
@@ -1708,10 +1566,6 @@ void MainWindow::initializeInteractives()
         connect(imageSlowForwardButton, SIGNAL(clicked()), this, SLOT(nextFrame()));
 
         
-//        omitFrameButton = new QPushButton("Remove");
-//        omitFrameButton->setIcon(QIcon(":art/kill.png"));
-//        omitFrameButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-//        connect(omitFrameButton, SIGNAL(clicked()), this, SLOT(omitFile()));
         removeCurrentPushButton = new QPushButton(QIcon(":/art/kill.png"),"Remove frame");
         connect(removeCurrentPushButton, SIGNAL(clicked()), this, SLOT(removeImage()));
         connect(this, SIGNAL(pathRemoved(QString)), fileSelectionModel, SLOT(removeFile(QString)));
@@ -2040,38 +1894,18 @@ void MainWindow::initializeInteractives()
         
         connect(helpCellOverlayButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setMiniCell()));
         
-//        QLabel * aLabel = new QLabel("<i>a<i>");
-//        QLabel * bLabel = new QLabel("<i>b<i>");
-//        QLabel * cLabel = new QLabel("<i>c<i>");
-//        QLabel * alphaLabel = new QLabel(trUtf8("<i>α<i>"));
-//        QLabel * betaLabel = new QLabel(trUtf8( "<i>β<i>"));
-//        QLabel * gammaLabel = new QLabel(trUtf8( "<i>γ<i>"));
-
-//        QLabel * hLabel = new QLabel("<i>h<i>");
-//        QLabel * kLabel = new QLabel("<i>k<i>");
-//        QLabel * lLabel = new QLabel("<i>l<i>");
-        
         QGridLayout * unitCellLayout = new QGridLayout; 
         
-//        unitCellLayout->addWidget(aLabel,0,0,1,1);
         unitCellLayout->addWidget(aNormSpinBox,0,0,1,2);
-//        unitCellLayout->addWidget(bLabel,0,2,1,1);
         unitCellLayout->addWidget(bNormSpinBox,0,2,1,2);
-//        unitCellLayout->addWidget(cLabel,0,4,1,1);
         unitCellLayout->addWidget(cNormSpinBox,0,4,1,2);
         
-//        unitCellLayout->addWidget(alphaLabel,1,0,1,1);
         unitCellLayout->addWidget(alphaNormSpinBox,1,0,1,2);
-//        unitCellLayout->addWidget(betaLabel,1,2,1,1);
         unitCellLayout->addWidget(betaNormSpinBox,1,2,1,2);
-//        unitCellLayout->addWidget(gammaLabel,1,4,1,1);
         unitCellLayout->addWidget(gammaNormSpinBox,1,4,1,2);
         
-//        unitCellLayout->addWidget(hLabel,4,0,1,1);
         unitCellLayout->addWidget(hSpinBox,4,0,1,2);
-//        unitCellLayout->addWidget(kLabel,4,2,1,1);
         unitCellLayout->addWidget(kSpinBox,4,2,1,2);
-//        unitCellLayout->addWidget(lLabel,4,4,1,1);
         unitCellLayout->addWidget(lSpinBox,4,4,1,2);
         
         unitCellLayout->addWidget(alignAlongAStarButton,5,0,1,2);
@@ -2131,45 +1965,6 @@ void MainWindow::initializeInteractives()
         activeAngleComboBox->addItem("Given by file");
 
         // Spin Boxes
-//        noiseCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
-//        noiseCorrectionMinDoubleSpinBox->setRange(0, 1e9);
-//        noiseCorrectionMinDoubleSpinBox->setSingleStep(1);
-//        noiseCorrectionMinDoubleSpinBox->setAccelerated(1);
-//        noiseCorrectionMinDoubleSpinBox->setDecimals(2);
-//        noiseCorrectionMinDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
-//        noiseCorrectionMinDoubleSpinBox->setPrefix("Noise cutoff: ");
-        
-//        noiseCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
-//        noiseCorrectionMaxDoubleSpinBox->setRange(0, 1e9);
-//        noiseCorrectionMaxDoubleSpinBox->setSingleStep(1);
-//        noiseCorrectionMaxDoubleSpinBox->setAccelerated(1);
-//        noiseCorrectionMaxDoubleSpinBox->setDecimals(2);
-//        noiseCorrectionMaxDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
-
-//        postCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
-//        postCorrectionMinDoubleSpinBox->setRange(0, 1e9);
-//        postCorrectionMinDoubleSpinBox->setSingleStep(1);
-//        postCorrectionMinDoubleSpinBox->setAccelerated(1);
-//        postCorrectionMinDoubleSpinBox->setDecimals(2);
-//        postCorrectionMinDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
-//        postCorrectionMinDoubleSpinBox->setPrefix("Post corr. cutoff: ");
-
-//        postCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
-//        postCorrectionMaxDoubleSpinBox->setRange(0, 1e9);
-//        postCorrectionMaxDoubleSpinBox->setSingleStep(1);
-//        postCorrectionMaxDoubleSpinBox->setAccelerated(1);
-//        postCorrectionMaxDoubleSpinBox->setDecimals(2);
-//        postCorrectionMaxDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
-
-        
-        
-//        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
-//        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
-//        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
-//        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(refreshDisplayFile()));
-//        QLabel * labelF = new QLabel("Δ<i>ω</i>:");
-//        QLabel * labelG = new QLabel("Δ<i>κ</i>:");
-//        QLabel * labelH = new QLabel("Δ<i>φ</i>:");
         omegaCorrectionSpinBox = new QDoubleSpinBox;
         omegaCorrectionSpinBox->setRange(-180, 180);
         omegaCorrectionSpinBox->setDecimals(3);
@@ -2211,22 +2006,11 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(formatComboBox,0,4,1,4);
         reconstructLayout->addWidget(labelE,1,0,1,4);
         reconstructLayout->addWidget(activeAngleComboBox,1,4,1,4);
-//        reconstructLayout->addWidget(labelB,2,0,1,4);
-//        reconstructLayout->addWidget(noiseCorrectionMinDoubleSpinBox,2,0,1,8);
-//        reconstructLayout->addWidget(noiseCorrectionMaxDoubleSpinBox,2,6,1,2);
-//        reconstructLayout->addWidget(labelC,3,0,1,4);
-//        reconstructLayout->addWidget(postCorrectionMinDoubleSpinBox,3,0,1,8);
-//        reconstructLayout->addWidget(postCorrectionMaxDoubleSpinBox,3,6,1,2);
-//        reconstructLayout->addWidget(labelI,4,0,1,2);
-//        reconstructLayout->addWidget(labelF,4,0,1,4);
         reconstructLayout->addWidget(omegaCorrectionSpinBox,4,0,1,8);
-//        reconstructLayout->addWidget(labelG,5,0,1,4);
         reconstructLayout->addWidget(kappaCorrectionSpinBox,5,0,1,8);
-//        reconstructLayout->addWidget(labelH,6,0,1,4);
         reconstructLayout->addWidget(phiCorrectionSpinBox,6,0,1,8);
         
         reconstructLayout->addWidget(labelJ,7,0,1,8, Qt::AlignHCenter);
-//        reconstructLayout->addWidget(labelD,8,0,1,4);
         reconstructLayout->addWidget(svoLevelSpinBox,8,0,1,8);
         reconstructLayout->addWidget(voxelizeButton,9,0,1,8);
         reconstructLayout->addWidget(saveSvoButton,10,0,1,8);
@@ -2252,11 +2036,6 @@ void MainWindow::initializeInteractives()
     
     /* Function dock widget */
     {
-//        QLabel * p0= new QLabel(QString("Variable 1: "));
-//        QLabel * p1= new QLabel(QString("Variable 2: "));
-//        QLabel * p2= new QLabel(QString("Variable 3: "));
-//        QLabel * p3= new QLabel(QString("Variable 4: "));
-
         functionToggleButton = new QPushButton(tr("Toggle"));
         funcParamASpinBox = new QDoubleSpinBox;
         funcParamASpinBox->setDecimals(3);
@@ -2290,13 +2069,9 @@ void MainWindow::initializeInteractives()
         functionWidget = new QWidget;
 
         QGridLayout * functionLayout = new QGridLayout;
-//        functionLayout->addWidget(p0,1,0,1,2);
         functionLayout->addWidget(funcParamASpinBox,1,0,1,4);
-//        functionLayout->addWidget(p1,2,0,1,2);
         functionLayout->addWidget(funcParamBSpinBox,2,0,1,4);
-//        functionLayout->addWidget(p2,3,0,1,2);
         functionLayout->addWidget(funcParamCSpinBox,3,0,1,4);
-//        functionLayout->addWidget(p3,4,0,1,2);
         functionLayout->addWidget(funcParamDSpinBox,4,0,1,4);
         functionLayout->addWidget(functionToggleButton,5,0,1,4);
         functionWidget->setLayout(functionLayout);

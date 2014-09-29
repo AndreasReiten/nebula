@@ -27,7 +27,7 @@
 
 #include <QOpenGLContext>
 
-static const size_t REDUCED_PIXELS_MAX_BYTES = 1e9;
+static const size_t REDUCED_PIXELS_MAX_BYTES = 100e6;
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.7e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU during pool construction. 3D image can be used with OpenCL 1.2, allowing you to use the entire VRAM.
 static const size_t nodes_per_kernel_call = 1024;
 static const size_t max_points_per_cluster = 50e6;
@@ -494,6 +494,7 @@ void ProjectFileWorker::process()
         if (kill_flag)
         {
             emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i+1)+" of "+QString::number(files->size()));
+            reduced_pixels->clear();
             break;
         }
 
@@ -519,7 +520,14 @@ void ProjectFileWorker::process()
     }
     size_t t = stopwatch.restart();
 
-    reduced_pixels->resize(1, n_reduced_pixels);
+    if (!kill_flag)
+    {
+        reduced_pixels->resize(1, n_reduced_pixels);
+
+        emit changedMessageString(" "+QString::number(files->size())+" files were processed successfully ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB) (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'f', 3)+" ms/file)");
+    }
+
+
 
     /* Create dummy dataset for debugging purposes.
     */
@@ -567,10 +575,7 @@ void ProjectFileWorker::process()
         }
     }
 
-    if (!kill_flag)
-    {
-        emit changedMessageString(" "+QString::number(files->size())+" files were processed successfully ("+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB) (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'f', 3)+" ms/file)");
-    }
+
 
     emit finished();
 }
@@ -754,13 +759,12 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 
-//    if (isProjectionActive)
-//    {
+    emit changedFormatMemoryUsage(QString("Mem usage: %p% (%v of %m KB)"));
+
     for (int i = 0; i < file->getFastDimension()*file->getSlowDimension(); i++)
     {
-        if (projected_data_buf[i*4+3] > 0.0) // Above 0 check?
+        if (projected_data_buf[i*4+3] > 0.0) // Above 0 check
         {
-//                if (projected_data_buf[i*4+3] < 0.0) qDebug() <<  projected_data_buf[i*4+3] << i;
             if ((n_reduced_pixels)+3 < reduced_pixels->size())
             {
                 (*reduced_pixels)[(n_reduced_pixels)+0] = projected_data_buf[i*4+0];
@@ -771,13 +775,16 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
             }
             else
             {
-                qDebug() << "TODO: send proper warning";
+                emit changedRangeMemoryUsage(0,REDUCED_PIXELS_MAX_BYTES/1e3);
+                emit changedMemoryUsage(n_reduced_pixels*4/1e3);
                 return 0;
             }
         }
     }
-//    }
-    
+
+    emit changedRangeMemoryUsage(0,REDUCED_PIXELS_MAX_BYTES/1e3);
+    emit changedMemoryUsage(n_reduced_pixels*4/1e3);
+
     return 1;
 }
 
@@ -826,7 +833,6 @@ void MultiWorker::process()
     emit changedTabWidget(1);
 
     // Parameters for Ewald's projection
-//    qDebug() << reduced_pixels->size();
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES/sizeof(float));
 
     // Reset suggested values
@@ -866,45 +872,28 @@ void MultiWorker::process()
                 size_raw += file.getBytes();
 
                 // Project and correct file and get status
-                if (n_reduced_pixels > REDUCED_PIXELS_MAX_BYTES/sizeof(float))
+                int STATUS_OK = projectFile(&file);
+
+                if (STATUS_OK)
                 {
-                    // Break if there is too much data.
-                    emit changedMessageString(QString("\n["+QString(this->metaObject()->className())+"] Warning: There was too much data!"));
-                    kill_flag = true;
+                    // Get suggestions on the minimum search radius that can safely be applied during interpolation
+                    if (suggested_search_radius_low > file.getSearchRadiusLowSuggestion()) suggested_search_radius_low = file.getSearchRadiusLowSuggestion();
+                    if (suggested_search_radius_high < file.getSearchRadiusHighSuggestion()) suggested_search_radius_high = file.getSearchRadiusHighSuggestion();
+
+                    // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
+                    if (suggested_q < file.getQSuggestion()) suggested_q = file.getQSuggestion();
+
+                    n_ok_files++;
                 }
                 else
                 {
-//                    emit changedImageSize(file.getFastDimension(), file.getSlowDimension());
-
-//                    file.setActiveAngle(active_angle);
-//                    file.setProjectionKernel(&project_kernel);
-//                    file.setOffsetOmega(offset_omega);
-//                    file.setOffsetKappa(offset_kappa);
-//                    file.setOffsetPhi(offset_phi);
-
-                    int STATUS_OK = projectFile(&file);
-                    
-                    if (STATUS_OK)
-                    {
-                        // Get suggestions on the minimum search radius that can safely be applied during interpolation
-                        if (suggested_search_radius_low > file.getSearchRadiusLowSuggestion()) suggested_search_radius_low = file.getSearchRadiusLowSuggestion();
-                        if (suggested_search_radius_high < file.getSearchRadiusHighSuggestion()) suggested_search_radius_high = file.getSearchRadiusHighSuggestion();
-
-                        // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
-                        if (suggested_q < file.getQSuggestion()) suggested_q = file.getQSuggestion();
-
-                        n_ok_files++;
-                    }
-                    else
-                    {
-                        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: could not process data \""+files->at(i).getPath()+"\"");
-                        kill_flag = true;
-                    }
+                    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not process data \""+file.getPath()+"\"");
+                    kill_flag = true;
                 }
             }
             else if (!STATUS_OK)
             {
-                QString str("\n["+QString(this->metaObject()->className())+"] Warning: could not read \""+files->at(i).getPath()+"\"");
+                QString str("\n["+QString(this->metaObject()->className())+"] Warning: Could not read \""+file.getPath()+"\"");
 
                 emit changedMessageString(str);
 
@@ -919,30 +908,31 @@ void MultiWorker::process()
         // Update the progress bar
         emit changedGenericProgress(100*(i+1)/file_paths->size());
     }
-    reduced_pixels->resize(1, n_reduced_pixels);
 
-//    reduced_pixels->print(2,"Multiworker");
 
     size_t t = stopwatch.restart();
 
     if (!kill_flag)
     {
+        reduced_pixels->resize(1, n_reduced_pixels);
+
         emit changedMessageString(" "+QString::number(n_ok_files)+" of "+QString::number(file_paths->size())+" files were successfully processed ("+QString::number(size_raw/1000000.0, 'f', 3)+" MB -> "+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB, " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
         // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
         float resolution_min = 2*suggested_q/suggested_search_radius_high;
         float resolution_max = 2*suggested_q/suggested_search_radius_low;
 
-//        float level_min = std::log(resolution_min/(float)svo->getBrickInnerDimension())/std::log(2.0);
         float level_max = std::log(resolution_max/(float)svo->getBrickInnerDimension())/std::log(2.0);
 
         if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Max scattering vector Q: "+QString::number(suggested_q, 'g', 3)+" inverse "+trUtf8("Å"));
         if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Search radius: "+QString::number(suggested_search_radius_low, 'g', 2)+" to "+QString::number(suggested_search_radius_high, 'g', 2)+" inverse "+trUtf8("Å"));
         if (verbose) emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Suggested minimum resolution: "+QString::number(resolution_min, 'f', 0)+" to "+QString::number(resolution_max, 'f', 0)+" voxels");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Use at least octree level "+QString::number((int)level_max)+" to achieve good resolution");
+
+        emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
     }
 
-    emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
+
     emit finished();
 }
 
@@ -1000,17 +990,18 @@ void VoxelizeWorker::initializeCLKernel()
 void VoxelizeWorker::process()
 {
     QCoreApplication::processEvents();
-//qDebug() << "Before";
-//    svo->print();
 
-    kill_flag = false;
-    qDebug() << suggested_q;
     if (reduced_pixels->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Warning: No data available!");
         emit changedMessageString(str);
-        kill_flag = true;
+        return;
     }
+
+    kill_flag = false;
+
+    qDebug() << reduced_pixels->size();
+
     if (!kill_flag)
     {
         QElapsedTimer totaltime;
@@ -1041,6 +1032,10 @@ void VoxelizeWorker::process()
         pool_dimension[2] *= svo->getBrickOuterDimension();
 
         size_t BRICK_POOL_HARD_MAX_BYTES = pool_dimension[0]*pool_dimension[1]*pool_dimension[2]*sizeof(float);
+
+        emit changedFormatMemoryUsage(QString("Mem usage: %p% (%v of %m MB)"));
+        emit changedRangeMemoryUsage(0,BRICK_POOL_HARD_MAX_BYTES/1e6);
+        emit changedMemoryUsage(0);
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
@@ -1104,7 +1099,6 @@ void VoxelizeWorker::process()
         
         // Generate an octtree data structure from which to construct bricks
         SearchNode root(NULL, svo->getExtent()->data());
-//        root.setOpenCLContext(context_cl);
         
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
@@ -1400,6 +1394,8 @@ void VoxelizeWorker::process()
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
 
+                    emit changedMemoryUsage(non_empty_node_counter*n_points_brick*sizeof(float)/1e6);
+
                     emit changedGenericProgress((i+1)*100/nodes[lvl]);
                 }
                 if (kill_flag)
@@ -1439,7 +1435,6 @@ void VoxelizeWorker::process()
 
                 // Read results
                 svo->pool.reserve(1, non_empty_node_counter_rounded_up*n_points_brick);
-//                svo->pool.set(1, non_empty_node_counter_rounded_up*n_points_brick,0.0);
                 
                 svo->setMin(0.0f);
                 svo->setMax(max_brick_sum/(float)(n_points_brick));
@@ -1456,7 +1451,7 @@ void VoxelizeWorker::process()
 
             if (!kill_flag)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Done ("+QString::number(totaltime.elapsed())+" ms).n\The dataset consists of "+QString::number(nodes_prev_lvls)+" bricks and is approxiamtely "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Done ("+QString::number(totaltime.elapsed())+" ms).\nThe dataset consists of "+QString::number(nodes_prev_lvls)+" bricks and is approx "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
 
             }
         }
@@ -1471,8 +1466,6 @@ void VoxelizeWorker::process()
         clReleaseMemObject(pool_cl);
         clReleaseMemObject(sum_check_cl);
     }
-//    qDebug() << "After";
-//        svo->print();
     emit finished();
 }
 
