@@ -510,65 +510,19 @@ void MainWindow::setFrame(int value)
 void MainWindow::nextFrame()
 {
     imageSpinBox->setValue(imageSpinBox->value()+1);
-    
-    
-//    if (image_folder.size() > 0)
-//    {
-//        emit imageChanged(*image_folder.next());
-//    }
 }
 void MainWindow::previousFrame()
 {
     imageSpinBox->setValue(imageSpinBox->value()-1);
-    
-//    if (image_folder.size() > 0)
-//    {
-//        emit imageChanged(*image_folder.previous());
-//    }
 }
 void MainWindow::batchForward()
 {
-    imageSpinBox->setValue(imageSpinBox->value()+10);
-    
-//    if (image_folder.size() > 0)
-//    {
-//        for (size_t i = 0; i < batch_size; i++)
-//        {
-//            image_folder.next();
-//        }
-        
-//        emit imageChanged(*image_folder.current());
-//    }
+    imageSpinBox->setValue(imageSpinBox->value()+batch_size);
 }
 void MainWindow::batchBackward()
 {
-    imageSpinBox->setValue(imageSpinBox->value()-10);
-    
-//    if (image_folder.size() > 0)
-//    {
-//        for (size_t i = 0; i < batch_size; i++)
-//        {
-//            image_folder.previous();
-//        }
-        
-//        emit imageChanged(*image_folder.current());
-//    }
+    imageSpinBox->setValue(imageSpinBox->value()-batch_size);
 }
-
-//void MainWindow::nextFolder()
-//{
-//    if (image_folder.size() > 0)
-//    {
-//        emit imageChanged(*folderSet.next()->current());
-//    }
-//}
-//void MainWindow::previousFolder()
-//{
-//    if (image_folder.size() > 0)
-//    {
-//        emit imageChanged(*folderSet.previous()->current());
-//    }
-//}
 
 void MainWindow::runProjectFileThread()
 {
@@ -626,10 +580,11 @@ void MainWindow::setStartConditions()
     volumeRenderDataMaxSpinBox->setValue(10);
     volumeRenderAlphaSpinBox->setValue(1.0);
     volumeRenderBrightnessSpinBox->setValue(2.0);
-    
+    volumeRenderTsfAlphaComboBox->setCurrentIndex(2);
     volumeRenderViewModeComboBox->setCurrentIndex(0);
     tsfAlphaComboBox->setCurrentIndex(2);
     volumeRenderTsfComboBox->setCurrentIndex(1);
+    volumeRenderLogCheckBox->setChecked(true);
     
     tsfTextureComboBox->setCurrentIndex(1);
     tsfAlphaComboBox->setCurrentIndex(2);
@@ -687,7 +642,7 @@ void MainWindow::saveProject()
 {
     QFileDialog dialog;
     dialog.setDefaultSuffix("txt");
-    QString path = dialog.getSaveFileName(this, tr("Save project"), "", tr(".qt (*.qt);; All Files (*)"));
+    QString path = dialog.getSaveFileName(this, tr("Save project"), "", tr(".qt (*.qt);; All files (*)"));
 
     if (path != "")
     {
@@ -714,7 +669,7 @@ void MainWindow::saveProject()
 
 void MainWindow::loadProject()
 {
-    QString path = QFileDialog::getOpenFileName(this, tr("Open project"), "", tr(".qt (*.qt);; All Files (*)"));
+    QString path = QFileDialog::getOpenFileName(this, tr("Open project"), "", tr(".qt (*.qt);; All files (*)"));
 
     if (path != "")
     {
@@ -807,7 +762,7 @@ void MainWindow::initializeActions()
     saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
     saveAct->setVisible(false);
     runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
-    saveAsAct = new QAction(QIcon(":/art/save.png"), tr("Save script &As..."), this);
+    saveAsAct = new QAction(QIcon(":/art/save.png"), tr("Save script &as..."), this);
     exitAct = new QAction(tr("E&xit program"), this);
     aboutAct = new QAction(tr("&About Nebula"), this);
     aboutQtAct = new QAction(tr("About &Qt"), this);
@@ -815,10 +770,10 @@ void MainWindow::initializeActions()
     aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
     openSvoAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
     saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
-    saveLoadedSvoAct = new QAction(QIcon(":/art/save.png"), tr("Save Current SVO"), this);
-    log3DAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle logarithmic"), this);
-    log3DAct->setCheckable(true);
-    log3DAct->setChecked(true);
+    saveLoadedSvoAct = new QAction(QIcon(":/art/save.png"), tr("Save current SVO"), this);
+//    log3DAct =  new QAction(QIcon(":/art/log.png"), tr("Toggle logarithmic"), this);
+//    log3DAct->setCheckable(true);
+//    log3DAct->setChecked(true);
     dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle data structure"), this);
     dataStructureAct->setCheckable(true);
     backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle background color"), this);
@@ -849,7 +804,7 @@ void MainWindow::initializeActions()
     rulerAct->setCheckable(true);
     
     markAct = new QAction(QIcon(":/art/marker.png"), tr("&Add marker"), this);
-    labFrameAct = new QAction(QIcon(":/art/labframe.png"), tr("&View Lab Frame"), this);
+    labFrameAct = new QAction(QIcon(":/art/labframe.png"), tr("&View lab frame"), this);
     labFrameAct->setCheckable(true);
     labFrameAct->setChecked(true);
     
@@ -933,7 +888,7 @@ void MainWindow::documentWasModified()
 
 void MainWindow::openUnitcellFile()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".par (*.par);; All Files (*)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open file"), "", tr(".par (*.par);; All files (*)"));
 
     if ((fileName != ""))
     {
@@ -1120,12 +1075,12 @@ void MainWindow::initializeConnects()
     connect(this->orthoGridAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setOrthoGrid()));
     connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
     connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
-    connect(this->log3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
+//    connect(this->log3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic()));
     connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic2D()));
     connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setDataStructure()));
     connect(this->volumeRenderTsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
     connect(this->volumeRenderViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setViewMode(int)));
-    connect(this->tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
+    connect(this->volumeRenderTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
     connect(this->volumeRenderDataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMin(double)));
     connect(this->volumeRenderDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
     connect(this->volumeRenderAlphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setAlpha(double)));
@@ -1213,7 +1168,7 @@ void MainWindow::saveSvo()
     {
         QFileDialog dialog;
         dialog.setDefaultSuffix("svo");
-        QString file_name = dialog.getSaveFileName(this, tr("Save File"), "", tr(".svo (*.svo);; All Files (*)"));
+        QString file_name = dialog.getSaveFileName(this, tr("Save file"), "", tr(".svo (*.svo);; All files (*)"));
 
         if (file_name != "")
         {
@@ -1240,7 +1195,7 @@ void MainWindow::saveLoadedSvo()
     {
         QFileDialog dialog;
         dialog.setDefaultSuffix("svo");
-        QString file_name = dialog.getSaveFileName(this, tr("Save File"), "", tr(".svo (*.svo);; All Files (*)"));
+        QString file_name = dialog.getSaveFileName(this, tr("Save file"), "", tr(".svo (*.svo);; All files (*)"));
 
         if (file_name != "")
         {
@@ -1265,7 +1220,7 @@ void MainWindow::saveLoadedSvo()
 
 void MainWindow::openSvo()
 {
-    current_svo_path = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".svo (*.svo);; All Files (*)"));
+    current_svo_path = QFileDialog::getOpenFileName(this, tr("Open file"), "", tr(".svo (*.svo);; All files (*)"));
 
     if ((current_svo_path != ""))
     {
@@ -1373,7 +1328,7 @@ void MainWindow::initializeInteractives()
 
         allInOneButton = new QPushButton;
         allInOneButton->setIcon(QIcon(":/art/fast_proceed.png"));
-        allInOneButton->setText("All of Above (reduced memory consumption) ");
+        allInOneButton->setText("All (reduced memory consumption) ");
         allInOneButton->setIconSize(QSize(24,24));
 
         killButton = new QPushButton;
@@ -1486,7 +1441,7 @@ void MainWindow::initializeInteractives()
         volumeRenderWidget->setFocusPolicy(Qt::TabFocus);
 
         // Toolbar
-        viewToolBar = new QToolBar(tr("3D View"));
+        viewToolBar = new QToolBar(tr("3D view"));
         viewToolBar->addAction(openSvoAct);
         viewToolBar->addAction(saveLoadedSvoAct);
         
@@ -1523,14 +1478,21 @@ void MainWindow::initializeInteractives()
         
 
         // Layout
-        QGridLayout * viewLayout = new QGridLayout;
-        viewLayout->setSpacing(0);
-        viewLayout->setContentsMargins(0,0,0,0);
-        viewLayout->addWidget(viewToolBar,0,0,1,1);
-        viewLayout->addWidget(volumeRenderWidget,1,0,1,1);
-
-        viewWidget = new QWidget;
-        viewWidget->setLayout(viewLayout);
+//        QGridLayout * viewLayout = new QGridLayout;
+//        viewLayout->setSpacing(0);
+//        viewLayout->setContentsMargins(0,0,0,0);
+//        viewLayout->addWidget(viewToolBar,0,0,1,1);
+//        viewLayout->addWidget(volumeRenderWidget,1,0,1,1);
+        
+        
+        // Volume render QMainWindow
+        volumeRenderMainWindow = new QMainWindow;
+        volumeRenderMainWindow->setCentralWidget(volumeRenderWidget);
+        volumeRenderMainWindow->addToolBar(Qt::TopToolBarArea, viewToolBar);
+        
+//                volumeRenderMainWindow->addToolBar(
+//        viewWidget = new QWidget;
+//        viewWidget->setLayout(viewLayout);
     }
 
     /*
@@ -1560,7 +1522,7 @@ void MainWindow::initializeInteractives()
         imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
         imageDisplayWidget->setFocusPolicy(Qt::TabFocus);
         
-        imageWidget = new QMainWindow;
+        imageMainWindow = new QMainWindow;
 
         // Toolbar
         pathLineEdit = new QLineEdit("/path/to/file");
@@ -1629,7 +1591,7 @@ void MainWindow::initializeInteractives()
         connect(imagePreviewWindow->getWorker(), SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
         connect(imagePreviewWindow->getWorker(), SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
 
-        imageWidget->addToolBar(Qt::TopToolBarArea, imageToolBar);
+        imageMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
         
         QGridLayout * imageLayout = new QGridLayout;
         imageLayout->setRowStretch(1,1);
@@ -1643,7 +1605,7 @@ void MainWindow::initializeInteractives()
         
         imageCentralWidget = new QWidget;
         imageCentralWidget->setLayout(imageLayout);
-        imageWidget->setCentralWidget(imageCentralWidget);
+        imageMainWindow->setCentralWidget(imageCentralWidget);
     }
     
     /* Image browser settings widget */
@@ -1697,7 +1659,7 @@ void MainWindow::initializeInteractives()
         imageSettingsDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
         imageSettingsDock->setWidget(imageSettingsWidget);
         imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
-        imageWidget->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
+        imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
         
         connect(tsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfTexture(int)));
         connect(tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfAlpha(int)));
@@ -1754,7 +1716,7 @@ void MainWindow::initializeInteractives()
         correctionDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
         correctionDock->setWidget(correctionWidget);
         correctionDock->setFixedHeight(correctionWidget->minimumSizeHint().height()*1.2);
-        imageWidget->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
+        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
         
         
         connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)),Qt::QueuedConnection);
@@ -1762,6 +1724,9 @@ void MainWindow::initializeInteractives()
         connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionLow(double)),Qt::QueuedConnection);
         connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionHigh(double)),Qt::QueuedConnection);
     }
+    
+    
+    
     
     /* Graphics dock widget */
     {
@@ -1814,13 +1779,17 @@ void MainWindow::initializeInteractives()
         volumeRenderTsfAlphaComboBox->addItem(trUtf8("Linear"));
         volumeRenderTsfAlphaComboBox->addItem(trUtf8("Exponential"));
         volumeRenderTsfAlphaComboBox->addItem(trUtf8("Uniform"));
-
+        
+        volumeRenderLogCheckBox = new QCheckBox("Log");
+        connect(volumeRenderLogCheckBox, SIGNAL(toggled(bool)), volumeRenderWindow->getWorker(), SLOT(setLog(bool)));
+        
+        
         qualitySlider = new QSlider(Qt::Horizontal);
         qualitySlider->setRange(1,100);
         qualitySlider->setToolTip("Set texture resolution");
         qualitySlider->setTickPosition(QSlider::NoTicks);
 
-        graphicsDockWidget = new QDockWidget(tr("View Settings"), this);
+        graphicsDockWidget = new QDockWidget(tr("Display settings"), this);
         graphicsDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         graphicsWidget = new QWidget;
 
@@ -1837,17 +1806,18 @@ void MainWindow::initializeInteractives()
         graphicsLayout->addWidget(volumeRenderBrightnessSpinBox,5,0,1,4);
         graphicsLayout->addWidget(label_quality,6,0,1,2);
         graphicsLayout->addWidget(qualitySlider,6,2,1,2);
-
+        graphicsLayout->addWidget(volumeRenderLogCheckBox,7,0,1,2);
+                    
         graphicsWidget->setLayout(graphicsLayout);
         graphicsDockWidget->setFixedHeight(graphicsWidget->minimumSizeHint().height()*1.1);
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
-        this->addDockWidget(Qt::RightDockWidgetArea, graphicsDockWidget);
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, graphicsDockWidget);
     }
     
     /* Unitcell dock widget */
     {
-        unitCellDock = new QDockWidget(tr("UB Matrix"), this);
+        unitCellDock = new QDockWidget(tr("UB matrix"), this);
         unitCellDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         unitCellWidget = new QWidget;
         
@@ -1950,19 +1920,19 @@ void MainWindow::initializeInteractives()
         unitCellDock->setFixedHeight(unitCellWidget->minimumSizeHint().height()*1.15);
         
         viewMenu->addAction(unitCellDock->toggleViewAction());
-        this->addDockWidget(Qt::RightDockWidgetArea, unitCellDock);
+        volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, unitCellDock);
     }
 
     
     /* SVO metadata text edit */
     {
-        svoHeaderDock = new QDockWidget(tr("Metadata"), this);
+        svoHeaderDock = new QDockWidget(tr("File info/notes"), this);
         svoHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         svoHeaderEdit = new QPlainTextEdit;
         
         svoHeaderDock->setWidget(svoHeaderEdit);
         
-        this->addDockWidget(Qt::RightDockWidgetArea, svoHeaderDock);
+        volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, svoHeaderDock);
 
         svoHeaderDock->hide();
         
@@ -2041,12 +2011,12 @@ void MainWindow::initializeInteractives()
         reconstructLayout->addWidget(voxelizeButton,9,0,1,8);
         reconstructLayout->addWidget(saveSvoButton,10,0,1,8);
         fileControlsWidget->setLayout(reconstructLayout);
-        fileDockWidget = new QDockWidget(tr("Data Reduction Settings"), this);
+        fileDockWidget = new QDockWidget(tr("Data reduction settings"), this);
         fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileDockWidget->setWidget(fileControlsWidget);
         fileDockWidget->setFixedHeight(fileControlsWidget->minimumSizeHint().height()*1.1);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
-        imageWidget->addDockWidget(Qt::RightDockWidgetArea, fileDockWidget);
+        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileDockWidget);
     }
     
     // File header dock widget
@@ -2054,7 +2024,7 @@ void MainWindow::initializeInteractives()
         fileHeaderEdit = new QPlainTextEdit;
         fileHeaderEdit->setReadOnly(true);
         
-        fileHeaderDock = new QDockWidget(tr("Header Info"), this);
+        fileHeaderDock = new QDockWidget(tr("Header info"), this);
         fileHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileHeaderDock->setWidget(fileHeaderEdit);
         this->addDockWidget(Qt::LeftDockWidgetArea, fileHeaderDock);
@@ -2091,7 +2061,7 @@ void MainWindow::initializeInteractives()
         funcParamDSpinBox->setAccelerated(1);
         funcParamDSpinBox->setPrefix("Var 4: ");
 
-        functionDockWidget = new QDockWidget(tr("Model Settings"), this);
+        functionDockWidget = new QDockWidget(tr("Model settings"), this);
         functionWidget = new QWidget;
 
         QGridLayout * functionLayout = new QGridLayout;
@@ -2105,7 +2075,7 @@ void MainWindow::initializeInteractives()
         functionDockWidget->setFixedHeight(functionWidget->minimumSizeHint().height());
         functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         viewMenu->addAction(functionDockWidget->toggleViewAction());
-        this->addDockWidget(Qt::RightDockWidgetArea, functionDockWidget);
+        volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, functionDockWidget);
     }
 
 
@@ -2148,9 +2118,9 @@ void MainWindow::initializeInteractives()
     tabWidget = new QTabWidget(mainWidget);
 
     // Add tabs
-    tabWidget->addTab(setFilesWidget, tr("File Selection"));
-    tabWidget->addTab(imageWidget, tr("Reconstruction"));
-    tabWidget->addTab(viewWidget, tr("Visualization"));
+    tabWidget->addTab(setFilesWidget, tr("File selection"));
+    tabWidget->addTab(imageMainWindow, tr("Reconstruction"));
+    tabWidget->addTab(volumeRenderMainWindow, tr("Visualization"));
 
     // Put into main layout
     mainLayout->setContentsMargins(3,3,3,3);
@@ -2288,8 +2258,8 @@ void MainWindow::takeScreenshot()
     QDateTime dateTime = dateTime.currentDateTime();
     QString initialPath = QDir::currentPath() + QString("/screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
 
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), initialPath,
-                                                tr("%1 Files (*.%2);;All Files (*)")
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save as"), initialPath,
+                                                tr("%1 files (*.%2);;All files (*)")
                                                 .arg(format.toUpper())
                                                 .arg(format));
     emit captureFrameBuffer(fileName);

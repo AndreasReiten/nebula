@@ -3251,9 +3251,9 @@ void VolumeRenderWorker::setURotation()
     isURotationActive = !isURotationActive;
 }
 
-void VolumeRenderWorker::setLogarithmic()
+void VolumeRenderWorker::setLog(bool value)
 {
-    isLogarithmic = !isLogarithmic;
+    isLogarithmic = value;
     if (isInitialized) setMiscArrays();
 }
 void VolumeRenderWorker::setLogarithmic2D()

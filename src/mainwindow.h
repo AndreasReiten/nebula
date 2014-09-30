@@ -211,10 +211,8 @@ private:
     void setFiles(QMap<QString, QStringList> folder_map);
     
     
-    // Image browser QDockWidget
-    QDockWidget * imageDock;
-    
-    QMainWindow * imageWidget;
+    // Image browser widget
+    QMainWindow * imageMainWindow;
     QWidget * imageCentralWidget;
     
     QLineEdit * pathLineEdit;
@@ -237,7 +235,7 @@ private:
     QAction *scalebarAct;
     QAction *saveSVOAct;
     QAction *saveLoadedSvoAct;
-    QAction *log3DAct;
+//    QAction *log3DAct;
     QAction *dataStructureAct;
     QAction *backgroundAct;
     QAction *projectionAct;
@@ -316,7 +314,10 @@ private:
     QLabel * aStar;
     QLabel * bStar;
     QLabel * cStar;
-
+    
+    // Volume render widget
+    QMainWindow * volumeRenderMainWindow;
+    
     QComboBox *formatComboBox;
     QComboBox *activeAngleComboBox;
 
@@ -347,6 +348,8 @@ private:
     QComboBox * volumeRenderViewModeComboBox;
 
     QSlider * qualitySlider;
+    
+    QCheckBox * volumeRenderLogCheckBox;
 
     QElapsedTimer timer;
     Highlighter *script_highlighter;
@@ -366,7 +369,7 @@ private:
     QWidget *functionWidget;
     QWidget *unitcellWidget;
     QWidget *setFilesWidget;
-    QWidget *viewWidget;
+//    QWidget *viewWidget;
 
 protected:
     // OpenGL rendering widgets

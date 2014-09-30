@@ -27,7 +27,7 @@ public slots:
     void setScalebar();
     void setProjection();
     void setBackground();
-    void setLogarithmic();
+    void setLog(bool value);
     void setLogarithmic2D();
     void setDataStructure();
     void setTsfColor(int value);
