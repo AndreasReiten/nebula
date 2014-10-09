@@ -1,10 +1,18 @@
 # QMAKE PROJECT FILE
-LIBS += -lOpenCL
+
+win32 {
+    LIBS += -lOpenCL
+    INCLUDEPATH = inc_win
+    QMAKE_CXXFLAGS += -c++11 # C++11
+}
+
+unix {
+    LIBS += -lOpenCL
+    QMAKE_CXXFLAGS += -std=c++0x # C++11
+}
 
 
-
-QMAKE_CXXFLAGS += -std=c++0x # C++11 
-QT += core gui widgets
+QT += widgets
 
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
