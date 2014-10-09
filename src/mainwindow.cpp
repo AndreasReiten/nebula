@@ -19,7 +19,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QToolButton>
-#include <QtScript>
+//#include <QtScript>
 #include <QVBoxLayout>
 #include <QPlainTextEdit>
 #include <QStatusBar>
@@ -81,7 +81,7 @@ MainWindow::MainWindow() :
     
     setCentralWidget(mainWidget);
     readSettings();
-    setCurrentFile("");
+//    setCurrentFile("");
     print("[Nebula] Welcome to Nebula!");
     setWindowTitle(tr("Nebula[*]"));
     
@@ -99,8 +99,8 @@ MainWindow::MainWindow() :
 
 MainWindow::~MainWindow()
 {
-    readScriptThread->quit();
-    readScriptThread->wait(1000);
+//    readScriptThread->quit();
+//    readScriptThread->wait(1000);
             
     setFileThread->quit();
     setFileThread->wait(1000);
@@ -134,7 +134,7 @@ void MainWindow::displayPopup(QString title, QString text)
 
 void MainWindow::initializeWorkers()
 {
-    readScriptThread = new QThread;
+//    readScriptThread = new QThread;
     setFileThread = new QThread;
     readFileThread = new QThread;
     projectFileThread = new QThread;
@@ -143,7 +143,7 @@ void MainWindow::initializeWorkers()
     displayFileThread = new QThread;
 
     // readScriptWorker
-    readScriptWorker = new ReadScriptWorker();
+    /*readScriptWorker = new ReadScriptWorker();
     readScriptWorker->setFilePaths(&file_paths);
     readScriptWorker->setScriptEngine(&engine);
     readScriptWorker->setInput(scriptTextEdit);
@@ -159,7 +159,7 @@ void MainWindow::initializeWorkers()
     connect(readScriptWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(readScriptWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readScriptButton, SIGNAL(clicked()), readScriptThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), readScriptWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(killButton, SIGNAL(clicked()), readScriptWorker, SLOT(killProcess()), Qt::DirectConnection);*/
 
     //### setFileWorker ###
     setFileWorker = new SetFileWorker();
@@ -325,7 +325,7 @@ void MainWindow::initializeWorkers()
 
 void MainWindow::anyButtonStart()
 {
-    readScriptButton->setDisabled(true);
+//    readScriptButton->setDisabled(true);
     setFileButton->setDisabled(true);
     allInOneButton->setDisabled(true);
     readFileButton->setDisabled(true);
@@ -333,7 +333,7 @@ void MainWindow::anyButtonStart()
     voxelizeButton->setDisabled(true);
 }
 
-void MainWindow::readScriptButtonFinish()
+/*void MainWindow::readScriptButtonFinish()
 {
     readScriptButton->setDisabled(false);
     setFileButton->setDisabled(false);
@@ -341,11 +341,11 @@ void MainWindow::readScriptButtonFinish()
     readFileButton->setDisabled(true);
     projectFileButton->setDisabled(true);
     voxelizeButton->setDisabled(true);
-}
+}*/
 
 void MainWindow::setFileButtonFinish()
 {
-    readScriptButton->setDisabled(false);
+//    readScriptButton->setDisabled(false);
     setFileButton->setDisabled(false);
     allInOneButton->setDisabled(false);
     readFileButton->setDisabled(false);
@@ -355,7 +355,7 @@ void MainWindow::setFileButtonFinish()
 
 void MainWindow::allInOneButtonFinish()
 {
-    readScriptButton->setDisabled(false);
+//    readScriptButton->setDisabled(false);
     setFileButton->setDisabled(false);
     allInOneButton->setDisabled(false);
     readFileButton->setDisabled(true);
@@ -365,7 +365,7 @@ void MainWindow::allInOneButtonFinish()
 
 void MainWindow::readFileButtonFinish()
 {
-    readScriptButton->setDisabled(false);
+//    readScriptButton->setDisabled(false);
     setFileButton->setDisabled(false);
     allInOneButton->setDisabled(false);
     readFileButton->setDisabled(false);
@@ -375,7 +375,7 @@ void MainWindow::readFileButtonFinish()
 
 void MainWindow::projectFileButtonFinish()
 {
-    readScriptButton->setDisabled(false);
+//    readScriptButton->setDisabled(false);
     setFileButton->setDisabled(false);
     allInOneButton->setDisabled(false);
     readFileButton->setDisabled(false);
@@ -385,7 +385,7 @@ void MainWindow::projectFileButtonFinish()
 
 void MainWindow::voxelizeButtonFinish()
 {
-    readScriptButton->setDisabled(false);
+//    readScriptButton->setDisabled(false);
     setFileButton->setDisabled(false);
     allInOneButton->setDisabled(false);
     readFileButton->setDisabled(false);
@@ -563,7 +563,7 @@ void MainWindow::runAllInOneThread()
 
 void MainWindow::setFilesFromSelectionModel()
 {
-    if (!scriptingAct->isChecked()) file_paths = image_folder.paths();
+    file_paths = image_folder.paths();
 }
 
 void MainWindow::setStartConditions()
@@ -627,15 +627,8 @@ void MainWindow::setStartConditions()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (maybeSave())
-    {
-        writeSettings();
-        event->accept();
-    }
-    else
-    {
-        event->ignore();
-    }
+    writeSettings();
+    event->accept();
 }
 
 void MainWindow::saveProject()
@@ -722,47 +715,47 @@ void MainWindow::setSelection(Selection rect)
     }
 }
 
-void MainWindow::newScriptFile()
-{
-    if (maybeSave())
-    {
-        scriptTextEdit->clear();
-        setCurrentFile("");
-    }
-}
+//void MainWindow::newScriptFile()
+//{
+//    if (maybeSave())
+//    {
+//        scriptTextEdit->clear();
+//        setCurrentFile("");
+//    }
+//}
 
-void MainWindow::openScript()
-{
-    if (maybeSave())
-    {
-        current_script_path = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".txt (*.txt);; All Files (*)"));
-        if (!current_script_path.isEmpty())
-        {
-            QFileInfo fileInfo = QFileInfo(current_script_path);
-            if (fileInfo.size() < 5000000) loadFile(current_script_path);
-            else print("\nFile is too large!");
+//void MainWindow::openScript()
+//{
+//    if (maybeSave())
+//    {
+//        current_script_path = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr(".txt (*.txt);; All Files (*)"));
+//        if (!current_script_path.isEmpty())
+//        {
+//            QFileInfo fileInfo = QFileInfo(current_script_path);
+//            if (fileInfo.size() < 5000000) loadFile(current_script_path);
+//            else print("\nFile is too large!");
             
-            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
-        }
-    }
-}
+//            setWindowTitle(tr("Nebula[*] (")+current_script_path+")");
+//        }
+//    }
+//}
 
 void MainWindow::initializeActions()
 {
 
 
     // Actions
-    scriptingAct = new QAction(QIcon(":/art/script.png"), tr("&Toggle scripting mode"), this);
-    scriptingAct->setCheckable(true);
-    scriptingAct->setChecked(false);
-    newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
-    newAct->setVisible(false);
-    openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
-    openAct->setVisible(false);
-    saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
-    saveAct->setVisible(false);
-    runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
-    saveAsAct = new QAction(QIcon(":/art/save.png"), tr("Save script &as..."), this);
+//    scriptingAct = new QAction(QIcon(":/art/script.png"), tr("&Toggle scripting mode"), this);
+//    scriptingAct->setCheckable(true);
+//    scriptingAct->setChecked(false);
+//    newAct = new QAction(QIcon(":/art/new.png"), tr("&New script"), this);
+//    newAct->setVisible(false);
+//    openAct = new QAction(QIcon(":/art/open.png"), tr("&Open script"), this);
+//    openAct->setVisible(false);
+//    saveAct = new QAction(QIcon(":/art/save.png"), tr("&Save script"), this);
+//    saveAct->setVisible(false);
+//    runScriptAct = new QAction(QIcon(":/art/forward.png"), tr("Run"), this);
+//    saveAsAct = new QAction(QIcon(":/art/save.png"), tr("Save script &as..."), this);
     exitAct = new QAction(tr("E&xit program"), this);
     aboutAct = new QAction(tr("&About Nebula"), this);
     aboutQtAct = new QAction(tr("About &Qt"), this);
@@ -824,11 +817,11 @@ void MainWindow::initializeActions()
     integrateCountsAct->setChecked(false);
     
     // Action Tips
-    newAct->setStatusTip(tr("Create a new file"));
-    openAct->setStatusTip(tr("Open an existing file"));
-    saveAct->setStatusTip(tr("Save the document to disk"));
-    saveAsAct->setStatusTip(tr("Save the document under a new name"));
-    runScriptAct->setStatusTip(tr("Run the script"));
+//    newAct->setStatusTip(tr("Create a new file"));
+//    openAct->setStatusTip(tr("Open an existing file"));
+//    saveAct->setStatusTip(tr("Save the document to disk"));
+//    saveAsAct->setStatusTip(tr("Save the document under a new name"));
+//    runScriptAct->setStatusTip(tr("Run the script"));
     exitAct->setStatusTip(tr("Exit Nebula"));
     aboutAct->setStatusTip(tr("About"));
     aboutQtAct->setStatusTip(tr("About Qt"));
@@ -836,31 +829,31 @@ void MainWindow::initializeActions()
     aboutOpenGLAct->setStatusTip(tr("About OpenGL"));
 
     // Shortcuts
-    newAct->setShortcuts(QKeySequence::New);
-    openAct->setShortcuts(QKeySequence::Open);
-    saveAct->setShortcuts(QKeySequence::Save);
-    saveAsAct->setShortcuts(QKeySequence::SaveAs);
+//    newAct->setShortcuts(QKeySequence::New);
+//    openAct->setShortcuts(QKeySequence::Open);
+//    saveAct->setShortcuts(QKeySequence::Save);
+//    saveAsAct->setShortcuts(QKeySequence::SaveAs);
     exitAct->setShortcuts(QKeySequence::Quit);
 }
 
-void MainWindow::saveScript()
-{
-    if (curFile.isEmpty())
-    {
-        saveScriptAs();
-    }
-    else
-    {
-        saveFile(curFile);
-    }
-}
+//void MainWindow::saveScript()
+//{
+//    if (curFile.isEmpty())
+//    {
+//        saveScriptAs();
+//    }
+//    else
+//    {
+//        saveFile(curFile);
+//    }
+//}
 
 
-void MainWindow::saveScriptAs()
-{
-    QString fileName = QFileDialog::getSaveFileName(this);
-    if (!fileName.isEmpty()) saveFile(fileName);
-}
+//void MainWindow::saveScriptAs()
+//{
+//    QString fileName = QFileDialog::getSaveFileName(this);
+//    if (!fileName.isEmpty()) saveFile(fileName);
+//}
 
 void MainWindow::about()
 {
@@ -880,10 +873,10 @@ void MainWindow::aboutOpenGL()
         tr("<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>"));
 }
 
-void MainWindow::documentWasModified()
-{
-    setWindowModified(scriptTextEdit->document()->isModified());
-}
+//void MainWindow::documentWasModified()
+//{
+//    setWindowModified(scriptTextEdit->document()->isModified());
+//}
 
 
 void MainWindow::openUnitcellFile()
@@ -1123,25 +1116,25 @@ void MainWindow::initializeConnects()
     connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_gamma(double)), Qt::QueuedConnection);
     
     
-    connect(this->scriptingAct, SIGNAL(toggled(bool)), fileBrowserWidget, SLOT(setHidden(bool)));
-    connect(this->scriptingAct, SIGNAL(toggled(bool)), fileSelectionFilter, SLOT(setDisabled(bool)));
-    connect(this->scriptingAct, SIGNAL(toggled(bool)), scriptTextEdit, SLOT(setVisible(bool)));
-    connect(this->scriptingAct, SIGNAL(toggled(bool)), readScriptButton, SLOT(setVisible(bool)));
-    connect(this->scriptingAct, SIGNAL(toggled(bool)), newAct, SLOT(setVisible(bool)));
-    connect(this->scriptingAct, SIGNAL(toggled(bool)), openAct, SLOT(setVisible(bool)));
-    connect(this->scriptingAct, SIGNAL(toggled(bool)), saveAct, SLOT(setVisible(bool)));
+//    connect(this->scriptingAct, SIGNAL(toggled(bool)), fileBrowserWidget, SLOT(setHidden(bool)));
+//    connect(this->scriptingAct, SIGNAL(toggled(bool)), fileSelectionFilter, SLOT(setDisabled(bool)));
+//    connect(this->scriptingAct, SIGNAL(toggled(bool)), scriptTextEdit, SLOT(setVisible(bool)));
+//    connect(this->scriptingAct, SIGNAL(toggled(bool)), readScriptButton, SLOT(setVisible(bool)));
+//    connect(this->scriptingAct, SIGNAL(toggled(bool)), newAct, SLOT(setVisible(bool)));
+//    connect(this->scriptingAct, SIGNAL(toggled(bool)), openAct, SLOT(setVisible(bool)));
+//    connect(this->scriptingAct, SIGNAL(toggled(bool)), saveAct, SLOT(setVisible(bool)));
     
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
-    connect(scriptTextEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
+//    connect(scriptTextEdit->document(), SIGNAL(contentsChanged()), this, SLOT(documentWasModified()));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSvoAct, SIGNAL(triggered()), this, SLOT(openSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
     connect(saveLoadedSvoAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvo()));
     connect(saveSvoButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
-    connect(newAct, SIGNAL(triggered()), this, SLOT(newScriptFile()));
-    connect(openAct, SIGNAL(triggered()), this, SLOT(openScript()));
-    connect(saveAct, SIGNAL(triggered()), this, SLOT(saveScript()));
-    connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveScriptAs()));
+//    connect(newAct, SIGNAL(triggered()), this, SLOT(newScriptFile()));
+//    connect(openAct, SIGNAL(triggered()), this, SLOT(openScript()));
+//    connect(saveAct, SIGNAL(triggered()), this, SLOT(saveScript()));
+//    connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveScriptAs()));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
     connect(aboutOpenCLAct, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
@@ -1268,23 +1261,23 @@ void MainWindow::openSvo()
 void MainWindow::initializeMenus()
 {
     mainMenu = new QMenuBar;
-    scriptMenu = new QMenu(tr("&File"));
+//    scriptMenu = new QMenu(tr("&File"));
     viewMenu = new QMenu(tr("V&iew"));
     helpMenu = new QMenu(tr("&Help"));
 
-    scriptMenu->addAction(newAct);
-    scriptMenu->addAction(openAct);
-    scriptMenu->addAction(saveAct);
-    scriptMenu->addAction(saveAsAct);
-    scriptMenu->addSeparator();
-    scriptMenu->addAction(exitAct);
+//    scriptMenu->addAction(newAct);
+//    scriptMenu->addAction(openAct);
+//    scriptMenu->addAction(saveAct);
+//    scriptMenu->addAction(saveAsAct);
+//    scriptMenu->addSeparator();
+//    scriptMenu->addAction(exitAct);
 
     helpMenu->addAction(aboutAct);
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutOpenCLAct);
     helpMenu->addAction(aboutOpenGLAct);
 
-    mainMenu->addMenu(scriptMenu);
+//    mainMenu->addMenu(scriptMenu);
     mainMenu->addMenu(viewMenu);
     mainMenu->addSeparator();
     mainMenu->addMenu(helpMenu);
@@ -1302,12 +1295,12 @@ void MainWindow::initializeInteractives()
         topWidget = new QWidget(mainWidget);
 
         // Buttons
-        readScriptButton = new QPushButton;
-        readScriptButton->setIcon(QIcon(":/art/proceed.png"));
-        readScriptButton->setIconSize(QSize(32,32));
-        readScriptButton->setText("Run Script ");
-        readScriptButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-        readScriptButton->setVisible(false);
+//        readScriptButton = new QPushButton;
+//        readScriptButton->setIcon(QIcon(":/art/proceed.png"));
+//        readScriptButton->setIconSize(QSize(32,32));
+//        readScriptButton->setText("Run Script ");
+//        readScriptButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+//        readScriptButton->setVisible(false);
         
         setFileButton = new QPushButton;
         setFileButton->setIcon(QIcon(":/art/proceed.png"));
@@ -1345,7 +1338,7 @@ void MainWindow::initializeInteractives()
         toolChainLayout->setColumnStretch(2,1);
         toolChainLayout->setColumnStretch(3,1);
         toolChainLayout->setColumnStretch(4,1);
-        toolChainLayout->addWidget(readScriptButton,0,0,2,1);
+//        toolChainLayout->addWidget(readScriptButton,0,0,2,1);
         toolChainLayout->addWidget(setFileButton,0,1,1,1);
         toolChainLayout->addWidget(readFileButton,0,2,1,1);
         toolChainLayout->addWidget(projectFileButton,0,3,1,1);
@@ -1368,18 +1361,18 @@ void MainWindow::initializeInteractives()
         setFilesWidget = new QWidget;
 
         // Script text edit
-        scriptTextEdit = new QPlainTextEdit;
-        scriptTextEdit->hide();
-        script_highlighter = new Highlighter(scriptTextEdit->document());
-        loadFile(":/default/example_script.txt");
+//        scriptTextEdit = new QPlainTextEdit;
+//        scriptTextEdit->hide();
+//        script_highlighter = new Highlighter(scriptTextEdit->document());
+//        loadFile(":/default/example_script.txt");
         
         
         // Toolbar
         fileSelectionToolBar = new QToolBar(tr("File selection toolbar"));
-        fileSelectionToolBar->addAction(scriptingAct);
-        fileSelectionToolBar->addAction(newAct);
-        fileSelectionToolBar->addAction(openAct);
-        fileSelectionToolBar->addAction(saveAct);
+//        fileSelectionToolBar->addAction(scriptingAct);
+//        fileSelectionToolBar->addAction(newAct);
+//        fileSelectionToolBar->addAction(openAct);
+//        fileSelectionToolBar->addAction(saveAct);
         
         
         fileSelectionFilter = new QLineEdit;
@@ -1412,7 +1405,7 @@ void MainWindow::initializeInteractives()
         scriptLayout->setSpacing(0);
         scriptLayout->setContentsMargins(0,0,0,0);
         scriptLayout->addWidget(fileSelectionToolBar,0,0,1,2);
-        scriptLayout->addWidget(scriptTextEdit,1,0,1,2);
+//        scriptLayout->addWidget(scriptTextEdit,1,0,1,2);
         scriptLayout->addWidget(fileBrowserWidget,2,0,1,2);
         scriptLayout->addWidget(loadPathsPushButton,3,0,1,2);
         setFilesWidget->setLayout(scriptLayout);
@@ -2129,8 +2122,8 @@ void MainWindow::initializeInteractives()
     mainWidget->setLayout(mainLayout);
 
     /* Script engine */
-    rawFilesQs = engine.newVariant(file_paths);
-    engine.globalObject().setProperty("files", rawFilesQs);
+//    rawFilesQs = engine.newVariant(file_paths);
+//    engine.globalObject().setProperty("files", rawFilesQs);
 }
 
 
@@ -2169,7 +2162,7 @@ void MainWindow::writeSettings()
     settings.setValue("scriptDir", svoDir);
 }
 
-bool MainWindow::maybeSave()
+/*bool MainWindow::maybeSave()
 {
     if (scriptTextEdit->document()->isModified())
     {
@@ -2187,70 +2180,70 @@ bool MainWindow::maybeSave()
             return false;
     }
     return true;
-}
+}*/
 
-void MainWindow::loadFile(const QString &fileName)
-{
-    QFile file(fileName);
-    if (!file.open(QFile::ReadOnly | QFile::Text))
-    {
-        QMessageBox::warning(this, tr("Nebula"),
-            tr("Cannot read file %1:\n%2.")
-            .arg(fileName)
-            .arg(file.errorString()));
-        return;
-    }
+//void MainWindow::loadFile(const QString &fileName)
+//{
+//    QFile file(fileName);
+//    if (!file.open(QFile::ReadOnly | QFile::Text))
+//    {
+//        QMessageBox::warning(this, tr("Nebula"),
+//            tr("Cannot read file %1:\n%2.")
+//            .arg(fileName)
+//            .arg(file.errorString()));
+//        return;
+//    }
 
-    QTextStream in(&file);
-    #ifndef QT_NO_CURSOR
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-    #endif
-        scriptTextEdit->setPlainText(in.readAll());
-    #ifndef QT_NO_CURSOR
-        QApplication::restoreOverrideCursor();
-    #endif
+//    QTextStream in(&file);
+//    #ifndef QT_NO_CURSOR
+//        QApplication::setOverrideCursor(Qt::WaitCursor);
+//    #endif
+//        scriptTextEdit->setPlainText(in.readAll());
+//    #ifndef QT_NO_CURSOR
+//        QApplication::restoreOverrideCursor();
+//    #endif
 
-    setCurrentFile(fileName);
-}
+//    setCurrentFile(fileName);
+//}
 
-bool MainWindow::saveFile(const QString &fileName)
-{
-    QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text))
-    {
-        QMessageBox::warning(this, tr("Nebula"),
-            tr("Cannot write file %1:\n%2.")
-            .arg(fileName)
-            .arg(file.errorString()));
-        return false;
-    }
+//bool MainWindow::saveFile(const QString &fileName)
+//{
+//    QFile file(fileName);
+//    if (!file.open(QFile::WriteOnly | QFile::Text))
+//    {
+//        QMessageBox::warning(this, tr("Nebula"),
+//            tr("Cannot write file %1:\n%2.")
+//            .arg(fileName)
+//            .arg(file.errorString()));
+//        return false;
+//    }
 
-    QTextStream out(&file);
-    #ifndef QT_NO_CURSOR
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-    #endif
-        out << scriptTextEdit->toPlainText();
-    #ifndef QT_NO_CURSOR
-        QApplication::restoreOverrideCursor();
-    #endif
+//    QTextStream out(&file);
+//    #ifndef QT_NO_CURSOR
+//        QApplication::setOverrideCursor(Qt::WaitCursor);
+//    #endif
+//        out << scriptTextEdit->toPlainText();
+//    #ifndef QT_NO_CURSOR
+//        QApplication::restoreOverrideCursor();
+//    #endif
 
-    setCurrentFile(fileName);
-    return true;
-}
+//    setCurrentFile(fileName);
+//    return true;
+//}
 
 
 
-void MainWindow::setCurrentFile(const QString &fileName)
-{
-    curFile = fileName;
-    scriptTextEdit->document()->setModified(false);
-    setWindowModified(false);
+//void MainWindow::setCurrentFile(const QString &fileName)
+//{
+//    curFile = fileName;
+//    scriptTextEdit->document()->setModified(false);
+//    setWindowModified(false);
 
-    QString shownName = curFile;
-    if (curFile.isEmpty())
-        shownName = "untitled.txt";
-    setWindowFilePath(shownName);
-}
+//    QString shownName = curFile;
+//    if (curFile.isEmpty())
+//        shownName = "untitled.txt";
+//    setWindowFilePath(shownName);
+//}
 
 void MainWindow::takeScreenshot()
 {

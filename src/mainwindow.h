@@ -39,7 +39,7 @@ private slots:
     // Toolchain button stuff
     void anyButtonStart();
 
-    void readScriptButtonFinish();
+//    void readScriptButtonFinish();
     void setFileButtonFinish();
     void allInOneButtonFinish();
     void readFileButtonFinish();
@@ -47,19 +47,19 @@ private slots:
     void voxelizeButtonFinish();
 
     void takeScreenshot();
-    void saveScriptAs();
+//    void saveScriptAs();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
 
-    void newScriptFile();
-    void openScript();
-    void saveScript();
+//    void newScriptFile();
+//    void openScript();
+//    void saveScript();
     void openSvo();
     void saveSvo();
     void saveLoadedSvo();
 
 
-    void documentWasModified();
+//    void documentWasModified();
 
     void about();
     void aboutOpenCL();
@@ -166,11 +166,11 @@ private:
     
     /* Header strings */
     QString current_svo_path;
-    QString current_script_path;
+//    QString current_script_path;
 
     // Buttons
     QPushButton *allInOneButton;
-    QPushButton *readScriptButton;
+//    QPushButton *readScriptButton;
     QPushButton *setFileButton;
     QPushButton *readFileButton;
     QPushButton *projectFileButton;
@@ -188,7 +188,7 @@ private:
     OpenCLContext * context_cl;
 
     // QThreads
-    QThread * readScriptThread;
+//    QThread * readScriptThread;
     QThread * setFileThread;
     QThread * readFileThread;
     QThread * projectFileThread;
@@ -197,7 +197,7 @@ private:
     QThread * displayFileThread;
 
     // Workers
-    ReadScriptWorker * readScriptWorker;
+//    ReadScriptWorker * readScriptWorker;
     SetFileWorker * setFileWorker;
     ReadFileWorker * readFileWorker;
     ProjectFileWorker * projectFileWorker;
@@ -241,12 +241,12 @@ private:
     QAction *projectionAct;
     QAction *screenshotAct;
     QAction *openSvoAct;
-    QAction *newAct;
-    QAction *openAct;
-    QAction *saveAct;
-    QAction *scriptingAct;
-    QAction *runScriptAct;
-    QAction *saveAsAct;
+//    QAction *newAct;
+//    QAction *openAct;
+//    QAction *saveAct;
+//    QAction *scriptingAct;
+//    QAction *runScriptAct;
+//    QAction *saveAsAct;
     QAction *exitAct;
     QAction *aboutAct;
     QAction *aboutQtAct;
@@ -285,13 +285,13 @@ private:
     void readSettings();
     void writeSettings();
     bool maybeSave();
-    void loadFile(const QString &fileName);
-    bool saveFile(const QString &fileName);
-    void setCurrentFile(const QString &fileName);
+//    void loadFile(const QString &fileName);
+//    bool saveFile(const QString &fileName);
+//    void setCurrentFile(const QString &fileName);
 
 
     QString strippedName(const QString &fullFileName);
-    QString scriptHelp;
+//    QString scriptHelp;
     QString curFile;
     QString info;
 
@@ -352,7 +352,7 @@ private:
     QCheckBox * volumeRenderLogCheckBox;
 
     QElapsedTimer timer;
-    Highlighter *script_highlighter;
+//    Highlighter *script_highlighter;
     Highlighter *error_highlighter;
 
     QTabWidget *tabWidget;
@@ -419,7 +419,7 @@ protected:
 
     QString svoDir;
 
-    QPlainTextEdit *scriptTextEdit;
+//    QPlainTextEdit *scriptTextEdit;
     QPlainTextEdit *errorTextEdit;
     QProgressBar *genericProgressBar;
     QProgressBar *memoryUsageProgressBar;
@@ -429,15 +429,15 @@ protected:
     QMenuBar * mainMenu;
     QMenu *reduceMenu;
     QMenu *svoMenu;
-    QMenu *scriptMenu;
+//    QMenu *scriptMenu;
     QMenu *viewMenu;
     QMenu *helpMenu;
     QToolBar *fileSelectionToolBar;
     QToolBar *viewToolBar;
 
 
-    QScriptEngine engine;
-    QScriptValue rawFilesQs;
+//    QScriptEngine engine;
+//    QScriptValue rawFilesQs;
 
     // Main resources
     QStringList file_paths;

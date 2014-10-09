@@ -141,27 +141,27 @@ void BaseWorker::setReducedPixels(Matrix<float> *reduced_pixels)
 
 
 
-ReadScriptWorker::ReadScriptWorker()
-{
+//ReadScriptWorker::ReadScriptWorker()
+//{
 
-}
+//}
 
-ReadScriptWorker::~ReadScriptWorker()
-{
+//ReadScriptWorker::~ReadScriptWorker()
+//{
 
-}
+//}
 
-void ReadScriptWorker::setScriptEngine(QScriptEngine * engine)
-{
-    this->engine = engine;
-}
+//void ReadScriptWorker::setScriptEngine(QScriptEngine * engine)
+//{
+//    this->engine = engine;
+//}
 
-void ReadScriptWorker::setInput(QPlainTextEdit * widget)
-{
-    this->inputWidget = widget;
-}
+//void ReadScriptWorker::setInput(QPlainTextEdit * widget)
+//{
+//    this->inputWidget = widget;
+//}
 
-void ReadScriptWorker::process()
+/*void ReadScriptWorker::process()
 {
     QCoreApplication::processEvents();
     
@@ -223,7 +223,7 @@ void ReadScriptWorker::process()
     emit maxFramesChanged(file_paths->size()-1);
 
     emit finished();
-}
+}*/
 
 
 /***

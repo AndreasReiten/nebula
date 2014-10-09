@@ -1,7 +1,7 @@
 #ifndef WORKER_H
 #define WORKER_H
 
-#include <QScriptEngine>
+//#include <QScriptEngine>
 #include <QPlainTextEdit>
 
 /* Project files */
@@ -87,27 +87,27 @@ class BaseWorker : public QObject
         size_t GLOBAL_VRAM_ALLOC_MAX;
 };
 
-class ReadScriptWorker : public BaseWorker
-{
-    Q_OBJECT
+//class ReadScriptWorker : public BaseWorker
+//{
+//    Q_OBJECT
 
-    public:
-        ReadScriptWorker();
-        ~ReadScriptWorker();
+//    public:
+//        ReadScriptWorker();
+//        ~ReadScriptWorker();
 
-        void setScriptEngine(QScriptEngine * engine);
-        void setInput(QPlainTextEdit * widget);
+//        void setScriptEngine(QScriptEngine * engine);
+//        void setInput(QPlainTextEdit * widget);
 
-    signals:
-        void maxFramesChanged(int value);
+//    signals:
+//        void maxFramesChanged(int value);
 
-    private slots:
-        void process();
+//    private slots:
+//        void process();
 
-    private:
-        QScriptEngine * engine;
-        QPlainTextEdit * inputWidget;
-};
+//    private:
+//        QScriptEngine * engine;
+//        QPlainTextEdit * inputWidget;
+//};
 
 
 class SetFileWorker : public BaseWorker
