@@ -12,7 +12,6 @@
 //#include <QtGlobal>
 #include <QCoreApplication>
 
-/* GL and CL */
 #include <CL/opencl.h>
 
 /* QT */
@@ -594,7 +593,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     target_format.image_channel_data_type = CL_FLOAT;
 
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
-    cl_mem xyzi_target_cl = clCreateImage2D ( *context_cl->getContext(),
+    cl_mem xyzi_target_cl = clCreateImage2D ( context_cl->context(),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
         &target_format,
         file->getFastDimension(),
@@ -609,7 +608,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     source_format.image_channel_order = CL_INTENSITY;
     source_format.image_channel_data_type = CL_FLOAT;
 
-    cl_mem source_cl = clCreateImage2D ( *context_cl->getContext(),
+    cl_mem source_cl = clCreateImage2D ( context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
         file->getFastDimension(),
@@ -620,7 +619,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
-    cl_sampler intensity_sampler = clCreateSampler(*context_cl->getContext(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+    cl_sampler intensity_sampler = clCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
@@ -661,7 +660,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     
     sampleRotMat = PHI*KAPPA*OMEGA;
 
-    cl_mem sample_rotation_matrix_cl = clCreateBuffer(*context_cl->getContext(),
+    cl_mem sample_rotation_matrix_cl = clCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
         sampleRotMat.toFloat().bytes(),
         sampleRotMat.toFloat().data(),
@@ -669,7 +668,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // The sampler for cl_tsf_tex
-    cl_sampler tsf_sampler = clCreateSampler(*context_cl->getContext(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    cl_sampler tsf_sampler = clCreateSampler(context_cl->context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Set kernel arguments
@@ -722,11 +721,11 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = clEnqueueNDRangeKernel(*context_cl->getCommandQueue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            err = clEnqueueNDRangeKernel(context_cl->queue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
-    clFinish(*context_cl->getCommandQueue());
+    clFinish(context_cl->queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Read the data
@@ -741,7 +740,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     region[2] = 1;
 
     Matrix<float> projected_data_buf(1,file->getFastDimension()*file->getSlowDimension()*4);
-    err = clEnqueueReadImage ( *context_cl->getCommandQueue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
+    err = clEnqueueReadImage ( context_cl->queue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     if (xyzi_target_cl){
@@ -1047,42 +1046,42 @@ void VoxelizeWorker::process()
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
-        cl_mem pool_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem pool_cl = clCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
             BRICK_POOL_HARD_MAX_BYTES,
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        cl_mem pool_cluster_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem pool_cluster_cl = clCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                                                 nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        cl_mem brick_extent_cl =  clCreateBuffer(*context_cl->getContext(),
+        cl_mem brick_extent_cl =  clCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*6*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        cl_mem point_data_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem point_data_cl = clCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             max_points_per_cluster*sizeof(cl_float4),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        cl_mem point_data_offset_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem point_data_offset_cl = clCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(int),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                 
-        cl_mem point_data_count_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem point_data_count_cl = clCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(int),
             NULL,
@@ -1090,7 +1089,7 @@ void VoxelizeWorker::process()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                            
         Matrix<float> sum_check(1, nodes_per_kernel_call, 0);
-        cl_mem sum_check_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem sum_check_cl = clCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(float),
             sum_check.data(),
@@ -1098,7 +1097,7 @@ void VoxelizeWorker::process()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         Matrix<float> variance_check(1, nodes_per_kernel_call, 0);
-        cl_mem variance_check_cl = clCreateBuffer(*context_cl->getContext(),
+        cl_mem variance_check_cl = clCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(float),
             variance_check.data(),
@@ -1207,7 +1206,7 @@ void VoxelizeWorker::process()
                         // Upload this point data to an OpenCL buffer
                         if (point_data_count[j] > 0)
                         {
-                            err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
+                            err = clEnqueueWriteBuffer(context_cl->queue(),
                                 point_data_cl ,
                                 CL_FALSE,
                                 point_data_offset[j]*sizeof(cl_float4),
@@ -1223,7 +1222,7 @@ void VoxelizeWorker::process()
                     
                     // Upload this extent to an OpenCL buffer
                     err = clEnqueueWriteBuffer(
-                        *context_cl->getCommandQueue(),
+                        context_cl->queue(),
                         brick_extent_cl ,
                         CL_FALSE,
                         0,
@@ -1233,7 +1232,7 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     // Upload other stuff before launcing the kernel
-                    err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
+                    err = clEnqueueWriteBuffer(context_cl->queue(),
                         point_data_offset_cl ,
                         CL_FALSE,
                         0,
@@ -1242,7 +1241,7 @@ void VoxelizeWorker::process()
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
-                    err = clEnqueueWriteBuffer(*context_cl->getCommandQueue(),
+                    err = clEnqueueWriteBuffer(context_cl->queue(),
                         point_data_count_cl ,
                         CL_FALSE,
                         0,
@@ -1265,7 +1264,7 @@ void VoxelizeWorker::process()
 
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
-                    err = clFinish(*context_cl->getCommandQueue());
+                    err = clFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                     // Second pass: calculate the data for each node in the cluster (OpenCL)
@@ -1276,7 +1275,7 @@ void VoxelizeWorker::process()
                         size_t loc_ws[3] = {8,8,8};
                         size_t glb_ws[3] = {8,8,8};
                         err = clEnqueueNDRangeKernel(
-                                    *context_cl->getCommandQueue(), 
+                                    context_cl->queue(),
                                     voxelize_kernel, 
                                     3, 
                                     glb_offset, 
@@ -1287,11 +1286,11 @@ void VoxelizeWorker::process()
                         
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
-                    err = clFinish(*context_cl->getCommandQueue());
+                    err = clFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     // Read relevant data
-                    err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+                    err = clEnqueueReadBuffer ( context_cl->queue(),
                         sum_check_cl,
                         CL_TRUE,
                         0,
@@ -1300,7 +1299,7 @@ void VoxelizeWorker::process()
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-                    err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+                    err = clEnqueueReadBuffer ( context_cl->queue(),
                         variance_check_cl,
                         CL_TRUE,
                         0,
@@ -1310,7 +1309,7 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     
-                    err = clFinish(*context_cl->getCommandQueue());
+                    err = clFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     
@@ -1381,7 +1380,7 @@ void VoxelizeWorker::process()
                             size_t loc_ws[3] = {8,8,8};
                             size_t glb_ws[3] = {8,8,8};
                             err = clEnqueueNDRangeKernel(
-                                        *context_cl->getCommandQueue(), 
+                                        context_cl->queue(),
                                         fill_kernel, 
                                         3, 
                                         glb_offset, 
@@ -1393,7 +1392,7 @@ void VoxelizeWorker::process()
                             
                             non_empty_node_counter++;
                             
-                            err = clFinish(*context_cl->getCommandQueue());
+                            err = clFinish(context_cl->queue());
                             if ( err != CL_SUCCESS)
                             {
                                 qFatal(cl_error_cstring(err));
@@ -1447,7 +1446,7 @@ void VoxelizeWorker::process()
                 svo->setMin(0.0f);
                 svo->setMax(max_brick_sum/(float)(n_points_brick));
                 
-                err = clEnqueueReadBuffer ( *context_cl->getCommandQueue(),
+                err = clEnqueueReadBuffer ( context_cl->queue(),
                     pool_cl,
                     CL_TRUE,
                     0,

@@ -62,7 +62,6 @@ HEADERS += \
     lib/qxlib/qxmath/utils/ubmatrix.h \
     lib/qxlib/qxmath/qxmathlib.h \
     lib/qxlib/qxopencl/utils/contextcl.h \
-    lib/qxlib/qxopencl/utils/devicecl.h \
     lib/qxlib/qxopencl/qxopencllib.h \
     lib/qxlib/qxopengl/utils/openglwindow.h \
     lib/qxlib/qxopengl/utils/sharedcontext.h \
@@ -89,7 +88,6 @@ SOURCES += \
     lib/qxlib/qximage/qximagelib.cpp \
     lib/qxlib/qxmath/qxmathlib.cpp \
     lib/qxlib/qxopencl/utils/contextcl.cpp \
-    lib/qxlib/qxopencl/utils/devicecl.cpp \
     lib/qxlib/qxopencl/qxopencllib.cpp \
     lib/qxlib/qxopengl/utils/openglwindow.cpp \
     lib/qxlib/qxopengl/utils/sharedcontext.cpp \

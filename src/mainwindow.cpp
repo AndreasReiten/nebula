@@ -46,7 +46,9 @@ MainWindow::MainWindow() :
     this->setStyleSheet(style);
 
     // Set the OpenCL context
+    qDebug() << "setting clcontext";
     context_cl = new OpenCLContext;
+    qDebug() << "done setting clcontext";
 
     // Set the format of the rendering context
     QSurfaceFormat format_gl;
@@ -58,6 +60,7 @@ MainWindow::MainWindow() :
     format_gl.setBlueBufferSize(8);
     format_gl.setAlphaBufferSize(8);
     
+    qDebug() << "HADUKEN!";
 
     sharedContextWindow = new SharedContextWindow();
     sharedContextWindow->setFormat(format_gl);
