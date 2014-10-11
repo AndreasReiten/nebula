@@ -1364,7 +1364,6 @@ void VolumeRenderWorker::initResourcesCL()
     cl_parallel_reduce = clCreateKernel(program, "psum", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-
     // Buffers
     cl_view_matrix_inverse = clCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,

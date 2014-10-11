@@ -66,6 +66,9 @@ MainWindow::MainWindow() :
     sharedContextWindow->setFormat(format_gl);
     sharedContextWindow->setOpenCLContext(context_cl);
     sharedContextWindow->show();
+
+//    qDebug() << cl_easy_context_info(context_cl->context());
+
     sharedContextWindow->initializeWorker();
     sharedContextWindow->hide();
     
