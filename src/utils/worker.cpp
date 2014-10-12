@@ -684,7 +684,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     threshold_two[0] = this->thld_project_low;
     threshold_two[1] = this->thld_project_high;
 
-    qDebug() << thld_noise_low << thld_noise_high << thld_project_low << thld_project_high;
+//    qDebug() << thld_noise_low << thld_noise_high << thld_project_low << thld_project_high;
     
     err |= QOpenCLSetKernelArg(project_kernel, 5, 2*sizeof(cl_float), threshold_one);
     err |= QOpenCLSetKernelArg(project_kernel, 6, 2*sizeof(cl_float), threshold_two);
@@ -1055,7 +1055,7 @@ void VoxelizeWorker::process()
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
-        qDebug() << BRICK_POOL_HARD_MAX_BYTES;
+//        qDebug() << BRICK_POOL_HARD_MAX_BYTES;
 
         cl_mem pool_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
@@ -1064,7 +1064,7 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        qDebug() << nodes_per_kernel_call << svo->getBrickOuterDimension() << nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float);
+//        qDebug() << nodes_per_kernel_call << svo->getBrickOuterDimension() << nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float);
 
         cl_mem pool_cluster_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,

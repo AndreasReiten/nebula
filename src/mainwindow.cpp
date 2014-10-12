@@ -147,7 +147,7 @@ void MainWindow::initializeWorkers()
     setFileWorker->setSVOFile(&svo_inprocess);
 
     setFileWorker->moveToThread(setFileThread);
-    connect(setFileButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
+    connect(setFileButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
     connect(setFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
     connect(setFileWorker, SIGNAL(finished()), this, SLOT(setFileButtonFinish()));
     connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
@@ -158,7 +158,7 @@ void MainWindow::initializeWorkers()
     connect(setFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(setFileButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()));
 
 
     //### readFileWorker ###
@@ -186,7 +186,7 @@ void MainWindow::initializeWorkers()
 
     connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readFileButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()));
 
 
     //### projectFileWorker ###
@@ -197,14 +197,14 @@ void MainWindow::initializeWorkers()
     projectFileWorker->setOpenCLContext(context_cl);
     projectFileWorker->setReducedPixels(&reduced_pixels);
     projectFileWorker->initializeCLKernel();
-    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), projectFileWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
-    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
-    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
-    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseHigh(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectLow(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectHigh(double)), Qt::QueuedConnection);
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), projectFileWorker, SLOT(setActiveAngle(int)));
+    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetOmega(double)));
+    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetKappa(double)));
+    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetPhi(double)));
+    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
+    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseHigh(double)));
+    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectLow(double)));
+    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectHigh(double)));
     connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
     
 
@@ -225,7 +225,7 @@ void MainWindow::initializeWorkers()
 
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
-    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()));
 
 
     //### allInOneWorker ###
@@ -235,15 +235,15 @@ void MainWindow::initializeWorkers()
     allInOneWorker->setOpenCLContext(context_cl);
     allInOneWorker->setReducedPixels(&reduced_pixels);
     allInOneWorker->initializeCLKernel();
-    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()), Qt::DirectConnection);
-    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), allInOneWorker, SLOT(setActiveAngle(int)), Qt::QueuedConnection);
-    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetOmega(double)), Qt::QueuedConnection);
-    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetKappa(double)), Qt::QueuedConnection);
-    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetPhi(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseLow(double)), Qt::QueuedConnection);
-    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseHigh(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectLow(double)), Qt::QueuedConnection);
-    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectHigh(double)), Qt::QueuedConnection);
+    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), allInOneWorker, SLOT(setActiveAngle(int)));
+    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetOmega(double)));
+    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetKappa(double)));
+    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetPhi(double)));
+    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseLow(double)));
+    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseHigh(double)));
+    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectLow(double)));
+    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectHigh(double)));
     connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), allInOneWorker, SLOT(setNoiseLow(double)));
 
     allInOneWorker->moveToThread(allInOneThread);
@@ -265,7 +265,7 @@ void MainWindow::initializeWorkers()
     connect(allInOneWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
-    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()));
 
 
     //### voxelizeWorker ###
@@ -279,7 +279,7 @@ void MainWindow::initializeWorkers()
     voxelizeWorker->moveToThread(voxelizeThread);
     connect(voxelizeThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
     connect(voxelizeWorker, SIGNAL(finished()), this, SLOT(voxelizeButtonFinish()));
-    connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)), Qt::DirectConnection);
+    connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
     connect(voxelizeWorker, SIGNAL(popup(QString,QString)), this, SLOT(displayPopup(QString,QString)));
@@ -295,7 +295,7 @@ void MainWindow::initializeWorkers()
     connect(voxelizeWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
 
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()));
     connect(allInOneWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
     connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
@@ -534,26 +534,31 @@ void MainWindow::setStartConditions()
 
     svoLevelSpinBox->setValue(11);
 
+    noiseCorrectionMinDoubleSpinBox->setValue(100);
     noiseCorrectionMinDoubleSpinBox->setValue(0);
-    noiseCorrectionMaxDoubleSpinBox->setValue(1e9);
+    noiseCorrectionMaxDoubleSpinBox->setValue(1e6);
+    postCorrectionMinDoubleSpinBox->setValue(100);
     postCorrectionMinDoubleSpinBox->setValue(0);
-    postCorrectionMaxDoubleSpinBox->setValue(1e9);
+    postCorrectionMaxDoubleSpinBox->setValue(1e6);
 
     volumeRenderDataMinSpinBox->setValue(1.0);
     volumeRenderDataMaxSpinBox->setValue(10);
     volumeRenderAlphaSpinBox->setValue(1.0);
     volumeRenderBrightnessSpinBox->setValue(2.0);
     volumeRenderTsfAlphaComboBox->setCurrentIndex(2);
+    volumeRenderViewModeComboBox->setCurrentIndex(1);
     volumeRenderViewModeComboBox->setCurrentIndex(0);
     volumeRenderTsfComboBox->setCurrentIndex(1);
     volumeRenderLogCheckBox->setChecked(true);
     
     imagePreviewTsfTextureComboBox->setCurrentIndex(1);
     imagePreviewTsfAlphaComboBox->setCurrentIndex(2);
+    imagePreviewDataMinDoubleSpinBox->setValue(10);
     imagePreviewDataMinDoubleSpinBox->setValue(0);
     imagePreviewDataMaxDoubleSpinBox->setValue(1000);
     imagePreviewLogCheckBox->setChecked(true);
     correctionLorentzCheckBox->setChecked(true);
+    imageModeComboBox->setCurrentIndex(1);
     imageModeComboBox->setCurrentIndex(0);
     
     
@@ -570,6 +575,10 @@ void MainWindow::setStartConditions()
     omegaCorrectionSpinBox->setValue(1.0);
     kappaCorrectionSpinBox->setValue(1.0);
     phiCorrectionSpinBox->setValue(1.0);
+
+    omegaCorrectionSpinBox->setValue(0.1);
+    kappaCorrectionSpinBox->setValue(0.1);
+    phiCorrectionSpinBox->setValue(0.1);
     
     omegaCorrectionSpinBox->setValue(0.0);
     kappaCorrectionSpinBox->setValue(0.0);
@@ -970,7 +979,7 @@ void MainWindow::initializeConnects()
     connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam1(double)));
     connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam2(double)));
     connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam3(double)));
-    connect(volumeRenderWindow->getWorker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)), Qt::BlockingQueuedConnection);
+    connect(volumeRenderWindow->getWorker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
     connect(this, SIGNAL(captureFrameBuffer(QString)), volumeRenderWindow->getWorker(), SLOT(takeScreenShot(QString)));
     connect(this->alignLabXtoSliceXAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabXtoSliceX()));
     connect(this->alignLabYtoSliceYAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabYtoSliceY()));
@@ -994,13 +1003,13 @@ void MainWindow::initializeConnects()
     connect(this->integrateCountsAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setCountIntegration()));
     
     /* this <-> this */
-    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_a(double)), Qt::QueuedConnection);
-    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_b(double)), Qt::QueuedConnection);
-    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_c(double)), Qt::QueuedConnection);
+    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_a(double)));
+    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_b(double)));
+    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_c(double)));
     
-    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_alpha(double)), Qt::QueuedConnection);
-    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_beta(double)), Qt::QueuedConnection);
-    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_gamma(double)), Qt::QueuedConnection);
+    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_alpha(double)));
+    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_beta(double)));
+    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_gamma(double)));
     
     
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
@@ -1535,10 +1544,10 @@ void MainWindow::initializeInteractives()
         imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
         
         
-        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)),Qt::QueuedConnection);
-        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseHigh(double)),Qt::QueuedConnection);
-        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionLow(double)),Qt::QueuedConnection);
-        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionHigh(double)),Qt::QueuedConnection);
+        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)));
+        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseHigh(double)));
+        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionLow(double)));
+        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionHigh(double)));
     }
     
     
