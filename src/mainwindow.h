@@ -390,13 +390,13 @@ protected:
     
     /* Image browser view settings widget */
     QComboBox * imageModeComboBox;
-    QComboBox * tsfTextureComboBox;
-    QComboBox * tsfAlphaComboBox;
+    QComboBox * imagePreviewTsfTextureComboBox;
+    QComboBox * imagePreviewTsfAlphaComboBox;
 
-    QDoubleSpinBox * dataMinDoubleSpinBox;
-    QDoubleSpinBox * dataMaxDoubleSpinBox;
+    QDoubleSpinBox * imagePreviewDataMinDoubleSpinBox;
+    QDoubleSpinBox * imagePreviewDataMaxDoubleSpinBox;
 
-    QCheckBox * logCheckBox;
+    QCheckBox * imagePreviewLogCheckBox;
     
     QWidget * imageSettingsWidget;
     QDockWidget * imageSettingsDock;

@@ -45,11 +45,92 @@ BaseWorker::BaseWorker()
     : isCLInitialized(false)
 {
     this->isCLInitialized = false;
+    resolveOpenCLFunctions();
 }
 
 BaseWorker::~BaseWorker()
 {
     
+}
+
+void BaseWorker::resolveOpenCLFunctions()
+{
+    QLibrary myLib("OpenCL");
+
+    QOpenCLGetPlatformIDs = (PROTOTYPE_QOpenCLGetPlatformIDs) myLib.resolve("clGetPlatformIDs");
+    if (!QOpenCLGetPlatformIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetDeviceIDs = (PROTOTYPE_QOpenCLGetDeviceIDs) myLib.resolve("clGetDeviceIDs");
+    if (!QOpenCLGetDeviceIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetPlatformInfo = (PROTOTYPE_QOpenCLGetPlatformInfo) myLib.resolve("clGetPlatformInfo");
+    if (!QOpenCLGetPlatformInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetDeviceInfo = (PROTOTYPE_QOpenCLGetDeviceInfo) myLib.resolve("clGetDeviceInfo");
+    if (!QOpenCLGetDeviceInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateProgramWithSource = (PROTOTYPE_QOpenCLCreateProgramWithSource) myLib.resolve("clCreateProgramWithSource");
+    if (!QOpenCLCreateProgramWithSource) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetProgramBuildInfo = (PROTOTYPE_QOpenCLGetProgramBuildInfo) myLib.resolve("clGetProgramBuildInfo");
+    if (!QOpenCLGetProgramBuildInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateContext = (PROTOTYPE_QOpenCLCreateContext) myLib.resolve("clCreateContext");
+    if (!QOpenCLCreateContext) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateCommandQueue = (PROTOTYPE_QOpenCLCreateCommandQueue) myLib.resolve("clCreateCommandQueue");
+    if (!QOpenCLCreateCommandQueue) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLSetKernelArg = (PROTOTYPE_QOpenCLSetKernelArg) myLib.resolve("clSetKernelArg");
+    if (!QOpenCLSetKernelArg) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueNDRangeKernel = (PROTOTYPE_QOpenCLEnqueueNDRangeKernel) myLib.resolve("clEnqueueNDRangeKernel");
+    if (!QOpenCLEnqueueNDRangeKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLFinish= (PROTOTYPE_QOpenCLFinish) myLib.resolve("clFinish");
+    if (!QOpenCLFinish) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueReleaseGLObjects = (PROTOTYPE_QOpenCLEnqueueReleaseGLObjects) myLib.resolve("clEnqueueReleaseGLObjects");
+    if (!QOpenCLEnqueueReleaseGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueAcquireGLObjects = (PROTOTYPE_QOpenCLEnqueueAcquireGLObjects) myLib.resolve("clEnqueueAcquireGLObjects");
+    if (!QOpenCLEnqueueAcquireGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateKernel = (PROTOTYPE_QOpenCLCreateKernel) myLib.resolve("clCreateKernel");
+    if (!QOpenCLCreateKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueReadBuffer = (PROTOTYPE_QOpenCLEnqueueReadBuffer) myLib.resolve("clEnqueueReadBuffer");
+    if (!QOpenCLEnqueueReadBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateBuffer = (PROTOTYPE_QOpenCLCreateBuffer) myLib.resolve("clCreateBuffer");
+    if (!QOpenCLCreateBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLReleaseMemObject = (PROTOTYPE_QOpenCLReleaseMemObject) myLib.resolve("clReleaseMemObject");
+    if (!QOpenCLReleaseMemObject) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateFromGLTexture2D = (PROTOTYPE_QOpenCLCreateFromGLTexture2D) myLib.resolve("clCreateFromGLTexture2D");
+    if (!QOpenCLCreateFromGLTexture2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateSampler = (PROTOTYPE_QOpenCLCreateSampler) myLib.resolve("clCreateSampler");
+    if (!QOpenCLCreateSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueWriteBuffer = (PROTOTYPE_QOpenCLEnqueueWriteBuffer) myLib.resolve("clEnqueueWriteBuffer");
+    if (!QOpenCLEnqueueWriteBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLReleaseKernel = (PROTOTYPE_QOpenCLReleaseKernel) myLib.resolve("clReleaseKernel");
+    if (!QOpenCLReleaseKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateImage2D = (PROTOTYPE_QOpenCLCreateImage2D) myLib.resolve("clCreateImage2D");
+    if (!QOpenCLCreateImage2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateImage3D = (PROTOTYPE_QOpenCLCreateImage3D) myLib.resolve("clCreateImage3D");
+    if (!QOpenCLCreateImage3D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueReadImage = (PROTOTYPE_QOpenCLEnqueueReadImage) myLib.resolve("clEnqueueReadImage");
+    if (!QOpenCLEnqueueReadImage) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLReleaseSampler = (PROTOTYPE_QOpenCLReleaseSampler) myLib.resolve("clReleaseSampler");
+    if (!QOpenCLReleaseSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 }
 
 void BaseWorker::setOpenCLContext(OpenCLContext * context)
@@ -137,92 +218,6 @@ void BaseWorker::setReducedPixels(Matrix<float> *reduced_pixels)
 
     this->reduced_pixels = reduced_pixels;
 }
-
-
-
-//ReadScriptWorker::ReadScriptWorker()
-//{
-
-//}
-
-//ReadScriptWorker::~ReadScriptWorker()
-//{
-
-//}
-
-//void ReadScriptWorker::setScriptEngine(QScriptEngine * engine)
-//{
-//    this->engine = engine;
-//}
-
-//void ReadScriptWorker::setInput(QPlainTextEdit * widget)
-//{
-//    this->inputWidget = widget;
-//}
-
-/*void ReadScriptWorker::process()
-{
-    QCoreApplication::processEvents();
-    
-    kill_flag = false;
-
-    // Set the corresponding tab
-    emit changedTabWidget(0);
-    emit changedRangeGenericProcess(1,file_paths->size());
-    emit changedFormatGenericProgress(QString("Reading file %v of %m (%p%)"));
-
-    // Evaluate the script input
-    engine->evaluate("var files = [];");
-    engine->evaluate(inputWidget->toPlainText());
-
-    // Handle exceptions
-    if (engine->hasUncaughtException() == true)
-    {
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Script error: Uncaught exception in line " + QString::number(engine->uncaughtExceptionLineNumber()) + "\n["+QString(this->metaObject()->className())+"] " + engine->uncaughtException().toString());
-    }
-    else
-    {
-        // Store evaluated file paths in a list
-        *file_paths = engine->globalObject().property("files").toVariant().toStringList();
-        int n = file_paths->removeDuplicates();
-        emit changedMessageString( "\n["+QString(this->metaObject()->className())+"] Script ran successfully and could register "+QString::number(file_paths->size())+" files...");
-
-        if (n > 0) emit changedMessageString( "\n["+QString(this->metaObject()->className())+"] Removed "+QString::number(n)+" duplicates...");
-
-        size_t n_files = file_paths->size();
-
-        for (int i = 0; i < file_paths->size(); i++)
-        {
-            if (kill_flag)
-            {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(i+1)+" of "+QString::number(file_paths->size()));
-                file_paths->clear();
-                break;
-            }
-            
-            // Update the progress bar
-            if (file_paths->size() > 0) emit changedGenericProgress(i + 1);
-            
-            if(i >= file_paths->size()) break;
-
-            QString fileName = file_paths->at(i);
-
-            QFileInfo curFile(fileName);
-
-            if (!curFile.exists())
-            {
-                emit changedMessageString( "\n["+QString(this->metaObject()->className())+"]  Warning: \"" + fileName + "\" - missing or no access!");
-                file_paths->removeAt(i);
-                i--;
-            }
-        }
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] "+ QString::number(file_paths->size())+" of "+QString::number(n_files)+" files successfully found ("+QString::number(n_files-file_paths->size())+"  missing or no access)");
-    }
-
-    emit maxFramesChanged(file_paths->size()-1);
-
-    emit finished();
-}*/
 
 
 /***
@@ -437,6 +432,8 @@ void ReadFileWorker::process()
 ProjectFileWorker::ProjectFileWorker()
 {
     this->isCLInitialized = false;
+    resolveOpenCLFunctions();
+
     offset_omega = 0;
     offset_kappa = 0;
     offset_phi = 0;
@@ -445,7 +442,11 @@ ProjectFileWorker::ProjectFileWorker()
 ProjectFileWorker::~ProjectFileWorker()
 {
 
-    if (isCLInitialized && project_kernel) clReleaseKernel(project_kernel);
+    if (isCLInitialized && project_kernel)
+    {
+        err = QOpenCLReleaseKernel(project_kernel);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 }
 
 void ProjectFileWorker::initializeCLKernel()
@@ -460,7 +461,7 @@ void ProjectFileWorker::initializeCLKernel()
 
 
     // Kernel handles
-    project_kernel = clCreateKernel(program, "FRAME_FILTER", &err);
+    project_kernel = QOpenCLCreateKernel(program, "FRAME_FILTER", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isCLInitialized = true;
@@ -593,7 +594,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     target_format.image_channel_data_type = CL_FLOAT;
 
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
-    cl_mem xyzi_target_cl = clCreateImage2D ( context_cl->context(),
+    cl_mem xyzi_target_cl = QOpenCLCreateImage2D ( context_cl->context(),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
         &target_format,
         file->getFastDimension(),
@@ -608,7 +609,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     source_format.image_channel_order = CL_INTENSITY;
     source_format.image_channel_data_type = CL_FLOAT;
 
-    cl_mem source_cl = clCreateImage2D ( context_cl->context(),
+    cl_mem source_cl = QOpenCLCreateImage2D ( context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &source_format,
         file->getFastDimension(),
@@ -619,7 +620,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
-    cl_sampler intensity_sampler = clCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+    cl_sampler intensity_sampler = QOpenCLCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
@@ -660,7 +661,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     
     sampleRotMat = PHI*KAPPA*OMEGA;
 
-    cl_mem sample_rotation_matrix_cl = clCreateBuffer(context_cl->context(),
+    cl_mem sample_rotation_matrix_cl = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
         sampleRotMat.toFloat().bytes(),
         sampleRotMat.toFloat().data(),
@@ -668,39 +669,41 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // The sampler for cl_tsf_tex
-    cl_sampler tsf_sampler = clCreateSampler(context_cl->context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    cl_sampler tsf_sampler = QOpenCLCreateSampler(context_cl->context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Set kernel arguments
-    err = clSetKernelArg(project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= clSetKernelArg(project_kernel, 1, sizeof(cl_mem), (void *) &source_cl);
-    err |= clSetKernelArg(project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
-    err |= clSetKernelArg(project_kernel, 3, sizeof(cl_sampler), &intensity_sampler);
-    err |= clSetKernelArg(project_kernel, 4, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    err = QOpenCLSetKernelArg(project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
+    err |= QOpenCLSetKernelArg(project_kernel, 1, sizeof(cl_mem), (void *) &source_cl);
+    err |= QOpenCLSetKernelArg(project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
+    err |= QOpenCLSetKernelArg(project_kernel, 3, sizeof(cl_sampler), &intensity_sampler);
+    err |= QOpenCLSetKernelArg(project_kernel, 4, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
     float threshold_one[2], threshold_two[2];
     threshold_one[0] = this->thld_noise_low;
     threshold_one[1] = this->thld_noise_high;
     threshold_two[0] = this->thld_project_low;
     threshold_two[1] = this->thld_project_high;
+
+    qDebug() << thld_noise_low << thld_noise_high << thld_project_low << thld_project_high;
     
-    err |= clSetKernelArg(project_kernel, 5, 2*sizeof(cl_float), threshold_one);
-    err |= clSetKernelArg(project_kernel, 6, 2*sizeof(cl_float), threshold_two);
-    err |= clSetKernelArg(project_kernel, 7, sizeof(cl_float), &file->background_flux);
-    err |= clSetKernelArg(project_kernel, 8, sizeof(cl_float), &file->backgroundExpTime);
-    err |= clSetKernelArg(project_kernel, 9, sizeof(cl_float), &file->pixel_size_x);
-    err |= clSetKernelArg(project_kernel, 10, sizeof(cl_float), &file->pixel_size_y);
-    err |= clSetKernelArg(project_kernel, 11, sizeof(cl_float), &file->exposure_time);
-    err |= clSetKernelArg(project_kernel, 12, sizeof(cl_float), &file->wavelength);
-    err |= clSetKernelArg(project_kernel, 13, sizeof(cl_float), &file->detector_distance);
-    err |= clSetKernelArg(project_kernel, 14, sizeof(cl_float), &file->beam_x);
-    err |= clSetKernelArg(project_kernel, 15, sizeof(cl_float), &file->beam_y);
-    err |= clSetKernelArg(project_kernel, 16, sizeof(cl_float), &file->flux);
-    err |= clSetKernelArg(project_kernel, 17, sizeof(cl_float), &file->start_angle);
-    err |= clSetKernelArg(project_kernel, 18, sizeof(cl_float), &file->angle_increment);
-    err |= clSetKernelArg(project_kernel, 19, sizeof(cl_float), &file->kappa);
-    err |= clSetKernelArg(project_kernel, 20, sizeof(cl_float), &file->phi);
-    err |= clSetKernelArg(project_kernel, 21, sizeof(cl_float), &file->omega);
-    err |= clSetKernelArg(project_kernel, 22, sizeof(cl_float), &file->max_counts);
+    err |= QOpenCLSetKernelArg(project_kernel, 5, 2*sizeof(cl_float), threshold_one);
+    err |= QOpenCLSetKernelArg(project_kernel, 6, 2*sizeof(cl_float), threshold_two);
+    err |= QOpenCLSetKernelArg(project_kernel, 7, sizeof(cl_float), &file->background_flux);
+    err |= QOpenCLSetKernelArg(project_kernel, 8, sizeof(cl_float), &file->backgroundExpTime);
+    err |= QOpenCLSetKernelArg(project_kernel, 9, sizeof(cl_float), &file->pixel_size_x);
+    err |= QOpenCLSetKernelArg(project_kernel, 10, sizeof(cl_float), &file->pixel_size_y);
+    err |= QOpenCLSetKernelArg(project_kernel, 11, sizeof(cl_float), &file->exposure_time);
+    err |= QOpenCLSetKernelArg(project_kernel, 12, sizeof(cl_float), &file->wavelength);
+    err |= QOpenCLSetKernelArg(project_kernel, 13, sizeof(cl_float), &file->detector_distance);
+    err |= QOpenCLSetKernelArg(project_kernel, 14, sizeof(cl_float), &file->beam_x);
+    err |= QOpenCLSetKernelArg(project_kernel, 15, sizeof(cl_float), &file->beam_y);
+    err |= QOpenCLSetKernelArg(project_kernel, 16, sizeof(cl_float), &file->flux);
+    err |= QOpenCLSetKernelArg(project_kernel, 17, sizeof(cl_float), &file->start_angle);
+    err |= QOpenCLSetKernelArg(project_kernel, 18, sizeof(cl_float), &file->angle_increment);
+    err |= QOpenCLSetKernelArg(project_kernel, 19, sizeof(cl_float), &file->kappa);
+    err |= QOpenCLSetKernelArg(project_kernel, 20, sizeof(cl_float), &file->phi);
+    err |= QOpenCLSetKernelArg(project_kernel, 21, sizeof(cl_float), &file->omega);
+    err |= QOpenCLSetKernelArg(project_kernel, 22, sizeof(cl_float), &file->max_counts);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Launch rendering kernel */
@@ -721,11 +724,11 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = clEnqueueNDRangeKernel(context_cl->queue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
-    clFinish(context_cl->queue());
+    QOpenCLFinish(context_cl->queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Read the data
@@ -740,27 +743,27 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     region[2] = 1;
 
     Matrix<float> projected_data_buf(1,file->getFastDimension()*file->getSlowDimension()*4);
-    err = clEnqueueReadImage ( context_cl->queue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
+    err = QOpenCLEnqueueReadImage ( context_cl->queue(), xyzi_target_cl, true, origin, region, 0, 0, projected_data_buf.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     if (xyzi_target_cl){
-        err = clReleaseMemObject(xyzi_target_cl);
+        err = QOpenCLReleaseMemObject(xyzi_target_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     if (source_cl){
-        err = clReleaseMemObject(source_cl);
+        err = QOpenCLReleaseMemObject(source_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     if (sample_rotation_matrix_cl){
-        err = clReleaseMemObject(sample_rotation_matrix_cl);
+        err = QOpenCLReleaseMemObject(sample_rotation_matrix_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     if (intensity_sampler){
-        err = clReleaseSampler(intensity_sampler);
+        err = QOpenCLReleaseSampler(intensity_sampler);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     if (tsf_sampler){
-        err = clReleaseSampler(tsf_sampler);
+        err = QOpenCLReleaseSampler(tsf_sampler);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 
@@ -806,6 +809,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
 MultiWorker::MultiWorker()
 {
     this->isCLInitialized = false;
+    resolveOpenCLFunctions();
     
     offset_omega = 0;
     offset_kappa = 0;
@@ -955,11 +959,16 @@ void MultiWorker::process()
 VoxelizeWorker::VoxelizeWorker()
 {
     this->isCLInitialized = false;
+    resolveOpenCLFunctions();
 }
 
 VoxelizeWorker::~VoxelizeWorker()
 {
-    if (isCLInitialized) clReleaseKernel(voxelize_kernel);
+    if (isCLInitialized)
+    {
+        err = QOpenCLReleaseKernel(voxelize_kernel);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    }
 }
 
 unsigned int VoxelizeWorker::getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child)
@@ -984,10 +993,10 @@ void VoxelizeWorker::initializeCLKernel()
 
 
     // Kernel handles
-    voxelize_kernel = clCreateKernel(program, "voxelize", &err);
+    voxelize_kernel = QOpenCLCreateKernel(program, "voxelize", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    fill_kernel = clCreateKernel(program, "fill", &err);
+    fill_kernel = QOpenCLCreateKernel(program, "fill", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isCLInitialized = true;
@@ -997,16 +1006,16 @@ void VoxelizeWorker::process()
 {
     QCoreApplication::processEvents();
 
+    kill_flag = false;
+
     if (reduced_pixels->size() <= 0)
     {
         QString str("\n["+QString(this->metaObject()->className())+"] Warning: No data available!");
         emit changedMessageString(str);
-        return;
+        kill_flag = true;
     }
 
-    kill_flag = false;
 
-    qDebug() << reduced_pixels->size();
 
     if (!kill_flag)
     {
@@ -1046,42 +1055,46 @@ void VoxelizeWorker::process()
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
-        cl_mem pool_cl = clCreateBuffer(context_cl->context(),
+        qDebug() << BRICK_POOL_HARD_MAX_BYTES;
+
+        cl_mem pool_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
             BRICK_POOL_HARD_MAX_BYTES,
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        cl_mem pool_cluster_cl = clCreateBuffer(context_cl->context(),
+        qDebug() << nodes_per_kernel_call << svo->getBrickOuterDimension() << nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float);
+
+        cl_mem pool_cluster_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-                                                nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
+            nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        cl_mem brick_extent_cl =  clCreateBuffer(context_cl->context(),
+        cl_mem brick_extent_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*6*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        cl_mem point_data_cl = clCreateBuffer(context_cl->context(),
+        cl_mem point_data_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             max_points_per_cluster*sizeof(cl_float4),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        cl_mem point_data_offset_cl = clCreateBuffer(context_cl->context(),
+        cl_mem point_data_offset_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(int),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                 
-        cl_mem point_data_count_cl = clCreateBuffer(context_cl->context(),
+        cl_mem point_data_count_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(int),
             NULL,
@@ -1089,7 +1102,7 @@ void VoxelizeWorker::process()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                            
         Matrix<float> sum_check(1, nodes_per_kernel_call, 0);
-        cl_mem sum_check_cl = clCreateBuffer(context_cl->context(),
+        cl_mem sum_check_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(float),
             sum_check.data(),
@@ -1097,7 +1110,7 @@ void VoxelizeWorker::process()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         Matrix<float> variance_check(1, nodes_per_kernel_call, 0);
-        cl_mem variance_check_cl = clCreateBuffer(context_cl->context(),
+        cl_mem variance_check_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*sizeof(float),
             variance_check.data(),
@@ -1206,7 +1219,7 @@ void VoxelizeWorker::process()
                         // Upload this point data to an OpenCL buffer
                         if (point_data_count[j] > 0)
                         {
-                            err = clEnqueueWriteBuffer(context_cl->queue(),
+                            err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                                 point_data_cl ,
                                 CL_FALSE,
                                 point_data_offset[j]*sizeof(cl_float4),
@@ -1221,7 +1234,7 @@ void VoxelizeWorker::process()
                     }
                     
                     // Upload this extent to an OpenCL buffer
-                    err = clEnqueueWriteBuffer(
+                    err = QOpenCLEnqueueWriteBuffer(
                         context_cl->queue(),
                         brick_extent_cl ,
                         CL_FALSE,
@@ -1232,7 +1245,7 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     // Upload other stuff before launcing the kernel
-                    err = clEnqueueWriteBuffer(context_cl->queue(),
+                    err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                         point_data_offset_cl ,
                         CL_FALSE,
                         0,
@@ -1241,7 +1254,7 @@ void VoxelizeWorker::process()
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
-                    err = clEnqueueWriteBuffer(context_cl->queue(),
+                    err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                         point_data_count_cl ,
                         CL_FALSE,
                         0,
@@ -1250,21 +1263,21 @@ void VoxelizeWorker::process()
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
-                    err = clSetKernelArg( voxelize_kernel, 0, sizeof(cl_mem), (void *) &point_data_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 1, sizeof(cl_mem), (void *) &point_data_offset_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 2, sizeof(cl_mem), (void *) &point_data_count_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 3, sizeof(cl_mem), (void *) &brick_extent_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 4, sizeof(cl_mem), (void *) &pool_cluster_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &sum_check_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 6, sizeof(cl_mem), (void *) &variance_check_cl);
-                    err |= clSetKernelArg( voxelize_kernel, 7, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
+                    err = QOpenCLSetKernelArg( voxelize_kernel, 0, sizeof(cl_mem), (void *) &point_data_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 1, sizeof(cl_mem), (void *) &point_data_offset_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 2, sizeof(cl_mem), (void *) &point_data_count_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 3, sizeof(cl_mem), (void *) &brick_extent_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 4, sizeof(cl_mem), (void *) &pool_cluster_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &sum_check_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 6, sizeof(cl_mem), (void *) &variance_check_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 7, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
                     int tmp = svo->getBrickOuterDimension();
-                    err |= clSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), &tmp);
-                    err |= clSetKernelArg( voxelize_kernel, 9, sizeof(cl_float), &search_radius);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), &tmp);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 9, sizeof(cl_float), &search_radius);
 
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
-                    err = clFinish(context_cl->queue());
+                    err = QOpenCLFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                     // Second pass: calculate the data for each node in the cluster (OpenCL)
@@ -1274,7 +1287,7 @@ void VoxelizeWorker::process()
                         size_t glb_offset[3] = {0,0,8*j};
                         size_t loc_ws[3] = {8,8,8};
                         size_t glb_ws[3] = {8,8,8};
-                        err = clEnqueueNDRangeKernel(
+                        err = QOpenCLEnqueueNDRangeKernel(
                                     context_cl->queue(),
                                     voxelize_kernel, 
                                     3, 
@@ -1286,11 +1299,11 @@ void VoxelizeWorker::process()
                         
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
-                    err = clFinish(context_cl->queue());
+                    err = QOpenCLFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     // Read relevant data
-                    err = clEnqueueReadBuffer ( context_cl->queue(),
+                    err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
                         sum_check_cl,
                         CL_TRUE,
                         0,
@@ -1299,7 +1312,7 @@ void VoxelizeWorker::process()
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-                    err = clEnqueueReadBuffer ( context_cl->queue(),
+                    err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
                         variance_check_cl,
                         CL_TRUE,
                         0,
@@ -1309,7 +1322,7 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     
-                    err = clFinish(context_cl->queue());
+                    err = QOpenCLFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     
@@ -1367,19 +1380,23 @@ void VoxelizeWorker::process()
 
                             
                             // Transfer brick data to pool
-                            err = clSetKernelArg( fill_kernel, 0, sizeof(cl_mem), (void *) &pool_cluster_cl);
-                            err |= clSetKernelArg( fill_kernel, 1, sizeof(cl_mem), (void *) &pool_cl);
-                            err |= clSetKernelArg( fill_kernel, 2, sizeof(cl_int4), pool_dimension.data());
+//                            pool_dimension.print(0,"pool_dim");
+
+//                            qDebug() << "non_empty_node_counter" << non_empty_node_counter;
+
+                            err = QOpenCLSetKernelArg( fill_kernel, 0, sizeof(cl_mem), (void *) &pool_cluster_cl);
+                            err |= QOpenCLSetKernelArg( fill_kernel, 1, sizeof(cl_mem), (void *) &pool_cl);
+                            err |= QOpenCLSetKernelArg( fill_kernel, 2, sizeof(cl_int4), pool_dimension.data());
                             int tmp = svo->getBrickOuterDimension();
-                            err |= clSetKernelArg( fill_kernel, 3, sizeof(cl_uint), &tmp);
-                            err |= clSetKernelArg( fill_kernel, 4, sizeof(cl_uint), &non_empty_node_counter);
+                            err |= QOpenCLSetKernelArg( fill_kernel, 3, sizeof(cl_uint), &tmp);
+                            err |= QOpenCLSetKernelArg( fill_kernel, 4, sizeof(cl_uint), &non_empty_node_counter);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                             // Launch kernel to write data to pool
                             size_t glb_offset[3] = {0,0,8*j};
                             size_t loc_ws[3] = {8,8,8};
                             size_t glb_ws[3] = {8,8,8};
-                            err = clEnqueueNDRangeKernel(
+                            err = QOpenCLEnqueueNDRangeKernel(
                                         context_cl->queue(),
                                         fill_kernel, 
                                         3, 
@@ -1392,7 +1409,7 @@ void VoxelizeWorker::process()
                             
                             non_empty_node_counter++;
                             
-                            err = clFinish(context_cl->queue());
+                            err = QOpenCLFinish(context_cl->queue());
                             if ( err != CL_SUCCESS)
                             {
                                 qFatal(cl_error_cstring(err));
@@ -1446,7 +1463,7 @@ void VoxelizeWorker::process()
                 svo->setMin(0.0f);
                 svo->setMax(max_brick_sum/(float)(n_points_brick));
                 
-                err = clEnqueueReadBuffer ( context_cl->queue(),
+                err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
                     pool_cl,
                     CL_TRUE,
                     0,
@@ -1465,13 +1482,14 @@ void VoxelizeWorker::process()
 
 
 
-        clReleaseMemObject(point_data_cl);
-        clReleaseMemObject(point_data_offset_cl);
-        clReleaseMemObject(point_data_count_cl);
-        clReleaseMemObject(brick_extent_cl);
-        clReleaseMemObject(pool_cluster_cl);
-        clReleaseMemObject(pool_cl);
-        clReleaseMemObject(sum_check_cl);
+        err = QOpenCLReleaseMemObject(point_data_cl);
+        err |= QOpenCLReleaseMemObject(point_data_offset_cl);
+        err |= QOpenCLReleaseMemObject(point_data_count_cl);
+        err |= QOpenCLReleaseMemObject(brick_extent_cl);
+        err |= QOpenCLReleaseMemObject(pool_cluster_cl);
+        err |= QOpenCLReleaseMemObject(pool_cl);
+        err |= QOpenCLReleaseMemObject(sum_check_cl);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     emit finished();
 }

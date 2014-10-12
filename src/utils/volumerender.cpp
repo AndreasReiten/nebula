@@ -52,11 +52,6 @@ void VolumeRenderWindow::renderNow()
         emit stopRendering();
         return;
     }
-//    if (isWorkerBusy)
-//    {
-//        if (isAnimating) renderLater();
-//        return;
-//    }
     else if (!isWorkerBusy)
     {
         if (!isInitialized) initializeWorker();
@@ -65,21 +60,12 @@ void VolumeRenderWindow::renderNow()
         {
             if (isThreaded)
             {
-//                qDebug() << "render";
                 isWorkerBusy = true;
                 worker_thread->start();
                 emit render();
             }
-//            else
-//            {
-//                context_gl->makeCurrent(this);
-//                gl_worker->process();
-//                emit render();
-//            }
-
         }
     }
-//    if (isAnimating) renderLater();
     renderLater();
 }
 
@@ -104,7 +90,6 @@ void VolumeRenderWindow::initializeWorker()
 
         // Transfering mouse events
         connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
-//        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent)));
         connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
         connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
         connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
@@ -112,16 +97,6 @@ void VolumeRenderWindow::initializeWorker()
         
         emit render();
     }
-//    else
-//    {
-//        connect(this, SIGNAL(mouseMoveEventCaught(QMouseEvent*)), gl_worker, SLOT(mouseMoveEvent(QMouseEvent*)), Qt::DirectConnection);
-//        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
-//        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
-
-//        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-//    }
-    
-    
     
     isInitialized = true;
 }
@@ -148,7 +123,6 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isSlicingActive(false),
       isIntegration2DActive(false),
       isIntegration3DActive(true),
-//      isRendering(true),
       isShadowActive(false),
       isLogarithmic2D(false),
       isOrthoGridActive(false),
@@ -164,6 +138,85 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       n_marker_indices(0),
       quality_percentage(20)
 {
+    // Resolve OpenCL functions
+    QLibrary myLib("OpenCL");
+
+    QOpenCLGetPlatformIDs = (PROTOTYPE_QOpenCLGetPlatformIDs) myLib.resolve("clGetPlatformIDs");
+    if (!QOpenCLGetPlatformIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetDeviceIDs = (PROTOTYPE_QOpenCLGetDeviceIDs) myLib.resolve("clGetDeviceIDs");
+    if (!QOpenCLGetDeviceIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetPlatformInfo = (PROTOTYPE_QOpenCLGetPlatformInfo) myLib.resolve("clGetPlatformInfo");
+    if (!QOpenCLGetPlatformInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetDeviceInfo = (PROTOTYPE_QOpenCLGetDeviceInfo) myLib.resolve("clGetDeviceInfo");
+    if (!QOpenCLGetDeviceInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateProgramWithSource = (PROTOTYPE_QOpenCLCreateProgramWithSource) myLib.resolve("clCreateProgramWithSource");
+    if (!QOpenCLCreateProgramWithSource) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLGetProgramBuildInfo = (PROTOTYPE_QOpenCLGetProgramBuildInfo) myLib.resolve("clGetProgramBuildInfo");
+    if (!QOpenCLGetProgramBuildInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateContext = (PROTOTYPE_QOpenCLCreateContext) myLib.resolve("clCreateContext");
+    if (!QOpenCLCreateContext) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateCommandQueue = (PROTOTYPE_QOpenCLCreateCommandQueue) myLib.resolve("clCreateCommandQueue");
+    if (!QOpenCLCreateCommandQueue) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLSetKernelArg = (PROTOTYPE_QOpenCLSetKernelArg) myLib.resolve("clSetKernelArg");
+    if (!QOpenCLSetKernelArg) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueNDRangeKernel = (PROTOTYPE_QOpenCLEnqueueNDRangeKernel) myLib.resolve("clEnqueueNDRangeKernel");
+    if (!QOpenCLEnqueueNDRangeKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLFinish= (PROTOTYPE_QOpenCLFinish) myLib.resolve("clFinish");
+    if (!QOpenCLFinish) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueReleaseGLObjects = (PROTOTYPE_QOpenCLEnqueueReleaseGLObjects) myLib.resolve("clEnqueueReleaseGLObjects");
+    if (!QOpenCLEnqueueReleaseGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueAcquireGLObjects = (PROTOTYPE_QOpenCLEnqueueAcquireGLObjects) myLib.resolve("clEnqueueAcquireGLObjects");
+    if (!QOpenCLEnqueueAcquireGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateKernel = (PROTOTYPE_QOpenCLCreateKernel) myLib.resolve("clCreateKernel");
+    if (!QOpenCLCreateKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueReadBuffer = (PROTOTYPE_QOpenCLEnqueueReadBuffer) myLib.resolve("clEnqueueReadBuffer");
+    if (!QOpenCLEnqueueReadBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateBuffer = (PROTOTYPE_QOpenCLCreateBuffer) myLib.resolve("clCreateBuffer");
+    if (!QOpenCLCreateBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLReleaseMemObject = (PROTOTYPE_QOpenCLReleaseMemObject) myLib.resolve("clReleaseMemObject");
+    if (!QOpenCLReleaseMemObject) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateFromGLTexture2D = (PROTOTYPE_QOpenCLCreateFromGLTexture2D) myLib.resolve("clCreateFromGLTexture2D");
+    if (!QOpenCLCreateFromGLTexture2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateSampler = (PROTOTYPE_QOpenCLCreateSampler) myLib.resolve("clCreateSampler");
+    if (!QOpenCLCreateSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueWriteBuffer = (PROTOTYPE_QOpenCLEnqueueWriteBuffer) myLib.resolve("clEnqueueWriteBuffer");
+    if (!QOpenCLEnqueueWriteBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLReleaseKernel = (PROTOTYPE_QOpenCLReleaseKernel) myLib.resolve("clReleaseKernel");
+    if (!QOpenCLReleaseKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateImage2D = (PROTOTYPE_QOpenCLCreateImage2D) myLib.resolve("clCreateImage2D");
+    if (!QOpenCLCreateImage2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLCreateImage3D = (PROTOTYPE_QOpenCLCreateImage3D) myLib.resolve("clCreateImage3D");
+    if (!QOpenCLCreateImage3D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLEnqueueReadImage = (PROTOTYPE_QOpenCLEnqueueReadImage) myLib.resolve("clEnqueueReadImage");
+    if (!QOpenCLEnqueueReadImage) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+    QOpenCLReleaseSampler = (PROTOTYPE_QOpenCLReleaseSampler) myLib.resolve("clReleaseSampler");
+    if (!QOpenCLReleaseSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+
+
     // Marker
     markers_selected_indices.set(100,1,0);
             
@@ -321,24 +374,24 @@ float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, si
     float sum;
 
     /* Pass arguments to kernel */
-    err = clSetKernelArg(cl_parallel_reduce, 0, sizeof(cl_mem), (void *) &cl_data);
-    err |= clSetKernelArg(cl_parallel_reduce, 1, local_size[0]*sizeof(cl_float), NULL);
-    err |= clSetKernelArg(cl_parallel_reduce, 2, sizeof(cl_uint), &read_size);
-    err |= clSetKernelArg(cl_parallel_reduce, 3, sizeof(cl_uint), &read_offset);
-    err |= clSetKernelArg(cl_parallel_reduce, 4, sizeof(cl_uint), &write_offset);
+    err = QOpenCLSetKernelArg(cl_parallel_reduce, 0, sizeof(cl_mem), (void *) &cl_data);
+    err |= QOpenCLSetKernelArg(cl_parallel_reduce, 1, local_size[0]*sizeof(cl_float), NULL);
+    err |= QOpenCLSetKernelArg(cl_parallel_reduce, 2, sizeof(cl_uint), &read_size);
+    err |= QOpenCLSetKernelArg(cl_parallel_reduce, 3, sizeof(cl_uint), &read_offset);
+    err |= QOpenCLSetKernelArg(cl_parallel_reduce, 4, sizeof(cl_uint), &write_offset);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Launch kernel repeatedly until the summing is done */
     while (read_size > 1)
     {
-        err = clEnqueueNDRangeKernel(context_cl->queue(), cl_parallel_reduce, 1, 0, global_size.data(), local_size.data(), 0, NULL, NULL);
+        err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_parallel_reduce, 1, 0, global_size.data(), local_size.data(), 0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        err = clFinish(context_cl->queue());
+        err = QOpenCLFinish(context_cl->queue());
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         /* Extract the sum */
-        err = clEnqueueReadBuffer ( context_cl->queue(),
+        err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
             cl_data,
             CL_TRUE,
             forth ? global_size[0]*sizeof(cl_float) : 0,
@@ -371,9 +424,9 @@ float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, si
             else global_size[0] = read_size;
         }
 
-        err = clSetKernelArg(cl_parallel_reduce, 2, sizeof(cl_uint), &read_size);
-        err |= clSetKernelArg(cl_parallel_reduce, 3, sizeof(cl_uint), &read_offset);
-        err |= clSetKernelArg(cl_parallel_reduce, 4, sizeof(cl_uint), &write_offset);
+        err = QOpenCLSetKernelArg(cl_parallel_reduce, 2, sizeof(cl_uint), &read_size);
+        err |= QOpenCLSetKernelArg(cl_parallel_reduce, 3, sizeof(cl_uint), &read_offset);
+        err |= QOpenCLSetKernelArg(cl_parallel_reduce, 4, sizeof(cl_uint), &write_offset);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     }
@@ -1349,75 +1402,75 @@ void VolumeRenderWorker::initResourcesCL()
 
 
     // Kernel handles
-    cl_svo_raytrace = clCreateKernel(program, "svoRayTrace", &err);
+    cl_svo_raytrace = QOpenCLCreateKernel(program, "svoRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_model_raytrace = clCreateKernel(program, "modelRayTrace", &err);
+    cl_model_raytrace = QOpenCLCreateKernel(program, "modelRayTrace", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_integrate_image = clCreateKernel(program, "integrateImage", &err);
+    cl_integrate_image = QOpenCLCreateKernel(program, "integrateImage", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_box_sampler = clCreateKernel(program, "boxSample", &err);
+    cl_box_sampler = QOpenCLCreateKernel(program, "boxSample", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_parallel_reduce = clCreateKernel(program, "psum", &err);
+    cl_parallel_reduce = QOpenCLCreateKernel(program, "psum", &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Buffers
-    cl_view_matrix_inverse = clCreateBuffer(context_cl->context(),
+    cl_view_matrix_inverse = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         view_matrix.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_scalebar_rotation = clCreateBuffer(context_cl->context(),
+    cl_scalebar_rotation = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         (rotation*scalebar_rotation).toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
-    cl_data_extent = clCreateBuffer(context_cl->context(),
+    cl_data_extent = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         data_extent.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
-    cl_data_view_extent = clCreateBuffer(context_cl->context(),
+    cl_data_view_extent = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         data_view_extent.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
-    cl_tsf_parameters_svo = clCreateBuffer(context_cl->context(),
+    cl_tsf_parameters_svo = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         tsf_parameters_svo.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_tsf_parameters_model = clCreateBuffer(context_cl->context(),
+    cl_tsf_parameters_model = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         tsf_parameters_model.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_misc_ints = clCreateBuffer(context_cl->context(),
+    cl_misc_ints = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         misc_ints.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_model_misc_floats = clCreateBuffer(context_cl->context(),
+    cl_model_misc_floats = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         model_misc_floats.toFloat().bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Enough for a 6000 x 6000 pixel texture
-    cl_glb_work = clCreateBuffer(context_cl->context(),
+    cl_glb_work = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
         (6000*6000)/(ray_loc_ws[0]*ray_loc_ws[1])*sizeof(cl_float),
         NULL, &err);
@@ -1437,7 +1490,7 @@ void VolumeRenderWorker::setViewMatrices()
     minicell_view_matrix = ctc_matrix * bbox_translation * minicell_scaling * rotation * U;
     ctc_matrix.setWindow(render_surface->width(),render_surface->height());
     
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_view_matrix_inverse,
         CL_TRUE,
         0,
@@ -1446,7 +1499,7 @@ void VolumeRenderWorker::setViewMatrices()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_scalebar_rotation,
         CL_TRUE,
         0,
@@ -1455,17 +1508,17 @@ void VolumeRenderWorker::setViewMatrices()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clSetKernelArg(cl_model_raytrace, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err |= clSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
+    err = QOpenCLSetKernelArg(cl_model_raytrace, 3, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err |= QOpenCLSetKernelArg(cl_model_raytrace, 9, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
 
-    err |= clSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
-    err |= clSetKernelArg(cl_svo_raytrace, 12, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 7, sizeof(cl_mem), (void *) &cl_view_matrix_inverse);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 12, sizeof(cl_mem), (void *) &cl_scalebar_rotation);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
 void VolumeRenderWorker::setDataExtent()
 {
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_data_extent,
         CL_TRUE,
         0,
@@ -1474,7 +1527,7 @@ void VolumeRenderWorker::setDataExtent()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_data_view_extent,
         CL_TRUE,
         0,
@@ -1483,19 +1536,19 @@ void VolumeRenderWorker::setDataExtent()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clSetKernelArg(cl_model_raytrace, 4, sizeof(cl_mem),  &cl_data_extent);
-    err |= clSetKernelArg(cl_model_raytrace, 5, sizeof(cl_mem), &cl_data_view_extent);
+    err = QOpenCLSetKernelArg(cl_model_raytrace, 4, sizeof(cl_mem),  &cl_data_extent);
+    err |= QOpenCLSetKernelArg(cl_model_raytrace, 5, sizeof(cl_mem), &cl_data_view_extent);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
-    err = clSetKernelArg(cl_svo_raytrace, 8, sizeof(cl_mem),  &cl_data_extent);
-    err |= clSetKernelArg(cl_svo_raytrace, 9, sizeof(cl_mem), &cl_data_view_extent);
+    err = QOpenCLSetKernelArg(cl_svo_raytrace, 8, sizeof(cl_mem),  &cl_data_extent);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 9, sizeof(cl_mem), &cl_data_view_extent);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
 void VolumeRenderWorker::setTsfParameters()
 {
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_tsf_parameters_model,
         CL_TRUE,
         0,
@@ -1504,7 +1557,7 @@ void VolumeRenderWorker::setTsfParameters()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_tsf_parameters_svo,
         CL_TRUE,
         0,
@@ -1513,8 +1566,8 @@ void VolumeRenderWorker::setTsfParameters()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clSetKernelArg(cl_model_raytrace, 6, sizeof(cl_mem), &cl_tsf_parameters_model);
-    err |= clSetKernelArg(cl_svo_raytrace, 10, sizeof(cl_mem), &cl_tsf_parameters_svo);
+    err = QOpenCLSetKernelArg(cl_model_raytrace, 6, sizeof(cl_mem), &cl_tsf_parameters_model);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 10, sizeof(cl_mem), &cl_tsf_parameters_svo);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -1530,7 +1583,7 @@ void VolumeRenderWorker::setMiscArrays()
     misc_ints[6] = isShadowActive;
     misc_ints[7] = isIntegration3DActive;
 
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_misc_ints,
         CL_TRUE,
         0,
@@ -1539,7 +1592,7 @@ void VolumeRenderWorker::setMiscArrays()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueWriteBuffer (context_cl->queue(),
+    err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_model_misc_floats,
         CL_TRUE,
         0,
@@ -1548,9 +1601,9 @@ void VolumeRenderWorker::setMiscArrays()
         0,0,0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clSetKernelArg(cl_model_raytrace, 7, sizeof(cl_mem), &cl_model_misc_floats);
-    err |= clSetKernelArg(cl_model_raytrace, 8, sizeof(cl_mem), &cl_misc_ints);
-    err |= clSetKernelArg(cl_svo_raytrace, 11, sizeof(cl_mem), &cl_misc_ints);
+    err = QOpenCLSetKernelArg(cl_model_raytrace, 7, sizeof(cl_mem), &cl_model_misc_floats);
+    err |= QOpenCLSetKernelArg(cl_model_raytrace, 8, sizeof(cl_mem), &cl_misc_ints);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 11, sizeof(cl_mem), &cl_misc_ints);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -1591,7 +1644,7 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         else ray_glb_ws[1] = ray_tex_dim[1];
 
         if (isRayTexInitialized){
-            err = clReleaseMemObject(ray_tex_cl);
+            err = QOpenCLReleaseMemObject(ray_tex_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
 
@@ -1614,16 +1667,16 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Convert to CL texture
-        ray_tex_cl = clCreateFromGLTexture2D(context_cl->context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex_gl, &err);
+        ray_tex_cl = QOpenCLCreateFromGLTexture2D(context_cl->context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex_gl, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         isRayTexInitialized = true;
 
         // Integration texture
         if (isIntegrationTexInitialized){
-            err = clReleaseMemObject(integration_tex_alpha_cl);
+            err = QOpenCLReleaseMemObject(integration_tex_alpha_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-            err = clReleaseMemObject(integration_tex_beta_cl);
+            err = QOpenCLReleaseMemObject(integration_tex_beta_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
 
@@ -1631,7 +1684,7 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         integration_format.image_channel_order = CL_INTENSITY;
         integration_format.image_channel_data_type = CL_FLOAT;
 
-        integration_tex_alpha_cl = clCreateImage2D ( context_cl->context(),
+        integration_tex_alpha_cl = QOpenCLCreateImage2D ( context_cl->context(),
             CL_MEM_READ_WRITE  | CL_MEM_ALLOC_HOST_PTR,
             &integration_format,
             ray_tex_dim[0],
@@ -1641,7 +1694,7 @@ void VolumeRenderWorker::setRayTexture(int percentage)
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        integration_tex_beta_cl = clCreateImage2D ( context_cl->context(),
+        integration_tex_beta_cl = QOpenCLCreateImage2D ( context_cl->context(),
             CL_MEM_READ_WRITE  | CL_MEM_ALLOC_HOST_PTR,
             &integration_format,
             ray_tex_dim[0],
@@ -1652,21 +1705,21 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         // Sampler for integration texture
-        integration_sampler_cl = clCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+        integration_sampler_cl = QOpenCLCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         isIntegrationTexInitialized = true;
 
         // Pass textures to CL kernels
-        if (isInitialized) err = clSetKernelArg(cl_integrate_image, 0, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
-        if (isInitialized) err |= clSetKernelArg(cl_integrate_image, 1, sizeof(cl_mem), (void *) &integration_tex_beta_cl);
-        if (isInitialized) err |= clSetKernelArg(cl_integrate_image, 3, sizeof(cl_sampler), &integration_sampler_cl);
+        if (isInitialized) err = QOpenCLSetKernelArg(cl_integrate_image, 0, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        if (isInitialized) err |= QOpenCLSetKernelArg(cl_integrate_image, 1, sizeof(cl_mem), (void *) &integration_tex_beta_cl);
+        if (isInitialized) err |= QOpenCLSetKernelArg(cl_integrate_image, 3, sizeof(cl_sampler), &integration_sampler_cl);
 
-        if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-        if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        if (isInitialized) err |= QOpenCLSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        if (isInitialized) err |= QOpenCLSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
 
-        if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-        if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 }
@@ -1676,11 +1729,11 @@ void VolumeRenderWorker::setTsfTexture()
 //    if (1) qDebug() << "setting tsf" << tsf_color_scheme << tsf_alpha_scheme;
     
     if (isTsfTexInitialized){
-        err = clReleaseSampler(tsf_tex_sampler);
+        err = QOpenCLReleaseSampler(tsf_tex_sampler);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 //    }
 //    if (isTsfTexInitialized){
-        err = clReleaseMemObject(tsf_tex_cl);
+        err = QOpenCLReleaseMemObject(tsf_tex_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 
@@ -1734,7 +1787,7 @@ void VolumeRenderWorker::setTsfTexture()
     tsf_format.image_channel_order = CL_RGBA;
     tsf_format.image_channel_data_type = CL_FLOAT;
 
-    tsf_tex_cl = clCreateImage2D ( context_cl->context(),
+    tsf_tex_cl = QOpenCLCreateImage2D ( context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &tsf_format,
         tsf.getSplined()->n(),
@@ -1745,16 +1798,16 @@ void VolumeRenderWorker::setTsfTexture()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // The sampler for tsf_tex_cl
-    tsf_tex_sampler = clCreateSampler(context_cl->context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    tsf_tex_sampler = QOpenCLCreateSampler(context_cl->context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isTsfTexInitialized = true;
 
     // Set corresponding kernel arguments
-    if (isInitialized) err = clSetKernelArg(cl_svo_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
-    if (isInitialized) err |= clSetKernelArg(cl_svo_raytrace, 6, sizeof(cl_sampler), &tsf_tex_sampler);
-    if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
-    if (isInitialized) err |= clSetKernelArg(cl_model_raytrace, 2, sizeof(cl_sampler), &tsf_tex_sampler);
+    if (isInitialized) err = QOpenCLSetKernelArg(cl_svo_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
+    if (isInitialized) err |= QOpenCLSetKernelArg(cl_svo_raytrace, 6, sizeof(cl_sampler), &tsf_tex_sampler);
+    if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
+    if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 2, sizeof(cl_sampler), &tsf_tex_sampler);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -1768,7 +1821,7 @@ float VolumeRenderWorker::sumViewBox()
     int pr_padded_size = pr_global_size + pr_global_size/pr_local_size;
 
     /* Prepare array */
-    cl_mem  cl_data_array = clCreateBuffer(context_cl->context(),
+    cl_mem  cl_data_array = QOpenCLCreateBuffer(context_cl->context(),
                                  CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                                  pr_padded_size*sizeof(cl_float),
                                  NULL,
@@ -1782,27 +1835,27 @@ float VolumeRenderWorker::sumViewBox()
     unsigned int n_tree_levels = misc_ints[0];
     unsigned int brick_dim = misc_ints[1];
 
-    err = clSetKernelArg(cl_box_sampler, 0, sizeof(cl_mem), (void *) &cl_svo_pool);
-    err |= clSetKernelArg(cl_box_sampler, 1, sizeof(cl_mem), (void *) &cl_svo_index);
-    err |= clSetKernelArg(cl_box_sampler, 2, sizeof(cl_mem), (void *) &cl_svo_brick);
-    err |= clSetKernelArg(cl_box_sampler, 3, sizeof(cl_mem), (void *) &cl_data_extent);
-    err |= clSetKernelArg(cl_box_sampler, 4, sizeof(cl_mem), (void *) &cl_data_view_extent);
-    err |= clSetKernelArg(cl_box_sampler, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
-    err |= clSetKernelArg(cl_box_sampler, 6, sizeof(cl_uint), &n_tree_levels);
-    err |= clSetKernelArg(cl_box_sampler, 7, sizeof(cl_uint), &brick_dim);
-    err |= clSetKernelArg(cl_box_sampler, 8, sizeof(cl_mem), (void *) &cl_data_array);
+    err = QOpenCLSetKernelArg(cl_box_sampler, 0, sizeof(cl_mem), (void *) &cl_svo_pool);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 1, sizeof(cl_mem), (void *) &cl_svo_index);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 2, sizeof(cl_mem), (void *) &cl_svo_brick);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 3, sizeof(cl_mem), (void *) &cl_data_extent);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 4, sizeof(cl_mem), (void *) &cl_data_view_extent);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 6, sizeof(cl_uint), &n_tree_levels);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 7, sizeof(cl_uint), &brick_dim);
+    err |= QOpenCLSetKernelArg(cl_box_sampler, 8, sizeof(cl_mem), (void *) &cl_data_array);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clEnqueueNDRangeKernel(context_cl->queue(), cl_box_sampler, 3, 0, box_global_size.data(), box_local_size.data(), 0, NULL, NULL);
+    err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_box_sampler, 3, 0, box_global_size.data(), box_local_size.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clFinish(context_cl->queue());
+    err = QOpenCLFinish(context_cl->queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     float sum = sumGpuArray(cl_data_array, pr_read_size, pr_local_size);
 
     /* Clean up */
-    err = clReleaseMemObject(cl_data_array);
+    err = QOpenCLReleaseMemObject(cl_data_array);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     return sum;
@@ -1899,8 +1952,8 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     int block_size = 128;
 
     // Set kernel arguments
-    err = clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
-    err |= clSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
+    err = QOpenCLSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
+    err |= QOpenCLSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Launch kernel
@@ -1924,11 +1977,11 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     {
         global_offset[1] = row;
 
-        err = clEnqueueNDRangeKernel(context_cl->queue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
+        err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 
-    err = clFinish(context_cl->queue());
+    err = QOpenCLFinish(context_cl->queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
@@ -1946,7 +1999,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     region[2] = 1;
 
 
-    err = clEnqueueReadImage ( 	context_cl->queue(),
+    err = QOpenCLEnqueueReadImage ( 	context_cl->queue(),
         integration_tex_beta_cl,
         CL_TRUE,
         origin.data(),
@@ -2034,8 +2087,8 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     block_size = 128;
 
     // Set kernel arguments
-    err = clSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
-    err |= clSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
+    err = QOpenCLSetKernelArg(cl_integrate_image, 2, block_size* sizeof(cl_float), NULL);
+    err |= QOpenCLSetKernelArg(cl_integrate_image, 4, sizeof(cl_int), &direction);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Launch kernel
@@ -2055,11 +2108,11 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     {
         global_offset[0] = column;
 
-        err = clEnqueueNDRangeKernel(context_cl->queue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
+        err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_integrate_image, 2, global_offset.data(), work_size.data(), local_size.data(), 0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 
-    err = clFinish(context_cl->queue());
+    err = QOpenCLFinish(context_cl->queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
@@ -2074,7 +2127,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
     region[1] = global_size[1]/block_size;
     region[2] = 1;
 
-    err = clEnqueueReadImage ( 	context_cl->queue(),
+    err = QOpenCLEnqueueReadImage ( 	context_cl->queue(),
         integration_tex_beta_cl,
         CL_TRUE,
         origin.data(),
@@ -2748,7 +2801,6 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
         GLuint indices[] = {0,1,3,1,2,3};
         
-//        gl_tsf_rect.print(2,"gl_tsf_rect");
         glUniformMatrix4fv(shared_window->std_2d_tex_transform, 1, GL_FALSE, identity.data());
         
         glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
@@ -2767,9 +2819,6 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         
         
         // Draw the ticks
-//        RotationMatrix<double> identity;
-//        identity.setIdentity(4);
-        
         shared_window->std_2d_col_program->bind();
         glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
     
@@ -2896,7 +2945,7 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel)
 
     // Aquire shared CL/GL objects
     glFinish();
-    err = clEnqueueAcquireGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
+    err = QOpenCLEnqueueAcquireGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Launch rendering kernel
@@ -2918,19 +2967,19 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel)
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = clEnqueueNDRangeKernel(context_cl->queue(), kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
 
-    err = clFinish(context_cl->queue());
+    err = QOpenCLFinish(context_cl->queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Release shared CL/GL objects
-    err = clEnqueueReleaseGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
+    err = QOpenCLEnqueueReleaseGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    err = clFinish(context_cl->queue());
+    err = QOpenCLFinish(context_cl->queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -2957,32 +3006,28 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
     pool_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
     pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())) + 1)*svo->getBrickOuterDimension();
     
-//    qDebug() << n_bricks << pool_dim[0] << pool_dim[1] << pool_dim[2] << pool_dim[0]*pool_dim[1]*pool_dim[2];
-    
-//    unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
-    
     // Load the contents into a CL texture
     if (isSvoInitialized){
-        err = clReleaseMemObject(cl_svo_brick);
+        err = QOpenCLReleaseMemObject(cl_svo_brick);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     if (isSvoInitialized){
-        err = clReleaseMemObject(cl_svo_index);
+        err = QOpenCLReleaseMemObject(cl_svo_index);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     if (isSvoInitialized){
-        err = clReleaseMemObject(cl_svo_pool);
+        err = QOpenCLReleaseMemObject(cl_svo_pool);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 
-    cl_svo_index = clCreateBuffer(context_cl->context(),
+    cl_svo_index = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         svo->index.size()*sizeof(cl_uint),
         svo->index.data(),
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_svo_brick = clCreateBuffer(context_cl->context(),
+    cl_svo_brick = QOpenCLCreateBuffer(context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         svo->brick.size()*sizeof(cl_uint),
         svo->brick.data(),
@@ -2995,15 +3040,13 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
 
     Matrix<float> tmp(1, pool_dim[0]*pool_dim[1]*pool_dim[2], 0);
     
-//    qDebug() << tmp.size() << svo->pool.size();
-    
     // This will be obsolete when the voxels are stored in a better way
     for (size_t i = 0; i < svo->pool.size(); i++)
     {
         tmp[i] = svo->pool[i];    
     }
     
-    cl_svo_pool = clCreateImage3D ( context_cl->context(),
+    cl_svo_pool = QOpenCLCreateImage3D ( context_cl->context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
         &cl_pool_format,
         pool_dim[0],
@@ -3015,14 +3058,14 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    cl_svo_pool_sampler = clCreateSampler(context_cl->context(), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
+    cl_svo_pool_sampler = QOpenCLCreateSampler(context_cl->context(), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Send stuff to the kernel
-    err = clSetKernelArg(cl_svo_raytrace, 2, sizeof(cl_mem), &cl_svo_pool);
-    err |= clSetKernelArg(cl_svo_raytrace, 3, sizeof(cl_mem), &cl_svo_index);
-    err |= clSetKernelArg(cl_svo_raytrace, 4, sizeof(cl_mem), &cl_svo_brick);
-    err |= clSetKernelArg(cl_svo_raytrace, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
+    err = QOpenCLSetKernelArg(cl_svo_raytrace, 2, sizeof(cl_mem), &cl_svo_pool);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 3, sizeof(cl_mem), &cl_svo_index);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 4, sizeof(cl_mem), &cl_svo_brick);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     isSvoInitialized = true;
@@ -3283,22 +3326,19 @@ void VolumeRenderWorker::setShadowVector()
 
     shadow_kernel_arg = rotation.inverse4x4().toFloat()*shadow_kernel_arg;
 
-    clSetKernelArg(cl_model_raytrace, 11, sizeof(cl_float4),  shadow_kernel_arg.data());
+    err = QOpenCLSetKernelArg(cl_model_raytrace, 11, sizeof(cl_float4),  shadow_kernel_arg.data());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
 void VolumeRenderWorker::setIntegration2D()
 {
     isIntegration2DActive = !isIntegration2DActive;
 
-//    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
-
     if (isInitialized) setMiscArrays();
 }
 void VolumeRenderWorker::setIntegration3D()
 {
     isIntegration3DActive = !isIntegration3DActive;
-
-//    if (!isOrthonormal) emit changedMessageString("\nWarning: Perspective projection is currently active.");
 
     if (isInitialized) setMiscArrays();
 }

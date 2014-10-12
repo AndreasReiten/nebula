@@ -1,16 +1,13 @@
 # QMAKE PROJECT FILE
-
 win32 {
-    LIBS += -lOpenCL
-    INCLUDEPATH = inc_win
+    INCLUDEPATH = lib/qxlib/qxopencl/khronos/
     QMAKE_CXXFLAGS += -c++11 # C++11
 }
 
 unix {
-    LIBS += -lOpenCL
+    INCLUDEPATH = lib/qxlib/qxopencl/khronos/
     QMAKE_CXXFLAGS += -std=c++0x # C++11
 }
-
 
 QT += widgets
 
