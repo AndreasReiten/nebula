@@ -897,7 +897,7 @@ void MultiWorker::process()
                 }
                 else
                 {
-                    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not process data \""+file.getPath()+"\"");
+                    emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not process \""+file.getPath()+"\".\n Too much data was kept during reconstruction. Try increasing the lower data thresholds (noise, PCT).");
                     kill_flag = true;
                 }
             }

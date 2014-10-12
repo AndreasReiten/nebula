@@ -1,7 +1,6 @@
 # QMAKE PROJECT FILE
 win32 {
     INCLUDEPATH = lib/qxlib/qxopencl/khronos/
-    QMAKE_CXXFLAGS += -c++11 # C++11
 }
 
 unix {
