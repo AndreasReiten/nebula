@@ -19,7 +19,6 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QToolButton>
-//#include <QtScript>
 #include <QVBoxLayout>
 #include <QPlainTextEdit>
 #include <QStatusBar>
@@ -34,7 +33,6 @@ MainWindow::MainWindow() :
     batch_size(10)
 {
     // Set some default values
-    current_svo = 0;
     display_file = 0;
     reduced_pixels.set(0,0,0);
     
@@ -356,13 +354,13 @@ void MainWindow::voxelizeButtonFinish()
 
 void MainWindow::setImage(ImageInfo image)
 {
-    if (image_folder.size() > 0)
+    if (!series_set.isEmpty())
     {
-        *image_folder.current() = image;
+        *series_set.current()->current() = image;
 
-        pathLineEdit->setText(image_folder.current()->path());
+        pathLineEdit->setText(series_set.current()->current()->path());
 
-        setHeader(image_folder.current()->path());
+        setHeader(series_set.current()->current()->path());
 
         hasPendingChanges = true;
     }
@@ -411,11 +409,14 @@ void MainWindow::setHeader(QString path)
 
 void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 {
-    image_folder.clear();
-    
+    series_set.clear();
+
     QMap<QString, QStringList>::const_iterator i = folder_map.constBegin();
     while (i != folder_map.constEnd())
     {
+        ImageSeries folder;
+        folder.setPath(i.key());
+
         QStringList image_strings(i.value());
         QStringList::const_iterator j = image_strings.constBegin();
 
@@ -425,17 +426,20 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 
             image.setPath(*j);
 
-            image_folder << image;
+            folder << image;
             ++j;
         }
+
+        series_set << folder;
+
         ++i;
     }
     
-    imageSpinBox->setRange(0,image_folder.size()-1);
+    imageSpinBox->setRange(0,series_set.current()->size()-1);
     
-    if (image_folder.size() > 0) 
+    if (!series_set.isEmpty())
     {
-        emit imageChanged(*image_folder.current());
+        emit imageChanged(*series_set.current()->current());
         emit centerImage();
     }
 }
@@ -443,26 +447,26 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 
 void MainWindow::removeImage()
 {
-    if (image_folder.size() > 0)
+    if (!series_set.isEmpty())
     {
-        emit pathRemoved(image_folder.current()->path());
+        emit pathRemoved(series_set.current()->current()->path());
         
-        image_folder.removeCurrent();
+        series_set.current()->removeCurrent();
 
-        if (image_folder.size() == 0) image_folder.removeCurrent();
+//        if (image_folder.size() == 0) image_folder.removeCurrent();
         
-        if (image_folder.size() > 0)
+        if (!series_set.isEmpty())
         {
-            emit imageChanged(*image_folder.next());
+            emit imageChanged(*series_set.current()->next());
         }
     }
 }
 
 void MainWindow::setFrame(int value)
 {
-    if (image_folder.size() > 0)
+    if (!series_set.isEmpty())
     {
-        emit imageChanged(*image_folder.at(value));
+        emit imageChanged(*series_set.current()->at(value));
     }
 }
 
@@ -472,7 +476,7 @@ void MainWindow::nextFrame()
 {
     imageSpinBox->setValue(imageSpinBox->value()+1);
 }
-void MainWindow::previousFrame()
+void MainWindow::prevFrame()
 {
     imageSpinBox->setValue(imageSpinBox->value()-1);
 }
@@ -483,6 +487,35 @@ void MainWindow::batchForward()
 void MainWindow::batchBackward()
 {
     imageSpinBox->setValue(imageSpinBox->value()-batch_size);
+}
+
+
+void MainWindow::nextSeries()
+{
+    if (!series_set.isEmpty())
+    {
+        series_set.current()->rememberCurrent();
+        series_set.next();
+        series_set.current()->restoreMemory();
+
+        imageSpinBox->setValue(series_set.current()->i());
+
+        emit imageChanged(*series_set.current()->current());
+    }
+}
+
+void MainWindow::prevSeries()
+{
+    if (!series_set.isEmpty())
+    {
+        series_set.current()->rememberCurrent();
+        series_set.previous();
+        series_set.current()->restoreMemory();
+
+        imageSpinBox->setValue(series_set.current()->i());
+
+        emit imageChanged(*series_set.current()->current());
+    }
 }
 
 void MainWindow::runProjectFileThread()
@@ -524,7 +557,7 @@ void MainWindow::runAllInOneThread()
 
 void MainWindow::setFilesFromSelectionModel()
 {
-    file_paths = image_folder.paths();
+    file_paths = series_set.paths();
 }
 
 void MainWindow::setStartConditions()
@@ -615,7 +648,7 @@ void MainWindow::saveProject()
         {
             QDataStream out(&file);
             
-            out << image_folder;
+            out << series_set;
             out << imagePreviewTsfTextureComboBox->currentText();
             out << imagePreviewTsfAlphaComboBox->currentText();
             out << (double) imagePreviewDataMinDoubleSpinBox->value();
@@ -650,9 +683,9 @@ void MainWindow::loadProject()
             
             QDataStream in(&file);
             
-            in >> image_folder >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> lorentzCorrection >> autoBackgroundCorrection;
+            in >> series_set >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> lorentzCorrection >> autoBackgroundCorrection;
             
-            imageSpinBox->setRange(0,image_folder.size()-1);
+            imageSpinBox->setRange(0,series_set.current()->size()-1);
             
             
             imagePreviewTsfTextureComboBox->setCurrentText(tsfTexture);
@@ -665,9 +698,9 @@ void MainWindow::loadProject()
             
             file.close();
 
-            if (image_folder.size() > 0)
+            if (!series_set.isEmpty())
             {
-                emit imageChanged(*image_folder.current());
+                emit imageChanged(*series_set.current()->current());
                 emit centerImage();
             }
         }
@@ -678,9 +711,9 @@ void MainWindow::loadProject()
 
 void MainWindow::setSelection(Selection rect)
 {
-    if (image_folder.size() > 0)
+    if (!series_set.isEmpty())
     {
-        image_folder.current()->setSelection(rect);
+        series_set.current()->current()->setSelection(rect);
         
         hasPendingChanges = true;
     }
@@ -1309,25 +1342,35 @@ void MainWindow::initializeInteractives()
         pathLineEdit->setReadOnly(true);
         connect(this, SIGNAL(pathChanged(QString)), pathLineEdit, SLOT(setText(QString)));
         
-        imageFastBackButton = new QPushButton;
-        imageFastBackButton->setIcon(QIcon(":art/fast_back.png"));
-        imageFastBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        connect(imageFastBackButton, SIGNAL(clicked()), this, SLOT(batchBackward()));
+        imageBatchPrevButton = new QPushButton;
+        imageBatchPrevButton->setIcon(QIcon(":art/fast_back.png"));
+        imageBatchPrevButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(imageBatchPrevButton, SIGNAL(clicked()), this, SLOT(batchBackward()));
 
-        imageSlowBackButton = new QPushButton;
-        imageSlowBackButton->setIcon(QIcon(":art/back.png"));
-        imageSlowBackButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        connect(imageSlowBackButton, SIGNAL(clicked()), this, SLOT(previousFrame()));
+        imagePrevButton = new QPushButton;
+        imagePrevButton->setIcon(QIcon(":art/back.png"));
+        imagePrevButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(imagePrevButton, SIGNAL(clicked()), this, SLOT(prevFrame()));
 
-        imageFastForwardButton = new QPushButton;
-        imageFastForwardButton->setIcon(QIcon(":art/fast_forward.png"));
-        imageFastForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        connect(imageFastForwardButton, SIGNAL(clicked()), this, SLOT(batchForward()));
+        imageBatchNextButton = new QPushButton;
+        imageBatchNextButton->setIcon(QIcon(":art/fast_forward.png"));
+        imageBatchNextButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(imageBatchNextButton, SIGNAL(clicked()), this, SLOT(batchForward()));
 
-        imageSlowForwardButton = new QPushButton;
-        imageSlowForwardButton->setIcon(QIcon(":art/forward.png"));
-        imageSlowForwardButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-        connect(imageSlowForwardButton, SIGNAL(clicked()), this, SLOT(nextFrame()));
+        imageNextButton = new QPushButton;
+        imageNextButton->setIcon(QIcon(":art/forward.png"));
+        imageNextButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(imageNextButton, SIGNAL(clicked()), this, SLOT(nextFrame()));
+
+        nextSeriesButton = new QPushButton;
+        nextSeriesButton->setIcon(QIcon(":art/forward.png"));
+        nextSeriesButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(nextSeriesButton, SIGNAL(clicked()), this, SLOT(nextSeries()));
+
+        prevSeriesButton = new QPushButton;
+        prevSeriesButton->setIcon(QIcon(":art/back.png"));
+        prevSeriesButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        connect(prevSeriesButton, SIGNAL(clicked()), this, SLOT(prevSeries()));
 
         imageSpinBox = new QSpinBox;
         imageSpinBox->setRange(0,1);
@@ -1421,12 +1464,14 @@ void MainWindow::initializeInteractives()
         imageLayout->setRowStretch(1,1);
         imageLayout->addWidget(toolChainWidget,0,0,1,8);
         imageLayout->addWidget(imageDisplayWidget,1,0,1,8);
-        imageLayout->addWidget(imageFastBackButton,2,0,1,2);
-        imageLayout->addWidget(imageSlowBackButton,2,2,1,1);
+        imageLayout->addWidget(imageBatchPrevButton,2,0,1,2);
+        imageLayout->addWidget(imagePrevButton,2,2,1,1);
         imageLayout->addWidget(imageSpinBox,2,3,1,2);
-        imageLayout->addWidget(imageSlowForwardButton,2,5,1,1);
-        imageLayout->addWidget(imageFastForwardButton,2,6,1,2);
-        imageLayout->addWidget(removeCurrentPushButton,3,0,1,8);
+        imageLayout->addWidget(imageNextButton,2,5,1,1);
+        imageLayout->addWidget(imageBatchNextButton,2,6,1,2);
+        imageLayout->addWidget(prevSeriesButton,3,0,1,2);
+        imageLayout->addWidget(nextSeriesButton,3,6,1,2);
+        imageLayout->addWidget(removeCurrentPushButton,3,2,1,4);
         
         imageCentralWidget = new QWidget;
         imageCentralWidget->setLayout(imageLayout);

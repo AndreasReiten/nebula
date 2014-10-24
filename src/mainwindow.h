@@ -29,17 +29,11 @@ public:
 
 
 private slots:
-//    void setHeader(QString path);
     void displayPopup(QString title, QString text);
-//    void omitFile();
-
-//    void test();
-
 
     // Toolchain button stuff
     void anyButtonStart();
 
-//    void readScriptButtonFinish();
     void setFileButtonFinish();
     void allInOneButtonFinish();
     void readFileButtonFinish();
@@ -47,19 +41,12 @@ private slots:
     void voxelizeButtonFinish();
 
     void takeScreenshot();
-//    void saveScriptAs();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
 
-//    void newScriptFile();
-//    void openScript();
-//    void saveScript();
     void openSvo();
     void saveSvo();
     void saveLoadedSvo();
-
-
-//    void documentWasModified();
 
     void about();
     void aboutOpenCL();
@@ -79,11 +66,11 @@ private slots:
     void removeImage();
     void setFrame(int value);
     void nextFrame();
-    void previousFrame();
+    void prevFrame();
     void batchForward();
     void batchBackward();
-//    void nextFolder();
-//    void previousFolder();
+    void nextSeries();
+    void prevSeries();
     
     void setHeader(QString path);
     
@@ -219,11 +206,15 @@ private:
     
     QWidget * imageDisplayWidget;
     
-    QPushButton * imageFastBackButton;
-    QPushButton * imageSlowBackButton;
+    QPushButton * imageBatchPrevButton;
+    QPushButton * imagePrevButton;
     
-    QPushButton * imageFastForwardButton;
-    QPushButton * imageSlowForwardButton;
+    QPushButton * imageBatchNextButton;
+    QPushButton * imageNextButton;
+
+    QPushButton * nextSeriesButton;
+    QPushButton * prevSeriesButton;
+
     QSpinBox * imageSpinBox;
 
     // Actions
@@ -235,18 +226,11 @@ private:
     QAction *scalebarAct;
     QAction *saveSVOAct;
     QAction *saveLoadedSvoAct;
-//    QAction *log3DAct;
     QAction *dataStructureAct;
     QAction *backgroundAct;
     QAction *projectionAct;
     QAction *screenshotAct;
     QAction *openSvoAct;
-//    QAction *newAct;
-//    QAction *openAct;
-//    QAction *saveAct;
-//    QAction *scriptingAct;
-//    QAction *runScriptAct;
-//    QAction *saveAsAct;
     QAction *exitAct;
     QAction *aboutAct;
     QAction *aboutQtAct;
@@ -269,8 +253,6 @@ private:
     QAction *integrateCountsAct;
     
     
-    int current_svo;
-
     SparseVoxelOcttree svo_inprocess;
     SparseVoxelOcttree svo_loaded;
 
@@ -285,13 +267,9 @@ private:
     void readSettings();
     void writeSettings();
     bool maybeSave();
-//    void loadFile(const QString &fileName);
-//    bool saveFile(const QString &fileName);
-//    void setCurrentFile(const QString &fileName);
 
 
     QString strippedName(const QString &fullFileName);
-//    QString scriptHelp;
     QString curFile;
     QString info;
 
@@ -352,7 +330,6 @@ private:
     QCheckBox * volumeRenderLogCheckBox;
 
     QElapsedTimer timer;
-//    Highlighter *script_highlighter;
     Highlighter *error_highlighter;
 
     QTabWidget *tabWidget;
@@ -369,7 +346,6 @@ private:
     QWidget *functionWidget;
     QWidget *unitcellWidget;
     QWidget *setFilesWidget;
-//    QWidget *viewWidget;
 
 protected:
     // OpenGL rendering widgets
@@ -419,30 +395,24 @@ protected:
 
     QString svoDir;
 
-//    QPlainTextEdit *scriptTextEdit;
     QPlainTextEdit *errorTextEdit;
     QProgressBar *genericProgressBar;
     QProgressBar *memoryUsageProgressBar;
 
-
-
     QMenuBar * mainMenu;
     QMenu *reduceMenu;
     QMenu *svoMenu;
-//    QMenu *scriptMenu;
     QMenu *viewMenu;
     QMenu *helpMenu;
     QToolBar *fileSelectionToolBar;
     QToolBar *viewToolBar;
 
-
-//    QScriptEngine engine;
-//    QScriptValue rawFilesQs;
-
     // Main resources
     QStringList file_paths;
     QList<DetectorFile> files;
-    ImageFolder image_folder;
+//    ImageSeries image_folder;
+    SeriesSet series_set;
+
     Matrix<float> reduced_pixels;
 
     // Related to file treatment

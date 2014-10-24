@@ -90,8 +90,8 @@ int main(int argc, char **argv)
 
     // Register custom objects for signal/slot transfer
     qRegisterMetaType<ImageInfo>();
-    qRegisterMetaType<ImageFolder>();
-    qRegisterMetaType<FolderSet>();
+    qRegisterMetaType<ImageSeries>();
+    qRegisterMetaType<SeriesSet>();
     qRegisterMetaType<Selection>();
 
     QApplication app(argc, argv);
