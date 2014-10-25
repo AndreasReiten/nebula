@@ -63,7 +63,6 @@ public slots:
     
     
     void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
-//    void mouseMoveEvent(QMouseEvent ev);
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void wheelEvent(QWheelEvent* ev);
@@ -126,7 +125,6 @@ private:
     bool isSlicingActive;
     bool isIntegration2DActive;
     bool isIntegration3DActive;
-//    bool isRendering;
     bool isShadowActive;
     bool isLogarithmic2D;
     bool isOrthoGridActive;
@@ -159,13 +157,11 @@ private:
     Matrix<int> ray_tex_dim;
     Matrix<size_t> ray_glb_ws;
     Matrix<size_t> ray_loc_ws;
-//    float weird_parameter;
     int quality_percentage;
     cl_mem ray_tex_cl;
     GLuint ray_tex_gl;
     void setRayTexture(int percentage);
     void raytrace(cl_kernel kernel);
-//    double work, work_time, quality_factor;
     
     // Center line
     GLuint centerline_vbo;
@@ -227,7 +223,6 @@ private:
     int fps_string_width_prev;
     
     // Drawing rectangles
-//    QRect multiplier_string_rect;
     QRect fps_string_rect;
     
     // Core set functions
@@ -271,7 +266,6 @@ private:
     QElapsedTimer session_age;
     
     // Ray texture timing
-//    float fps_requested;
     QElapsedTimer ray_kernel_timer;
 
     // Mouse
