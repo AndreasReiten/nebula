@@ -137,6 +137,9 @@ private:
     bool isLabFrameActive;
     bool isMiniCellActive;
     bool isCountIntegrationActive;
+    bool displayDistance;
+    bool displayFps;
+    bool displayResolution;
     
     // Markers
     QVector<Marker> markers;

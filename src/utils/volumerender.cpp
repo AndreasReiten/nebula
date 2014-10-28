@@ -136,7 +136,10 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isMiniCellActive(true),
       isCountIntegrationActive(false),
       n_marker_indices(0),
-      quality_percentage(20)
+      quality_percentage(15),
+      displayDistance(true),
+      displayFps(true),
+      displayResolution(true)
 {
     // Resolve OpenCL functions
     QLibrary myLib("OpenCL");
@@ -309,8 +312,8 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
             
 
     // Color    
-    white.set(1,1,1,0.4);
-    black.set(0,0,0,0.4);
+    white.set(1,1,1,1.0); // Note: Changed alpha from 0.4
+    black.set(0,0,0,1.0); // Note: Changed alpha from 0.4
     yellow.set(1,0.2,0,0.8);
     red.set(1,0,0,1);
     green.set(0,1,0,1);
@@ -1868,7 +1871,6 @@ void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
 
 void VolumeRenderWorker::render(QPainter *painter)
 {
-//    isRendering = true;
     isDataExtentReadOnly = true;
     setDataExtent();
     setViewMatrices();
@@ -1898,15 +1900,15 @@ void VolumeRenderWorker::render(QPainter *painter)
     computePixelSize();
 
     if (isIntegration2DActive) drawIntegral(painter);
-    drawCountScalebar(painter);
     
     drawOverlay(painter);
     if (isUnitcellActive) drawHklText(painter);
     if (n_marker_indices > 0) drawMarkers(painter);
     if (isMiniCellActive) drawHelpCell(painter);
+    drawCountScalebar(painter);
     if (isSvoInitialized && isCountIntegrationActive) drawCountIntegral(painter);
     
-//    isRendering = false;
+    
 }
 
 
@@ -1914,6 +1916,9 @@ void VolumeRenderWorker::takeScreenShot(QString path)
 {
     // Set resolution back to former value
     setRayTexture(100);
+    displayDistance = false;
+    displayFps = false;
+    displayResolution = false;
     
     QOpenGLFramebufferObjectFormat format;
 
@@ -1929,7 +1934,7 @@ void VolumeRenderWorker::takeScreenShot(QString path)
     
     // Render into buffer using max quality
     QPainter painter(paint_device_gl);
-
+    
     render(&painter);
 
     buffy.release();
@@ -1939,6 +1944,9 @@ void VolumeRenderWorker::takeScreenShot(QString path)
     
     // Set resolution back to former value
     setRayTexture(quality_percentage);
+    displayDistance = true;
+    displayFps = true;
+    displayResolution = true;
 }
 
 
@@ -2549,55 +2557,48 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
         }
     }
     
-    // Count scalebar tick labels
-    if (n_count_scalebar_ticks >= 2)
-    {
-        for (size_t i = 0; i < n_count_scalebar_ticks; i++)
-        {
-            painter->drawText(QPointF(count_scalebar_ticks[i*3+0], count_scalebar_ticks[i*3+1]), QString::number(count_scalebar_ticks[i*3+2], 'g', 4));
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < n_count_minor_scalebar_ticks; i++)
-        {
-            painter->drawText(QPointF(count_minor_scalebar_ticks[i*3+0], count_minor_scalebar_ticks[i*3+1]), QString::number(count_minor_scalebar_ticks[i*3+2], 'g', 4));
-        }
-    }
-    
     // Distance from (000), length of center line
-    double distance = std::sqrt(centerline_coords[3]*centerline_coords[3] + centerline_coords[4]*centerline_coords[4] + centerline_coords[5]*centerline_coords[5]);
-
-    QString centerline_string("Distance from (000): "+QString::number(distance, 'g', 5)+" 1/Å");
-    QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
-    centerline_string_rect += QMargins(5,5,5,5);
-    centerline_string_rect.moveBottomRight(QPoint(render_surface->width()-5,render_surface->height()-5));
-
-    painter->setBrush(*fill_brush);
-    painter->drawRoundedRect(centerline_string_rect, 5, 5, Qt::AbsoluteSize);
-    painter->drawText(centerline_string_rect, Qt::AlignCenter, centerline_string);
-
-    // Fps
-    QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
-    fps_string_rect = emph_fontmetric->boundingRect(fps_string);
-    fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
-    fps_string_width_prev = fps_string_rect.width();
-    fps_string_rect += QMargins(5,5,5,5);
-    fps_string_rect.moveTopRight(QPoint(render_surface->width()-5,5));
-
-    painter->setBrush(*fill_brush);
-    painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
-    painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
-
-    // Texture resolution
-    QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(render_surface->width()*render_surface->height()), 'f', 1)+"%");
-    QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
-    resolution_string_rect += QMargins(5,5,5,5);
-    resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
-
-    painter->drawRoundedRect(resolution_string_rect, 5, 5, Qt::AbsoluteSize);
-    painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
+    if (displayDistance)
+    {
+        double distance = std::sqrt(centerline_coords[3]*centerline_coords[3] + centerline_coords[4]*centerline_coords[4] + centerline_coords[5]*centerline_coords[5]);
     
+        QString centerline_string("Distance from (000): "+QString::number(distance, 'g', 5)+" 1/Å");
+        QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
+        centerline_string_rect += QMargins(5,5,5,5);
+        centerline_string_rect.moveBottomRight(QPoint(render_surface->width()-5,render_surface->height()-5));
+    
+        painter->setBrush(*fill_brush);
+        painter->drawRoundedRect(centerline_string_rect, 5, 5, Qt::AbsoluteSize);
+        painter->drawText(centerline_string_rect, Qt::AlignCenter, centerline_string);
+    }
+    
+    // Fps
+    if (displayFps)
+    {
+        QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
+        fps_string_rect = emph_fontmetric->boundingRect(fps_string);
+        fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
+        fps_string_width_prev = fps_string_rect.width();
+        fps_string_rect += QMargins(5,5,5,5);
+        fps_string_rect.moveTopRight(QPoint(render_surface->width()-5,5));
+    
+        painter->setBrush(*fill_brush);
+        painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
+        painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
+    }
+    
+    // Texture resolution
+    if (displayResolution)
+    {
+        QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(render_surface->width()*render_surface->height()), 'f', 1)+"%");
+        QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
+        resolution_string_rect += QMargins(5,5,5,5);
+        resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
+    
+        painter->drawRoundedRect(resolution_string_rect, 5, 5, Qt::AbsoluteSize);
+        painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
+    }
+
     // Draw accumulated roll for a mouse move event
     /*QString roll_string("Roll: "+QString::number(accumulated_roll*180/pi, 'g', 5)+" deg");
     QRect roll_string_rect = emph_fontmetric->boundingRect(roll_string);
@@ -2707,13 +2708,18 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
     // Draw transfer function bounding box
     QRectF tsf_rect(0, 0, 20, render_surface->height() - (fps_string_rect.bottom() + 5) - 50);
-    tsf_rect += QMargins(30,5,5,5);
+    tsf_rect += QMargins(35,15,5,15);
     tsf_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
-
-    tsf_rect -= QMargins(30,5,5,5);
+    
+    // Backdrop
+    painter->setPen(*normal_pen);
+    painter->setBrush(*fill_brush);
+    painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
+    
+    // Rectangle in GL coords    
+    tsf_rect -= QMargins(35,15,5,15);
     Matrix<GLfloat> gl_tsf_rect;
     gl_tsf_rect = glRect(tsf_rect);
-    
     
     // Find appropriate tick positions
     if (isModelActive)
@@ -2729,8 +2735,8 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
     if(isLogarithmic)
     {
-        if (data_min <= 0) data_min = 1.0e-9;
-        if (data_max <= 0) data_min = 1.0e-9;
+        if (data_min <= 0) data_min = 1.0e-3;
+        if (data_max <= 0) data_min = 1.0e-3;
         
         data_min = log10(data_min);
         data_max = log10(data_max);
@@ -2759,7 +2765,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
                 
                 if(n_count_scalebar_ticks < count_scalebar_ticks.size())
                 {
-                    count_scalebar_ticks[n_count_scalebar_ticks*3+0] = tsf_rect.left()-35;
+                    count_scalebar_ticks[n_count_scalebar_ticks*3+0] = tsf_rect.left()-30;
                     count_scalebar_ticks[n_count_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height();
                     if (isLogarithmic) count_scalebar_ticks[n_count_scalebar_ticks*3+2] = pow(10,current);
                     else count_scalebar_ticks[n_count_scalebar_ticks*3+2] = current;
@@ -2770,7 +2776,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
             
             if(n_count_minor_scalebar_ticks < count_minor_scalebar_ticks.size())
             {
-                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+0] = tsf_rect.left()-35;
+                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+0] = tsf_rect.left()-30;
                 count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height();
                 if (isLogarithmic) count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = pow(10,current);
                 else count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = current;
@@ -2837,9 +2843,35 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         shared_window->std_2d_col_program->release();
         
         endRawGLCalls(painter);
+    }
     
-        painter->setBrush(*normal_brush);
-        painter->drawRect(tsf_rect);
+    // Enveloping background
+    painter->setBrush(*normal_brush);
+    painter->setPen(*normal_pen);
+    painter->drawRect(tsf_rect);
+    
+    // Count scalebar tick labels
+    if (n_count_scalebar_ticks >= 2)
+    {
+        for (size_t i = 0; i < n_count_scalebar_ticks; i++)
+        {
+            double value = count_scalebar_ticks[i*3+2];
+            
+//            if (isLogarithmic) value = log10(value);
+            
+            painter->drawText(QPointF(count_scalebar_ticks[i*3+0], count_scalebar_ticks[i*3+1]), QString::number(value, 'g', 4));
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < n_count_minor_scalebar_ticks; i++)
+        {
+            double value = count_minor_scalebar_ticks[i*3+2];
+            
+//            if (isLogarithmic) value = log10(value);
+            
+            painter->drawText(QPointF(count_minor_scalebar_ticks[i*3+0], count_minor_scalebar_ticks[i*3+1]), QString::number(value, 'g', 4));
+        }
     }
     
 }

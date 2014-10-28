@@ -156,7 +156,7 @@ void MainWindow::initializeWorkers()
     connect(setFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
     connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
     connect(setFileButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
     //### readFileWorker ###
@@ -184,7 +184,7 @@ void MainWindow::initializeWorkers()
 
     connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(readFileButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
     //### projectFileWorker ###
@@ -223,7 +223,7 @@ void MainWindow::initializeWorkers()
 
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
-    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
     //### allInOneWorker ###
@@ -263,7 +263,7 @@ void MainWindow::initializeWorkers()
     connect(allInOneWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
     connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
-    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
 
 
     //### voxelizeWorker ###
@@ -293,7 +293,7 @@ void MainWindow::initializeWorkers()
     connect(voxelizeWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
 
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
-    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()));
+    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
     connect(allInOneWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
     connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
@@ -498,6 +498,7 @@ void MainWindow::nextSeries()
         series_set.next();
         series_set.current()->restoreMemory();
 
+        imageSpinBox->setRange(0,series_set.current()->size()-1);
         imageSpinBox->setValue(series_set.current()->i());
 
         emit imageChanged(*series_set.current()->current());

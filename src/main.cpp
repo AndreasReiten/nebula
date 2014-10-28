@@ -14,8 +14,13 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
- * Radial integration
- * 
+ * Radial selectivity. I. e. confining viewable area to a spherical shell 
+ * A solid linear texture edit (tsf function) 
+ * Area selection prior to reduction to limit data size.
+ * Proper setting of transparent voxels. There are artefacts.
+ * Align slice frame to normal to a*, b* and c*. 
+ * Persistent screenshot dir.
+ * Going from slice mode to integrate mode is bugged.
  * */
 
 #include <QApplication>
