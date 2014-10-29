@@ -85,12 +85,12 @@ MainWindow::MainWindow() :
     // Set start conditions
     setStartConditions();
 
-    graphicsDockWidget->hide();
-    unitCellDock->hide();
-    functionDockWidget->hide();
-    fileDockWidget->hide();
-    toolChainWidget->show();
-    outputDockWidget->show();
+//    graphicsDockWidget->hide();
+//    unitCellDock->hide();
+//    functionDockWidget->hide();
+//    fileDockWidget->hide();
+//    toolChainWidget->show();
+//    outputDockWidget->show();
 
 }
 
@@ -951,17 +951,17 @@ void MainWindow::openUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
-    toolChainWidget->hide();
-    fileHeaderDock->hide();
-    outputDockWidget->hide();
-    fileDockWidget->hide();
-    graphicsDockWidget->hide();
-    unitCellDock->hide();
-    functionDockWidget->hide();
-    svoHeaderDock->hide();
+//    toolChainWidget->hide();
+//    fileHeaderDock->hide();
+//    outputDockWidget->hide();
+//    fileDockWidget->hide();
+//    graphicsDockWidget->hide();
+//    unitCellDock->hide();
+//    functionDockWidget->hide();
+//    svoHeaderDock->hide();
     
-    if ((tab==0) || (tab==1)) toolChainWidget->show();
-    else toolChainWidget->hide();
+//    if ((tab==0) || (tab==1)) toolChainWidget->show();
+//    else toolChainWidget->hide();
     
     if ((tab==0) || (tab==1)) fileHeaderDock->show();
     else fileHeaderDock->hide();
@@ -969,20 +969,20 @@ void MainWindow::setTab(int tab)
     if ((tab==0) || (tab==1)) outputDockWidget->show();
     else outputDockWidget->hide();
     
-    if (tab==1) fileDockWidget->show();
-    else fileDockWidget->hide();
+//    if (tab==1) fileDockWidget->show();
+//    else fileDockWidget->hide();
     
-    if (tab==2) graphicsDockWidget->show();
-    else graphicsDockWidget->hide();
+//    if (tab==2) graphicsDockWidget->show();
+//    else graphicsDockWidget->hide();
     
-    if (tab==2) unitCellDock->show();
-    else unitCellDock->hide();
+//    if (tab==2) unitCellDock->show();
+//    else unitCellDock->hide();
      
-    if (tab==2) functionDockWidget->show();
-    else functionDockWidget->hide();
+//    if (tab==2) functionDockWidget->show();
+//    else functionDockWidget->hide();
     
-    if (tab==2) svoHeaderDock->show();
-    else svoHeaderDock->hide();
+//    if (tab==2) svoHeaderDock->show();
+//    else svoHeaderDock->hide();
 }
 
 
@@ -1275,11 +1275,11 @@ void MainWindow::initializeInteractives()
         viewToolBar->addSeparator();
         viewToolBar->addAction(projectionAct);
         
-        viewToolBar->addAction(markAct);
+//        viewToolBar->addAction(markAct);
         viewToolBar->addAction(scalebarAct);
         viewToolBar->addAction(labFrameAct);
         
-        viewToolBar->addAction(shadowAct);
+//        viewToolBar->addAction(shadowAct);
         viewToolBar->addAction(dataStructureAct);
         
         viewToolBar->addSeparator();
@@ -1291,13 +1291,14 @@ void MainWindow::initializeInteractives()
         viewToolBar->addAction(alignLabXtoSliceXAct);
         viewToolBar->addAction(alignLabYtoSliceYAct);
         viewToolBar->addAction(alignLabZtoSliceZAct);
-        viewToolBar->addAction(alignSliceToLabAct);
+        
         viewToolBar->addAction(rotateLeftAct);
         viewToolBar->addAction(rotateRightAct);
         viewToolBar->addAction(rotateDownAct);
         viewToolBar->addAction(rotateUpAct);
         viewToolBar->addAction(rollCW);
         viewToolBar->addAction(rollCCW);
+        viewToolBar->addAction(alignSliceToLabAct);
         viewToolBar->addSeparator();
         
         viewToolBar->addAction(backgroundAct);
@@ -1406,7 +1407,7 @@ void MainWindow::initializeInteractives()
         imageToolBar->addAction(centerImageAction);
         imageToolBar->addAction(showWeightCenterAction);
         imageToolBar->addAction(squareAreaSelectAlphaAction);
-        imageToolBar->addAction(squareAreaSelectBetaAction);
+//        imageToolBar->addAction(squareAreaSelectBetaAction);
         imageToolBar->addWidget(pathLineEdit);
     
         connect(showWeightCenterAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(showWeightCenter(bool)));
@@ -1587,7 +1588,7 @@ void MainWindow::initializeInteractives()
         correctionDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
         correctionDock->setWidget(correctionWidget);
         correctionDock->setFixedHeight(correctionWidget->minimumSizeHint().height()*1.2);
-        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
+        imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
         
         
         connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)));
@@ -1791,7 +1792,7 @@ void MainWindow::initializeInteractives()
         unitCellDock->setFixedHeight(unitCellWidget->minimumSizeHint().height()*1.15);
         
         viewMenu->addAction(unitCellDock->toggleViewAction());
-        volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, unitCellDock);
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, unitCellDock);
     }
 
     
@@ -1803,9 +1804,9 @@ void MainWindow::initializeInteractives()
         
         svoHeaderDock->setWidget(svoHeaderEdit);
         
-        volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, svoHeaderDock);
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, svoHeaderDock);
 
-        svoHeaderDock->hide();
+//        svoHeaderDock->hide();
         
         connect(this, SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
         
@@ -1938,6 +1939,7 @@ void MainWindow::initializeInteractives()
         functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         viewMenu->addAction(functionDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, functionDockWidget);
+        functionDockWidget->hide();
     }
 
 

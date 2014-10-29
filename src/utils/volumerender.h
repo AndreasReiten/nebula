@@ -363,6 +363,7 @@ private:
     QFont * emph_font;
     QFontMetrics * normal_fontmetric;
     QFontMetrics * emph_fontmetric;
+    QFontMetrics * minicell_fontmetric;
 
     // Shadow
     Matrix<float> shadow_vector;

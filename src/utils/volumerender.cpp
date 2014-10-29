@@ -1065,8 +1065,11 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, b_indices.data());
     glUniform4fv(shared_window->std_3d_col_color, 1, blue.data());
     glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, c_indices.data());
-    glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
-    glLineWidth(1.5);
+    
+    ColorMatrix<GLfloat> wire_color = clear_color_inverse;
+    wire_color[3] = 0.7;
+    glUniform4fv(shared_window->std_3d_col_color, 1, wire_color.data());
+    glLineWidth(0.7);
     glDrawElements(GL_LINES,  18, GL_UNSIGNED_INT, wire.data());
     
     glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
@@ -1087,6 +1090,16 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     getPosition2D(z_2d.data(), vetices.data()+9, &minicell_view_matrix);
     
     painter->setFont(*minicell_font);
+    
+//    QRect text_backdrop = minicell_fontmetric->boundingRect(QString("a*"));
+//    text_backdrop.moveBottomLeft(QPoint((x_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( x_2d[1]+ 1.0) * 0.5) *200));
+//    painter->drawRect(text_backdrop);
+    
+//    text_backdrop.moveBottomLeft(QPoint((y_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( y_2d[1]+ 1.0) * 0.5) *200));
+//    painter->drawRect(text_backdrop);
+    
+//    text_backdrop.moveBottomLeft(QPoint((z_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( z_2d[1]+ 1.0) * 0.5) *200));
+//    painter->drawRect(text_backdrop);
     
     painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( x_2d[1]+ 1.0) * 0.5) *200), QString("a*"));
     painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( y_2d[1]+ 1.0) * 0.5) *200), QString("b*"));
@@ -1357,6 +1370,7 @@ void VolumeRenderWorker::initializePaintTools()
 
     normal_fontmetric = new QFontMetrics(*normal_font, paint_device_gl);
     emph_fontmetric = new QFontMetrics(*emph_font, paint_device_gl);
+    minicell_fontmetric = new QFontMetrics(*minicell_font, paint_device_gl);
 
     fill_brush = new QBrush;
     fill_brush->setStyle(Qt::SolidPattern);
@@ -2766,7 +2780,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
                 if(n_count_scalebar_ticks < count_scalebar_ticks.size())
                 {
                     count_scalebar_ticks[n_count_scalebar_ticks*3+0] = tsf_rect.left()-30;
-                    count_scalebar_ticks[n_count_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height();
+                    count_scalebar_ticks[n_count_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height() - 2;
                     if (isLogarithmic) count_scalebar_ticks[n_count_scalebar_ticks*3+2] = pow(10,current);
                     else count_scalebar_ticks[n_count_scalebar_ticks*3+2] = current;
                     
@@ -2777,7 +2791,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
             if(n_count_minor_scalebar_ticks < count_minor_scalebar_ticks.size())
             {
                 count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+0] = tsf_rect.left()-30;
-                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height();
+                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height() - 2;
                 if (isLogarithmic) count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = pow(10,current);
                 else count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = current;
                 
