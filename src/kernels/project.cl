@@ -48,10 +48,14 @@ __kernel void FRAME_FILTER(
         float intensity = read_imagef(source, intensity_sampler, (target_dim - id_glb - 1)).w; /* DANGER */
 
         // Flat min/max filter (threshold_one)
-        if (((intensity < threshold_one.x) || (intensity > threshold_one.y)))
-        {
-            intensity = 0.0f;
-        }
+//        if (((intensity < threshold_one.x) || (intensity > threshold_one.y)))
+//        {
+//            intensity = 0.0f;
+//        }
+
+        // Noise filter
+        intensity = clamp(intensity, threshold_one.x, threshold_one.y); // All readings within noise thresholds
+        intensity -= threshold_one.x; // Subtracts the noise
         
         float4 Q = (float4)(0.0f);
         if (intensity > 0.0f)
@@ -98,6 +102,11 @@ __kernel void FRAME_FILTER(
             {
                 Q.w = 0.0f;
             }
+            
+            // Post correction filter (Note: remove this at some point, it has little logical purpose)
+            Q.w = clamp(Q.w, threshold_two.x, threshold_two.y); 
+            Q.w -= threshold_two.x; 
+            
         }
 
         // Write to the Q target (CL texture)

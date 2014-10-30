@@ -21,6 +21,7 @@
  * Align slice frame to normal to a*, b* and c*. 
  * Persistent screenshot dir.
  * Going from slice mode to integrate mode is bugged.
+ * Remove PCT threshold altogether. It can no longer be justified if the early box termination based on variance becomes successful. This could also be where the problem with voxelize lies.
  * */
 
 #include <QApplication>

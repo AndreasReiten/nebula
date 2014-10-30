@@ -26,7 +26,6 @@ OTHER_FILES += \
     src/kernels/render_shared.cl \
     src/kernels/render_model.cl \
     src/kernels/integrate.cl \
-#    src/kernels/image_preview.cl \
     src/kernels/box_sampler.cl \
     src/kernels/models.cl \
     lib/qxlib/qxopengl/glsl/std_2d_col.f.glsl \

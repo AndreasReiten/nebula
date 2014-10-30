@@ -1004,6 +1004,8 @@ void VoxelizeWorker::initializeCLKernel()
 
 void VoxelizeWorker::process()
 {
+    // Note: The term node and brick are used a lot. A brick is a 3D voxel grid of data points, and each node has one brick and some extra metadata. 
+    
     QCoreApplication::processEvents();
 
     kill_flag = false;
@@ -1032,13 +1034,13 @@ void VoxelizeWorker::process()
         // The number of data points in a single brick
         size_t n_points_brick = svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension();
 
-        // The extent of the volume
+        // Save the extent of the volume
         svo->setExtent(suggested_q);
         
-        // The extent of the volume
+        // Save initial metadata (just text)
         svo->setMetaData("You can write notes about the dataset here.");
 
-        // Prepare the brick pool
+        // Prepare the brick pool in which we will store bricks
         Matrix<int> pool_dimension(1, 4, 0);
         pool_dimension[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
         pool_dimension[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
@@ -1055,8 +1057,7 @@ void VoxelizeWorker::process()
 
         size_t n_max_bricks = BRICK_POOL_HARD_MAX_BYTES/(n_points_brick*sizeof(float));
 
-//        qDebug() << BRICK_POOL_HARD_MAX_BYTES;
-
+        // Prepare the relevant OpenCL buffers
         cl_mem pool_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
             BRICK_POOL_HARD_MAX_BYTES,
@@ -1064,8 +1065,6 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-//        qDebug() << nodes_per_kernel_call << svo->getBrickOuterDimension() << nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float);
-
         cl_mem pool_cluster_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
@@ -1117,8 +1116,10 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        // Generate an octtree data structure from which to construct bricks
+        // Place all data points in an octtree data structure from which to construct the bricks in the brick pool
         SearchNode root(NULL, svo->getExtent()->data());
+        
+        qDebug() << "Placing data point sin octtree:" << reduced_pixel.size()/4;
         
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
@@ -1130,12 +1131,14 @@ void VoxelizeWorker::process()
             root.insert(reduced_pixels->data()+i*4);
             emit changedGenericProgress((i+1)*100/(reduced_pixels->size()/4));
         }
-
+        
         if (!kill_flag)
         {
-            /* Create an octtree from brick data. The nodes are maintained in a linear array rather than on the heap. This is due to lack of proper support for recursion on GPUs */
+            /* Create an octtree from brick data. The nodes are maintained in a linear array rather than a tree. This is mainly due to (current) lack of proper support for recursion on GPUs */
             Matrix<BrickNode> gpuHelpOcttree(1, n_max_bricks*16);
             gpuHelpOcttree[0].setParent(0);
+            
+            // An array to store number of nodes per level
             Matrix<unsigned int> nodes;
             nodes.set(1, 64, (unsigned int) 0);
             nodes[0] = 1;
@@ -1144,14 +1147,14 @@ void VoxelizeWorker::process()
 
             QElapsedTimer timer;
             
-            // Keep track of the maximum sum returned by a brick and use it later to estimate max value in data set
+            // Keep track of the maximum sum returned by a node and use it later to estimate max value in data set
             float max_brick_sum = 0.0;
             
             // Containers 
-            Matrix<double> brick_extent(1, 6*nodes_per_kernel_call);
-            Matrix<float> point_data(max_points_per_cluster,4);
-            Matrix<int> point_data_offset(1, nodes_per_kernel_call);
-            Matrix<int> point_data_count(1, nodes_per_kernel_call);
+            Matrix<double> brick_extent(1, 6*nodes_per_kernel_call); // The extent of each brick in a kernel invocation
+            Matrix<int> point_data_offset(1, nodes_per_kernel_call); // The data offset for each brick in a kernel invocation
+            Matrix<int> point_data_count(1, nodes_per_kernel_call); // The data size for each brick in a kernel invocation
+            Matrix<float> point_data(max_points_per_cluster,4); // Temporaily holds the data for a single brick
             
             // Cycle through the levels
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
@@ -1380,10 +1383,6 @@ void VoxelizeWorker::process()
 
                             
                             // Transfer brick data to pool
-//                            pool_dimension.print(0,"pool_dim");
-
-//                            qDebug() << "non_empty_node_counter" << non_empty_node_counter;
-
                             err = QOpenCLSetKernelArg( fill_kernel, 0, sizeof(cl_mem), (void *) &pool_cluster_cl);
                             err |= QOpenCLSetKernelArg( fill_kernel, 1, sizeof(cl_mem), (void *) &pool_cl);
                             err |= QOpenCLSetKernelArg( fill_kernel, 2, sizeof(cl_int4), pool_dimension.data());
