@@ -1119,7 +1119,7 @@ void VoxelizeWorker::process()
         // Place all data points in an octtree data structure from which to construct the bricks in the brick pool
         SearchNode root(NULL, svo->getExtent()->data());
         
-        qDebug() << "Placing data point sin octtree:" << reduced_pixel.size()/4;
+        qDebug() << "Placing data point sin octtree:" << reduced_pixels.size()/4;
         
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
@@ -1164,7 +1164,7 @@ void VoxelizeWorker::process()
 
                 timer.start();
 
-                // Find the correct range search radius
+                // Find the correct range search radius, which will be smaller for each level until it approaches the distance between samples in the data set
                 float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
                 if (search_radius < suggested_search_radius_high) search_radius = suggested_search_radius_high;
 
@@ -1185,7 +1185,7 @@ void VoxelizeWorker::process()
                     // First pass: find relevant data for cluster of nodes
                     unsigned int currentId;
                     size_t accumulated_points = 0;
-                    for (size_t j = 0; j < nodes_per_kernel_call; j++)
+                    for (size_t j = 0; j < nodes_per_kernel_call; j++) // What if j is too big?
                     {
                         
                         // The id of the octnode in the octnode array
