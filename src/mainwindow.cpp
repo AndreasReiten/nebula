@@ -435,10 +435,11 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
         ++i;
     }
     
-    imageSpinBox->setRange(0,series_set.current()->size()-1);
+    
     
     if (!series_set.isEmpty())
     {
+        imageSpinBox->setRange(0,series_set.current()->size()-1);
         emit imageChanged(*series_set.current()->current());
         emit centerImage();
     }
