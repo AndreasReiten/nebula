@@ -514,6 +514,7 @@ void MainWindow::prevSeries()
         series_set.previous();
         series_set.current()->restoreMemory();
 
+        imageSpinBox->setRange(0,series_set.current()->size()-1);
         imageSpinBox->setValue(series_set.current()->i());
 
         emit imageChanged(*series_set.current()->current());
@@ -1697,13 +1698,10 @@ void MainWindow::initializeInteractives()
         // Real space unit cell
         aNormSpinBox = new QDoubleSpinBox;
         aNormSpinBox->setPrefix("a: ");
-        aNormSpinBox->setSuffix(" °");
         bNormSpinBox = new QDoubleSpinBox;
         bNormSpinBox->setPrefix("b: ");
-        bNormSpinBox->setSuffix(" °");
         cNormSpinBox = new QDoubleSpinBox;
         cNormSpinBox->setPrefix("c: ");
-        cNormSpinBox->setSuffix(" °");
         
         alphaNormSpinBox = new QDoubleSpinBox;
         alphaNormSpinBox->setPrefix("α: ");

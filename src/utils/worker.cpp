@@ -26,10 +26,10 @@
 
 #include <QOpenGLContext>
 
-static const size_t REDUCED_PIXELS_MAX_BYTES = 100e6;
+static const size_t REDUCED_PIXELS_MAX_BYTES = 100e6; // Max amount of reduced data
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.7e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU during pool construction. 3D image can be used with OpenCL 1.2, allowing you to use the entire VRAM.
 static const size_t nodes_per_kernel_call = 1024;
-static const size_t max_points_per_cluster = 50e6;
+static const size_t max_points_per_cluster = 10e6;
 
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
@@ -1064,6 +1064,8 @@ void VoxelizeWorker::process()
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+        qDebug() << "Pool" << BRICK_POOL_HARD_MAX_BYTES << "bytes";
         
         cl_mem pool_cluster_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
@@ -1071,6 +1073,8 @@ void VoxelizeWorker::process()
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+//        qDebug() << "Pool cluster" << nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float) << "bytes";
         
         cl_mem brick_extent_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -1119,8 +1123,6 @@ void VoxelizeWorker::process()
         // Place all data points in an octtree data structure from which to construct the bricks in the brick pool
         SearchNode root(NULL, svo->getExtent()->data());
         
-        qDebug() << "Placing data point sin octtree:" << reduced_pixels->size()/4;
-        
         for (size_t i = 0; i < reduced_pixels->size()/4; i++)
         {
             if (kill_flag)
@@ -1142,10 +1144,7 @@ void VoxelizeWorker::process()
             Matrix<unsigned int> nodes;
             nodes.set(1, 16, (unsigned int) 0); // Note: make bigger
             nodes[0] = 1;
-            Matrix<size_t> empty_nodes; 
-            empty_nodes.set(1,16,0);
-            empty_nodes[0] = 0;
-            
+
             unsigned int nodes_prev_lvls = 0, non_empty_node_counter = 0;
 
             QElapsedTimer timer;
@@ -1229,12 +1228,14 @@ void VoxelizeWorker::process()
                         {
                             err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                                 point_data_cl ,
-                                CL_FALSE,
+                                CL_TRUE,
                                 point_data_offset[j]*sizeof(cl_float4),
                                 point_data_count[j]*sizeof(cl_float4),
                                 point_data.data() + point_data_offset[j]*4,
                                 0, NULL, NULL);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+
                         }
                         
                         // Break off loop when all nodes are processed
@@ -1245,7 +1246,7 @@ void VoxelizeWorker::process()
                     err = QOpenCLEnqueueWriteBuffer(
                         context_cl->queue(),
                         brick_extent_cl ,
-                        CL_FALSE,
+                        CL_TRUE,
                         0,
                         brick_extent.toFloat().bytes(),
                         brick_extent.toFloat().data(),
@@ -1255,7 +1256,7 @@ void VoxelizeWorker::process()
                     // The data offset for each brick
                     err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                         point_data_offset_cl ,
-                        CL_FALSE,
+                        CL_TRUE,
                         0,
                         point_data_offset.bytes(),
                         point_data_offset.data(),
@@ -1265,7 +1266,7 @@ void VoxelizeWorker::process()
                     // The data size for each brick
                     err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                         point_data_count_cl ,
-                        CL_FALSE,
+                        CL_TRUE,
                         0,
                         point_data_count.bytes(),
                         point_data_count.data(),
@@ -1347,12 +1348,11 @@ void VoxelizeWorker::process()
                         // If a node simply has no data
                         if ((sum_check[j] <= 0.0))
                         {
-                            empty_nodes[lvl]++;
                             gpuHelpOcttree[currentId].setDataFlag(0);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
                             gpuHelpOcttree[currentId].setChild(0);
                         }
-                        // Else a node has data
+                        // Else a node has data and possibly qualifies for children
                         else
                         {
                             if (non_empty_node_counter + 1 >= n_max_bricks)
@@ -1365,7 +1365,16 @@ void VoxelizeWorker::process()
                             gpuHelpOcttree[currentId].setDataFlag(1);
                             gpuHelpOcttree[currentId].setMsdFlag(0);
 
-                            if (lvl >= svo->getLevels() - 1) gpuHelpOcttree[currentId].setMsdFlag(1);
+                            // Set maximum subdivision if the max level is reached or if the variance of the brick data is small compared to the average.
+                            float average = sum_check[j]/(float)n_points_brick;
+                            float variance_threshold = 0.30 * average;
+
+                            if ((lvl >= svo->getLevels() - 1) ||
+                                ((lvl >= 6) && (variance_check[j] <= variance_threshold)))
+                            {
+//                                qDebug() << "Terminated brick early at lvl" << lvl << "Average:" << sum_check[j]/(float)n_points_brick << "Variance:" << variance_check[j];
+                                gpuHelpOcttree[currentId].setMsdFlag(1);
+                            }
 
                             // Set the pool id of the brick corresponding to the node
                             gpuHelpOcttree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
@@ -1396,7 +1405,7 @@ void VoxelizeWorker::process()
                                         loc_ws, 
                                         0, NULL, NULL);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-                            
+
                             err = QOpenCLFinish(context_cl->queue());
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
@@ -1415,9 +1424,6 @@ void VoxelizeWorker::process()
                                     nodes[lvl+1]++;
                                 }
                             }
-                            
-                            
-                            
                         }
                         if (i + j + 1 >= nodes[lvl]) break;
                     }
@@ -1440,11 +1446,6 @@ void VoxelizeWorker::process()
                 size_t t = timer.restart();
                 emit changedMessageString(" ...done ("+QString::number(t)+" ms)");
             }
-            
-            nodes.print(0,"Nodes");
-            empty_nodes.print(0,"Empty Nodes");
-            
-            sum_nodes
             
             if (!kill_flag)
             {
