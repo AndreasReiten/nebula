@@ -903,16 +903,15 @@ void MultiWorker::process()
             }
             else if (!STATUS_OK)
             {
-                QString str("\n["+QString(this->metaObject()->className())+"] Warning: Could not read \""+file.getPath()+"\"");
-
-                emit changedMessageString(str);
-
+//                QString str("\n["+QString(this->metaObject()->className())+"] Warning: Could not read \""+file.getPath()+"\"");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not read \""+file.getPath()+"\"");
                 kill_flag = true;
             }
         }
         else
         {
             emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Warning: Could not set \""+QString(file_paths->at(i))+"\"");
+            kill_flag = true;
         }
 
         // Update the progress bar
@@ -1164,7 +1163,7 @@ void VoxelizeWorker::process()
             for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
             {
                 emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
-                emit changedFormatGenericProgress("Constructing Level "+QString::number(lvl)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
+                emit changedFormatGenericProgress("Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
 
                 timer.start();
 

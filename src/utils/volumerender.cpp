@@ -1160,7 +1160,7 @@ void VolumeRenderWorker::drawCountIntegral(QPainter * painter)
     float sum = sumViewBox();
 
     QString sum_string("Integrated intensity: "+QString::number(sum, 'e',3)+" 1/Å^3");
-    QRect sum_string_rect = emph_fontmetric->boundingRect(sum_string);
+    QRect sum_string_rect = normal_fontmetric->boundingRect(sum_string);
     sum_string_rect += QMargins(5,5,5,5);
     sum_string_rect.moveTopLeft(QPoint(5,205));
 
@@ -1349,29 +1349,30 @@ void VolumeRenderWorker::initialize()
 
 void VolumeRenderWorker::initializePaintTools()
 {
-    normal_pen = new QPen;
-    normal_pen->setWidthF(1.0);
-    border_pen = new QPen;
-    border_pen->setWidth(1);
-    
-    minicell_font = new QFont;
+    // Fonts
+    normal_font = new QFont("Helvetica", 14);
+
+    tiny_font = new QFont("Helvetica", 12);
+
+//    emph_font = new QFont("Helvetica", 12);
+//    emph_font->setBold(true);
+
+    minicell_font = new QFont("Helvetica", 16);
     minicell_font->setBold(true);
     minicell_font->setItalic(true);
     
-    
-    
-    whatever_pen = new QPen;
-
-    normal_font = new QFont();
-    tiny_font = new QFont;
-    tiny_font->setPixelSize(12);
-    emph_font = new QFont;
-    emph_font->setBold(true);
-
+    // Font metrics
     normal_fontmetric = new QFontMetrics(*normal_font, paint_device_gl);
-    emph_fontmetric = new QFontMetrics(*emph_font, paint_device_gl);
+//    normal_fontmetric = new QFontMetrics(*emph_font, paint_device_gl);
     minicell_fontmetric = new QFontMetrics(*minicell_font, paint_device_gl);
 
+    // Pens
+    normal_pen = new QPen;
+//    border_pen = new QPen;
+//    border_pen->setWidth(1);
+    anything_pen = new QPen;
+
+    // Brushes
     fill_brush = new QBrush;
     fill_brush->setStyle(Qt::SolidPattern);
     fill_brush->setColor(QColor(255,255,255,155));
@@ -1379,13 +1380,13 @@ void VolumeRenderWorker::initializePaintTools()
     normal_brush = new QBrush;
     normal_brush->setStyle(Qt::NoBrush);
 
-    dark_fill_brush = new QBrush;
-    dark_fill_brush->setStyle(Qt::SolidPattern);
-    dark_fill_brush->setColor(QColor(0,0,0,255));
+//    dark_fill_brush = new QBrush;
+//    dark_fill_brush->setStyle(Qt::SolidPattern);
+//    dark_fill_brush->setColor(QColor(0,0,0,255));
 
-    histogram_brush = new QBrush;
-    histogram_brush->setStyle(Qt::SolidPattern);
-    histogram_brush->setColor(QColor(40,225,40,225));
+//    histogram_brush = new QBrush;
+//    histogram_brush->setStyle(Qt::SolidPattern);
+//    histogram_brush->setColor(QColor(40,225,40,225));
 }
 
 void VolumeRenderWorker::initResourcesGL()
@@ -2274,15 +2275,15 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
     QVector<qreal> dashes;
     dashes << 2 << 2;
     
-    whatever_pen->setWidthF(1.0);
-    whatever_pen->setStyle(Qt::CustomDashLine);
-    whatever_pen->setDashPattern(dashes);
-    whatever_pen->setColor(QColor(
+    anything_pen->setWidthF(1.0);
+    anything_pen->setStyle(Qt::CustomDashLine);
+    anything_pen->setDashPattern(dashes);
+    anything_pen->setColor(QColor(
                                 255.0*clear_color_inverse[0],
                                 255.0*clear_color_inverse[1],
                                 255.0*clear_color_inverse[2],
                                 255));
-    painter->setPen(*whatever_pen);
+    painter->setPen(*anything_pen);
     
     painter->drawLines(lines.data(), 5);
     
@@ -2291,7 +2292,7 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
     double length = sqrt((ruler[2]-ruler[0])*(ruler[2]-ruler[0])*pixel_size[0]*pixel_size[0] + (ruler[3]-ruler[1])*(ruler[3]-ruler[1])*pixel_size[1]*pixel_size[1]);
     
     QString centerline_string(QString::number(length, 'g', 5)+" 1/Å ("+QString::number(1.0/length, 'g', 5)+"Å)");
-    QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
+    QRect centerline_string_rect = normal_fontmetric->boundingRect(centerline_string);
     centerline_string_rect += QMargins(5,5,5,5);
     centerline_string_rect.moveBottomLeft(QPoint(ruler[0]+5, ruler[1]-5));
     
@@ -2363,24 +2364,24 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
 
             if (i == 0)
             {
-                whatever_pen->setWidthF(1.0);
-                whatever_pen->setStyle(Qt::SolidLine);
-                whatever_pen->setColor(QColor(50,50,255,255));
-                painter->setPen(*whatever_pen);
+                anything_pen->setWidthF(1.0);
+                anything_pen->setStyle(Qt::SolidLine);
+                anything_pen->setColor(QColor(50,50,255,255));
+                painter->setPen(*anything_pen);
             }
             else
             {
                 QVector<qreal> dashes;
                 dashes << 3 << 3;
                 
-                whatever_pen->setWidthF(0.3);
-                whatever_pen->setStyle(Qt::CustomDashLine);
-                whatever_pen->setDashPattern(dashes);
-                whatever_pen->setColor(QColor(255.0*clear_color_inverse[0],
+                anything_pen->setWidthF(0.3);
+                anything_pen->setStyle(Qt::CustomDashLine);
+                anything_pen->setDashPattern(dashes);
+                anything_pen->setColor(QColor(255.0*clear_color_inverse[0],
                                         255.0*clear_color_inverse[1],
                                         255.0*clear_color_inverse[2],
                                         255));
-                painter->setPen(*whatever_pen);
+                painter->setPen(*anything_pen);
             }
 
             painter->drawLines(vertical_lines.data()+2, (ticks_by_level[i]/2)*2+1);
@@ -2561,6 +2562,7 @@ void VolumeRenderWorker::computePixelSize()
 void VolumeRenderWorker::drawOverlay(QPainter * painter)
 {
     painter->setPen(*normal_pen);
+    painter->setFont(*normal_font);
     
     // Position scalebar tick labels
     if (isScalebarActive)
@@ -2577,7 +2579,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
         double distance = std::sqrt(centerline_coords[3]*centerline_coords[3] + centerline_coords[4]*centerline_coords[4] + centerline_coords[5]*centerline_coords[5]);
     
         QString centerline_string("Distance from (000): "+QString::number(distance, 'g', 5)+" 1/Å");
-        QRect centerline_string_rect = emph_fontmetric->boundingRect(centerline_string);
+        QRect centerline_string_rect = normal_fontmetric->boundingRect(centerline_string);
         centerline_string_rect += QMargins(5,5,5,5);
         centerline_string_rect.moveBottomRight(QPoint(render_surface->width()-5,render_surface->height()-5));
     
@@ -2590,7 +2592,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     if (displayFps)
     {
         QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
-        fps_string_rect = emph_fontmetric->boundingRect(fps_string);
+        fps_string_rect = normal_fontmetric->boundingRect(fps_string);
         fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
         fps_string_width_prev = fps_string_rect.width();
         fps_string_rect += QMargins(5,5,5,5);
@@ -2605,7 +2607,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     if (displayResolution)
     {
         QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(render_surface->width()*render_surface->height()), 'f', 1)+"%");
-        QRect resolution_string_rect = emph_fontmetric->boundingRect(resolution_string);
+        QRect resolution_string_rect = normal_fontmetric->boundingRect(resolution_string);
         resolution_string_rect += QMargins(5,5,5,5);
         resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
     
@@ -2615,7 +2617,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
 
     // Draw accumulated roll for a mouse move event
     /*QString roll_string("Roll: "+QString::number(accumulated_roll*180/pi, 'g', 5)+" deg");
-    QRect roll_string_rect = emph_fontmetric->boundingRect(roll_string);
+    QRect roll_string_rect = normal_fontmetric->boundingRect(roll_string);
     roll_string_rect += QMargins(5,5,5,5);
     roll_string_rect.moveBottomLeft(QPoint(5,render_surface->height() -10 -resolution_string_rect.height()));
 
@@ -2625,7 +2627,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     
     // Scalebar multiplier
     /*QString multiplier_string("x"+QString::number(scalebar_multiplier)+" 1/Å");
-    multiplier_string_rect = emph_fontmetric->boundingRect(multiplier_string);
+    multiplier_string_rect = normal_fontmetric->boundingRect(multiplier_string);
     multiplier_string_rect += QMargins(5,5,5,5);
     multiplier_string_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
 
@@ -2698,6 +2700,7 @@ void VolumeRenderWorker::drawLabFrame(QPainter *painter)
     
     // Draw text to indicate lab reference frame directions
     painter->setPen(*normal_pen);
+    painter->setFont(*normal_font);
     painter->setBrush(*fill_brush);
     
     Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
@@ -2721,9 +2724,9 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     double exponent;
     
     // Draw transfer function bounding box
-    QRectF tsf_rect(0, 0, 20, render_surface->height() - (fps_string_rect.bottom() + 5) - 50);
-    tsf_rect += QMargins(35,15,5,15);
-    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
+    QRectF tsf_rect(0, 0, 20, render_surface->height() - (fps_string_rect.bottom() + 5) - 100);
+    tsf_rect += QMargins(35,20,5,15);
+    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 15));
     
     // Backdrop
     painter->setPen(*normal_pen);
@@ -2731,7 +2734,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
     
     // Rectangle in GL coords    
-    tsf_rect -= QMargins(35,15,5,15);
+    tsf_rect -= QMargins(35,20,5,15);
     Matrix<GLfloat> gl_tsf_rect;
     gl_tsf_rect = glRect(tsf_rect);
     
@@ -3329,7 +3332,7 @@ void VolumeRenderWorker::setBackground()
     fill_color.setAlphaF(0.7);
     
     normal_pen->setColor(normal_color);
-    whatever_pen->setColor(normal_color);
+    anything_pen->setColor(normal_color);
     fill_brush->setColor(fill_color);
 }
 

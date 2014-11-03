@@ -351,18 +351,18 @@ private:
     // Pens
     void initializePaintTools();
     QPen * normal_pen;
-    QPen * border_pen;
-    QPen * whatever_pen;
+//    QPen * border_pen;
+    QPen * anything_pen;
     QFont * minicell_font;
     QBrush * fill_brush;
-    QBrush * histogram_brush;
+//    QBrush * histogram_brush;
     QBrush * normal_brush;
-    QBrush * dark_fill_brush;
+//    QBrush * dark_fill_brush;
     QFont * normal_font;
     QFont * tiny_font;
-    QFont * emph_font;
+//    QFont * emph_font;
     QFontMetrics * normal_fontmetric;
-    QFontMetrics * emph_fontmetric;
+//    QFontMetrics * emph_fontmetric;
     QFontMetrics * minicell_fontmetric;
 
     // Shadow
