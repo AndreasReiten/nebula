@@ -262,6 +262,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     ctc_matrix.setN(N);
     ctc_matrix.setF(F);
     ctc_matrix.setFov(fov);
+    ctc_matrix.setWindow(200,200);
     ctc_matrix.setProjection(isOrthonormal);
     
     // hkl selection
@@ -1350,26 +1351,22 @@ void VolumeRenderWorker::initialize()
 void VolumeRenderWorker::initializePaintTools()
 {
     // Fonts
-    normal_font = new QFont("Helvetica", 14);
-
-    tiny_font = new QFont("Helvetica", 12);
-
-//    emph_font = new QFont("Helvetica", 12);
-//    emph_font->setBold(true);
-
-    minicell_font = new QFont("Helvetica", 16);
+    normal_font = new QFont("Helvetica", 13);
+    tiny_font = new QFont("Helvetica", 11);
+    minicell_font = new QFont("Helvetica", 15);
     minicell_font->setBold(true);
     minicell_font->setItalic(true);
     
+    qDebug() << normal_font->family() << normal_font->pointSize();
+    qDebug() << tiny_font->family() << tiny_font->pointSize();
+    qDebug() << minicell_font->family() << minicell_font->pointSize();
+    
     // Font metrics
     normal_fontmetric = new QFontMetrics(*normal_font, paint_device_gl);
-//    normal_fontmetric = new QFontMetrics(*emph_font, paint_device_gl);
     minicell_fontmetric = new QFontMetrics(*minicell_font, paint_device_gl);
 
     // Pens
     normal_pen = new QPen;
-//    border_pen = new QPen;
-//    border_pen->setWidth(1);
     anything_pen = new QPen;
 
     // Brushes
@@ -1379,14 +1376,6 @@ void VolumeRenderWorker::initializePaintTools()
 
     normal_brush = new QBrush;
     normal_brush->setStyle(Qt::NoBrush);
-
-//    dark_fill_brush = new QBrush;
-//    dark_fill_brush->setStyle(Qt::SolidPattern);
-//    dark_fill_brush->setColor(QColor(0,0,0,255));
-
-//    histogram_brush = new QBrush;
-//    histogram_brush->setStyle(Qt::SolidPattern);
-//    histogram_brush->setColor(QColor(40,225,40,225));
 }
 
 void VolumeRenderWorker::initResourcesGL()
@@ -1502,6 +1491,14 @@ void VolumeRenderWorker::setViewMatrices()
     normalization_scaling[10] = bbox_scaling[10] * projection_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
 
     view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
+//    view_matrix.print(2,"view matrix");
+//    ctc_matrix.print(2,"ctc matrix");
+//    bbox_translation.print(2,"bbox matrix");
+//    normalization_scaling.print(2,"norm matrix");
+//    data_scaling.print(2,"scale matrix");
+//    rotation.print(2,"rot matrix"); 
+//    data_translation.print(2,"trans matrix");
+    
     scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation * data_translation;
     unitcell_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
     ctc_matrix.setWindow(200, 200);
@@ -2873,9 +2870,6 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         for (size_t i = 0; i < n_count_scalebar_ticks; i++)
         {
             double value = count_scalebar_ticks[i*3+2];
-            
-//            if (isLogarithmic) value = log10(value);
-            
             painter->drawText(QPointF(count_scalebar_ticks[i*3+0], count_scalebar_ticks[i*3+1]), QString::number(value, 'g', 4));
         }
     }
@@ -2884,9 +2878,6 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         for (size_t i = 0; i < n_count_minor_scalebar_ticks; i++)
         {
             double value = count_minor_scalebar_ticks[i*3+2];
-            
-//            if (isLogarithmic) value = log10(value);
-            
             painter->drawText(QPointF(count_minor_scalebar_ticks[i*3+0], count_minor_scalebar_ticks[i*3+1]), QString::number(value, 'g', 4));
         }
     }

@@ -314,12 +314,12 @@ class ProjectFileWorker : public BaseWorker
         int projectFile(DetectorFile * file);
         
     signals:
-//        void changedImageSize(int w, int h);
         void testToWindow();
         void testToMain();
 
     public slots:
         void initializeCLKernel();
+        void setSelection(Selection area); 
 
     private slots:
         void process();
@@ -328,6 +328,7 @@ class ProjectFileWorker : public BaseWorker
         // Related to OpenCL
         cl_kernel project_kernel;
         size_t n_reduced_pixels;
+        Selection selection;
 };
 
 

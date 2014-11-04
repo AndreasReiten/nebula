@@ -437,6 +437,8 @@ ProjectFileWorker::ProjectFileWorker()
     offset_omega = 0;
     offset_kappa = 0;
     offset_phi = 0;
+    
+    selection.setRect(0,0,1e5,1e5);
 }
 
 ProjectFileWorker::~ProjectFileWorker()
@@ -449,6 +451,11 @@ ProjectFileWorker::~ProjectFileWorker()
     }
 }
 
+void ProjectFileWorker::setSelection(Selection area)
+{
+    selection = area;
+}
+
 void ProjectFileWorker::initializeCLKernel()
 {
     QStringList paths;
@@ -458,7 +465,6 @@ void ProjectFileWorker::initializeCLKernel()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     context_cl->buildProgram(&program, "-Werror");
-
 
     // Kernel handles
     project_kernel = QOpenCLCreateKernel(program, "FRAME_FILTER", &err);
@@ -684,8 +690,6 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     threshold_two[0] = this->thld_project_low;
     threshold_two[1] = this->thld_project_high;
 
-//    qDebug() << thld_noise_low << thld_noise_high << thld_project_low << thld_project_high;
-    
     err |= QOpenCLSetKernelArg(project_kernel, 5, 2*sizeof(cl_float), threshold_one);
     err |= QOpenCLSetKernelArg(project_kernel, 6, 2*sizeof(cl_float), threshold_two);
     err |= QOpenCLSetKernelArg(project_kernel, 7, sizeof(cl_float), &file->background_flux);
@@ -704,6 +708,7 @@ int ProjectFileWorker::projectFile(DetectorFile * file)
     err |= QOpenCLSetKernelArg(project_kernel, 20, sizeof(cl_float), &file->phi);
     err |= QOpenCLSetKernelArg(project_kernel, 21, sizeof(cl_float), &file->omega);
     err |= QOpenCLSetKernelArg(project_kernel, 22, sizeof(cl_float), &file->max_counts);
+    err |= QOpenCLSetKernelArg(project_kernel, 23, sizeof(cl_int4), selection.lrtb().data());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Launch rendering kernel */
@@ -814,6 +819,8 @@ MultiWorker::MultiWorker()
     offset_omega = 0;
     offset_kappa = 0;
     offset_phi = 0;
+    
+    selection.setRect(0,0,1e5,1e5);
 }
 
 MultiWorker::~MultiWorker()
@@ -1064,8 +1071,6 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        qDebug() << "Pool" << BRICK_POOL_HARD_MAX_BYTES << "bytes";
-        
         cl_mem pool_cluster_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
@@ -1073,8 +1078,6 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//        qDebug() << "Pool cluster" << nodes_per_kernel_call*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float) << "bytes";
-        
         cl_mem brick_extent_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
             nodes_per_kernel_call*6*sizeof(float),
@@ -1225,6 +1228,8 @@ void VoxelizeWorker::process()
                         // Upload this point data to an OpenCL buffer
                         if (point_data_count[j] > 0)
                         {
+//                            if ((point_data_offset[j] + point_data_count[j])*sizeof(cl_float4) > max_points_per_cluster*sizeof(cl_float4)) qDebug() << "lvl" << lvl << "MEM:"<< (point_data_offset[j] + point_data_count[j])*sizeof(cl_float4) << ">" << max_points_per_cluster*sizeof(cl_float4);
+                            
                             err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                                 point_data_cl ,
                                 CL_TRUE,
@@ -1366,10 +1371,11 @@ void VoxelizeWorker::process()
 
                             // Set maximum subdivision if the max level is reached or if the variance of the brick data is small compared to the average.
                             float average = sum_check[j]/(float)n_points_brick;
-                            float variance_threshold = 0.30 * average;
+                            float std_dev = sqrt(variance_check[j]);
+                            float threshold = 0.10 * average;
 
                             if ((lvl >= svo->getLevels() - 1) ||
-                                ((lvl >= 6) && (variance_check[j] <= variance_threshold)))
+                                ((lvl >= 6) && (std_dev <= threshold)))
                             {
 //                                qDebug() << "Terminated brick early at lvl" << lvl << "Average:" << sum_check[j]/(float)n_points_brick << "Variance:" << variance_check[j];
                                 gpuHelpOcttree[currentId].setMsdFlag(1);

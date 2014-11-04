@@ -62,6 +62,7 @@ private slots:
     void runProjectFileThread();
     void runAllInOneThread();
     void setImage(ImageInfo image);
+    void setSeriesSelection(Selection area);
     void loadPaths();
     void removeImage();
     void setFrame(int value);
@@ -188,7 +189,7 @@ private:
     SetFileWorker * setFileWorker;
     ReadFileWorker * readFileWorker;
     ProjectFileWorker * projectFileWorker;
-    MultiWorker * allInOneWorker;
+    MultiWorker * multiWorker;
     VoxelizeWorker * voxelizeWorker;
 
     // File browser
@@ -296,7 +297,7 @@ private:
     // Volume render widget
     QMainWindow * volumeRenderMainWindow;
     
-    QComboBox *formatComboBox;
+//    QComboBox *formatComboBox;
     QComboBox *activeAngleComboBox;
 
     QSpinBox * svoLevelSpinBox;
@@ -336,7 +337,9 @@ private:
 
     
     QDockWidget *fileDockWidget;
+    QDockWidget *voxelizeDockWidget;
     QWidget *fileControlsWidget;
+    QWidget *voxelizeWidget;
 
     QWidget *toolChainWidget;
     QWidget *mainWidget;

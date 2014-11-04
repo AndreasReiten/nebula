@@ -23,6 +23,7 @@
  * Going from slice mode to integrate mode is bugged.
  * Remove PCT threshold altogether. It can no longer be justified if the early box termination based on variance becomes successful. This could also be where the problem with voxelize lies.
  * Too much VRAM is being used and without proper warnigns when too much is used
+ * Make native save/load (<< and >>)functions for svo's and possibly reconstruction projects
  * */
 
 #include <QApplication>

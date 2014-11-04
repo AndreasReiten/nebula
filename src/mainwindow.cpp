@@ -224,46 +224,48 @@ void MainWindow::initializeWorkers()
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
 
 
     //### allInOneWorker ###
-    allInOneWorker = new MultiWorker();
-    allInOneWorker->setFilePaths(&file_paths);
-    allInOneWorker->setSVOFile(&svo_inprocess);
-    allInOneWorker->setOpenCLContext(context_cl);
-    allInOneWorker->setReducedPixels(&reduced_pixels);
-    allInOneWorker->initializeCLKernel();
+    multiWorker = new MultiWorker();
+    multiWorker->setFilePaths(&file_paths);
+    multiWorker->setSVOFile(&svo_inprocess);
+    multiWorker->setOpenCLContext(context_cl);
+    multiWorker->setReducedPixels(&reduced_pixels);
+    multiWorker->initializeCLKernel();
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
-    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), allInOneWorker, SLOT(setActiveAngle(int)));
-    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetOmega(double)));
-    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetKappa(double)));
-    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setOffsetPhi(double)));
-    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseLow(double)));
-    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setNoiseHigh(double)));
-    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectLow(double)));
-    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), allInOneWorker, SLOT(setThldProjectHigh(double)));
-    connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), allInOneWorker, SLOT(setNoiseLow(double)));
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), multiWorker, SLOT(setActiveAngle(int)));
+    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setOffsetOmega(double)));
+    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setOffsetKappa(double)));
+    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setOffsetPhi(double)));
+    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseLow(double)));
+    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseHigh(double)));
+    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectLow(double)));
+    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectHigh(double)));
+    connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), multiWorker, SLOT(setNoiseLow(double)));
 
-    allInOneWorker->moveToThread(allInOneThread);
+    multiWorker->moveToThread(allInOneThread);
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-    connect(allInOneWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
-    connect(allInOneThread, SIGNAL(started()), allInOneWorker, SLOT(process()));
-    connect(allInOneWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
-    connect(allInOneWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(multiWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
+    connect(allInOneThread, SIGNAL(started()), multiWorker, SLOT(process()));
+    connect(multiWorker, SIGNAL(finished()), allInOneThread, SLOT(quit()));
+    connect(multiWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
 
-    connect(allInOneWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
-    connect(allInOneWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
-    connect(allInOneWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+    connect(multiWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+    connect(multiWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
+    connect(multiWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
 
-    connect(allInOneWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-    connect(allInOneWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    connect(allInOneWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
+    connect(multiWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+    connect(multiWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(multiWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
     
 
-    connect(allInOneWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
-    connect(allInOneWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
+    connect(multiWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
+    connect(multiWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
-    connect(killButton, SIGNAL(clicked()), allInOneWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(killButton, SIGNAL(clicked()), multiWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
 
 
     //### voxelizeWorker ###
@@ -294,7 +296,7 @@ void MainWindow::initializeWorkers()
 
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(allInOneWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
+    connect(multiWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
     connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
 
@@ -362,6 +364,16 @@ void MainWindow::setImage(ImageInfo image)
 
         setHeader(series_set.current()->current()->path());
 
+        hasPendingChanges = true;
+    }
+}
+
+
+void MainWindow::setSeriesSelection(Selection area)
+{
+    if (!series_set.isEmpty())
+    {
+        series_set.current()->setSelection(area);
         hasPendingChanges = true;
     }
 }
@@ -643,7 +655,7 @@ void MainWindow::saveProject()
     QFileDialog dialog;
     dialog.setDefaultSuffix("txt");
     QString path = dialog.getSaveFileName(this, tr("Save project"), "", tr(".qt (*.qt);; All files (*)"));
-
+    
     if (path != "")
     {
         QFile file(path);
@@ -688,8 +700,6 @@ void MainWindow::loadProject()
             
             in >> series_set >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> lorentzCorrection >> autoBackgroundCorrection;
             
-            imageSpinBox->setRange(0,series_set.current()->size()-1);
-            
             
             imagePreviewTsfTextureComboBox->setCurrentText(tsfTexture);
             imagePreviewTsfAlphaComboBox->setCurrentText(tsfAlpha);
@@ -703,6 +713,8 @@ void MainWindow::loadProject()
 
             if (!series_set.isEmpty())
             {
+                series_set.current();
+                imageSpinBox->setRange(0,series_set.current()->size()-1);
                 emit imageChanged(*series_set.current()->current());
                 emit centerImage();
             }
@@ -1408,7 +1420,7 @@ void MainWindow::initializeInteractives()
         imageToolBar->addAction(loadProjectAction);
         imageToolBar->addAction(centerImageAction);
         imageToolBar->addAction(showWeightCenterAction);
-        imageToolBar->addAction(squareAreaSelectAlphaAction);
+//        imageToolBar->addAction(squareAreaSelectAlphaAction);
 //        imageToolBar->addAction(squareAreaSelectBetaAction);
         imageToolBar->addWidget(pathLineEdit);
     
@@ -1530,7 +1542,7 @@ void MainWindow::initializeInteractives()
     
     
         imageSettingsDock =  new QDockWidget("Display settings");
-        imageSettingsDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
+//        imageSettingsDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea | Qt::BottomDockWidgetArea);
         imageSettingsDock->setWidget(imageSettingsWidget);
         imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
         imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
@@ -1548,7 +1560,8 @@ void MainWindow::initializeInteractives()
         connect(this, SIGNAL(centerImage()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
         
         connect(imagePreviewWindow->getWorker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
-        connect(imagePreviewWindow->getWorker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
+        connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(Selection)), this, SLOT(setSeriesSelection(Selection)));
+        
     }
     
     // Corrections dock widget
@@ -1576,21 +1589,21 @@ void MainWindow::initializeInteractives()
         
         
         QGridLayout * correctionLayout = new QGridLayout;
-        correctionLayout->addWidget(noiseCorrectionMinDoubleSpinBox,0,0,1,1);
-        correctionLayout->addWidget(noiseCorrectionMaxDoubleSpinBox,0,1,1,1);
-        correctionLayout->addWidget(postCorrectionMinDoubleSpinBox,1,0,1,1);
-        correctionLayout->addWidget(postCorrectionMaxDoubleSpinBox,1,1,1,1);
-        correctionLayout->addWidget(correctionLorentzCheckBox,2,0,1,2);
-        correctionLayout->addWidget(autoBackgroundCorrectionCheckBox,3,0,1,2);
+        correctionLayout->addWidget(noiseCorrectionMinDoubleSpinBox,0,0,1,2);
+//        correctionLayout->addWidget(noiseCorrectionMaxDoubleSpinBox,0,1,1,1);
+//        correctionLayout->addWidget(postCorrectionMinDoubleSpinBox,1,0,1,1);
+//        correctionLayout->addWidget(postCorrectionMaxDoubleSpinBox,1,1,1,1);
+        correctionLayout->addWidget(correctionLorentzCheckBox,1,0,1,2);
+//        correctionLayout->addWidget(autoBackgroundCorrectionCheckBox,3,0,1,2);
         
         correctionWidget = new QWidget;
         correctionWidget->setLayout(correctionLayout);
         
         correctionDock =  new QDockWidget("Background");
-        correctionDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
+//        correctionDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
         correctionDock->setWidget(correctionWidget);
         correctionDock->setFixedHeight(correctionWidget->minimumSizeHint().height()*1.2);
-        imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
+        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
         
         
         connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)));
@@ -1664,7 +1677,7 @@ void MainWindow::initializeInteractives()
         qualitySlider->setTickPosition(QSlider::NoTicks);
 
         graphicsDockWidget = new QDockWidget(tr("Display settings"), this);
-        graphicsDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+//        graphicsDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         graphicsWidget = new QWidget;
 
         QGridLayout * graphicsLayout = new QGridLayout;
@@ -1692,7 +1705,7 @@ void MainWindow::initializeInteractives()
     /* Unitcell dock widget */
     {
         unitCellDock = new QDockWidget(tr("UB matrix"), this);
-        unitCellDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+//        unitCellDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         unitCellWidget = new QWidget;
         
         // Real space unit cell
@@ -1798,7 +1811,7 @@ void MainWindow::initializeInteractives()
     /* SVO metadata text edit */
     {
         svoHeaderDock = new QDockWidget(tr("File info/notes"), this);
-        svoHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+//        svoHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         svoHeaderEdit = new QPlainTextEdit;
         
         svoHeaderDock->setWidget(svoHeaderEdit);
@@ -1815,23 +1828,14 @@ void MainWindow::initializeInteractives()
     {
         fileControlsWidget = new QWidget;
 
-        // Labels
-        QLabel * labelA = new QLabel(QString("File format:"));
         QLabel * labelE = new QLabel(QString("Active angle:"));
-        QLabel * labelJ = new QLabel("Voxelize settings");
-        
-        // Combo boxes and their labels
-        formatComboBox = new QComboBox;
-        formatComboBox->addItem("PILATUS CBF 1.2");
-        formatComboBox->addItem("[ your file format here ]");
-        
+
         activeAngleComboBox = new QComboBox;
         activeAngleComboBox->addItem("Phi");
         activeAngleComboBox->addItem("Kappa");
         activeAngleComboBox->addItem("Omega");
         activeAngleComboBox->addItem("Given by file");
 
-        // Spin Boxes
         omegaCorrectionSpinBox = new QDoubleSpinBox;
         omegaCorrectionSpinBox->setRange(-180, 180);
         omegaCorrectionSpinBox->setDecimals(3);
@@ -1850,44 +1854,55 @@ void MainWindow::initializeInteractives()
         phiCorrectionSpinBox->setPrefix("Δφ: ");
         phiCorrectionSpinBox->setSuffix(" °");
                                      
-        svoLevelSpinBox = new QSpinBox;
-        svoLevelSpinBox->setRange(1, 15);
-        svoLevelSpinBox->setPrefix("Octtree levels: ");
-        
-        
-        
         
 
-        // Buttons
+        QGridLayout * reconstructLayout = new QGridLayout;
+        reconstructLayout->addWidget(labelE,0,0,1,4);
+        reconstructLayout->addWidget(activeAngleComboBox,0,4,1,4);
+        reconstructLayout->addWidget(omegaCorrectionSpinBox,1,0,1,8);
+        reconstructLayout->addWidget(kappaCorrectionSpinBox,2,0,1,8);
+        reconstructLayout->addWidget(phiCorrectionSpinBox,3,0,1,8);
+        
+        fileControlsWidget->setLayout(reconstructLayout);
+        
+        fileDockWidget = new QDockWidget(tr("Angle"), this);
+//        fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+        fileDockWidget->setWidget(fileControlsWidget);
+        fileDockWidget->setMaximumHeight(fileControlsWidget->minimumSizeHint().height()*1.1);
+        viewMenu->addAction(fileDockWidget->toggleViewAction());
+        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileDockWidget);
+    }
+    
+    /*Voxelize dock widget*/
+    {
+        svoLevelSpinBox = new QSpinBox;
+        svoLevelSpinBox->setRange(1, 15);
+        svoLevelSpinBox->setPrefix("Levels: ");
+
         voxelizeButton = new QPushButton;
         voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
-        voxelizeButton->setText("Voxelize");
+        voxelizeButton->setText("Generate");
         voxelizeButton->setEnabled(false);
         
         saveSvoButton = new QPushButton;
         saveSvoButton->setIcon(QIcon(":/art/save.png"));
-        saveSvoButton->setText("Save Octtree");
-
-        QGridLayout * reconstructLayout = new QGridLayout;
-        reconstructLayout->addWidget(labelA,0,0,1,4);
-        reconstructLayout->addWidget(formatComboBox,0,4,1,4);
-        reconstructLayout->addWidget(labelE,1,0,1,4);
-        reconstructLayout->addWidget(activeAngleComboBox,1,4,1,4);
-        reconstructLayout->addWidget(omegaCorrectionSpinBox,4,0,1,8);
-        reconstructLayout->addWidget(kappaCorrectionSpinBox,5,0,1,8);
-        reconstructLayout->addWidget(phiCorrectionSpinBox,6,0,1,8);
+        saveSvoButton->setText("Save");
         
-        reconstructLayout->addWidget(labelJ,7,0,1,8, Qt::AlignHCenter);
-        reconstructLayout->addWidget(svoLevelSpinBox,8,0,1,8);
-        reconstructLayout->addWidget(voxelizeButton,9,0,1,8);
-        reconstructLayout->addWidget(saveSvoButton,10,0,1,8);
-        fileControlsWidget->setLayout(reconstructLayout);
-        fileDockWidget = new QDockWidget(tr("Reconstruction"), this);
-        fileDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-        fileDockWidget->setWidget(fileControlsWidget);
-        fileDockWidget->setFixedHeight(fileControlsWidget->minimumSizeHint().height()*1.1);
-        viewMenu->addAction(fileDockWidget->toggleViewAction());
-        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileDockWidget);
+        QVBoxLayout * voxelizeLayout = new QVBoxLayout;
+        voxelizeLayout->addWidget(svoLevelSpinBox);
+        voxelizeLayout->addWidget(voxelizeButton);
+        voxelizeLayout->addWidget(saveSvoButton);
+        voxelizeLayout->addStretch(100);
+        
+        voxelizeWidget = new QWidget;
+        voxelizeWidget->setLayout(voxelizeLayout);
+        
+        voxelizeDockWidget = new QDockWidget("Voxel octtree");
+//        voxelizeDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+        voxelizeDockWidget->setWidget(voxelizeWidget);
+//        voxelizeDockWidget->setFixedHeight(voxelizeWidget->minimumSizeHint().height()*1.1);
+        viewMenu->addAction(voxelizeDockWidget->toggleViewAction());
+        imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, voxelizeDockWidget);
     }
     
 
@@ -1935,7 +1950,7 @@ void MainWindow::initializeInteractives()
         functionWidget->setLayout(functionLayout);
         functionDockWidget->setWidget(functionWidget);
         functionDockWidget->setFixedHeight(functionWidget->minimumSizeHint().height());
-        functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+//        functionDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         viewMenu->addAction(functionDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, functionDockWidget);
         functionDockWidget->hide();
@@ -1946,7 +1961,7 @@ void MainWindow::initializeInteractives()
     /* Output Widget */
     {
         outputDockWidget = new QDockWidget(tr("Message log"), this);
-        outputDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+//        outputDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         botWidget = new QWidget;
 
         // Progress Bar
@@ -1982,7 +1997,7 @@ void MainWindow::initializeInteractives()
         fileHeaderEdit->setReadOnly(true);
 
         fileHeaderDock = new QDockWidget(tr("Header info"), this);
-        fileHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+//        fileHeaderDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
         fileHeaderDock->setWidget(fileHeaderEdit);
         this->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDock);
     }
