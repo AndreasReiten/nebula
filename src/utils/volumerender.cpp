@@ -1357,9 +1357,9 @@ void VolumeRenderWorker::initializePaintTools()
     minicell_font->setBold(true);
     minicell_font->setItalic(true);
     
-    qDebug() << normal_font->family() << normal_font->pointSize();
-    qDebug() << tiny_font->family() << tiny_font->pointSize();
-    qDebug() << minicell_font->family() << minicell_font->pointSize();
+//    qDebug() << normal_font->family() << normal_font->pointSize();
+//    qDebug() << tiny_font->family() << tiny_font->pointSize();
+//    qDebug() << minicell_font->family() << minicell_font->pointSize();
     
     // Font metrics
     normal_fontmetric = new QFontMetrics(*normal_font, paint_device_gl);

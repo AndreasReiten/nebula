@@ -14,16 +14,18 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
- * Radial selectivity. I. e. confining viewable area to a spherical shell 
- * A solid linear texture edit (tsf function) 
- * Area selection prior to reduction to limit data size.
- * Proper setting of transparent voxels. There are artefacts.
- * Align slice frame to normal to a*, b* and c*. 
- * Persistent screenshot dir.
- * Going from slice mode to integrate mode is bugged.
- * Remove PCT threshold altogether. It can no longer be justified if the early box termination based on variance becomes successful. This could also be where the problem with voxelize lies.
- * Too much VRAM is being used and without proper warnigns when too much is used
- * Make native save/load (<< and >>)functions for svo's and possibly reconstruction projects
+ * (Low priority) Radial selectivity. I. e. confining viewable area to a spherical shell
+ * (Time consuming) A solid linear texture edit (tsf function)
+ * (Done) Area selection prior to reduction to limit data size.
+ * (Easy) Align slice frame to normal to a*, b* and c*.
+ * (Done) Persistent screenshot dir.
+ * (Easy) Going from slice mode to integrate mode is bugged.
+ * (Done on GUI level) Remove PCT threshold altogether. It can no longer be justified if the early box termination based on variance becomes successful. This could also be where the problem with voxelize lies.
+ * (Somewhat time consuming) Too much VRAM is being used and without proper warnigns when too much is used
+ * (Somewhat time consuming) Make native save/load (<< and >>)functions for svo's and possibly reconstruction projects
+ * (Done, but early MSD features are still very flawed) Vincinity check for bricks. Bricks can not be made MSD early if some voxels are filled, but others are zero. Would help smoothen surface features. Basically check for voxels of value zero in each brick. It is also flawed in that it disallows MSD for cases where a brick completely envelops a small feature.
+ * (Difficult, and variance should be found from raw data, not interpolated) Proper setting of transparent voxels. There are artefacts.
+ * Other interpolation modes than IDW to get rid of blobbyness. IDW great unless sparsely populated.
  * */
 
 #include <QApplication>

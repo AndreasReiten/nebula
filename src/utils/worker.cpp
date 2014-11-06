@@ -1106,6 +1106,14 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                            
+        Matrix<float> min_check(1, nodes_per_kernel_call, 0);
+        cl_mem min_check_cl = QOpenCLCreateBuffer(context_cl->context(),
+            CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+            nodes_per_kernel_call*sizeof(float),
+            min_check.data(),
+            &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
         Matrix<float> sum_check(1, nodes_per_kernel_call, 0);
         cl_mem sum_check_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -1285,12 +1293,13 @@ void VoxelizeWorker::process()
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 2, sizeof(cl_mem), (void *) &point_data_count_cl);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 3, sizeof(cl_mem), (void *) &brick_extent_cl);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 4, sizeof(cl_mem), (void *) &pool_cluster_cl);
-                    err |= QOpenCLSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &sum_check_cl);
-                    err |= QOpenCLSetKernelArg( voxelize_kernel, 6, sizeof(cl_mem), (void *) &variance_check_cl);
-                    err |= QOpenCLSetKernelArg( voxelize_kernel, 7, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &min_check_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 6, sizeof(cl_mem), (void *) &sum_check_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 7, sizeof(cl_mem), (void *) &variance_check_cl);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 8, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
                     int tmp = svo->getBrickOuterDimension(); // why a separate variable?
-                    err |= QOpenCLSetKernelArg( voxelize_kernel, 8, sizeof(cl_int), &tmp);
-                    err |= QOpenCLSetKernelArg( voxelize_kernel, 9, sizeof(cl_float), &search_radius);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 9, sizeof(cl_int), &tmp);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 10, sizeof(cl_float), &search_radius);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
                     err = QOpenCLFinish(context_cl->queue());
@@ -1318,6 +1327,16 @@ void VoxelizeWorker::process()
                     err = QOpenCLFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                     
+                    // The minimum value data point in each brick
+                    err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+                        min_check_cl,
+                        CL_TRUE,
+                        0,
+                        nodes_per_kernel_call*sizeof(float),
+                        min_check.data(),
+                        0, NULL, NULL);
+                    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
                     // The sum of data points in each brick
                     err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
                         sum_check_cl,
@@ -1359,9 +1378,9 @@ void VoxelizeWorker::process()
                         // Else a node has data and possibly qualifies for children
                         else
                         {
-                            if (non_empty_node_counter + 1 >= n_max_bricks)
+                            if ((non_empty_node_counter+1)*n_points_brick*sizeof(float) >= BRICK_POOL_HARD_MAX_BYTES)
                             {
-                                emit popup(QString("Warning - Data Overflow"), QString("The dataset you are trying to create grew too large. This event occured at level X. The data exceeded the limit of Y MB. The issue can be remedied by increasing the lower thresholds."));
+                                emit popup(QString("Warning - Data Overflow"), QString("The dataset you are trying to create grew too large, and exceeded the limit of " +QString::number(BRICK_POOL_HARD_MAX_BYTES/1e6)+ " MB. The issue can be remedied by applying more stringent reconstruction parameters or by reducing the octtree level."));
                                 kill_flag = true;
                                 break;
                             }
@@ -1372,10 +1391,10 @@ void VoxelizeWorker::process()
                             // Set maximum subdivision if the max level is reached or if the variance of the brick data is small compared to the average.
                             float average = sum_check[j]/(float)n_points_brick;
                             float std_dev = sqrt(variance_check[j]);
-                            float threshold = 0.10 * average;
 
-                            if ((lvl >= svo->getLevels() - 1) ||
-                                ((lvl >= 6) && (std_dev <= threshold)))
+                            if ((lvl >= svo->getLevels() - 1) || // Max level
+                                ((std_dev <= 0.5 * average) && (min_check[j] > 0)) || // Voxel data is self-similar and all voxels are non-zero
+                                ((std_dev <= 0.2 * average))) // Voxel data is self-similar
                             {
 //                                qDebug() << "Terminated brick early at lvl" << lvl << "Average:" << sum_check[j]/(float)n_points_brick << "Variance:" << variance_check[j];
                                 gpuHelpOcttree[currentId].setMsdFlag(1);
@@ -1501,7 +1520,9 @@ void VoxelizeWorker::process()
         err |= QOpenCLReleaseMemObject(brick_extent_cl);
         err |= QOpenCLReleaseMemObject(pool_cluster_cl);
         err |= QOpenCLReleaseMemObject(pool_cl);
+        err |= QOpenCLReleaseMemObject(min_check_cl);
         err |= QOpenCLReleaseMemObject(sum_check_cl);
+        err |= QOpenCLReleaseMemObject(variance_check_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
     emit finished();

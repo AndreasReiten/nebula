@@ -95,6 +95,7 @@ signals:
     void pathRemoved(QString path);
     void pathChanged(QString path);
     void imageChanged(ImageInfo image);
+    void selectionChanged(Selection area);
     void centerImage();
     
 private:
@@ -152,13 +153,8 @@ private:
     QDockWidget * fileHeaderDock;
     QPlainTextEdit * fileHeaderEdit;
     
-    /* Header strings */
-    QString current_svo_path;
-//    QString current_script_path;
-
     // Buttons
     QPushButton *allInOneButton;
-//    QPushButton *readScriptButton;
     QPushButton *setFileButton;
     QPushButton *readFileButton;
     QPushButton *projectFileButton;
@@ -396,7 +392,8 @@ protected:
     QDockWidget *graphicsDockWidget;
     QDockWidget *functionDockWidget;
 
-    QString svoDir;
+    QString working_dir;
+    QString screenshot_dir;
 
     QPlainTextEdit *errorTextEdit;
     QProgressBar *genericProgressBar;
