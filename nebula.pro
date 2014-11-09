@@ -42,7 +42,8 @@ OTHER_FILES += \
     lib/qxlib/qxopengl/glsl/rect_hl_2d_tex.v.glsl \
     lib/qxlib/qxopencl/cl/image_preview.cl \
     lib/qxlib/qxopencl/cl/mem_functions.cl \
-    lib/qxlib/qxopencl/cl/parallel_reduce.cl
+    lib/qxlib/qxopencl/cl/parallel_reduce.cl \
+    lib/qxlib/qxopencl/cl/background_filter.cl
 
 HEADERS += \
     lib/qxlib/qxfile/utils/fileformat.h \
