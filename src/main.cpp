@@ -17,9 +17,9 @@
  * (Low priority) Radial selectivity. I. e. confining viewable area to a spherical shell
  * (Time consuming) A solid linear texture edit (tsf function)
  * (Done) Area selection prior to reduction to limit data size.
- * (Easy) Align slice frame to normal to a*, b* and c*.
+ * (Done) Align slice frame to normal to a*, b* and c*.
  * (Done) Persistent screenshot dir.
- * (Easy) Going from slice mode to integrate mode is bugged.
+ * (Done, quick fixed) Going from slice mode to integrate mode is bugged.
  * (Done on GUI level) Remove PCT threshold altogether. It can no longer be justified if the early box termination based on variance becomes successful. This could also be where the problem with voxelize lies.
  * (Somewhat time consuming) Too much VRAM is being used and without proper warnigns when too much is used
  * (Somewhat time consuming) Make native save/load (<< and >>)functions for svo's and possibly reconstruction projects

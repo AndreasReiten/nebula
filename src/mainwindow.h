@@ -141,6 +141,10 @@ private:
     QPushButton * alignAlongAStarButton;
     QPushButton * alignAlongBStarButton;
     QPushButton * alignAlongCStarButton;
+
+    QPushButton * alignSlicetoAStarPushButton;
+    QPushButton * alignSlicetoBStarPushButton;
+    QPushButton * alignSlicetoCStarPushButton;
     
     QPushButton * helpCellOverlayButton;
     QPushButton * rotateCellButton;

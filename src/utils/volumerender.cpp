@@ -130,7 +130,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isDataExtentReadOnly(true),
       isCenterlineActive(true),
       isRulerActive(false),
-      isLMBDown(false),
+//      isLMBDown(false),
       isURotationActive(false),
       isLabFrameActive(true),
       isMiniCellActive(true),
@@ -588,10 +588,10 @@ void VolumeRenderWorker::metaMouseReleaseEvent(int x, int y, int left_button, in
 
 void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
 {
-    if (left_button) isLMBDown = true;
-    else isLMBDown = false;
+//    if (left_button) isLMBDown = true;
+//    else isLMBDown = false;
 
-    if (isLMBDown && isRulerActive)
+    if (left_button && isRulerActive)
     {
         ruler[2] = x;
         ruler[3] = y;
@@ -1490,17 +1490,9 @@ void VolumeRenderWorker::setViewMatrices()
     normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
     normalization_scaling[10] = bbox_scaling[10] * projection_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
 
-    view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
-//    view_matrix.print(2,"view matrix");
-//    ctc_matrix.print(2,"ctc matrix");
-//    bbox_translation.print(2,"bbox matrix");
-//    normalization_scaling.print(2,"norm matrix");
-//    data_scaling.print(2,"scale matrix");
-//    rotation.print(2,"rot matrix"); 
-//    data_translation.print(2,"trans matrix");
-    
-    scalebar_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation * data_translation;
-    unitcell_view_matrix = ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
+    view_matrix =           ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
+    unitcell_view_matrix =  ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
+    scalebar_view_matrix =  ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation;
     ctc_matrix.setWindow(200, 200);
     minicell_view_matrix = ctc_matrix * bbox_translation * minicell_scaling * rotation * U;
     ctc_matrix.setWindow(render_surface->width(),render_surface->height());
@@ -2389,6 +2381,61 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
     }
 }
 
+void VolumeRenderWorker::alignSlicetoAStar()
+{
+    Matrix<double> vec(4,1,1);
+    vec[0] = UB[0];
+    vec[1] = UB[3];
+    vec[2] = UB[6];
+
+    RotationMatrix<double> zeta_rotation;
+    zeta_rotation.setYRotation(zeta(vec));
+
+    RotationMatrix<double> eta_rotation;
+    eta_rotation.setXRotation(eta(vec));
+
+    scalebar_rotation = zeta_rotation * eta_rotation;
+
+    setViewMatrices();
+}
+
+void VolumeRenderWorker::alignSlicetoBStar()
+{
+    Matrix<double> vec(4,1,1);
+    vec[0] = UB[1];
+    vec[1] = UB[4];
+    vec[2] = UB[7];
+
+    RotationMatrix<double> zeta_rotation;
+    zeta_rotation.setYRotation(zeta(vec));
+
+    RotationMatrix<double> eta_rotation;
+    eta_rotation.setXRotation(eta(vec));
+
+    scalebar_rotation = zeta_rotation * eta_rotation;
+
+    setViewMatrices();
+}
+
+void VolumeRenderWorker::alignSlicetoCStar()
+{
+    Matrix<double> vec(4,1,1);
+    vec[0] = UB[2];
+    vec[1] = UB[5];
+    vec[2] = UB[8];
+
+    RotationMatrix<double> zeta_rotation;
+    zeta_rotation.setYRotation(zeta(vec));
+
+    RotationMatrix<double> eta_rotation;
+    eta_rotation.setXRotation(eta(vec));
+
+    scalebar_rotation = zeta_rotation * eta_rotation;
+
+    setViewMatrices();
+}
+
+
 void VolumeRenderWorker::alignAStartoZ()
 {
     Matrix<double> vec(4,1,1);
@@ -2405,8 +2452,8 @@ void VolumeRenderWorker::alignAStartoZ()
     rotation = eta_rotation * zeta_rotation;
     
     setViewMatrices();
-    
-    view_matrix.inverse4x4(1);
+
+//    view_matrix.inverse4x4(1);
 }
 void VolumeRenderWorker::alignBStartoZ()
 {
@@ -3154,55 +3201,55 @@ size_t VolumeRenderWorker::setScaleBars()
                 if (j != 0)
                 {
                     // X-tick cross
-                    scalebar_coords[(coord_counter+0)*3+0] = x_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+0)*3+1] = data_view_extent[2] + length * 0.5 + tick_width * 0.5;
-                    scalebar_coords[(coord_counter+0)*3+2] = data_view_extent[4] + length * 0.5;
+                    scalebar_coords[(coord_counter+0)*3+0] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+0)*3+1] = tick_width * 0.5;
+                    scalebar_coords[(coord_counter+0)*3+2] = 0;
 
-                    scalebar_coords[(coord_counter+1)*3+0] = x_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+1)*3+1] = data_view_extent[2] + length * 0.5 - tick_width * 0.5;
-                    scalebar_coords[(coord_counter+1)*3+2] = data_view_extent[4] + length * 0.5;
+                    scalebar_coords[(coord_counter+1)*3+0] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+1)*3+1] = - tick_width * 0.5;
+                    scalebar_coords[(coord_counter+1)*3+2] = 0;
 
-                    scalebar_coords[(coord_counter+2)*3+0] = x_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+2)*3+1] = data_view_extent[2] + length * 0.5;
-                    scalebar_coords[(coord_counter+2)*3+2] = data_view_extent[4] + length * 0.5 + tick_width * 0.5;
+                    scalebar_coords[(coord_counter+2)*3+0] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+2)*3+1] = 0;
+                    scalebar_coords[(coord_counter+2)*3+2] = tick_width * 0.5;
 
-                    scalebar_coords[(coord_counter+3)*3+0] = x_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+3)*3+1] = data_view_extent[2] + length * 0.5;
-                    scalebar_coords[(coord_counter+3)*3+2] = data_view_extent[4] + length * 0.5 - tick_width * 0.5;
+                    scalebar_coords[(coord_counter+3)*3+0] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+3)*3+1] = 0;
+                    scalebar_coords[(coord_counter+3)*3+2] = - tick_width * 0.5;
 
                     // Y-tick cross
-                    scalebar_coords[(coord_counter+4)*3+0] = data_view_extent[0] + length * 0.5 + tick_width * 0.5;
-                    scalebar_coords[(coord_counter+4)*3+1] = y_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+4)*3+2] = data_view_extent[4] + length * 0.5;
+                    scalebar_coords[(coord_counter+4)*3+0] = tick_width * 0.5;
+                    scalebar_coords[(coord_counter+4)*3+1] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+4)*3+2] = 0;
 
-                    scalebar_coords[(coord_counter+5)*3+0] = data_view_extent[0] + length * 0.5 - tick_width * 0.5;
-                    scalebar_coords[(coord_counter+5)*3+1] = y_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+5)*3+2] = data_view_extent[4] + length * 0.5;
+                    scalebar_coords[(coord_counter+5)*3+0] = - tick_width * 0.5;
+                    scalebar_coords[(coord_counter+5)*3+1] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+5)*3+2] = 0;
 
-                    scalebar_coords[(coord_counter+6)*3+0] = data_view_extent[0] + length * 0.5;
-                    scalebar_coords[(coord_counter+6)*3+1] = y_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+6)*3+2] = data_view_extent[4] + length * 0.5 + tick_width * 0.5;
+                    scalebar_coords[(coord_counter+6)*3+0] = 0;
+                    scalebar_coords[(coord_counter+6)*3+1] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+6)*3+2] = tick_width * 0.5;
 
-                    scalebar_coords[(coord_counter+7)*3+0] = data_view_extent[0] + length * 0.5;
-                    scalebar_coords[(coord_counter+7)*3+1] = y_start + j * tick_interdistance;
-                    scalebar_coords[(coord_counter+7)*3+2] = data_view_extent[4] + length * 0.5 - tick_width * 0.5;
+                    scalebar_coords[(coord_counter+7)*3+0] = 0;
+                    scalebar_coords[(coord_counter+7)*3+1] = j * tick_interdistance;
+                    scalebar_coords[(coord_counter+7)*3+2] = - tick_width * 0.5;
 
                     // Z-tick cross
-                    scalebar_coords[(coord_counter+8)*3+0] = data_view_extent[0] + length * 0.5 + tick_width * 0.5;
-                    scalebar_coords[(coord_counter+8)*3+1] = data_view_extent[2] + length * 0.5;
-                    scalebar_coords[(coord_counter+8)*3+2] = z_start + j * tick_interdistance;
+                    scalebar_coords[(coord_counter+8)*3+0] = tick_width * 0.5;
+                    scalebar_coords[(coord_counter+8)*3+1] = 0;
+                    scalebar_coords[(coord_counter+8)*3+2] = j * tick_interdistance;
 
-                    scalebar_coords[(coord_counter+9)*3+0] = data_view_extent[0] + length * 0.5 - tick_width * 0.5;
-                    scalebar_coords[(coord_counter+9)*3+1] = data_view_extent[2] + length * 0.5;
-                    scalebar_coords[(coord_counter+9)*3+2] = z_start + j * tick_interdistance;
+                    scalebar_coords[(coord_counter+9)*3+0] = - tick_width * 0.5;
+                    scalebar_coords[(coord_counter+9)*3+1] = 0;
+                    scalebar_coords[(coord_counter+9)*3+2] = j * tick_interdistance;
 
-                    scalebar_coords[(coord_counter+10)*3+0] = data_view_extent[0] + length * 0.5;
-                    scalebar_coords[(coord_counter+10)*3+1] = data_view_extent[2] + length * 0.5 + tick_width * 0.5;
-                    scalebar_coords[(coord_counter+10)*3+2] = z_start + j * tick_interdistance;
+                    scalebar_coords[(coord_counter+10)*3+0] = 0;
+                    scalebar_coords[(coord_counter+10)*3+1] = tick_width * 0.5;
+                    scalebar_coords[(coord_counter+10)*3+2] = j * tick_interdistance;
 
-                    scalebar_coords[(coord_counter+11)*3+0] = data_view_extent[0] + length * 0.5;
-                    scalebar_coords[(coord_counter+11)*3+1] = data_view_extent[2] + length * 0.5 - tick_width * 0.5;
-                    scalebar_coords[(coord_counter+11)*3+2] = z_start + j * tick_interdistance;
+                    scalebar_coords[(coord_counter+11)*3+0] = 0;
+                    scalebar_coords[(coord_counter+11)*3+1] = - tick_width * 0.5;
+                    scalebar_coords[(coord_counter+11)*3+2] = j * tick_interdistance;
 
 
                     // Get positions for tick text
@@ -3239,31 +3286,31 @@ size_t VolumeRenderWorker::setScaleBars()
 
     // Base cross 
     // X
-    scalebar_coords[(coord_counter+0)*3+0] = data_view_extent[0];
-    scalebar_coords[(coord_counter+0)*3+1] = data_view_extent[2] + length * 0.5;
-    scalebar_coords[(coord_counter+0)*3+2] = data_view_extent[4] + length * 0.5;
+    scalebar_coords[(coord_counter+0)*3+0] = -length * 0.5;
+    scalebar_coords[(coord_counter+0)*3+1] = 0;
+    scalebar_coords[(coord_counter+0)*3+2] = 0;
 
-    scalebar_coords[(coord_counter+1)*3+0] = data_view_extent[1];
-    scalebar_coords[(coord_counter+1)*3+1] = data_view_extent[2] + length * 0.5;
-    scalebar_coords[(coord_counter+1)*3+2] = data_view_extent[4] + length * 0.5;
+    scalebar_coords[(coord_counter+1)*3+0] = length * 0.5;
+    scalebar_coords[(coord_counter+1)*3+1] = 0;
+    scalebar_coords[(coord_counter+1)*3+2] = 0;
 
     // Y
-    scalebar_coords[(coord_counter+2)*3+0] = data_view_extent[0] + length * 0.5;
-    scalebar_coords[(coord_counter+2)*3+1] = data_view_extent[2];
-    scalebar_coords[(coord_counter+2)*3+2] = data_view_extent[4] + length * 0.5;
+    scalebar_coords[(coord_counter+2)*3+0] = 0;
+    scalebar_coords[(coord_counter+2)*3+1] = -length * 0.5;
+    scalebar_coords[(coord_counter+2)*3+2] = 0;
 
-    scalebar_coords[(coord_counter+3)*3+0] = data_view_extent[0] + length * 0.5;
-    scalebar_coords[(coord_counter+3)*3+1] = data_view_extent[3];
-    scalebar_coords[(coord_counter+3)*3+2] = data_view_extent[4] + length * 0.5;
+    scalebar_coords[(coord_counter+3)*3+0] = 0;
+    scalebar_coords[(coord_counter+3)*3+1] = length * 0.5;
+    scalebar_coords[(coord_counter+3)*3+2] = 0;
 
     // Z
-    scalebar_coords[(coord_counter+4)*3+0] = data_view_extent[0] + length * 0.5;
-    scalebar_coords[(coord_counter+4)*3+1] = data_view_extent[2] + length * 0.5;
-    scalebar_coords[(coord_counter+4)*3+2] = data_view_extent[4];
+    scalebar_coords[(coord_counter+4)*3+0] = 0;
+    scalebar_coords[(coord_counter+4)*3+1] = 0;
+    scalebar_coords[(coord_counter+4)*3+2] = -length * 0.5;
 
-    scalebar_coords[(coord_counter+5)*3+0] = data_view_extent[0] + length * 0.5;
-    scalebar_coords[(coord_counter+5)*3+1] = data_view_extent[2] + length * 0.5;
-    scalebar_coords[(coord_counter+5)*3+2] = data_view_extent[5];
+    scalebar_coords[(coord_counter+5)*3+0] = 0;
+    scalebar_coords[(coord_counter+5)*3+1] = 0;
+    scalebar_coords[(coord_counter+5)*3+2] = length * 0.5;
 
     coord_counter += 6;
 
@@ -3384,9 +3431,12 @@ void VolumeRenderWorker::setIntegration3D()
 }
 void VolumeRenderWorker::setViewMode(int value)
 {
+    // This could be done more neatly by maintaining a simple index to indicate the mode. Sins of the past.
+
     if (value == 0)
     {
         isIntegration3DActive = true;
+        isSlicingActive = false;
     }
     else if (value == 1)
     {

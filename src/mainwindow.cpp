@@ -1779,10 +1779,18 @@ void MainWindow::initializeInteractives()
         alignAlongAStarButton = new QPushButton("Align a*");
         alignAlongBStarButton = new QPushButton("Align b*");
         alignAlongCStarButton = new QPushButton("Align c*");
-        
+
         connect(alignAlongAStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignAStartoZ()));
         connect(alignAlongBStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignBStartoZ()));
         connect(alignAlongCStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignCStartoZ()));
+
+        alignSlicetoAStarPushButton = new QPushButton("Slice a*");
+        alignSlicetoBStarPushButton = new QPushButton("Slice b*");
+        alignSlicetoCStarPushButton = new QPushButton("Slice c*");
+        
+        connect(alignSlicetoAStarPushButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignSlicetoAStar()));
+        connect(alignSlicetoBStarPushButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignSlicetoBStar()));
+        connect(alignSlicetoCStarPushButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignSlicetoCStar()));
         
         helpCellOverlayButton = new QPushButton("Help Cell");
         rotateCellButton = new QPushButton("Rotation");
@@ -1813,11 +1821,15 @@ void MainWindow::initializeInteractives()
         unitCellLayout->addWidget(alignAlongAStarButton,5,0,1,2);
         unitCellLayout->addWidget(alignAlongBStarButton,5,2,1,2);
         unitCellLayout->addWidget(alignAlongCStarButton,5,4,1,2);
+
+        unitCellLayout->addWidget(alignSlicetoAStarPushButton,6,0,1,2);
+        unitCellLayout->addWidget(alignSlicetoBStarPushButton,6,2,1,2);
+        unitCellLayout->addWidget(alignSlicetoCStarPushButton,6,4,1,2);
         
-        unitCellLayout->addWidget(helpCellOverlayButton,6,0,1,3);
-        unitCellLayout->addWidget(rotateCellButton,6,3,1,3);
+        unitCellLayout->addWidget(helpCellOverlayButton,7,0,1,3);
+        unitCellLayout->addWidget(rotateCellButton,7,3,1,3);
         
-        unitCellLayout->addWidget(toggleCellButton,7,0,1,6);
+        unitCellLayout->addWidget(toggleCellButton,8,0,1,6);
         
         unitCellWidget->setLayout(unitCellLayout);
         

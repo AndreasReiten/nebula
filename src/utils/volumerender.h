@@ -74,6 +74,10 @@ public slots:
     void alignLabZtoSliceZ();
     void alignSliceToLab();
     
+    void alignSlicetoAStar();
+    void alignSlicetoBStar();
+    void alignSlicetoCStar();
+
     void alignAStartoZ();
     void alignBStartoZ();
     void alignCStartoZ();
@@ -132,7 +136,7 @@ private:
     bool isDataExtentReadOnly;
     bool isCenterlineActive;
     bool isRulerActive;
-    bool isLMBDown;
+//    bool isLMBDown;
     bool isURotationActive;
     bool isLabFrameActive;
     bool isMiniCellActive;
