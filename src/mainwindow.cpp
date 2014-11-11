@@ -713,7 +713,6 @@ void MainWindow::loadProject()
             double dataMax;
             bool log;
             bool lorentzCorrection;
-            bool autoBackgroundCorrection;
             int svo_lvl;
             double noise;
             double omegaCorrection, kappaCorrection, phiCorrection;
