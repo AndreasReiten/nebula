@@ -51,5 +51,7 @@
         <file>art/select.png</file>
         <file>art/select2.png</file>
         <file>art/weight_center.png</file>
+        <file>art/prev_series.png</file>
+        <file>art/next_series.png</file>
     </qresource>
 </RCC>
