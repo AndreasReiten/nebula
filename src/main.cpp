@@ -14,6 +14,7 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
+ * Remove hard memory requirements in cases where information about max RAM is known (case for vRAM).
  * (Low priority) Radial selectivity. I. e. confining viewable area to a spherical shell
  * (Time consuming) A solid linear texture edit (tsf function)
  * (Done) Area selection prior to reduction to limit data size.
