@@ -70,8 +70,8 @@ private slots:
     void prevFrame();
     void batchForward();
     void batchBackward();
-    void nextSeries();
-    void prevSeries();
+//    void nextSeries();
+//    void prevSeries();
     
     void setHeader(QString path);
     

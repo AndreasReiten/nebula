@@ -574,7 +574,7 @@ public:
     ~VolumeRenderWindow();
 
     void setSharedWindow(SharedContextWindow * window);
-    VolumeRenderWorker *getWorker();
+    VolumeRenderWorker *worker();
 
     void initializeWorker();
 

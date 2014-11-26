@@ -40,7 +40,7 @@ VolumeRenderWindow::~VolumeRenderWindow()
 
 }
 
-VolumeRenderWorker *  VolumeRenderWindow::getWorker()
+VolumeRenderWorker *  VolumeRenderWindow::worker()
 {
     return gl_worker;
 }
@@ -2998,10 +2998,10 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
         };
 
         GLfloat texpos[] = {
-            0.0, 0.0,
-            1.0, 0.0,
-            1.0, 1.0,
-            0.0, 1.0
+            0.0, -1.0,
+            1.0, -1.0,
+            1.0, -2.0,
+            0.0, -2.0
         };
 
         GLuint indices[] = {0,1,3,1,2,3};

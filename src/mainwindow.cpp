@@ -203,7 +203,7 @@ void MainWindow::initializeWorkers()
     connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseHigh(double)));
     connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectLow(double)));
     connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectHigh(double)));
-    connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
+    connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
     
 
     projectFileWorker->moveToThread(projectFileThread);
@@ -224,7 +224,7 @@ void MainWindow::initializeWorkers()
     connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
     connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
+    connect(imagePreviewWindow->worker(), SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
     connect(this, SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
 
 
@@ -244,7 +244,7 @@ void MainWindow::initializeWorkers()
     connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseHigh(double)));
     connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectLow(double)));
     connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectHigh(double)));
-    connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), multiWorker, SLOT(setNoiseLow(double)));
+    connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), multiWorker, SLOT(setNoiseLow(double)));
 
     multiWorker->moveToThread(allInOneThread);
     connect(allInOneThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -266,7 +266,7 @@ void MainWindow::initializeWorkers()
     connect(multiWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(allInOneButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
     connect(killButton, SIGNAL(clicked()), multiWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
+    connect(imagePreviewWindow->worker(), SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
     connect(this, SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
 
 
@@ -505,35 +505,35 @@ void MainWindow::batchBackward()
 }
 
 
-void MainWindow::nextSeries()
-{
-    if (!series_set.isEmpty())
-    {
-        series_set.current()->rememberCurrent();
-        series_set.next();
-        series_set.current()->restoreMemory();
+//void MainWindow::nextSeries()
+//{
+//    if (!series_set.isEmpty())
+//    {
+//        series_set.current()->saveCurrentIndex();
+//        series_set.next();
+//        series_set.current()->loadSavedIndex();
 
-        imageSpinBox->setRange(0,series_set.current()->size()-1);
-        imageSpinBox->setValue(series_set.current()->i());
+//        imageSpinBox->setRange(0,series_set.current()->size()-1);
+//        imageSpinBox->setValue(series_set.current()->i());
 
-        emit imageChanged(*series_set.current()->current());
-    }
-}
+//        emit imageChanged(*series_set.current()->current());
+//    }
+//}
 
-void MainWindow::prevSeries()
-{
-    if (!series_set.isEmpty())
-    {
-        series_set.current()->rememberCurrent();
-        series_set.previous();
-        series_set.current()->restoreMemory();
+//void MainWindow::prevSeries()
+//{
+//    if (!series_set.isEmpty())
+//    {
+//        series_set.current()->saveCurrentIndex();
+//        series_set.previous();
+//        series_set.current()->loadSavedIndex();
 
-        imageSpinBox->setRange(0,series_set.current()->size()-1);
-        imageSpinBox->setValue(series_set.current()->i());
+//        imageSpinBox->setRange(0,series_set.current()->size()-1);
+//        imageSpinBox->setValue(series_set.current()->i());
 
-        emit imageChanged(*series_set.current()->current());
-    }
-}
+//        emit imageChanged(*series_set.current()->current());
+//    }
+//}
 
 void MainWindow::runProjectFileThread()
 {
@@ -1031,61 +1031,61 @@ void MainWindow::setTab(int tab)
 void MainWindow::initializeConnects()
 {
     /* this <-> volumeRenderWidget */
-    connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setQuality(int)));
-    connect(this->qualitySlider, SIGNAL(sliderReleased()), volumeRenderWindow->getWorker(), SLOT(refreshTexture()));
-    connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setScalebar()));
-    connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setSlicing()));
-    connect(this->integrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration2D()));
-    connect(this->integrate3DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setIntegration3D()));
-    connect(this->shadowAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setShadow()));
-    connect(this->orthoGridAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setOrthoGrid()));
-    connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setProjection()));
-    connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setBackground()));
-    connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLogarithmic2D()));
-    connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setDataStructure()));
-    connect(this->volumeRenderTsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfColor(int)));
-    connect(this->volumeRenderViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setViewMode(int)));
-    connect(this->volumeRenderTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->getWorker(), SLOT(setTsfAlpha(int)));
-    connect(this->volumeRenderDataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMin(double)));
-    connect(this->volumeRenderDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setDataMax(double)));
-    connect(this->volumeRenderAlphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setAlpha(double)));
-    connect(this->volumeRenderBrightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setBrightness(double)));
-    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setModel()));
-    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam0(double)));
-    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam1(double)));
-    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam2(double)));
-    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setModelParam3(double)));
-    connect(volumeRenderWindow->getWorker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(this, SIGNAL(captureFrameBuffer(QString)), volumeRenderWindow->getWorker(), SLOT(takeScreenShot(QString)));
-    connect(this->alignLabXtoSliceXAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabXtoSliceX()));
-    connect(this->alignLabYtoSliceYAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabYtoSliceY()));
-    connect(this->alignLabZtoSliceZAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignLabZtoSliceZ()));
-    connect(this->alignSliceToLabAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(alignSliceToLab()));
+    connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setQuality(int)));
+    connect(this->qualitySlider, SIGNAL(sliderReleased()), volumeRenderWindow->worker(), SLOT(refreshTexture()));
+    connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setScalebar()));
+    connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setSlicing()));
+    connect(this->integrate2DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setIntegration2D()));
+    connect(this->integrate3DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setIntegration3D()));
+    connect(this->shadowAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setShadow()));
+    connect(this->orthoGridAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setOrthoGrid()));
+    connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setProjection()));
+    connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setBackground()));
+    connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setLogarithmic2D()));
+    connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setDataStructure()));
+    connect(this->volumeRenderTsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setTsfColor(int)));
+    connect(this->volumeRenderViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setViewMode(int)));
+    connect(this->volumeRenderTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setTsfAlpha(int)));
+    connect(this->volumeRenderDataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setDataMin(double)));
+    connect(this->volumeRenderDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setDataMax(double)));
+    connect(this->volumeRenderAlphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setAlpha(double)));
+    connect(this->volumeRenderBrightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setBrightness(double)));
+    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setModel()));
+    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam0(double)));
+    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam1(double)));
+    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam2(double)));
+    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam3(double)));
+    connect(volumeRenderWindow->worker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(this, SIGNAL(captureFrameBuffer(QString)), volumeRenderWindow->worker(), SLOT(takeScreenShot(QString)));
+    connect(this->alignLabXtoSliceXAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabXtoSliceX()));
+    connect(this->alignLabYtoSliceYAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabYtoSliceY()));
+    connect(this->alignLabZtoSliceZAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabZtoSliceZ()));
+    connect(this->alignSliceToLabAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignSliceToLab()));
     
-    connect(this->rotateLeftAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateLeft()));
-    connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateRight()));
-    connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateUp()));
-    connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rotateDown()));
-    connect(this->rollCW, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rollCW()));
-    connect(this->rollCCW, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(rollCCW()));
-    connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(toggleRuler()));
-    connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(addMarker()));
-    connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setLabFrame()));
-    connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setURotation()));
-    connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setUnitcell()));
-    connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setHCurrent(int)));
-    connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setKCurrent(int)));
-    connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->getWorker(), SLOT(setLCurrent(int)));
-    connect(this->integrateCountsAct, SIGNAL(triggered()), volumeRenderWindow->getWorker(), SLOT(setCountIntegration()));
+    connect(this->rotateLeftAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateLeft()));
+    connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateRight()));
+    connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateUp()));
+    connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateDown()));
+    connect(this->rollCW, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rollCW()));
+    connect(this->rollCCW, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rollCCW()));
+    connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(toggleRuler()));
+    connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(addMarker()));
+    connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setLabFrame()));
+    connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setURotation()));
+    connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setUnitcell()));
+    connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setHCurrent(int)));
+    connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setKCurrent(int)));
+    connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setLCurrent(int)));
+    connect(this->integrateCountsAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setCountIntegration()));
     
     /* this <-> this */
-    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_a(double)));
-    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_b(double)));
-    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_c(double)));
+    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_a(double)));
+    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_b(double)));
+    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_c(double)));
     
-    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_alpha(double)));
-    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_beta(double)));
-    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->getWorker(), SLOT(setUB_gamma(double)));
+    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_alpha(double)));
+    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_beta(double)));
+    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_gamma(double)));
     
     
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
@@ -1164,7 +1164,7 @@ void MainWindow::saveLoadedSvo()
             svo_loaded.view_alpha = volumeRenderAlphaSpinBox->value();
             svo_loaded.view_brightness = volumeRenderBrightnessSpinBox->value();
             
-            svo_loaded.setUB(volumeRenderWindow->getWorker()->getUBMatrix());
+            svo_loaded.setUB(volumeRenderWindow->worker()->getUBMatrix());
             svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
             svo_loaded.save(file_name);
         }
@@ -1182,7 +1182,7 @@ void MainWindow::openSvo()
         working_dir = info.absoluteDir().path();
 
         svo_loaded.open(file_name);
-        volumeRenderWindow->getWorker()->setSvo(&(svo_loaded));
+        volumeRenderWindow->worker()->setSvo(&(svo_loaded));
         
         volumeRenderViewModeComboBox->setCurrentIndex(svo_loaded.view_mode);
         imagePreviewTsfAlphaComboBox->setCurrentIndex(svo_loaded.view_tsf_style);
@@ -1198,7 +1198,7 @@ void MainWindow::openSvo()
         
         if (UB.size() == 3*3)
         {
-            volumeRenderWindow->getWorker()->setUBMatrix(UB);
+            volumeRenderWindow->worker()->setUBMatrix(UB);
         
             alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
             betaNormSpinBox->setValue(UB.beta()*180.0/pi);
@@ -1453,11 +1453,11 @@ void MainWindow::initializeInteractives()
         imageToolBar->addAction(showWeightCenterAction);
         imageToolBar->addWidget(pathLineEdit);
     
-        connect(showWeightCenterAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(showWeightCenter(bool)));
-        connect(squareAreaSelectAlphaAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setSelectionAlphaActive(bool)));
-        connect(squareAreaSelectBetaAction, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setSelectionBetaActive(bool)));
-        connect(imagePreviewWindow->getWorker(), SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
-        connect(imagePreviewWindow->getWorker(), SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
+        connect(showWeightCenterAction, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(showWeightCenter(bool)));
+        connect(squareAreaSelectAlphaAction, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setSelectionAlphaActive(bool)));
+        connect(squareAreaSelectBetaAction, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setSelectionBetaActive(bool)));
+        connect(imagePreviewWindow->worker(), SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
+        connect(imagePreviewWindow->worker(), SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
 
         imageMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
 
@@ -1575,20 +1575,20 @@ void MainWindow::initializeInteractives()
         imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
         imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
         
-        connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfTexture(int)));
-        connect(imagePreviewTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setTsfAlpha(int)));
-        connect(imagePreviewDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setDataMin(double)));
-        connect(imagePreviewDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setDataMax(double)));
-        connect(imagePreviewLogCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setLog(bool)));
-        connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->getWorker(), SLOT(setMode(int)));
+        connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setTsfTexture(int)));
+        connect(imagePreviewTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setTsfAlpha(int)));
+        connect(imagePreviewDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setDataMin(double)));
+        connect(imagePreviewDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setDataMax(double)));
+        connect(imagePreviewLogCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setLog(bool)));
+        connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setMode(int)));
         connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(saveProject()));
         connect(loadProjectAction, SIGNAL(triggered()), this, SLOT(loadProject()));
-        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->getWorker(), SLOT(setFrame(ImageInfo)));
-        connect(centerImageAction, SIGNAL(triggered()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
-        connect(this, SIGNAL(centerImage()), imagePreviewWindow->getWorker(), SLOT(centerImage()));
+        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->worker(), SLOT(setFrame(ImageInfo)));
+        connect(centerImageAction, SIGNAL(triggered()), imagePreviewWindow->worker(), SLOT(centerImage()));
+        connect(this, SIGNAL(centerImage()), imagePreviewWindow->worker(), SLOT(centerImage()));
         
-        connect(imagePreviewWindow->getWorker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
-        connect(imagePreviewWindow->getWorker(), SIGNAL(selectionChanged(Selection)), this, SLOT(setSeriesSelection(Selection)));
+        connect(imagePreviewWindow->worker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
+        connect(imagePreviewWindow->worker(), SIGNAL(selectionChanged(Selection)), this, SLOT(setSeriesSelection(Selection)));
         
     }
     
@@ -1611,9 +1611,9 @@ void MainWindow::initializeInteractives()
         correctionLorentzCheckBox = new QCheckBox("Lorentz correction");
         autoBackgroundCorrectionCheckBox = new QCheckBox("Automatic background subtraction");
         
-        connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setCorrection(bool)));
-        connect(autoBackgroundCorrectionCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->getWorker(), SLOT(setAutoBackgroundCorrection(bool)));
-        connect(imagePreviewWindow->getWorker(), SIGNAL(noiseLowChanged(double)), noiseCorrectionMinDoubleSpinBox, SLOT(setValue(double)));
+        connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setCorrection(bool)));
+        connect(autoBackgroundCorrectionCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setAutoBackgroundCorrection(bool)));
+        connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), noiseCorrectionMinDoubleSpinBox, SLOT(setValue(double)));
         
         
         QGridLayout * correctionLayout = new QGridLayout;
@@ -1629,10 +1629,10 @@ void MainWindow::initializeInteractives()
         imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
         
         
-        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseLow(double)));
-        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdNoiseHigh(double)));
-        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionLow(double)));
-        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->getWorker(), SLOT(setThresholdPostCorrectionHigh(double)));
+        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdNoiseLow(double)));
+        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdNoiseHigh(double)));
+        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdPostCorrectionLow(double)));
+        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdPostCorrectionHigh(double)));
     }
     
     
@@ -1691,7 +1691,7 @@ void MainWindow::initializeInteractives()
         volumeRenderTsfAlphaComboBox->addItem(trUtf8("Uniform"));
         
         volumeRenderLogCheckBox = new QCheckBox("Log");
-        connect(volumeRenderLogCheckBox, SIGNAL(toggled(bool)), volumeRenderWindow->getWorker(), SLOT(setLog(bool)));
+        connect(volumeRenderLogCheckBox, SIGNAL(toggled(bool)), volumeRenderWindow->worker(), SLOT(setLog(bool)));
         
         
         qualitySlider = new QSlider(Qt::Horizontal);
@@ -1779,17 +1779,17 @@ void MainWindow::initializeInteractives()
         alignAlongBStarButton = new QPushButton("Align b*");
         alignAlongCStarButton = new QPushButton("Align c*");
 
-        connect(alignAlongAStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignAStartoZ()));
-        connect(alignAlongBStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignBStartoZ()));
-        connect(alignAlongCStarButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignCStartoZ()));
+        connect(alignAlongAStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignAStartoZ()));
+        connect(alignAlongBStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignBStartoZ()));
+        connect(alignAlongCStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignCStartoZ()));
 
         alignSlicetoAStarPushButton = new QPushButton("Slice a*");
         alignSlicetoBStarPushButton = new QPushButton("Slice b*");
         alignSlicetoCStarPushButton = new QPushButton("Slice c*");
         
-        connect(alignSlicetoAStarPushButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignSlicetoAStar()));
-        connect(alignSlicetoBStarPushButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignSlicetoBStar()));
-        connect(alignSlicetoCStarPushButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(alignSlicetoCStar()));
+        connect(alignSlicetoAStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoAStar()));
+        connect(alignSlicetoBStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoBStar()));
+        connect(alignSlicetoCStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoCStar()));
         
         helpCellOverlayButton = new QPushButton("Help Cell");
         rotateCellButton = new QPushButton("Rotation");
@@ -1801,7 +1801,7 @@ void MainWindow::initializeInteractives()
         helpCellOverlayButton->setCheckable(true);
         helpCellOverlayButton->setChecked(true);
         
-        connect(helpCellOverlayButton, SIGNAL(clicked()), volumeRenderWindow->getWorker(), SLOT(setMiniCell()));
+        connect(helpCellOverlayButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setMiniCell()));
         
         QGridLayout * unitCellLayout = new QGridLayout; 
         
