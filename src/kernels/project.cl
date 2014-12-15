@@ -4,24 +4,24 @@ __kernel void FRAME_FILTER(
     sampler_t tsf_sampler,
     sampler_t intensity_sampler,
     __constant float * sample_rotation_matrix,
-    float2 threshold_one,
-    float2 threshold_two,
-    float background_flux,
-    float background_exposure_time,
+//    float2 threshold_one,
+//    float2 threshold_two,
+//    float background_flux,
+//    float background_exposure_time,
     float h_pixel_size_x,
     float h_pixel_size_y,
-    float h_exposure_time,
+//    float h_exposure_time,
     float h_wavelength,
     float h_detector_distance,
     float h_beam_x,
     float h_beam_y,
-    float h_flux,
+//    float h_flux,
     float h_start_angle,
     float h_angle_increment,
     float h_kappa,
     float h_phi,
     float h_omega,
-    float max_intensity,
+//    float max_intensity,
     int4 selection
     )
 {
@@ -47,15 +47,18 @@ __kernel void FRAME_FILTER(
     {
         float4 Q = (float4)(0.0f);
         
-        if ((target_dim.x - 1 - id_glb.x >= selection.x) && (target_dim.x - 1 - id_glb.x < selection.y) && (target_dim.y - 1 - id_glb.y >= selection.z) && (target_dim.y - 1 - id_glb.y < selection.w))
+        if ((id_glb.x >= selection.x) && // Left 
+            (id_glb.x < selection.y) && // Right
+            (id_glb.y >= selection.z) && // Top
+            (id_glb.y < selection.w)) // Bottom
         {
-            float intensity = read_imagef(source, intensity_sampler, (target_dim - 1 - id_glb)).w; /* DANGER */
-    
-            // Noise filter
-            intensity = clamp(intensity, threshold_one.x, threshold_one.y); // All readings within noise thresholds
-            intensity -= threshold_one.x; // Subtracts the noise
+            Q.w = read_imagef(source, intensity_sampler, id_glb).w; /* DANGER */
             
-            if (intensity > 0.0f)
+            // Noise filter
+//            intensity = clamp(intensity, threshold_one.x, threshold_one.y); // All readings within noise thresholds
+//            intensity -= threshold_one.x; // Subtracts the noise
+            
+            if (Q.w > 0.0f)
             {
                 /*
                  * Lorentz Polarization correction and distance correction + projecting the pixel onto the Ewald sphere
@@ -65,27 +68,26 @@ __kernel void FRAME_FILTER(
                 float3 k_i = (float3)(-k,0,0);
                 float3 k_f = k*normalize((float3)(
                     -h_detector_distance, 
-                    h_pixel_size_x * ((float) id_glb.y - h_beam_x), /* DANGER */
-                    h_pixel_size_y * ((float) id_glb.x - h_beam_y))); /* DANGER */
+                    h_pixel_size_x * ((float) (target_dim.y - 1 - id_glb.y) - h_beam_x), /* DANGER */
+                    h_pixel_size_y * ((float) (target_dim.x - 1 - id_glb.x) - h_beam_y))); /* DANGER */
                 
                 Q.xyz = k_f - k_i; 
-                Q.w = intensity;
                 
                 // Titlt the detector around origo assuming it correctly coincides with the actual center of rotation ( not yet implemented)
     
-                {
+//                {
                     // XYZ now has the direction of the scattered ray with respect to the incident one. This can be used to calculate the scattering angle for correction purposes. lab_theta and lab_phi are not to be confused with the detector/sample angles. These are simply the circular coordinate representation of the pixel position
-                    float lab_theta = asin(native_divide(Q.y, k));
-                    float lab_phi = atan2(Q.z,-Q.x);
+//                    float lab_theta = asin(native_divide(Q.y, k));
+//                    float lab_phi = atan2(Q.z,-Q.x);
     
                     /* Lorentz Polarization correction - The Lorentz part will depend on the scanning axis, but has to be applied if the frames are integrated over some time */
     
                     // Assuming rotation around the z-axis of the lab frame:
-                    float L = fabs(native_sin(lab_theta));
+//                    float L = fabs(native_sin(lab_theta));
     
                     // The polarization correction also needs a bit more work...
-                    Q.w *= L;
-                }
+//                    Q.w *= L;
+//                }
     
                 // Sample rotation
                 float3 temp = Q.xyz;
@@ -95,10 +97,12 @@ __kernel void FRAME_FILTER(
                 Q.z = temp.x * sample_rotation_matrix[8] + temp.y * sample_rotation_matrix[9] + temp.z * sample_rotation_matrix[10];
     
                 // Post correction filter (Note: remove this at some point, it has little logical purpose)
-                Q.w = clamp(Q.w, threshold_two.x, threshold_two.y); 
-                Q.w -= threshold_two.x; 
+//                Q.w = clamp(Q.w, threshold_two.x, threshold_two.y); 
+//                Q.w -= threshold_two.x; 
                 
             }
+            
+//            Q.w = 11.0f;
     
         }    
         else 

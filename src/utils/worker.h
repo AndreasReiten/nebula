@@ -15,12 +15,12 @@ class BaseWorker : public QObject
         BaseWorker();
         ~BaseWorker();
 
-        void setFilePaths(QStringList * file_paths);
+//        void setFilePaths(QStringList * file_paths);
 //        void setQSpaceInfo(float * suggested_search_radius_low, float * suggested_search_radius_high, float * suggested_q);
-        void setFiles(QList<DetectorFile> * files);
+//        void setFiles(QList<DetectorFile> * files);
         void setReducedPixels(Matrix<float> * reduced_pixels);
         void setOpenCLContext(OpenCLContext * context);
-        void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
+//        void setOpenCLBuffers(cl_mem * alpha_img_clgl, cl_mem * beta_img_clgl, cl_mem * gamma_img_clgl, cl_mem * tsf_img_clgl);
         void setSVOFile(SparseVoxelOcttree * svo);
 
     signals:
@@ -33,22 +33,23 @@ class BaseWorker : public QObject
         void changedFormatMemoryUsage(QString str);
         void changedRangeMemoryUsage(int min, int max);
         void changedRangeGenericProcess(int min, int max);
-        void changedTabWidget(int value);
-        void changedFile(QString path);
+//        void changedTabWidget(int value);
+//        void changedFile(QString path);
         void popup(QString title, QString text);
         void qSpaceInfoChanged(float suggested_search_radius_low, float suggested_search_radius_high, float suggested_q);
 
     public slots:
+        void setSet(SeriesSet set);
         void killProcess();
         void setActiveAngle(int value);
         void setOffsetOmega(double value);
         void setOffsetKappa(double value);
         void setOffsetPhi(double value);
-        void setNoiseLow(double value);
-        void setNoiseHigh(double value);
-        void setThldProjectLow(double value);
-        void setThldProjectHigh(double value);
-        void setQSpaceInfo(float suggested_search_radius_low, float suggested_search_radius_high, float suggested_q);
+//        void setNoiseLow(double value);
+//        void setNoiseHigh(double value);
+//        void setThldProjectLow(double value);
+//        void setThldProjectHigh(double value);
+//        void setQSpaceInfo(float suggested_search_radius_low, float suggested_search_radius_high, float suggested_q);
 
     protected:
         // Runtime
@@ -56,10 +57,10 @@ class BaseWorker : public QObject
         
         // OpenCL
         OpenCLContext * context_cl;
-        cl_mem * alpha_img_clgl;
-        cl_mem * beta_img_clgl;
-        cl_mem * gamma_img_clgl;
-        cl_mem * tsf_img_clgl;
+//        cl_mem * alpha_img_clgl;
+//        cl_mem * beta_img_clgl;
+//        cl_mem * gamma_img_clgl;
+//        cl_mem * tsf_img_clgl;
         cl_int err;
         cl_program program;
         bool isCLInitialized;
@@ -72,12 +73,13 @@ class BaseWorker : public QObject
 
         // File treatment
         int active_angle;
-        float thld_noise_low;
-        float thld_noise_high;
-        float thld_project_low;
-        float thld_project_high;
-        QStringList * file_paths;
-        QList<DetectorFile> * files;
+//        float thld_noise_low;
+//        float thld_noise_high;
+//        float thld_project_low;
+//        float thld_project_high;
+//        QStringList * file_paths; // Deprecated
+//        QList<DetectorFile> * files; // Deprecated
+        SeriesSet set;
         Matrix<float> * reduced_pixels;
         
         double offset_omega;
@@ -278,49 +280,76 @@ class BaseWorker : public QObject
         PROTOTYPE_QOpenCLGetDeviceInfo QOpenCLGetDeviceInfo;
 };
 
-class SetFileWorker : public BaseWorker
-{
-    Q_OBJECT
+//class SetFileWorker : public BaseWorker
+//{
+//    Q_OBJECT
 
-    public:
-        SetFileWorker();
-        ~SetFileWorker();
+//    public:
+//        SetFileWorker();
+//        ~SetFileWorker();
 
-    private slots:
-        void process();
-};
-
-
-class ReadFileWorker : public BaseWorker
-{
-    Q_OBJECT
-
-    public:
-        ReadFileWorker();
-        ~ReadFileWorker();
-
-    private slots:
-        void process();
-};
+//    private slots:
+//        void process();
+//};
 
 
-class ProjectFileWorker : public BaseWorker
-{
-    Q_OBJECT
+//class ReadFileWorker : public BaseWorker
+//{
+//    Q_OBJECT
 
-    public:
-        ProjectFileWorker();
-        ~ProjectFileWorker();
-        int projectFile(DetectorFile * file);
+//    public:
+//        ReadFileWorker();
+//        ~ReadFileWorker();
+
+//    private slots:
+//        void process();
+//};
+
+
+//class ProjectFileWorker : public BaseWorker
+//{
+//    Q_OBJECT
+
+//    public:
+//        ProjectFileWorker();
+//        ~ProjectFileWorker();
+//        int projectFile(DetectorFile * file);
         
-    signals:
-        void testToWindow();
-        void testToMain();
+//    signals:
+//        void testToWindow();
+//        void testToMain();
+
+//    public slots:
+//        void initializeCLKernel();
+//        void setSelection(Selection area); 
+        
+//    private slots:
+//        void process();
+
+//    protected:
+//        // Related to OpenCL
+//        cl_kernel project_kernel;
+//        size_t n_reduced_pixels;
+//        Selection selection;
+//};
+
+class ReconstructWorker : public BaseWorker
+{
+    Q_OBJECT
+
+    public:
+        ReconstructWorker();
+        ~ReconstructWorker();
+        int projectFile(DetectorFile * file, Selection selection);
+        
+//    signals:
+//        void testToWindow();
+//        void testToMain();
 
     public slots:
         void initializeCLKernel();
-        void setSelection(Selection area); 
-
+//        void setSelection(Selection area); 
+        
     private slots:
         void process();
 
@@ -328,9 +357,8 @@ class ProjectFileWorker : public BaseWorker
         // Related to OpenCL
         cl_kernel project_kernel;
         size_t n_reduced_pixels;
-        Selection selection;
+//        Selection selection;
 };
-
 
 class VoxelizeWorker : public BaseWorker
 {
@@ -352,16 +380,6 @@ class VoxelizeWorker : public BaseWorker
         unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);
 };
 
-class MultiWorker : public ProjectFileWorker
-{
-    Q_OBJECT
 
-    public:
-        MultiWorker();
-        ~MultiWorker();
-
-    public slots:
-        void process();
-};
 
 #endif

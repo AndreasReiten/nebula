@@ -112,6 +112,7 @@ int main(int argc, char **argv)
     app.setApplicationName("Nebula");
 
     MainWindow window;
+    window.setAnimated(false);
     window.show();
 
     return app.exec();

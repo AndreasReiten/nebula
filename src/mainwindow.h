@@ -30,7 +30,8 @@ public:
 
 private slots:
     void displayPopup(QString title, QString text);
-
+    void transferSet();
+    
     // Toolchain button stuff
     void anyButtonStart();
 
@@ -57,19 +58,19 @@ private slots:
     void setGenericProgressFormat(QString str);
     void setMemoryUsageFormat(QString str);
     void openUnitcellFile();
-    void initializeWorkers();
+    void initWorkers();
 
     void runProjectFileThread();
     void runAllInOneThread();
-    void setImage(ImageInfo image);
-    void setSeriesSelection(Selection area);
+//    void setImage(ImageInfo image);
+//    void setSeriesSelection(Selection area);
     void loadPaths();
-    void removeImage();
-    void setFrame(int value);
-    void nextFrame();
-    void prevFrame();
-    void batchForward();
-    void batchBackward();
+//    void removeImage();
+//    void setFrame(int value);
+//    void nextFrame();
+//    void prevFrame();
+//    void batchForward();
+//    void batchBackward();
 //    void nextSeries();
 //    void prevSeries();
     
@@ -78,11 +79,24 @@ private slots:
     void saveProject();
     void loadProject();
     
-    void setSelection(Selection rect);
+//    void setSelection(Selection rect);
     
     // File selection
-    void setFilesFromSelectionModel();
+//    void setFilesFromSelectionModel();
     
+    
+    void applyAnalytics();
+    void applyPlaneMarker();
+    void applySelection();
+    void nextFrame();
+    void previousFrame();
+    void batchForward();
+    void batchBackward();
+    void takeImageScreenshotFunction();
+    void saveImageFunction();
+    void setApplyMode(QString str);
+    void setBatchSize(int value);
+    void setImageRange(int low, int high);
     
 signals:
     void testToWindow();
@@ -97,6 +111,13 @@ signals:
     void imageChanged(ImageInfo image);
     void selectionChanged(Selection area);
     void centerImage();
+    void analyze(QString str);
+    void setPlaneMarkers(QString str);
+    void setSelection(QString str);
+    void takeImageScreenshot(QString str);
+    void saveImage(QString str);
+    void setChanged(SeriesSet set);
+    void setPulled(SeriesSet set);
     
 private:
     /* UI elements for UB matrix */
@@ -151,14 +172,14 @@ private:
     QPushButton * toggleCellButton;
     
     /* File selection filter */
-    QLineEdit * fileSelectionFilter;
+    QLineEdit * fileFilter;
     
     /* Header dock widget */
     QDockWidget * fileHeaderDock;
     QPlainTextEdit * fileHeaderEdit;
     
     // Buttons
-    QPushButton *allInOneButton;
+    QPushButton *reconstructButton;
     QPushButton *setFileButton;
     QPushButton *readFileButton;
     QPushButton *projectFileButton;
@@ -177,46 +198,46 @@ private:
 
     // QThreads
 //    QThread * readScriptThread;
-    QThread * setFileThread;
-    QThread * readFileThread;
-    QThread * projectFileThread;
+//    QThread * setFileThread;
+//    QThread * readFileThread;
+//    QThread * projectFileThread;
     QThread * voxelizeThread;
-    QThread * allInOneThread;
+    QThread * reconstructThread;
     QThread * displayFileThread;
 
     // Workers
 //    ReadScriptWorker * readScriptWorker;
-    SetFileWorker * setFileWorker;
-    ReadFileWorker * readFileWorker;
-    ProjectFileWorker * projectFileWorker;
-    MultiWorker * multiWorker;
+//    SetFileWorker * setFileWorker;
+//    ReadFileWorker * readFileWorker;
+//    ProjectFileWorker * projectFileWorker;
+    ReconstructWorker * reconstructWorker;
     VoxelizeWorker * voxelizeWorker;
 
     // File browser
-    QWidget * fileBrowserWidget;
+//    QWidget * fileBrowserWidget;
     FileSelectionModel * fileSelectionModel;
-    FileTreeView *fileSelectionTree;
+    FileTreeView *fileTreeView;
     void setFiles(QMap<QString, QStringList> folder_map);
     
     
     // Image browser widget
     QMainWindow * imageMainWindow;
-    QWidget * imageCentralWidget;
+//    QWidget * imageCentralWidget;
     
     QLineEdit * pathLineEdit;
     
     QWidget * imageDisplayWidget;
     
-    QPushButton * imageBatchPrevButton;
-    QPushButton * imagePrevButton;
+//    QPushButton * imageBatchPrevButton;
+//    QPushButton * imagePrevButton;
     
-    QPushButton * imageBatchNextButton;
-    QPushButton * imageNextButton;
+//    QPushButton * imageBatchNextButton;
+//    QPushButton * imageNextButton;
 
-    QPushButton * nextSeriesButton;
-    QPushButton * prevSeriesButton;
+//    QPushButton * nextSeriesButton;
+//    QPushButton * prevSeriesButton;
 
-    QSpinBox * imageSpinBox;
+//    QSpinBox * imageSpinBox;
 
     // Actions
     QAction *shadowAct;
@@ -252,16 +273,18 @@ private:
     QAction *rollCW;
     QAction *rollCCW;
     QAction *integrateCountsAct;
+    QAction * imageScreenshotAct;
+    QAction * saveImageAct;
     
     
     SparseVoxelOcttree svo_inprocess;
     SparseVoxelOcttree svo_loaded;
 
     void closeEvent(QCloseEvent *event);
-    void initializeActions();
-    void initializeConnects();
-    void initializeInteractives();
-    void initializeMenus();
+    void initActions();
+    void initConnects();
+    void initGUI();
+    void initMenus();
 
     void setStartConditions();
 
@@ -302,10 +325,10 @@ private:
 
     QSpinBox * svoLevelSpinBox;
 
-    QDoubleSpinBox *noiseCorrectionMinDoubleSpinBox;
-    QDoubleSpinBox *noiseCorrectionMaxDoubleSpinBox;
-    QDoubleSpinBox *postCorrectionMinDoubleSpinBox;
-    QDoubleSpinBox *postCorrectionMaxDoubleSpinBox;
+//    QDoubleSpinBox *noiseCorrectionMinDoubleSpinBox;
+//    QDoubleSpinBox *noiseCorrectionMaxDoubleSpinBox;
+//    QDoubleSpinBox *postCorrectionMinDoubleSpinBox;
+//    QDoubleSpinBox *postCorrectionMaxDoubleSpinBox;
     
     QDoubleSpinBox *omegaCorrectionSpinBox;
     QDoubleSpinBox *kappaCorrectionSpinBox;
@@ -343,12 +366,57 @@ private:
 
     QWidget *toolChainWidget;
     QWidget *mainWidget;
-    QWidget *topWidget;
+//    QWidget *topWidget;
     QWidget *botWidget;
     QWidget *graphicsWidget;
     QWidget *functionWidget;
     QWidget *unitcellWidget;
     QWidget *setFilesWidget;
+    
+    
+    // Corrections dock widget
+    QWidget * correctionWidget;
+    QDockWidget * correctionDock;
+    QPushButton * traceSetPushButton;
+    QCheckBox * traceTextureCheckBox;
+    QDoubleSpinBox * correctionNoiseDoubleSpinBox;
+    QSpinBox * correctionClutterSpinBox;
+    QSpinBox * correctionMedianSpinBox;
+    QSpinBox * correctionPlaneSpinBox;
+    QCheckBox * correctionNoiseCheckBox;
+    QCheckBox * correctionPlaneCheckBox;
+    QCheckBox * correctionClutterCheckBox;
+    QCheckBox * correctionMedianCheckBox;
+    QCheckBox * correctionLorentzCheckBox;
+    QCheckBox * correctionPolarizationCheckBox;
+    QCheckBox * correctionFluxCheckBox;
+    QCheckBox * correctionExposureCheckBox;
+    
+    // Navigation dock widget
+    QWidget * navigationWidget;
+    QDockWidget * navigationDock;
+    QProgressBar * generalProgressBar;
+    QSpinBox * batchSizeSpinBox;
+    QSpinBox * imageSpinBox;
+    QPushButton * nextFramePushButton;
+    QPushButton * previousFramePushButton;
+    QPushButton * batchForwardPushButton;
+    QPushButton * batchBackwardPushButton;
+    QPushButton * nextSeriesPushButton;
+    QPushButton * prevSeriesPushButton;
+    
+    // Operations dock widget
+    QPushButton * applyPlaneMarkerPushButton;
+    QPushButton * applySelectionPushButton;
+    QPushButton * integratePushButton;
+    QComboBox * selectionModeComboBox;
+    QGridLayout * selectionLayout;
+    QWidget * selectionWidget;
+    QDockWidget * selectionDock;
+    
+    // Misc 
+    QString apply_mode;
+    QPlainTextEdit * outputPlainTextEdit;
 
 protected:
     // OpenGL rendering widgets
@@ -381,10 +449,9 @@ protected:
     QDockWidget * imageSettingsDock;
     
     /* Image corrections widget */
-    QCheckBox * autoBackgroundCorrectionCheckBox;
-    QWidget * correctionWidget;
-    QDockWidget * correctionDock;
-    QCheckBox * correctionLorentzCheckBox;
+//    QCheckBox * autoBackgroundCorrectionCheckBox;
+    
+//    QCheckBox * correctionLorentzCheckBox;
     
     
     // Image Preview Widget
@@ -408,14 +475,14 @@ protected:
     QMenu *svoMenu;
     QMenu *viewMenu;
     QMenu *helpMenu;
-    QToolBar *fileSelectionToolBar;
+//    QToolBar *fileSelectionToolBar;
     QToolBar *viewToolBar;
 
     // Main resources
     QStringList file_paths;
     QList<DetectorFile> files;
 //    ImageSeries image_folder;
-    SeriesSet series_set;
+//    SeriesSet series_set;
 
     Matrix<float> reduced_pixels;
 
