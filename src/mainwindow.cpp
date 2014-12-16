@@ -34,7 +34,7 @@ MainWindow::MainWindow() :
 {
     // Set some default values
     display_file = 0;
-    reduced_pixels.set(0,0,0);
+    reduced_pixels.set(0,0);
     
     // Set stylesheet
     QFile styleFile( ":/src/stylesheets/plain.qss" );
@@ -108,8 +108,8 @@ MainWindow::~MainWindow()
     voxelizeThread->quit();
     voxelizeThread->wait(1000);
     
-    reconstructThread->quit();
-    reconstructThread->wait(1000);
+//    reconstructThread->quit();
+//    reconstructThread->wait(1000);
     
     displayFileThread->quit();
     displayFileThread->wait(1000);
@@ -133,7 +133,7 @@ void MainWindow::initWorkers()
 //    readFileThread = new QThread;
 //    projectFileThread = new QThread;
     voxelizeThread = new QThread;
-    reconstructThread = new QThread;
+//    reconstructThread = new QThread;
     displayFileThread = new QThread;
 
     //### setFileWorker ###
@@ -229,44 +229,44 @@ void MainWindow::initWorkers()
 
 
     //### allInOneWorker ###
-    reconstructWorker = new ReconstructWorker();
+//    reconstructWorker = new ReconstructWorker();
 //    reconstructWorker->setFilePaths(&file_paths);
-    reconstructWorker->setSVOFile(&svo_inprocess);
-    reconstructWorker->setOpenCLContext(context_cl);
-    reconstructWorker->setReducedPixels(&reduced_pixels);
-    reconstructWorker->initializeCLKernel();
+//    reconstructWorker->setSVOFile(&svo_inprocess);
+//    reconstructWorker->setOpenCLContext(context_cl);
+    imagePreviewWindow->worker()->setReducedPixels(&reduced_pixels);
+//    imagePreviewWindow->worker()->initializeCLKernel();
 //    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
-    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), reconstructWorker, SLOT(setActiveAngle(int)));
-    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), reconstructWorker, SLOT(setOffsetOmega(double)));
-    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), reconstructWorker, SLOT(setOffsetKappa(double)));
-    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), reconstructWorker, SLOT(setOffsetPhi(double)));
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setActiveAngle(int)));
+    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetOmega(double)));
+    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetKappa(double)));
+    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetPhi(double)));
 //    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseLow(double)));
 //    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseHigh(double)));
 //    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectLow(double)));
 //    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectHigh(double)));
 //    connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), reconstructWorker, SLOT(setNoiseLow(double)));
 
-    reconstructWorker->moveToThread(reconstructThread);
-    connect(reconstructThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-    connect(reconstructWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
-    connect(reconstructThread, SIGNAL(started()), this, SLOT(transferSet()), Qt::DirectConnection);
-    connect(reconstructThread, SIGNAL(started()), reconstructWorker, SLOT(process()));
-    connect(reconstructWorker, SIGNAL(finished()), reconstructThread, SLOT(quit()));
-    connect(reconstructWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+//    reconstructWorker->moveToThread(reconstructThread);
+//    connect(reconstructThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+//    connect(reconstructWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
+//    connect(reconstructThread, SIGNAL(started()), this, SLOT(transferSet()), Qt::DirectConnection);
+//    connect(reconstructThread, SIGNAL(started()), reconstructWorker, SLOT(process()));
+//    connect(reconstructWorker, SIGNAL(finished()), reconstructThread, SLOT(quit()));
+    connect(imagePreviewWindow->worker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
 
-    connect(reconstructWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
-    connect(reconstructWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
-    connect(reconstructWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+    connect(imagePreviewWindow->worker(), SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+    connect(imagePreviewWindow->worker(), SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
+    connect(imagePreviewWindow->worker(), SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
 
-    connect(reconstructWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-    connect(reconstructWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    connect(reconstructWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
-    connect(this, SIGNAL(setPulled(SeriesSet)), reconstructWorker, SLOT(setSet(SeriesSet)));
+    connect(imagePreviewWindow->worker(), SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+    connect(imagePreviewWindow->worker(), SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+    connect(imagePreviewWindow->worker(), SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
+//    connect(this, SIGNAL(setPulled(SeriesSet)), reconstructWorker, SLOT(setSet(SeriesSet)));
 
 //    connect(reconstructWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
 //    connect(reconstructWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-    connect(reconstructButton, SIGNAL(clicked()), this, SLOT(runAllInOneThread()));
-    connect(killButton, SIGNAL(clicked()), reconstructWorker, SLOT(killProcess()), Qt::DirectConnection);
+    connect(reconstructButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(reconstruct()));
+    connect(killButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(killProcess()), Qt::DirectConnection);
 //    connect(imagePreviewWindow->worker(), SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
 //    connect(this, SIGNAL(selectionChanged(Selection)), reconstructWorker, SLOT(setSelection(Selection)));
 
@@ -280,8 +280,8 @@ void MainWindow::initWorkers()
     voxelizeWorker->initializeCLKernel();
 
     voxelizeWorker->moveToThread(voxelizeThread);
-    connect(voxelizeThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-    connect(voxelizeWorker, SIGNAL(finished()), this, SLOT(voxelizeButtonFinish()));
+//    connect(voxelizeThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
+//    connect(voxelizeWorker, SIGNAL(finished()), this, SLOT(voxelizeButtonFinish()));
     connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
@@ -299,63 +299,63 @@ void MainWindow::initWorkers()
 
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(reconstructWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
+    connect(imagePreviewWindow->worker(), SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 //    connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
 
-void MainWindow::anyButtonStart()
-{
-    setFileButton->setDisabled(true);
-    reconstructButton->setDisabled(true);
-    readFileButton->setDisabled(true);
-    projectFileButton->setDisabled(true);
-    voxelizeButton->setDisabled(true);
-}
+//void MainWindow::anyButtonStart()
+//{
+//    setFileButton->setDisabled(true);
+//    reconstructButton->setDisabled(true);
+//    readFileButton->setDisabled(true);
+//    projectFileButton->setDisabled(true);
+//    voxelizeButton->setDisabled(true);
+//}
 
-void MainWindow::setFileButtonFinish()
-{
-    setFileButton->setDisabled(false);
-    reconstructButton->setDisabled(false);
-    readFileButton->setDisabled(false);
-    projectFileButton->setDisabled(true);
-    voxelizeButton->setDisabled(true);
-}
+//void MainWindow::setFileButtonFinish()
+//{
+//    setFileButton->setDisabled(false);
+//    reconstructButton->setDisabled(false);
+//    readFileButton->setDisabled(false);
+//    projectFileButton->setDisabled(true);
+//    voxelizeButton->setDisabled(true);
+//}
 
-void MainWindow::allInOneButtonFinish()
-{
-    setFileButton->setDisabled(false);
-    reconstructButton->setDisabled(false);
-    readFileButton->setDisabled(true);
-    projectFileButton->setDisabled(true);
-    voxelizeButton->setDisabled(false);
-}
+//void MainWindow::allInOneButtonFinish()
+//{
+//    setFileButton->setDisabled(false);
+//    reconstructButton->setDisabled(false);
+//    readFileButton->setDisabled(true);
+//    projectFileButton->setDisabled(true);
+//    voxelizeButton->setDisabled(false);
+//}
 
-void MainWindow::readFileButtonFinish()
-{
-    setFileButton->setDisabled(false);
-    reconstructButton->setDisabled(false);
-    readFileButton->setDisabled(false);
-    projectFileButton->setDisabled(false);
-    voxelizeButton->setDisabled(true);
-}
+//void MainWindow::readFileButtonFinish()
+//{
+//    setFileButton->setDisabled(false);
+//    reconstructButton->setDisabled(false);
+//    readFileButton->setDisabled(false);
+//    projectFileButton->setDisabled(false);
+//    voxelizeButton->setDisabled(true);
+//}
 
-void MainWindow::projectFileButtonFinish()
-{
-    setFileButton->setDisabled(false);
-    reconstructButton->setDisabled(false);
-    readFileButton->setDisabled(false);
-    projectFileButton->setDisabled(false);
-    voxelizeButton->setDisabled(false);
-}
+//void MainWindow::projectFileButtonFinish()
+//{
+//    setFileButton->setDisabled(false);
+//    reconstructButton->setDisabled(false);
+//    readFileButton->setDisabled(false);
+//    projectFileButton->setDisabled(false);
+//    voxelizeButton->setDisabled(false);
+//}
 
-void MainWindow::voxelizeButtonFinish()
-{
-    setFileButton->setDisabled(false);
-    reconstructButton->setDisabled(false);
-    readFileButton->setDisabled(false);
-    projectFileButton->setDisabled(false);
-    voxelizeButton->setDisabled(false);
-}
+//void MainWindow::voxelizeButtonFinish()
+//{
+//    setFileButton->setDisabled(false);
+//    reconstructButton->setDisabled(false);
+//    readFileButton->setDisabled(false);
+//    projectFileButton->setDisabled(false);
+//    voxelizeButton->setDisabled(false);
+//}
 
 //void MainWindow::setImage(ImageInfo image)
 //{
@@ -452,7 +452,7 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
     
     if (!set.isEmpty()) 
     {
-        file_paths = set.paths();
+//        file_paths = set.paths();
         emit setChanged(set);
         imageSpinBox->setRange(0,set.current()->size()-1);
     }
@@ -534,42 +534,42 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
 //    }
 //}
 
-void MainWindow::runProjectFileThread()
-{
-    tabWidget->setCurrentIndex(1);
+//void MainWindow::runProjectFileThread()
+//{
+//    tabWidget->setCurrentIndex(1);
     
     // Creation settings
-    svo_inprocess.creation_date = QDateTime::currentDateTime();
+//    svo_inprocess.creation_date = QDateTime::currentDateTime();
 //    svo_inprocess.creation_noise_cutoff_low = noiseCorrectionMinDoubleSpinBox->value();
 //    svo_inprocess.creation_noise_cutoff_high = noiseCorrectionMaxDoubleSpinBox->value();
 //    svo_inprocess.creation_post_cutoff_low = postCorrectionMinDoubleSpinBox->value();
 //    svo_inprocess.creation_post_cutoff_high = postCorrectionMaxDoubleSpinBox->value();
-    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
-    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
-    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
-    svo_inprocess.creation_file_paths = file_paths;
+//    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
+//    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
+//    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
+//    svo_inprocess.creation_file_paths = file_paths;
     
 //    projectFileThread->start();
-}
+//}
 
-void MainWindow::runAllInOneThread()
-{
-    tabWidget->setCurrentIndex(1);
+//void MainWindow::runAllInOneThread()
+//{
+//    tabWidget->setCurrentIndex(1);
     
     // Creation settings
-    svo_inprocess.creation_date = QDateTime::currentDateTime();
+//    svo_inprocess.creation_date = QDateTime::currentDateTime();
 //    svo_inprocess.creation_noise_cutoff_low = noiseCorrectionMinDoubleSpinBox->value();
 //    svo_inprocess.creation_noise_cutoff_high = noiseCorrectionMaxDoubleSpinBox->value();
 //    svo_inprocess.creation_post_cutoff_low = postCorrectionMinDoubleSpinBox->value();
 //    svo_inprocess.creation_post_cutoff_high = postCorrectionMaxDoubleSpinBox->value();
-    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
-    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
-    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
-    svo_inprocess.creation_file_paths = file_paths;
+//    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
+//    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
+//    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
+//    svo_inprocess.creation_file_paths = file_paths;
     
     
-    reconstructThread->start();
-}
+//    reconstructThread->start();
+//}
 
 //void MainWindow::setFilesFromSelectionModel()
 //{
@@ -2165,7 +2165,7 @@ void MainWindow::initGUI()
         voxelizeButton = new QPushButton;
         voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
         voxelizeButton->setText("Generate tree");
-        voxelizeButton->setEnabled(false);
+//        voxelizeButton->setEnabled(false);
         
         saveSvoButton = new QPushButton;
         saveSvoButton->setIcon(QIcon(":/art/save.png"));

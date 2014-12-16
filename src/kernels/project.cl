@@ -1,8 +1,8 @@
 __kernel void FRAME_FILTER(
     __write_only image2d_t xyzi_target,
-    __read_only image2d_t source,
+    __global float * source,
     sampler_t tsf_sampler,
-    sampler_t intensity_sampler,
+//    sampler_t intensity_sampler,
     __constant float * sample_rotation_matrix,
 //    float2 threshold_one,
 //    float2 threshold_two,
@@ -52,7 +52,8 @@ __kernel void FRAME_FILTER(
             (id_glb.y >= selection.z) && // Top
             (id_glb.y < selection.w)) // Bottom
         {
-            Q.w = read_imagef(source, intensity_sampler, id_glb).w; /* DANGER */
+            Q.w = source[id_glb.y*target_dim.x + id_glb.x]; //id_glb.y * image_size.x + id_glb.x; //
+//            read_imagef(source, intensity_sampler, id_glb).w; /* DANGER */
             
             // Noise filter
 //            intensity = clamp(intensity, threshold_one.x, threshold_one.y); // All readings within noise thresholds
@@ -65,6 +66,12 @@ __kernel void FRAME_FILTER(
                  * */
                 float k = 1.0f/h_wavelength; // Multiply with 2pi if desired
                 
+
+                //float3 k_f = k*normalize((float3)(
+                  //  -det_dist,
+                  //  pix_size_x * ((float) (image_size.y - id_glb.y) - beam_x), /* DANGER */
+                  //  pix_size_y * ((float) id_glb.x - beam_y))); /* DANGER */
+
                 float3 k_i = (float3)(-k,0,0);
                 float3 k_f = k*normalize((float3)(
                     -h_detector_distance, 

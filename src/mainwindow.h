@@ -33,13 +33,13 @@ private slots:
     void transferSet();
     
     // Toolchain button stuff
-    void anyButtonStart();
+//    void anyButtonStart();
 
-    void setFileButtonFinish();
-    void allInOneButtonFinish();
-    void readFileButtonFinish();
-    void projectFileButtonFinish();
-    void voxelizeButtonFinish();
+//    void setFileButtonFinish();
+//    void allInOneButtonFinish();
+//    void readFileButtonFinish();
+//    void projectFileButtonFinish();
+//    void voxelizeButtonFinish();
 
     void takeScreenshot();
     void setCurrentSvoLevel(int value);
@@ -60,8 +60,8 @@ private slots:
     void openUnitcellFile();
     void initWorkers();
 
-    void runProjectFileThread();
-    void runAllInOneThread();
+//    void runProjectFileThread();
+//    void runAllInOneThread();
 //    void setImage(ImageInfo image);
 //    void setSeriesSelection(Selection area);
     void loadPaths();
@@ -202,7 +202,7 @@ private:
 //    QThread * readFileThread;
 //    QThread * projectFileThread;
     QThread * voxelizeThread;
-    QThread * reconstructThread;
+//    QThread * reconstructThread;
     QThread * displayFileThread;
 
     // Workers
@@ -210,7 +210,7 @@ private:
 //    SetFileWorker * setFileWorker;
 //    ReadFileWorker * readFileWorker;
 //    ProjectFileWorker * projectFileWorker;
-    ReconstructWorker * reconstructWorker;
+//    ReconstructWorker * reconstructWorker;
     VoxelizeWorker * voxelizeWorker;
 
     // File browser
@@ -479,8 +479,8 @@ protected:
     QToolBar *viewToolBar;
 
     // Main resources
-    QStringList file_paths;
-    QList<DetectorFile> files;
+//    QStringList file_paths;
+//    QList<DetectorFile> files;
 //    ImageSeries image_folder;
 //    SeriesSet series_set;
 
