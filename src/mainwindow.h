@@ -41,7 +41,7 @@ private slots:
 //    void projectFileButtonFinish();
 //    void voxelizeButtonFinish();
 
-    void takeScreenshot();
+    void takeVolumeScreenshot();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
 

@@ -663,18 +663,33 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::saveProject()
 {
-    QFileDialog dialog;
-    dialog.setDefaultSuffix("txt");
-    QString file_name = dialog.getSaveFileName(this, tr("Save project"), working_dir, tr(".qt (*.qt);; All Files (*)"));
-
+//    QFileDialog dialog;
+    
+//    qDebug() << "Got here";
+    
+//    dialog.setDefaultSuffix("txt");
+    
+//    qDebug() << "Got here";
+    
+//    QString file_name = dialog.getSaveFileName();
+    QString file_name = QFileDialog::getSaveFileName(this, tr("Save project"), working_dir, tr(".qt (*.qt);; All Files (*)"));
+    
+//    QString file_name = "/home/natt/Workdir/BUGTEST.qt";
+    
+//    qDebug() << file_name;
+    
     if (file_name != "")
     {
         QFileInfo info(file_name);
         working_dir = info.absoluteDir().path();
         
+//        qDebug() << working_dir;
+        
         QFile file(file_name);
         if (file.open(QIODevice::WriteOnly))
         {
+//            qDebug() << "Got here";
+            
             QDataStream out(&file);
             
             out << imagePreviewWindow->worker()->set();
@@ -687,11 +702,15 @@ void MainWindow::saveProject()
             out << (bool) correctionLorentzCheckBox->isChecked();  
             out << (double) correctionNoiseDoubleSpinBox->value();
             
+//            qDebug() << "Got here";
+            
             file.close();
         }
     }
     
+    
     hasPendingChanges = false;
+//    qDebug() << "Got here too";
 }
 
 void MainWindow::transferSet()
@@ -1087,7 +1106,7 @@ void MainWindow::initConnects()
     connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_alpha(double)));
     connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_beta(double)));
     connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_gamma(double)));
-    connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeScreenshot()));
+    connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeVolumeScreenshot()));
 //    connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSvoAct, SIGNAL(triggered()), this, SLOT(openSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
@@ -1180,9 +1199,9 @@ void MainWindow::saveSvo()
 {
     if (svo_inprocess.index.size() > 0)
     {
-        QFileDialog dialog;
-        dialog.setDefaultSuffix("svo");
-        QString file_name = dialog.getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
+//        QFileDialog dialog;
+//        dialog.setDefaultSuffix("svo");
+        QString file_name = QFileDialog::getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
 
         if (file_name != "")
         {
@@ -1208,9 +1227,9 @@ void MainWindow::saveLoadedSvo()
 {
     if (svo_loaded.getBrickNumber() > 0)
     {
-        QFileDialog dialog;
-        dialog.setDefaultSuffix("svo");
-        QString file_name = dialog.getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
+//        QFileDialog dialog;
+//        dialog.setDefaultSuffix("svo");
+        QString file_name = QFileDialog::getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
 
         if (file_name != "")
         {
@@ -2446,7 +2465,7 @@ void MainWindow::writeSettings()
     settings.setValue("screenshot_dir", screenshot_dir);
 }
 
-void MainWindow::takeScreenshot()
+void MainWindow::takeVolumeScreenshot()
 {
     QString format = "jpg";
     QDateTime dateTime = dateTime.currentDateTime();
