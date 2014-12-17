@@ -30,6 +30,7 @@
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 100e6; // Max amount of reduced data
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.7e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU during pool construction. 3D image can be used with OpenCL 1.2, allowing you to use the entire VRAM.
+static const size_t MAX_POINTS_PER_KERNEL_CALL = 100000;
 static const size_t nodes_per_kernel_call = 1024;
 static const size_t max_points_per_cluster = 10e6;
 
@@ -1246,6 +1247,9 @@ void VoxelizeWorker::process()
                     // First pass: find relevant data for each brick in the node cluster
                     unsigned int currentId;
                     size_t accumulated_points = 0;
+
+                    size_t premature_termination = 0;
+
                     for (size_t j = 0; j < nodes_per_kernel_call; j++) 
                     {
                         
@@ -1272,19 +1276,24 @@ void VoxelizeWorker::process()
                         point_data_offset[j] = accumulated_points;
                         
                         // Get point data needed for this brick 
-                        root.getData(brick_extent.data() + j*6,
-                                     point_data.data(),
-                                     &accumulated_points,
-                                     search_radius);
-                        
+                        if( root.getData(
+                                    MAX_POINTS_PER_KERNEL_CALL,
+                                    brick_extent.data() + j*6,
+                                    point_data.data(),
+                                    &accumulated_points,
+                                    search_radius))
+                        {
+                            premature_termination = j;
+
+                            qDebug() << lvl+1 << premature_termination << "of" << nodes_per_kernel_call;
+                        }
+
                         // Number of points accumulated thus far
                         point_data_count[j] = accumulated_points - point_data_offset[j];
                         
                         // Upload this point data to an OpenCL buffer
                         if (point_data_count[j] > 0)
                         {
-//                            if ((point_data_offset[j] + point_data_count[j])*sizeof(cl_float4) > max_points_per_cluster*sizeof(cl_float4)) qDebug() << "lvl" << lvl << "MEM:"<< (point_data_offset[j] + point_data_count[j])*sizeof(cl_float4) << ">" << max_points_per_cluster*sizeof(cl_float4);
-                            
                             err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                                 point_data_cl ,
                                 CL_TRUE,
@@ -1293,12 +1302,10 @@ void VoxelizeWorker::process()
                                 point_data.data() + point_data_offset[j]*4,
                                 0, NULL, NULL);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-
                         }
                         
                         // Break off loop when all nodes are processed
-                        if (i + j + 1 >= nodes[lvl]) break;
+                        if ((i + j + 1 >= nodes[lvl]) || (premature_termination)) break;
                     }
                     
                     // The extent of each brick
@@ -1369,7 +1376,7 @@ void VoxelizeWorker::process()
                                     0, NULL, NULL);
                         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                         
-                        if (i + j + 1 >= nodes[lvl]) break;
+                        if ((i + j + 1 >= nodes[lvl]) || (j >= premature_termination)) break;
                     }
                     err = QOpenCLFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1415,8 +1422,34 @@ void VoxelizeWorker::process()
                         // The id of the octnode in the octnode array
                         currentId = nodes_prev_lvls+i+j;
                         
-                        // If a node simply has no data
-                        if ((sum_check[j] <= 0.0))
+                        // If the node has no associated data because too much memory was used
+                        if (j >= premature_termination)
+                        {
+                            gpuHelpOcttree[currentId].setDataFlag(1);
+                            gpuHelpOcttree[currentId].setMsdFlag(0);
+                            if (lvl >= svo->getLevels() - 1) // Voxel data is self-similar
+                            {
+                                gpuHelpOcttree[currentId].setMsdFlag(1);
+                            }
+
+                            non_empty_node_counter++;
+
+                            // Account for children
+                            if (!gpuHelpOcttree[currentId].getMsdFlag())
+                            {
+                                unsigned int childId = nodes_prev_lvls + nodes[lvl] + nodes[lvl+1];
+                                gpuHelpOcttree[currentId].setChild(childId); // Index points to first child only
+
+                                // For each child
+                                for (size_t k = 0; k < 8; k++)
+                                {
+                                    gpuHelpOcttree[childId+k].setParent(currentId);
+                                    nodes[lvl+1]++;
+                                }
+                            }
+                        }
+                        // Else if a node truly has no data
+                        else if ((sum_check[j] <= 0.0))
                         {
                             gpuHelpOcttree[currentId].setDataFlag(0);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
