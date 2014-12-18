@@ -1079,6 +1079,7 @@ void VoxelizeWorker::process()
         // Emit to appropriate slots
         emit changedFormatGenericProgress(QString(" Creating Interpolation Data Structure: %p%"));
         emit changedRangeGenericProcess(0, 100);
+        emit showProgressBar(true);
 
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Generating Sparse Voxel Octtree "+QString::number(svo->getLevels())+" levels deep.");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] The source data is "+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB");
@@ -1232,8 +1233,10 @@ void VoxelizeWorker::process()
 
                 double tmp = (svo->getExtent()->at(1) - svo->getExtent()->at(0)) / (1 << lvl);
 
+                size_t n_nodes_treated = 0;
+
                 // For each cluster of nodes
-                for (size_t i = 0; i < nodes[lvl]; i += nodes_per_kernel_call)
+                while (n_nodes_treated <= nodes[lvl])
                 {
                     if((non_empty_node_counter+1) >= n_max_bricks)
                     {
@@ -1246,66 +1249,68 @@ void VoxelizeWorker::process()
                         
                     // First pass: find relevant data for each brick in the node cluster
                     unsigned int currentId;
-                    size_t accumulated_points = 0;
+                    size_t n_points_harvested = 0; // The number of xyzi data points gathered
+                    size_t n_nodes_treated_sub = 0; // The number of nodes treated in this iteration of the enclosing while loop
 
-                    size_t premature_termination = 0;
-
-                    for (size_t j = 0; j < nodes_per_kernel_call; j++) 
+                    while (n_points_harvested < MAX_POINTS_PER_KERNEL_CALL)
                     {
-                        
                         // The id of the octnode in the octnode array
-                        currentId = nodes_prev_lvls+i+j;
+                        currentId = nodes_prev_lvls + n_nodes_treated + n_nodes_treated_sub;
                         
                         // Set the level
                         gpuHelpOcttree[currentId].setLevel(lvl);
 
                         // Set the brick id
-                        gpuHelpOcttree[currentId].calcBrickId((i+j)%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
+                        gpuHelpOcttree[currentId].calcBrickId((n_nodes_treated + n_nodes_treated_sub)%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
 
                         // Based on brick id calculate the brick extent 
                         unsigned int * brick_id = gpuHelpOcttree[currentId].getBrickId();
                         
-                        brick_extent[j*6 + 0] = svo->getExtent()->at(0) + tmp*brick_id[0];
-                        brick_extent[j*6 + 1] = svo->getExtent()->at(0) + tmp*(brick_id[0]+1);
-                        brick_extent[j*6 + 2] = svo->getExtent()->at(2) + tmp*brick_id[1];
-                        brick_extent[j*6 + 3] = svo->getExtent()->at(2) + tmp*(brick_id[1]+1);
-                        brick_extent[j*6 + 4] = svo->getExtent()->at(4) + tmp*brick_id[2];
-                        brick_extent[j*6 + 5] = svo->getExtent()->at(4) + tmp*(brick_id[2]+1);
+                        brick_extent[n_nodes_treated_sub*6 + 0] = svo->getExtent()->at(0) + tmp*brick_id[0];
+                        brick_extent[n_nodes_treated_sub*6 + 1] = svo->getExtent()->at(0) + tmp*(brick_id[0]+1);
+                        brick_extent[n_nodes_treated_sub*6 + 2] = svo->getExtent()->at(2) + tmp*brick_id[1];
+                        brick_extent[n_nodes_treated_sub*6 + 3] = svo->getExtent()->at(2) + tmp*(brick_id[1]+1);
+                        brick_extent[n_nodes_treated_sub*6 + 4] = svo->getExtent()->at(4) + tmp*brick_id[2];
+                        brick_extent[n_nodes_treated_sub*6 + 5] = svo->getExtent()->at(4) + tmp*(brick_id[2]+1);
                         
                         // Offset of points accumulated thus far
-                        point_data_offset[j] = accumulated_points;
-                        
+                        point_data_offset[n_nodes_treated_sub] = n_points_harvested;
+                        size_t premature_termination = 0;
+
                         // Get point data needed for this brick 
                         if( root.getData(
                                     MAX_POINTS_PER_KERNEL_CALL,
-                                    brick_extent.data() + j*6,
+                                    brick_extent.data() + n_nodes_treated_sub*6,
                                     point_data.data(),
-                                    &accumulated_points,
+                                    &n_points_harvested,
                                     search_radius))
                         {
-                            premature_termination = j;
+                            premature_termination = n_nodes_treated_sub;
 
-                            qDebug() << lvl+1 << premature_termination << "of" << nodes_per_kernel_call;
+                            qDebug() << lvl+1 << premature_termination << "of" << nodes_per_kernel_call << "pts:" << n_points_harvested;
                         }
 
                         // Number of points accumulated thus far
-                        point_data_count[j] = accumulated_points - point_data_offset[j];
+                        point_data_count[n_nodes_treated_sub] = n_points_harvested - point_data_offset[n_nodes_treated_sub];
                         
                         // Upload this point data to an OpenCL buffer
-                        if (point_data_count[j] > 0)
+                        if (point_data_count[n_nodes_treated_sub] > 0)
                         {
                             err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                                 point_data_cl ,
                                 CL_TRUE,
-                                point_data_offset[j]*sizeof(cl_float4),
-                                point_data_count[j]*sizeof(cl_float4),
-                                point_data.data() + point_data_offset[j]*4,
+                                point_data_offset[n_nodes_treated_sub]*sizeof(cl_float4),
+                                point_data_count[n_nodes_treated_sub]*sizeof(cl_float4),
+                                point_data.data() + point_data_offset[n_nodes_treated_sub]*4,
                                 0, NULL, NULL);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                         }
-                        
+
+                        n_nodes_treated_sub++;
+
+
                         // Break off loop when all nodes are processed
-                        if ((i + j + 1 >= nodes[lvl]) || (premature_termination)) break;
+                        if ((n_nodes_treated + n_nodes_treated_sub >= nodes[lvl]) || (premature_termination)) break;
                     }
                     
                     // The extent of each brick
@@ -1360,7 +1365,7 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                     // Interpolate data for each brick
-                    for (size_t j = 0; j < nodes_per_kernel_call; j++)
+                    for (size_t j = 0; j < n_nodes_treated_sub; j++)
                     {
                         // Launch kernel
                         size_t glb_offset[3] = {0,0,8*j};
@@ -1376,7 +1381,7 @@ void VoxelizeWorker::process()
                                     0, NULL, NULL);
                         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                         
-                        if ((i + j + 1 >= nodes[lvl]) || (j >= premature_termination)) break;
+//                        if (i + j + 1 >= nodes[lvl]) break;
                     }
                     err = QOpenCLFinish(context_cl->queue());
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1417,39 +1422,13 @@ void VoxelizeWorker::process()
                     
                     
                     // Third pass: transfer non-empty nodes to svo data structure (OpenCL)
-                    for (size_t j = 0; j < nodes_per_kernel_call; j++)
+                    for (size_t j = 0; j < n_nodes_treated_sub; j++)
                     {
                         // The id of the octnode in the octnode array
-                        currentId = nodes_prev_lvls+i+j;
+                        currentId = nodes_prev_lvls + n_nodes_treated + j;
                         
-                        // If the node has no associated data because too much memory was used
-                        if (j >= premature_termination)
-                        {
-                            gpuHelpOcttree[currentId].setDataFlag(1);
-                            gpuHelpOcttree[currentId].setMsdFlag(0);
-                            if (lvl >= svo->getLevels() - 1) // Voxel data is self-similar
-                            {
-                                gpuHelpOcttree[currentId].setMsdFlag(1);
-                            }
-
-                            non_empty_node_counter++;
-
-                            // Account for children
-                            if (!gpuHelpOcttree[currentId].getMsdFlag())
-                            {
-                                unsigned int childId = nodes_prev_lvls + nodes[lvl] + nodes[lvl+1];
-                                gpuHelpOcttree[currentId].setChild(childId); // Index points to first child only
-
-                                // For each child
-                                for (size_t k = 0; k < 8; k++)
-                                {
-                                    gpuHelpOcttree[childId+k].setParent(currentId);
-                                    nodes[lvl+1]++;
-                                }
-                            }
-                        }
-                        // Else if a node truly has no data
-                        else if ((sum_check[j] <= 0.0))
+                        // If a node has no relevant data
+                        if ((sum_check[j] <= 0.0))
                         {
                             gpuHelpOcttree[currentId].setDataFlag(0);
                             gpuHelpOcttree[currentId].setMsdFlag(1);
@@ -1529,12 +1508,14 @@ void VoxelizeWorker::process()
                                 }
                             }
                         }
-                        if (i + j + 1 >= nodes[lvl]) break;
+//                        if (i + j + 1 >= nodes[lvl]) break;
                     }
+
+                    n_nodes_treated += n_nodes_treated_sub;
 
                     emit changedMemoryUsage(non_empty_node_counter*n_points_brick*sizeof(float)/1e6);
 
-                    emit changedGenericProgress((i+1)*100/nodes[lvl]);
+                    emit changedGenericProgress((n_nodes_treated+1)*100/nodes[lvl]);
                 }
                 if (kill_flag)
                 {
@@ -1548,7 +1529,7 @@ void VoxelizeWorker::process()
                 nodes_prev_lvls += nodes[lvl];
                 
                 size_t t = timer.restart();
-                emit changedMessageString(" ...done ("+QString::number(t)+" ms)");
+                emit changedMessageString(" ...done ("+QString::number(t)+" ms, "+QString::number(nodes[lvl])+" nodes)");
             }
             
             if (!kill_flag)
@@ -1592,7 +1573,7 @@ void VoxelizeWorker::process()
             }
         }
 
-
+        emit showProgressBar(false);
 
         err = QOpenCLReleaseMemObject(point_data_cl);
         err |= QOpenCLReleaseMemObject(point_data_offset_cl);

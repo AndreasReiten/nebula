@@ -70,11 +70,9 @@ MainWindow::MainWindow() :
     
     this->initGUI();
     
-    this->initConnects();
-    
     this->initWorkers();
     
-    
+    this->initConnects();
     
     setCentralWidget(mainWidget);
     readSettings();
@@ -1186,6 +1184,8 @@ void MainWindow::initConnects()
     connect(this, SIGNAL(takeImageScreenshot(QString)), imagePreviewWindow->worker(),SLOT(takeScreenShot(QString)));
     connect(imagePreviewWindow->worker(), SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
+    connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), genericProgressBar, SLOT(setVisible(bool)));
+    connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
 }
 
 void MainWindow::setGenericProgressFormat(QString str)

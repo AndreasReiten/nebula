@@ -292,6 +292,10 @@ class VoxelizeWorker : public BaseWorker
         void process();
         void initializeCLKernel();
 
+
+    signals:
+        void showProgressBar(bool value);
+
     protected:
         cl_kernel voxelize_kernel;
         cl_kernel fill_kernel;
