@@ -12,6 +12,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QGridLayout>
+#include <QFileDialog>
 
 #include "../lib/qxlib/qxlib.h"
 #include "utils/texthighlighter.h"
@@ -294,7 +295,7 @@ private:
 
 
     QString strippedName(const QString &fullFileName);
-    QString curFile;
+//    QString curFile;
     QString info;
 
     QLineEdit * hklEdit;
@@ -456,7 +457,7 @@ protected:
     
     // Image Preview Widget
     ImagePreviewWindow * imagePreviewWindow;
-    int display_file;
+//    int display_file;
 
 
     QDockWidget *outputDockWidget;
@@ -487,14 +488,14 @@ protected:
     Matrix<float> reduced_pixels;
 
     // Related to file treatment
-    float threshold_reduce_low;
-    float threshold_reduce_high;
-    float threshold_project_low;
-    float threshold_project_high;
+//    float threshold_reduce_low;
+//    float threshold_reduce_high;
+//    float threshold_project_low;
+//    float threshold_project_high;
 
     // Related to Voxelize
-    int brick_inner_dimension;
-    int brick_outer_dimension;
+//    int brick_inner_dimension;
+//    int brick_outer_dimension;
 
     QGridLayout * mainLayout;
 

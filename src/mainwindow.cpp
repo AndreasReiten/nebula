@@ -17,7 +17,6 @@
 #include <QGroupBox>
 #include <QMessageBox>
 #include <QFile>
-#include <QFileDialog>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QPlainTextEdit>
@@ -33,7 +32,7 @@ MainWindow::MainWindow() :
     batch_size(10)
 {
     // Set some default values
-    display_file = 0;
+//    display_file = 0;
     reduced_pixels.set(0,0);
     
     // Set stylesheet
@@ -711,6 +710,10 @@ void MainWindow::saveProject()
     
     hasPendingChanges = false;
 //    qDebug() << "Got here too";
+//    {
+//        QFileDialog dialog;
+//    }
+    
 }
 
 void MainWindow::transferSet()
