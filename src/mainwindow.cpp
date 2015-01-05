@@ -255,9 +255,9 @@ void MainWindow::initWorkers()
     connect(imagePreviewWindow->worker(), SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
     connect(imagePreviewWindow->worker(), SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
 
-    connect(imagePreviewWindow->worker(), SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-    connect(imagePreviewWindow->worker(), SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    connect(imagePreviewWindow->worker(), SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
+//    connect(imagePreviewWindow->worker(), SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+//    connect(imagePreviewWindow->worker(), SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+//    connect(imagePreviewWindow->worker(), SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
 //    connect(this, SIGNAL(setPulled(SeriesSet)), reconstructWorker, SLOT(setSet(SeriesSet)));
 
 //    connect(reconstructWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
