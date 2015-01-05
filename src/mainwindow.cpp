@@ -2280,10 +2280,11 @@ void MainWindow::initGUI()
         // Progress Bar
         genericProgressBar = new QProgressBar;
         genericProgressBar->setRange( 0, 100);
+        genericProgressBar->setVisible(false);
         
         memoryUsageProgressBar = new QProgressBar;
         memoryUsageProgressBar->setRange( 0, 1);
-        
+        memoryUsageProgressBar->setVisible(false);
 
         // Text output
         errorTextEdit = new QPlainTextEdit;
