@@ -1,7 +1,7 @@
 __kernel void voxelize(
     __global float4 * point_data,
-    __constant int * point_data_offset,
-    __constant int * point_data_count,
+    __global int * point_data_offset,
+    __global int * point_data_count,
     __global float * brick_extent,
     __global float * pool_cluster,
     __global float * min_check,

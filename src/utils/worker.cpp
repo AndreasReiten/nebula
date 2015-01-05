@@ -31,7 +31,7 @@
 //static const size_t REDUCED_PIXELS_MAX_BYTES = 100e6; // Max amount of reduced data
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.7e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU during pool construction. 3D image can be used with OpenCL 1.2, allowing you to use the entire VRAM.
 static const size_t MAX_POINTS_PER_CLUSTER = 10000000;
-static const size_t MAX_NODES_IN_CLUSTER = 20000;
+static const size_t MAX_NODES_PER_CLUSTER = 20000;
 
 
 // ASCII from http://patorjk.com/software/taag/#p=display&c=c&f=Trek&t=Base%20Class
@@ -1119,14 +1119,14 @@ void VoxelizeWorker::process()
 
         cl_mem pool_cluster_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_IN_CLUSTER*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
+            MAX_NODES_PER_CLUSTER*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         cl_mem brick_extent_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_IN_CLUSTER*6*sizeof(float),
+            MAX_NODES_PER_CLUSTER*6*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1140,38 +1140,38 @@ void VoxelizeWorker::process()
         
         cl_mem point_data_offset_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_IN_CLUSTER*sizeof(int),
+            MAX_NODES_PER_CLUSTER*sizeof(cl_int),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                 
         cl_mem point_data_count_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_IN_CLUSTER*sizeof(int),
+            MAX_NODES_PER_CLUSTER*sizeof(cl_int),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                            
-        Matrix<float> min_check(1, MAX_NODES_IN_CLUSTER, 0);
+        Matrix<float> min_check(1, MAX_NODES_PER_CLUSTER, 0);
         cl_mem min_check_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_IN_CLUSTER*sizeof(float),
+            MAX_NODES_PER_CLUSTER*sizeof(cl_float),
             min_check.data(),
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        Matrix<float> sum_check(1, MAX_NODES_IN_CLUSTER, 0);
+        Matrix<float> sum_check(1, MAX_NODES_PER_CLUSTER, 0);
         cl_mem sum_check_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_IN_CLUSTER*sizeof(float),
+            MAX_NODES_PER_CLUSTER*sizeof(cl_float),
             sum_check.data(),
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        Matrix<float> variance_check(1, MAX_NODES_IN_CLUSTER, 0);
+        Matrix<float> variance_check(1, MAX_NODES_PER_CLUSTER, 0);
         cl_mem variance_check_cl = QOpenCLCreateBuffer(context_cl->context(),
             CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_IN_CLUSTER*sizeof(float),
+            MAX_NODES_PER_CLUSTER*sizeof(cl_float),
             variance_check.data(),
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1211,9 +1211,9 @@ void VoxelizeWorker::process()
             float max_brick_sum = 0.0;
             
             // Containers 
-            Matrix<double> brick_extent(1, 6*MAX_NODES_IN_CLUSTER); // The extent of each brick in a kernel invocation
-            Matrix<int> point_data_offset(1, MAX_NODES_IN_CLUSTER); // The data offset for each brick in a kernel invocation
-            Matrix<int> point_data_count(1, MAX_NODES_IN_CLUSTER); // The data size for each brick in a kernel invocation
+            Matrix<double> brick_extent(1, 6*MAX_NODES_PER_CLUSTER); // The extent of each brick in a kernel invocation
+            Matrix<int> point_data_offset(1, MAX_NODES_PER_CLUSTER); // The data offset for each brick in a kernel invocation
+            Matrix<int> point_data_count(1, MAX_NODES_PER_CLUSTER); // The data size for each brick in a kernel invocation
             Matrix<float> point_data(MAX_POINTS_PER_CLUSTER,4); // Temporaily holds the data for a single brick
             
             
@@ -1249,67 +1249,67 @@ void VoxelizeWorker::process()
                     // First pass: find relevant data for each brick in the node cluster
                     unsigned int currentId;
                     size_t n_points_harvested = 0; // The number of xyzi data points gathered
-                    size_t n_nodes_treated_cluster = 0; // The number of nodes treated in this iteration of the enclosing while loop
+                    size_t n_nodes_treated_in_cluster = 0; // The number of nodes treated in this iteration of the enclosing while loop
 
                     while (n_points_harvested < MAX_POINTS_PER_CLUSTER)
                     {
                         // The id of the octnode in the octnode array
-                        currentId = nodes_prev_lvls + n_nodes_treated + n_nodes_treated_cluster;
+                        currentId = nodes_prev_lvls + n_nodes_treated + n_nodes_treated_in_cluster;
                         
                         // Set the level
                         gpuHelpOcttree[currentId].setLevel(lvl);
 
                         // Set the brick id
-                        gpuHelpOcttree[currentId].calcBrickId((n_nodes_treated + n_nodes_treated_cluster)%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
+                        gpuHelpOcttree[currentId].calcBrickId((n_nodes_treated + n_nodes_treated_in_cluster)%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
 
                         // Based on brick id calculate the brick extent 
                         unsigned int * brick_id = gpuHelpOcttree[currentId].getBrickId();
                         
-                        brick_extent[n_nodes_treated_cluster*6 + 0] = svo->getExtent()->at(0) + tmp*brick_id[0];
-                        brick_extent[n_nodes_treated_cluster*6 + 1] = svo->getExtent()->at(0) + tmp*(brick_id[0]+1);
-                        brick_extent[n_nodes_treated_cluster*6 + 2] = svo->getExtent()->at(2) + tmp*brick_id[1];
-                        brick_extent[n_nodes_treated_cluster*6 + 3] = svo->getExtent()->at(2) + tmp*(brick_id[1]+1);
-                        brick_extent[n_nodes_treated_cluster*6 + 4] = svo->getExtent()->at(4) + tmp*brick_id[2];
-                        brick_extent[n_nodes_treated_cluster*6 + 5] = svo->getExtent()->at(4) + tmp*(brick_id[2]+1);
+                        brick_extent[n_nodes_treated_in_cluster*6 + 0] = svo->getExtent()->at(0) + tmp*brick_id[0];
+                        brick_extent[n_nodes_treated_in_cluster*6 + 1] = svo->getExtent()->at(0) + tmp*(brick_id[0]+1);
+                        brick_extent[n_nodes_treated_in_cluster*6 + 2] = svo->getExtent()->at(2) + tmp*brick_id[1];
+                        brick_extent[n_nodes_treated_in_cluster*6 + 3] = svo->getExtent()->at(2) + tmp*(brick_id[1]+1);
+                        brick_extent[n_nodes_treated_in_cluster*6 + 4] = svo->getExtent()->at(4) + tmp*brick_id[2];
+                        brick_extent[n_nodes_treated_in_cluster*6 + 5] = svo->getExtent()->at(4) + tmp*(brick_id[2]+1);
                         
                         // Offset of points accumulated thus far
-                        point_data_offset[n_nodes_treated_cluster] = n_points_harvested;
+                        point_data_offset[n_nodes_treated_in_cluster] = n_points_harvested;
                         size_t premature_termination = 0;
 
                         // Get point data needed for this brick 
                         if( root.getData(
                                     MAX_POINTS_PER_CLUSTER,
-                                    brick_extent.data() + n_nodes_treated_cluster*6,
+                                    brick_extent.data() + n_nodes_treated_in_cluster*6,
                                     point_data.data(),
                                     &n_points_harvested,
                                     search_radius))
                         {
-                            premature_termination = n_nodes_treated_cluster;
+                            premature_termination = n_nodes_treated_in_cluster;
 
-                            qDebug() << lvl+1 << premature_termination << "of" << MAX_NODES_IN_CLUSTER << "pts:" << n_points_harvested;
+                            qDebug() << lvl+1 << premature_termination << "of" << MAX_NODES_PER_CLUSTER << "pts:" << n_points_harvested;
                         }
 
-                        // Number of points accumulated thus far
-                        point_data_count[n_nodes_treated_cluster] = n_points_harvested - point_data_offset[n_nodes_treated_cluster];
+                        // Number of points for this node
+                        point_data_count[n_nodes_treated_in_cluster] = n_points_harvested - point_data_offset[n_nodes_treated_in_cluster];
                         
                         // Upload this point data to an OpenCL buffer
-                        if (point_data_count[n_nodes_treated_cluster] > 0)
+                        if (point_data_count[n_nodes_treated_in_cluster] > 0)
                         {
                             err = QOpenCLEnqueueWriteBuffer(context_cl->queue(),
                                 point_data_cl ,
                                 CL_TRUE,
-                                point_data_offset[n_nodes_treated_cluster]*sizeof(cl_float4),
-                                point_data_count[n_nodes_treated_cluster]*sizeof(cl_float4),
-                                point_data.data() + point_data_offset[n_nodes_treated_cluster]*4,
+                                point_data_offset[n_nodes_treated_in_cluster]*sizeof(cl_float4),
+                                point_data_count[n_nodes_treated_in_cluster]*sizeof(cl_float4),
+                                point_data.data() + point_data_offset[n_nodes_treated_in_cluster]*4, // ?? Redundant storage? At least move outisde of loop?
                                 0, NULL, NULL);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                         }
 
-                        n_nodes_treated_cluster++;
+                        n_nodes_treated_in_cluster++;
 
 
                         // Break off loop when all nodes are processed
-                        if ((n_nodes_treated + n_nodes_treated_cluster >= nodes[lvl]) || (premature_termination) || (n_nodes_treated_cluster >= MAX_NODES_IN_CLUSTER) ) break;
+                        if ((n_nodes_treated + n_nodes_treated_in_cluster >= nodes[lvl]) || (premature_termination) || (n_nodes_treated_in_cluster >= MAX_NODES_PER_CLUSTER) ) break;
                     }
 
                     // The extent of each brick
@@ -1346,6 +1346,12 @@ void VoxelizeWorker::process()
                     
                     // Second pass: calculate the data for each node in the cluster (OpenCL)
                     // Set kernel arguments
+//                    qDebug() << point_data.size();
+//                    qDebug() << point_data_offset.size();
+//                    qDebug() << point_data_offset.bytes();
+//                    qDebug() << point_data_count.size();
+//                    qDebug() << brick_extet.size();
+
                     err = QOpenCLSetKernelArg( voxelize_kernel, 0, sizeof(cl_mem), (void *) &point_data_cl);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 1, sizeof(cl_mem), (void *) &point_data_offset_cl);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 2, sizeof(cl_mem), (void *) &point_data_count_cl);
@@ -1364,7 +1370,7 @@ void VoxelizeWorker::process()
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
                             
                     // Interpolate data for each brick
-                    for (size_t j = 0; j < n_nodes_treated_cluster; j++)
+                    for (size_t j = 0; j < n_nodes_treated_in_cluster; j++)
                     {
                         // Launch kernel
                         size_t glb_offset[3] = {0,0,8*j};
@@ -1378,7 +1384,11 @@ void VoxelizeWorker::process()
                                     glb_ws, 
                                     loc_ws, 
                                     0, NULL, NULL);
-                        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+                        if ( err != CL_SUCCESS)
+                        {
+                            qDebug() << j << "of" << n_nodes_treated_in_cluster << tmp << search_radius;
+                            qFatal(cl_error_cstring(err));
+                        }
                         
 //                        if (i + j + 1 >= nodes[lvl]) break;
                     }
@@ -1390,7 +1400,7 @@ void VoxelizeWorker::process()
                         min_check_cl,
                         CL_TRUE,
                         0,
-                        MAX_NODES_IN_CLUSTER*sizeof(float),
+                        MAX_NODES_PER_CLUSTER*sizeof(float),
                         min_check.data(),
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1400,7 +1410,7 @@ void VoxelizeWorker::process()
                         sum_check_cl,
                         CL_TRUE,
                         0,
-                        MAX_NODES_IN_CLUSTER*sizeof(float),
+                        MAX_NODES_PER_CLUSTER*sizeof(float),
                         sum_check.data(),
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1410,7 +1420,7 @@ void VoxelizeWorker::process()
                         variance_check_cl,
                         CL_TRUE,
                         0,
-                        MAX_NODES_IN_CLUSTER*sizeof(float),
+                        MAX_NODES_PER_CLUSTER*sizeof(float),
                         variance_check.data(),
                         0, NULL, NULL);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1421,7 +1431,7 @@ void VoxelizeWorker::process()
                     
                     
                     // Third pass: transfer non-empty nodes to svo data structure (OpenCL)
-                    for (size_t j = 0; j < n_nodes_treated_cluster; j++)
+                    for (size_t j = 0; j < n_nodes_treated_in_cluster; j++)
                     {
                         // The id of the octnode in the octnode array
                         currentId = nodes_prev_lvls + n_nodes_treated + j;
@@ -1510,7 +1520,7 @@ void VoxelizeWorker::process()
 //                        if (i + j + 1 >= nodes[lvl]) break;
                     }
 
-                    n_nodes_treated += n_nodes_treated_cluster;
+                    n_nodes_treated += n_nodes_treated_in_cluster;
 
                     emit changedMemoryUsage(non_empty_node_counter*n_points_brick*sizeof(float)/1e6);
 
