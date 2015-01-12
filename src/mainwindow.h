@@ -171,6 +171,7 @@ private:
     QPushButton * helpCellOverlayButton;
     QPushButton * rotateCellButton;
     QPushButton * toggleCellButton;
+    QPushButton * toggleHklButton;
     
     /* File selection filter */
     QLineEdit * fileFilter;

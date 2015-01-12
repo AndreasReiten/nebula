@@ -130,6 +130,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isDataExtentReadOnly(true),
       isCenterlineActive(true),
       isRulerActive(false),
+      isHklTextActive(true),
 //      isLMBDown(false),
       isURotationActive(false),
       isLabFrameActive(true),
@@ -361,6 +362,11 @@ VolumeRenderWorker::~VolumeRenderWorker()
         glDeleteBuffers(1, &marker_centers_vbo);
         glDeleteBuffers(1, &minicell_vbo);
     }
+}
+
+void VolumeRenderWorker::toggleHkl()
+{
+    isHklTextActive = !isHklTextActive;
 }
 
 float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, size_t work_group_size)
@@ -1172,7 +1178,7 @@ void VolumeRenderWorker::drawCountIntegral(QPainter * painter)
 
 void VolumeRenderWorker::drawHklText(QPainter * painter)
 {
-    painter->setFont(*tiny_font);
+    painter->setFont(*hkl_font);
     
     for (size_t i = 0; i < hkl_text_counter; i++)
     {
@@ -1352,7 +1358,10 @@ void VolumeRenderWorker::initializePaintTools()
 {
     // Fonts
     normal_font = new QFont("Helvetica", 13);
-    tiny_font = new QFont("Helvetica", 11);
+    normal_font->setBold(false);
+    hkl_font = new QFont("Helvetica", 10);
+    hkl_font->setItalic(true);
+    hkl_font->setBold(false);
     minicell_font = new QFont("Helvetica", 15);
     minicell_font->setBold(true);
     minicell_font->setItalic(true);
@@ -1906,7 +1915,7 @@ void VolumeRenderWorker::render(QPainter *painter)
     if (isIntegration2DActive) drawIntegral(painter);
     
     drawOverlay(painter);
-    if (isUnitcellActive) drawHklText(painter);
+    if (isHklTextActive) drawHklText(painter);
     if (n_marker_indices > 0) drawMarkers(painter);
     if (isMiniCellActive) drawHelpCell(painter);
     drawCountScalebar(painter);

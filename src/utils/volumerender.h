@@ -20,6 +20,7 @@ signals:
     void changedMessageString(QString str);
 
 public slots:
+    void toggleHkl();
     void setCountIntegration();
     void addMarker();
     void setQuality(int value);
@@ -144,6 +145,7 @@ private:
     bool displayDistance;
     bool displayFps;
     bool displayResolution;
+    bool isHklTextActive;
     
     // Markers
     QVector<Marker> markers;
@@ -363,7 +365,7 @@ private:
     QBrush * normal_brush;
 //    QBrush * dark_fill_brush;
     QFont * normal_font;
-    QFont * tiny_font;
+    QFont * hkl_font;
 //    QFont * emph_font;
     QFontMetrics * normal_fontmetric;
 //    QFontMetrics * emph_fontmetric;

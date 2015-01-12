@@ -233,7 +233,7 @@ void MainWindow::initWorkers()
     imagePreviewWindow->worker()->setReducedPixels(&reduced_pixels);
 //    imagePreviewWindow->worker()->initializeCLKernel();
 //    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
-    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setActiveAngle(int)));
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(QString)), imagePreviewWindow->worker(), SLOT(setActiveAngle(QString)));
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetOmega(double)));
     connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetKappa(double)));
     connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetPhi(double)));
@@ -1094,6 +1094,7 @@ void MainWindow::initConnects()
     connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(addMarker()));
     connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setLabFrame()));
     connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setURotation()));
+    connect(this->toggleHklButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(toggleHkl()));
     connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setUnitcell()));
     connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setHCurrent(int)));
     connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setKCurrent(int)));
@@ -2032,7 +2033,8 @@ void MainWindow::initGUI()
         
         helpCellOverlayButton = new QPushButton("Help Cell");
         rotateCellButton = new QPushButton("Rotation");
-        toggleCellButton = new QPushButton("Toggle");
+        toggleHklButton = new QPushButton("Toggle hkl");
+        toggleCellButton = new QPushButton("Toggle Cell");
         
         rotateCellButton->setCheckable(true);
         rotateCellButton->setChecked(false);
@@ -2071,7 +2073,8 @@ void MainWindow::initGUI()
         gridLayout->addWidget(helpCellOverlayButton,7,0,1,3);
         gridLayout->addWidget(rotateCellButton,7,3,1,3);
         
-        gridLayout->addWidget(toggleCellButton,8,0,1,6);
+        gridLayout->addWidget(toggleHklButton,8,0,1,6);
+        gridLayout->addWidget(toggleCellButton,9,0,1,6);
         
         unitCellWidget->setLayout(gridLayout);
         
@@ -2103,7 +2106,7 @@ void MainWindow::initGUI()
     {
         fileControlsWidget = new QWidget;
 
-        QLabel * labelE = new QLabel(QString("Active angle:"));
+        QLabel * label = new QLabel(QString("Active angle:"));
 
         activeAngleComboBox = new QComboBox;
         activeAngleComboBox->addItem("Phi");
@@ -2136,7 +2139,7 @@ void MainWindow::initGUI()
         gridLayout->setVerticalSpacing(2);
         gridLayout->setContentsMargins(5,5,5,5);
         gridLayout->setRowStretch(4,1);
-        gridLayout->addWidget(labelE,0,0,1,4);
+        gridLayout->addWidget(label,0,0,1,4);
         gridLayout->addWidget(activeAngleComboBox,0,4,1,4);
         gridLayout->addWidget(omegaCorrectionSpinBox,1,0,1,8);
         gridLayout->addWidget(kappaCorrectionSpinBox,2,0,1,8);
