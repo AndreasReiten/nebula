@@ -56,7 +56,7 @@ private slots:
 
 
     void print(QString str);
-    void setGenericProgressFormat(QString str);
+    void setGeneralProgressFormat(QString str);
     void setMemoryUsageFormat(QString str);
     void openUnitcellFile();
     void initWorkers();
@@ -108,7 +108,7 @@ signals:
     void captureFrameBuffer(QString path);
     void changedUB();
     void pathRemoved(QString path);
-    void pathChanged(QString path);
+//    void pathChanged(QString path);
     void imageChanged(ImageInfo image);
     void selectionChanged(Selection area);
     void centerImage();
@@ -226,7 +226,7 @@ private:
     QMainWindow * imageMainWindow;
 //    QWidget * imageCentralWidget;
     
-    QLineEdit * pathLineEdit;
+//    QLineEdit * pathLineEdit;
     
     QWidget * imageDisplayWidget;
     
@@ -469,7 +469,7 @@ protected:
     QString screenshot_dir;
 
     QPlainTextEdit *errorTextEdit;
-    QProgressBar *genericProgressBar;
+//    QProgressBar *genericProgressBar;
     QProgressBar *memoryUsageProgressBar;
 
     QMenuBar * mainMenu;

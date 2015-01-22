@@ -254,6 +254,7 @@ void MainWindow::initWorkers()
     connect(imagePreviewWindow->worker(), SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(imagePreviewWindow->worker(), SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
     connect(imagePreviewWindow->worker(), SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+    connect(imagePreviewWindow->worker(), SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
 
 //    connect(imagePreviewWindow->worker(), SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
 //    connect(imagePreviewWindow->worker(), SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
@@ -286,13 +287,13 @@ void MainWindow::initWorkers()
     connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
 
-    connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+//    connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
     connect(voxelizeWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
 
-    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-    connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-    connect(voxelizeWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
+    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), generalProgressBar, SLOT(setValue(int)));
+    connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGeneralProgressFormat(QString)));
+    connect(voxelizeWorker, SIGNAL(changedRangeGenericProcess(int,int)), generalProgressBar, SLOT(setRange(int,int)));
 
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
@@ -609,8 +610,8 @@ void MainWindow::setStartConditions()
     
     imagePreviewTsfTextureComboBox->setCurrentIndex(1);
     imagePreviewTsfAlphaComboBox->setCurrentIndex(2);
-    imagePreviewDataMinDoubleSpinBox->setValue(10);
-    imagePreviewDataMinDoubleSpinBox->setValue(1);
+//    imagePreviewDataMinDoubleSpinBox->setValue(10);
+    imagePreviewDataMinDoubleSpinBox->setValue(0.01);
     imagePreviewDataMaxDoubleSpinBox->setValue(1000);
     imagePreviewLogCheckBox->setChecked(true);
     correctionLorentzCheckBox->setChecked(true);
@@ -1150,7 +1151,7 @@ void MainWindow::initConnects()
     connect(this, SIGNAL(setPlaneMarkers(QString)), imagePreviewWindow->worker(), SLOT(applyPlaneMarker(QString)));
     connect(this, SIGNAL(analyze(QString)), imagePreviewWindow->worker(), SLOT(analyze(QString)));
     connect(imagePreviewWindow->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
-    connect(imagePreviewWindow->worker(), SIGNAL(pathChanged(QString)), pathLineEdit, SLOT(setText(QString)));
+    connect(imagePreviewWindow->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
     connect(imageSpinBox, SIGNAL(valueChanged(int)), imagePreviewWindow->worker(), SLOT(setFrameByIndex(int)));
     connect(imagePreviewWindow->worker(), SIGNAL(imageRangeChanged(int,int)), this, SLOT(setImageRange(int, int)));
     connect(imagePreviewWindow->worker(), SIGNAL(currentIndexChanged(int)), imageSpinBox, SLOT(setValue(int)));
@@ -1160,7 +1161,7 @@ void MainWindow::initConnects()
     connect(traceTextureCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(toggleTraceTexture(bool)));
     connect(imagePreviewWindow->worker(), SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
     connect(imagePreviewWindow->worker(), SIGNAL(progressRangeChanged(int,int)), generalProgressBar, SLOT(setRange(int,int)));
-    connect(imagePreviewWindow->worker(), SIGNAL(visibilityChanged(bool)), generalProgressBar, SLOT(setHidden(bool)));
+//    connect(imagePreviewWindow->worker(), SIGNAL(visibilityChanged(bool)), generalProgressBar, SLOT(setHidden(bool)));
     connect(correctionNoiseCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionNoise(bool)));
     connect(correctionPlaneCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionPlane(bool)));
     connect(correctionClutterCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionClutter(bool)));
@@ -1185,13 +1186,15 @@ void MainWindow::initConnects()
     connect(this, SIGNAL(takeImageScreenshot(QString)), imagePreviewWindow->worker(),SLOT(takeScreenShot(QString)));
     connect(imagePreviewWindow->worker(), SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
-    connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), genericProgressBar, SLOT(setVisible(bool)));
+//    connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), generalProgressBar, SLOT(setVisible(bool)));
     connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
 }
 
-void MainWindow::setGenericProgressFormat(QString str)
+void MainWindow::setGeneralProgressFormat(QString str)
 {
-    genericProgressBar->setFormat(str);
+//    qDebug() << str;
+    
+    generalProgressBar->setFormat(str);
 }
 
 void MainWindow::setMemoryUsageFormat(QString str)
@@ -1685,9 +1688,9 @@ void MainWindow::initGUI()
     
     // Navigation dock widget
     {
-        pathLineEdit = new QLineEdit("/path/to/file");
-        pathLineEdit->setReadOnly(true);
-        connect(this, SIGNAL(pathChanged(QString)), pathLineEdit, SLOT(setText(QString)));
+//        pathLineEdit = new QLineEdit("/path/to/file");
+//        pathLineEdit->setReadOnly(true);
+//        connect(this, SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
         
         nextFramePushButton = new QPushButton(QIcon(":/art/forward.png"),"Next");
         previousFramePushButton = new QPushButton(QIcon(":/art/back.png"),"Prev");
@@ -1709,8 +1712,14 @@ void MainWindow::initGUI()
 //        connect(batchSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setBatchSize(int)));
         
         generalProgressBar = new QProgressBar;
-        generalProgressBar->hide();
-        generalProgressBar->setFormat("%v of %m");
+//        generalProgressBar->hide();
+//        generalProgressBar->setFormat("%v of %m");
+//        generalProgressBar->setRange( 1);
+//        generalProgressBar->setValue(1);
+        
+        memoryUsageProgressBar = new QProgressBar;
+        memoryUsageProgressBar->setRange( 0, 1);
+        memoryUsageProgressBar->setVisible(false);
     
         QGridLayout * gridLayout = new QGridLayout;
         
@@ -1727,8 +1736,9 @@ void MainWindow::initGUI()
         gridLayout->addWidget(batchSizeSpinBox,1,2,1,2);
         gridLayout->addWidget(nextSeriesPushButton,1,4,2,2);
         gridLayout->addWidget(removeCurrentPushButton, 2, 2, 1 , 2);
-        gridLayout->addWidget(pathLineEdit,3,0,1,6);
-        gridLayout->addWidget(generalProgressBar, 4, 0, 1 , 6);
+//        gridLayout->addWidget(pathLineEdit,3,0,1,6);
+        gridLayout->addWidget(generalProgressBar, 3, 0, 1 , 6);
+        gridLayout->addWidget(memoryUsageProgressBar, 4, 0, 1 , 6);
         
         navigationWidget = new QWidget;
         navigationWidget->setLayout(gridLayout);
@@ -2098,7 +2108,7 @@ void MainWindow::initGUI()
 
 //        svoHeaderDock->hide();
         
-        connect(this, SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
+//        connect(this, SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
         
     }
     
@@ -2281,14 +2291,10 @@ void MainWindow::initGUI()
         botWidget = new QWidget;
 
         // Progress Bar
-        genericProgressBar = new QProgressBar;
-        genericProgressBar->setRange( 0, 100);
-        genericProgressBar->setVisible(false);
+//        genericProgressBar = new QProgressBar;
+//        genericProgressBar->setRange( 0, 100);
+//        genericProgressBar->setVisible(false);
         
-        memoryUsageProgressBar = new QProgressBar;
-        memoryUsageProgressBar->setRange( 0, 1);
-        memoryUsageProgressBar->setVisible(false);
-
         // Text output
         errorTextEdit = new QPlainTextEdit;
         error_highlighter = new Highlighter(errorTextEdit->document());
@@ -2300,8 +2306,8 @@ void MainWindow::initGUI()
         gridLayout->setVerticalSpacing(0);
         gridLayout->setContentsMargins(5,5,5,5);
         gridLayout->addWidget(errorTextEdit, 0, 0, 1, 1);
-        gridLayout->addWidget(genericProgressBar, 1, 0, 1, 1);
-        gridLayout->addWidget(memoryUsageProgressBar, 2, 0, 1, 1);
+//        gridLayout->addWidget(genericProgressBar, 1, 0, 1, 1);
+//        gridLayout->addWidget(memoryUsageProgressBar, 2, 0, 1, 1);
 
         botWidget->setLayout(gridLayout);
         outputDockWidget->setWidget(botWidget);

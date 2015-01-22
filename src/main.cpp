@@ -14,7 +14,16 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
- * Remove hard memory requirements in cases where information about max RAM is known (case for vRAM).
+ * (Time consuming) Switch to QOpenGLWidget
+ * (Somewhat time consuming) Remove hard memory requirements in cases where information about max RAM is known (case for vRAM). Adapt to hardware.
+ * (Somewhat time consuming) Implement LP correction with convenient GUI. Polarization corr. based on beam polarization. Lorentz correction based on sample rotation axis (given by two angles)
+ * (Somewhat time consuming) Implement clutter removal, median filter, flux and exposure normalization
+ * (Quick) Save all parameters in save files and make the program relaxed regarding version. "Use what you can"-approach
+ * When generating an octtree, allow to save at any level less than or equal to the max chosen one.
+ * (Time consuming) Implement a transfer function editor.
+ * (Time consuming) Shadows
+ * (Time consuming) Pre-integrated transfer functions
+ * (Quick) Try opening folder structure in file browser when opening project file. Ability to append more unique files if requested.  
  * (Low priority) Radial selectivity. I. e. confining viewable area to a spherical shell
  * (Time consuming) A solid linear texture edit (tsf function)
  * (Done) Area selection prior to reduction to limit data size.

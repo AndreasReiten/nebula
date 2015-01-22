@@ -350,6 +350,8 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 
 VolumeRenderWorker::~VolumeRenderWorker()
 {
+//    qDebug() << "Destroy";
+    
     if (isInitialized)
     {
         glDeleteBuffers(1, &lab_frame_vbo);
@@ -1627,6 +1629,8 @@ void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 {
     Q_UNUSED(ev);
 
+//    qDebug() << "resize";
+    
     if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
     ctc_matrix.setWindow(render_surface->width(), render_surface->height());
 
@@ -1660,8 +1664,11 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         else ray_glb_ws[1] = ray_tex_dim[1];
 
         if (isRayTexInitialized){
+            
+//            qDebug() << "Releasing..." << ray_tex_cl;
             err = QOpenCLReleaseMemObject(ray_tex_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//            qDebug() << "Released";
         }
 
         // Update GL texture
@@ -1683,9 +1690,11 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Convert to CL texture
+//        qDebug() << "Creating...";
         ray_tex_cl = QOpenCLCreateFromGLTexture2D(context_cl->context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex_gl, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
+//        qDebug() << "Created" << ray_tex_cl;
+        
         isRayTexInitialized = true;
 
         // Integration texture
