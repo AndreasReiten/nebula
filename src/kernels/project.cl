@@ -2,26 +2,18 @@ __kernel void FRAME_FILTER(
     __write_only image2d_t xyzi_target,
     __global float * source,
     sampler_t tsf_sampler,
-//    sampler_t intensity_sampler,
     __constant float * sample_rotation_matrix,
-//    float2 threshold_one,
-//    float2 threshold_two,
-//    float background_flux,
-//    float background_exposure_time,
     float h_pixel_size_x,
     float h_pixel_size_y,
-//    float h_exposure_time,
     float h_wavelength,
     float h_detector_distance,
     float h_beam_x,
     float h_beam_y,
-//    float h_flux,
     float h_start_angle,
     float h_angle_increment,
     float h_kappa,
     float h_phi,
     float h_omega,
-//    float max_intensity,
     int4 selection
     )
 {
@@ -53,8 +45,6 @@ __kernel void FRAME_FILTER(
             (id_glb.y < selection.w)) // Bottom
         {
             Q.w = source[id_glb.y*target_dim.x + id_glb.x]; //id_glb.y * image_size.x + id_glb.x; //
-//            read_imagef(source, intensity_sampler, id_glb).w; /* DANGER */
-            
             // Noise filter
 //            intensity = clamp(intensity, threshold_one.x, threshold_one.y); // All readings within noise thresholds
 //            intensity -= threshold_one.x; // Subtracts the noise
@@ -65,18 +55,12 @@ __kernel void FRAME_FILTER(
                  * Lorentz Polarization correction and distance correction + projecting the pixel onto the Ewald sphere
                  * */
                 float k = 1.0f/h_wavelength; // Multiply with 2pi if desired
-                
-
-                //float3 k_f = k*normalize((float3)(
-                  //  -det_dist,
-                  //  pix_size_x * ((float) (image_size.y - id_glb.y) - beam_x), /* DANGER */
-                  //  pix_size_y * ((float) id_glb.x - beam_y))); /* DANGER */
 
                 float3 k_i = (float3)(-k,0,0);
                 float3 k_f = k*normalize((float3)(
                     -h_detector_distance, 
-                    h_pixel_size_x * ((float) (target_dim.y - 1 - id_glb.y) - h_beam_x), /* DANGER */
-                    h_pixel_size_y * ((float) (target_dim.x - 1 - id_glb.x) - h_beam_y))); /* DANGER */
+                    h_pixel_size_x * ((float) (target_dim.y - 0.5 - id_glb.y) - h_beam_x), /* DANGER */
+                    h_pixel_size_y * ((float) (target_dim.x - 0.5 - id_glb.x) - h_beam_y))); /* DANGER */
                 
                 Q.xyz = k_f - k_i; 
                 
@@ -103,14 +87,10 @@ __kernel void FRAME_FILTER(
                 Q.y = temp.x * sample_rotation_matrix[4] + temp.y * sample_rotation_matrix[5] + temp.z * sample_rotation_matrix[6];
                 Q.z = temp.x * sample_rotation_matrix[8] + temp.y * sample_rotation_matrix[9] + temp.z * sample_rotation_matrix[10];
     
-                // Post correction filter (Note: remove this at some point, it has little logical purpose)
 //                Q.w = clamp(Q.w, threshold_two.x, threshold_two.y); 
 //                Q.w -= threshold_two.x; 
                 
             }
-            
-//            Q.w = 11.0f;
-    
         }    
         else 
         {
