@@ -335,6 +335,8 @@ private:
     QDoubleSpinBox *omegaCorrectionSpinBox;
     QDoubleSpinBox *kappaCorrectionSpinBox;
     QDoubleSpinBox *phiCorrectionSpinBox;
+    QDoubleSpinBox *beamXOverrideSpinBox;
+    QDoubleSpinBox *beamYOverrideSpinBox;
 
 
     QDoubleSpinBox * funcParamASpinBox;
@@ -347,6 +349,8 @@ private:
     QDoubleSpinBox * volumeRenderAlphaSpinBox;
     QDoubleSpinBox * volumeRenderBrightnessSpinBox;
 
+    QCheckBox * beamOverrideCheckBox;
+    
     QComboBox * volumeRenderTsfComboBox;
     QComboBox * volumeRenderTsfAlphaComboBox;
     QComboBox * volumeRenderViewModeComboBox;

@@ -2115,9 +2115,25 @@ void MainWindow::initGUI()
     /* File Controls Widget */
     {
         fileControlsWidget = new QWidget;
-
+        
+        beamOverrideCheckBox = new QCheckBox;
+        
+        QLabel * beamOverrideLabel = new QLabel(QString("Beam center override:"));
+        
+        beamXOverrideSpinBox = new QDoubleSpinBox;
+        beamXOverrideSpinBox->setRange(-5000, 5000);
+        beamXOverrideSpinBox->setDecimals(2);
+        beamXOverrideSpinBox->setPrefix("x: ");
+        beamXOverrideSpinBox->setSuffix(" px");
+        
+        beamYOverrideSpinBox = new QDoubleSpinBox;
+        beamYOverrideSpinBox->setRange(-5000, 5000);
+        beamYOverrideSpinBox->setDecimals(2);        
+        beamYOverrideSpinBox->setPrefix("y: ");
+        beamYOverrideSpinBox->setSuffix(" px");
+        
         QLabel * label = new QLabel(QString("Active angle:"));
-
+        
         activeAngleComboBox = new QComboBox;
         activeAngleComboBox->addItem("Phi");
         activeAngleComboBox->addItem("Kappa");
@@ -2149,11 +2165,15 @@ void MainWindow::initGUI()
         gridLayout->setVerticalSpacing(2);
         gridLayout->setContentsMargins(5,5,5,5);
         gridLayout->setRowStretch(4,1);
-        gridLayout->addWidget(label,0,0,1,4);
-        gridLayout->addWidget(activeAngleComboBox,0,4,1,4);
-        gridLayout->addWidget(omegaCorrectionSpinBox,1,0,1,8);
-        gridLayout->addWidget(kappaCorrectionSpinBox,2,0,1,8);
-        gridLayout->addWidget(phiCorrectionSpinBox,3,0,1,8);
+        gridLayout->addWidget(beamOverrideCheckBox,0,0,1,1);
+        gridLayout->addWidget(beamOverrideLabel,0,1,1,7);
+        gridLayout->addWidget(beamXOverrideSpinBox,1,0,1,4);
+        gridLayout->addWidget(beamYOverrideSpinBox,1,4,1,4);
+        gridLayout->addWidget(label,2,0,1,4);
+        gridLayout->addWidget(activeAngleComboBox,2,4,1,4);
+        gridLayout->addWidget(omegaCorrectionSpinBox,3,0,1,8);
+        gridLayout->addWidget(kappaCorrectionSpinBox,4,0,1,8);
+        gridLayout->addWidget(phiCorrectionSpinBox,5,0,1,8);
         
         fileControlsWidget->setLayout(gridLayout);
         
