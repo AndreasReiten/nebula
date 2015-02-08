@@ -1,7 +1,12 @@
 #ifndef VOLUMERENDER_H
 #define VOLUMERENDER_H
 
-#include "../../lib/qxlib/qxlib.h"
+#include "math/qxmathlib.h"
+#include "opencl/qxopencllib.h"
+#include "opengl/qxopengllib.h"
+#include "file/qxfilelib.h"
+#include "image/qximagelib.h"
+#include "svo/qxsvolib.h"
 #include "marker.h"
 
 class VolumeRenderWorker : public OpenGLWorker

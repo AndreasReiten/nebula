@@ -14,7 +14,12 @@
 #include <QGridLayout>
 #include <QFileDialog>
 
-#include "../lib/qxlib/qxlib.h"
+#include "utils/math/qxmathlib.h"
+#include "utils/opencl/qxopencllib.h"
+#include "utils/opengl/qxopengllib.h"
+#include "utils/file/qxfilelib.h"
+#include "utils/image/qximagelib.h"
+#include "utils/svo/qxsvolib.h"
 #include "utils/texthighlighter.h"
 #include "utils/volumerender.h"
 #include "utils/worker.h"
