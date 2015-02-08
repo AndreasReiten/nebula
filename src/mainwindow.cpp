@@ -200,7 +200,7 @@ void MainWindow::initWorkers()
 ////    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseHigh(double)));
 ////    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectLow(double)));
 ////    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectHigh(double)));
-//    connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
+//    connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
     
 
 //    projectFileWorker->moveToThread(projectFileThread);
@@ -221,7 +221,7 @@ void MainWindow::initWorkers()
 //    connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
 //    connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
 //    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-////    connect(imagePreviewWindow->worker(), SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
+////    connect(imageOpenGLWidget, SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
 //    connect(this, SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
 
 
@@ -230,18 +230,18 @@ void MainWindow::initWorkers()
 //    reconstructWorker->setFilePaths(&file_paths);
 //    reconstructWorker->setSVOFile(&svo_inprocess);
 //    reconstructWorker->setOpenCLContext(context_cl);
-    imagePreviewWindow->worker()->setReducedPixels(&reduced_pixels);
-//    imagePreviewWindow->worker()->initializeCLKernel();
+    imageOpenGLWidget->setReducedPixels(&reduced_pixels);
+//    imageOpenGLWidget->initializeCLKernel();
 //    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
-    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(QString)), imagePreviewWindow->worker(), SLOT(setActiveAngle(QString)));
-    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetOmega(double)));
-    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetKappa(double)));
-    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setOffsetPhi(double)));
+    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(QString)), imageOpenGLWidget, SLOT(setActiveAngle(QString)));
+    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setOffsetOmega(double)));
+    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setOffsetKappa(double)));
+    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setOffsetPhi(double)));
 //    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseLow(double)));
 //    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseHigh(double)));
 //    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectLow(double)));
 //    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectHigh(double)));
-//    connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), reconstructWorker, SLOT(setNoiseLow(double)));
+//    connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), reconstructWorker, SLOT(setNoiseLow(double)));
 
 //    reconstructWorker->moveToThread(reconstructThread);
 //    connect(reconstructThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
@@ -249,23 +249,23 @@ void MainWindow::initWorkers()
 //    connect(reconstructThread, SIGNAL(started()), this, SLOT(transferSet()), Qt::DirectConnection);
 //    connect(reconstructThread, SIGNAL(started()), reconstructWorker, SLOT(process()));
 //    connect(reconstructWorker, SIGNAL(finished()), reconstructThread, SLOT(quit()));
-    connect(imagePreviewWindow->worker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+    connect(imageOpenGLWidget, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
 
-    connect(imagePreviewWindow->worker(), SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
-    connect(imagePreviewWindow->worker(), SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
-    connect(imagePreviewWindow->worker(), SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
-    connect(imagePreviewWindow->worker(), SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
+    connect(imageOpenGLWidget, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
+    connect(imageOpenGLWidget, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
+    connect(imageOpenGLWidget, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
+    connect(imageOpenGLWidget, SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
 
-//    connect(imagePreviewWindow->worker(), SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-//    connect(imagePreviewWindow->worker(), SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(imagePreviewWindow->worker(), SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
+//    connect(imageOpenGLWidget, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
+//    connect(imageOpenGLWidget, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
+//    connect(imageOpenGLWidget, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
 //    connect(this, SIGNAL(setPulled(SeriesSet)), reconstructWorker, SLOT(setSet(SeriesSet)));
 
 //    connect(reconstructWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
 //    connect(reconstructWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-    connect(reconstructButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(reconstruct()));
-    connect(killButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(killProcess()), Qt::DirectConnection);
-//    connect(imagePreviewWindow->worker(), SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
+    connect(reconstructButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(reconstruct()));
+    connect(killButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(killProcess()), Qt::DirectConnection);
+//    connect(imageOpenGLWidget, SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
 //    connect(this, SIGNAL(selectionChanged(Selection)), reconstructWorker, SLOT(setSelection(Selection)));
 
 
@@ -297,7 +297,7 @@ void MainWindow::initWorkers()
 
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
-    connect(imagePreviewWindow->worker(), SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
+    connect(imageOpenGLWidget, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 //    connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
 
@@ -690,7 +690,7 @@ void MainWindow::saveProject()
             
             QDataStream out(&file);
             
-            out << imagePreviewWindow->worker()->set();
+            out << imageOpenGLWidget->set();
             out << imageModeComboBox->currentText();
             out << imagePreviewTsfTextureComboBox->currentText();
             out << imagePreviewTsfAlphaComboBox->currentText();
@@ -717,7 +717,7 @@ void MainWindow::saveProject()
 
 void MainWindow::transferSet()
 {
-    SeriesSet set = imagePreviewWindow->worker()->set();
+    SeriesSet set = imageOpenGLWidget->set();
     
 //    qDebug() << "Main" << set << set.begin()->begin()->selection();
     
@@ -1123,68 +1123,68 @@ void MainWindow::initConnects()
     
     /*this <-> misc*/
     connect(fileFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
-//    connect(imagePreviewWindow->worker(), SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
+//    connect(imageOpenGLWidget, SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
     connect(fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
     
     // KK
 //    connect(fileFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
     connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadPaths()));
     connect(batchSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setBatchSize(int)));
-//    connect(imagePrevtsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setTsfTexture(int)));
-//    connect(tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setTsfAlpha(int)));
-//    connect(dataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setDataMin(double)));
-//    connect(dataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setDataMax(double)));
-//    connect(logCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setLog(bool)));
-    connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setCorrectionLorentz(bool)));
-    connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setMode(int)));
+//    connect(imagePrevtsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)));
+//    connect(tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
+//    connect(dataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
+//    connect(dataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
+//    connect(logCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setLog(bool)));
+    connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionLorentz(bool)));
+    connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setMode(int)));
     connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(saveProject()));
     connect(loadProjectAction, SIGNAL(triggered()), this, SLOT(loadProject()));
     connect(nextFramePushButton, SIGNAL(clicked()), this, SLOT(nextFrame()));
     connect(previousFramePushButton, SIGNAL(clicked()), this, SLOT(previousFrame()));
     connect(batchForwardPushButton, SIGNAL(clicked()), this, SLOT(batchForward()));
     connect(batchBackwardPushButton, SIGNAL(clicked()), this, SLOT(batchBackward()));
-    connect(nextSeriesPushButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(nextSeries()));
-    connect(prevSeriesPushButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(prevSeries()));
-    connect(removeCurrentPushButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(removeCurrentImage()));
-    connect(imagePreviewWindow->worker(), SIGNAL(pathRemoved(QString)), fileSelectionModel, SLOT(removeFile(QString)));
-    connect(this, SIGNAL(setSelection(QString)), imagePreviewWindow->worker(), SLOT(applySelection(QString)));
-    connect(this, SIGNAL(setPlaneMarkers(QString)), imagePreviewWindow->worker(), SLOT(applyPlaneMarker(QString)));
-    connect(this, SIGNAL(analyze(QString)), imagePreviewWindow->worker(), SLOT(analyze(QString)));
-    connect(imagePreviewWindow->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
-    connect(imagePreviewWindow->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
-    connect(imageSpinBox, SIGNAL(valueChanged(int)), imagePreviewWindow->worker(), SLOT(setFrameByIndex(int)));
-    connect(imagePreviewWindow->worker(), SIGNAL(imageRangeChanged(int,int)), this, SLOT(setImageRange(int, int)));
-    connect(imagePreviewWindow->worker(), SIGNAL(currentIndexChanged(int)), imageSpinBox, SLOT(setValue(int)));
-    connect(this, SIGNAL(setChanged(SeriesSet)), imagePreviewWindow->worker(), SLOT(setSet(SeriesSet)));
-    connect(traceSetPushButton, SIGNAL(clicked()), imagePreviewWindow->worker(), SLOT(traceSet()));
-    connect(correctionPlaneSpinBox, SIGNAL(valueChanged(int)), imagePreviewWindow->worker(), SLOT(setLsqSamples(int)));
-    connect(traceTextureCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(toggleTraceTexture(bool)));
-    connect(imagePreviewWindow->worker(), SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
-    connect(imagePreviewWindow->worker(), SIGNAL(progressRangeChanged(int,int)), generalProgressBar, SLOT(setRange(int,int)));
-//    connect(imagePreviewWindow->worker(), SIGNAL(visibilityChanged(bool)), generalProgressBar, SLOT(setHidden(bool)));
-    connect(correctionNoiseCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionNoise(bool)));
-    connect(correctionPlaneCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionPlane(bool)));
-    connect(correctionClutterCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionClutter(bool)));
-    connect(correctionMedianCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionMedian(bool)));
-    connect(correctionPolarizationCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionPolarization(bool)));
-    connect(correctionFluxCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionFlux(bool)));
-    connect(correctionExposureCheckBox,SIGNAL(toggled(bool)),imagePreviewWindow->worker(),SLOT(setCorrectionExposure(bool)));
-    connect(centerImageAction, SIGNAL(triggered()), imagePreviewWindow->worker(), SLOT(centerImage()));
-    connect(showWeightCenterAction, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(showWeightCenter(bool)));
+    connect(nextSeriesPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(nextSeries()));
+    connect(prevSeriesPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(prevSeries()));
+    connect(removeCurrentPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(removeCurrentImage()));
+    connect(imageOpenGLWidget, SIGNAL(pathRemoved(QString)), fileSelectionModel, SLOT(removeFile(QString)));
+    connect(this, SIGNAL(setSelection(QString)), imageOpenGLWidget, SLOT(applySelection(QString)));
+    connect(this, SIGNAL(setPlaneMarkers(QString)), imageOpenGLWidget, SLOT(applyPlaneMarker(QString)));
+    connect(this, SIGNAL(analyze(QString)), imageOpenGLWidget, SLOT(analyze(QString)));
+    connect(imageOpenGLWidget, SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
+    connect(imageOpenGLWidget, SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
+    connect(imageSpinBox, SIGNAL(valueChanged(int)), imageOpenGLWidget, SLOT(setFrameByIndex(int)));
+    connect(imageOpenGLWidget, SIGNAL(imageRangeChanged(int,int)), this, SLOT(setImageRange(int, int)));
+    connect(imageOpenGLWidget, SIGNAL(currentIndexChanged(int)), imageSpinBox, SLOT(setValue(int)));
+    connect(this, SIGNAL(setChanged(SeriesSet)), imageOpenGLWidget, SLOT(setSet(SeriesSet)));
+    connect(traceSetPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(traceSet()));
+    connect(correctionPlaneSpinBox, SIGNAL(valueChanged(int)), imageOpenGLWidget, SLOT(setLsqSamples(int)));
+    connect(traceTextureCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(toggleTraceTexture(bool)));
+    connect(imageOpenGLWidget, SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
+    connect(imageOpenGLWidget, SIGNAL(progressRangeChanged(int,int)), generalProgressBar, SLOT(setRange(int,int)));
+//    connect(imageOpenGLWidget, SIGNAL(visibilityChanged(bool)), generalProgressBar, SLOT(setHidden(bool)));
+    connect(correctionNoiseCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionNoise(bool)));
+    connect(correctionPlaneCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionPlane(bool)));
+    connect(correctionClutterCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionClutter(bool)));
+    connect(correctionMedianCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionMedian(bool)));
+    connect(correctionPolarizationCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionPolarization(bool)));
+    connect(correctionFluxCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionFlux(bool)));
+    connect(correctionExposureCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionExposure(bool)));
+    connect(centerImageAction, SIGNAL(triggered()), imageOpenGLWidget, SLOT(centerImage()));
+    connect(showWeightCenterAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(showWeightCenter(bool)));
     connect(integratePushButton,SIGNAL(clicked()),this,SLOT(applyAnalytics()));
     connect(applyPlaneMarkerPushButton,SIGNAL(clicked()),this,SLOT(applyPlaneMarker()));
     connect(applySelectionPushButton,SIGNAL(clicked()),this,SLOT(applySelection()));
     connect(selectionModeComboBox,SIGNAL(currentTextChanged(QString)),this,SLOT(setApplyMode(QString)));
-    connect(correctionNoiseDoubleSpinBox,SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setNoise(double)));
-//    connect(noiseCorrectionMaxDoubleSpinBox,SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdNoiseHigh(double)));
-//    connect(postCorrectionMinDoubleSpinBox,SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdPostCorrectionLow(double)));
-//    connect(postCorrectionMaxDoubleSpinBox,SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdPostCorrectionHigh(double)));
-    connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), correctionNoiseDoubleSpinBox, SLOT(setValue(double)));
+    connect(correctionNoiseDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setNoise(double)));
+//    connect(noiseCorrectionMaxDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdNoiseHigh(double)));
+//    connect(postCorrectionMinDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionLow(double)));
+//    connect(postCorrectionMaxDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionHigh(double)));
+    connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), correctionNoiseDoubleSpinBox, SLOT(setValue(double)));
     connect(saveImageAct, SIGNAL(triggered()), this, SLOT(saveImageFunction()));
-    connect(this, SIGNAL(saveImage(QString)), imagePreviewWindow->worker(),SLOT(saveImage(QString)));
+    connect(this, SIGNAL(saveImage(QString)), imageOpenGLWidget,SLOT(saveImage(QString)));
     connect(imageScreenshotAct, SIGNAL(triggered()), this, SLOT(takeImageScreenshotFunction()));
-    connect(this, SIGNAL(takeImageScreenshot(QString)), imagePreviewWindow->worker(),SLOT(takeScreenShot(QString)));
-    connect(imagePreviewWindow->worker(), SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
+    connect(this, SIGNAL(takeImageScreenshot(QString)), imageOpenGLWidget,SLOT(takeScreenShot(QString)));
+    connect(imageOpenGLWidget, SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
 //    connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), generalProgressBar, SLOT(setVisible(bool)));
     connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
@@ -1461,15 +1461,15 @@ void MainWindow::initGUI()
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
         
-        imagePreviewWindow = new ImagePreviewWindow();
-        imagePreviewWindow->setMultiThreading(true);
-        imagePreviewWindow->setSharedWindow(sharedContextWindow);
-        imagePreviewWindow->setFormat(format_gl);
-        imagePreviewWindow->setOpenCLContext(context_cl);
-        imagePreviewWindow->initializeWorker();
+        imageOpenGLWidget = new ImagePreviewWindow();
+        imageOpenGLWidget->setMultiThreading(true);
+        imageOpenGLWidget->setSharedWindow(sharedContextWindow);
+        imageOpenGLWidget->setFormat(format_gl);
+        imageOpenGLWidget->setOpenCLContext(context_cl);
+        imageOpenGLWidget->initializeWorker();
         
-        imageDisplayWidget = QWidget::createWindowContainer(imagePreviewWindow);
-        imageDisplayWidget->setFocusPolicy(Qt::TabFocus);
+//        imageOpenGLWidget = QWidget::createWindowContainer(imagePreviewWindow);
+        imageOpenGLWidget->setFocusPolicy(Qt::TabFocus);
         
         imageMainWindow = new QMainWindow;
         imageMainWindow->setAnimated(false);
@@ -1545,11 +1545,11 @@ void MainWindow::initGUI()
         imageToolBar->addAction(saveImageAct);
 //        imageToolBar->addWidget(pathLineEdit);
     
-//        connect(showWeightCenterAction, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(showWeightCenter(bool)));
-//        connect(squareAreaSelectAlphaAction, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setSelectionAlphaActive(bool)));
-//        connect(squareAreaSelectBetaAction, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setSelectionBetaActive(bool)));
-        connect(imagePreviewWindow->worker(), SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
-        connect(imagePreviewWindow->worker(), SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
+//        connect(showWeightCenterAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(showWeightCenter(bool)));
+//        connect(squareAreaSelectAlphaAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setSelectionAlphaActive(bool)));
+//        connect(squareAreaSelectBetaAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setSelectionBetaActive(bool)));
+        connect(imageOpenGLWidget, SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
+        connect(imageOpenGLWidget, SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
 
         imageMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
 
@@ -1601,7 +1601,7 @@ void MainWindow::initGUI()
 //        QGridLayout * imageLayout = new QGridLayout;
 //        imageLayout->setRowStretch(1,1);
 //        imageLayout->addWidget(toolChainWidget,0,0,1,8);
-//        imageLayout->addWidget(imageDisplayWidget,1,0,1,8);
+//        imageLayout->addWidget(imageOpenGLWidget,1,0,1,8);
 //        imageLayout->addWidget(imageBatchPrevButton,2,0,1,2);
 //        imageLayout->addWidget(imagePrevButton,2,2,1,1);
 //        imageLayout->addWidget(imageSpinBox,2,3,1,2);
@@ -1613,7 +1613,7 @@ void MainWindow::initGUI()
         
 //        imageCentralWidget = new QWidget;
 //        imageCentralWidget->setLayout(imageLayout);
-        imageMainWindow->setCentralWidget(imageDisplayWidget);
+        imageMainWindow->setCentralWidget(imageOpenGLWidget);
     }
     
     /* Image browser display widget */
@@ -1669,20 +1669,20 @@ void MainWindow::initGUI()
 //        imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
         imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
         
-        connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setTsfTexture(int)));
-        connect(imagePreviewTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setTsfAlpha(int)));
-        connect(imagePreviewDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setDataMin(double)));
-        connect(imagePreviewDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setDataMax(double)));
-        connect(imagePreviewLogCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setLog(bool)));
-//        connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imagePreviewWindow->worker(), SLOT(setMode(int)));
+        connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)));
+        connect(imagePreviewTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
+        connect(imagePreviewDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
+        connect(imagePreviewDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
+        connect(imagePreviewLogCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setLog(bool)));
+//        connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setMode(int)));
 //        connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(saveProject()));
 //        connect(loadProjectAction, SIGNAL(triggered()), this, SLOT(loadProject()));
-//        connect(this, SIGNAL(imageChanged(ImageInfo)), imagePreviewWindow->worker(), SLOT(setFrame(ImageInfo)));
-//        connect(centerImageAction, SIGNAL(triggered()), imagePreviewWindow->worker(), SLOT(centerImage()));
-        connect(this, SIGNAL(centerImage()), imagePreviewWindow->worker(), SLOT(centerImage()));
+//        connect(this, SIGNAL(imageChanged(ImageInfo)), imageOpenGLWidget, SLOT(setFrame(ImageInfo)));
+//        connect(centerImageAction, SIGNAL(triggered()), imageOpenGLWidget, SLOT(centerImage()));
+        connect(this, SIGNAL(centerImage()), imageOpenGLWidget, SLOT(centerImage()));
         
-//        connect(imagePreviewWindow->worker(), SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
-//        connect(imagePreviewWindow->worker(), SIGNAL(selectionChanged(Selection)), this, SLOT(setSeriesSelection(Selection)));
+//        connect(imageOpenGLWidget, SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
+//        connect(imageOpenGLWidget, SIGNAL(selectionChanged(Selection)), this, SLOT(setSeriesSelection(Selection)));
         
     }
     
@@ -1858,9 +1858,9 @@ void MainWindow::initGUI()
 //        correctionLorentzCheckBox = new QCheckBox("Lorentz correction");
 //        autoBackgroundCorrectionCheckBox = new QCheckBox("Automatic background subtraction");
         
-//        connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setCorrection(bool)));
-//        connect(autoBackgroundCorrectionCheckBox, SIGNAL(toggled(bool)), imagePreviewWindow->worker(), SLOT(setAutoBackgroundCorrection(bool)));
-//        connect(imagePreviewWindow->worker(), SIGNAL(noiseLowChanged(double)), noiseCorrectionMinDoubleSpinBox, SLOT(setValue(double)));
+//        connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrection(bool)));
+//        connect(autoBackgroundCorrectionCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setAutoBackgroundCorrection(bool)));
+//        connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), noiseCorrectionMinDoubleSpinBox, SLOT(setValue(double)));
         
         
 //        QGridLayout * correctionLayout = new QGridLayout;
@@ -1876,10 +1876,10 @@ void MainWindow::initGUI()
 //        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
         
         
-//        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdNoiseLow(double)));
-//        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdNoiseHigh(double)));
-//        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdPostCorrectionLow(double)));
-//        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imagePreviewWindow->worker(), SLOT(setThresholdPostCorrectionHigh(double)));
+//        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdNoiseLow(double)));
+//        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdNoiseHigh(double)));
+//        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionLow(double)));
+//        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionHigh(double)));
     }
     
     

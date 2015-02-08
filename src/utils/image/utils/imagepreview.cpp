@@ -10,6 +10,7 @@
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1000e6;
 
 ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
+    paint_device_gl(0),
     isImageTexInitialized(false),
     isTsfTexInitialized(false),
     isCLInitialized(false),
@@ -25,7 +26,7 @@ ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
 {
     Q_UNUSED(parent);
 
-    isInitialized = false;
+//    isInitialized = false;
 
     parameter.reserve(1,16);
     parameter[0] = 0;
@@ -132,6 +133,21 @@ ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
     
 }
 
+void ImagePreviewWorker::paintGL()
+{
+
+}
+
+void ImagePreviewWorker::resizeGL()
+{
+    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
+}
+
+void ImagePreviewWorker::intitalizeGL()
+{
+    if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
+}
+
 ImagePreviewWorker::~ImagePreviewWorker()
 {
     glDeleteBuffers(5, selections_vbo);
@@ -220,12 +236,13 @@ void ImagePreviewWorker::reconstruct()
             // setFrame() calls calculus() which carries out any corrections
             setFrame();
             {
-                QPainter painter(paint_device_gl);
-                render(&painter);
+//                QPainter painter(paint_device_gl);
+//                render(&painter);
+                this->update();
             }
 
             // Force a buffer swap
-            context_gl->swapBuffers(render_surface);
+//            context_gl->swapBuffers(render_surface);
             size_raw += frame.getBytes();
 
             // Project and correct file and get status
@@ -295,7 +312,7 @@ void ImagePreviewWorker::reconstruct()
     
     emit showProgressBar(false);
     emit visibilityChanged(true);
-    emit finished();
+//    emit finished();
 }
 
 
@@ -345,6 +362,10 @@ void ImagePreviewWorker::setReducedPixels(Matrix<float> *reduced_pixels)
 
 //    isCLInitialized = true;
 //}
+void ImagePreviewWorker::setOpenCLContext(OpenCLContext * context)
+{
+    this->context_cl = context;
+}
 
 int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Matrix<float> * samples, size_t * n_samples)
 {
@@ -581,10 +602,10 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
 }
 
 
-void ImagePreviewWorker::setSharedWindow(SharedContextWindow * window)
-{
-    this->shared_window = window;
-}
+//void ImagePreviewWorker::setSharedWindow(SharedContextWindow * window)
+//{
+//    this->shared_window = window;
+//}
 
 void ImagePreviewWorker::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> & param, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, float mean, float deviation, int task)
 {
@@ -628,7 +649,7 @@ void ImagePreviewWorker::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, M
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImagePreviewWorker::imageDisplay(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, cl_sampler tsf_sampler, int log)
+void ImagePreviewWorker::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, cl_sampler tsf_sampler, int log)
 {
     /*
      * Display an image buffer object, matching intensity to color
@@ -637,7 +658,7 @@ void ImagePreviewWorker::imageDisplay(cl_mem data_buf_cl, cl_mem frame_image_cl,
     if (!isFrameValid) return;
         
     // Aquire shared CL/GL objects
-    context_gl->makeCurrent(render_surface);
+    makeCurrent();
     
     glFinish();
 
@@ -1133,19 +1154,19 @@ void ImagePreviewWorker::refreshDisplay()
     if (mode == 0)
     {
         // Normal intensity
-        imageDisplay(image_data_corrected_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
+        imageCompute(image_data_corrected_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
 //        imageDisplay(image_data_max_cl, max_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
     }
     if (mode == 1)
     {
         // Variance
-        imageDisplay(image_data_variance_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
+        imageCompute(image_data_variance_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
 //        imageDisplay(image_data_max_cl, max_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
     }
     else if (mode == 2)
     {
         // Skewness
-        imageDisplay(image_data_skewness_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
+        imageCompute(image_data_skewness_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
 //        imageDisplay(image_data_max_cl, max_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
     }
     else
@@ -1167,7 +1188,7 @@ void ImagePreviewWorker::maintainImageTexture(Matrix<size_t> &image_size)
 //            glDeleteTextures(1, &trace_tex_gl);
         }
         
-        context_gl->makeCurrent(render_surface);
+        makeCurrent();
         
         glGenTextures(1, &image_tex_gl);
         glBindTexture(GL_TEXTURE_2D, image_tex_gl);
@@ -1346,7 +1367,7 @@ void ImagePreviewWorker::analyze(QString str)
         }
 
         // Force a buffer swap
-        context_gl->swapBuffers(render_surface);
+//        context_gl->swapBuffers(render_surface);
 
         QString result;
         result += "# Analysis of single frame\n";
@@ -3636,12 +3657,12 @@ void ImagePreviewWorker::wheelEvent(QWheelEvent* ev)
 
 
 }
-void ImagePreviewWorker::resizeEvent(QResizeEvent * ev)
-{
-    Q_UNUSED(ev);
+//void ImagePreviewWorker::resizeEvent(QResizeEvent * ev)
+//{
+//    Q_UNUSED(ev);
 
-    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
-}
+//    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
+//}
 
 ImagePreviewWindow::ImagePreviewWindow()
     : isInitialized(false)

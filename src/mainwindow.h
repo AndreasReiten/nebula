@@ -430,6 +430,8 @@ private:
     QPlainTextEdit * outputPlainTextEdit;
 
 protected:
+    ImagePreviewWorker * imageOpenGLWidget;
+
     // OpenGL rendering widgets
     SharedContextWindow *sharedContextWindow;
     VolumeRenderWindow *volumeRenderWindow;
@@ -466,7 +468,7 @@ protected:
     
     
     // Image Preview Widget
-    ImagePreviewWindow * imagePreviewWindow;
+//    ImagePreviewWindow * imagePreviewWindow;
 //    int display_file;
 
 

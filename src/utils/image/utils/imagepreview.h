@@ -7,12 +7,15 @@
 
 #include <QLibrary>
 #include <CL/opencl.h>
+#include <QOpenGLWidget>
+#include <QOpenGLPaintDevice>
+#include <QOpenGLFunctions>
 
 #include "../../opengl/qxopengllib.h"
 #include "../../file/qxfilelib.h"
 #include "../../math/qxmathlib.h"
 
-class ImagePreviewWorker : public OpenGLWorker
+class ImagePreviewWorker : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
@@ -21,7 +24,7 @@ public:
     
     explicit ImagePreviewWorker(QObject *parent = 0);
     ~ImagePreviewWorker();
-    void setSharedWindow(SharedContextWindow * window);
+//    void setSharedWindow(SharedContextWindow * window);
     SeriesSet set();
     
 signals:
@@ -102,10 +105,18 @@ public slots:
     void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
     void wheelEvent(QWheelEvent* ev);
-    void resizeEvent(QResizeEvent * ev);
+//    void resizeEvent(QResizeEvent * ev);
     
     
 private:
+    QOpenGLPaintDevice * paint_device_gl;
+    void setOpenCLContext(OpenCLContext * context);
+    OpenCLContext *context_cl;
+
+    void paintGL();
+    void resizeGL();
+    void intitalizeGL();
+
     Matrix<float> * reduced_pixels;
     double offset_omega;
     double offset_kappa;
@@ -122,7 +133,7 @@ private:
     // GPU functions
     void imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> &param, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, float mean, float deviation, int task);
     
-    void imageDisplay(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, cl_sampler tsf_sampler, int log);
+    void imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, cl_sampler tsf_sampler, int log);
     
     void copyBufferRect(cl_mem cl_buffer, cl_mem cl_copy, Matrix<size_t> &buffer_size, Matrix<size_t> &buffer_origin, Matrix<size_t> &copy_size, Matrix<size_t> &copy_origin, Matrix<size_t> &local_ws);
     
@@ -153,7 +164,7 @@ private:
     Matrix<double> getPlane();
     QString integrationFrameString(DetectorFile &f, ImageInfo &image);
     
-    SharedContextWindow * shared_window;
+//    SharedContextWindow * shared_window;
     
     size_t n_reduced_pixels;
     
@@ -471,32 +482,32 @@ protected:
     void render(QPainter *painter);
 };
 
-class ImagePreviewWindow : public OpenGLWindow
-{
-    Q_OBJECT
+//class ImagePreviewWindow : public OpenGLWindow
+//{
+//    Q_OBJECT
 
-signals:
-    void selectionActiveChanged(bool value);
+//signals:
+//    void selectionActiveChanged(bool value);
     
-public:
-    ImagePreviewWindow();
-    ~ImagePreviewWindow();
+//public:
+//    ImagePreviewWindow();
+//    ~ImagePreviewWindow();
 
-    void setSharedWindow(SharedContextWindow * window);
-    ImagePreviewWorker *worker();
+//    void setSharedWindow(SharedContextWindow * window);
+//    ImagePreviewWorker *worker();
 
-    void initializeWorker();
+//    void initializeWorker();
 
-public slots:
-    void renderNow();
-    void keyPressEvent(QKeyEvent *ev);
-    void keyReleaseEvent(QKeyEvent *ev);
+//public slots:
+//    void renderNow();
+//    void keyPressEvent(QKeyEvent *ev);
+//    void keyReleaseEvent(QKeyEvent *ev);
 
-private:
-    bool isInitialized;
+//private:
+//    bool isInitialized;
 
-    SharedContextWindow * shared_window;
-    ImagePreviewWorker * gl_worker;
-};
+//    SharedContextWindow * shared_window;
+//    ImagePreviewWorker * gl_worker;
+//};
 
 #endif // IMAGEPREVIEW_H
