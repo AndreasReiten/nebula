@@ -89,6 +89,19 @@ cl_program OpenCLContext::createProgram(QStringList paths, cl_int * err)
     return QOpenCLCreateProgramWithSource(p_context, paths.size(), sources.data(), lengths.data(), err);
 }
 
+void OpenCLContext::initializeGL()
+{
+    // Initialize OpenGL
+    QOpenGLFunctions::initializeOpenGLFunctions();
+    
+    this->initDevices();
+    this->initSharedContext();
+    this->initCommandQueue();
+    this->initResources();
+    
+    qDebug() << context();
+}
+
 void OpenCLContext::buildProgram(cl_program * program, const char * options)
 {
     // Build source

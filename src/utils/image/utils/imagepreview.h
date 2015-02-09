@@ -8,8 +8,12 @@
 #include <QLibrary>
 #include <CL/opencl.h>
 #include <QOpenGLWidget>
+#include <QPainter>
 #include <QOpenGLPaintDevice>
 #include <QOpenGLFunctions>
+#include <QOpenGLShaderProgram>
+#include <QElapsedTimer>
+#include <QMouseEvent>
 
 #include "../../opengl/qxopengllib.h"
 #include "../../file/qxfilelib.h"
@@ -158,12 +162,12 @@ private:
     GLint std_blend_method;
     QOpenGLShaderProgram *std_blend_program;
 
-    QOpenGLPaintDevice * paint_device_gl;
+//    QOpenGLPaintDevice * paint_device_gl;
     OpenCLContext *context_cl;
 
     void paintGL();
-    void resizeGL();
-    void intitalizeGL();
+    void resizeGL(int w, int h);
+    void initializeGL();
 
     Matrix<float> * reduced_pixels;
     double offset_omega;
@@ -248,7 +252,7 @@ private:
     // Eventually merge the following two objects into a single class, or at least name them appropriately
     DetectorFile frame;
 
-    void initOpenCL();
+    void initializeCL();
     void setParameter(Matrix<float> &data);
     void setTsf(TransferFunction & tsf);
     Matrix<double> getScatteringVector(DetectorFile & f, double x, double y);
@@ -270,6 +274,7 @@ private:
     bool isImageTexInitialized;
     bool isTsfTexInitialized;
     bool isCLInitialized;
+    bool isGLInitialized;
     bool isFrameValid;
     bool isWeightCenterActive;
     bool isInterpolGpuInitialized;
@@ -552,7 +557,7 @@ protected:
 //    void keyReleaseEvent(QKeyEvent *ev);
 
 //private:
-//    bool isInitialized;
+//    bool isGLInitialized;
 
 //    SharedContextWindow * shared_window;
 //    ImagePreviewWorker * gl_worker;

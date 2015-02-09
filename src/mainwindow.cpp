@@ -42,26 +42,25 @@ MainWindow::MainWindow() :
     styleFile.close();
     this->setStyleSheet(style);
 
-    // Set the OpenCL context
-    context_cl = new OpenCLContext;
+    
 
     // Set the format of the rendering context
-    QSurfaceFormat format_gl;
-    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    format_gl.setSwapInterval(1);
-    format_gl.setSamples(16);
-    format_gl.setRedBufferSize(8);
-    format_gl.setGreenBufferSize(8);
-    format_gl.setBlueBufferSize(8);
-    format_gl.setAlphaBufferSize(8);
+//    QSurfaceFormat format_gl;
+//    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+//    format_gl.setSwapInterval(1);
+//    format_gl.setSamples(16);
+//    format_gl.setRedBufferSize(8);
+//    format_gl.setGreenBufferSize(8);
+//    format_gl.setBlueBufferSize(8);
+//    format_gl.setAlphaBufferSize(8);
     
-    sharedContextWindow = new SharedContextWindow();
-    sharedContextWindow->setFormat(format_gl);
-    sharedContextWindow->setOpenCLContext(context_cl);
-    sharedContextWindow->show();
+//    sharedContextWindow = new SharedContextWindow();
+//    sharedContextWindow->setFormat(format_gl);
+//    sharedContextWindow->setOpenCLContext(context_cl);
+//    sharedContextWindow->show();
 
-    sharedContextWindow->initializeWorker();
-    sharedContextWindow->hide();
+//    sharedContextWindow->initializeWorker();
+//    sharedContextWindow->hide();
     
     
     this->initActions();
@@ -1055,60 +1054,60 @@ void MainWindow::setTab(int tab)
 void MainWindow::initConnects()
 {
     /* this <-> volumeRenderWidget */
-    connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setQuality(int)));
-    connect(this->qualitySlider, SIGNAL(sliderReleased()), volumeRenderWindow->worker(), SLOT(refreshTexture()));
-    connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setScalebar()));
-    connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setSlicing()));
-    connect(this->integrate2DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setIntegration2D()));
-    connect(this->integrate3DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setIntegration3D()));
-    connect(this->shadowAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setShadow()));
-    connect(this->orthoGridAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setOrthoGrid()));
-    connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setProjection()));
-    connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setBackground()));
-    connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setLogarithmic2D()));
-    connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setDataStructure()));
-    connect(this->volumeRenderTsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setTsfColor(int)));
-    connect(this->volumeRenderViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setViewMode(int)));
-    connect(this->volumeRenderTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setTsfAlpha(int)));
-    connect(this->volumeRenderDataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setDataMin(double)));
-    connect(this->volumeRenderDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setDataMax(double)));
-    connect(this->volumeRenderAlphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setAlpha(double)));
-    connect(this->volumeRenderBrightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setBrightness(double)));
-    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setModel()));
-    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam0(double)));
-    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam1(double)));
-    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam2(double)));
-    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam3(double)));
-    connect(volumeRenderWindow->worker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-    connect(this, SIGNAL(captureFrameBuffer(QString)), volumeRenderWindow->worker(), SLOT(takeScreenShot(QString)));
-    connect(this->alignLabXtoSliceXAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabXtoSliceX()));
-    connect(this->alignLabYtoSliceYAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabYtoSliceY()));
-    connect(this->alignLabZtoSliceZAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabZtoSliceZ()));
-    connect(this->alignSliceToLabAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignSliceToLab()));
-    connect(this->rotateLeftAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateLeft()));
-    connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateRight()));
-    connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateUp()));
-    connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateDown()));
-    connect(this->rollCW, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rollCW()));
-    connect(this->rollCCW, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rollCCW()));
-    connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(toggleRuler()));
-    connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(addMarker()));
-    connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setLabFrame()));
-    connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setURotation()));
-    connect(this->toggleHklButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(toggleHkl()));
-    connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setUnitcell()));
-    connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setHCurrent(int)));
-    connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setKCurrent(int)));
-    connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setLCurrent(int)));
-    connect(this->integrateCountsAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setCountIntegration()));
+//    connect(this->qualitySlider, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setQuality(int)));
+//    connect(this->qualitySlider, SIGNAL(sliderReleased()), volumeRenderWindow->worker(), SLOT(refreshTexture()));
+//    connect(this->scalebarAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setScalebar()));
+//    connect(this->sliceAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setSlicing()));
+//    connect(this->integrate2DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setIntegration2D()));
+//    connect(this->integrate3DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setIntegration3D()));
+//    connect(this->shadowAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setShadow()));
+//    connect(this->orthoGridAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setOrthoGrid()));
+//    connect(this->projectionAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setProjection()));
+//    connect(this->backgroundAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setBackground()));
+//    connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setLogarithmic2D()));
+//    connect(this->dataStructureAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setDataStructure()));
+//    connect(this->volumeRenderTsfComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setTsfColor(int)));
+//    connect(this->volumeRenderViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setViewMode(int)));
+//    connect(this->volumeRenderTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeRenderWindow->worker(), SLOT(setTsfAlpha(int)));
+//    connect(this->volumeRenderDataMinSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setDataMin(double)));
+//    connect(this->volumeRenderDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setDataMax(double)));
+//    connect(this->volumeRenderAlphaSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setAlpha(double)));
+//    connect(this->volumeRenderBrightnessSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setBrightness(double)));
+//    connect(this->functionToggleButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setModel()));
+//    connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam0(double)));
+//    connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam1(double)));
+//    connect(this->funcParamCSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam2(double)));
+//    connect(this->funcParamDSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setModelParam3(double)));
+//    connect(volumeRenderWindow->worker(), SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
+//    connect(this, SIGNAL(captureFrameBuffer(QString)), volumeRenderWindow->worker(), SLOT(takeScreenShot(QString)));
+//    connect(this->alignLabXtoSliceXAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabXtoSliceX()));
+//    connect(this->alignLabYtoSliceYAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabYtoSliceY()));
+//    connect(this->alignLabZtoSliceZAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignLabZtoSliceZ()));
+//    connect(this->alignSliceToLabAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(alignSliceToLab()));
+//    connect(this->rotateLeftAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateLeft()));
+//    connect(this->rotateRightAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateRight()));
+//    connect(this->rotateUpAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateUp()));
+//    connect(this->rotateDownAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rotateDown()));
+//    connect(this->rollCW, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rollCW()));
+//    connect(this->rollCCW, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(rollCCW()));
+//    connect(this->rulerAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(toggleRuler()));
+//    connect(this->markAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(addMarker()));
+//    connect(this->labFrameAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setLabFrame()));
+//    connect(this->rotateCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setURotation()));
+//    connect(this->toggleHklButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(toggleHkl()));
+//    connect(this->toggleCellButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setUnitcell()));
+//    connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setHCurrent(int)));
+//    connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setKCurrent(int)));
+//    connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeRenderWindow->worker(), SLOT(setLCurrent(int)));
+//    connect(this->integrateCountsAct, SIGNAL(triggered()), volumeRenderWindow->worker(), SLOT(setCountIntegration()));
     
-    /* this <-> this */
-    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_a(double)));
-    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_b(double)));
-    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_c(double)));
-    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_alpha(double)));
-    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_beta(double)));
-    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_gamma(double)));
+//    /* this <-> this */
+//    connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_a(double)));
+//    connect(this->bNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_b(double)));
+//    connect(this->cNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_c(double)));
+//    connect(this->alphaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_alpha(double)));
+//    connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_beta(double)));
+//    connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeRenderWindow->worker(), SLOT(setUB_gamma(double)));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeVolumeScreenshot()));
 //    connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSvoAct, SIGNAL(triggered()), this, SLOT(openSvo()));
@@ -1252,7 +1251,7 @@ void MainWindow::saveLoadedSvo()
             svo_loaded.view_alpha = volumeRenderAlphaSpinBox->value();
             svo_loaded.view_brightness = volumeRenderBrightnessSpinBox->value();
             
-            svo_loaded.setUB(volumeRenderWindow->worker()->getUBMatrix());
+//            svo_loaded.setUB(volumeRenderWindow->worker()->getUBMatrix());
             svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
             svo_loaded.save(file_name);
         }
@@ -1270,7 +1269,7 @@ void MainWindow::openSvo()
         working_dir = info.absoluteDir().path();
 
         svo_loaded.open(file_name);
-        volumeRenderWindow->worker()->setSvo(&(svo_loaded));
+//        volumeRenderWindow->worker()->setSvo(&(svo_loaded));
         
         volumeRenderViewModeComboBox->setCurrentIndex(svo_loaded.view_mode);
         imagePreviewTsfAlphaComboBox->setCurrentIndex(svo_loaded.view_tsf_style);
@@ -1286,7 +1285,7 @@ void MainWindow::openSvo()
         
         if (UB.size() == 3*3)
         {
-            volumeRenderWindow->worker()->setUBMatrix(UB);
+//            volumeRenderWindow->worker()->setUBMatrix(UB);
         
             alphaNormSpinBox->setValue(UB.alpha()*180.0/pi);
             betaNormSpinBox->setValue(UB.beta()*180.0/pi);
@@ -1328,6 +1327,21 @@ void MainWindow::initMenus()
 
 void MainWindow::initGUI()
 {
+    QSurfaceFormat format_gl;
+    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+    format_gl.setSwapInterval(1);
+    format_gl.setSamples(16);
+    format_gl.setRedBufferSize(8);
+    format_gl.setGreenBufferSize(8);
+    format_gl.setBlueBufferSize(8);
+    format_gl.setAlphaBufferSize(8);
+    
+    context_cl = new OpenCLContext;
+    context_cl->setFormat(format_gl);
+    context_cl->show();
+    context_cl->hide();
+    
+    
     /* Top Widget */
 //    {
 //        topWidget = new QWidget;
@@ -1397,15 +1411,15 @@ void MainWindow::initGUI()
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
 
-        volumeRenderWindow = new VolumeRenderWindow();
-        volumeRenderWindow->setMultiThreading(true);
-        volumeRenderWindow->setSharedWindow(sharedContextWindow);
-        volumeRenderWindow->setFormat(format_gl);
-        volumeRenderWindow->setOpenCLContext(context_cl);
-        volumeRenderWindow->initializeWorker();
+//        volumeRenderWindow = new VolumeRenderWindow();
+//        volumeRenderWindow->setMultiThreading(true);
+//        volumeRenderWindow->setSharedWindow(sharedContextWindow);
+//        volumeRenderWindow->setFormat(format_gl);
+//        volumeRenderWindow->setOpenCLContext(context_cl);
+//        volumeRenderWindow->initializeWorker();
 
-        volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
-        volumeRenderWidget->setFocusPolicy(Qt::TabFocus);
+//        volumeRenderWidget = QWidget::createWindowContainer(volumeRenderWindow);
+//        volumeRenderWidget->setFocusPolicy(Qt::TabFocus);
 
         // Toolbar
         viewToolBar = new QToolBar(tr("3D view"));
@@ -1442,7 +1456,7 @@ void MainWindow::initGUI()
         
         // Volume render QMainWindow
         volumeRenderMainWindow = new QMainWindow;
-        volumeRenderMainWindow->setCentralWidget(volumeRenderWidget);
+//        volumeRenderMainWindow->setCentralWidget(volumeRenderWidget);
         volumeRenderMainWindow->addToolBar(Qt::TopToolBarArea, viewToolBar);
     }
 
@@ -1464,12 +1478,15 @@ void MainWindow::initGUI()
         imageOpenGLWidget = new ImagePreviewWorker();
 //        imageOpenGLWidget->setMultiThreading(true);
 //        imageOpenGLWidget->setSharedWindow(sharedContextWindow);
+        
         imageOpenGLWidget->setFormat(format_gl);
         imageOpenGLWidget->setOpenCLContext(context_cl);
 //        imageOpenGLWidget->initializeWorker();
         
 //        imageOpenGLWidget = QWidget::createWindowContainer(imagePreviewWindow);
         imageOpenGLWidget->setFocusPolicy(Qt::TabFocus);
+        
+//        imageOpenGLWidget->hide();
         
         imageMainWindow = new QMainWindow;
         imageMainWindow->setAnimated(false);
@@ -1669,7 +1686,7 @@ void MainWindow::initGUI()
 //        imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
         imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
         
-        connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)));
+        connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)), Qt::QueuedConnection);
         connect(imagePreviewTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
         connect(imagePreviewDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
         connect(imagePreviewDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
@@ -1938,7 +1955,7 @@ void MainWindow::initGUI()
         volumeRenderTsfAlphaComboBox->addItem(trUtf8("Uniform"));
         
         volumeRenderLogCheckBox = new QCheckBox("Log");
-        connect(volumeRenderLogCheckBox, SIGNAL(toggled(bool)), volumeRenderWindow->worker(), SLOT(setLog(bool)));
+//        connect(volumeRenderLogCheckBox, SIGNAL(toggled(bool)), volumeRenderWindow->worker(), SLOT(setLog(bool)));
         
         
         qualitySlider = new QSlider(Qt::Horizontal);
@@ -2029,17 +2046,17 @@ void MainWindow::initGUI()
         alignAlongBStarButton = new QPushButton("Align b*");
         alignAlongCStarButton = new QPushButton("Align c*");
 
-        connect(alignAlongAStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignAStartoZ()));
-        connect(alignAlongBStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignBStartoZ()));
-        connect(alignAlongCStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignCStartoZ()));
+//        connect(alignAlongAStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignAStartoZ()));
+//        connect(alignAlongBStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignBStartoZ()));
+//        connect(alignAlongCStarButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignCStartoZ()));
 
         alignSlicetoAStarPushButton = new QPushButton("Slice a*");
         alignSlicetoBStarPushButton = new QPushButton("Slice b*");
         alignSlicetoCStarPushButton = new QPushButton("Slice c*");
         
-        connect(alignSlicetoAStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoAStar()));
-        connect(alignSlicetoBStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoBStar()));
-        connect(alignSlicetoCStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoCStar()));
+//        connect(alignSlicetoAStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoAStar()));
+//        connect(alignSlicetoBStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoBStar()));
+//        connect(alignSlicetoCStarPushButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(alignSlicetoCStar()));
         
         helpCellOverlayButton = new QPushButton("Help Cell");
         rotateCellButton = new QPushButton("Rotation");
@@ -2052,7 +2069,7 @@ void MainWindow::initGUI()
         helpCellOverlayButton->setCheckable(true);
         helpCellOverlayButton->setChecked(true);
         
-        connect(helpCellOverlayButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setMiniCell()));
+//        connect(helpCellOverlayButton, SIGNAL(clicked()), volumeRenderWindow->worker(), SLOT(setMiniCell()));
         
         QGridLayout * gridLayout = new QGridLayout; 
         gridLayout->setHorizontalSpacing(5);
@@ -2369,6 +2386,7 @@ void MainWindow::initGUI()
     
     mainWidget = new QWidget(this);
     mainWidget->setLayout(mainLayout);
+    
 }
 
 void MainWindow::applyAnalytics()

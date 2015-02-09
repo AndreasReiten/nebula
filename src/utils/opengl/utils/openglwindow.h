@@ -31,8 +31,8 @@ public:
 
     // Sets
     void setOpenCLContext(OpenCLContext * context);
-    void setOpenGLContext(QOpenGLContext *context);
-    void setRenderSurface(QWindow *surface);
+    void setOpenGLContext(QOpenGLContext * context);
+    void setRenderSurface(QWindow * surface);
 
     // Convenience functions
     void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);

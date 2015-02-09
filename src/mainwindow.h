@@ -126,6 +126,8 @@ signals:
     void setPulled(SeriesSet set);
     
 private:
+    OpenCLContext * context_cl;
+    
     /* UI elements for UB matrix */
     QDockWidget * unitCellDock;
     QWidget * unitCellWidget;
@@ -201,7 +203,7 @@ private:
 
 
     // OpenCL
-    OpenCLContext * context_cl;
+//    OpenCLContext * context_cl;
 
     // QThreads
 //    QThread * readScriptThread;
@@ -368,7 +370,7 @@ private:
     Highlighter *error_highlighter;
 
     QTabWidget *tabWidget;
-
+    
     
     QDockWidget *fileDockWidget;
     QDockWidget *voxelizeDockWidget;
@@ -433,9 +435,9 @@ protected:
     ImagePreviewWorker * imageOpenGLWidget;
 
     // OpenGL rendering widgets
-    SharedContextWindow *sharedContextWindow;
-    VolumeRenderWindow *volumeRenderWindow;
-    QWidget *volumeRenderWidget;
+//    SharedContextWindow *sharedContextWindow;
+//    VolumeRenderWindow *volumeRenderWindow;
+//    QWidget *volumeRenderWidget;
 
     /* Image browser toolbar */
     QToolBar * imageToolBar;

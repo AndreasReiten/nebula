@@ -9,14 +9,14 @@
 #include "svo/qxsvolib.h"
 #include "marker.h"
 
-class VolumeRenderWorker : public OpenGLWorker
+class VolumeRenderWorker : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
     explicit VolumeRenderWorker(QObject *parent = 0);
     ~VolumeRenderWorker();
 
-    void setSharedWindow(SharedContextWindow * window);
+//    void setSharedWindow(SharedContextWindow * window);
     void setSvo(SparseVoxelOcttree * svo);
     void setUBMatrix(UBMatrix<double> & mat);
     UBMatrix<double> & getUBMatrix();
@@ -108,11 +108,69 @@ public slots:
     void setUB_gamma(double value);
     
 protected:
-    void initialize();
-    void render(QPainter *painter);
+//    void initialize();
+//    void render(QPainter *painter);
 
 private:
-    SharedContextWindow * shared_window;
+    QPointF posGLtoQt(QPointF coord);
+    QPointF posQttoGL(QPointF coord);
+    
+    void getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform);
+    void getPosition2D(double * pos_2d, double * pos_3d, Matrix<double> * transform);
+
+    void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
+    Matrix<GLfloat> glRect(QRectF &qt_rect);
+
+    GLuint loadShader(GLenum type, const char *source);
+
+    // Shaders
+    GLint std_2d_tex_fragpos;
+    GLint std_2d_tex_pos;
+    GLint std_2d_tex_texture;
+    GLint std_2d_tex_transform;
+    QOpenGLShaderProgram *std_2d_tex_program;
+
+    GLint rect_hl_2d_tex_fragpos;
+    GLint rect_hl_2d_tex_pos;
+    GLint rect_hl_2d_tex_texture;
+    GLint rect_hl_2d_tex_transform;
+    GLint rect_hl_2d_tex_bounds;
+    GLint rect_hl_2d_tex_pixel_size;
+    QOpenGLShaderProgram *rect_hl_2d_tex_program;
+
+    GLint std_2d_col_color;
+    GLint std_2d_col_transform;
+    GLint std_2d_col_fragpos;
+    QOpenGLShaderProgram *std_2d_col_program;
+
+    GLint std_3d_col_color;
+    GLint std_3d_col_transform;
+    GLint std_3d_col_fragpos;
+    QOpenGLShaderProgram *std_3d_col_program;
+
+    GLint unitcell_color;
+    GLint unitcell_transform;
+    GLint unitcell_fragpos;
+    GLint unitcell_lim_low;
+    GLint unitcell_lim_high;
+    GLint unitcell_u;
+    QOpenGLShaderProgram *unitcell_program;
+
+    GLint std_blend_fragpos;
+    GLint std_blend_texpos;
+    GLint std_blend_tex_a;
+    GLint std_blend_tex_b;
+    GLint std_blend_method;
+    QOpenGLShaderProgram *std_blend_program;
+
+    QOpenGLPaintDevice * paint_device_gl;
+    OpenCLContext *context_cl;
+    
+    void paintGL();
+    void resizeGL(int w, int h);
+    void initializeGL();
+    
+//    SharedContextWindow * shared_window;
 
     // Sum
     float sumGpuArray(cl_mem cl_data, unsigned int read_size, size_t work_group_size);
@@ -121,6 +179,8 @@ private:
     float sumViewBox();
 
     // Boolean checks
+    bool isCLInitialized;
+    bool isGLInitialized;
     bool isInitialized;
     bool isRayTexInitialized;
     bool isTsfTexInitialized;
@@ -572,27 +632,27 @@ private:
     PROTOTYPE_QOpenCLGetDeviceInfo QOpenCLGetDeviceInfo;
 };
 
-class VolumeRenderWindow : public OpenGLWindow
-{
-    Q_OBJECT
+//class VolumeRenderWindow : public OpenGLWindow
+//{
+//    Q_OBJECT
 
-public:
-    VolumeRenderWindow();
-    ~VolumeRenderWindow();
+//public:
+//    VolumeRenderWindow();
+//    ~VolumeRenderWindow();
 
-    void setSharedWindow(SharedContextWindow * window);
-    VolumeRenderWorker *worker();
+//    void setSharedWindow(SharedContextWindow * window);
+//    VolumeRenderWorker *worker();
 
-    void initializeWorker();
+//    void initializeWorker();
 
-public slots:
-    void renderNow();
+//public slots:
+//    void renderNow();
 
-private:
-    bool isInitialized;
+//private:
+//    bool isInitialized;
 
-    SharedContextWindow * shared_window;
-    VolumeRenderWorker * gl_worker;
-};
+//    SharedContextWindow * shared_window;
+//    VolumeRenderWorker * gl_worker;
+//};
 
 #endif

@@ -7,12 +7,15 @@
 
 #include <QLibrary>
 #include <CL/opencl.h>
+#include <QOpenGLWidget>
+#include <QOpenGLFunctions>
+#include <QDebug>
 
 #include "../../math/qxmathlib.h"
 
 const char * cl_error_cstring(cl_int err);
 
-class OpenCLContext
+class OpenCLContext : public QOpenGLWidget, protected QOpenGLFunctions
 {
 public:
     OpenCLContext();
@@ -34,6 +37,8 @@ public:
     QString cl_easy_platform_info(cl_platform_id platform);
     
 private:
+    void initializeGL();
+    
     cl_platform_id platform[64];
     cl_device_id device[64];
 

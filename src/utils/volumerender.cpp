@@ -28,88 +28,88 @@
 #include <QPainter>
 #include <QOpenGLFramebufferObject>
 
-VolumeRenderWindow::VolumeRenderWindow()
-    : isInitialized(false)
-    , gl_worker(0)
-{
+//VolumeRenderWindow::VolumeRenderWindow()
+//    : isInitialized(false)
+//    , gl_worker(0)
+//{
 
-}
+//}
 
-VolumeRenderWindow::~VolumeRenderWindow()
-{
+//VolumeRenderWindow::~VolumeRenderWindow()
+//{
 
-}
+//}
 
-VolumeRenderWorker *  VolumeRenderWindow::worker()
-{
-    return gl_worker;
-}
+//VolumeRenderWorker *  VolumeRenderWindow::worker()
+//{
+//    return gl_worker;
+//}
 
-void VolumeRenderWindow::renderNow()
-{
-    if (!isExposed())
-    {
-        emit stopRendering();
-        return;
-    }
-    else if (!isWorkerBusy)
-    {
-        if (!isInitialized) initializeWorker();
+//void VolumeRenderWindow::renderNow()
+//{
+//    if (!isExposed())
+//    {
+//        emit stopRendering();
+//        return;
+//    }
+//    else if (!isWorkerBusy)
+//    {
+//        if (!isInitialized) initializeWorker();
 
-        if (gl_worker)
-        {
-            if (isThreaded)
-            {
-                isWorkerBusy = true;
-                worker_thread->start();
-                emit render();
-            }
-        }
-    }
-    renderLater();
-}
+//        if (gl_worker)
+//        {
+//            if (isThreaded)
+//            {
+//                isWorkerBusy = true;
+//                worker_thread->start();
+//                emit render();
+//            }
+//        }
+//    }
+//    renderLater();
+//}
 
-void VolumeRenderWindow::initializeWorker()
-{
-    initializeGLContext();
+//void VolumeRenderWindow::initializeWorker()
+//{
+//    initializeGLContext();
 
-    gl_worker = new VolumeRenderWorker;
-    gl_worker->setRenderSurface(this);
-    gl_worker->setOpenGLContext(context_gl);
-    gl_worker->setOpenCLContext(context_cl);
-    gl_worker->setSharedWindow(shared_window);
-    gl_worker->setMultiThreading(isThreaded);
+//    gl_worker = new VolumeRenderWorker;
+//    gl_worker->setRenderSurface(this);
+//    gl_worker->setOpenGLContext(context_gl);
+//    gl_worker->setOpenCLContext(context_cl);
+//    gl_worker->setSharedWindow(shared_window);
+//    gl_worker->setMultiThreading(isThreaded);
 
-    if (isThreaded)
-    {
-        // Set up worker thread
-        gl_worker->moveToThread(worker_thread);
-        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-        connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
-        connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
+//    if (isThreaded)
+//    {
+//        // Set up worker thread
+//        gl_worker->moveToThread(worker_thread);
+//        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
+//        connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
+//        connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
 
-        // Transfering mouse events
-        connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
-        connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
-        connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
-        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
-        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+//        // Transfering mouse events
+//        connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
+//        connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
+//        connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
+//        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
+//        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
         
-        emit render();
-    }
+//        emit render();
+//    }
     
-    isInitialized = true;
-}
+//    isInitialized = true;
+//}
 
-void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
-{
-    this->shared_window = window;
-    shared_context = window->getGLContext();
-}
+//void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
+//{
+//    this->shared_window = window;
+//    shared_context = window->getGLContext();
+//}
 
 VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
-    : OpenGLWorker(parent),
-      isInitialized(false),
+    : isCLInitialized(false),
+      isGLInitialized(false),
       isRayTexInitialized(false),
       isTsfTexInitialized(false),
       isIntegrationTexInitialized(false),
@@ -371,6 +371,178 @@ void VolumeRenderWorker::toggleHkl()
     isHklTextActive = !isHklTextActive;
 }
 
+void VolumeRenderWorker::paintGL()
+{
+    QPainter painter(paint_device_gl);
+
+    painter.setRenderHint(QPainter::Antialiasing);
+    
+    isDataExtentReadOnly = true;
+    setDataExtent();
+    setViewMatrices();
+    
+    beginRawGLCalls(&painter);
+    glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    glLineWidth(1.0);
+    const qreal retinaScale = this->devicePixelRatio();
+    glViewport(0, 0, this->width() * retinaScale, this->height() * retinaScale);
+    endRawGLCalls(&painter);
+    
+    if (isScalebarActive) drawPositionScalebars(&painter);
+    if (isLabFrameActive) drawCenterLine(&painter);
+    if (isUnitcellActive) drawUnitCell(&painter);
+    if (isLabFrameActive) drawLabFrame(&painter);
+    
+    isDataExtentReadOnly = false;
+
+    // Draw raytracing texture
+    drawRayTex(&painter);
+    
+    // Compute the projected pixel size in orthonormal configuration
+    computePixelSize();
+
+    if (isIntegration2DActive) drawIntegral(&painter);
+    
+    drawOverlay(&painter);
+    if (isHklTextActive) drawHklText(&painter);
+    if (n_marker_indices > 0) drawMarkers(&painter);
+    if (isMiniCellActive) drawHelpCell(&painter);
+    drawCountScalebar(&painter);
+    if (isSvoInitialized && isCountIntegrationActive) drawCountIntegral(&painter);
+}
+
+void VolumeRenderWorker::resizeGL(int w, int h)
+{
+    
+}
+
+QPointF VolumeRenderWorker::posGLtoQt(QPointF coord)
+{
+    QPointF QtPoint;
+
+    QtPoint.setX(0.5 * (float)this->width() * (coord.x()+1.0) - 1.0);
+    QtPoint.setY(0.5 * (float)this->height() * (1.0-coord.y()) - 1.0);
+
+    return QtPoint;
+}
+
+QPointF VolumeRenderWorker::posQttoGL(QPointF coord)
+{
+    QPointF GLPoint;
+    GLPoint.setX((coord.x()+1.0)/(float) (this->width())*2.0-1.0);
+    GLPoint.setY((1.0 - (coord.y()+1.0)/(float) this->height())*2.0-1.0);
+    return GLPoint;
+}
+
+void VolumeRenderWorker::initializeGL()
+{
+    if (isCLInitialized && isGLInitialized) return;
+    
+    // Initialize OpenGL
+    QOpenGLFunctions::initializeOpenGLFunctions();
+    
+    if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice(this->size());
+    
+    // Shader for drawing textures in 2D
+    std_2d_tex_program = new QOpenGLShaderProgram(this);
+    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_2d_tex.v.glsl");
+    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_2d_tex.f.glsl");
+    if (!std_2d_tex_program->link()) qFatal(std_2d_tex_program->log().toStdString().c_str());
+
+    if ((std_2d_tex_fragpos = std_2d_tex_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_2d_tex_pos = std_2d_tex_program->attributeLocation("texpos")) == -1) qFatal("Invalid attribute");
+    if ((std_2d_tex_texture = std_2d_tex_program->uniformLocation("texture")) == -1) qFatal("Invalid uniform");
+    if ((std_2d_tex_transform = std_2d_tex_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing textures in 2D with a highlighted rectangle
+    rect_hl_2d_tex_program = new QOpenGLShaderProgram(this);
+    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/rect_hl_2d_tex.v.glsl");
+    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/rect_hl_2d_tex.f.glsl");
+    if (!rect_hl_2d_tex_program->link()) qFatal(rect_hl_2d_tex_program->log().toStdString().c_str());
+
+    if ((rect_hl_2d_tex_fragpos = rect_hl_2d_tex_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((rect_hl_2d_tex_pos = rect_hl_2d_tex_program->attributeLocation("texpos")) == -1) qFatal("Invalid attribute");
+    if ((rect_hl_2d_tex_texture = rect_hl_2d_tex_program->uniformLocation("texture")) == -1) qFatal("Invalid uniform");
+    if ((rect_hl_2d_tex_transform = rect_hl_2d_tex_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing lines and similar in 3D
+    std_3d_col_program = new QOpenGLShaderProgram(this);
+    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_3d_col.v.glsl");
+    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_3d_col.f.glsl");
+    if (!std_3d_col_program->link()) qFatal(std_3d_col_program->log().toStdString().c_str());
+
+    if ((std_3d_col_fragpos = std_3d_col_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_3d_col_color = std_3d_col_program->uniformLocation("color")) == -1) qFatal("Invalid uniform");
+    if ((std_3d_col_transform = std_3d_col_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing lines and similar in 2D
+    std_2d_col_program = new QOpenGLShaderProgram(this);
+    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_2d_col.v.glsl");
+    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_2d_col.f.glsl");
+    if (!std_2d_col_program->link()) qFatal(std_2d_col_program->log().toStdString().c_str());
+
+    if ((std_2d_col_fragpos = std_2d_col_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_2d_col_color = std_2d_col_program->uniformLocation("color")) == -1) qFatal("Invalid uniform");
+    if ((std_2d_col_transform = std_2d_col_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for blending two textures
+    std_blend_program = new QOpenGLShaderProgram(this);
+    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_blend.v.glsl");
+    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_blend.f.glsl");
+    if (!std_blend_program->link()) qFatal(std_blend_program->log().toStdString().c_str());
+
+    if ((std_blend_fragpos = std_blend_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_blend_texpos = std_blend_program->attributeLocation("texpos")) == -1) qFatal("Invalid attribute");
+    if ((std_blend_tex_a = std_blend_program->uniformLocation("texture_alpha")) == -1) qFatal("Invalid uniform");
+    if ((std_blend_tex_b = std_blend_program->uniformLocation("texture_beta")) == -1) qFatal("Invalid uniform");
+    if ((std_blend_method = std_blend_program->uniformLocation("method")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing a (reciprocal) unitcell grid
+    unitcell_program = new QOpenGLShaderProgram(this);
+    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/unitcell.v.glsl");
+    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/unitcell.f.glsl");
+    if (!unitcell_program->link()) qFatal(unitcell_program->log().toStdString().c_str());
+
+    if ((unitcell_fragpos = unitcell_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((unitcell_color = unitcell_program->uniformLocation("color")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_transform = unitcell_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_u = unitcell_program->uniformLocation("u")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_lim_low = unitcell_program->uniformLocation("lim_low")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_lim_high = unitcell_program->uniformLocation("lim_high")) == -1) qFatal("Invalid uniform");
+    
+    
+    
+    // Initialize OpenCL
+    initResourcesCL();
+    initResourcesGL();
+    
+    isGLInitialized = true;
+    isCLInitialized = true;
+
+//    isInitialized = true;
+
+    // Textures
+    setRayTexture(20);
+    setTsfTexture();
+
+    // Core set functions
+    setDataExtent();
+    setViewMatrices();
+    setTsfParameters();
+    setMiscArrays();
+
+    // Pens
+    initializePaintTools();
+    
+    // Initial drawings
+    updateUnitCellVertices();
+    updateUnitCellText();
+    
+    
+}
+
 float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, size_t work_group_size)
 {
     /* Set initial kernel parameters (they will change for each iteration)*/
@@ -502,13 +674,13 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
     accumulated_roll = 0;
     
     GLfloat depth;
-    glReadPixels(x, render_surface->height() - y - 1, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    glReadPixels(x, this->height() - y - 1, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
     
     if (( depth < 1.0) && (markers.size() > 0) && left_button && !right_button && !mid_button)
     {
         Matrix<double> xyz_clip(4,1,1.0);
-        xyz_clip[0] = 2.0 * (double) x / (double) render_surface->width() - 1.0;
-        xyz_clip[1] = 2.0 * (double) (render_surface->height() - y)/ (double) render_surface->height() - 1.0;
+        xyz_clip[0] = 2.0 * (double) x / (double) this->width() - 1.0;
+        xyz_clip[1] = 2.0 * (double) (this->height() - y)/ (double) this->height() - 1.0;
         xyz_clip[2] = 2.0 * depth - 1.0;
             
         Matrix<double> xyz = view_matrix.inverse4x4() * xyz_clip;
@@ -618,7 +790,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
              * */
 
             double eta = std::atan2((double)x - last_mouse_pos_x, (double)y - last_mouse_pos_y) - pi*1.0;
-            double roll = move_scaling * pi/((float) render_surface->height()) * std::sqrt((double)(x - last_mouse_pos_x)*(x - last_mouse_pos_x) + (y - last_mouse_pos_y)*(y - last_mouse_pos_y));
+            double roll = move_scaling * pi/((float) this->height()) * std::sqrt((double)(x - last_mouse_pos_x)*(x - last_mouse_pos_x) + (y - last_mouse_pos_y)*(y - last_mouse_pos_y));
             
             RotationMatrix<double> roll_rotation;
             roll_rotation.setArbRotation(-0.5*pi, eta, roll);
@@ -646,7 +818,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
              * */
 
             RotationMatrix<double> roll_rotation;
-            double roll = move_scaling * pi/((float) render_surface->height()) * (y - last_mouse_pos_y);
+            double roll = move_scaling * pi/((float) this->height()) * (y - last_mouse_pos_y);
             
             accumulated_roll += roll;
             
@@ -672,8 +844,8 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
         {
             /* X/Y translation happens multiplicatively. Here it is
              * important to retain the bounding box accordingly  */
-            float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) render_surface->height()) * (x - last_mouse_pos_x);
-            float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) render_surface->height()) * (y - last_mouse_pos_y);
+            float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) this->height()) * (x - last_mouse_pos_x);
+            float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) this->height()) * (y - last_mouse_pos_y);
 
             Matrix<double> data_translation_prev;
             data_translation_prev.setIdentity(4);
@@ -692,7 +864,7 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
         else if (!left_button && right_button && !mid_button)
         {
             /* Z translation happens multiplicatively */
-            float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) render_surface->height()) * (y - last_mouse_pos_y);
+            float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) this->height()) * (y - last_mouse_pos_y);
 
             Matrix<double> data_translation_prev;
             data_translation_prev.setIdentity(4);
@@ -905,21 +1077,28 @@ void VolumeRenderWorker::updateUnitCellVertices()
     unitcell_nodes = n_basis*6;
 }
 
+void VolumeRenderWorker::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, usage);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 void VolumeRenderWorker::drawUnitCell(QPainter * painter)
 {
     beginRawGLCalls(painter);
     
     glLineWidth(0.7);
-    shared_window->unitcell_program->bind();
-    glEnableVertexAttribArray(shared_window->unitcell_fragpos);
+    unitcell_program->bind();
+    glEnableVertexAttribArray(unitcell_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, unitcell_vbo);
-    glVertexAttribPointer(shared_window->unitcell_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(unitcell_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniformMatrix4fv(shared_window->unitcell_transform, 1, GL_FALSE, unitcell_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(unitcell_transform, 1, GL_FALSE, unitcell_view_matrix.colmajor().toFloat().data());
     
-    glUniformMatrix4fv(shared_window->unitcell_u, 1, GL_FALSE, U.colmajor().toFloat().data());
+    glUniformMatrix4fv(unitcell_u, 1, GL_FALSE, U.colmajor().toFloat().data());
     
     
     float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1]-data_view_extent[0])) * 5.0, 2);
@@ -930,7 +1109,7 @@ void VolumeRenderWorker::drawUnitCell(QPainter * painter)
     
     color[3] = alpha;
     
-    glUniform4fv(shared_window->unitcell_color, 1, color.data());
+    glUniform4fv(unitcell_color, 1, color.data());
     
     Matrix<float> lim_low(1,3);
     lim_low[0] = data_view_extent[0];
@@ -942,15 +1121,15 @@ void VolumeRenderWorker::drawUnitCell(QPainter * painter)
     lim_high[1] = data_view_extent[3];
     lim_high[2] = data_view_extent[5];
     
-    glUniform3fv(shared_window->unitcell_lim_low, 1, lim_low.data());
+    glUniform3fv(unitcell_lim_low, 1, lim_low.data());
     
-    glUniform3fv(shared_window->unitcell_lim_high, 1, lim_high.data());
+    glUniform3fv(unitcell_lim_high, 1, lim_high.data());
     
     glDrawArrays(GL_LINES,  0, unitcell_nodes);
     
-    glDisableVertexAttribArray(shared_window->unitcell_fragpos);
+    glDisableVertexAttribArray(unitcell_fragpos);
 
-    shared_window->unitcell_program->release();
+    unitcell_program->release();
     
     
     glLineWidth(1.0);
@@ -1055,39 +1234,39 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     wire.setDeep(1,18,wire_buf);
     
     // Draw it
-    glViewport(0,render_surface->height()-200,200,200);
+    glViewport(0,this->height()-200,200,200);
     glLineWidth(3.0);
     
-    shared_window->std_3d_col_program->bind();
+    std_3d_col_program->bind();
     
-    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glEnableVertexAttribArray(std_3d_col_fragpos);
 
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, minicell_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, minicell_view_matrix.colmajor().toFloat().data());
     
     glBindBuffer(GL_ARRAY_BUFFER, minicell_vbo);
-    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    glUniform4fv(shared_window->std_3d_col_color, 1, red.data());
+    glUniform4fv(std_3d_col_color, 1, red.data());
     glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, a_indices.data());
-    glUniform4fv(shared_window->std_3d_col_color, 1, green.data());
+    glUniform4fv(std_3d_col_color, 1, green.data());
     glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, b_indices.data());
-    glUniform4fv(shared_window->std_3d_col_color, 1, blue.data());
+    glUniform4fv(std_3d_col_color, 1, blue.data());
     glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, c_indices.data());
     
     ColorMatrix<GLfloat> wire_color = clear_color_inverse;
     wire_color[3] = 0.7;
-    glUniform4fv(shared_window->std_3d_col_color, 1, wire_color.data());
+    glUniform4fv(std_3d_col_color, 1, wire_color.data());
     glLineWidth(0.7);
     glDrawElements(GL_LINES,  18, GL_UNSIGNED_INT, wire.data());
     
-    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glDisableVertexAttribArray(std_3d_col_fragpos);
     
     glLineWidth(1.0);
     
-    shared_window->std_3d_col_program->release();
+    std_3d_col_program->release();
     
-    glViewport(0,0,render_surface->width(),render_surface->height());
+    glViewport(0,0,this->width(),this->height());
     
     
     endRawGLCalls(painter);
@@ -1117,6 +1296,33 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     painter->setFont(*normal_font);
 }
 
+void VolumeRenderWorker::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)
+{
+    Matrix<float> pos_3d_matrix;
+    Matrix<float> pos_2d_matrix(4, 1);
+
+    pos_3d_matrix.setDeep(4, 1, pos_3d);
+    pos_3d_matrix[3] = 1.0;
+
+    pos_2d_matrix = transform->toFloat() * pos_3d_matrix;
+
+    pos_2d[0] = pos_2d_matrix[0]/pos_2d_matrix[3];
+    pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
+}
+
+void VolumeRenderWorker::getPosition2D(double * pos_2d, double * pos_3d, Matrix<double> * transform)
+{
+    Matrix<double> pos_3d_matrix;
+    Matrix<double> pos_2d_matrix(4, 1);
+
+    pos_3d_matrix.setDeep(4, 1, pos_3d);
+    pos_3d_matrix[3] = 1.0;
+
+    pos_2d_matrix = *transform * pos_3d_matrix;
+
+    pos_2d[0] = pos_2d_matrix[0]/pos_2d_matrix[3];
+    pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
+}
 
 void VolumeRenderWorker::drawMarkers(QPainter * painter)
 {
@@ -1124,18 +1330,18 @@ void VolumeRenderWorker::drawMarkers(QPainter * painter)
     
     glLineWidth(3.0);
     
-    shared_window->std_3d_col_program->bind();
+    std_3d_col_program->bind();
     
-    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glEnableVertexAttribArray(std_3d_col_fragpos);
 
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
     
     for (int i = 0; i < markers.size(); i++)
     {
-        glUniform4fv(shared_window->std_3d_col_color, 1, markers[i].getColor());
+        glUniform4fv(std_3d_col_color, 1, markers[i].getColor());
         
         glBindBuffer(GL_ARRAY_BUFFER, marker_vbo[i]);
-        glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         
         glEnable(GL_DEPTH_TEST);
@@ -1144,17 +1350,17 @@ void VolumeRenderWorker::drawMarkers(QPainter * painter)
     }
     glLineWidth(1.5);
     
-    glUniform4fv(shared_window->std_3d_col_color, 1, marker_line_color.data());
+    glUniform4fv(std_3d_col_color, 1, marker_line_color.data());
     
     glBindBuffer(GL_ARRAY_BUFFER, marker_centers_vbo);
-    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     glDrawElements(GL_LINES,  n_marker_indices, GL_UNSIGNED_INT, markers_selected_indices.data());
     
-    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glDisableVertexAttribArray(std_3d_col_fragpos);
 
-    shared_window->std_3d_col_program->release();
+    std_3d_col_program->release();
     
     glLineWidth(1.0);
     
@@ -1190,7 +1396,7 @@ void VolumeRenderWorker::drawHklText(QPainter * painter)
         
         QString text = "("+QString::number((int) hkl_text[i*6+0])+","+QString::number((int) hkl_text[i*6+1])+","+QString::number((int) hkl_text[i*6+2])+")";
         
-        painter->drawText(QPointF((pos2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( pos2d[1]+ 1.0) * 0.5) *render_surface->height()), text);
+        painter->drawText(QPointF((pos2d[0]+ 1.0) * 0.5 *this->width(), (1.0 - ( pos2d[1]+ 1.0) * 0.5) *this->height()), text);
     }
     
     painter->setPen(*normal_pen);
@@ -1214,23 +1420,23 @@ void VolumeRenderWorker::drawCenterLine(QPainter * painter)
     
     setCenterLine();
 
-    shared_window->std_3d_col_program->bind();
-    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, centerline_vbo);
-    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
 
-    glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
+    glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
 
     glDrawArrays(GL_LINES,  0, 2);
 
-    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glDisableVertexAttribArray(std_3d_col_fragpos);
 
-    shared_window->std_3d_col_program->release();
+    std_3d_col_program->release();
     
     endRawGLCalls(painter);
 }
@@ -1251,11 +1457,11 @@ void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm
     setVbo(point_vbo, point_coords.data(), 3*100, GL_DYNAMIC_DRAW);
     
     
-    shared_window->std_3d_col_program->bind();
-    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
-    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0); 
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0); 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     
@@ -1273,21 +1479,21 @@ void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm
     point_around_axis = ctc_matrix * bbox_translation * normalization_scaling * rotation * axis_rotation * RyPlus * RxPlus;
     
     
-    glUniform4fv(shared_window->std_3d_col_color, 1, clear_color_inverse.data());
+    glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
     
     glPointSize(5);
     
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_around_axis.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, point_around_axis.colmajor().toFloat().data());
     glDrawArrays(GL_POINTS,  2, 98);
     
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, point_on_axis.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, point_on_axis.colmajor().toFloat().data());
     glDrawArrays(GL_LINE_STRIP,  0, 2);
     
-    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glDisableVertexAttribArray(std_3d_col_fragpos);
 
-    shared_window->std_3d_col_program->release();
+    std_3d_col_program->release();
 }
 
 void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
@@ -1331,30 +1537,30 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
 
 
 
-void VolumeRenderWorker::initialize()
-{
-    initResourcesCL();
-    initResourcesGL();
+//void VolumeRenderWorker::initialize()
+//{
+//    initResourcesCL();
+//    initResourcesGL();
 
-    isInitialized = true;
+////    isInitialized = true;
 
-    // Textures
-    setRayTexture(20);
-    setTsfTexture();
+//    // Textures
+//    setRayTexture(20);
+//    setTsfTexture();
 
-    // Core set functions
-    setDataExtent();
-    setViewMatrices();
-    setTsfParameters();
-    setMiscArrays();
+//    // Core set functions
+//    setDataExtent();
+//    setViewMatrices();
+//    setTsfParameters();
+//    setMiscArrays();
 
-    // Pens
-    initializePaintTools();
+//    // Pens
+//    initializePaintTools();
     
-    // Initial drawings
-    updateUnitCellVertices();
-    updateUnitCellText();
-}
+//    // Initial drawings
+//    updateUnitCellVertices();
+//    updateUnitCellText();
+//}
 
 void VolumeRenderWorker::initializePaintTools()
 {
@@ -1506,7 +1712,7 @@ void VolumeRenderWorker::setViewMatrices()
     scalebar_view_matrix =  ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation;
     ctc_matrix.setWindow(200, 200);
     minicell_view_matrix = ctc_matrix * bbox_translation * minicell_scaling * rotation * U;
-    ctc_matrix.setWindow(render_surface->width(),render_surface->height());
+    ctc_matrix.setWindow(this->width(),this->height());
     
     err = QOpenCLEnqueueWriteBuffer (context_cl->queue(),
         cl_view_matrix_inverse,
@@ -1631,28 +1837,29 @@ void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
 
 //    qDebug() << "resize";
     
-    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
-    ctc_matrix.setWindow(render_surface->width(), render_surface->height());
+    if (paint_device_gl) paint_device_gl->setSize(this->size());
+    ctc_matrix.setWindow(this->width(), this->height());
 
     setRayTexture(quality_percentage);
 }
 
 void VolumeRenderWorker::setRayTexture(int percentage)
 {
-    if (isInitialized)
+    if (!isCLInitialized || !isGLInitialized) return;
+    if (1)
     {
         // Set a texture for the volume rendering kernel
         Matrix<int> ray_tex_new(1, 2);
 
-        ray_tex_new[0] = (int)(sqrt((double) percentage * 0.01) * (float)render_surface->width());
-        ray_tex_new[1] = (int)(sqrt((double) percentage * 0.01) * (float)render_surface->height());
+        ray_tex_new[0] = (int)(sqrt((double) percentage * 0.01) * (float)this->width());
+        ray_tex_new[1] = (int)(sqrt((double) percentage * 0.01) * (float)this->height());
 
         // Clamp
         if (ray_tex_new[0] < 16) ray_tex_new[0] = 16;
         if (ray_tex_new[1] < 16) ray_tex_new[1] = 16;
 
-        if (ray_tex_new[0] > render_surface->width()) ray_tex_new[0] = render_surface->width();
-        if (ray_tex_new[1] > render_surface->height()) ray_tex_new[1] = render_surface->height();
+        if (ray_tex_new[0] > this->width()) ray_tex_new[0] = this->width();
+        if (ray_tex_new[1] > this->height()) ray_tex_new[1] = this->height();
 
         // Calculate the actual quality factor multiplier
         ray_tex_dim = ray_tex_new;
@@ -1736,15 +1943,15 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         isIntegrationTexInitialized = true;
 
         // Pass textures to CL kernels
-        if (isInitialized) err = QOpenCLSetKernelArg(cl_integrate_image, 0, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
-        if (isInitialized) err |= QOpenCLSetKernelArg(cl_integrate_image, 1, sizeof(cl_mem), (void *) &integration_tex_beta_cl);
-        if (isInitialized) err |= QOpenCLSetKernelArg(cl_integrate_image, 3, sizeof(cl_sampler), &integration_sampler_cl);
+        err = QOpenCLSetKernelArg(cl_integrate_image, 0, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        err |= QOpenCLSetKernelArg(cl_integrate_image, 1, sizeof(cl_mem), (void *) &integration_tex_beta_cl);
+        err |= QOpenCLSetKernelArg(cl_integrate_image, 3, sizeof(cl_sampler), &integration_sampler_cl);
 
-        if (isInitialized) err |= QOpenCLSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-        if (isInitialized) err |= QOpenCLSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        err |= QOpenCLSetKernelArg(cl_svo_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        err |= QOpenCLSetKernelArg(cl_svo_raytrace, 13, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
 
-        if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
-        if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
+        err |= QOpenCLSetKernelArg(cl_model_raytrace, 0, sizeof(cl_mem), (void *) &ray_tex_cl);
+        err |= QOpenCLSetKernelArg(cl_model_raytrace, 10, sizeof(cl_mem), (void *) &integration_tex_alpha_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
 }
@@ -1886,52 +2093,17 @@ float VolumeRenderWorker::sumViewBox()
     return sum;
 }
 
-void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
-{
-    this->shared_window = window;
-}
+//void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
+//{
+//    this->shared_window = window;
+//}
 
-void VolumeRenderWorker::render(QPainter *painter)
-{
-    isDataExtentReadOnly = true;
-    setDataExtent();
-    setViewMatrices();
-    
-    beginRawGLCalls(painter);
-    glClearColor(clear_color[0], clear_color[1], clear_color[2], 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    glLineWidth(1.0);
-    const qreal retinaScale = render_surface->devicePixelRatio();
-    glViewport(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
-    endRawGLCalls(painter);
-    
-    painter->setRenderHint(QPainter::Antialiasing);
-    
-    if (isScalebarActive) drawPositionScalebars(painter);
-    if (isLabFrameActive) drawCenterLine(painter);
-    if (isUnitcellActive) drawUnitCell(painter);
-    if (isLabFrameActive) drawLabFrame(painter);
-    
-    isDataExtentReadOnly = false;
-
-    // Draw raytracing texture
-    drawRayTex(painter);
-    
-    // Compute the projected pixel size in orthonormal configuration
-    computePixelSize();
-
-    if (isIntegration2DActive) drawIntegral(painter);
-    
-    drawOverlay(painter);
-    if (isHklTextActive) drawHklText(painter);
-    if (n_marker_indices > 0) drawMarkers(painter);
-    if (isMiniCellActive) drawHelpCell(painter);
-    drawCountScalebar(painter);
-    if (isSvoInitialized && isCountIntegrationActive) drawCountIntegral(painter);
+//void VolumeRenderWorker::render(QPainter *painter)
+//{
     
     
-}
+    
+//}
 
 
 void VolumeRenderWorker::takeScreenShot(QString path)
@@ -1950,14 +2122,14 @@ void VolumeRenderWorker::takeScreenShot(QString path)
     format.setTextureTarget(GL_TEXTURE_2D);
     format.setInternalTextureFormat(GL_RGBA32F);
 
-    QOpenGLFramebufferObject buffy(render_surface->width(), render_surface->height(), format);
+    QOpenGLFramebufferObject buffy(this->width(), this->height(), format);
 
     buffy.bind();
     
     // Render into buffer using max quality
-    QPainter painter(paint_device_gl);
+//    QPainter painter(paint_device_gl);
     
-    render(&painter);
+//    render(&painter);
 
     buffy.release();
     
@@ -2084,22 +2256,22 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
         {
             QPointF point_top, point_bottom;
 
-            float value = ((row_sum[row_sum.m() - i - 1] - min) / (max - min))*render_surface->width()/10.0;
+            float value = ((row_sum[row_sum.m() - i - 1] - min) / (max - min))*this->width()/10.0;
 
             point_top.setX(value);
-            point_top.setY(((float) i / (float) row_sum.m())*render_surface->height());
+            point_top.setY(((float) i / (float) row_sum.m())*this->height());
 
             point_bottom.setX(value);
-            point_bottom.setY((((float) i + 1) / (float) row_sum.m())*render_surface->height());
+            point_bottom.setY((((float) i + 1) / (float) row_sum.m())*this->height());
             row_polygon << point_top << point_bottom;
         }
-        row_polygon << QPointF(0,render_surface->height());
+        row_polygon << QPointF(0,this->height());
 
 
 
         painter->setRenderHint(QPainter::Antialiasing);
 
-        QLinearGradient lgrad(QPointF(0,0), QPointF(render_surface->width()/10.0,0));
+        QLinearGradient lgrad(QPointF(0,0), QPointF(this->width()/10.0,0));
                     lgrad.setColorAt(0.0, Qt::transparent);
                     lgrad.setColorAt(1.0, Qt::blue);
 
@@ -2208,27 +2380,27 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
         }
 
         QPolygonF column_polygon;
-        column_polygon << QPointF(0,render_surface->height());
+        column_polygon << QPointF(0,this->height());
         for (size_t i = 0; i < column_sum.n(); i++)
         {
             QPointF point_top, point_bottom;
 
-            float value = render_surface->height() - (column_sum[i] - min) / (max - min)*render_surface->height()*0.1;
+            float value = this->height() - (column_sum[i] - min) / (max - min)*this->height()*0.1;
 
-            point_top.setX(((float) i / (float) column_sum.n())*render_surface->width());
+            point_top.setX(((float) i / (float) column_sum.n())*this->width());
             point_top.setY(value);
 
-            point_bottom.setX((((float) i + 1) / (float) column_sum.n())*render_surface->width());
+            point_bottom.setX((((float) i + 1) / (float) column_sum.n())*this->width());
             point_bottom.setY(value);
             column_polygon << point_top << point_bottom;
         }
-        column_polygon << QPointF(render_surface->width(),render_surface->height());
+        column_polygon << QPointF(this->width(),this->height());
 
 
 
         painter->setRenderHint(QPainter::Antialiasing);
 
-        QLinearGradient lgrad(QPointF(0,render_surface->height()*0.9), QPointF(0,render_surface->height()));
+        QLinearGradient lgrad(QPointF(0,this->height()*0.9), QPointF(0,this->height()));
                     lgrad.setColorAt(0.0, Qt::blue);
                     lgrad.setColorAt(1.0, Qt::transparent);
 
@@ -2312,8 +2484,8 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
 void VolumeRenderWorker::drawGrid(QPainter * painter)
 {
     // Draw grid lines, the center of the screen is (0,0)
-    double screen_width = pixel_size[0]*render_surface->width();
-    double screen_height = pixel_size[1]*render_surface->height();
+    double screen_width = pixel_size[0]*this->width();
+    double screen_height = pixel_size[1]*this->height();
 
     // Find appropriate tick intervals
     int levels = 2;
@@ -2330,7 +2502,7 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
 
         if (((screen_width / pow(10.0, (double) exponent)) > level_min_ticks))
         {
-            if ((render_surface->width()/(screen_width / pow(10.0, (double) exponent)) < min_pix_interdist)) break;
+            if ((this->width()/(screen_width / pow(10.0, (double) exponent)) < min_pix_interdist)) break;
             exponent_by_level[qualified_levels] = exponent;
             ticks_by_level[qualified_levels] = (screen_width / pow(10.0, (double) exponent)) + 1;
             qualified_levels++;
@@ -2345,28 +2517,28 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
         Matrix<QPointF> horizontal_lines(1, (int)((screen_width / pow(10.0, (double) exponent_by_level[qualified_levels-1])) + 5)*2);
         for (int i = qualified_levels-1; i >= 0; i--)
         {
-            vertical_lines[2] = QPointF(render_surface->width()*0.5, render_surface->height());
-            vertical_lines[3] = QPointF(render_surface->width()*0.5, 0);
+            vertical_lines[2] = QPointF(this->width()*0.5, this->height());
+            vertical_lines[3] = QPointF(this->width()*0.5, 0);
 
             for (int j = 1; j < ticks_by_level[i]/2+1; j++)
             {
-                vertical_lines[j*4] = QPointF((j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height());
-                vertical_lines[j*4+1] = QPointF((j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, 0);
+                vertical_lines[j*4] = QPointF((j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*this->width()*0.5 + this->width()*0.5, this->height());
+                vertical_lines[j*4+1] = QPointF((j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*this->width()*0.5 + this->width()*0.5, 0);
 
-                vertical_lines[j*4+2] = QPointF((-j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, render_surface->height());
-                vertical_lines[j*4+3] = QPointF((-j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*render_surface->width()*0.5 + render_surface->width()*0.5, 0);
+                vertical_lines[j*4+2] = QPointF((-j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*this->width()*0.5 + this->width()*0.5, this->height());
+                vertical_lines[j*4+3] = QPointF((-j * pow(10.0, exponent_by_level[i]))/(screen_width*0.5)*this->width()*0.5 + this->width()*0.5, 0);
             }
 
-            horizontal_lines[2] = QPointF(render_surface->width(), render_surface->height()*0.5);
-            horizontal_lines[3] = QPointF(0,render_surface->height()*0.5);
+            horizontal_lines[2] = QPointF(this->width(), this->height()*0.5);
+            horizontal_lines[3] = QPointF(0,this->height()*0.5);
 
             for (int j = 1; j < ticks_by_level[i]/2+1; j++)
             {
-                horizontal_lines[j*4] = QPointF(render_surface->width(), (j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
-                horizontal_lines[j*4+1] = QPointF(0,(j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
+                horizontal_lines[j*4] = QPointF(this->width(), (j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*this->height()*0.5 + this->height()*0.5);
+                horizontal_lines[j*4+1] = QPointF(0,(j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*this->height()*0.5 + this->height()*0.5);
 
-                horizontal_lines[j*4+2] = QPointF(render_surface->width(), (-j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
-                horizontal_lines[j*4+3] = QPointF(0,(-j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*render_surface->height()*0.5 + render_surface->height()*0.5);
+                horizontal_lines[j*4+2] = QPointF(this->width(), (-j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*this->height()*0.5 + this->height()*0.5);
+                horizontal_lines[j*4+3] = QPointF(0,(-j * pow(10.0, exponent_by_level[i]))/(screen_height*0.5)*this->height()*0.5 + this->height()*0.5);
             }
 
             if (i == 0)
@@ -2595,13 +2767,13 @@ void VolumeRenderWorker::computePixelSize()
     // The height of a single pixel
     Matrix<double> ndc01(4,1);
     ndc01[0] = 0.0;
-    ndc01[1] = 2.0/(double)render_surface->height();
+    ndc01[1] = 2.0/(double)this->height();
     ndc01[2] = -1.0;
     ndc01[3] = 1.0;
     
     // The width of a single pixel
     Matrix<double> ndc10(4,1);
-    ndc10[0] = 2.0/(double)render_surface->width();
+    ndc10[0] = 2.0/(double)this->width();
     ndc10[1] = 0.0;
     ndc10[2] = -1.0;
     ndc10[3] = 1.0;
@@ -2643,7 +2815,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
         QString centerline_string("Distance from (000): "+QString::number(distance, 'g', 5)+" 1/Å");
         QRect centerline_string_rect = normal_fontmetric->boundingRect(centerline_string);
         centerline_string_rect += QMargins(5,5,5,5);
-        centerline_string_rect.moveBottomRight(QPoint(render_surface->width()-5,render_surface->height()-5));
+        centerline_string_rect.moveBottomRight(QPoint(this->width()-5,this->height()-5));
     
         painter->setBrush(*fill_brush);
         painter->drawRoundedRect(centerline_string_rect, 5, 5, Qt::AbsoluteSize);
@@ -2651,27 +2823,27 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     }
     
     // Fps
-    if (displayFps)
-    {
-        QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
-        fps_string_rect = normal_fontmetric->boundingRect(fps_string);
-        fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
-        fps_string_width_prev = fps_string_rect.width();
-        fps_string_rect += QMargins(5,5,5,5);
-        fps_string_rect.moveTopRight(QPoint(render_surface->width()-5,5));
+//    if (displayFps)
+//    {
+//        QString fps_string("Fps: "+QString::number(getFps(), 'f', 0));
+//        fps_string_rect = normal_fontmetric->boundingRect(fps_string);
+//        fps_string_rect.setWidth(std::max(fps_string_width_prev, fps_string_rect.width()));
+//        fps_string_width_prev = fps_string_rect.width();
+//        fps_string_rect += QMargins(5,5,5,5);
+//        fps_string_rect.moveTopRight(QPoint(this->width()-5,5));
     
-        painter->setBrush(*fill_brush);
-        painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
-        painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
-    }
+//        painter->setBrush(*fill_brush);
+//        painter->drawRoundedRect(fps_string_rect, 5, 5, Qt::AbsoluteSize);
+//        painter->drawText(fps_string_rect, Qt::AlignCenter, fps_string);
+//    }
     
     // Texture resolution
     if (displayResolution)
     {
-        QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(render_surface->width()*render_surface->height()), 'f', 1)+"%");
+        QString resolution_string("Texture resolution: "+QString::number(100.0*(ray_tex_dim[0]*ray_tex_dim[1])/(this->width()*this->height()), 'f', 1)+"%");
         QRect resolution_string_rect = normal_fontmetric->boundingRect(resolution_string);
         resolution_string_rect += QMargins(5,5,5,5);
-        resolution_string_rect.moveBottomLeft(QPoint(5, render_surface->height() - 5));
+        resolution_string_rect.moveBottomLeft(QPoint(5, this->height() - 5));
     
         painter->drawRoundedRect(resolution_string_rect, 5, 5, Qt::AbsoluteSize);
         painter->drawText(resolution_string_rect, Qt::AlignCenter, resolution_string);
@@ -2681,7 +2853,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     /*QString roll_string("Roll: "+QString::number(accumulated_roll*180/pi, 'g', 5)+" deg");
     QRect roll_string_rect = normal_fontmetric->boundingRect(roll_string);
     roll_string_rect += QMargins(5,5,5,5);
-    roll_string_rect.moveBottomLeft(QPoint(5,render_surface->height() -10 -resolution_string_rect.height()));
+    roll_string_rect.moveBottomLeft(QPoint(5,this->height() -10 -resolution_string_rect.height()));
 
     painter->setBrush(*fill_brush);
     painter->drawRoundedRect(roll_string_rect, 5, 5, Qt::AbsoluteSize);
@@ -2691,7 +2863,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     /*QString multiplier_string("x"+QString::number(scalebar_multiplier)+" 1/Å");
     multiplier_string_rect = normal_fontmetric->boundingRect(multiplier_string);
     multiplier_string_rect += QMargins(5,5,5,5);
-    multiplier_string_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 5));
+    multiplier_string_rect.moveTopRight(QPoint(this->width()-5, fps_string_rect.bottom() + 5));
 
     painter->drawRoundedRect(multiplier_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);*/
@@ -2703,23 +2875,23 @@ void VolumeRenderWorker::drawPositionScalebars(QPainter * painter)
     
     scalebar_coord_count = setScaleBars();
 
-    shared_window->std_3d_col_program->bind();
-    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, scalebar_vbo);
-    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    if (isBackgroundBlack) glUniform4fv(shared_window->std_3d_col_color, 1, magenta_light.data());
-    else glUniform4fv(shared_window->std_3d_col_color, 1, blue_light.data());
+    if (isBackgroundBlack) glUniform4fv(std_3d_col_color, 1, magenta_light.data());
+    else glUniform4fv(std_3d_col_color, 1, blue_light.data());
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, scalebar_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, scalebar_view_matrix.colmajor().toFloat().data());
     
     glDrawArrays(GL_LINES,  0, scalebar_coord_count);
     
-    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glDisableVertexAttribArray(std_3d_col_fragpos);
 
-    shared_window->std_3d_col_program->release();
+    std_3d_col_program->release();
     
     endRawGLCalls(painter);
 }
@@ -2739,24 +2911,24 @@ void VolumeRenderWorker::drawLabFrame(QPainter *painter)
     setVbo(lab_frame_vbo, vertices.data(), vertices.size(), GL_STATIC_DRAW);
     
     // Draw the lab reference frame 
-    shared_window->std_3d_col_program->bind();
-    glEnableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, lab_frame_vbo);
-    glVertexAttribPointer(shared_window->std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    if (isBackgroundBlack) glUniform4fv(shared_window->std_3d_col_color, 1, magenta_light.data());
-    else glUniform4fv(shared_window->std_3d_col_color, 1, blue_light.data());
+    if (isBackgroundBlack) glUniform4fv(std_3d_col_color, 1, magenta_light.data());
+    else glUniform4fv(std_3d_col_color, 1, blue_light.data());
     
-    glUniformMatrix4fv(shared_window->std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
     
     GLuint indices[] = {0,1,0,2,0,3};
     glDrawElements(GL_LINES,  6, GL_UNSIGNED_INT, indices);
     
-    glDisableVertexAttribArray(shared_window->std_3d_col_fragpos);
+    glDisableVertexAttribArray(std_3d_col_fragpos);
 
-    shared_window->std_3d_col_program->release();
+    std_3d_col_program->release();
     
     endRawGLCalls(painter);
     
@@ -2770,9 +2942,9 @@ void VolumeRenderWorker::drawLabFrame(QPainter *painter)
     getPosition2D(y_2d.data(), vertices.data()+6, &view_matrix);
     getPosition2D(z_2d.data(), vertices.data()+9, &view_matrix);
     
-    painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("X (towards source)"));
-    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Y (up)"));
-    painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *render_surface->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *render_surface->height()), QString("Z"));
+    painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *this->width(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *this->height()), QString("X (towards source)"));
+    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *this->width(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *this->height()), QString("Y (up)"));
+    painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *this->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *this->height()), QString("Z"));
 }
 
 void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
@@ -2786,9 +2958,9 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     double exponent;
     
     // Draw transfer function bounding box
-    QRectF tsf_rect(0, 0, 20, render_surface->height() - (fps_string_rect.bottom() + 5) - 100);
+    QRectF tsf_rect(0, 0, 20, this->height() - (fps_string_rect.bottom() + 5) - 100);
     tsf_rect += QMargins(35,20,5,15);
-    tsf_rect.moveTopRight(QPoint(render_surface->width()-5, fps_string_rect.bottom() + 15));
+    tsf_rect.moveTopRight(QPoint(this->width()-5, fps_string_rect.bottom() + 15));
     
     // Backdrop
     painter->setPen(*normal_pen);
@@ -2833,14 +3005,14 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         
         while ((current < data_max) && (iter < ticks.size()/4))
         {
-            ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-10)/ (double) render_surface->width())*2.0;
-            ticks[iter*4+1] = -1.0 + ((render_surface->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) render_surface->height())*2.0;
-            ticks[iter*4+2] = -1.0 + (tsf_rect.right()/ (double) render_surface->width())*2.0;
-            ticks[iter*4+3] = -1.0 + ((render_surface->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) render_surface->height())*2.0;
+            ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-10)/ (double) this->width())*2.0;
+            ticks[iter*4+1] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) this->height())*2.0;
+            ticks[iter*4+2] = -1.0 + (tsf_rect.right()/ (double) this->width())*2.0;
+            ticks[iter*4+3] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) this->height())*2.0;
             
             if (((int)round(current*pow(10.0, -exponent)) % 10) == 0)
             {
-                ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-25)/ (double) render_surface->width())*2.0;
+                ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-25)/ (double) this->width())*2.0;
                 
                 if(n_count_scalebar_ticks < count_scalebar_ticks.size())
                 {
@@ -2871,11 +3043,11 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         setVbo(count_scalebar_vbo, ticks.toFloat().data(), iter*4, GL_STATIC_DRAW);
         
         // Draw transfer function texture
-        shared_window->std_2d_tex_program->bind();
+        std_2d_tex_program->bind();
     
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
+        std_2d_tex_program->setUniformValue(std_2d_tex_texture, 0);
     
         GLfloat texpos[] = {
             0.0, 1.0,
@@ -2886,40 +3058,40 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
         GLuint indices[] = {0,1,3,1,2,3};
         
-        glUniformMatrix4fv(shared_window->std_2d_tex_transform, 1, GL_FALSE, identity.data());
+        glUniformMatrix4fv(std_2d_tex_transform, 1, GL_FALSE, identity.data());
         
-        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
-        glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        glVertexAttribPointer(std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, gl_tsf_rect.data());
+        glVertexAttribPointer(std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
     
-        glEnableVertexAttribArray(shared_window->std_2d_tex_fragpos);
-        glEnableVertexAttribArray(shared_window->std_2d_tex_pos);
+        glEnableVertexAttribArray(std_2d_tex_fragpos);
+        glEnableVertexAttribArray(std_2d_tex_pos);
     
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
     
-        glDisableVertexAttribArray(shared_window->std_2d_tex_pos);
-        glDisableVertexAttribArray(shared_window->std_2d_tex_fragpos);
+        glDisableVertexAttribArray(std_2d_tex_pos);
+        glDisableVertexAttribArray(std_2d_tex_fragpos);
         glBindTexture(GL_TEXTURE_2D, 0);
     
-        shared_window->std_2d_tex_program->release();
+        std_2d_tex_program->release();
         
         
         // Draw the ticks
-        shared_window->std_2d_col_program->bind();
-        glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
+        std_2d_col_program->bind();
+        glEnableVertexAttribArray(std_2d_col_fragpos);
     
         glBindBuffer(GL_ARRAY_BUFFER, count_scalebar_vbo);
-        glVertexAttribPointer(shared_window->std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-        glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.data());
+        glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, identity.data());
     
-        glUniform4fv(shared_window->std_2d_col_color, 1, clear_color_inverse.data());
+        glUniform4fv(std_2d_col_color, 1, clear_color_inverse.data());
     
         glDrawArrays(GL_LINES,  0, iter*2);
     
-        glDisableVertexAttribArray(shared_window->std_2d_col_fragpos);
+        glDisableVertexAttribArray(std_2d_col_fragpos);
     
-        shared_window->std_2d_col_program->release();
+        std_2d_col_program->release();
         
         endRawGLCalls(painter);
     }
@@ -2947,6 +3119,32 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
         }
     }
     
+}
+
+Matrix<GLfloat> VolumeRenderWorker::glRect(QRectF & qt_rect)
+{
+    Matrix<GLfloat> gl_rect(1,8);
+
+    qreal x,y,w,h;
+    qreal xf,yf,wf,hf;
+    qt_rect = qt_rect.normalized();
+    qt_rect.getRect(&x, &y, &w, &h);
+
+    xf = (x / (qreal) this->width()) * 2.0 - 1.0;
+    yf = 1.0 - (y + h)/ (qreal) this->height() * 2.0;
+    wf = (w / (qreal) this->width()) * 2.0;
+    hf = (h / (qreal) this->height()) * 2.0;
+
+    gl_rect[0] = (GLfloat) xf;
+    gl_rect[1] = (GLfloat) yf;
+    gl_rect[2] = (GLfloat) xf + wf;
+    gl_rect[3] = (GLfloat) yf;
+    gl_rect[4] = (GLfloat) xf + wf;
+    gl_rect[5] = (GLfloat) yf + hf;
+    gl_rect[6] = (GLfloat) xf;
+    gl_rect[7] = (GLfloat) yf + hf;
+
+    return gl_rect;
 }
 
 void VolumeRenderWorker::addMarker()
@@ -3002,11 +3200,11 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
     // Draw texture given one of the above is true
     if (isModelActive || isSvoInitialized)
     {
-        shared_window->std_2d_tex_program->bind();
+        std_2d_tex_program->bind();
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
+        std_2d_tex_program->setUniformValue(std_2d_tex_texture, 0);
 
         GLfloat fragpos[] = {
             -1.0, -1.0,
@@ -3024,21 +3222,21 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
 
         GLuint indices[] = {0,1,3,1,2,3};
         
-        glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, identity.data());
+        glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, identity.data());
 
-        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
-        glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        glVertexAttribPointer(std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
+        glVertexAttribPointer(std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
-        glEnableVertexAttribArray(shared_window->std_2d_tex_fragpos);
-        glEnableVertexAttribArray(shared_window->std_2d_tex_pos);
+        glEnableVertexAttribArray(std_2d_tex_fragpos);
+        glEnableVertexAttribArray(std_2d_tex_pos);
 
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-        glDisableVertexAttribArray(shared_window->std_2d_tex_pos);
-        glDisableVertexAttribArray(shared_window->std_2d_tex_fragpos);
+        glDisableVertexAttribArray(std_2d_tex_pos);
+        glDisableVertexAttribArray(std_2d_tex_fragpos);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        shared_window->std_2d_tex_program->release();
+        std_2d_tex_program->release();
     }
     
     endRawGLCalls(painter);
@@ -3277,20 +3475,20 @@ size_t VolumeRenderWorker::setScaleBars()
                         if ((size_t) n_position_scalebar_ticks+3 < position_scalebar_ticks.m())
                         {
                             getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+0)*3, &scalebar_view_matrix);
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *this->width();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *this->height();
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
                             n_position_scalebar_ticks++;
 
                             getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+4)*3, &scalebar_view_matrix);
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *this->width();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *this->height();
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
                             n_position_scalebar_ticks++;
 
                             getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter+8)*3, &scalebar_view_matrix);
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *render_surface->width();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *render_surface->height();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 *this->width();
+                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) *this->height();
                             position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
                             n_position_scalebar_ticks++;
                         }

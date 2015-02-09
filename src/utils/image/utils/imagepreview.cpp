@@ -10,10 +10,11 @@
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1000e6;
 
 ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
-    paint_device_gl(0),
+//    paint_device_gl(0),
     isImageTexInitialized(false),
     isTsfTexInitialized(false),
     isCLInitialized(false),
+    isGLInitialized(false),
     isFrameValid(false),
     isWeightCenterActive(false),
     isInterpolGpuInitialized(false),
@@ -26,7 +27,7 @@ ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
 {
     Q_UNUSED(parent);
 
-//    isInitialized = false;
+//    isGLInitialized = false;
 
     parameter.reserve(1,16);
     parameter[0] = 0;
@@ -135,10 +136,14 @@ ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
 
 void ImagePreviewWorker::paintGL()
 {
-    QPainter painter(paint_device_gl);
+//    qDebug() << "Paint";
+    
+//    QOpenGLPaintDevice * paint_device_gl = new QOpenGLPaintDevice(this->size());
+    
+    QPainter painter(this);
 
     painter.setRenderHint(QPainter::Antialiasing);
-
+    
     beginRawGLCalls(&painter);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -161,7 +166,7 @@ void ImagePreviewWorker::paintGL()
         drawImage(image_rect, image_tex_gl, &painter);
 //                break;
 //            case 1:
-//                drawImage(image_rect, trace_tex_gl, painter);
+//                drawImage(image_rect, trace_tex_gl, &painter);
 //                break;
 //        }
 
@@ -176,17 +181,17 @@ void ImagePreviewWorker::paintGL()
         // Draw trace
 //        if (isSetTraced)
 //        {
-//            beginRawGLCalls(painter);
+//            beginRawGLCalls(&painter);
 
 //            QRectF trace_rect(QPoint(0,0),QSizeF(frame.getFastDimension(), frame.getSlowDimension()));
 //            trace_rect.moveTopLeft(image_rect.topRight() + QPointF(20,0));
 
-//            drawImage(trace_rect,  isSetTraced && isSwapped ? image_tex_gl : trace_tex_gl, painter);
+//            drawImage(trace_rect,  isSetTraced && isSwapped ? image_tex_gl : trace_tex_gl, &painter);
 
-//            endRawGLCalls(painter);
+//            endRawGLCalls(&painter);
 
 //            ColorMatrix<float> analysis_area_color_trace(0.0,0,0,0.3);
-//            drawSelection(p_set.current()->current()->selection(), painter, analysis_area_color_trace, QPointF(frame.getFastDimension() + 20, 0));
+//            drawSelection(p_set.current()->current()->selection(), &painter, analysis_area_color_trace, QPointF(frame.getFastDimension() + 20, 0));
 //        }
 
         // Draw pixel tootip
@@ -202,19 +207,32 @@ void ImagePreviewWorker::paintGL()
         drawConeEwaldIntersect(&painter);
         drawPixelToolTip(&painter);
     }
+    
+//    qDebug() << "Paint done";
 }
 
-void ImagePreviewWorker::resizeGL()
+void ImagePreviewWorker::resizeGL(int w, int h)
 {
-    if (paint_device_gl) paint_device_gl->setSize(this->size());
+    qDebug() << "resizeGL" << w << h << this->width() << this->height();
+    
+//    if (paint_device_gl) paint_device_gl->setSize(this->size());
 }
 
-void ImagePreviewWorker::intitalizeGL()
+void ImagePreviewWorker::initializeGL()
 {
-    if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
-
+//    if (isCLInitialized && isGLInitialized) return;
+    
+    qDebug() << "initializeGL";
+    
+    // Initialize OpenGL
+    QOpenGLFunctions::initializeOpenGLFunctions();
+    
+//    if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice(this->size());
+    
     glGenBuffers(5, selections_vbo);
     glGenBuffers(5, weightpoints_vbo);
+    glGenTextures(1, &image_tex_gl);
+    glGenTextures(1, &tsf_tex_gl);
 
     // Shader for drawing textures in 2D
     std_2d_tex_program = new QOpenGLShaderProgram(this);
@@ -282,6 +300,15 @@ void ImagePreviewWorker::intitalizeGL()
     if ((unitcell_u = unitcell_program->uniformLocation("u")) == -1) qFatal("Invalid uniform");
     if ((unitcell_lim_low = unitcell_program->uniformLocation("lim_low")) == -1) qFatal("Invalid uniform");
     if ((unitcell_lim_high = unitcell_program->uniformLocation("lim_high")) == -1) qFatal("Invalid uniform");
+    
+    isGLInitialized = true;
+    
+    // Initialize OpenCL
+    initializeCL();
+    
+    isCLInitialized = true;
+    
+    qDebug() << context();
 }
 
 GLuint ImagePreviewWorker::loadShader(GLenum type, const char *source)
@@ -508,7 +535,7 @@ void ImagePreviewWorker::setReducedPixels(Matrix<float> *reduced_pixels)
 //}
 void ImagePreviewWorker::setOpenCLContext(OpenCLContext * context)
 {
-    this->context_cl = context;
+    context_cl = context;
 }
 
 int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Matrix<float> * samples, size_t * n_samples)
@@ -1065,6 +1092,8 @@ void ImagePreviewWorker::calculus()
 
 void ImagePreviewWorker::setFrame()
 {
+    if (!isCLInitialized || !isGLInitialized) return;
+    
     // Set the frame
 //    frame_image = image;
     if (!frame.set(p_set.current()->current()->path())) return;
@@ -1326,15 +1355,9 @@ void ImagePreviewWorker::maintainImageTexture(Matrix<size_t> &image_size)
         if (isImageTexInitialized)
         {
             err =  QOpenCLReleaseMemObject(image_tex_cl);
-//            err |=  QOpenCLReleaseMemObject(max_tex_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-            glDeleteTextures(1, &image_tex_gl);
-//            glDeleteTextures(1, &trace_tex_gl);
         }
         
-        makeCurrent();
-        
-        glGenTextures(1, &image_tex_gl);
         glBindTexture(GL_TEXTURE_2D, image_tex_gl);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1350,28 +1373,11 @@ void ImagePreviewWorker::maintainImageTexture(Matrix<size_t> &image_size)
             NULL);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-//        glGenTextures(1, &trace_tex_gl);
-//        glBindTexture(GL_TEXTURE_2D, trace_tex_gl);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//        glTexImage2D(
-//            GL_TEXTURE_2D,
-//            0,
-//            GL_RGBA32F,
-//            image_size[0],
-//            image_size[1],
-//            0,
-//            GL_RGBA,
-//            GL_FLOAT,
-//            NULL);
-//        glBindTexture(GL_TEXTURE_2D, 0);
-        
         image_tex_size[0] = image_size[0];
         image_tex_size[1] = image_size[1];
         
         // Share the texture with the OpenCL runtime
         image_tex_cl =  QOpenCLCreateFromGLTexture2D(context_cl->context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex_gl, &err);
-//        max_tex_cl =  QOpenCLCreateFromGLTexture2D(context_cl->context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, trace_tex_gl, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
         isImageTexInitialized = true;
@@ -1506,8 +1512,8 @@ void ImagePreviewWorker::analyze(QString str)
     {
         setFrame();
         {
-            QPainter painter(paint_device_gl);
-            render(&painter);
+//            QPainter painter(paint_device_gl);
+//            render(&painter);
         }
 
         // Force a buffer swap
@@ -1538,8 +1544,8 @@ void ImagePreviewWorker::analyze(QString str)
             // Draw the frame and update the intensity OpenCL buffer prior to further operations
             setFrame();
             {
-                QPainter painter(paint_device_gl);
-                render(&painter);
+//                QPainter painter(paint_device_gl);
+//                render(&painter);
             }
             // Force a buffer swap
 //            context_gl->swapBuffers(render_surface);
@@ -2510,9 +2516,16 @@ void ImagePreviewWorker::selectionCalculus(Selection * area, cl_mem image_data_c
 }
 
 
-void ImagePreviewWorker::initOpenCL()
+void ImagePreviewWorker::initializeCL()
 {
-    // Build program from OpenCL kernel source
+//    // Set the OpenCL context
+//    context_cl = new OpenCLContext;
+//    context_cl->initDevices();
+//    context_cl->initSharedContext();
+//    context_cl->initCommandQueue();
+//    context_cl->initResources();
+    
+    // Build programs from OpenCL kernel source
     QStringList paths;
     paths << "cl/image_preview.cl";
     paths << "kernels/project.cl";
@@ -2652,15 +2665,17 @@ void ImagePreviewWorker::initOpenCL()
 
 void ImagePreviewWorker::setTsf(TransferFunction & tsf)
 {
+    if (!isCLInitialized || !isGLInitialized) return;
+    
     if (isTsfTexInitialized)
     {
         err =  QOpenCLReleaseMemObject(tsf_tex_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-        glDeleteTextures(1, &tsf_tex_gl);
+//        glDeleteTextures(1, &tsf_tex_gl);
     }
     
     // Buffer for tsf_tex_gl
-    glGenTextures(1, &tsf_tex_gl);
+//    glGenTextures(1, &tsf_tex_gl);
     glBindTexture(GL_TEXTURE_2D, tsf_tex_gl);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2700,7 +2715,7 @@ void ImagePreviewWorker::setTsfTexture(int value)
     tsf.setColorScheme(rgb_style, alpha_style);
     tsf.setSpline(256);
 
-    if (isInitialized) setTsf(tsf);
+    setTsf(tsf);
     
     refreshDisplay();
 }
@@ -2711,7 +2726,7 @@ void ImagePreviewWorker::setTsfAlpha(int value)
     tsf.setColorScheme(rgb_style, alpha_style);
     tsf.setSpline(256);
 
-    if (isInitialized) setTsf(tsf);
+    setTsf(tsf);
 
     refreshDisplay();
 }
@@ -3784,7 +3799,7 @@ void ImagePreviewWorker::wheelEvent(QWheelEvent* event)
 //}
 
 //ImagePreviewWindow::ImagePreviewWindow()
-//    : isInitialized(false)
+//    : isGLInitialized(false)
 //    , gl_worker(0)
 //{
 
@@ -3833,7 +3848,7 @@ void ImagePreviewWorker::wheelEvent(QWheelEvent* event)
 //        emit render(); // A call to render is necessary to make sure initialize() is callled
 //    }
 
-//    isInitialized = true;
+//    isGLInitialized = true;
 //}
 
 //void ImagePreviewWindow::renderNow()
@@ -3846,7 +3861,7 @@ void ImagePreviewWorker::wheelEvent(QWheelEvent* event)
 //    }
 //    else if (!isWorkerBusy)
 //    {
-//        if (!isInitialized) initializeWorker();
+//        if (!isGLInitialized) initializeWorker();
 
 //        if (gl_worker)
 //        {
@@ -3919,9 +3934,9 @@ void ImagePreviewWorker::takeScreenShot(QString path)
     buffy.bind();
     
     // Render into buffer
-    QPainter painter(paint_device_gl);
+//    QPainter painter(paint_device_gl);
     
-    render(&painter);
+//    render(&painter);
 
     
     
@@ -3946,7 +3961,9 @@ void ImagePreviewWorker::saveImage(QString path)
     buffy.bind();
     
     // Render into buffer
-    QPainter painter(paint_device_gl);
+    QOpenGLPaintDevice paint_device_gl(this->size());
+    
+    QPainter painter(&paint_device_gl);
     
     /////////////////////////////////
     beginRawGLCalls(&painter);

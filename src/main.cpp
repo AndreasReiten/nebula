@@ -14,6 +14,7 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
+ * Make QOpenCL class similar to QOpenGLFunctions
  * (Time consuming) Switch to QOpenGLWidget
  * (Somewhat time consuming) Remove hard memory requirements in cases where information about max RAM is known (case for vRAM). Adapt to hardware.
  * (Somewhat time consuming) Implement LP correction with convenient GUI. Polarization corr. based on beam polarization. Lorentz correction based on sample rotation axis (given by two angles)

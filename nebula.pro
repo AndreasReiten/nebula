@@ -59,8 +59,8 @@ HEADERS += \
     src/utils/math/qxmathlib.h \
     src/utils/opencl/utils/contextcl.h \
     src/utils/opencl/qxopencllib.h \
-    src/utils/opengl/utils/openglwindow.h \
-    src/utils/opengl/utils/sharedcontext.h \
+#    src/utils/opengl/utils/openglwindow.h \
+#    src/utils/opengl/utils/sharedcontext.h \
     src/utils/opengl/utils/transferfunction.h \
     src/utils/opengl/qxopengllib.h \
     src/utils/svo/qxsvolib.h \
@@ -85,8 +85,8 @@ SOURCES += \
     src/utils/math/qxmathlib.cpp \
     src/utils/opencl/utils/contextcl.cpp \
     src/utils/opencl/qxopencllib.cpp \
-    src/utils/opengl/utils/openglwindow.cpp \
-    src/utils/opengl/utils/sharedcontext.cpp \
+#    src/utils/opengl/utils/openglwindow.cpp \
+#    src/utils/opengl/utils/sharedcontext.cpp \
     src/utils/opengl/utils/transferfunction.cpp \
     src/utils/opengl/qxopengllib.cpp \
     src/utils/svo/qxsvolib.cpp \
