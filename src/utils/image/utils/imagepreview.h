@@ -19,6 +19,7 @@ class ImagePreviewWorker : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
+    void setOpenCLContext(OpenCLContext * context);
     int projectFile(DetectorFile * file, Selection selection, Matrix<float> *samples, size_t *n_samples);
     void setReducedPixels(Matrix<float> * reduced_pixels);
     
@@ -101,16 +102,63 @@ public slots:
     void setLsqSamples(int value);
     void toggleTraceTexture(bool value);
     
-    void metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
-    void metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
-    void metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button);
-    void wheelEvent(QWheelEvent* ev);
+    void mouseMoveEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent* event);
 //    void resizeEvent(QResizeEvent * ev);
     
     
 private:
+    QPointF posGLtoQt(QPointF coord);
+    QPointF posQttoGL(QPointF coord);
+
+    void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
+    Matrix<GLfloat> glRect(QRectF &qt_rect);
+
+    GLuint loadShader(GLenum type, const char *source);
+
+    // Shaders
+    GLint std_2d_tex_fragpos;
+    GLint std_2d_tex_pos;
+    GLint std_2d_tex_texture;
+    GLint std_2d_tex_transform;
+    QOpenGLShaderProgram *std_2d_tex_program;
+
+    GLint rect_hl_2d_tex_fragpos;
+    GLint rect_hl_2d_tex_pos;
+    GLint rect_hl_2d_tex_texture;
+    GLint rect_hl_2d_tex_transform;
+    GLint rect_hl_2d_tex_bounds;
+    GLint rect_hl_2d_tex_pixel_size;
+    QOpenGLShaderProgram *rect_hl_2d_tex_program;
+
+    GLint std_2d_col_color;
+    GLint std_2d_col_transform;
+    GLint std_2d_col_fragpos;
+    QOpenGLShaderProgram *std_2d_col_program;
+
+    GLint std_3d_col_color;
+    GLint std_3d_col_transform;
+    GLint std_3d_col_fragpos;
+    QOpenGLShaderProgram *std_3d_col_program;
+
+    GLint unitcell_color;
+    GLint unitcell_transform;
+    GLint unitcell_fragpos;
+    GLint unitcell_lim_low;
+    GLint unitcell_lim_high;
+    GLint unitcell_u;
+    QOpenGLShaderProgram *unitcell_program;
+
+    GLint std_blend_fragpos;
+    GLint std_blend_texpos;
+    GLint std_blend_tex_a;
+    GLint std_blend_tex_b;
+    GLint std_blend_method;
+    QOpenGLShaderProgram *std_blend_program;
+
     QOpenGLPaintDevice * paint_device_gl;
-    void setOpenCLContext(OpenCLContext * context);
     OpenCLContext *context_cl;
 
     void paintGL();
@@ -478,8 +526,8 @@ private:
 
 
 protected:
-    void initialize();
-    void render(QPainter *painter);
+//    void initiaize();
+//    void render(QPainter *painter);
 };
 
 //class ImagePreviewWindow : public OpenGLWindow

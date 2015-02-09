@@ -1461,12 +1461,12 @@ void MainWindow::initGUI()
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
         
-        imageOpenGLWidget = new ImagePreviewWindow();
-        imageOpenGLWidget->setMultiThreading(true);
-        imageOpenGLWidget->setSharedWindow(sharedContextWindow);
+        imageOpenGLWidget = new ImagePreviewWorker();
+//        imageOpenGLWidget->setMultiThreading(true);
+//        imageOpenGLWidget->setSharedWindow(sharedContextWindow);
         imageOpenGLWidget->setFormat(format_gl);
         imageOpenGLWidget->setOpenCLContext(context_cl);
-        imageOpenGLWidget->initializeWorker();
+//        imageOpenGLWidget->initializeWorker();
         
 //        imageOpenGLWidget = QWidget::createWindowContainer(imagePreviewWindow);
         imageOpenGLWidget->setFocusPolicy(Qt::TabFocus);

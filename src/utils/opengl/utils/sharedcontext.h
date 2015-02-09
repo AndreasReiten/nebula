@@ -28,7 +28,6 @@ public:
     GLint rect_hl_2d_tex_transform;
     GLint rect_hl_2d_tex_bounds;
     GLint rect_hl_2d_tex_pixel_size;
-//    GLint rect_hl_2d_tex_center;
     QOpenGLShaderProgram *rect_hl_2d_tex_program;
     
     GLint std_2d_col_color;

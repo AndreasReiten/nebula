@@ -135,17 +135,161 @@ ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
 
 void ImagePreviewWorker::paintGL()
 {
+    QPainter painter(paint_device_gl);
 
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    beginRawGLCalls(&painter);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+//    const qreal retinaScale = this->devicePixelRatio();
+
+    glViewport(0, 0, this->width(), this->height());
+//    glScissor(0, 0, this->width() * retinaScale, this->height() * retinaScale);
+
+    if(!p_set.isEmpty())
+    {
+        beginRawGLCalls(&painter);
+
+        QRectF image_rect(QPoint(0,0),QSizeF(frame.getFastDimension(), frame.getSlowDimension()));
+        image_rect.moveTopLeft(QPointF((qreal) this->width()*0.5, (qreal) this->height()*0.5));
+
+//        switch(texture_number)
+//        {
+//            case 0:
+        drawImage(image_rect, image_tex_gl, &painter);
+//                break;
+//            case 1:
+//                drawImage(image_rect, trace_tex_gl, painter);
+//                break;
+//        }
+
+
+
+
+        endRawGLCalls(&painter);
+
+        ColorMatrix<float> analysis_area_color(0.0,0,0,0.3);
+        drawSelection(p_set.current()->current()->selection(), &painter, analysis_area_color);
+
+        // Draw trace
+//        if (isSetTraced)
+//        {
+//            beginRawGLCalls(painter);
+
+//            QRectF trace_rect(QPoint(0,0),QSizeF(frame.getFastDimension(), frame.getSlowDimension()));
+//            trace_rect.moveTopLeft(image_rect.topRight() + QPointF(20,0));
+
+//            drawImage(trace_rect,  isSetTraced && isSwapped ? image_tex_gl : trace_tex_gl, painter);
+
+//            endRawGLCalls(painter);
+
+//            ColorMatrix<float> analysis_area_color_trace(0.0,0,0,0.3);
+//            drawSelection(p_set.current()->current()->selection(), painter, analysis_area_color_trace, QPointF(frame.getFastDimension() + 20, 0));
+//        }
+
+        // Draw pixel tootip
+        if (isCorrectionPlaneActive)
+        {
+            drawPlaneMarkerToolTip(&painter);
+        }
+
+        // Draw weight center
+        ColorMatrix<float> analysis_wp_color(0.0,0.0,0.0,1.0);
+        if (isWeightCenterActive) drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
+
+        drawConeEwaldIntersect(&painter);
+        drawPixelToolTip(&painter);
+    }
 }
 
 void ImagePreviewWorker::resizeGL()
 {
-    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
+    if (paint_device_gl) paint_device_gl->setSize(this->size());
 }
 
 void ImagePreviewWorker::intitalizeGL()
 {
     if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice;
+
+    glGenBuffers(5, selections_vbo);
+    glGenBuffers(5, weightpoints_vbo);
+
+    // Shader for drawing textures in 2D
+    std_2d_tex_program = new QOpenGLShaderProgram(this);
+    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_2d_tex.v.glsl");
+    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_2d_tex.f.glsl");
+    if (!std_2d_tex_program->link()) qFatal(std_2d_tex_program->log().toStdString().c_str());
+
+    if ((std_2d_tex_fragpos = std_2d_tex_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_2d_tex_pos = std_2d_tex_program->attributeLocation("texpos")) == -1) qFatal("Invalid attribute");
+    if ((std_2d_tex_texture = std_2d_tex_program->uniformLocation("texture")) == -1) qFatal("Invalid uniform");
+    if ((std_2d_tex_transform = std_2d_tex_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing textures in 2D with a highlighted rectangle
+    rect_hl_2d_tex_program = new QOpenGLShaderProgram(this);
+    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/rect_hl_2d_tex.v.glsl");
+    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/rect_hl_2d_tex.f.glsl");
+    if (!rect_hl_2d_tex_program->link()) qFatal(rect_hl_2d_tex_program->log().toStdString().c_str());
+
+    if ((rect_hl_2d_tex_fragpos = rect_hl_2d_tex_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((rect_hl_2d_tex_pos = rect_hl_2d_tex_program->attributeLocation("texpos")) == -1) qFatal("Invalid attribute");
+    if ((rect_hl_2d_tex_texture = rect_hl_2d_tex_program->uniformLocation("texture")) == -1) qFatal("Invalid uniform");
+    if ((rect_hl_2d_tex_transform = rect_hl_2d_tex_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing lines and similar in 3D
+    std_3d_col_program = new QOpenGLShaderProgram(this);
+    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_3d_col.v.glsl");
+    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_3d_col.f.glsl");
+    if (!std_3d_col_program->link()) qFatal(std_3d_col_program->log().toStdString().c_str());
+
+    if ((std_3d_col_fragpos = std_3d_col_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_3d_col_color = std_3d_col_program->uniformLocation("color")) == -1) qFatal("Invalid uniform");
+    if ((std_3d_col_transform = std_3d_col_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing lines and similar in 2D
+    std_2d_col_program = new QOpenGLShaderProgram(this);
+    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_2d_col.v.glsl");
+    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_2d_col.f.glsl");
+    if (!std_2d_col_program->link()) qFatal(std_2d_col_program->log().toStdString().c_str());
+
+    if ((std_2d_col_fragpos = std_2d_col_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_2d_col_color = std_2d_col_program->uniformLocation("color")) == -1) qFatal("Invalid uniform");
+    if ((std_2d_col_transform = std_2d_col_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+
+    // Shader for blending two textures
+    std_blend_program = new QOpenGLShaderProgram(this);
+    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_blend.v.glsl");
+    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_blend.f.glsl");
+    if (!std_blend_program->link()) qFatal(std_blend_program->log().toStdString().c_str());
+
+    if ((std_blend_fragpos = std_blend_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((std_blend_texpos = std_blend_program->attributeLocation("texpos")) == -1) qFatal("Invalid attribute");
+    if ((std_blend_tex_a = std_blend_program->uniformLocation("texture_alpha")) == -1) qFatal("Invalid uniform");
+    if ((std_blend_tex_b = std_blend_program->uniformLocation("texture_beta")) == -1) qFatal("Invalid uniform");
+    if ((std_blend_method = std_blend_program->uniformLocation("method")) == -1) qFatal("Invalid uniform");
+
+    // Shader for drawing a (reciprocal) unitcell grid
+    unitcell_program = new QOpenGLShaderProgram(this);
+    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/unitcell.v.glsl");
+    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/unitcell.f.glsl");
+    if (!unitcell_program->link()) qFatal(unitcell_program->log().toStdString().c_str());
+
+    if ((unitcell_fragpos = unitcell_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
+    if ((unitcell_color = unitcell_program->uniformLocation("color")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_transform = unitcell_program->uniformLocation("transform")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_u = unitcell_program->uniformLocation("u")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_lim_low = unitcell_program->uniformLocation("lim_low")) == -1) qFatal("Invalid uniform");
+    if ((unitcell_lim_high = unitcell_program->uniformLocation("lim_high")) == -1) qFatal("Invalid uniform");
+}
+
+GLuint ImagePreviewWorker::loadShader(GLenum type, const char *source)
+{
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, 0);
+    glCompileShader(shader);
+    return shader;
 }
 
 ImagePreviewWorker::~ImagePreviewWorker()
@@ -1398,7 +1542,7 @@ void ImagePreviewWorker::analyze(QString str)
                 render(&painter);
             }
             // Force a buffer swap
-            context_gl->swapBuffers(render_surface);
+//            context_gl->swapBuffers(render_surface);
 
             // Math
             Matrix<double> Q = getScatteringVector(frame, p_set.current()->current()->selection().weighted_x(), p_set.current()->current()->selection().weighted_y());
@@ -1462,11 +1606,11 @@ void ImagePreviewWorker::analyze(QString str)
                 // Draw the frame and update the intensity OpenCL buffer prior to further operations
                 setFrame();
                 {
-                    QPainter painter(paint_device_gl);
-                    render(&painter);
+//                    QPainter painter(paint_device_gl);
+//                    render(&painter);
                 }
                 // Force a buffer swap
-                context_gl->swapBuffers(render_surface);
+//                context_gl->swapBuffers(render_surface);
 
 
                 // Math
@@ -2540,13 +2684,13 @@ void ImagePreviewWorker::setTsf(TransferFunction & tsf)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImagePreviewWorker::initialize()
-{
-    initOpenCL();
+//void ImagePreviewWorker::initialize()
+//{
+//    initOpenCL();
 
-    glGenBuffers(5, selections_vbo);
-    glGenBuffers(5, weightpoints_vbo);
-}
+//    glGenBuffers(5, selections_vbo);
+//    glGenBuffers(5, weightpoints_vbo);
+//}
 
 
 void ImagePreviewWorker::setTsfTexture(int value)
@@ -2675,82 +2819,18 @@ void ImagePreviewWorker::endRawGLCalls(QPainter * painter)
     painter->endNativePainting();
 }
 
-void ImagePreviewWorker::render(QPainter *painter)
-{
-    painter->setRenderHint(QPainter::Antialiasing);
-    
-    beginRawGLCalls(painter);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+//void ImagePreviewWorker::render(QPainter *painter)
+//{
 
-    const qreal retinaScale = render_surface->devicePixelRatio();
-
-    glViewport(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
-//    glScissor(0, 0, render_surface->width() * retinaScale, render_surface->height() * retinaScale);
-
-    if(!p_set.isEmpty())
-    {
-        beginRawGLCalls(painter);
-        
-        QRectF image_rect(QPoint(0,0),QSizeF(frame.getFastDimension(), frame.getSlowDimension()));
-        image_rect.moveTopLeft(QPointF((qreal) render_surface->width()*0.5, (qreal) render_surface->height()*0.5));
-        
-//        switch(texture_number)
-//        {
-//            case 0:
-        drawImage(image_rect, image_tex_gl, painter);
-//                break;
-//            case 1:
-//                drawImage(image_rect, trace_tex_gl, painter);
-//                break;
-//        }
-
-        
-        
-
-        endRawGLCalls(painter);
-        
-        ColorMatrix<float> analysis_area_color(0.0,0,0,0.3);
-        drawSelection(p_set.current()->current()->selection(), painter, analysis_area_color);
-
-        // Draw trace
-//        if (isSetTraced)
-//        {
-//            beginRawGLCalls(painter);
-
-//            QRectF trace_rect(QPoint(0,0),QSizeF(frame.getFastDimension(), frame.getSlowDimension()));
-//            trace_rect.moveTopLeft(image_rect.topRight() + QPointF(20,0));
-
-//            drawImage(trace_rect,  isSetTraced && isSwapped ? image_tex_gl : trace_tex_gl, painter);
-
-//            endRawGLCalls(painter);
-            
-//            ColorMatrix<float> analysis_area_color_trace(0.0,0,0,0.3);
-//            drawSelection(p_set.current()->current()->selection(), painter, analysis_area_color_trace, QPointF(frame.getFastDimension() + 20, 0));
-//        }
-        
-        // Draw pixel tootip
-        if (isCorrectionPlaneActive) 
-        {
-            drawPlaneMarkerToolTip(painter);
-        }
-        
-        // Draw weight center
-        ColorMatrix<float> analysis_wp_color(0.0,0.0,0.0,1.0);
-        if (isWeightCenterActive) drawWeightpoint(p_set.current()->current()->selection(), painter, analysis_wp_color);
-        
-        drawConeEwaldIntersect(painter);
-        drawPixelToolTip(painter);
-    }
-}
+//}
 
 void ImagePreviewWorker::drawImage(QRectF rect, GLuint texture, QPainter * painter)
 {
 
 
-    shared_window->std_2d_tex_program->bind();
+    std_2d_tex_program->bind();
 
-    shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
+    std_2d_tex_program->setUniformValue(std_2d_tex_texture, 0);
 
     GLfloat texpos[] = {
         0.0, 0.0,
@@ -2763,7 +2843,7 @@ void ImagePreviewWorker::drawImage(QRectF rect, GLuint texture, QPainter * paint
 
     texture_view_matrix = zoom_matrix*translation_matrix;
 
-    glUniformMatrix4fv(shared_window->std_2d_tex_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_2d_tex_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
     
 
 
@@ -2776,42 +2856,68 @@ void ImagePreviewWorker::drawImage(QRectF rect, GLuint texture, QPainter * paint
 //    bounds[2] = (double) (p_set.current()->current()->selection().x()+p_set.current()->current()->selection().width()) / (double) frame.getFastDimension();
 //    bounds[3] = 1.0 - (double) (p_set.current()->current()->selection().top()) / (double) frame.getSlowDimension();
     
-//    glUniform4fv(shared_window->std_2d_tex_bounds, 1, bounds.toFloat().data());
+//    glUniform4fv(std_2d_tex_bounds, 1, bounds.toFloat().data());
     
     // Set the size of a pixel (in image units)
 //    GLfloat pixel_size = (1.0f / (float) frame.getFastDimension()) / zoom_matrix[0];
     
-//    glUniform1f(shared_window->std_2d_tex_pixel_size, pixel_size);
+//    glUniform1f(std_2d_tex_pixel_size, pixel_size);
     
-    glEnableVertexAttribArray(shared_window->std_2d_tex_fragpos);
-    glEnableVertexAttribArray(shared_window->std_2d_tex_pos);
+    glEnableVertexAttribArray(std_2d_tex_fragpos);
+    glEnableVertexAttribArray(std_2d_tex_pos);
 
     Matrix<GLfloat> fragpos;
 
     // Draw image
     glBindTexture(GL_TEXTURE_2D, texture);
     fragpos = glRect(rect);
-    glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos.data());
-    glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+    glVertexAttribPointer(std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos.data());
+    glVertexAttribPointer(std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
     glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-    glDisableVertexAttribArray(shared_window->std_2d_tex_pos);
-    glDisableVertexAttribArray(shared_window->std_2d_tex_fragpos);
+    glDisableVertexAttribArray(std_2d_tex_pos);
+    glDisableVertexAttribArray(std_2d_tex_fragpos);
 
-    shared_window->std_2d_tex_program->release();
+    std_2d_tex_program->release();
 
 //    endRawGLCalls(painter);
 }
 
+Matrix<GLfloat> ImagePreviewWorker::glRect(QRectF & qt_rect)
+{
+    Matrix<GLfloat> gl_rect(1,8);
+
+    qreal x,y,w,h;
+    qreal xf,yf,wf,hf;
+    qt_rect = qt_rect.normalized();
+    qt_rect.getRect(&x, &y, &w, &h);
+
+    xf = (x / (qreal) this->width()) * 2.0 - 1.0;
+    yf = 1.0 - (y + h)/ (qreal) this->height() * 2.0;
+    wf = (w / (qreal) this->width()) * 2.0;
+    hf = (h / (qreal) this->height()) * 2.0;
+
+    gl_rect[0] = (GLfloat) xf;
+    gl_rect[1] = (GLfloat) yf;
+    gl_rect[2] = (GLfloat) xf + wf;
+    gl_rect[3] = (GLfloat) yf;
+    gl_rect[4] = (GLfloat) xf + wf;
+    gl_rect[5] = (GLfloat) yf + hf;
+    gl_rect[6] = (GLfloat) xf;
+    gl_rect[7] = (GLfloat) yf + hf;
+
+    return gl_rect;
+}
+
 void ImagePreviewWorker::centerImage()
 {
-    translation_matrix[3] = (qreal) -frame.getFastDimension()/( (qreal) render_surface->width());
-    translation_matrix[7] = (qreal) frame.getSlowDimension()/( (qreal) render_surface->height());
+    translation_matrix[3] = (qreal) -frame.getFastDimension()/( (qreal) this->width());
+    translation_matrix[7] = (qreal) frame.getSlowDimension()/( (qreal) this->height());
     
-    zoom_matrix[0] = (qreal) render_surface->width() / (qreal) frame.getFastDimension();
-    zoom_matrix[5] = (qreal) render_surface->width() / (qreal) frame.getFastDimension();
-    zoom_matrix[10] = (qreal) render_surface->width() / (qreal) frame.getFastDimension();
+    zoom_matrix[0] = (qreal) this->width() / (qreal) frame.getFastDimension();
+    zoom_matrix[5] = (qreal) this->width() / (qreal) frame.getFastDimension();
+    zoom_matrix[10] = (qreal) this->width() / (qreal) frame.getFastDimension();
 }
 
 
@@ -2821,17 +2927,17 @@ void ImagePreviewWorker::drawSelection(Selection area, QPainter *painter, Matrix
 {
 //    glLineWidth(2.0);
 
-    float selection_left = (((qreal) area.left() + 0.5*render_surface->width() + offset.x()) / (qreal) render_surface->width()) * 2.0 - 1.0; // Left
-    float selection_right = (((qreal) area.x() + area.width()  + 0.5*render_surface->width() + offset.x())/ (qreal) render_surface->width()) * 2.0 - 1.0; // Right
+    float selection_left = (((qreal) area.left() + 0.5*this->width() + offset.x()) / (qreal) this->width()) * 2.0 - 1.0; // Left
+    float selection_right = (((qreal) area.x() + area.width()  + 0.5*this->width() + offset.x())/ (qreal) this->width()) * 2.0 - 1.0; // Right
     
-    float selection_top = (1.0 - (qreal) (area.top() + 0.5*render_surface->height() + offset.y())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Top
-    float selection_bot = (1.0 - (qreal) (area.y() + area.height() + 0.5*render_surface->height() + offset.y())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Bottom
+    float selection_top = (1.0 - (qreal) (area.top() + 0.5*this->height() + offset.y())/ (qreal) this->height()) * 2.0 - 1.0; // Top
+    float selection_bot = (1.0 - (qreal) (area.y() + area.height() + 0.5*this->height() + offset.y())/ (qreal) this->height()) * 2.0 - 1.0; // Bottom
     
-    float frame_left = (((qreal) -4 + 0.5*render_surface->width() + offset.x()) / (qreal) render_surface->width()) * 2.0 - 1.0; // Left
-    float frame_right = (((qreal) frame.getFastDimension() + 4  + 0.5*render_surface->width() + offset.x())/ (qreal) render_surface->width()) * 2.0 - 1.0; // Right
+    float frame_left = (((qreal) -4 + 0.5*this->width() + offset.x()) / (qreal) this->width()) * 2.0 - 1.0; // Left
+    float frame_right = (((qreal) frame.getFastDimension() + 4  + 0.5*this->width() + offset.x())/ (qreal) this->width()) * 2.0 - 1.0; // Right
     
-    float frame_top = (1.0 - (qreal) (-4 + 0.5*render_surface->height() + offset.y())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Top
-    float frame_bot = (1.0 - (qreal) (frame.getSlowDimension() + 4 + 0.5*render_surface->height() + offset.y())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Bottom
+    float frame_top = (1.0 - (qreal) (-4 + 0.5*this->height() + offset.y())/ (qreal) this->height()) * 2.0 - 1.0; // Top
+    float frame_bot = (1.0 - (qreal) (frame.getSlowDimension() + 4 + 0.5*this->height() + offset.y())/ (qreal) this->height()) * 2.0 - 1.0; // Bottom
     
     // Points
     Matrix<GLfloat> point(8,2);
@@ -2859,46 +2965,54 @@ void ImagePreviewWorker::drawSelection(Selection area, QPainter *painter, Matrix
 
     beginRawGLCalls(painter);
 
-    shared_window->std_2d_col_program->bind();
-    glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
+    std_2d_col_program->bind();
+    glEnableVertexAttribArray(std_2d_col_fragpos);
 
-    glUniform4fv(shared_window->std_2d_col_color, 1, color.data());
+    glUniform4fv(std_2d_col_color, 1, color.data());
 
     glBindBuffer(GL_ARRAY_BUFFER, selections_vbo[0]);
-    glVertexAttribPointer(shared_window->std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     texture_view_matrix = zoom_matrix*translation_matrix;
 
-    glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
     
     
 //    GLuint indices[] = {0,1,3,2,0, 4,6,7,5,4,0};
     GLuint indices[] = {0,1,4, 1,4,5, 1,3,5, 3,5,7, 2,3,7, 2,6,7, 0,2,6, 0,4,6};
     glDrawElements(GL_TRIANGLES,  3*8, GL_UNSIGNED_INT, indices);
 
-    glDisableVertexAttribArray(shared_window->std_2d_col_fragpos);
+    glDisableVertexAttribArray(std_2d_col_fragpos);
 
-    shared_window->std_2d_col_program->release();
+    std_2d_col_program->release();
 
     endRawGLCalls(painter);
 }
+
+void ImagePreviewWorker::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, usage);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 
 //void ImagePreviewWorker::drawPlaneMarker(QList<Selection> marker, QPainter *painter, QPoint offset)
 //{
 //    beginRawGLCalls(painter);
 
-//    shared_window->std_2d_col_program->bind();
+//    std_2d_col_program->bind();
     
-//    glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
+//    glEnableVertexAttribArray(std_2d_col_fragpos);
     
 //    for (int i = 0; i < n_lsq_samples; i++)
 //    {
-//        float selection_left = (((qreal) marker[i].left() + offset.x() + 0.5*render_surface->width()) / (qreal) render_surface->width()) * 2.0 - 1.0; // Left
-//        float selection_right = (((qreal) marker[i].x() + offset.x() + marker[i].width()  + 0.5*render_surface->width())/ (qreal) render_surface->width()) * 2.0 - 1.0; // Right
+//        float selection_left = (((qreal) marker[i].left() + offset.x() + 0.5*this->width()) / (qreal) this->width()) * 2.0 - 1.0; // Left
+//        float selection_right = (((qreal) marker[i].x() + offset.x() + marker[i].width()  + 0.5*this->width())/ (qreal) this->width()) * 2.0 - 1.0; // Right
         
-//        float selection_top = (1.0 - (qreal) (marker[i].top() + offset.y() + 0.5*render_surface->height())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Top
-//        float selection_bot = (1.0 - (qreal) (marker[i].y() + offset.y() + marker[i].height() + 0.5*render_surface->height())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Bottom
+//        float selection_top = (1.0 - (qreal) (marker[i].top() + offset.y() + 0.5*this->height())/ (qreal) this->height()) * 2.0 - 1.0; // Top
+//        float selection_bot = (1.0 - (qreal) (marker[i].y() + offset.y() + marker[i].height() + 0.5*this->height())/ (qreal) this->height()) * 2.0 - 1.0; // Bottom
         
 //        // Points
 //        Matrix<GLfloat> point(4,2);
@@ -2916,23 +3030,23 @@ void ImagePreviewWorker::drawSelection(Selection area, QPainter *painter, Matrix
     
 //        ColorMatrix<float> color(0,0,0,0.9);
         
-//        glUniform4fv(shared_window->std_2d_col_color, 1, color.data());
+//        glUniform4fv(std_2d_col_color, 1, color.data());
     
 //        glBindBuffer(GL_ARRAY_BUFFER, selections_vbo[0]);
-//        glVertexAttribPointer(shared_window->std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//        glVertexAttribPointer(std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
 //        glBindBuffer(GL_ARRAY_BUFFER, 0);
     
 //        texture_view_matrix = zoom_matrix*translation_matrix;
     
-//        glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
+//        glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
         
 //        GLuint indices[] = {0,1,2, 1,2,3};
 //        glDrawElements(GL_TRIANGLES,  3*2, GL_UNSIGNED_INT, indices);
 //    }
     
-//    glDisableVertexAttribArray(shared_window->std_2d_col_fragpos);
+//    glDisableVertexAttribArray(std_2d_col_fragpos);
 
-//    shared_window->std_2d_col_program->release();
+//    std_2d_col_program->release();
 
 //    endRawGLCalls(painter);
 //}
@@ -2944,13 +3058,13 @@ void ImagePreviewWorker::drawWeightpoint(Selection area, QPainter *painter, Matr
     
     glLineWidth(2.5);
 
-    float x0 = (((qreal) area.left() + 0.5*render_surface->width()) / (qreal) render_surface->width()) * 2.0 - 1.0; // Left
-    float x2 = (((qreal) area.x() + area.width()  + 0.5*render_surface->width())/ (qreal) render_surface->width()) * 2.0 - 1.0; // Right
-    float x1 = (((qreal) area.weighted_x()  + 0.5*render_surface->width())/ (qreal) render_surface->width()) * 2.0 - 1.0; // Center
+    float x0 = (((qreal) area.left() + 0.5*this->width()) / (qreal) this->width()) * 2.0 - 1.0; // Left
+    float x2 = (((qreal) area.x() + area.width()  + 0.5*this->width())/ (qreal) this->width()) * 2.0 - 1.0; // Right
+    float x1 = (((qreal) area.weighted_x()  + 0.5*this->width())/ (qreal) this->width()) * 2.0 - 1.0; // Center
     
-    float y0 = (1.0 - (qreal) (area.top() + 0.5*render_surface->height())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Top
-    float y2 = (1.0 - (qreal) (area.y() + area.height() + 0.5*render_surface->height())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Bottom
-    float y1 = (1.0 - (qreal) (area.weighted_y() + 0.5*render_surface->height())/ (qreal) render_surface->height()) * 2.0 - 1.0; // Center 
+    float y0 = (1.0 - (qreal) (area.top() + 0.5*this->height())/ (qreal) this->height()) * 2.0 - 1.0; // Top
+    float y2 = (1.0 - (qreal) (area.y() + area.height() + 0.5*this->height())/ (qreal) this->height()) * 2.0 - 1.0; // Bottom
+    float y1 = (1.0 - (qreal) (area.weighted_y() + 0.5*this->height())/ (qreal) this->height()) * 2.0 - 1.0; // Center
     
     float x_offset = (x2 - x0)*0.02;
     float y_offset = (y2 - y0)*0.02;
@@ -2982,24 +3096,24 @@ void ImagePreviewWorker::drawWeightpoint(Selection area, QPainter *painter, Matr
 
     beginRawGLCalls(painter);
 
-    shared_window->std_2d_col_program->bind();
-    glEnableVertexAttribArray(shared_window->std_2d_col_fragpos);
+    std_2d_col_program->bind();
+    glEnableVertexAttribArray(std_2d_col_fragpos);
 
-    glUniform4fv(shared_window->std_2d_col_color, 1, color.data());
+    glUniform4fv(std_2d_col_color, 1, color.data());
 
     glBindBuffer(GL_ARRAY_BUFFER, weightpoints_vbo[0]);
-    glVertexAttribPointer(shared_window->std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     texture_view_matrix = zoom_matrix*translation_matrix;
 
-    glUniformMatrix4fv(shared_window->std_2d_col_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
 
     glDrawArrays(GL_LINES,  0, 8);
 
-    glDisableVertexAttribArray(shared_window->std_2d_col_fragpos);
+    glDisableVertexAttribArray(std_2d_col_fragpos);
 
-    shared_window->std_2d_col_program->release();
+    std_2d_col_program->release();
 
     endRawGLCalls(painter);
 }
@@ -3056,8 +3170,8 @@ void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
 //    qDebug() << "---" << pos;
     
     Matrix<double> screen_pixel_pos(4,1,0); // Uses GL coordinates
-    screen_pixel_pos[0] = 2.0 * (double) pos.x()/(double) render_surface->width() - 1.0;
-    screen_pixel_pos[1] = 2.0 * (1.0 - (double) pos.y()/(double) render_surface->height()) - 1.0;
+    screen_pixel_pos[0] = 2.0 * (double) pos.x()/(double) this->width() - 1.0;
+    screen_pixel_pos[1] = 2.0 * (1.0 - (double) pos.y()/(double) this->height()) - 1.0;
     screen_pixel_pos[2] = 0;
     screen_pixel_pos[3] = 1.0;
     
@@ -3068,8 +3182,8 @@ void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
 //    screen_pixel_pos.print(1);
 //    image_pixel_pos.print(1);
     
-    double pixel_x = image_pixel_pos[0] * render_surface->width() * 0.5;
-    double pixel_y = - image_pixel_pos[1] * render_surface->height() * 0.5;
+    double pixel_x = image_pixel_pos[0] * this->width() * 0.5;
+    double pixel_y = - image_pixel_pos[1] * this->height() * 0.5;
     
 //    qDebug() << pixel_x << pixel_y;
     
@@ -3153,9 +3267,9 @@ void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
     
     
     // Define the area assigned to displaying the tooltip
-    QRect area = fm.boundingRect (render_surface->geometry(), Qt::AlignLeft, tip);
+    QRect area = fm.boundingRect (this->geometry(), Qt::AlignLeft, tip);
     
-    area.moveBottomLeft(QPoint(5,render_surface->height()-5));
+    area.moveBottomLeft(QPoint(5,this->height()-5));
     
     area += QMargins(2,2,2,2);
     painter->drawRect(area);
@@ -3171,15 +3285,15 @@ void ImagePreviewWorker::drawConeEwaldIntersect(QPainter *painter)
     Matrix<double> beam_image_pos(4,1,0);
     Matrix<double> beam_screen_pos(4,1,0);
     
-    beam_image_pos[0] = 2.0 * (frame.getFastDimension() - frame.getBeamY()) / render_surface->width(); /* DANGER */
-    beam_image_pos[1] = - 2.0 * (frame.getSlowDimension() - frame.getBeamX()) / render_surface->height(); /* DANGER */
+    beam_image_pos[0] = 2.0 * (frame.getFastDimension() - frame.getBeamY()) / this->width(); /* DANGER */
+    beam_image_pos[1] = - 2.0 * (frame.getSlowDimension() - frame.getBeamX()) / this->height(); /* DANGER */
     beam_image_pos[2] = 0;
     beam_image_pos[3] = 1.0;
     
     beam_screen_pos = texture_view_matrix * beam_image_pos; 
     
-    beam_screen_pos[0] = (beam_screen_pos[0] + 1.0)*0.5*render_surface->width();
-    beam_screen_pos[1] = (-(beam_screen_pos[1] + 1.0)*0.5 + 1.0)*render_surface->height(); 
+    beam_screen_pos[0] = (beam_screen_pos[0] + 1.0)*0.5*this->width();
+    beam_screen_pos[1] = (-(beam_screen_pos[1] + 1.0)*0.5 + 1.0)*this->height();
     
     double radius = sqrt(pow(beam_screen_pos[0] - pos.x(), 2.0) + pow(beam_screen_pos[1] - pos.y(), 2.0)); 
     
@@ -3208,8 +3322,8 @@ void ImagePreviewWorker::drawPlaneMarkerToolTip(QPainter *painter)
         painter->setBrush(brush);
         
         QPointF text_pos_gl = posQttoGL(QPointF(
-                            (float)marker.at(i).topLeft().x() + (float) render_surface->width()*0.5,
-                            (float)marker.at(i).topLeft().y() + (float) render_surface->height()*0.5));
+                            (float)marker.at(i).topLeft().x() + (float) this->width()*0.5,
+                            (float)marker.at(i).topLeft().y() + (float) this->height()*0.5));
         Matrix<double> pos_gl(4,1);
         pos_gl[0] = text_pos_gl.x();
         pos_gl[1] = text_pos_gl.y();
@@ -3221,8 +3335,8 @@ void ImagePreviewWorker::drawPlaneMarkerToolTip(QPainter *painter)
         QPointF topleft_text_pos_qt = posGLtoQt(QPointF(pos_gl[0]/pos_gl[3],pos_gl[1]/pos_gl[3]));
 
         text_pos_gl = posQttoGL(QPointF(
-                            (float)marker.at(i).bottomRight().x() + (float) render_surface->width()*0.5,
-                            (float)marker.at(i).bottomRight().y() + (float) render_surface->height()*0.5));
+                            (float)marker.at(i).bottomRight().x() + (float) this->width()*0.5,
+                            (float)marker.at(i).bottomRight().y() + (float) this->height()*0.5));
         pos_gl[0] = text_pos_gl.x();
         pos_gl[1] = text_pos_gl.y();
         pos_gl[2] = 0;
@@ -3246,8 +3360,8 @@ void ImagePreviewWorker::drawPlaneMarkerToolTip(QPainter *painter)
 //        if (isSetTraced)
 //        {
 //            text_pos_gl = posQttoGL(QPointF(
-//                                (float)marker.at(i).topLeft().x() + (float) render_surface->width()*0.5 + frame.getFastDimension() + 20,
-//                                (float)marker.at(i).topLeft().y() + (float) render_surface->height()*0.5));
+//                                (float)marker.at(i).topLeft().x() + (float) this->width()*0.5 + frame.getFastDimension() + 20,
+//                                (float)marker.at(i).topLeft().y() + (float) this->height()*0.5));
 //            pos_gl[0] = text_pos_gl.x();
 //            pos_gl[1] = text_pos_gl.y();
 //            pos_gl[2] = 0;
@@ -3266,6 +3380,23 @@ void ImagePreviewWorker::drawPlaneMarkerToolTip(QPainter *painter)
 
 }
 
+QPointF ImagePreviewWorker::posGLtoQt(QPointF coord)
+{
+    QPointF QtPoint;
+
+    QtPoint.setX(0.5 * (float)this->width() * (coord.x()+1.0) - 1.0);
+    QtPoint.setY(0.5 * (float)this->height() * (1.0-coord.y()) - 1.0);
+
+    return QtPoint;
+}
+
+QPointF ImagePreviewWorker::posQttoGL(QPointF coord)
+{
+    QPointF GLPoint;
+    GLPoint.setX((coord.x()+1.0)/(float) (this->width())*2.0-1.0);
+    GLPoint.setY((1.0 - (coord.y()+1.0)/(float) this->height())*2.0-1.0);
+    return GLPoint;
+}
 
 void ImagePreviewWorker::setMode(int value)
 {
@@ -3378,8 +3509,8 @@ QPoint ImagePreviewWorker::getImagePixel(QPoint pos)
 {
     // Find the OpenGL coordinate of the cursor
     Matrix<double> screen_pos_gl(4,1); 
-    screen_pos_gl[0] = 2.0 * (double) pos.x() / (double) render_surface->width() - 1.0;
-    screen_pos_gl[1] = - 2.0 * (double) pos.y() / (double) render_surface->height() + 1.0;
+    screen_pos_gl[0] = 2.0 * (double) pos.x() / (double) this->width() - 1.0;
+    screen_pos_gl[1] = - 2.0 * (double) pos.y() / (double) this->height() + 1.0;
     screen_pos_gl[2] = 0;
     screen_pos_gl[3] = 1.0;
     
@@ -3389,9 +3520,9 @@ QPoint ImagePreviewWorker::getImagePixel(QPoint pos)
     
     QPoint image_pixel;
     
-    image_pixel.setX(0.5*image_pos_gl[0]*render_surface->width());
-//    image_pixel.setX((int)(0.5*image_pos_gl[0]*render_surface->width())%(frame.getFastDimension()+20)); // Modulo 
-    image_pixel.setY(-0.5*image_pos_gl[1]*render_surface->height());
+    image_pixel.setX(0.5*image_pos_gl[0]*this->width());
+//    image_pixel.setX((int)(0.5*image_pos_gl[0]*this->width())%(frame.getFastDimension()+20)); // Modulo
+    image_pixel.setY(-0.5*image_pos_gl[1]*this->height());
     
     if (image_pixel.x() < 0) image_pixel.setX(0);
     if (image_pixel.x() >= frame.getFastDimension()) image_pixel.setX(frame.getFastDimension() - 1);
@@ -3402,21 +3533,19 @@ QPoint ImagePreviewWorker::getImagePixel(QPoint pos)
     return image_pixel;
 }
 
-void ImagePreviewWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+void ImagePreviewWorker::mouseMoveEvent(QMouseEvent * event)
 {
-    Q_UNUSED(mid_button);
-    Q_UNUSED(right_button);
-    Q_UNUSED(ctrl_button);
+//    (int)ev->x(), (int)ev->y(), (int)(ev->buttons() & Qt::LeftButton), (int)(ev->buttons() & Qt::MidButton), (int)(ev->buttons() & Qt::RightButton), (int)(ev->modifiers() & Qt::ControlModifier), (int)(ev->modifiers() & Qt::ShiftModifier)
 
     if (!isFrameValid) return;
 
     float move_scaling = 1.0;
     
-    pos = QPoint(x,y);
+    pos = event->pos();
 
-    if (left_button)
+    if ((event->buttons() & Qt::LeftButton))
     {
-        if (shift_button)
+        if ((event->modifiers() & Qt::ShiftModifier))
         {
             Selection analysis_area = p_set.current()->current()->selection();
             
@@ -3430,7 +3559,7 @@ void ImagePreviewWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             
             p_set.current()->current()->setSelection(analysis_area);
         }
-        else if (ctrl_button)
+        else if ((event->modifiers() & Qt::ControlModifier))
         {
             Selection analysis_area = p_set.current()->current()->selection();
             
@@ -3465,8 +3594,8 @@ void ImagePreviewWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
 
             if (!isSomethingSelected)
             {
-                double dx = (pos.x() - prev_pos.x())*2.0/(render_surface->width()*zoom_matrix[0]);
-                double dy = -(pos.y() - prev_pos.y())*2.0/(render_surface->height()*zoom_matrix[0]);
+                double dx = (pos.x() - prev_pos.x())*2.0/(this->width()*zoom_matrix[0]);
+                double dy = -(pos.y() - prev_pos.y())*2.0/(this->height()*zoom_matrix[0]);
 
                 translation_matrix[3] += dx*move_scaling;
                 translation_matrix[7] += dy*move_scaling;
@@ -3477,23 +3606,18 @@ void ImagePreviewWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
     prev_pos = pos;
 }
 
-void ImagePreviewWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+void ImagePreviewWorker::mousePressEvent(QMouseEvent *event)
 {
-    Q_UNUSED(mid_button);
-    Q_UNUSED(right_button);
-    Q_UNUSED(ctrl_button);
-    Q_UNUSED(shift_button);
-    
     if (!isFrameValid) return;
 
-    pos = QPoint(x,y);
+    pos = event->pos();
     
-    if (!shift_button && left_button)
+    if (!(event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
     {
         //Position
         Matrix<double> screen_pixel_pos(4,1,0); // Uses GL coordinates
-        screen_pixel_pos[0] = 2.0 * (double) pos.x()/(double) render_surface->width() - 1.0;
-        screen_pixel_pos[1] = 2.0 * (1.0 - (double) pos.y()/(double) render_surface->height()) - 1.0;
+        screen_pixel_pos[0] = 2.0 * (double) pos.x()/(double) this->width() - 1.0;
+        screen_pixel_pos[1] = 2.0 * (1.0 - (double) pos.y()/(double) this->height()) - 1.0;
         screen_pixel_pos[2] = 0;
         screen_pixel_pos[3] = 1.0;
 
@@ -3501,8 +3625,8 @@ void ImagePreviewWorker::metaMousePressEvent(int x, int y, int left_button, int 
 
         image_pixel_pos = texture_view_matrix.inverse4x4() * screen_pixel_pos;
 
-        double pixel_x = image_pixel_pos[0] * render_surface->width() * 0.5;
-        double pixel_y = - image_pixel_pos[1] * render_surface->height() * 0.5;
+        double pixel_x = image_pixel_pos[0] * this->width() * 0.5;
+        double pixel_y = - image_pixel_pos[1] * this->height() * 0.5;
 
         if (pixel_x < 0) pixel_x = 0;
         if (pixel_y < 0) pixel_y = 0;
@@ -3522,7 +3646,7 @@ void ImagePreviewWorker::metaMousePressEvent(int x, int y, int left_button, int 
 
         p_set.current()->current()->setPlaneMarkerTest(marker);
     }
-    else if (shift_button && left_button)
+    else if ((event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
     {
         Selection analysis_area = p_set.current()->current()->selection();
         
@@ -3540,19 +3664,14 @@ void ImagePreviewWorker::metaMousePressEvent(int x, int y, int left_button, int 
 
 }
 
-void ImagePreviewWorker::metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+void ImagePreviewWorker::mouseReleaseEvent(QMouseEvent *event)
 {
-    Q_UNUSED(mid_button);
-    Q_UNUSED(right_button);
-    Q_UNUSED(ctrl_button);
-    Q_UNUSED(shift_button);
-
     if (!isFrameValid) return;
 
-    pos = QPoint(x,y);
+    pos =  event->pos();
     
     // A bit overkill to set shit on mouse release as well as mouse move
-    if (shift_button && left_button)
+    if ((event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
     {
         Selection analysis_area = p_set.current()->current()->selection();
         
@@ -3566,7 +3685,7 @@ void ImagePreviewWorker::metaMouseReleaseEvent(int x, int y, int left_button, in
         
         p_set.current()->current()->setSelection(analysis_area);
     }
-    else if(ctrl_button && left_button)
+    else if((event->modifiers() & Qt::ControlModifier) && (event->buttons() & Qt::LeftButton))
     {
         Selection analysis_area = p_set.current()->current()->selection();
         
@@ -3595,36 +3714,36 @@ void ImagePreviewWorker::metaMouseReleaseEvent(int x, int y, int left_button, in
     refreshDisplay();
 }   
 
-void ImagePreviewWindow::keyPressEvent(QKeyEvent *ev)
-{
+//void ImagePreviewWindow::keyPressEvent(QKeyEvent *ev)
+//{
     // This is an example of letting the QWindow take care of event handling. In all fairness, only swapbuffers and heavy work (OpenCL and calculations) need to be done in a separate thread. 
     //Currently bugged somehow. A signal to the worker appears to block further key events.
 //    qDebug() << "Press key " << ev->key();
 
 
-    if (ev->key() == Qt::Key_Shift) 
-    {
-        emit selectionActiveChanged(true);
-    }
-}
+//    if (ev->key() == Qt::Key_Shift)
+//    {
+//        emit selectionActiveChanged(true);
+//    }
+//}
 
-void ImagePreviewWindow::keyReleaseEvent(QKeyEvent *ev)
-{
-//    qDebug() << "Release key " << ev->key();
-    if (ev->key() == Qt::Key_Shift) 
-    {
-        emit selectionActiveChanged(false);
-    }
-}
+//void ImagePreviewWindow::keyReleaseEvent(QKeyEvent *ev)
+//{
+////    qDebug() << "Release key " << ev->key();
+//    if (ev->key() == Qt::Key_Shift)
+//    {
+//        emit selectionActiveChanged(false);
+//    }
+//}
 
-void ImagePreviewWorker::wheelEvent(QWheelEvent* ev)
+void ImagePreviewWorker::wheelEvent(QWheelEvent* event)
 {
 
     float move_scaling = 1.0;
-    if(ev->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
-    else if(ev->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
+    if(event->modifiers() & Qt::ShiftModifier) move_scaling = 5.0;
+    else if(event->modifiers() & Qt::ControlModifier) move_scaling = 0.2;
 
-    double delta = move_scaling*((double)ev->delta())*0.0008;
+    double delta = move_scaling*((double)event->delta())*0.0008;
 
     if ((zoom_matrix[0] + zoom_matrix[0]*delta < 256))// && (isRendering == false))
     {
@@ -3637,8 +3756,8 @@ void ImagePreviewWorker::wheelEvent(QWheelEvent* ev)
          * */
 
         // Translate cursor position to middle
-        double dx = -(ev->x() - render_surface->width()*0.5)*2.0/(render_surface->width()*zoom_matrix[0]);
-        double dy = -((render_surface->height() - ev->y()) - render_surface->height()*0.5)*2.0/(render_surface->height()*zoom_matrix[0]);
+        double dx = -(event->x() - this->width()*0.5)*2.0/(this->width()*zoom_matrix[0]);
+        double dy = -((this->height() - event->y()) - this->height()*0.5)*2.0/(this->height()*zoom_matrix[0]);
 
         translation_matrix[3] += dx;
         translation_matrix[7] += dy;
@@ -3661,86 +3780,86 @@ void ImagePreviewWorker::wheelEvent(QWheelEvent* ev)
 //{
 //    Q_UNUSED(ev);
 
-//    if (paint_device_gl) paint_device_gl->setSize(render_surface->size());
+//    if (paint_device_gl) paint_device_gl->setSize(this->size());
 //}
 
-ImagePreviewWindow::ImagePreviewWindow()
-    : isInitialized(false)
-    , gl_worker(0)
-{
+//ImagePreviewWindow::ImagePreviewWindow()
+//    : isInitialized(false)
+//    , gl_worker(0)
+//{
 
-}
-ImagePreviewWindow::~ImagePreviewWindow()
-{
+//}
+//ImagePreviewWindow::~ImagePreviewWindow()
+//{
 
-}
+//}
 
-void ImagePreviewWindow::setSharedWindow(SharedContextWindow * window)
-{
-    this->shared_window = window;
-    shared_context = window->getGLContext();
-}
-ImagePreviewWorker * ImagePreviewWindow::worker()
-{
-    return gl_worker;
-}
+//void ImagePreviewWindow::setSharedWindow(SharedContextWindow * window)
+//{
+//    this->shared_window = window;
+//    shared_context = window->getGLContext();
+//}
+//ImagePreviewWorker * ImagePreviewWindow::worker()
+//{
+//    return gl_worker;
+//}
 
-void ImagePreviewWindow::initializeWorker()
-{
-    initializeGLContext();
+//void ImagePreviewWindow::initializeWorker()
+//{
+//    initializeGLContext();
 
-    gl_worker = new ImagePreviewWorker;
-    gl_worker->setRenderSurface(this);
-    gl_worker->setOpenGLContext(context_gl);
-    gl_worker->setOpenCLContext(context_cl);
-    gl_worker->setSharedWindow(shared_window);
-    gl_worker->setMultiThreading(isThreaded);
+//    gl_worker = new ImagePreviewWorker;
+//    gl_worker->setRenderSurface(this);
+//    gl_worker->setOpenGLContext(context_gl);
+//    gl_worker->setOpenCLContext(context_cl);
+//    gl_worker->setSharedWindow(shared_window);
+//    gl_worker->setMultiThreading(isThreaded);
 
-    if (isThreaded)
-    {
-        // Set up worker thread
-        gl_worker->moveToThread(worker_thread);
-        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-        connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
-        connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
+//    if (isThreaded)
+//    {
+//        // Set up worker thread
+//        gl_worker->moveToThread(worker_thread);
+//        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
+//        connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
+//        connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
 
-        // Transfering mouse events
-        connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
-        connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
-        connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
-        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));
-        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
+//        // Transfering mouse events
+//        connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
+//        connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
+//        connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
+//        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));
+//        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
         
-        emit render(); // A call to render is necessary to make sure initialize() is callled
-    }
+//        emit render(); // A call to render is necessary to make sure initialize() is callled
+//    }
 
-    isInitialized = true;
-}
+//    isInitialized = true;
+//}
 
-void ImagePreviewWindow::renderNow()
-{
+//void ImagePreviewWindow::renderNow()
+//{
     
-    if (!isExposed())
-    {
-        emit stopRendering();
-        return;
-    }
-    else if (!isWorkerBusy)
-    {
-        if (!isInitialized) initializeWorker();
+//    if (!isExposed())
+//    {
+//        emit stopRendering();
+//        return;
+//    }
+//    else if (!isWorkerBusy)
+//    {
+//        if (!isInitialized) initializeWorker();
 
-        if (gl_worker)
-        {
-            if (isThreaded)
-            {
-                isWorkerBusy = true;
-                worker_thread->start(); // Reaching this point will activate the thread
-                emit render();
-            }
-        }
-    }
-    renderLater();
-}
+//        if (gl_worker)
+//        {
+//            if (isThreaded)
+//            {
+//                isWorkerBusy = true;
+//                worker_thread->start(); // Reaching this point will activate the thread
+//                emit render();
+//            }
+//        }
+//    }
+//    renderLater();
+//}
 
 //SeriesToolShed::SeriesToolShed()
 //{
@@ -3795,7 +3914,7 @@ void ImagePreviewWorker::takeScreenShot(QString path)
     format.setTextureTarget(GL_TEXTURE_2D);
     format.setInternalTextureFormat(GL_RGBA32F);
 
-    QOpenGLFramebufferObject buffy(render_surface->width(), render_surface->height(), format);
+    QOpenGLFramebufferObject buffy(this->width(), this->height(), format);
 
     buffy.bind();
     
@@ -3834,16 +3953,16 @@ void ImagePreviewWorker::saveImage(QString path)
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    const qreal retinaScale = render_surface->devicePixelRatio();
+    const qreal retinaScale = this->devicePixelRatio();
 
     glViewport(0, 0, frame.getFastDimension() * retinaScale, frame.getSlowDimension() * retinaScale);
 //    glScissor(0, 0, frame.getFastDimension() * retinaScale, frame.getSlowDimension() * retinaScale);
 
     if(!p_set.isEmpty())
     {
-        shared_window->std_2d_tex_program->bind();
+        std_2d_tex_program->bind();
     
-        shared_window->std_2d_tex_program->setUniformValue(shared_window->std_2d_tex_texture, 0);
+        std_2d_tex_program->setUniformValue(std_2d_tex_texture, 0);
     
         GLfloat texpos[] = {
             0.0, 0.0,
@@ -3856,10 +3975,10 @@ void ImagePreviewWorker::saveImage(QString path)
     
         texture_view_matrix.setIdentity(4);
         
-        glUniformMatrix4fv(shared_window->std_2d_tex_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
+        glUniformMatrix4fv(std_2d_tex_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
         
-        glEnableVertexAttribArray(shared_window->std_2d_tex_fragpos);
-        glEnableVertexAttribArray(shared_window->std_2d_tex_pos);
+        glEnableVertexAttribArray(std_2d_tex_fragpos);
+        glEnableVertexAttribArray(std_2d_tex_pos);
     
         GLfloat fragpos[] = {
             -1.0,-1.0,
@@ -3870,15 +3989,15 @@ void ImagePreviewWorker::saveImage(QString path)
                 
         // Draw image
         glBindTexture(GL_TEXTURE_2D, image_tex_gl);
-        glVertexAttribPointer(shared_window->std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
-        glVertexAttribPointer(shared_window->std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+        glVertexAttribPointer(std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos);
+        glVertexAttribPointer(std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
     
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
     
-        glDisableVertexAttribArray(shared_window->std_2d_tex_pos);
-        glDisableVertexAttribArray(shared_window->std_2d_tex_fragpos);
+        glDisableVertexAttribArray(std_2d_tex_pos);
+        glDisableVertexAttribArray(std_2d_tex_fragpos);
     
-        shared_window->std_2d_tex_program->release();
+        std_2d_tex_program->release();
         
         // Save buffer as image
         buffy.toImage().save(path);

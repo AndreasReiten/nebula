@@ -233,7 +233,7 @@ private:
     
 //    QLineEdit * pathLineEdit;
     
-    QWidget * imageDisplayWidget;
+//    QWidget * imageOpenGLWidget;
     
 //    QPushButton * imageBatchPrevButton;
 //    QPushButton * imagePrevButton;
