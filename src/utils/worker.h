@@ -21,7 +21,7 @@ class BaseWorker : public QObject
         ~BaseWorker();
 
         void setReducedPixels(Matrix<float> * reduced_pixels);
-        void setOpenCLContext(OpenCLContext * context);
+//        void setOpenCLContext(OpenCLContext * context);
         void setSVOFile(SparseVoxelOcttree * svo);
 
     signals:
@@ -50,7 +50,7 @@ class BaseWorker : public QObject
         bool kill_flag;
         
         // OpenCL
-        OpenCLContext * context_cl;
+        OpenCLContext context_cl;
         cl_int err;
         cl_program program;
         bool isCLInitialized;

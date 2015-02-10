@@ -307,8 +307,9 @@ void ImagePreviewWorker::initializeGL()
     initializeCL();
     
     isCLInitialized = true;
-    
-    qDebug() << context();
+
+    setTsfTexture(1);
+    setTsfAlpha(2);
 }
 
 GLuint ImagePreviewWorker::loadShader(GLenum type, const char *source)
@@ -522,10 +523,10 @@ void ImagePreviewWorker::setReducedPixels(Matrix<float> *reduced_pixels)
 //    QStringList paths;
 //    paths << "kernels/project.cl";
 
-//    program = context_cl->createProgram(paths, &err);
+//    program = context_cl.createProgram(paths, &err);
 //    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//    context_cl->buildProgram(&program, "-Werror");
+//    context_cl.buildProgram(&program, "-Werror");
 
 //    // Kernel handles
 //    project_kernel = QOpenCLCreateKernel(program, "FRAME_FILTER", &err);
@@ -533,10 +534,10 @@ void ImagePreviewWorker::setReducedPixels(Matrix<float> *reduced_pixels)
 
 //    isCLInitialized = true;
 //}
-void ImagePreviewWorker::setOpenCLContext(OpenCLContext * context)
-{
-    context_cl = context;
-}
+//void ImagePreviewWorker::setOpenCLContext(OpenCLContext * context)
+//{
+//    context_cl = context;
+//}
 
 int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Matrix<float> * samples, size_t * n_samples)
 {
@@ -546,7 +547,7 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
     target_format.image_channel_data_type = CL_FLOAT;
 
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
-    cl_mem xyzi_target_cl = QOpenCLCreateImage2D ( context_cl->context(),
+    cl_mem xyzi_target_cl = QOpenCLCreateImage2D ( context_cl.context(),
         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
         &target_format,
         file->getFastDimension(),
@@ -561,7 +562,7 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
     source_format.image_channel_order = CL_INTENSITY;
     source_format.image_channel_data_type = CL_FLOAT;
 
-//    cl_mem source_cl = QOpenCLCreateImage2D ( context_cl->context(),
+//    cl_mem source_cl = QOpenCLCreateImage2D ( context_cl.context(),
 //        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 //        &source_format,
 //        file->getFastDimension(),
@@ -572,7 +573,7 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
 //    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // A sampler. The filtering should be CL_FILTER_NEAREST unless a linear interpolation of the data is actually what you want
-//    cl_sampler intensity_sampler = QOpenCLCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+//    cl_sampler intensity_sampler = QOpenCLCreateSampler(context_cl.context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
 //    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
@@ -617,7 +618,7 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
     
     sampleRotMat = PHI*KAPPA*OMEGA;
 
-    cl_mem sample_rotation_matrix_cl = QOpenCLCreateBuffer(context_cl->context(),
+    cl_mem sample_rotation_matrix_cl = QOpenCLCreateBuffer(context_cl.context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
         sampleRotMat.toFloat().bytes(),
         sampleRotMat.toFloat().data(),
@@ -625,7 +626,7 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // The sampler for cl_tsf_tex
-    cl_sampler tsf_sampler = QOpenCLCreateSampler(context_cl->context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    cl_sampler tsf_sampler = QOpenCLCreateSampler(context_cl.context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Set kernel arguments
@@ -683,11 +684,11 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
-    QOpenCLFinish(context_cl->queue());
+    QOpenCLFinish(context_cl.queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Read the data
@@ -708,7 +709,7 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
     
     Matrix<float> projected_data_buf(selection.height(), selection.width()*4);
     
-    err = QOpenCLEnqueueReadImage ( context_cl->queue(), 
+    err = QOpenCLEnqueueReadImage ( context_cl.queue(),
                                     xyzi_target_cl, 
                                     true, 
                                     origin, 
@@ -813,10 +814,10 @@ void ImagePreviewWorker::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, M
     
     
     // Launch the kernel
-    err =   QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_image_calculus, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_image_calculus, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    err =   QOpenCLFinish(context_cl->queue());
+    err =   QOpenCLFinish(context_cl.queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -833,8 +834,14 @@ void ImagePreviewWorker::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl,
     
     glFinish();
 
-    err =  QOpenCLEnqueueAcquireGLObjects(context_cl->queue(), 1, &frame_image_cl, 0, 0, 0);
-    err |=  QOpenCLEnqueueAcquireGLObjects(context_cl->queue(), 1, &tsf_image_cl, 0, 0, 0);
+    qDebug() << "Use: image_tex_gl";
+
+    err =  QOpenCLEnqueueAcquireGLObjects(context_cl.queue(), 1, &frame_image_cl, 0, 0, 0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    qDebug() << "Use: tsf_tex_cl";
+
+    err =  QOpenCLEnqueueAcquireGLObjects(context_cl.queue(), 1, &tsf_image_cl, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Prepare kernel parameters
@@ -853,15 +860,15 @@ void ImagePreviewWorker::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl,
     
     
     // Launch the kernel
-    err =   QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_display_image, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_display_image, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    err =   QOpenCLFinish(context_cl->queue());
+    err =   QOpenCLFinish(context_cl.queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
     // Release shared CL/GL objects
-    err =  QOpenCLEnqueueReleaseGLObjects(context_cl->queue(), 1, &frame_image_cl, 0, 0, 0);
-    err |=  QOpenCLEnqueueReleaseGLObjects(context_cl->queue(), 1, &tsf_image_cl, 0, 0, 0);
+    err =  QOpenCLEnqueueReleaseGLObjects(context_cl.queue(), 1, &frame_image_cl, 0, 0, 0);
+    err |=  QOpenCLEnqueueReleaseGLObjects(context_cl.queue(), 1, &tsf_image_cl, 0, 0, 0);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -882,23 +889,23 @@ void ImagePreviewWorker::copyBufferRect(cl_mem buffer_cl,
     int copy_row_pitch = copy_size[0];
     
     // Set kernel parameters
-    err =   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float,  0, sizeof(cl_mem), (void *) &buffer_cl);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 1, sizeof(cl_int2), buffer_size.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 2, sizeof(cl_int2), buffer_origin.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 3, sizeof(int), &buffer_row_pitch);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 4, sizeof(cl_mem), (void *) &copy_cl);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 5, sizeof(cl_int2), copy_size.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 6, sizeof(cl_int2), copy_origin.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 7, sizeof(int), &copy_row_pitch);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_rect_copy_float, 8, sizeof(cl_int2), copy_size.toInt().data());
+    err =   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float,  0, sizeof(cl_mem), (void *) &buffer_cl);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 1, sizeof(cl_int2), buffer_size.toInt().data());
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 2, sizeof(cl_int2), buffer_origin.toInt().data());
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 3, sizeof(int), &buffer_row_pitch);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 4, sizeof(cl_mem), (void *) &copy_cl);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 5, sizeof(cl_int2), copy_size.toInt().data());
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 6, sizeof(cl_int2), copy_origin.toInt().data());
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 7, sizeof(int), &copy_row_pitch);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 8, sizeof(cl_int2), copy_size.toInt().data());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
     
     // Launch the kernel
-    err =   QOpenCLEnqueueNDRangeKernel(context_cl->queue(), context_cl->cl_rect_copy_float, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), context_cl.cl_rect_copy_float, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    err =   QOpenCLFinish(context_cl->queue());
+    err =   QOpenCLFinish(context_cl.queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -925,24 +932,24 @@ float ImagePreviewWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, Ma
     float sum;
 
     /* Pass arguments to kernel */
-    err =   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 0, sizeof(cl_mem), (void *) &cl_data);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 1, local_ws[0]*sizeof(cl_float), NULL);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
-    err |=   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
+    err =   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 0, sizeof(cl_mem), (void *) &cl_data);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 1, local_ws[0]*sizeof(cl_float), NULL);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
+    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     /* Launch kernel repeatedly until the summing is done */
     while (read_size > 1)
     {
-        err =   QOpenCLEnqueueNDRangeKernel(context_cl->queue(), context_cl->cl_parallel_reduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+        err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), context_cl.cl_parallel_reduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        err =   QOpenCLFinish(context_cl->queue());
+        err =   QOpenCLFinish(context_cl.queue());
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         /* Extract the sum */
-        err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+        err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
             cl_data,
             CL_TRUE,
             forth ? global_ws[0]*sizeof(cl_float) : 0,
@@ -975,9 +982,9 @@ float ImagePreviewWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, Ma
             else global_ws[0] = read_size;
         }
 
-        err =   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
-        err |=   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
-        err |=   QOpenCLSetKernelArg(context_cl->cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
+        err =   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
+        err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
+        err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     }
@@ -1126,7 +1133,7 @@ void ImagePreviewWorker::setFrame()
 
     // Write the frame data to the GPU
     err =  QOpenCLEnqueueWriteBuffer(
-                context_cl->queue(),
+                context_cl.queue(),
                 image_data_raw_cl,
                 CL_TRUE, 
                 0, 
@@ -1177,63 +1184,63 @@ void ImagePreviewWorker::clMaintainImageBuffers(Matrix<size_t> &image_size)
         err |=  QOpenCLReleaseMemObject(image_data_weight_y_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        image_data_raw_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_raw_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        image_data_trace_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_trace_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        image_data_corrected_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_corrected_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-//        xyzi_buf_cl =  QOpenCLCreateBuffer( context_cl->context(),
+//        xyzi_buf_cl =  QOpenCLCreateBuffer( context_cl.context(),
 //            CL_MEM_ALLOC_HOST_PTR,
 //            4*image_size[0]*image_size[1]*sizeof(cl_float),
 //            NULL,
 //            &err);
 //        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        image_data_variance_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_variance_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        image_data_skewness_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_skewness_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        image_data_weight_x_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_weight_x_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        image_data_weight_y_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_weight_y_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        image_data_generic_cl =  QOpenCLCreateBuffer( context_cl->context(),
+        image_data_generic_cl =  QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_ALLOC_HOST_PTR,
             image_size[0]*image_size[1]*sizeof(cl_float)*2, // *2 so it can be used for parallel reduction
             NULL,
@@ -1354,6 +1361,7 @@ void ImagePreviewWorker::maintainImageTexture(Matrix<size_t> &image_size)
     {
         if (isImageTexInitialized)
         {
+            qDebug() << "Release: image_tex_gl";
             err =  QOpenCLReleaseMemObject(image_tex_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
@@ -1377,7 +1385,8 @@ void ImagePreviewWorker::maintainImageTexture(Matrix<size_t> &image_size)
         image_tex_size[1] = image_size[1];
         
         // Share the texture with the OpenCL runtime
-        image_tex_cl =  QOpenCLCreateFromGLTexture2D(context_cl->context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex_gl, &err);
+        qDebug() << "Create: image_tex_gl";
+        image_tex_cl =  QOpenCLCreateFromGLTexture2D(context_cl.context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex_gl, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
         isImageTexInitialized = true;
@@ -1792,7 +1801,7 @@ Matrix<double> ImagePreviewWorker::getPlane()
         
         Matrix<float> marker_buf(marker.at(i).height(), marker.at(i).width()); // Too small in comparison to region
         
-        err =   QOpenCLEnqueueReadBufferRect ( context_cl->queue(),
+        err =   QOpenCLEnqueueReadBufferRect ( context_cl.queue(),
             image_data_raw_cl,
             CL_TRUE,
             buffer_origin.data(),
@@ -2043,7 +2052,7 @@ void ImagePreviewWorker::traceSet()
         
         Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
 
-        cl_mem max_image_gpu = QOpenCLCreateBuffer( context_cl->context(),
+        cl_mem max_image_gpu = QOpenCLCreateBuffer( context_cl.context(),
                 CL_MEM_COPY_HOST_PTR,
                 zeros_like_frame.bytes(),
                 zeros_like_frame.data(),
@@ -2058,7 +2067,7 @@ void ImagePreviewWorker::traceSet()
             // Read data and send to a VRAM buffer. 
             frame.readData();
 
-            cl_mem image_gpu = QOpenCLCreateBuffer( context_cl->context(),
+            cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
                     CL_MEM_COPY_HOST_PTR,
                     frame.data().bytes(),
                     frame.data().data(),
@@ -2084,7 +2093,7 @@ void ImagePreviewWorker::traceSet()
             err |=   QOpenCLSetKernelArg(cl_buffer_max, 2, sizeof(cl_int2), image_size.data());
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-            err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_buffer_max, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_buffer_max, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
             err =  QOpenCLReleaseMemObject(image_gpu);
@@ -2100,7 +2109,7 @@ void ImagePreviewWorker::traceSet()
         // Read back the second VRAM buffer and store in system RAM for later usage 
         Matrix<float> max_image(frame.getSlowDimension(),frame.getFastDimension());
 
-        err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+        err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
             max_image_gpu,
             CL_TRUE,
             0,
@@ -2183,14 +2192,14 @@ void ImagePreviewWorker::traceSet()
 //        }
 
 //        // Move series storage buffer into gpu memory
-//        cl_mem series_samples_gpu = QOpenCLCreateBuffer( context_cl->context(),
+//        cl_mem series_samples_gpu = QOpenCLCreateBuffer( context_cl.context(),
 //                CL_MEM_COPY_HOST_PTR,
 //                series_samples_cpu.bytes(),
 //                series_samples_cpu.data(),
 //                &err);
 //        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//        cl_mem series_interpol_gpu = QOpenCLCreateBuffer( context_cl->context(),
+//        cl_mem series_interpol_gpu = QOpenCLCreateBuffer( context_cl.context(),
 //                CL_MEM_ALLOC_HOST_PTR,
 //                tool.series_interpol_cpu.bytes(),
 //                NULL,
@@ -2221,10 +2230,10 @@ void ImagePreviewWorker::traceSet()
 ////        local_ws.print(0,"local_ws");
 ////        global_ws.print(0,"global_ws");
 
-//        err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_glowstick, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+//        err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_glowstick, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 //        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-//        err = QOpenCLFinish(context_cl->queue());
+//        err = QOpenCLFinish(context_cl.queue());
 //        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
 //        tool.dim[0] = dim[0];
@@ -2233,7 +2242,7 @@ void ImagePreviewWorker::traceSet()
 //        p_set.next();
         
 //        // Read back relevant data
-//        err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+//        err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
 //            series_interpol_gpu,
 //            CL_TRUE,
 //            0,
@@ -2276,7 +2285,7 @@ void ImagePreviewWorker::setSeriesMaxFrame()
     err =  QOpenCLReleaseMemObject(image_data_trace_cl);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    image_data_trace_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_trace_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_COPY_HOST_PTR,
         set_trace[p_set.i()].bytes(),
         set_trace[p_set.i()].data(),
@@ -2309,7 +2318,7 @@ void ImagePreviewWorker::setSeriesMaxFrame()
 //        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 //    //    }
 
-//        series_interpol_gpu_3Dimg = QOpenCLCreateImage3D ( context_cl->context(),
+//        series_interpol_gpu_3Dimg = QOpenCLCreateImage3D ( context_cl.context(),
 //            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
 //            &format_3Dimg,
 //            region[0],
@@ -2466,21 +2475,21 @@ void ImagePreviewWorker::selectionCalculus(Selection * area, cl_mem image_data_c
     
     
     // Prepare buffers to put data into that coincides with the selected area
-    cl_mem selection_intensity_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    cl_mem selection_intensity_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         selection_padded_size*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    cl_mem selection_pos_weight_x_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    cl_mem selection_pos_weight_x_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         selection_padded_size*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    cl_mem selection_pos_weight_y_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    cl_mem selection_pos_weight_y_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         selection_padded_size*sizeof(cl_float),
         NULL,
@@ -2520,10 +2529,10 @@ void ImagePreviewWorker::initializeCL()
 {
 //    // Set the OpenCL context
 //    context_cl = new OpenCLContext;
-//    context_cl->initDevices();
-//    context_cl->initSharedContext();
-//    context_cl->initCommandQueue();
-//    context_cl->initResources();
+    context_cl.initDevices();
+    context_cl.initSharedContext();
+    context_cl.initCommandQueue();
+    context_cl.initResources();
     
     // Build programs from OpenCL kernel source
     QStringList paths;
@@ -2531,10 +2540,10 @@ void ImagePreviewWorker::initializeCL()
     paths << "kernels/project.cl";
 //    paths << "cl/background_filter.cl";
 
-    program = context_cl->createProgram(paths, &err);
+    program = context_cl.createProgram(paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    context_cl->buildProgram(&program, "-Werror");
+    context_cl.buildProgram(&program, "-Werror");
 
     // Kernel handles
     cl_display_image =  QOpenCLCreateKernel(program, "imageDisplay", &err);
@@ -2553,83 +2562,83 @@ void ImagePreviewWorker::initializeCL()
 //    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
     // Image sampler
-    image_sampler =  QOpenCLCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
+    image_sampler =  QOpenCLCreateSampler(context_cl.context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
     // Background sampler
-//    bg_sampler =  QOpenCLCreateSampler(context_cl->context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+//    bg_sampler =  QOpenCLCreateSampler(context_cl.context(), false, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
 //    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
 
     // Tsf sampler
-    tsf_sampler =  QOpenCLCreateSampler(context_cl->context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
+    tsf_sampler =  QOpenCLCreateSampler(context_cl.context(), true, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_LINEAR, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     // Parameters
-    parameter_cl =  QOpenCLCreateBuffer(context_cl->context(),
+    parameter_cl =  QOpenCLCreateBuffer(context_cl.context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         parameter.bytes(),
         NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
     // Image buffers
-    image_data_raw_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_raw_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    image_data_trace_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_trace_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-//    xyzi_buf_cl =  QOpenCLCreateBuffer( context_cl->context(),
+//    xyzi_buf_cl =  QOpenCLCreateBuffer( context_cl.context(),
 //        CL_MEM_ALLOC_HOST_PTR,
 //        image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
 //        NULL,
 //        &err);
 //    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    image_data_corrected_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_corrected_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    image_data_variance_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_variance_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    image_data_skewness_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_skewness_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    image_data_weight_x_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_weight_x_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    image_data_weight_y_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_weight_y_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float),
         NULL,
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     
-    image_data_generic_cl =  QOpenCLCreateBuffer( context_cl->context(),
+    image_data_generic_cl =  QOpenCLCreateBuffer( context_cl.context(),
         CL_MEM_ALLOC_HOST_PTR,
         image_buffer_size[0]*image_buffer_size[1]*sizeof(cl_float)*2, // *2 so it can be used for parallel reduction
         NULL,
@@ -2646,7 +2655,7 @@ void ImagePreviewWorker::initializeCL()
     format_3Dimg.image_channel_order = CL_INTENSITY;
     format_3Dimg.image_channel_data_type = CL_FLOAT;
     
-    series_interpol_gpu_3Dimg = QOpenCLCreateImage3D ( context_cl->context(),
+    series_interpol_gpu_3Dimg = QOpenCLCreateImage3D ( context_cl.context(),
         CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
         &format_3Dimg,
         region[0],
@@ -2669,6 +2678,7 @@ void ImagePreviewWorker::setTsf(TransferFunction & tsf)
     
     if (isTsfTexInitialized)
     {
+        qDebug() << "Release: tsf_tex_cl";
         err =  QOpenCLReleaseMemObject(tsf_tex_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 //        glDeleteTextures(1, &tsf_tex_gl);
@@ -2695,7 +2705,8 @@ void ImagePreviewWorker::setTsf(TransferFunction & tsf)
 
     isTsfTexInitialized = true;
 
-    tsf_tex_cl =  QOpenCLCreateFromGLTexture2D(context_cl->context(), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, tsf_tex_gl, &err);
+    qDebug() << "Create: tsf_tex_cl";
+    tsf_tex_cl =  QOpenCLCreateFromGLTexture2D(context_cl.context(), CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, tsf_tex_gl, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -3215,7 +3226,7 @@ void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
     
     if (mode == 0)
     {
-        err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+        err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
             image_data_corrected_cl,
             CL_TRUE,
             ((int) pixel_y * frame.getFastDimension() + (int) pixel_x)*sizeof(cl_float),
@@ -3226,7 +3237,7 @@ void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
     }
     else if (mode == 1)
     {
-        err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+        err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
             image_data_variance_cl,
             CL_TRUE,
             ((int) pixel_y * frame.getFastDimension() + (int) pixel_x)*sizeof(cl_float),
@@ -3237,7 +3248,7 @@ void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
     }
     else if (mode == 2)
     {
-        err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+        err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
             image_data_skewness_cl,
             CL_TRUE,
             ((int) pixel_y * frame.getFastDimension() + (int) pixel_x)*sizeof(cl_float),
@@ -3495,7 +3506,7 @@ void ImagePreviewWorker::setParameter(Matrix<float> & data)
 
     if (isCLInitialized)
     {
-        err =  QOpenCLEnqueueWriteBuffer (context_cl->queue(),
+        err =  QOpenCLEnqueueWriteBuffer (context_cl.queue(),
             parameter_cl,
             CL_TRUE,
             0,

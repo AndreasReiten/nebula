@@ -23,7 +23,7 @@ class ImagePreviewWorker : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT
 public:
-    void setOpenCLContext(OpenCLContext * context);
+//    void setOpenCLContext(OpenCLContext * context);
     int projectFile(DetectorFile * file, Selection selection, Matrix<float> *samples, size_t *n_samples);
     void setReducedPixels(Matrix<float> * reduced_pixels);
     
@@ -163,7 +163,7 @@ private:
     QOpenGLShaderProgram *std_blend_program;
 
 //    QOpenGLPaintDevice * paint_device_gl;
-    OpenCLContext *context_cl;
+    OpenCLContext context_cl;
 
     void paintGL();
     void resizeGL(int w, int h);

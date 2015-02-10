@@ -89,18 +89,18 @@ cl_program OpenCLContext::createProgram(QStringList paths, cl_int * err)
     return QOpenCLCreateProgramWithSource(p_context, paths.size(), sources.data(), lengths.data(), err);
 }
 
-void OpenCLContext::initializeGL()
-{
-    // Initialize OpenGL
-    QOpenGLFunctions::initializeOpenGLFunctions();
+//void OpenCLContext::initializeGL()
+//{
+//    // Initialize OpenGL
+//    QOpenGLFunctions::initializeOpenGLFunctions();
+//    context_cl = new OpenCLContext;
+//    context_cl.initDevices();
+//    context_cl.initSharedContext();
+//    context_cl.initCommandQueue();
+//    context_cl.initResources();
     
-    this->initDevices();
-    this->initSharedContext();
-    this->initCommandQueue();
-    this->initResources();
-    
-    qDebug() << context();
-}
+//    qDebug() << context();
+//}
 
 void OpenCLContext::buildProgram(cl_program * program, const char * options)
 {
@@ -211,6 +211,15 @@ void OpenCLContext::initSharedContext()
     cl_uint num = 1;
 
     p_context = QOpenCLCreateContext(properties, num, device, NULL, NULL, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+}
+
+void OpenCLContext::initNormalContext()
+{
+    // Context without GL interopability
+    cl_uint num = 1;
+
+    p_context = QOpenCLCreateContext(NULL, num, device, NULL, NULL, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 

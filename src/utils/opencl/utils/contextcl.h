@@ -15,12 +15,13 @@
 
 const char * cl_error_cstring(cl_int err);
 
-class OpenCLContext : public QOpenGLWidget, protected QOpenGLFunctions
+class OpenCLContext
 {
 public:
     OpenCLContext();
     void initDevices();
     void initSharedContext();
+    void initNormalContext();
     void initCommandQueue();
     void initResources();
     cl_command_queue queue();
@@ -37,7 +38,7 @@ public:
     QString cl_easy_platform_info(cl_platform_id platform);
     
 private:
-    void initializeGL();
+//    void initializeGL();
     
     cl_platform_id platform[64];
     cl_device_id device[64];

@@ -270,7 +270,7 @@ void MainWindow::initWorkers()
 
     //### voxelizeWorker ###
     voxelizeWorker = new VoxelizeWorker();
-    voxelizeWorker->setOpenCLContext(context_cl);
+//    voxelizeWorker->setOpenCLContext(context_cl);
     voxelizeWorker->moveToThread(voxelizeThread);
     voxelizeWorker->setSVOFile(&svo_inprocess);
     voxelizeWorker->setReducedPixels(&reduced_pixels);
@@ -1327,19 +1327,19 @@ void MainWindow::initMenus()
 
 void MainWindow::initGUI()
 {
-    QSurfaceFormat format_gl;
-    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    format_gl.setSwapInterval(1);
-    format_gl.setSamples(16);
-    format_gl.setRedBufferSize(8);
-    format_gl.setGreenBufferSize(8);
-    format_gl.setBlueBufferSize(8);
-    format_gl.setAlphaBufferSize(8);
+//    QSurfaceFormat format_gl;
+//    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+//    format_gl.setSwapInterval(1);
+//    format_gl.setSamples(16);
+//    format_gl.setRedBufferSize(8);
+//    format_gl.setGreenBufferSize(8);
+//    format_gl.setBlueBufferSize(8);
+//    format_gl.setAlphaBufferSize(8);
     
-    context_cl = new OpenCLContext;
-    context_cl->setFormat(format_gl);
-    context_cl->show();
-    context_cl->hide();
+//    context_cl = new OpenCLContext;
+//    context_cl.setFormat(format_gl);
+//    context_cl.show();
+//    context_cl.hide();
     
     
     /* Top Widget */
@@ -1480,7 +1480,7 @@ void MainWindow::initGUI()
 //        imageOpenGLWidget->setSharedWindow(sharedContextWindow);
         
         imageOpenGLWidget->setFormat(format_gl);
-        imageOpenGLWidget->setOpenCLContext(context_cl);
+//        imageOpenGLWidget->setOpenCLContext(context_cl);
 //        imageOpenGLWidget->initializeWorker();
         
 //        imageOpenGLWidget = QWidget::createWindowContainer(imagePreviewWindow);

@@ -164,7 +164,7 @@ private:
     QOpenGLShaderProgram *std_blend_program;
 
     QOpenGLPaintDevice * paint_device_gl;
-    OpenCLContext *context_cl;
+    OpenCLContext context_cl;
     
     void paintGL();
     void resizeGL(int w, int h);
