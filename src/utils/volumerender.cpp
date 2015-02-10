@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <ctime>
 #include <algorithm>
-//#include <cstdio>
 
 #include <QDebug>
 
@@ -22,90 +21,10 @@
 #include <QDateTime>
 #include <QMouseEvent>
 #include <QOpenGLShaderProgram>
-//#include <QResizeEvent>
 #include <QPolygonF>
 #include <QScreen>
 #include <QPainter>
 #include <QOpenGLFramebufferObject>
-
-//VolumeRenderWindow::VolumeRenderWindow()
-//    : isInitialized(false)
-//    , gl_worker(0)
-//{
-
-//}
-
-//VolumeRenderWindow::~VolumeRenderWindow()
-//{
-
-//}
-
-//VolumeRenderWorker *  VolumeRenderWindow::worker()
-//{
-//    return gl_worker;
-//}
-
-//void VolumeRenderWindow::renderNow()
-//{
-//    if (!isExposed())
-//    {
-//        emit stopRendering();
-//        return;
-//    }
-//    else if (!isWorkerBusy)
-//    {
-//        if (!isInitialized) initializeWorker();
-
-//        if (gl_worker)
-//        {
-//            if (isThreaded)
-//            {
-//                isWorkerBusy = true;
-//                worker_thread->start();
-//                emit render();
-//            }
-//        }
-//    }
-//    renderLater();
-//}
-
-//void VolumeRenderWindow::initializeWorker()
-//{
-//    initializeGLContext();
-
-//    gl_worker = new VolumeRenderWorker;
-//    gl_worker->setRenderSurface(this);
-//    gl_worker->setOpenGLContext(context_gl);
-//    gl_worker->setOpenCLContext(context_cl);
-//    gl_worker->setSharedWindow(shared_window);
-//    gl_worker->setMultiThreading(isThreaded);
-
-//    if (isThreaded)
-//    {
-//        // Set up worker thread
-//        gl_worker->moveToThread(worker_thread);
-//        connect(this, SIGNAL(render()), gl_worker, SLOT(process()));
-//        connect(this, SIGNAL(stopRendering()), worker_thread, SLOT(quit()));
-//        connect(gl_worker, SIGNAL(finished()), this, SLOT(setSwapState()));
-
-//        // Transfering mouse events
-//        connect(this, SIGNAL(metaMouseMoveEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseMoveEvent(int, int, int, int, int, int, int)));
-//        connect(this, SIGNAL(metaMousePressEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMousePressEvent(int, int, int, int, int, int, int)));
-//        connect(this, SIGNAL(metaMouseReleaseEventCaught(int, int, int, int, int, int, int)), gl_worker, SLOT(metaMouseReleaseEvent(int, int, int, int, int, int, int)));
-//        connect(this, SIGNAL(resizeEventCaught(QResizeEvent*)), gl_worker, SLOT(resizeEvent(QResizeEvent*)));//, Qt::DirectConnection);
-//        connect(this, SIGNAL(wheelEventCaught(QWheelEvent*)), gl_worker, SLOT(wheelEvent(QWheelEvent*)), Qt::DirectConnection);
-        
-//        emit render();
-//    }
-    
-//    isInitialized = true;
-//}
-
-//void VolumeRenderWindow::setSharedWindow(SharedContextWindow * window)
-//{
-//    this->shared_window = window;
-//    shared_context = window->getGLContext();
-//}
 
 VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     : isCLInitialized(false),
@@ -131,7 +50,6 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       isCenterlineActive(true),
       isRulerActive(false),
       isHklTextActive(true),
-//      isLMBDown(false),
       isURotationActive(false),
       isLabFrameActive(true),
       isMiniCellActive(true),
@@ -142,84 +60,6 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       displayFps(true),
       displayResolution(true)
 {
-    // Resolve OpenCL functions
-//    QLibrary myLib("OpenCL");
-
-//    QOpenCLGetPlatformIDs = (PROTOTYPE_QOpenCLGetPlatformIDs) myLib.resolve("clGetPlatformIDs");
-//    if (!QOpenCLGetPlatformIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLGetDeviceIDs = (PROTOTYPE_QOpenCLGetDeviceIDs) myLib.resolve("clGetDeviceIDs");
-//    if (!QOpenCLGetDeviceIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLGetPlatformInfo = (PROTOTYPE_QOpenCLGetPlatformInfo) myLib.resolve("clGetPlatformInfo");
-//    if (!QOpenCLGetPlatformInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLGetDeviceInfo = (PROTOTYPE_QOpenCLGetDeviceInfo) myLib.resolve("clGetDeviceInfo");
-//    if (!QOpenCLGetDeviceInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateProgramWithSource = (PROTOTYPE_QOpenCLCreateProgramWithSource) myLib.resolve("clCreateProgramWithSource");
-//    if (!QOpenCLCreateProgramWithSource) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLGetProgramBuildInfo = (PROTOTYPE_QOpenCLGetProgramBuildInfo) myLib.resolve("clGetProgramBuildInfo");
-//    if (!QOpenCLGetProgramBuildInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateContext = (PROTOTYPE_QOpenCLCreateContext) myLib.resolve("clCreateContext");
-//    if (!QOpenCLCreateContext) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateCommandQueue = (PROTOTYPE_QOpenCLCreateCommandQueue) myLib.resolve("clCreateCommandQueue");
-//    if (!QOpenCLCreateCommandQueue) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLSetKernelArg = (PROTOTYPE_QOpenCLSetKernelArg) myLib.resolve("clSetKernelArg");
-//    if (!QOpenCLSetKernelArg) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLEnqueueNDRangeKernel = (PROTOTYPE_QOpenCLEnqueueNDRangeKernel) myLib.resolve("clEnqueueNDRangeKernel");
-//    if (!QOpenCLEnqueueNDRangeKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLFinish= (PROTOTYPE_QOpenCLFinish) myLib.resolve("clFinish");
-//    if (!QOpenCLFinish) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLEnqueueReleaseGLObjects = (PROTOTYPE_QOpenCLEnqueueReleaseGLObjects) myLib.resolve("clEnqueueReleaseGLObjects");
-//    if (!QOpenCLEnqueueReleaseGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLEnqueueAcquireGLObjects = (PROTOTYPE_QOpenCLEnqueueAcquireGLObjects) myLib.resolve("clEnqueueAcquireGLObjects");
-//    if (!QOpenCLEnqueueAcquireGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateKernel = (PROTOTYPE_QOpenCLCreateKernel) myLib.resolve("clCreateKernel");
-//    if (!QOpenCLCreateKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLEnqueueReadBuffer = (PROTOTYPE_QOpenCLEnqueueReadBuffer) myLib.resolve("clEnqueueReadBuffer");
-//    if (!QOpenCLEnqueueReadBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateBuffer = (PROTOTYPE_QOpenCLCreateBuffer) myLib.resolve("clCreateBuffer");
-//    if (!QOpenCLCreateBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLReleaseMemObject = (PROTOTYPE_QOpenCLReleaseMemObject) myLib.resolve("clReleaseMemObject");
-//    if (!QOpenCLReleaseMemObject) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateFromGLTexture2D = (PROTOTYPE_QOpenCLCreateFromGLTexture2D) myLib.resolve("clCreateFromGLTexture2D");
-//    if (!QOpenCLCreateFromGLTexture2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateSampler = (PROTOTYPE_QOpenCLCreateSampler) myLib.resolve("clCreateSampler");
-//    if (!QOpenCLCreateSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLEnqueueWriteBuffer = (PROTOTYPE_QOpenCLEnqueueWriteBuffer) myLib.resolve("clEnqueueWriteBuffer");
-//    if (!QOpenCLEnqueueWriteBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLReleaseKernel = (PROTOTYPE_QOpenCLReleaseKernel) myLib.resolve("clReleaseKernel");
-//    if (!QOpenCLReleaseKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateImage2D = (PROTOTYPE_QOpenCLCreateImage2D) myLib.resolve("clCreateImage2D");
-//    if (!QOpenCLCreateImage2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLCreateImage3D = (PROTOTYPE_QOpenCLCreateImage3D) myLib.resolve("clCreateImage3D");
-//    if (!QOpenCLCreateImage3D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLEnqueueReadImage = (PROTOTYPE_QOpenCLEnqueueReadImage) myLib.resolve("clEnqueueReadImage");
-//    if (!QOpenCLEnqueueReadImage) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
-//    QOpenCLReleaseSampler = (PROTOTYPE_QOpenCLReleaseSampler) myLib.resolve("clReleaseSampler");
-//    if (!QOpenCLReleaseSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
-
 
     // Marker
     markers_selected_indices.set(100,1,0);
@@ -298,12 +138,6 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     tsf_parameters_svo[4] = 0.5; // alpha
     tsf_parameters_svo[5] = 2.0; // brightness
 
-    // Ray texture timing
-//    fps_requested = 60;
-//    work = 1.0;
-//    work_time = 0.0;
-//    quality_factor = 0.5;
-
     // Scalebars
     position_scalebar_ticks.reserve(100,3);
     count_scalebar_ticks.reserve(100,3);
@@ -350,7 +184,6 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 
 VolumeRenderWorker::~VolumeRenderWorker()
 {
-//    qDebug() << "Destroy";
     if (!(isCLInitialized && isGLInitialized)) return;
     
     glDeleteBuffers(1, &lab_frame_vbo);
@@ -459,8 +292,6 @@ void VolumeRenderWorker::initializeGL()
     glGenTextures(1, &tsf_tex_gl);
     glGenTextures(1, &tsf_tex_gl_thumb);
     
-//    if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice(this->size());
-    
     // Shader for drawing textures in 2D
     std_2d_tex_program = new QOpenGLShaderProgram(this);
     std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_2d_tex.v.glsl");
@@ -535,8 +366,6 @@ void VolumeRenderWorker::initializeGL()
     
     isGLInitialized = true;
     isCLInitialized = true;
-
-//    isInitialized = true;
 
     // Textures
     setRayTexture(20);
@@ -762,23 +591,15 @@ void VolumeRenderWorker::mouseReleaseEvent(QMouseEvent * event)
 }
 
 
-//void VolumeRenderWorker::mouseMoveEvent(QMouseEvent ev)
-//{
-//    qDebug() << ev.x() << ev.y();
-//}
 
 void VolumeRenderWorker::mouseMoveEvent(QMouseEvent *event)
 {
-//    if ((event->buttons() & Qt::LeftButton)) isLMBDown = true;
-//    else isLMBDown = false;
-
     if ((event->buttons() & Qt::LeftButton) && isRulerActive)
     {
         ruler[2] = event->x();
         ruler[3] = event->y();
     }
     
-//    if ((std::abs(last_mouse_pos_x - event->x()) < 50) && (std::abs(last_mouse_pos_y - event->y()) < 50))
     {
         float move_scaling = 0.6;
         if((event->buttons() & Qt::ControlModifier)) move_scaling = 0.1;
@@ -1244,7 +1065,8 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     wire.setDeep(1,18,wire_buf);
     
     // Draw it
-    glViewport(0,this->height()-200,200,200);
+    const qreal retinaScale = this->devicePixelRatio();
+    glViewport(0,(this->height()-200)*retinaScale,200*retinaScale,200*retinaScale);
     glLineWidth(3.0);
     
     std_3d_col_program->bind();
@@ -1276,7 +1098,7 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     
     std_3d_col_program->release();
     
-    glViewport(0,0,this->width(),this->height());
+    glViewport(0,0,this->width()*retinaScale,this->height()*retinaScale);
     
     
     endRawGLCalls(painter);
@@ -1288,16 +1110,6 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     getPosition2D(z_2d.data(), vetices.data()+9, &minicell_view_matrix);
     
     painter->setFont(*minicell_font);
-    
-//    QRect text_backdrop = minicell_fontmetric->boundingRect(QString("a*"));
-//    text_backdrop.moveBottomLeft(QPoint((x_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( x_2d[1]+ 1.0) * 0.5) *200));
-//    painter->drawRect(text_backdrop);
-    
-//    text_backdrop.moveBottomLeft(QPoint((y_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( y_2d[1]+ 1.0) * 0.5) *200));
-//    painter->drawRect(text_backdrop);
-    
-//    text_backdrop.moveBottomLeft(QPoint((z_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( z_2d[1]+ 1.0) * 0.5) *200));
-//    painter->drawRect(text_backdrop);
     
     painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( x_2d[1]+ 1.0) * 0.5) *200), QString("a*"));
     painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( y_2d[1]+ 1.0) * 0.5) *200), QString("b*"));
@@ -1547,33 +1359,6 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
     }
 }
 
-
-
-//void VolumeRenderWorker::initialize()
-//{
-//    initResourcesCL();
-//    initResourcesGL();
-
-////    isInitialized = true;
-
-//    // Textures
-//    setRayTexture(20);
-//    setTsfTexture();
-
-//    // Core set functions
-//    setDataExtent();
-//    setViewMatrices();
-//    setTsfParameters();
-//    setMiscArrays();
-
-//    // Pens
-//    initializePaintTools();
-    
-//    // Initial drawings
-//    updateUnitCellVertices();
-//    updateUnitCellText();
-//}
-
 void VolumeRenderWorker::initializePaintTools()
 {
     // Fonts
@@ -1585,10 +1370,6 @@ void VolumeRenderWorker::initializePaintTools()
     minicell_font = new QFont("Helvetica", 15);
     minicell_font->setBold(true);
     minicell_font->setItalic(true);
-    
-//    qDebug() << normal_font->family() << normal_font->pointSize();
-//    qDebug() << tiny_font->family() << tiny_font->pointSize();
-//    qDebug() << minicell_font->family() << minicell_font->pointSize();
     
     // Font metrics
     normal_fontmetric = new QFontMetrics(*normal_font, this);
@@ -1607,16 +1388,10 @@ void VolumeRenderWorker::initializePaintTools()
     normal_brush->setStyle(Qt::NoBrush);
 }
 
-//void VolumeRenderWorker::initResourcesGL()
-//{
-    
-//}
-
 void VolumeRenderWorker::initializeCL()
 {
     initializeOpenCLFunctions();
     
-//    context_cl = new OpenCLContext;
     context_cl.initDevices();
     context_cl.initSharedContext();
     context_cl.initCommandQueue();
@@ -1846,16 +1621,6 @@ void VolumeRenderWorker::setMiscArrays()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-//void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
-//{
-//    Q_UNUSED(ev);
-
-//    qDebug() << "resize";
-    
-//    if (paint_device_gl) paint_device_gl->setSize(this->size());
-    
-//}
-
 void VolumeRenderWorker::setRayTexture(int percentage)
 {
     if (!isCLInitialized || !isGLInitialized) return;
@@ -1885,15 +1650,11 @@ void VolumeRenderWorker::setRayTexture(int percentage)
 
         if (isRayTexInitialized){
             
-//            qDebug() << "Releasing..." << ray_tex_cl;
             err = QOpenCLReleaseMemObject(ray_tex_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//            qDebug() << "Released";
         }
 
         // Update GL texture
-//        glDeleteTextures(1, &ray_tex_gl);
-//        glGenTextures(1, &ray_tex_gl);
         glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1910,10 +1671,8 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Convert to CL texture
-//        qDebug() << "Creating...";
         ray_tex_cl = QOpenCLCreateFromGLTexture2D(context_cl.context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex_gl, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//        qDebug() << "Created" << ray_tex_cl;
         
         isRayTexInitialized = true;
 
@@ -1971,15 +1730,12 @@ void VolumeRenderWorker::setRayTexture(int percentage)
 
 void VolumeRenderWorker::setTsfTexture()
 {
-//    if (1) qDebug() << "setting tsf" << tsf_color_scheme << tsf_alpha_scheme;
     if(!(isCLInitialized && isGLInitialized)) return;
     
     
     if (isTsfTexInitialized){
         err = QOpenCLReleaseSampler(tsf_tex_sampler);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-//    }
-//    if (isTsfTexInitialized){
         err = QOpenCLReleaseMemObject(tsf_tex_cl);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
@@ -1988,8 +1744,6 @@ void VolumeRenderWorker::setTsfTexture()
     tsf.setSpline(256);
 
     // Buffer for tsf_tex_gl
-//    glDeleteTextures(1, &tsf_tex_gl);
-//    glGenTextures(1, &tsf_tex_gl);
     glBindTexture(GL_TEXTURE_2D, tsf_tex_gl);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2008,8 +1762,6 @@ void VolumeRenderWorker::setTsfTexture()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Buffer for tsf_tex_gl_thumb
-//    glDeleteTextures(1, &tsf_tex_gl_thumb);
-//    glGenTextures(1, &tsf_tex_gl_thumb);
     glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2026,8 +1778,6 @@ void VolumeRenderWorker::setTsfTexture()
         GL_FLOAT,
         tsf.getThumb()->colmajor().toFloat().data());
     glBindTexture(GL_TEXTURE_2D, 0);
-    
-//    tsf.getThumb()->colmajor().print(2);
     
     // Buffer for tsf_tex_cl
     cl_image_format tsf_format;
@@ -2108,19 +1858,6 @@ float VolumeRenderWorker::sumViewBox()
     return sum;
 }
 
-//void VolumeRenderWorker::setSharedWindow(SharedContextWindow * window)
-//{
-//    this->shared_window = window;
-//}
-
-//void VolumeRenderWorker::render(QPainter *painter)
-//{
-    
-    
-    
-//}
-
-
 void VolumeRenderWorker::takeScreenShot(QString path)
 {
     // Set resolution back to former value
@@ -2142,10 +1879,6 @@ void VolumeRenderWorker::takeScreenShot(QString path)
     buffy.bind();
     
     // Render into buffer using max quality
-//    QPainter painter(paint_device_gl);
-    
-//    render(&painter);
-
     buffy.release();
     
     // Save buffer as image

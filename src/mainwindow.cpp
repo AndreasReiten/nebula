@@ -32,7 +32,6 @@ MainWindow::MainWindow() :
     batch_size(10)
 {
     // Set some default values
-//    display_file = 0;
     reduced_pixels.set(0,0);
     
     // Set stylesheet
@@ -42,27 +41,6 @@ MainWindow::MainWindow() :
     styleFile.close();
     this->setStyleSheet(style);
 
-    
-
-    // Set the format of the rendering context
-//    QSurfaceFormat format_gl;
-//    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-//    format_gl.setSwapInterval(1);
-//    format_gl.setSamples(16);
-//    format_gl.setRedBufferSize(8);
-//    format_gl.setGreenBufferSize(8);
-//    format_gl.setBlueBufferSize(8);
-//    format_gl.setAlphaBufferSize(8);
-    
-//    sharedContextWindow = new SharedContextWindow();
-//    sharedContextWindow->setFormat(format_gl);
-//    sharedContextWindow->setOpenCLContext(context_cl);
-//    sharedContextWindow->show();
-
-//    sharedContextWindow->initializeWorker();
-//    sharedContextWindow->hide();
-    
-    
     this->initActions();
     
     this->initMenus();
@@ -80,35 +58,12 @@ MainWindow::MainWindow() :
     
     // Set start conditions
     setStartConditions();
-
-//    graphicsDockWidget->hide();
-//    unitCellDock->hide();
-//    functionDockWidget->hide();
-//    fileDockWidget->hide();
-//    toolChainWidget->show();
-//    outputDockWidget->show();
-
 }
 
 MainWindow::~MainWindow()
 {
-//    setFileThread->quit();
-//    setFileThread->wait(1000);
-    
-//    readFileThread->quit();
-//    readFileThread->wait(1000);
-    
-//    projectFileThread->quit();
-//    projectFileThread->wait(1000);
-    
     voxelizeThread->quit();
     voxelizeThread->wait(1000);
-    
-//    reconstructThread->quit();
-//    reconstructThread->wait(1000);
-    
-    displayFileThread->quit();
-    displayFileThread->wait(1000);
 }
 
 void MainWindow::setCurrentSvoLevel(int value)
@@ -124,130 +79,14 @@ void MainWindow::displayPopup(QString title, QString text)
 
 void MainWindow::initWorkers()
 {
-//    readScriptThread = new QThread;
-//    setFileThread = new QThread;
-//    readFileThread = new QThread;
-//    projectFileThread = new QThread;
     voxelizeThread = new QThread;
-//    reconstructThread = new QThread;
-    displayFileThread = new QThread;
-
-    //### setFileWorker ###
-//    setFileWorker = new SetFileWorker();
-//    setFileWorker->setFilePaths(&file_paths);
-//    setFileWorker->setFiles(&files);
-//    setFileWorker->setSVOFile(&svo_inprocess);
-//    setFileWorker->setOpenCLContext(context_cl);
-//    setFileWorker->setSVOFile(&svo_inprocess);
-
-//    setFileWorker->moveToThread(setFileThread);
-////    connect(setFileButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
-//    connect(setFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-//    connect(setFileWorker, SIGNAL(finished()), this, SLOT(setFileButtonFinish()));
-//    connect(setFileThread, SIGNAL(started()), setFileWorker, SLOT(process()));
-//    connect(setFileWorker, SIGNAL(abort()), setFileThread, SLOT(quit()));
-//    connect(setFileWorker, SIGNAL(finished()), setFileThread, SLOT(quit()));
-//    connect(setFileWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
-//    connect(setFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-//    connect(setFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-//    connect(setFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(setFileButton, SIGNAL(clicked()), setFileThread, SLOT(start()));
-//    connect(killButton, SIGNAL(clicked()), setFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-
-
-//    //### readFileWorker ###
-//    readFileWorker = new ReadFileWorker();
-//    readFileWorker->setFilePaths(&file_paths);
-//    readFileWorker->setFiles(&files);
-//    readFileWorker->setSVOFile(&svo_inprocess);
-
-//    readFileWorker->moveToThread(readFileThread);
-//    connect(readFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-//    connect(readFileWorker, SIGNAL(finished()), this, SLOT(readFileButtonFinish()));
-//    connect(readFileThread, SIGNAL(started()), readFileWorker, SLOT(process()));
-//    connect(readFileWorker, SIGNAL(abort()), readFileThread, SLOT(quit()));
-//    connect(readFileWorker, SIGNAL(finished()), readFileThread, SLOT(quit()));
-//    connect(readFileWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
-//    connect(readFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-
-//    connect(readFileWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
-//    connect(readFileWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
-//    connect(readFileWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
-
-//    connect(readFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-//    connect(readFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(readFileWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
-
-//    connect(readFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-//    connect(readFileButton, SIGNAL(clicked()), readFileThread, SLOT(start()));
-//    connect(killButton, SIGNAL(clicked()), readFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-
-
-//    //### projectFileWorker ###
-//    projectFileWorker = new ProjectFileWorker();
-//    projectFileWorker->setFilePaths(&file_paths);
-//    projectFileWorker->setSVOFile(&svo_inprocess);
-//    projectFileWorker->setFiles(&files);
-//    projectFileWorker->setOpenCLContext(context_cl);
-//    projectFileWorker->setReducedPixels(&reduced_pixels);
-//    projectFileWorker->initializeCLKernel();
-//    connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(int)), projectFileWorker, SLOT(setActiveAngle(int)));
-//    connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetOmega(double)));
-//    connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetKappa(double)));
-//    connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setOffsetPhi(double)));
-////    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
-////    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setNoiseHigh(double)));
-////    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectLow(double)));
-////    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), projectFileWorker, SLOT(setThldProjectHigh(double)));
-//    connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), projectFileWorker, SLOT(setNoiseLow(double)));
     
-
-//    projectFileWorker->moveToThread(projectFileThread);
-//    connect(projectFileThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-//    connect(projectFileWorker, SIGNAL(finished()), this, SLOT(projectFileButtonFinish()));
-//    connect(projectFileThread, SIGNAL(started()), projectFileWorker, SLOT(process()));
-//    connect(projectFileWorker, SIGNAL(finished()), projectFileThread, SLOT(quit()));
-//    connect(projectFileWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
-
-//    connect(projectFileWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
-//    connect(projectFileWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
-//    connect(projectFileWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
-
-//    connect(projectFileWorker, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-//    connect(projectFileWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(projectFileWorker, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
-
-//    connect(projectFileWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
-//    connect(projectFileButton, SIGNAL(clicked()), this, SLOT(runProjectFileThread()));
-//    connect(killButton, SIGNAL(clicked()), projectFileWorker, SLOT(killProcess()), Qt::DirectConnection);
-////    connect(imageOpenGLWidget, SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
-//    connect(this, SIGNAL(selectionChanged(Selection)), projectFileWorker, SLOT(setSelection(Selection)));
-
-
-    //### allInOneWorker ###
-//    reconstructWorker = new ReconstructWorker();
-//    reconstructWorker->setFilePaths(&file_paths);
-//    reconstructWorker->setSVOFile(&svo_inprocess);
-//    reconstructWorker->setOpenCLContext(context_cl);
     imageOpenGLWidget->setReducedPixels(&reduced_pixels);
-//    imageOpenGLWidget->initializeCLKernel();
-//    connect(allInOneButton, SIGNAL(clicked()), this, SLOT(setFilesFromSelectionModel()));
+    
     connect(this->activeAngleComboBox, SIGNAL(currentIndexChanged(QString)), imageOpenGLWidget, SLOT(setActiveAngle(QString)));
     connect(this->omegaCorrectionSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setOffsetOmega(double)));
     connect(this->kappaCorrectionSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setOffsetKappa(double)));
     connect(this->phiCorrectionSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setOffsetPhi(double)));
-//    connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseLow(double)));
-//    connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setNoiseHigh(double)));
-//    connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectLow(double)));
-//    connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), multiWorker, SLOT(setThldProjectHigh(double)));
-//    connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), reconstructWorker, SLOT(setNoiseLow(double)));
-
-//    reconstructWorker->moveToThread(reconstructThread);
-//    connect(reconstructThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-//    connect(reconstructWorker, SIGNAL(finished()), this, SLOT(allInOneButtonFinish()));
-//    connect(reconstructThread, SIGNAL(started()), this, SLOT(transferSet()), Qt::DirectConnection);
-//    connect(reconstructThread, SIGNAL(started()), reconstructWorker, SLOT(process()));
-//    connect(reconstructWorker, SIGNAL(finished()), reconstructThread, SLOT(quit()));
     connect(imageOpenGLWidget, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
 
     connect(imageOpenGLWidget, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
@@ -255,30 +94,18 @@ void MainWindow::initWorkers()
     connect(imageOpenGLWidget, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
     connect(imageOpenGLWidget, SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
 
-//    connect(imageOpenGLWidget, SIGNAL(changedGenericProgress(int)), genericProgressBar, SLOT(setValue(int)));
-//    connect(imageOpenGLWidget, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setGenericProgressFormat(QString)));
-//    connect(imageOpenGLWidget, SIGNAL(changedRangeGenericProcess(int,int)), genericProgressBar, SLOT(setRange(int,int)));
-//    connect(this, SIGNAL(setPulled(SeriesSet)), reconstructWorker, SLOT(setSet(SeriesSet)));
-
-//    connect(reconstructWorker, SIGNAL(changedFile(QString)), this, SLOT(setHeader(QString)));
-//    connect(reconstructWorker, SIGNAL(changedTabWidget(int)), tabWidget, SLOT(setCurrentIndex(int)));
     connect(reconstructButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(reconstruct()));
     connect(killButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(imageOpenGLWidget, SIGNAL(selectionChanged(Selection)), multiWorker, SLOT(setSelection(Selection)));
-//    connect(this, SIGNAL(selectionChanged(Selection)), reconstructWorker, SLOT(setSelection(Selection)));
 
 
     //### voxelizeWorker ###
     voxelizeWorker = new VoxelizeWorker();
-//    voxelizeWorker->setOpenCLContext(context_cl);
     voxelizeWorker->moveToThread(voxelizeThread);
     voxelizeWorker->setSVOFile(&svo_inprocess);
     voxelizeWorker->setReducedPixels(&reduced_pixels);
     voxelizeWorker->initializeCLKernel();
 
     voxelizeWorker->moveToThread(voxelizeThread);
-//    connect(voxelizeThread, SIGNAL(started()), this, SLOT(anyButtonStart()));
-//    connect(voxelizeWorker, SIGNAL(finished()), this, SLOT(voxelizeButtonFinish()));
     connect(svoLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
@@ -286,7 +113,6 @@ void MainWindow::initWorkers()
     connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedMessageString(QString)), this, SLOT(print(QString)));
 
-//    connect(voxelizeWorker, SIGNAL(changedMemoryUsage(int)), memoryUsageProgressBar, SLOT(setValue(int)));
     connect(voxelizeWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setMemoryUsageFormat(QString)));
     connect(voxelizeWorker, SIGNAL(changedRangeMemoryUsage(int,int)), memoryUsageProgressBar, SLOT(setRange(int,int)));
 
@@ -297,86 +123,7 @@ void MainWindow::initWorkers()
     connect(voxelizeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
     connect(imageOpenGLWidget, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
-//    connect(setFileWorker, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
-
-//void MainWindow::anyButtonStart()
-//{
-//    setFileButton->setDisabled(true);
-//    reconstructButton->setDisabled(true);
-//    readFileButton->setDisabled(true);
-//    projectFileButton->setDisabled(true);
-//    voxelizeButton->setDisabled(true);
-//}
-
-//void MainWindow::setFileButtonFinish()
-//{
-//    setFileButton->setDisabled(false);
-//    reconstructButton->setDisabled(false);
-//    readFileButton->setDisabled(false);
-//    projectFileButton->setDisabled(true);
-//    voxelizeButton->setDisabled(true);
-//}
-
-//void MainWindow::allInOneButtonFinish()
-//{
-//    setFileButton->setDisabled(false);
-//    reconstructButton->setDisabled(false);
-//    readFileButton->setDisabled(true);
-//    projectFileButton->setDisabled(true);
-//    voxelizeButton->setDisabled(false);
-//}
-
-//void MainWindow::readFileButtonFinish()
-//{
-//    setFileButton->setDisabled(false);
-//    reconstructButton->setDisabled(false);
-//    readFileButton->setDisabled(false);
-//    projectFileButton->setDisabled(false);
-//    voxelizeButton->setDisabled(true);
-//}
-
-//void MainWindow::projectFileButtonFinish()
-//{
-//    setFileButton->setDisabled(false);
-//    reconstructButton->setDisabled(false);
-//    readFileButton->setDisabled(false);
-//    projectFileButton->setDisabled(false);
-//    voxelizeButton->setDisabled(false);
-//}
-
-//void MainWindow::voxelizeButtonFinish()
-//{
-//    setFileButton->setDisabled(false);
-//    reconstructButton->setDisabled(false);
-//    readFileButton->setDisabled(false);
-//    projectFileButton->setDisabled(false);
-//    voxelizeButton->setDisabled(false);
-//}
-
-//void MainWindow::setImage(ImageInfo image)
-//{
-//    if (!series_set.isEmpty())
-//    {
-//        *series_set.current()->current() = image;
-
-//        pathLineEdit->setText(series_set.current()->current()->path());
-
-//        setHeader(series_set.current()->current()->path());
-
-//        hasPendingChanges = true;
-//    }
-//}
-
-
-//void MainWindow::setSeriesSelection(Selection area)
-//{
-//    if (!series_set.isEmpty())
-//    {
-//        series_set.current()->setSelection(area);
-//        hasPendingChanges = true;
-//    }
-//}
 
 void MainWindow::loadPaths()
 {
@@ -449,129 +196,11 @@ void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
     
     if (!set.isEmpty()) 
     {
-//        file_paths = set.paths();
         emit setChanged(set);
         imageSpinBox->setRange(0,set.current()->size()-1);
     }
 }
 
-
-//void MainWindow::removeImage()
-//{
-//    if (!series_set.isEmpty())
-//    {
-//        emit pathRemoved(series_set.current()->current()->path());
-        
-//        series_set.current()->removeCurrent();
-
-////        if (image_folder.size() == 0) image_folder.removeCurrent();
-        
-//        if (!series_set.isEmpty())
-//        {
-//            emit imageChanged(*series_set.current()->next());
-//        }
-//    }
-//}
-
-//void MainWindow::setFrame(int value)
-//{
-//    if (!series_set.isEmpty())
-//    {
-//        emit imageChanged(*series_set.current()->at(value));
-//    }
-//}
-
-
-
-//void MainWindow::nextFrame()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()+1);
-//}
-//void MainWindow::prevFrame()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()-1);
-//}
-//void MainWindow::batchForward()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()+batch_size);
-//}
-//void MainWindow::batchBackward()
-//{
-//    imageSpinBox->setValue(imageSpinBox->value()-batch_size);
-//}
-
-
-//void MainWindow::nextSeries()
-//{
-//    if (!series_set.isEmpty())
-//    {
-//        series_set.current()->saveCurrentIndex();
-//        series_set.next();
-//        series_set.current()->loadSavedIndex();
-
-//        imageSpinBox->setRange(0,series_set.current()->size()-1);
-//        imageSpinBox->setValue(series_set.current()->i());
-
-//        emit imageChanged(*series_set.current()->current());
-//    }
-//}
-
-//void MainWindow::prevSeries()
-//{
-//    if (!series_set.isEmpty())
-//    {
-//        series_set.current()->saveCurrentIndex();
-//        series_set.previous();
-//        series_set.current()->loadSavedIndex();
-
-//        imageSpinBox->setRange(0,series_set.current()->size()-1);
-//        imageSpinBox->setValue(series_set.current()->i());
-
-//        emit imageChanged(*series_set.current()->current());
-//    }
-//}
-
-//void MainWindow::runProjectFileThread()
-//{
-//    tabWidget->setCurrentIndex(1);
-    
-    // Creation settings
-//    svo_inprocess.creation_date = QDateTime::currentDateTime();
-//    svo_inprocess.creation_noise_cutoff_low = noiseCorrectionMinDoubleSpinBox->value();
-//    svo_inprocess.creation_noise_cutoff_high = noiseCorrectionMaxDoubleSpinBox->value();
-//    svo_inprocess.creation_post_cutoff_low = postCorrectionMinDoubleSpinBox->value();
-//    svo_inprocess.creation_post_cutoff_high = postCorrectionMaxDoubleSpinBox->value();
-//    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
-//    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
-//    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
-//    svo_inprocess.creation_file_paths = file_paths;
-    
-//    projectFileThread->start();
-//}
-
-//void MainWindow::runAllInOneThread()
-//{
-//    tabWidget->setCurrentIndex(1);
-    
-    // Creation settings
-//    svo_inprocess.creation_date = QDateTime::currentDateTime();
-//    svo_inprocess.creation_noise_cutoff_low = noiseCorrectionMinDoubleSpinBox->value();
-//    svo_inprocess.creation_noise_cutoff_high = noiseCorrectionMaxDoubleSpinBox->value();
-//    svo_inprocess.creation_post_cutoff_low = postCorrectionMinDoubleSpinBox->value();
-//    svo_inprocess.creation_post_cutoff_high = postCorrectionMaxDoubleSpinBox->value();
-//    svo_inprocess.creation_correction_omega = omegaCorrectionSpinBox->value();
-//    svo_inprocess.creation_correction_kappa = kappaCorrectionSpinBox->value();
-//    svo_inprocess.creation_correction_phi = phiCorrectionSpinBox->value();
-//    svo_inprocess.creation_file_paths = file_paths;
-    
-    
-//    reconstructThread->start();
-//}
-
-//void MainWindow::setFilesFromSelectionModel()
-//{
-//    file_paths = series_set.paths();
-//}
 
 void MainWindow::setStartConditions()
 {
@@ -589,8 +218,6 @@ void MainWindow::setStartConditions()
     volumeRenderTsfComboBox->setCurrentIndex(1);
     volumeRenderLogCheckBox->setChecked(true);
     
-    //
-    
     batchSizeSpinBox->setValue(10);
     
     correctionPlaneCheckBox->setChecked(true);
@@ -604,12 +231,8 @@ void MainWindow::setStartConditions()
 
     correctionPlaneSpinBox->setValue(10);
     
-    //
-    
-    
     imagePreviewTsfTextureComboBox->setCurrentIndex(1);
     imagePreviewTsfAlphaComboBox->setCurrentIndex(2);
-//    imagePreviewDataMinDoubleSpinBox->setValue(10);
     imagePreviewDataMinDoubleSpinBox->setValue(0.01);
     imagePreviewDataMaxDoubleSpinBox->setValue(1000);
     imagePreviewLogCheckBox->setChecked(true);
@@ -660,33 +283,16 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::saveProject()
 {
-//    QFileDialog dialog;
-    
-//    qDebug() << "Got here";
-    
-//    dialog.setDefaultSuffix("txt");
-    
-//    qDebug() << "Got here";
-    
-//    QString file_name = dialog.getSaveFileName();
     QString file_name = QFileDialog::getSaveFileName(this, tr("Save project"), working_dir, tr(".qt (*.qt);; All Files (*)"));
-    
-//    QString file_name = "/home/natt/Workdir/BUGTEST.qt";
-    
-//    qDebug() << file_name;
     
     if (file_name != "")
     {
         QFileInfo info(file_name);
         working_dir = info.absoluteDir().path();
         
-//        qDebug() << working_dir;
-        
         QFile file(file_name);
         if (file.open(QIODevice::WriteOnly))
         {
-//            qDebug() << "Got here";
-            
             QDataStream out(&file);
             
             out << imageOpenGLWidget->set();
@@ -699,26 +305,17 @@ void MainWindow::saveProject()
             out << (bool) correctionLorentzCheckBox->isChecked();  
             out << (double) correctionNoiseDoubleSpinBox->value();
             
-//            qDebug() << "Got here";
-            
             file.close();
         }
     }
     
     
     hasPendingChanges = false;
-//    qDebug() << "Got here too";
-//    {
-//        QFileDialog dialog;
-//    }
-    
 }
 
 void MainWindow::transferSet()
 {
     SeriesSet set = imageOpenGLWidget->set();
-    
-//    qDebug() << "Main" << set << set.begin()->begin()->selection();
     
     emit setPulled(set);
 }
@@ -766,20 +363,6 @@ void MainWindow::loadProject()
         }
     }
 }
-
-
-
-//void MainWindow::setSelection(Selection rect)
-//{
-//    if (!series_set.isEmpty())
-//    {
-//        series_set.current()->current()->setSelection(rect);
-        
-//        hasPendingChanges = true;
-//    }
-//}
-
-
 
 void MainWindow::initActions()
 {
@@ -1016,38 +599,11 @@ void MainWindow::openUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
-//    toolChainWidget->hide();
-//    fileHeaderDock->hide();
-//    outputDockWidget->hide();
-//    fileDockWidget->hide();
-//    graphicsDockWidget->hide();
-//    unitCellDock->hide();
-//    functionDockWidget->hide();
-//    svoHeaderDock->hide();
-    
-//    if ((tab==0) || (tab==1)) toolChainWidget->show();
-//    else toolChainWidget->hide();
-    
     if ((tab==0) || (tab==1)) fileHeaderDock->show();
     else fileHeaderDock->hide();
     
     if ((tab==0) || (tab==1)) outputDockWidget->show();
     else outputDockWidget->hide();
-    
-//    if (tab==1) fileDockWidget->show();
-//    else fileDockWidget->hide();
-    
-//    if (tab==2) graphicsDockWidget->show();
-//    else graphicsDockWidget->hide();
-    
-//    if (tab==2) unitCellDock->show();
-//    else unitCellDock->hide();
-     
-//    if (tab==2) functionDockWidget->show();
-//    else functionDockWidget->hide();
-    
-//    if (tab==2) svoHeaderDock->show();
-//    else svoHeaderDock->hide();
 }
 
 
@@ -1109,7 +665,6 @@ void MainWindow::initConnects()
     connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_beta(double)));
     connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_gamma(double)));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeVolumeScreenshot()));
-//    connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(openSvoAct, SIGNAL(triggered()), this, SLOT(openSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
     connect(saveLoadedSvoAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvo()));
@@ -1122,18 +677,11 @@ void MainWindow::initConnects()
     
     /*this <-> misc*/
     connect(fileFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
-//    connect(imageOpenGLWidget, SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
     connect(fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
     
     // KK
-//    connect(fileFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
     connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadPaths()));
     connect(batchSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setBatchSize(int)));
-//    connect(imagePrevtsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)));
-//    connect(tsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
-//    connect(dataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
-//    connect(dataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
-//    connect(logCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setLog(bool)));
     connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionLorentz(bool)));
     connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setMode(int)));
     connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(saveProject()));
@@ -1160,7 +708,6 @@ void MainWindow::initConnects()
     connect(traceTextureCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(toggleTraceTexture(bool)));
     connect(imageOpenGLWidget, SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
     connect(imageOpenGLWidget, SIGNAL(progressRangeChanged(int,int)), generalProgressBar, SLOT(setRange(int,int)));
-//    connect(imageOpenGLWidget, SIGNAL(visibilityChanged(bool)), generalProgressBar, SLOT(setHidden(bool)));
     connect(correctionNoiseCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionNoise(bool)));
     connect(correctionPlaneCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionPlane(bool)));
     connect(correctionClutterCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(setCorrectionClutter(bool)));
@@ -1175,9 +722,6 @@ void MainWindow::initConnects()
     connect(applySelectionPushButton,SIGNAL(clicked()),this,SLOT(applySelection()));
     connect(selectionModeComboBox,SIGNAL(currentTextChanged(QString)),this,SLOT(setApplyMode(QString)));
     connect(correctionNoiseDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setNoise(double)));
-//    connect(noiseCorrectionMaxDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdNoiseHigh(double)));
-//    connect(postCorrectionMinDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionLow(double)));
-//    connect(postCorrectionMaxDoubleSpinBox,SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionHigh(double)));
     connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), correctionNoiseDoubleSpinBox, SLOT(setValue(double)));
     connect(saveImageAct, SIGNAL(triggered()), this, SLOT(saveImageFunction()));
     connect(this, SIGNAL(saveImage(QString)), imageOpenGLWidget,SLOT(saveImage(QString)));
@@ -1185,14 +729,11 @@ void MainWindow::initConnects()
     connect(this, SIGNAL(takeImageScreenshot(QString)), imageOpenGLWidget,SLOT(takeScreenShot(QString)));
     connect(imageOpenGLWidget, SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
-//    connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), generalProgressBar, SLOT(setVisible(bool)));
     connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
 }
 
 void MainWindow::setGeneralProgressFormat(QString str)
 {
-//    qDebug() << str;
-    
     generalProgressBar->setFormat(str);
 }
 
@@ -1205,8 +746,6 @@ void MainWindow::saveSvo()
 {
     if (svo_inprocess.index.size() > 0)
     {
-//        QFileDialog dialog;
-//        dialog.setDefaultSuffix("svo");
         QString file_name = QFileDialog::getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
 
         if (file_name != "")
@@ -1233,8 +772,6 @@ void MainWindow::saveLoadedSvo()
 {
     if (svo_loaded.getBrickNumber() > 0)
     {
-//        QFileDialog dialog;
-//        dialog.setDefaultSuffix("svo");
         QString file_name = QFileDialog::getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
 
         if (file_name != "")
@@ -1327,45 +864,14 @@ void MainWindow::initMenus()
 
 void MainWindow::initGUI()
 {
-//    QSurfaceFormat format_gl;
-//    format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-//    format_gl.setSwapInterval(1);
-//    format_gl.setSamples(16);
-//    format_gl.setRedBufferSize(8);
-//    format_gl.setGreenBufferSize(8);
-//    format_gl.setBlueBufferSize(8);
-//    format_gl.setAlphaBufferSize(8);
-    
-//    context_cl = new OpenCLContext;
-//    context_cl.setFormat(format_gl);
-//    context_cl.show();
-//    context_cl.hide();
-    
-    
-    /* Top Widget */
-//    {
-//        topWidget = new QWidget;
-
-        // Layout
-//        QGridLayout * topLayout = new QGridLayout;
-//        gridLayout->setHorizontalSpacing(5);
-//        gridLayout->setContentsMargins(5,5,5,5);
-//        topLayout->addWidget(mainMenu,0,0,1,1);
-//        topWidget->setLayout(topLayout);
-//    }
-
-    
     /*      File Select Widget       */
     {
         setFilesWidget = new QWidget;
 
         // Toolbar
-//        fileSelectionToolBar = new QToolBar(tr("File selection toolbar"));
         fileFilter = new QLineEdit;
-//        fileSelectionToolBar->addWidget(fileSelectionFilter);
         
         // File browser
-//        fileBrowserWidget = new QWidget;
         fileSelectionModel  = new FileSelectionModel;
         fileSelectionModel->setRootPath(QDir::rootPath());
 
@@ -1375,20 +881,7 @@ void MainWindow::initGUI()
         loadPathsPushButton = new QPushButton;//(QIcon(":/art/download.png"),"Load selected files"); //QIcon(":/art/rotate_down.png"),
         loadPathsPushButton->setIcon(QIcon(":/art/download.png"));
         loadPathsPushButton->setIconSize(QSize(86,86));
-//        connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadPaths()));
-        
-//        connect(fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
-        
-//        {
-//            QGridLayout * gridLayout = new QGridLayout;
-//            gridLayout->setHorizontalSpacing(5);
-//            gridLayout->setVerticalSpacing(0);
-//            gridLayout->setContentsMargins(5,5,5,5);
-//            gridLayout->addWidget(fileSelectionTree,0,0,1,1);
-    
-//            fileBrowserWidget->setLayout(gridLayout);
-//        }
-        
+
         // Layout
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1471,65 +964,13 @@ void MainWindow::initGUI()
         format_gl.setAlphaBufferSize(8);
         
         imageOpenGLWidget = new ImagePreviewWorker();
-//        imageOpenGLWidget->setMultiThreading(true);
-//        imageOpenGLWidget->setSharedWindow(sharedContextWindow);
         
         imageOpenGLWidget->setFormat(format_gl);
         imageOpenGLWidget->setMouseTracking(true);
-//        imageOpenGLWidget->setOpenCLContext(context_cl);
-//        imageOpenGLWidget->initializeWorker();
-        
-//        imageOpenGLWidget = QWidget::createWindowContainer(imagePreviewWindow);
-//        imageOpenGLWidget->setFocusPolicy(Qt::TabFocus);
-        
-//        imageOpenGLWidget->hide();
         
         imageMainWindow = new QMainWindow;
         imageMainWindow->setAnimated(false);
 
-        // Toolbar
-        
-        
-//        imageBatchPrevButton = new QPushButton;
-//        imageBatchPrevButton->setIcon(QIcon(":art/fast_back.png"));
-//        imageBatchPrevButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-//        connect(imageBatchPrevButton, SIGNAL(clicked()), this, SLOT(batchBackward()));
-
-//        imagePrevButton = new QPushButton;
-//        imagePrevButton->setIcon(QIcon(":art/back.png"));
-//        imagePrevButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-//        connect(imagePrevButton, SIGNAL(clicked()), this, SLOT(prevFrame()));
-
-//        imageBatchNextButton = new QPushButton;
-//        imageBatchNextButton->setIcon(QIcon(":art/fast_forward.png"));
-//        imageBatchNextButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-//        connect(imageBatchNextButton, SIGNAL(clicked()), this, SLOT(batchForward()));
-
-//        imageNextButton = new QPushButton;
-//        imageNextButton->setIcon(QIcon(":art/forward.png"));
-//        imageNextButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-//        connect(imageNextButton, SIGNAL(clicked()), this, SLOT(nextFrame()));
-
-//        nextSeriesButton = new QPushButton;
-//        nextSeriesButton->setIcon(QIcon(":art/forward.png"));
-//        nextSeriesButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-//        connect(nextSeriesButton, SIGNAL(clicked()), this, SLOT(nextSeries()));
-
-//        prevSeriesButton = new QPushButton;
-//        prevSeriesButton->setIcon(QIcon(":art/back.png"));
-//        prevSeriesButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
-//        connect(prevSeriesButton, SIGNAL(clicked()), this, SLOT(prevSeries()));
-
-//        imageSpinBox = new QSpinBox;
-//        imageSpinBox->setRange(0,1);
-//        connect(imageSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setFrame(int)));        
-        
-//        removeCurrentPushButton = new QPushButton(QIcon(":/art/kill.png"),"Remove frame");
-//        connect(removeCurrentPushButton, SIGNAL(clicked()), this, SLOT(removeImage()));
-//        connect(this, SIGNAL(pathRemoved(QString)), fileSelectionModel, SLOT(removeFile(QString)));
-
-        
-    
         saveProjectAction = new QAction(QIcon(":/art/save.png"), tr("Save project"), this);
         loadProjectAction = new QAction(QIcon(":/art/open.png"), tr("Load project"), this);
 
@@ -1556,76 +997,12 @@ void MainWindow::initGUI()
         imageToolBar->addSeparator();
         imageToolBar->addAction(imageScreenshotAct);
         imageToolBar->addAction(saveImageAct);
-//        imageToolBar->addWidget(pathLineEdit);
-    
-//        connect(showWeightCenterAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(showWeightCenter(bool)));
-//        connect(squareAreaSelectAlphaAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setSelectionAlphaActive(bool)));
-//        connect(squareAreaSelectBetaAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setSelectionBetaActive(bool)));
+
         connect(imageOpenGLWidget, SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
         connect(imageOpenGLWidget, SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
 
         imageMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
 
-        // Buttons
-//        setFileButton = new QPushButton;
-//        setFileButton->setIcon(QIcon(":/art/proceed.png"));
-//        setFileButton->setIconSize(QSize(24,24));
-//        setFileButton->setText("Set ");
-
-//        readFileButton = new QPushButton;
-//        readFileButton->setIcon(QIcon(":/art/proceed.png"));
-//        readFileButton->setIconSize(QSize(24,24));
-//        readFileButton->setText("Read ");
-//        readFileButton->setEnabled(false);
-
-//        projectFileButton = new QPushButton;
-//        projectFileButton->setIcon(QIcon(":/art/proceed.png"));
-//        projectFileButton->setIconSize(QSize(24,24));
-//        projectFileButton->setText("Project ");
-//        projectFileButton->setEnabled(false);
-
-//        allInOneButton = new QPushButton;
-//        allInOneButton->setIcon(QIcon(":/art/fast_proceed.png"));
-//        allInOneButton->setText("All (reduced memory consumption) ");
-//        allInOneButton->setIconSize(QSize(24,24));
-
-//        killButton = new QPushButton;
-//        killButton->setIcon(QIcon(":/art/kill.png"));
-//        killButton->setText("Kill ");
-//        killButton->setIconSize(QSize(24,24));
-//        killButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-
-//        toolChainWidget = new QWidget;
-//        QGridLayout * gridLayout = new QGridLayout;
-//        gridLayout->setHorizontalSpacing(5);
-//        gridLayout->setVerticalSpacing(2);
-//        gridLayout->setContentsMargins(5,5,5,5);
-//        gridLayout->setColumnStretch(1,1);
-//        gridLayout->setColumnStretch(2,1);
-//        gridLayout->setColumnStretch(3,1);
-//        gridLayout->setColumnStretch(4,1);
-//        gridLayout->addWidget(setFileButton,0,1,1,1);
-//        gridLayout->addWidget(readFileButton,0,2,1,1);
-//        gridLayout->addWidget(projectFileButton,0,3,1,1);
-//        gridLayout->addWidget(killButton,0,4,2,1);
-//        gridLayout->addWidget(allInOneButton,1,1,1,3);
-//        toolChainWidget->setLayout(gridLayout);
-        
-//        QGridLayout * imageLayout = new QGridLayout;
-//        imageLayout->setRowStretch(1,1);
-//        imageLayout->addWidget(toolChainWidget,0,0,1,8);
-//        imageLayout->addWidget(imageOpenGLWidget,1,0,1,8);
-//        imageLayout->addWidget(imageBatchPrevButton,2,0,1,2);
-//        imageLayout->addWidget(imagePrevButton,2,2,1,1);
-//        imageLayout->addWidget(imageSpinBox,2,3,1,2);
-//        imageLayout->addWidget(imageNextButton,2,5,1,1);
-//        imageLayout->addWidget(imageBatchNextButton,2,6,1,2);
-//        imageLayout->addWidget(prevSeriesButton,3,0,1,2);
-//        imageLayout->addWidget(nextSeriesButton,3,6,1,2);
-//        imageLayout->addWidget(removeCurrentPushButton,3,2,1,4);
-        
-//        imageCentralWidget = new QWidget;
-//        imageCentralWidget->setLayout(imageLayout);
         imageMainWindow->setCentralWidget(imageOpenGLWidget);
     }
     
@@ -1679,7 +1056,6 @@ void MainWindow::initGUI()
     
         imageSettingsDock =  new QDockWidget("Display settings");
         imageSettingsDock->setWidget(imageSettingsWidget);
-//        imageSettingsDock->setFixedHeight(imageSettingsWidget->minimumSizeHint().height()*1.2);
         imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
         
         connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)), Qt::QueuedConnection);
@@ -1687,24 +1063,12 @@ void MainWindow::initGUI()
         connect(imagePreviewDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
         connect(imagePreviewDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
         connect(imagePreviewLogCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setLog(bool)));
-//        connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setMode(int)));
-//        connect(saveProjectAction, SIGNAL(triggered()), this, SLOT(saveProject()));
-//        connect(loadProjectAction, SIGNAL(triggered()), this, SLOT(loadProject()));
-//        connect(this, SIGNAL(imageChanged(ImageInfo)), imageOpenGLWidget, SLOT(setFrame(ImageInfo)));
-//        connect(centerImageAction, SIGNAL(triggered()), imageOpenGLWidget, SLOT(centerImage()));
         connect(this, SIGNAL(centerImage()), imageOpenGLWidget, SLOT(centerImage()));
-        
-//        connect(imageOpenGLWidget, SIGNAL(imageChanged(ImageInfo)), this, SLOT(setImage(ImageInfo)));
-//        connect(imageOpenGLWidget, SIGNAL(selectionChanged(Selection)), this, SLOT(setSeriesSelection(Selection)));
         
     }
     
     // Navigation dock widget
     {
-//        pathLineEdit = new QLineEdit("/path/to/file");
-//        pathLineEdit->setReadOnly(true);
-//        connect(this, SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
-        
         nextFramePushButton = new QPushButton(QIcon(":/art/forward.png"),"Next");
         previousFramePushButton = new QPushButton(QIcon(":/art/back.png"),"Prev");
         batchForwardPushButton = new QPushButton(QIcon(":/art/fast_forward.png"), "Skip");
@@ -1722,13 +1086,7 @@ void MainWindow::initGUI()
         batchSizeSpinBox = new QSpinBox;
         batchSizeSpinBox->setPrefix("Skip size: ");
         
-//        connect(batchSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setBatchSize(int)));
-        
         generalProgressBar = new QProgressBar;
-//        generalProgressBar->hide();
-//        generalProgressBar->setFormat("%v of %m");
-//        generalProgressBar->setRange( 1);
-//        generalProgressBar->setValue(1);
         
         memoryUsageProgressBar = new QProgressBar;
         memoryUsageProgressBar->setRange( 0, 1);
@@ -1749,7 +1107,6 @@ void MainWindow::initGUI()
         gridLayout->addWidget(batchSizeSpinBox,1,2,1,2);
         gridLayout->addWidget(nextSeriesPushButton,1,4,2,2);
         gridLayout->addWidget(removeCurrentPushButton, 2, 2, 1 , 2);
-//        gridLayout->addWidget(pathLineEdit,3,0,1,6);
         gridLayout->addWidget(generalProgressBar, 3, 0, 1 , 6);
         gridLayout->addWidget(memoryUsageProgressBar, 4, 0, 1 , 6);
         
@@ -1757,9 +1114,7 @@ void MainWindow::initGUI()
         navigationWidget->setLayout(gridLayout);
     
         navigationDock =  new QDockWidget("Navigation");
-    //    navigationDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
         navigationDock->setWidget(navigationWidget);
-//        navigationDock->setFixedHeight(navigationWidget->minimumSizeHint().height()*1.2);
         imageMainWindow->addDockWidget(Qt::BottomDockWidgetArea, navigationDock);
     }
     
@@ -1787,7 +1142,6 @@ void MainWindow::initGUI()
         selectionWidget->setLayout(gridLayout);
     
         selectionDock =  new QDockWidget("Frame-by-frame operations");
-//        selectionDock->setFixedHeight(selectionWidget->minimumSizeHint().height()*1.2);
         selectionDock->setWidget(selectionWidget);
         imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, selectionDock); 
     }
@@ -1846,53 +1200,8 @@ void MainWindow::initGUI()
         correctionWidget->setLayout(gridLayout);
         
         correctionDock =  new QDockWidget("Frame-by-frame corrections");
-    //    correctionDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
         correctionDock->setWidget(correctionWidget);
-//        correctionDock->setFixedHeight(correctionWidget->minimumSizeHint().height()*1.2);
         imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
-        
-        
-        // // //
-        
-//        noiseCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
-//        noiseCorrectionMinDoubleSpinBox->setRange(-1e6,1e6);
-//        noiseCorrectionMinDoubleSpinBox->setPrefix("Noise: ");
-        
-//        noiseCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
-//        noiseCorrectionMaxDoubleSpinBox->setRange(-1e6,1e6);
-        
-//        postCorrectionMinDoubleSpinBox = new QDoubleSpinBox;
-//        postCorrectionMinDoubleSpinBox->setRange(-1e6,1e6);
-//        postCorrectionMinDoubleSpinBox->setPrefix("PCT: ");
-        
-//        postCorrectionMaxDoubleSpinBox = new QDoubleSpinBox;
-//        postCorrectionMaxDoubleSpinBox->setRange(-1e6,1e6);
-        
-//        correctionLorentzCheckBox = new QCheckBox("Lorentz correction");
-//        autoBackgroundCorrectionCheckBox = new QCheckBox("Automatic background subtraction");
-        
-//        connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrection(bool)));
-//        connect(autoBackgroundCorrectionCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setAutoBackgroundCorrection(bool)));
-//        connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), noiseCorrectionMinDoubleSpinBox, SLOT(setValue(double)));
-        
-        
-//        QGridLayout * correctionLayout = new QGridLayout;
-//        correctionLayout->addWidget(noiseCorrectionMinDoubleSpinBox,0,0,1,2);
-//        correctionLayout->addWidget(correctionLorentzCheckBox,1,0,1,2);
-        
-//        correctionWidget = new QWidget;
-//        correctionWidget->setLayout(correctionLayout);
-        
-//        correctionDock =  new QDockWidget("Background");
-//        correctionDock->setWidget(correctionWidget);
-//        correctionDock->setFixedHeight(correctionWidget->minimumSizeHint().height()*1.2);
-//        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, correctionDock);
-        
-        
-//        connect(this->noiseCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdNoiseLow(double)));
-//        connect(this->noiseCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdNoiseHigh(double)));
-//        connect(this->postCorrectionMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionLow(double)));
-//        connect(this->postCorrectionMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setThresholdPostCorrectionHigh(double)));
     }
     
     
@@ -2065,8 +1374,6 @@ void MainWindow::initGUI()
         helpCellOverlayButton->setCheckable(true);
         helpCellOverlayButton->setChecked(true);
         
-//        connect(helpCellOverlayButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setMiniCell()));
-        
         QGridLayout * gridLayout = new QGridLayout; 
         gridLayout->setHorizontalSpacing(5);
         gridLayout->setVerticalSpacing(2);
@@ -2118,11 +1425,6 @@ void MainWindow::initGUI()
         svoHeaderDock->setWidget(svoHeaderEdit);
         
         volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, svoHeaderDock);
-
-//        svoHeaderDock->hide();
-        
-//        connect(this, SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
-        
     }
     
     /* File Controls Widget */
@@ -2201,30 +1503,25 @@ void MainWindow::initGUI()
     {
         setFileButton = new QPushButton;
         setFileButton->setIcon(QIcon(":/art/proceed.png"));
-//        setFileButton->setIconSize(QSize(24,24));
         setFileButton->setText("Set ");
 
         readFileButton = new QPushButton;
         readFileButton->setIcon(QIcon(":/art/proceed.png"));
-//        readFileButton->setIconSize(QSize(24,24));
         readFileButton->setText("Read ");
         readFileButton->setEnabled(false);
 
         projectFileButton = new QPushButton;
         projectFileButton->setIcon(QIcon(":/art/proceed.png"));
-//        projectFileButton->setIconSize(QSize(24,24));
         projectFileButton->setText("Project ");
         projectFileButton->setEnabled(false);
 
         reconstructButton = new QPushButton;
         reconstructButton->setIcon(QIcon(":/art/fast_proceed.png"));
         reconstructButton->setText("Reconstruct frames");
-//        allInOneButton->setIconSize(QSize(24,24));
 
         killButton = new QPushButton;
         killButton->setIcon(QIcon(":/art/kill.png"));
         killButton->setText("Kill ");
-//        killButton->setIconSize(QSize(24,24));
         
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
@@ -2233,7 +1530,6 @@ void MainWindow::initGUI()
         voxelizeButton = new QPushButton;
         voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
         voxelizeButton->setText("Generate tree");
-//        voxelizeButton->setEnabled(false);
         
         saveSvoButton = new QPushButton;
         saveSvoButton->setIcon(QIcon(":/art/save.png"));
@@ -2256,7 +1552,6 @@ void MainWindow::initGUI()
         
         voxelizeDockWidget = new QDockWidget("Reconstruction operations");
         voxelizeDockWidget->setWidget(voxelizeWidget);
-//        voxelizeDockWidget->setFixedHeight(voxelizeWidget->minimumSizeHint().height()*1.1);
         viewMenu->addAction(voxelizeDockWidget->toggleViewAction());
         imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, voxelizeDockWidget);
     }
@@ -2323,11 +1618,6 @@ void MainWindow::initGUI()
         outputDockWidget = new QDockWidget(tr("Message log"), this);
         botWidget = new QWidget;
 
-        // Progress Bar
-//        genericProgressBar = new QProgressBar;
-//        genericProgressBar->setRange( 0, 100);
-//        genericProgressBar->setVisible(false);
-        
         // Text output
         errorTextEdit = new QPlainTextEdit;
         error_highlighter = new Highlighter(errorTextEdit->document());
@@ -2339,8 +1629,6 @@ void MainWindow::initGUI()
         gridLayout->setVerticalSpacing(0);
         gridLayout->setContentsMargins(5,5,5,5);
         gridLayout->addWidget(errorTextEdit, 0, 0, 1, 1);
-//        gridLayout->addWidget(genericProgressBar, 1, 0, 1, 1);
-//        gridLayout->addWidget(memoryUsageProgressBar, 2, 0, 1, 1);
 
         botWidget->setLayout(gridLayout);
         outputDockWidget->setWidget(botWidget);
@@ -2373,11 +1661,9 @@ void MainWindow::initGUI()
     tabWidget->addTab(outputPlainTextEdit, "Text output");
 
     // Put into main layout
-//    mainLayout->setContentsMargins(3,3,3,3);
     mainLayout = new QGridLayout;
     mainLayout->setSpacing(0);
     mainLayout->setContentsMargins(0,0,0,0);
-//    mainLayout->addWidget(topWidget,0,0,1,1);
     mainLayout->addWidget(tabWidget,1,0,1,1);
     
     mainWidget = new QWidget(this);
@@ -2402,10 +1688,7 @@ void MainWindow::applySelection()
 
 void MainWindow::setApplyMode(QString str)
 {
-//    qDebug() << str;
-
     apply_mode = str;
-//    integration_mode = str;
 }
 
 void MainWindow::nextFrame()

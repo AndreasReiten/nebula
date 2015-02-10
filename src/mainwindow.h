@@ -38,15 +38,6 @@ private slots:
     void displayPopup(QString title, QString text);
     void transferSet();
     
-    // Toolchain button stuff
-//    void anyButtonStart();
-
-//    void setFileButtonFinish();
-//    void allInOneButtonFinish();
-//    void readFileButtonFinish();
-//    void projectFileButtonFinish();
-//    void voxelizeButtonFinish();
-
     void takeVolumeScreenshot();
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
@@ -59,37 +50,17 @@ private slots:
     void aboutOpenCL();
     void aboutOpenGL();
 
-
     void print(QString str);
     void setGeneralProgressFormat(QString str);
     void setMemoryUsageFormat(QString str);
     void openUnitcellFile();
     void initWorkers();
 
-//    void runProjectFileThread();
-//    void runAllInOneThread();
-//    void setImage(ImageInfo image);
-//    void setSeriesSelection(Selection area);
     void loadPaths();
-//    void removeImage();
-//    void setFrame(int value);
-//    void nextFrame();
-//    void prevFrame();
-//    void batchForward();
-//    void batchBackward();
-//    void nextSeries();
-//    void prevSeries();
-    
     void setHeader(QString path);
     
     void saveProject();
     void loadProject();
-    
-//    void setSelection(Selection rect);
-    
-    // File selection
-//    void setFilesFromSelectionModel();
-    
     
     void applyAnalytics();
     void applyPlaneMarker();
@@ -113,7 +84,6 @@ signals:
     void captureFrameBuffer(QString path);
     void changedUB();
     void pathRemoved(QString path);
-//    void pathChanged(QString path);
     void imageChanged(ImageInfo image);
     void selectionChanged(Selection area);
     void centerImage();
@@ -202,28 +172,12 @@ private:
     QPushButton * removeCurrentPushButton;
 
 
-    // OpenCL
-//    OpenCLContext * context_cl;
-
-    // QThreads
-//    QThread * readScriptThread;
-//    QThread * setFileThread;
-//    QThread * readFileThread;
-//    QThread * projectFileThread;
     QThread * voxelizeThread;
-//    QThread * reconstructThread;
-    QThread * displayFileThread;
 
     // Workers
-//    ReadScriptWorker * readScriptWorker;
-//    SetFileWorker * setFileWorker;
-//    ReadFileWorker * readFileWorker;
-//    ProjectFileWorker * projectFileWorker;
-//    ReconstructWorker * reconstructWorker;
     VoxelizeWorker * voxelizeWorker;
 
     // File browser
-//    QWidget * fileBrowserWidget;
     FileSelectionModel * fileSelectionModel;
     FileTreeView *fileTreeView;
     void setFiles(QMap<QString, QStringList> folder_map);
@@ -231,22 +185,6 @@ private:
     
     // Image browser widget
     QMainWindow * imageMainWindow;
-//    QWidget * imageCentralWidget;
-    
-//    QLineEdit * pathLineEdit;
-    
-//    QWidget * imageOpenGLWidget;
-    
-//    QPushButton * imageBatchPrevButton;
-//    QPushButton * imagePrevButton;
-    
-//    QPushButton * imageBatchNextButton;
-//    QPushButton * imageNextButton;
-
-//    QPushButton * nextSeriesButton;
-//    QPushButton * prevSeriesButton;
-
-//    QSpinBox * imageSpinBox;
 
     // Actions
     QAction *shadowAct;
@@ -303,7 +241,6 @@ private:
 
 
     QString strippedName(const QString &fullFileName);
-//    QString curFile;
     QString info;
 
     QLineEdit * hklEdit;
@@ -329,16 +266,10 @@ private:
     // Volume render widget
     QMainWindow * volumeRenderMainWindow;
     
-//    QComboBox *formatComboBox;
     QComboBox *activeAngleComboBox;
 
     QSpinBox * svoLevelSpinBox;
 
-//    QDoubleSpinBox *noiseCorrectionMinDoubleSpinBox;
-//    QDoubleSpinBox *noiseCorrectionMaxDoubleSpinBox;
-//    QDoubleSpinBox *postCorrectionMinDoubleSpinBox;
-//    QDoubleSpinBox *postCorrectionMaxDoubleSpinBox;
-    
     QDoubleSpinBox *omegaCorrectionSpinBox;
     QDoubleSpinBox *kappaCorrectionSpinBox;
     QDoubleSpinBox *phiCorrectionSpinBox;
@@ -379,7 +310,6 @@ private:
 
     QWidget *toolChainWidget;
     QWidget *mainWidget;
-//    QWidget *topWidget;
     QWidget *botWidget;
     QWidget *graphicsWidget;
     QWidget *functionWidget;
@@ -435,9 +365,7 @@ protected:
     ImagePreviewWorker * imageOpenGLWidget;
 
     // OpenGL rendering widgets
-//    SharedContextWindow *sharedContextWindow;
     VolumeRenderWorker *volumeOpenGLWidget;
-//    QWidget *volumeRenderWidget;
 
     /* Image browser toolbar */
     QToolBar * imageToolBar;
@@ -463,17 +391,6 @@ protected:
     QWidget * imageSettingsWidget;
     QDockWidget * imageSettingsDock;
     
-    /* Image corrections widget */
-//    QCheckBox * autoBackgroundCorrectionCheckBox;
-    
-//    QCheckBox * correctionLorentzCheckBox;
-    
-    
-    // Image Preview Widget
-//    ImagePreviewWindow * imagePreviewWindow;
-//    int display_file;
-
-
     QDockWidget *outputDockWidget;
     QDockWidget *graphicsDockWidget;
     QDockWidget *functionDockWidget;
@@ -482,7 +399,6 @@ protected:
     QString screenshot_dir;
 
     QPlainTextEdit *errorTextEdit;
-//    QProgressBar *genericProgressBar;
     QProgressBar *memoryUsageProgressBar;
 
     QMenuBar * mainMenu;
@@ -490,26 +406,9 @@ protected:
     QMenu *svoMenu;
     QMenu *viewMenu;
     QMenu *helpMenu;
-//    QToolBar *fileSelectionToolBar;
     QToolBar *viewToolBar;
 
-    // Main resources
-//    QStringList file_paths;
-//    QList<DetectorFile> files;
-//    ImageSeries image_folder;
-//    SeriesSet series_set;
-
     Matrix<float> reduced_pixels;
-
-    // Related to file treatment
-//    float threshold_reduce_low;
-//    float threshold_reduce_high;
-//    float threshold_project_low;
-//    float threshold_project_high;
-
-    // Related to Voxelize
-//    int brick_inner_dimension;
-//    int brick_outer_dimension;
 
     QGridLayout * mainLayout;
 
