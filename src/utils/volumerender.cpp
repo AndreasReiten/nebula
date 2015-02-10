@@ -22,7 +22,7 @@
 #include <QDateTime>
 #include <QMouseEvent>
 #include <QOpenGLShaderProgram>
-#include <QResizeEvent>
+//#include <QResizeEvent>
 #include <QPolygonF>
 #include <QScreen>
 #include <QPainter>
@@ -143,82 +143,82 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       displayResolution(true)
 {
     // Resolve OpenCL functions
-    QLibrary myLib("OpenCL");
+//    QLibrary myLib("OpenCL");
 
-    QOpenCLGetPlatformIDs = (PROTOTYPE_QOpenCLGetPlatformIDs) myLib.resolve("clGetPlatformIDs");
-    if (!QOpenCLGetPlatformIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLGetPlatformIDs = (PROTOTYPE_QOpenCLGetPlatformIDs) myLib.resolve("clGetPlatformIDs");
+//    if (!QOpenCLGetPlatformIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLGetDeviceIDs = (PROTOTYPE_QOpenCLGetDeviceIDs) myLib.resolve("clGetDeviceIDs");
-    if (!QOpenCLGetDeviceIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLGetDeviceIDs = (PROTOTYPE_QOpenCLGetDeviceIDs) myLib.resolve("clGetDeviceIDs");
+//    if (!QOpenCLGetDeviceIDs) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLGetPlatformInfo = (PROTOTYPE_QOpenCLGetPlatformInfo) myLib.resolve("clGetPlatformInfo");
-    if (!QOpenCLGetPlatformInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLGetPlatformInfo = (PROTOTYPE_QOpenCLGetPlatformInfo) myLib.resolve("clGetPlatformInfo");
+//    if (!QOpenCLGetPlatformInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLGetDeviceInfo = (PROTOTYPE_QOpenCLGetDeviceInfo) myLib.resolve("clGetDeviceInfo");
-    if (!QOpenCLGetDeviceInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLGetDeviceInfo = (PROTOTYPE_QOpenCLGetDeviceInfo) myLib.resolve("clGetDeviceInfo");
+//    if (!QOpenCLGetDeviceInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateProgramWithSource = (PROTOTYPE_QOpenCLCreateProgramWithSource) myLib.resolve("clCreateProgramWithSource");
-    if (!QOpenCLCreateProgramWithSource) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateProgramWithSource = (PROTOTYPE_QOpenCLCreateProgramWithSource) myLib.resolve("clCreateProgramWithSource");
+//    if (!QOpenCLCreateProgramWithSource) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLGetProgramBuildInfo = (PROTOTYPE_QOpenCLGetProgramBuildInfo) myLib.resolve("clGetProgramBuildInfo");
-    if (!QOpenCLGetProgramBuildInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLGetProgramBuildInfo = (PROTOTYPE_QOpenCLGetProgramBuildInfo) myLib.resolve("clGetProgramBuildInfo");
+//    if (!QOpenCLGetProgramBuildInfo) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateContext = (PROTOTYPE_QOpenCLCreateContext) myLib.resolve("clCreateContext");
-    if (!QOpenCLCreateContext) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateContext = (PROTOTYPE_QOpenCLCreateContext) myLib.resolve("clCreateContext");
+//    if (!QOpenCLCreateContext) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateCommandQueue = (PROTOTYPE_QOpenCLCreateCommandQueue) myLib.resolve("clCreateCommandQueue");
-    if (!QOpenCLCreateCommandQueue) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateCommandQueue = (PROTOTYPE_QOpenCLCreateCommandQueue) myLib.resolve("clCreateCommandQueue");
+//    if (!QOpenCLCreateCommandQueue) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLSetKernelArg = (PROTOTYPE_QOpenCLSetKernelArg) myLib.resolve("clSetKernelArg");
-    if (!QOpenCLSetKernelArg) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLSetKernelArg = (PROTOTYPE_QOpenCLSetKernelArg) myLib.resolve("clSetKernelArg");
+//    if (!QOpenCLSetKernelArg) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLEnqueueNDRangeKernel = (PROTOTYPE_QOpenCLEnqueueNDRangeKernel) myLib.resolve("clEnqueueNDRangeKernel");
-    if (!QOpenCLEnqueueNDRangeKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLEnqueueNDRangeKernel = (PROTOTYPE_QOpenCLEnqueueNDRangeKernel) myLib.resolve("clEnqueueNDRangeKernel");
+//    if (!QOpenCLEnqueueNDRangeKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLFinish= (PROTOTYPE_QOpenCLFinish) myLib.resolve("clFinish");
-    if (!QOpenCLFinish) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLFinish= (PROTOTYPE_QOpenCLFinish) myLib.resolve("clFinish");
+//    if (!QOpenCLFinish) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLEnqueueReleaseGLObjects = (PROTOTYPE_QOpenCLEnqueueReleaseGLObjects) myLib.resolve("clEnqueueReleaseGLObjects");
-    if (!QOpenCLEnqueueReleaseGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLEnqueueReleaseGLObjects = (PROTOTYPE_QOpenCLEnqueueReleaseGLObjects) myLib.resolve("clEnqueueReleaseGLObjects");
+//    if (!QOpenCLEnqueueReleaseGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLEnqueueAcquireGLObjects = (PROTOTYPE_QOpenCLEnqueueAcquireGLObjects) myLib.resolve("clEnqueueAcquireGLObjects");
-    if (!QOpenCLEnqueueAcquireGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLEnqueueAcquireGLObjects = (PROTOTYPE_QOpenCLEnqueueAcquireGLObjects) myLib.resolve("clEnqueueAcquireGLObjects");
+//    if (!QOpenCLEnqueueAcquireGLObjects) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateKernel = (PROTOTYPE_QOpenCLCreateKernel) myLib.resolve("clCreateKernel");
-    if (!QOpenCLCreateKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateKernel = (PROTOTYPE_QOpenCLCreateKernel) myLib.resolve("clCreateKernel");
+//    if (!QOpenCLCreateKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLEnqueueReadBuffer = (PROTOTYPE_QOpenCLEnqueueReadBuffer) myLib.resolve("clEnqueueReadBuffer");
-    if (!QOpenCLEnqueueReadBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLEnqueueReadBuffer = (PROTOTYPE_QOpenCLEnqueueReadBuffer) myLib.resolve("clEnqueueReadBuffer");
+//    if (!QOpenCLEnqueueReadBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateBuffer = (PROTOTYPE_QOpenCLCreateBuffer) myLib.resolve("clCreateBuffer");
-    if (!QOpenCLCreateBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateBuffer = (PROTOTYPE_QOpenCLCreateBuffer) myLib.resolve("clCreateBuffer");
+//    if (!QOpenCLCreateBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLReleaseMemObject = (PROTOTYPE_QOpenCLReleaseMemObject) myLib.resolve("clReleaseMemObject");
-    if (!QOpenCLReleaseMemObject) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLReleaseMemObject = (PROTOTYPE_QOpenCLReleaseMemObject) myLib.resolve("clReleaseMemObject");
+//    if (!QOpenCLReleaseMemObject) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateFromGLTexture2D = (PROTOTYPE_QOpenCLCreateFromGLTexture2D) myLib.resolve("clCreateFromGLTexture2D");
-    if (!QOpenCLCreateFromGLTexture2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateFromGLTexture2D = (PROTOTYPE_QOpenCLCreateFromGLTexture2D) myLib.resolve("clCreateFromGLTexture2D");
+//    if (!QOpenCLCreateFromGLTexture2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateSampler = (PROTOTYPE_QOpenCLCreateSampler) myLib.resolve("clCreateSampler");
-    if (!QOpenCLCreateSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateSampler = (PROTOTYPE_QOpenCLCreateSampler) myLib.resolve("clCreateSampler");
+//    if (!QOpenCLCreateSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLEnqueueWriteBuffer = (PROTOTYPE_QOpenCLEnqueueWriteBuffer) myLib.resolve("clEnqueueWriteBuffer");
-    if (!QOpenCLEnqueueWriteBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLEnqueueWriteBuffer = (PROTOTYPE_QOpenCLEnqueueWriteBuffer) myLib.resolve("clEnqueueWriteBuffer");
+//    if (!QOpenCLEnqueueWriteBuffer) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLReleaseKernel = (PROTOTYPE_QOpenCLReleaseKernel) myLib.resolve("clReleaseKernel");
-    if (!QOpenCLReleaseKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLReleaseKernel = (PROTOTYPE_QOpenCLReleaseKernel) myLib.resolve("clReleaseKernel");
+//    if (!QOpenCLReleaseKernel) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateImage2D = (PROTOTYPE_QOpenCLCreateImage2D) myLib.resolve("clCreateImage2D");
-    if (!QOpenCLCreateImage2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateImage2D = (PROTOTYPE_QOpenCLCreateImage2D) myLib.resolve("clCreateImage2D");
+//    if (!QOpenCLCreateImage2D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLCreateImage3D = (PROTOTYPE_QOpenCLCreateImage3D) myLib.resolve("clCreateImage3D");
-    if (!QOpenCLCreateImage3D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLCreateImage3D = (PROTOTYPE_QOpenCLCreateImage3D) myLib.resolve("clCreateImage3D");
+//    if (!QOpenCLCreateImage3D) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLEnqueueReadImage = (PROTOTYPE_QOpenCLEnqueueReadImage) myLib.resolve("clEnqueueReadImage");
-    if (!QOpenCLEnqueueReadImage) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLEnqueueReadImage = (PROTOTYPE_QOpenCLEnqueueReadImage) myLib.resolve("clEnqueueReadImage");
+//    if (!QOpenCLEnqueueReadImage) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
-    QOpenCLReleaseSampler = (PROTOTYPE_QOpenCLReleaseSampler) myLib.resolve("clReleaseSampler");
-    if (!QOpenCLReleaseSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
+//    QOpenCLReleaseSampler = (PROTOTYPE_QOpenCLReleaseSampler) myLib.resolve("clReleaseSampler");
+//    if (!QOpenCLReleaseSampler) qFatal(QString("Failed to resolve function:"+myLib.errorString()).toStdString().c_str());
 
 
     // Marker
@@ -351,19 +351,21 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
 VolumeRenderWorker::~VolumeRenderWorker()
 {
 //    qDebug() << "Destroy";
+    if (!(isCLInitialized && isGLInitialized)) return;
     
-    if (isInitialized)
-    {
-        glDeleteBuffers(1, &lab_frame_vbo);
-        glDeleteBuffers(1, &scalebar_vbo);
-        glDeleteBuffers(1, &count_scalebar_vbo);
-        glDeleteBuffers(1, &centerline_vbo);
-        glDeleteBuffers(1, &point_vbo);
-        glDeleteBuffers(1, &point_vbo);
-        glDeleteBuffers(1, &unitcell_vbo);
-        glDeleteBuffers(1, &marker_centers_vbo);
-        glDeleteBuffers(1, &minicell_vbo);
-    }
+    glDeleteBuffers(1, &lab_frame_vbo);
+    glDeleteBuffers(1, &scalebar_vbo);
+    glDeleteBuffers(1, &count_scalebar_vbo);
+    glDeleteBuffers(1, &centerline_vbo);
+    glDeleteBuffers(1, &point_vbo);
+    glDeleteBuffers(1, &point_vbo);
+    glDeleteBuffers(1, &unitcell_vbo);
+    glDeleteBuffers(1, &marker_centers_vbo);
+    glDeleteBuffers(1, &minicell_vbo);
+    
+    glDeleteTextures(1, &ray_tex_gl);
+    glDeleteTextures(1, &tsf_tex_gl);
+    glDeleteTextures(1, &tsf_tex_gl_thumb);
 }
 
 void VolumeRenderWorker::toggleHkl()
@@ -373,7 +375,7 @@ void VolumeRenderWorker::toggleHkl()
 
 void VolumeRenderWorker::paintGL()
 {
-    QPainter painter(paint_device_gl);
+    QPainter painter(this);
 
     painter.setRenderHint(QPainter::Antialiasing);
     
@@ -415,7 +417,9 @@ void VolumeRenderWorker::paintGL()
 
 void VolumeRenderWorker::resizeGL(int w, int h)
 {
-    
+    ctc_matrix.setWindow(this->width(), this->height());
+
+    setRayTexture(quality_percentage);
 }
 
 QPointF VolumeRenderWorker::posGLtoQt(QPointF coord)
@@ -442,8 +446,20 @@ void VolumeRenderWorker::initializeGL()
     
     // Initialize OpenGL
     QOpenGLFunctions::initializeOpenGLFunctions();
+
+    glGenBuffers(1, &lab_frame_vbo);
+    glGenBuffers(1, &scalebar_vbo);
+    glGenBuffers(1, &count_scalebar_vbo);
+    glGenBuffers(1, &centerline_vbo);
+    glGenBuffers(1, &point_vbo);
+    glGenBuffers(1, &unitcell_vbo);
+    glGenBuffers(1, &marker_centers_vbo);
+    glGenBuffers(1, &minicell_vbo);
+    glGenTextures(1, &ray_tex_gl);
+    glGenTextures(1, &tsf_tex_gl);
+    glGenTextures(1, &tsf_tex_gl_thumb);
     
-    if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice(this->size());
+//    if (!paint_device_gl) paint_device_gl = new QOpenGLPaintDevice(this->size());
     
     // Shader for drawing textures in 2D
     std_2d_tex_program = new QOpenGLShaderProgram(this);
@@ -515,8 +531,7 @@ void VolumeRenderWorker::initializeGL()
     
     
     // Initialize OpenCL
-    initResourcesCL();
-    initResourcesGL();
+    initializeCL();
     
     isGLInitialized = true;
     isCLInitialized = true;
@@ -653,34 +668,26 @@ void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
     updateUnitCellText();
 }
 
-void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+void VolumeRenderWorker::mousePressEvent(QMouseEvent * event)
 {
-    Q_UNUSED(x);
-    Q_UNUSED(y);
-    Q_UNUSED(left_button);
-    Q_UNUSED(mid_button);
-    Q_UNUSED(right_button);
-    Q_UNUSED(ctrl_button);
-    Q_UNUSED(shift_button);
-    
-    if (isRulerActive && left_button)
+    if (isRulerActive && (event->buttons() & Qt::LeftButton))
     {
-        ruler[0] = x;
-        ruler[1] = y;
-        ruler[2] = x;
-        ruler[3] = y;
+        ruler[0] = event->x();
+        ruler[1] = event->y();
+        ruler[2] = event->x();
+        ruler[3] = event->y();
     }
     
     accumulated_roll = 0;
     
     GLfloat depth;
-    glReadPixels(x, this->height() - y - 1, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    glReadPixels(event->x(), this->height() - event->y() - 1, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
     
-    if (( depth < 1.0) && (markers.size() > 0) && left_button && !right_button && !mid_button)
+    if (( depth < 1.0) && (markers.size() > 0) && (event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton) && !(event->buttons() & Qt::MidButton))
     {
         Matrix<double> xyz_clip(4,1,1.0);
-        xyz_clip[0] = 2.0 * (double) x / (double) this->width() - 1.0;
-        xyz_clip[1] = 2.0 * (double) (this->height() - y)/ (double) this->height() - 1.0;
+        xyz_clip[0] = 2.0 * (double) event->x() / (double) this->width() - 1.0;
+        xyz_clip[1] = 2.0 * (double) (this->height() - event->y())/ (double) this->height() - 1.0;
         xyz_clip[2] = 2.0 * depth - 1.0;
             
         Matrix<double> xyz = view_matrix.inverse4x4() * xyz_clip;
@@ -702,7 +709,7 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
             }
         }
         
-        if (ctrl_button)
+        if ((event->buttons() & Qt::ControlModifier))
         {
             markers.remove(closest);
             glDeleteBuffers(1, &marker_vbo[closest]);
@@ -749,15 +756,9 @@ void VolumeRenderWorker::metaMousePressEvent(int x, int y, int left_button, int 
     
 }
 
-void VolumeRenderWorker::metaMouseReleaseEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+void VolumeRenderWorker::mouseReleaseEvent(QMouseEvent * event)
 {
-    Q_UNUSED(x);
-    Q_UNUSED(y);
-    Q_UNUSED(left_button);
-    Q_UNUSED(mid_button);
-    Q_UNUSED(right_button);
-    Q_UNUSED(ctrl_button);
-    Q_UNUSED(shift_button);
+    
 }
 
 
@@ -766,42 +767,42 @@ void VolumeRenderWorker::metaMouseReleaseEvent(int x, int y, int left_button, in
 //    qDebug() << ev.x() << ev.y();
 //}
 
-void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int mid_button, int right_button, int ctrl_button, int shift_button)
+void VolumeRenderWorker::mouseMoveEvent(QMouseEvent *event)
 {
-//    if (left_button) isLMBDown = true;
+//    if ((event->buttons() & Qt::LeftButton)) isLMBDown = true;
 //    else isLMBDown = false;
 
-    if (left_button && isRulerActive)
+    if ((event->buttons() & Qt::LeftButton) && isRulerActive)
     {
-        ruler[2] = x;
-        ruler[3] = y;
+        ruler[2] = event->x();
+        ruler[3] = event->y();
     }
     
-    if ((std::abs(last_mouse_pos_x - x) < 50) && (std::abs(last_mouse_pos_y - y) < 50))
+//    if ((std::abs(last_mouse_pos_x - event->x()) < 50) && (std::abs(last_mouse_pos_y - event->y()) < 50))
     {
         float move_scaling = 0.6;
-        if(ctrl_button) move_scaling = 0.1;
+        if((event->buttons() & Qt::ControlModifier)) move_scaling = 0.1;
 
-        if (left_button && !right_button && !isRulerActive)
+        if ((event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton) && !isRulerActive)
         {
             /* Rotation happens multiplicatively around a rolling axis given
              * by the mouse move direction and magnitude.
              * Moving the mouse alters rotation.
              * */
 
-            double eta = std::atan2((double)x - last_mouse_pos_x, (double)y - last_mouse_pos_y) - pi*1.0;
-            double roll = move_scaling * pi/((float) this->height()) * std::sqrt((double)(x - last_mouse_pos_x)*(x - last_mouse_pos_x) + (y - last_mouse_pos_y)*(y - last_mouse_pos_y));
+            double eta = std::atan2((double)event->x() - last_mouse_pos_x, (double) event->y() - last_mouse_pos_y) - pi*1.0;
+            double roll = move_scaling * pi/((float) this->height()) * std::sqrt((double)(event->x() - last_mouse_pos_x)*(event->x() - last_mouse_pos_x) + (event->y() - last_mouse_pos_y)*(event->y() - last_mouse_pos_y));
             
             RotationMatrix<double> roll_rotation;
             roll_rotation.setArbRotation(-0.5*pi, eta, roll);
             
-            if (shift_button && isURotationActive && isUnitcellActive)
+            if ((event->buttons() & Qt::ShiftModifier) && isURotationActive && isUnitcellActive)
             {
                 U = rotation.inverse4x4() * roll_rotation * rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
-            else if(shift_button) 
+            else if((event->buttons() & Qt::ShiftModifier)) 
             {
                 scalebar_rotation = rotation.inverse4x4() * roll_rotation * rotation * scalebar_rotation;
             }
@@ -809,8 +810,10 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             {
                 rotation = roll_rotation * rotation;
             }
+            
+            update();
         }
-        else if (left_button && right_button && !mid_button && !isRulerActive)
+        else if ((event->buttons() & Qt::LeftButton) && (event->buttons() & Qt::RightButton) && !(event->buttons() & Qt::MidButton) && !isRulerActive)
         {
             /* Rotation happens multiplicatively around a rolling axis given
              * by the mouse move direction and magnitude.
@@ -818,19 +821,19 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
              * */
 
             RotationMatrix<double> roll_rotation;
-            double roll = move_scaling * pi/((float) this->height()) * (y - last_mouse_pos_y);
+            double roll = move_scaling * pi/((float) this->height()) * (event->y() - last_mouse_pos_y);
             
             accumulated_roll += roll;
             
             roll_rotation.setArbRotation(0, 0, roll);
 
-            if (shift_button && isURotationActive && isUnitcellActive)
+            if ((event->buttons() & Qt::ShiftModifier) && isURotationActive && isUnitcellActive)
             {
                 U = rotation.inverse4x4() * roll_rotation *  rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
-            else if(shift_button) 
+            else if((event->buttons() & Qt::ShiftModifier)) 
             {
                 scalebar_rotation = rotation.inverse4x4() * roll_rotation *  rotation * scalebar_rotation;
             }
@@ -838,14 +841,15 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             {
                 rotation = roll_rotation * rotation;
             }
-
+            
+            update();
         }
-        else if (mid_button && !left_button && !right_button)
+        else if ((event->buttons() & Qt::MidButton) && !(event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton))
         {
             /* X/Y translation happens multiplicatively. Here it is
              * important to retain the bounding box accordingly  */
-            float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) this->height()) * (x - last_mouse_pos_x);
-            float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) this->height()) * (y - last_mouse_pos_y);
+            float dx = move_scaling * 2.0*(data_view_extent[1]-data_view_extent[0])/((float) this->height()) * (event->x() - last_mouse_pos_x);
+            float dy = move_scaling * -2.0*(data_view_extent[3]-data_view_extent[2])/((float) this->height()) * (event->y() - last_mouse_pos_y);
 
             Matrix<double> data_translation_prev;
             data_translation_prev.setIdentity(4);
@@ -860,11 +864,13 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             this->data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
             
             updateUnitCellText();
+            
+            update();
         }
-        else if (!left_button && right_button && !mid_button)
+        else if (!(event->buttons() & Qt::LeftButton) && (event->buttons() & Qt::RightButton) && !(event->buttons() & Qt::MidButton))
         {
             /* Z translation happens multiplicatively */
-            float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) this->height()) * (y - last_mouse_pos_y);
+            float dz = move_scaling * 2.0*(data_view_extent[5]-data_view_extent[4])/((float) this->height()) * (event->y() - last_mouse_pos_y);
 
             Matrix<double> data_translation_prev;
             data_translation_prev.setIdentity(4);
@@ -878,18 +884,22 @@ void VolumeRenderWorker::metaMouseMoveEvent(int x, int y, int left_button, int m
             this->data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
             
             updateUnitCellText();
+            
+            update();
         }
 
     }
     
-    last_mouse_pos_x = x;
-    last_mouse_pos_y = y;
+    last_mouse_pos_x = event->x();
+    last_mouse_pos_y = event->y();
+    
+    
 }
 
 void VolumeRenderWorker::setUB_a(double value)
 {
     UB.setA(value);
-    if (isInitialized)
+    if ((isCLInitialized && isGLInitialized))
     {
         updateUnitCellVertices();
         updateUnitCellText();
@@ -899,7 +909,7 @@ void VolumeRenderWorker::setUB_a(double value)
 void VolumeRenderWorker::setUB_b(double value)
 {
     UB.setB(value);
-    if (isInitialized)
+    if ((isCLInitialized && isGLInitialized))
     {
         updateUnitCellVertices();
         updateUnitCellText();
@@ -908,7 +918,7 @@ void VolumeRenderWorker::setUB_b(double value)
 void VolumeRenderWorker::setUB_c(double value)
 {
     UB.setC(value);
-    if (isInitialized)
+    if ((isCLInitialized && isGLInitialized))
     {
         updateUnitCellVertices();
         updateUnitCellText();
@@ -918,7 +928,7 @@ void VolumeRenderWorker::setUB_c(double value)
 void VolumeRenderWorker::setUB_alpha(double value)
 {
     UB.setAlpha(value*pi/180.0);
-    if (isInitialized)
+    if ((isCLInitialized && isGLInitialized))
     {
         updateUnitCellVertices();
         updateUnitCellText();
@@ -927,7 +937,7 @@ void VolumeRenderWorker::setUB_alpha(double value)
 void VolumeRenderWorker::setUB_beta(double value)
 {
     UB.setBeta(value*pi/180.0);
-    if (isInitialized)
+    if ((isCLInitialized && isGLInitialized))
     {
         updateUnitCellVertices();
         updateUnitCellText();
@@ -936,7 +946,7 @@ void VolumeRenderWorker::setUB_beta(double value)
 void VolumeRenderWorker::setUB_gamma(double value)
 {
     UB.setGamma(value*pi/180.0);
-    if (isInitialized)
+    if ((isCLInitialized && isGLInitialized))
     {
         updateUnitCellVertices();
         updateUnitCellText();
@@ -1532,6 +1542,8 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
                 bbox_scaling[10] += bbox_scaling[10]*delta;
             }
         }
+        
+        update();
     }
 }
 
@@ -1579,8 +1591,8 @@ void VolumeRenderWorker::initializePaintTools()
 //    qDebug() << minicell_font->family() << minicell_font->pointSize();
     
     // Font metrics
-    normal_fontmetric = new QFontMetrics(*normal_font, paint_device_gl);
-    minicell_fontmetric = new QFontMetrics(*minicell_font, paint_device_gl);
+    normal_fontmetric = new QFontMetrics(*normal_font, this);
+    minicell_fontmetric = new QFontMetrics(*minicell_font, this);
 
     // Pens
     normal_pen = new QPen;
@@ -1595,20 +1607,15 @@ void VolumeRenderWorker::initializePaintTools()
     normal_brush->setStyle(Qt::NoBrush);
 }
 
-void VolumeRenderWorker::initResourcesGL()
-{
-    glGenBuffers(1, &lab_frame_vbo);
-    glGenBuffers(1, &scalebar_vbo);
-    glGenBuffers(1, &count_scalebar_vbo);
-    glGenBuffers(1, &centerline_vbo);
-    glGenBuffers(1, &point_vbo);
-    glGenBuffers(1, &unitcell_vbo);
-    glGenBuffers(1, &marker_centers_vbo);
-    glGenBuffers(1, &minicell_vbo);
-}
+//void VolumeRenderWorker::initResourcesGL()
+//{
+    
+//}
 
-void VolumeRenderWorker::initResourcesCL()
+void VolumeRenderWorker::initializeCL()
 {
+    initializeOpenCLFunctions();
+    
 //    context_cl = new OpenCLContext;
     context_cl.initDevices();
     context_cl.initSharedContext();
@@ -1778,6 +1785,8 @@ void VolumeRenderWorker::setDataExtent()
 
 void VolumeRenderWorker::setTsfParameters()
 {
+    if(!(isCLInitialized && isGLInitialized)) return;
+    
     err = QOpenCLEnqueueWriteBuffer (context_cl.queue(),
         cl_tsf_parameters_model,
         CL_TRUE,
@@ -1804,7 +1813,7 @@ void VolumeRenderWorker::setTsfParameters()
 void VolumeRenderWorker::setMiscArrays()
 {
 //    model_misc_floats.print(2,"misc floats");
-    
+    if(!(isCLInitialized && isGLInitialized)) return;
     
     misc_ints[2] = isLogarithmic;
     misc_ints[3] = isDSActive;
@@ -1837,17 +1846,15 @@ void VolumeRenderWorker::setMiscArrays()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
-{
-    Q_UNUSED(ev);
+//void VolumeRenderWorker::resizeEvent(QResizeEvent * ev)
+//{
+//    Q_UNUSED(ev);
 
 //    qDebug() << "resize";
     
-    if (paint_device_gl) paint_device_gl->setSize(this->size());
-    ctc_matrix.setWindow(this->width(), this->height());
-
-    setRayTexture(quality_percentage);
-}
+//    if (paint_device_gl) paint_device_gl->setSize(this->size());
+    
+//}
 
 void VolumeRenderWorker::setRayTexture(int percentage)
 {
@@ -1885,8 +1892,8 @@ void VolumeRenderWorker::setRayTexture(int percentage)
         }
 
         // Update GL texture
-        glDeleteTextures(1, &ray_tex_gl);
-        glGenTextures(1, &ray_tex_gl);
+//        glDeleteTextures(1, &ray_tex_gl);
+//        glGenTextures(1, &ray_tex_gl);
         glBindTexture(GL_TEXTURE_2D, ray_tex_gl);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1965,6 +1972,8 @@ void VolumeRenderWorker::setRayTexture(int percentage)
 void VolumeRenderWorker::setTsfTexture()
 {
 //    if (1) qDebug() << "setting tsf" << tsf_color_scheme << tsf_alpha_scheme;
+    if(!(isCLInitialized && isGLInitialized)) return;
+    
     
     if (isTsfTexInitialized){
         err = QOpenCLReleaseSampler(tsf_tex_sampler);
@@ -1979,8 +1988,8 @@ void VolumeRenderWorker::setTsfTexture()
     tsf.setSpline(256);
 
     // Buffer for tsf_tex_gl
-    glDeleteTextures(1, &tsf_tex_gl);
-    glGenTextures(1, &tsf_tex_gl);
+//    glDeleteTextures(1, &tsf_tex_gl);
+//    glGenTextures(1, &tsf_tex_gl);
     glBindTexture(GL_TEXTURE_2D, tsf_tex_gl);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1999,8 +2008,8 @@ void VolumeRenderWorker::setTsfTexture()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Buffer for tsf_tex_gl_thumb
-    glDeleteTextures(1, &tsf_tex_gl_thumb);
-    glGenTextures(1, &tsf_tex_gl_thumb);
+//    glDeleteTextures(1, &tsf_tex_gl_thumb);
+//    glGenTextures(1, &tsf_tex_gl_thumb);
     glBindTexture(GL_TEXTURE_2D, tsf_tex_gl_thumb);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2042,10 +2051,10 @@ void VolumeRenderWorker::setTsfTexture()
     isTsfTexInitialized = true;
 
     // Set corresponding kernel arguments
-    if (isInitialized) err = QOpenCLSetKernelArg(cl_svo_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
-    if (isInitialized) err |= QOpenCLSetKernelArg(cl_svo_raytrace, 6, sizeof(cl_sampler), &tsf_tex_sampler);
-    if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
-    if (isInitialized) err |= QOpenCLSetKernelArg(cl_model_raytrace, 2, sizeof(cl_sampler), &tsf_tex_sampler);
+    err = QOpenCLSetKernelArg(cl_svo_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 6, sizeof(cl_sampler), &tsf_tex_sampler);
+    err |= QOpenCLSetKernelArg(cl_model_raytrace, 1, sizeof(cl_mem), (void *) &tsf_tex_cl);
+    err |= QOpenCLSetKernelArg(cl_model_raytrace, 2, sizeof(cl_sampler), &tsf_tex_sampler);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
@@ -3604,7 +3613,7 @@ void VolumeRenderWorker::setURotation()
 void VolumeRenderWorker::setLog(bool value)
 {
     isLogarithmic = value;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setLogarithmic2D()
 {
@@ -3613,18 +3622,18 @@ void VolumeRenderWorker::setLogarithmic2D()
 void VolumeRenderWorker::setDataStructure()
 {
     isDSActive = !isDSActive;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setSlicing()
 {
     isSlicingActive = !isSlicingActive;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setShadow()
 {
     isShadowActive = !isShadowActive;
 
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 
 void VolumeRenderWorker::setShadowVector()
@@ -3643,13 +3652,13 @@ void VolumeRenderWorker::setIntegration2D()
 {
     isIntegration2DActive = !isIntegration2DActive;
 
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setIntegration3D()
 {
     isIntegration3DActive = !isIntegration3DActive;
 
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setViewMode(int value)
 {
@@ -3670,7 +3679,7 @@ void VolumeRenderWorker::setViewMode(int value)
         isSlicingActive = true;
     }
     
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 
 void VolumeRenderWorker::setTsfColor(int value)
@@ -3693,7 +3702,7 @@ void VolumeRenderWorker::setDataMin(double value)
     {
         tsf_parameters_svo[2] = value;
     }
-    if (isInitialized) setTsfParameters();
+    setTsfParameters();
 }
 void VolumeRenderWorker::setDataMax(double value)
 {
@@ -3705,7 +3714,7 @@ void VolumeRenderWorker::setDataMax(double value)
     {
         tsf_parameters_svo[3] = value;
     }
-    if (isInitialized) setTsfParameters();
+    setTsfParameters();
 }
 void VolumeRenderWorker::setAlpha(double value)
 {
@@ -3717,7 +3726,7 @@ void VolumeRenderWorker::setAlpha(double value)
     {
         tsf_parameters_svo[4] = value;
     }
-    if (isInitialized) setTsfParameters();
+    setTsfParameters();
 }
 void VolumeRenderWorker::setBrightness(double value)
 {
@@ -3729,7 +3738,7 @@ void VolumeRenderWorker::setBrightness(double value)
     {
         tsf_parameters_svo[5] = value;
     }
-    if (isInitialized) setTsfParameters();
+    setTsfParameters();
 }
 
 void VolumeRenderWorker::setUnitcell()
@@ -3745,32 +3754,32 @@ void VolumeRenderWorker::setModel()
 void VolumeRenderWorker::setModelParam0(double value)
 {
     model_misc_floats[0] = value;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setModelParam1(double value)
 {
     model_misc_floats[1] = value;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setModelParam2(double value)
 {
     model_misc_floats[2] = value;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setModelParam3(double value)
 {
     model_misc_floats[3] = value;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setModelParam4(double value)
 {
     model_misc_floats[4] = value;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 void VolumeRenderWorker::setModelParam5(double value)
 {
     model_misc_floats[5] = value;
-    if (isInitialized) setMiscArrays();
+    setMiscArrays();
 }
 
 void VolumeRenderWorker::setScalebar()

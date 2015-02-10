@@ -436,7 +436,7 @@ protected:
 
     // OpenGL rendering widgets
 //    SharedContextWindow *sharedContextWindow;
-//    VolumeRenderWindow *volumeRenderWindow;
+    VolumeRenderWorker *volumeOpenGLWidget;
 //    QWidget *volumeRenderWidget;
 
     /* Image browser toolbar */
