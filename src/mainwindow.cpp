@@ -63,7 +63,7 @@ MainWindow::MainWindow() :
 MainWindow::~MainWindow()
 {
     voxelizeThread->quit();
-    voxelizeThread->wait(1000);
+    voxelizeThread->wait();
 }
 
 void MainWindow::setCurrentSvoLevel(int value)
@@ -904,7 +904,7 @@ void MainWindow::initGUI()
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
 
-        volumeOpenGLWidget = new VolumeRenderWorker();
+        volumeOpenGLWidget = new VolumeOpenGLWidget();
         volumeOpenGLWidget->setFormat(format_gl);
         volumeOpenGLWidget->setMouseTracking(true);
 
@@ -963,7 +963,7 @@ void MainWindow::initGUI()
         format_gl.setBlueBufferSize(8);
         format_gl.setAlphaBufferSize(8);
         
-        imageOpenGLWidget = new ImagePreviewWorker();
+        imageOpenGLWidget = new ImageOpenGLWidget();
         
         imageOpenGLWidget->setFormat(format_gl);
         imageOpenGLWidget->setMouseTracking(true);

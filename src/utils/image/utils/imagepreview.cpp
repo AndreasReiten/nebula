@@ -9,7 +9,7 @@
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1000e6;
 
-ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
+ImageOpenGLWidget::ImageOpenGLWidget(QObject *parent) :
     isBeamOverrideActive(false),
     isImageTexInitialized(false),
     isTsfTexInitialized(false),
@@ -25,6 +25,16 @@ ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
     alpha_style(2),
     mode(0)
 {
+    // Worker
+    workerThread = new QThread;
+    imageWorker = new ImageWorker;
+    imageWorker->moveToThread(workerThread);
+    connect(workerThread, SIGNAL(finished()), imageWorker, SLOT(deleteLater()));
+//    connect(this, &Controller::operate, worker, &Worker::doWork);
+//    connect(worker, imageWorker::resultReady, this, Controller::handleResults);
+    workerThread->start();
+
+
     Q_UNUSED(parent);
 
     parameter.reserve(1,16);
@@ -48,7 +58,7 @@ ImagePreviewWorker::ImagePreviewWorker(QObject *parent) :
     prev_pixel.set(1,2,0);
 }
 
-void ImagePreviewWorker::paintGL()
+void ImageOpenGLWidget::paintGL()
 {
     QPainter painter(this);
 
@@ -91,12 +101,12 @@ void ImagePreviewWorker::paintGL()
     }
 }
 
-void ImagePreviewWorker::resizeGL(int w, int h)
+void ImageOpenGLWidget::resizeGL(int w, int h)
 {
 
 }
 
-void ImagePreviewWorker::initializeGL()
+void ImageOpenGLWidget::initializeGL()
 {
     // Initialize OpenGL
     QOpenGLFunctions::initializeOpenGLFunctions();
@@ -184,7 +194,7 @@ void ImagePreviewWorker::initializeGL()
     setTsfAlpha(2);
 }
 
-GLuint ImagePreviewWorker::loadShader(GLenum type, const char *source)
+GLuint ImageOpenGLWidget::loadShader(GLenum type, const char *source)
 {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, 0);
@@ -192,31 +202,34 @@ GLuint ImagePreviewWorker::loadShader(GLenum type, const char *source)
     return shader;
 }
 
-ImagePreviewWorker::~ImagePreviewWorker()
+ImageOpenGLWidget::~ImageOpenGLWidget()
 {
     
     if (!(isCLInitialized && isGLInitialized)) return;
     
     glDeleteBuffers(5, selections_vbo);
     glDeleteBuffers(5, weightpoints_vbo);
+
+    workerThread->quit();
+    workerThread->wait();
 }
 
-void ImagePreviewWorker::setBeamOverrideActive(bool value)
+void ImageOpenGLWidget::setBeamOverrideActive(bool value)
 {
     isBeamOverrideActive = value;
 }
 
-void ImagePreviewWorker::setBeamXOverride(double value)
+void ImageOpenGLWidget::setBeamXOverride(double value)
 {
     
 }
 
-void ImagePreviewWorker::setBeamYOverride(double value)
+void ImageOpenGLWidget::setBeamYOverride(double value)
 {
     
 }
 
-void ImagePreviewWorker::reconstruct()
+void ImageOpenGLWidget::reconstruct()
 {
 //        emit resultFinished(result);
 
@@ -352,35 +365,35 @@ void ImagePreviewWorker::reconstruct()
 
 
 
-void ImagePreviewWorker::setOffsetOmega(double value)
+void ImageOpenGLWidget::setOffsetOmega(double value)
 {
     offset_omega = value*pi/180.0;
 }
-void ImagePreviewWorker::setOffsetKappa(double value)
+void ImageOpenGLWidget::setOffsetKappa(double value)
 {
     offset_kappa = value*pi/180.0;
 }
-void ImagePreviewWorker::setOffsetPhi(double value)
+void ImageOpenGLWidget::setOffsetPhi(double value)
 {
     offset_phi = value*pi/180.0;
 }
 
-void ImagePreviewWorker::setActiveAngle(QString value)
+void ImageOpenGLWidget::setActiveAngle(QString value)
 {
     active_rotation = value;
 }
 
-void ImagePreviewWorker::killProcess()
+void ImageOpenGLWidget::killProcess()
 {
     kill_flag = true;
 }
 
-void ImagePreviewWorker::setReducedPixels(Matrix<float> *reduced_pixels)
+void ImageOpenGLWidget::setReducedPixels(Matrix<float> *reduced_pixels)
 {
     this->reduced_pixels = reduced_pixels;
 }
 
-int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Matrix<float> * samples, size_t * n_samples)
+int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Matrix<float> * samples, size_t * n_samples)
 {
     // Project and correct the data
     cl_image_format target_format;
@@ -567,7 +580,7 @@ int ImagePreviewWorker::projectFile(DetectorFile * file, Selection selection, Ma
 }
 
 
-void ImagePreviewWorker::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> & param, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, float mean, float deviation, int task)
+void ImageOpenGLWidget::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> & param, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, float mean, float deviation, int task)
 {
     // Prepare kernel parameters
     Matrix<size_t> global_ws(1,2);
@@ -601,7 +614,7 @@ void ImagePreviewWorker::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, M
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImagePreviewWorker::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, cl_sampler tsf_sampler, int log)
+void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> & local_ws, cl_sampler tsf_sampler, int log)
 {
     /*
      * Display an image buffer object, matching intensity to color
@@ -648,7 +661,7 @@ void ImagePreviewWorker::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl,
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImagePreviewWorker::copyBufferRect(cl_mem buffer_cl, 
+void ImageOpenGLWidget::copyBufferRect(cl_mem buffer_cl,
         cl_mem copy_cl, 
         Matrix<size_t> &buffer_size,
         Matrix<size_t> &buffer_origin,
@@ -685,7 +698,7 @@ void ImagePreviewWorker::copyBufferRect(cl_mem buffer_cl,
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-float ImagePreviewWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, Matrix<size_t> &local_ws)
+float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Matrix<size_t> &local_ws)
 {
     /* 
      * This function for parallel reduction does its work over multiple passes. First pass 
@@ -768,7 +781,7 @@ float ImagePreviewWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, Ma
     return sum;
 }
 
-void ImagePreviewWorker::calculus()
+void ImageOpenGLWidget::calculus()
 {
     /*
      * Carry out calculations on an image buffer, such as corrections and calculation of variance and skewness 
@@ -870,7 +883,7 @@ void ImagePreviewWorker::calculus()
     }
 }
 
-void ImagePreviewWorker::setFrame()
+void ImageOpenGLWidget::setFrame()
 {
     if (!isCLInitialized || !isGLInitialized) return;
     
@@ -936,7 +949,7 @@ void ImagePreviewWorker::setFrame()
 
 
 
-void ImagePreviewWorker::clMaintainImageBuffers(Matrix<size_t> &image_size)
+void ImageOpenGLWidget::clMaintainImageBuffers(Matrix<size_t> &image_size)
 {
     if ((image_size[0] != image_buffer_size[0]) || (image_size[1] != image_buffer_size[1]))
     {
@@ -1008,7 +1021,7 @@ void ImagePreviewWorker::clMaintainImageBuffers(Matrix<size_t> &image_size)
     }
 }
 
-void ImagePreviewWorker::refreshSelection(Selection * area)
+void ImageOpenGLWidget::refreshSelection(Selection * area)
 {
     Matrix<size_t> local_ws(1,2);
     local_ws[0] = 64;
@@ -1041,7 +1054,7 @@ void ImagePreviewWorker::refreshSelection(Selection * area)
 
 }
 
-void ImagePreviewWorker::refreshDisplay()
+void ImageOpenGLWidget::refreshDisplay()
 {
     /*
      * Refresh the image buffer 
@@ -1082,7 +1095,7 @@ void ImagePreviewWorker::refreshDisplay()
     }
 }
 
-void ImagePreviewWorker::maintainImageTexture(Matrix<size_t> &image_size)
+void ImageOpenGLWidget::maintainImageTexture(Matrix<size_t> &image_size)
 {
     if ((image_size[0] != image_tex_size[0]) || (image_size[1] != image_tex_size[1]) || !isImageTexInitialized)
     {
@@ -1118,7 +1131,7 @@ void ImagePreviewWorker::maintainImageTexture(Matrix<size_t> &image_size)
     }
 }
 
-QString ImagePreviewWorker::integrationFrameString(DetectorFile &f, ImageInfo & image)
+QString ImageOpenGLWidget::integrationFrameString(DetectorFile &f, ImageInfo & image)
 {
     Matrix<double> Q = getScatteringVector(f, image.selection().weighted_x(), image.selection().weighted_y());
     double value = 180*getScatteringAngle(f, image.selection().weighted_x(), image.selection().weighted_y())/pi;
@@ -1141,7 +1154,7 @@ QString ImagePreviewWorker::integrationFrameString(DetectorFile &f, ImageInfo & 
 }
 
 
-void ImagePreviewWorker::setCorrectionNoise(bool value)
+void ImageOpenGLWidget::setCorrectionNoise(bool value)
 {
     isCorrectionNoiseActive = (int) value;
     
@@ -1155,7 +1168,7 @@ void ImagePreviewWorker::setCorrectionNoise(bool value)
         p_set.current()->current()->setSelection(analysis_area);
     }
 }
-void ImagePreviewWorker::setCorrectionPlane(bool value)
+void ImageOpenGLWidget::setCorrectionPlane(bool value)
 {
     isCorrectionPlaneActive = (int) value;
 
@@ -1169,28 +1182,28 @@ void ImagePreviewWorker::setCorrectionPlane(bool value)
         p_set.current()->current()->setSelection(analysis_area);
     }
 }
-void ImagePreviewWorker::setCorrectionClutter(bool value)
+void ImageOpenGLWidget::setCorrectionClutter(bool value)
 {
      isCorrectionClutterActive = (int) value;
 }
-void ImagePreviewWorker::setCorrectionMedian(bool value)
+void ImageOpenGLWidget::setCorrectionMedian(bool value)
 {
      isCorrectionMedianActive = (int) value;
 }
-void ImagePreviewWorker::setCorrectionPolarization(bool value)
+void ImageOpenGLWidget::setCorrectionPolarization(bool value)
 {
      isCorrectionPolarizationActive = (int) value;
 }
-void ImagePreviewWorker::setCorrectionFlux(bool value)
+void ImageOpenGLWidget::setCorrectionFlux(bool value)
 {
      isCorrectionFluxActive = (int) value;
 }
-void ImagePreviewWorker::setCorrectionExposure(bool value)
+void ImageOpenGLWidget::setCorrectionExposure(bool value)
 {
      isCorrectionExposureActive = (int) value;
 }
 
-void ImagePreviewWorker::toggleTraceTexture(bool value)
+void ImageOpenGLWidget::toggleTraceTexture(bool value)
 {
     texture_number = (int) value;
     
@@ -1206,7 +1219,7 @@ void ImagePreviewWorker::toggleTraceTexture(bool value)
 }
 
 
-void ImagePreviewWorker::setLsqSamples(int value)
+void ImageOpenGLWidget::setLsqSamples(int value)
 {
     n_lsq_samples = value;
 
@@ -1221,7 +1234,7 @@ void ImagePreviewWorker::setLsqSamples(int value)
     }
 }
 
-void ImagePreviewWorker::analyze(QString str)
+void ImageOpenGLWidget::analyze(QString str)
 {
     emit visibilityChanged(false);
     
@@ -1393,7 +1406,7 @@ void ImagePreviewWorker::analyze(QString str)
 }
 
 
-void ImagePreviewWorker::applyPlaneMarker(QString str)
+void ImageOpenGLWidget::applyPlaneMarker(QString str)
 {
     if (!p_set.isEmpty())
     {
@@ -1402,7 +1415,7 @@ void ImagePreviewWorker::applyPlaneMarker(QString str)
     }
 }
 
-Matrix<double> ImagePreviewWorker::getPlane()
+Matrix<double> ImageOpenGLWidget::getPlane()
 {
     QList<Selection> marker = p_set.current()->current()->planeMarker();
     
@@ -1503,7 +1516,7 @@ Matrix<double> ImagePreviewWorker::getPlane()
     return B;
 }
 
-void ImagePreviewWorker::applySelection(QString str)
+void ImageOpenGLWidget::applySelection(QString str)
 {
     if (!p_set.isEmpty())
     {
@@ -1512,7 +1525,7 @@ void ImagePreviewWorker::applySelection(QString str)
     }
 }
 
-void ImagePreviewWorker::setSet(SeriesSet s)
+void ImageOpenGLWidget::setSet(SeriesSet s)
 {
     
     if (!s.isEmpty())
@@ -1529,7 +1542,7 @@ void ImagePreviewWorker::setSet(SeriesSet s)
     }
 }
 
-void ImagePreviewWorker::removeCurrentImage()
+void ImageOpenGLWidget::removeCurrentImage()
 {
     if (!p_set.isEmpty())
     {
@@ -1545,7 +1558,7 @@ void ImagePreviewWorker::removeCurrentImage()
 }
 
 
-void ImagePreviewWorker::setFrameByIndex(int i)
+void ImageOpenGLWidget::setFrameByIndex(int i)
 {
     if (!p_set.isEmpty())
     {
@@ -1554,7 +1567,7 @@ void ImagePreviewWorker::setFrameByIndex(int i)
     }
 }
 
-void ImagePreviewWorker::nextSeries()
+void ImageOpenGLWidget::nextSeries()
 {
     if (!p_set.isEmpty())
     {
@@ -1569,7 +1582,7 @@ void ImagePreviewWorker::nextSeries()
         setFrame();
     }
 }
-void ImagePreviewWorker::prevSeries()
+void ImageOpenGLWidget::prevSeries()
 {
     if (!p_set.isEmpty())
     {
@@ -1585,7 +1598,7 @@ void ImagePreviewWorker::prevSeries()
     }
 }
 
-void ImagePreviewWorker::traceSet()
+void ImageOpenGLWidget::traceSet()
 {
     emit visibilityChanged(false);
 
@@ -1690,7 +1703,7 @@ void ImagePreviewWorker::traceSet()
     setFrame();    
 }
 
-void ImagePreviewWorker::setSeriesMaxFrame()
+void ImageOpenGLWidget::setSeriesMaxFrame()
 {
     err =  QOpenCLReleaseMemObject(image_data_trace_cl);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1703,12 +1716,12 @@ void ImagePreviewWorker::setSeriesMaxFrame()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImagePreviewWorker::showWeightCenter(bool value)
+void ImageOpenGLWidget::showWeightCenter(bool value)
 {
     isWeightCenterActive = value;
 }
 
-void ImagePreviewWorker::selectionCalculus(Selection * area, cl_mem image_data_cl, cl_mem image_pos_weight_x_cl_new, cl_mem image_pos_weight_y_cl_new, Matrix<size_t> &image_size, Matrix<size_t> &local_ws)
+void ImageOpenGLWidget::selectionCalculus(Selection * area, cl_mem image_data_cl, cl_mem image_pos_weight_x_cl_new, cl_mem image_pos_weight_y_cl_new, Matrix<size_t> &image_size, Matrix<size_t> &local_ws)
 {
     /*
      * When an image is processed by the imagepreview kernel, it saves data into GPU buffers that can be used 
@@ -1809,7 +1822,7 @@ void ImagePreviewWorker::selectionCalculus(Selection * area, cl_mem image_data_c
 }
 
 
-void ImagePreviewWorker::initializeCL()
+void ImageOpenGLWidget::initializeCL()
 {
     initializeOpenCLFunctions();
     
@@ -1941,7 +1954,7 @@ void ImagePreviewWorker::initializeCL()
     setParameter(parameter);
 }
 
-void ImagePreviewWorker::setTsf(TransferFunction & tsf)
+void ImageOpenGLWidget::setTsf(TransferFunction & tsf)
 {
     if (!isCLInitialized || !isGLInitialized) return;
     
@@ -1975,7 +1988,7 @@ void ImagePreviewWorker::setTsf(TransferFunction & tsf)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void ImagePreviewWorker::setTsfTexture(int value)
+void ImageOpenGLWidget::setTsfTexture(int value)
 {
     rgb_style = value;
 
@@ -1986,7 +1999,7 @@ void ImagePreviewWorker::setTsfTexture(int value)
     
     refreshDisplay();
 }
-void ImagePreviewWorker::setTsfAlpha(int value)
+void ImageOpenGLWidget::setTsfAlpha(int value)
 {
     alpha_style = value;
 
@@ -1997,21 +2010,21 @@ void ImagePreviewWorker::setTsfAlpha(int value)
 
     refreshDisplay();
 }
-void ImagePreviewWorker::setLog(bool value)
+void ImageOpenGLWidget::setLog(bool value)
 {
     isLog = (int) value;
     
     refreshDisplay();
 }
 
-void ImagePreviewWorker::setDataMin(double value)
+void ImageOpenGLWidget::setDataMin(double value)
 {
     parameter[12] = value;
     setParameter(parameter);
 
     refreshDisplay();
 }
-void ImagePreviewWorker::setDataMax(double value)
+void ImageOpenGLWidget::setDataMax(double value)
 {
     parameter[13] = value;
     setParameter(parameter);
@@ -2019,7 +2032,7 @@ void ImagePreviewWorker::setDataMax(double value)
     refreshDisplay();
 }
 
-void ImagePreviewWorker::setNoise(double value)
+void ImageOpenGLWidget::setNoise(double value)
 {
     parameter[0] = value;
     setParameter(parameter);
@@ -2036,7 +2049,7 @@ void ImagePreviewWorker::setNoise(double value)
     
 }
 
-void ImagePreviewWorker::beginRawGLCalls(QPainter * painter)
+void ImageOpenGLWidget::beginRawGLCalls(QPainter * painter)
 {
     painter->beginNativePainting();
     glEnable(GL_BLEND);
@@ -2044,14 +2057,14 @@ void ImagePreviewWorker::beginRawGLCalls(QPainter * painter)
     glEnable(GL_MULTISAMPLE);
 }
 
-void ImagePreviewWorker::endRawGLCalls(QPainter * painter)
+void ImageOpenGLWidget::endRawGLCalls(QPainter * painter)
 {
     glDisable(GL_BLEND);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
 }
 
-void ImagePreviewWorker::drawImage(QRectF rect, GLuint texture, QPainter * painter)
+void ImageOpenGLWidget::drawImage(QRectF rect, GLuint texture, QPainter * painter)
 {
 
 
@@ -2091,7 +2104,7 @@ void ImagePreviewWorker::drawImage(QRectF rect, GLuint texture, QPainter * paint
     std_2d_tex_program->release();
 }
 
-Matrix<GLfloat> ImagePreviewWorker::glRect(QRectF & qt_rect)
+Matrix<GLfloat> ImageOpenGLWidget::glRect(QRectF & qt_rect)
 {
     Matrix<GLfloat> gl_rect(1,8);
 
@@ -2117,7 +2130,7 @@ Matrix<GLfloat> ImagePreviewWorker::glRect(QRectF & qt_rect)
     return gl_rect;
 }
 
-void ImagePreviewWorker::centerImage()
+void ImageOpenGLWidget::centerImage()
 {
     translation_matrix[3] = (qreal) -frame.getFastDimension()/( (qreal) this->width());
     translation_matrix[7] = (qreal) frame.getSlowDimension()/( (qreal) this->height());
@@ -2130,7 +2143,7 @@ void ImagePreviewWorker::centerImage()
 
 
 
-void ImagePreviewWorker::drawSelection(Selection area, QPainter *painter, Matrix<float> &color, QPointF offset)
+void ImageOpenGLWidget::drawSelection(Selection area, QPainter *painter, Matrix<float> &color, QPointF offset)
 {
 //    glLineWidth(2.0);
 
@@ -2197,7 +2210,7 @@ void ImagePreviewWorker::drawSelection(Selection area, QPainter *painter, Matrix
     endRawGLCalls(painter);
 }
 
-void ImagePreviewWorker::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
+void ImageOpenGLWidget::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
 {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, usage);
@@ -2258,7 +2271,7 @@ void ImagePreviewWorker::setVbo(GLuint vbo, float * buf, size_t length, GLenum u
 //    endRawGLCalls(painter);
 //}
 
-void ImagePreviewWorker::drawWeightpoint(Selection area, QPainter *painter, Matrix<float> &color)
+void ImageOpenGLWidget::drawWeightpoint(Selection area, QPainter *painter, Matrix<float> &color)
 {
     // Change to draw a faded polygon
     ColorMatrix<float> selection_lines_color(0.0f,0.0f,0.0f,1.0f);
@@ -2325,7 +2338,7 @@ void ImagePreviewWorker::drawWeightpoint(Selection area, QPainter *painter, Matr
     endRawGLCalls(painter);
 }
 
-Matrix<double> ImagePreviewWorker::getScatteringVector(DetectorFile & f, double x, double y)
+Matrix<double> ImageOpenGLWidget::getScatteringVector(DetectorFile & f, double x, double y)
 {
     // Assumes that the incoming ray is parallel to the z axis.
 
@@ -2348,7 +2361,7 @@ Matrix<double> ImagePreviewWorker::getScatteringVector(DetectorFile & f, double 
     return Q;
 }
 
-double ImagePreviewWorker::getScatteringAngle(DetectorFile & f, double x, double y)
+double ImageOpenGLWidget::getScatteringAngle(DetectorFile & f, double x, double y)
 {
     // Assumes that the incoming ray is parallel to the z axis.
 
@@ -2367,7 +2380,7 @@ double ImagePreviewWorker::getScatteringAngle(DetectorFile & f, double x, double
     return acos(vecDot(k_f, k_i)/(k*k));
 }
 
-void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
+void ImageOpenGLWidget::drawPixelToolTip(QPainter *painter)
 {
     if (isFrameValid == false) return;
     
@@ -2474,7 +2487,7 @@ void ImagePreviewWorker::drawPixelToolTip(QPainter *painter)
     painter->drawText(area, Qt::AlignLeft, tip);
 }
 
-void ImagePreviewWorker::drawConeEwaldIntersect(QPainter *painter)
+void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter *painter)
 {
     // Draw circle corresponding to cone intersection of the Ewald sphere
     Matrix<double> beam_image_pos(4,1,0);
@@ -2501,7 +2514,7 @@ void ImagePreviewWorker::drawConeEwaldIntersect(QPainter *painter)
     painter->drawLine(QPoint(beam_screen_pos[0],beam_screen_pos[1]), pos);
 }
 
-void ImagePreviewWorker::drawPlaneMarkerToolTip(QPainter *painter)
+void ImageOpenGLWidget::drawPlaneMarkerToolTip(QPainter *painter)
 {
     QList<Selection> marker = p_set.current()->current()->planeMarker();
 
@@ -2560,7 +2573,7 @@ void ImagePreviewWorker::drawPlaneMarkerToolTip(QPainter *painter)
 
 }
 
-QPointF ImagePreviewWorker::posGLtoQt(QPointF coord)
+QPointF ImageOpenGLWidget::posGLtoQt(QPointF coord)
 {
     QPointF QtPoint;
 
@@ -2570,7 +2583,7 @@ QPointF ImagePreviewWorker::posGLtoQt(QPointF coord)
     return QtPoint;
 }
 
-QPointF ImagePreviewWorker::posQttoGL(QPointF coord)
+QPointF ImageOpenGLWidget::posQttoGL(QPointF coord)
 {
     QPointF GLPoint;
     GLPoint.setX((coord.x()+1.0)/(float) (this->width())*2.0-1.0);
@@ -2578,7 +2591,7 @@ QPointF ImagePreviewWorker::posQttoGL(QPointF coord)
     return GLPoint;
 }
 
-void ImagePreviewWorker::setMode(int value)
+void ImageOpenGLWidget::setMode(int value)
 {
     mode = value;
     calculus();
@@ -2592,7 +2605,7 @@ void ImagePreviewWorker::setMode(int value)
     }
 }
 
-void ImagePreviewWorker::setCorrectionLorentz(bool value)
+void ImageOpenGLWidget::setCorrectionLorentz(bool value)
 {
     isCorrectionLorentzActive = (int) value;
 
@@ -2607,7 +2620,7 @@ void ImagePreviewWorker::setCorrectionLorentz(bool value)
     }
 }
 
-void ImagePreviewWorker::setCorrectionBackground(bool value)
+void ImageOpenGLWidget::setCorrectionBackground(bool value)
 {
     isBackgroundCorrected = (int) value;
 
@@ -2622,7 +2635,7 @@ void ImagePreviewWorker::setCorrectionBackground(bool value)
     }
 }
 
-void ImagePreviewWorker::setParameter(Matrix<float> & data)
+void ImageOpenGLWidget::setParameter(Matrix<float> & data)
 {
     if (0)
     {
@@ -2655,7 +2668,7 @@ void ImagePreviewWorker::setParameter(Matrix<float> & data)
     }
 }
 
-QPoint ImagePreviewWorker::getImagePixel(QPoint pos)
+QPoint ImageOpenGLWidget::getImagePixel(QPoint pos)
 {
     // Find the OpenGL coordinate of the cursor
     Matrix<double> screen_pos_gl(4,1); 
@@ -2682,7 +2695,7 @@ QPoint ImagePreviewWorker::getImagePixel(QPoint pos)
     return image_pixel;
 }
 
-void ImagePreviewWorker::mouseMoveEvent(QMouseEvent * event)
+void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 {
     if (!isFrameValid) return;
 
@@ -2753,7 +2766,7 @@ void ImagePreviewWorker::mouseMoveEvent(QMouseEvent * event)
     prev_pos = pos;
 }
 
-void ImagePreviewWorker::mousePressEvent(QMouseEvent *event)
+void ImageOpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
     if (!isFrameValid) return;
 
@@ -2811,7 +2824,7 @@ void ImagePreviewWorker::mousePressEvent(QMouseEvent *event)
 
 }
 
-void ImagePreviewWorker::mouseReleaseEvent(QMouseEvent *event)
+void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     if (!isFrameValid) return;
 
@@ -2861,7 +2874,7 @@ void ImagePreviewWorker::mouseReleaseEvent(QMouseEvent *event)
     refreshDisplay();
 }   
 
-void ImagePreviewWorker::wheelEvent(QWheelEvent* event)
+void ImageOpenGLWidget::wheelEvent(QWheelEvent* event)
 {
 
     float move_scaling = 1.0;
@@ -2904,12 +2917,12 @@ void ImagePreviewWorker::wheelEvent(QWheelEvent* event)
 
 }
 
-SeriesSet ImagePreviewWorker::set()
+SeriesSet ImageOpenGLWidget::set()
 {
     return p_set;
 }
 
-void ImagePreviewWorker::takeScreenShot(QString path)
+void ImageOpenGLWidget::takeScreenShot(QString path)
 {
     QOpenGLFramebufferObjectFormat format;
 
@@ -2932,7 +2945,7 @@ void ImagePreviewWorker::takeScreenShot(QString path)
     buffy.release();
 }
 
-void ImagePreviewWorker::saveImage(QString path)
+void ImageOpenGLWidget::saveImage(QString path)
 {
     QOpenGLFramebufferObjectFormat format;
 

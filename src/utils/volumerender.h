@@ -1,6 +1,8 @@
 #ifndef VOLUMERENDER_H
 #define VOLUMERENDER_H
 
+#include<QThread>
+
 #include "math/qxmathlib.h"
 #include "opencl/qxopencllib.h"
 #include "opengl/qxopengllib.h"
@@ -9,12 +11,27 @@
 #include "svo/qxsvolib.h"
 #include "marker.h"
 
-class VolumeRenderWorker : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
+class VolumeWorker : public QObject
+{
+    Q_OBJECT
+
+public slots:
+    void doWork(const QString &parameter) {
+        QString result;
+        /* ... here is the expensive or blocking operation ... */
+        emit resultReady(result);
+    }
+
+signals:
+    void resultReady(const QString &result);
+};
+
+class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
 {
     Q_OBJECT
 public:
-    explicit VolumeRenderWorker(QObject *parent = 0);
-    ~VolumeRenderWorker();
+    explicit VolumeOpenGLWidget(QObject *parent = 0);
+    ~VolumeOpenGLWidget();
 
     void setSvo(SparseVoxelOcttree * svo);
     void setUBMatrix(UBMatrix<double> & mat);
@@ -106,6 +123,9 @@ public slots:
     void setUB_gamma(double value);
     
 private:
+    QThread * workerThread;
+    VolumeWorker * volumeWorker;
+
     QPointF posGLtoQt(QPointF coord);
     QPointF posQttoGL(QPointF coord);
     

@@ -26,7 +26,7 @@
 #include <QPainter>
 #include <QOpenGLFramebufferObject>
 
-VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
+VolumeOpenGLWidget::VolumeOpenGLWidget(QObject *parent)
     : isCLInitialized(false),
       isGLInitialized(false),
       isRayTexInitialized(false),
@@ -60,6 +60,15 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
       displayFps(true),
       displayResolution(true)
 {
+    // Worker
+    workerThread = new QThread;
+    volumeWorker = new VolumeWorker;
+    volumeWorker->moveToThread(workerThread);
+    connect(workerThread, SIGNAL(finished()), volumeWorker, SLOT(deleteLater()));
+//    connect(this, &Controller::operate, worker, &Worker::doWork);
+//    connect(worker, volumeWorker::resultReady, this, Controller::handleResults);
+    workerThread->start();
+
 
     // Marker
     markers_selected_indices.set(100,1,0);
@@ -182,7 +191,7 @@ VolumeRenderWorker::VolumeRenderWorker(QObject *parent)
     identity.setIdentity(4);
 }
 
-VolumeRenderWorker::~VolumeRenderWorker()
+VolumeOpenGLWidget::~VolumeOpenGLWidget()
 {
     if (!(isCLInitialized && isGLInitialized)) return;
     
@@ -199,14 +208,17 @@ VolumeRenderWorker::~VolumeRenderWorker()
     glDeleteTextures(1, &ray_tex_gl);
     glDeleteTextures(1, &tsf_tex_gl);
     glDeleteTextures(1, &tsf_tex_gl_thumb);
+
+    workerThread->quit();
+    workerThread->wait();
 }
 
-void VolumeRenderWorker::toggleHkl()
+void VolumeOpenGLWidget::toggleHkl()
 {
     isHklTextActive = !isHklTextActive;
 }
 
-void VolumeRenderWorker::paintGL()
+void VolumeOpenGLWidget::paintGL()
 {
     QPainter painter(this);
 
@@ -248,14 +260,14 @@ void VolumeRenderWorker::paintGL()
     if (isSvoInitialized && isCountIntegrationActive) drawCountIntegral(&painter);
 }
 
-void VolumeRenderWorker::resizeGL(int w, int h)
+void VolumeOpenGLWidget::resizeGL(int w, int h)
 {
     ctc_matrix.setWindow(this->width(), this->height());
 
     setRayTexture(quality_percentage);
 }
 
-QPointF VolumeRenderWorker::posGLtoQt(QPointF coord)
+QPointF VolumeOpenGLWidget::posGLtoQt(QPointF coord)
 {
     QPointF QtPoint;
 
@@ -265,7 +277,7 @@ QPointF VolumeRenderWorker::posGLtoQt(QPointF coord)
     return QtPoint;
 }
 
-QPointF VolumeRenderWorker::posQttoGL(QPointF coord)
+QPointF VolumeOpenGLWidget::posQttoGL(QPointF coord)
 {
     QPointF GLPoint;
     GLPoint.setX((coord.x()+1.0)/(float) (this->width())*2.0-1.0);
@@ -273,7 +285,7 @@ QPointF VolumeRenderWorker::posQttoGL(QPointF coord)
     return GLPoint;
 }
 
-void VolumeRenderWorker::initializeGL()
+void VolumeOpenGLWidget::initializeGL()
 {
     if (isCLInitialized && isGLInitialized) return;
     
@@ -387,7 +399,7 @@ void VolumeRenderWorker::initializeGL()
     
 }
 
-float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, size_t work_group_size)
+float VolumeOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, size_t work_group_size)
 {
     /* Set initial kernel parameters (they will change for each iteration)*/
     Matrix<size_t> local_size(1,1,work_group_size);
@@ -462,25 +474,25 @@ float VolumeRenderWorker::sumGpuArray(cl_mem cl_data, unsigned int read_size, si
     return sum;
 }
 
-void VolumeRenderWorker::setHCurrent(int value)
+void VolumeOpenGLWidget::setHCurrent(int value)
 {
     hklCurrent[0] = value;
     setHkl(hklCurrent);
 }
 
-void VolumeRenderWorker::setKCurrent(int value)
+void VolumeOpenGLWidget::setKCurrent(int value)
 {
     hklCurrent[1] = value;
     setHkl(hklCurrent);
 }
 
-void VolumeRenderWorker::setLCurrent(int value)
+void VolumeOpenGLWidget::setLCurrent(int value)
 {
     hklCurrent[2] = value;
     setHkl(hklCurrent);
 }
 
-void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
+void VolumeOpenGLWidget::setHkl(Matrix<int> & hkl)
 {
     Matrix<double> hkl_focus(1,3,0);
     
@@ -497,7 +509,7 @@ void VolumeRenderWorker::setHkl(Matrix<int> & hkl)
     updateUnitCellText();
 }
 
-void VolumeRenderWorker::mousePressEvent(QMouseEvent * event)
+void VolumeOpenGLWidget::mousePressEvent(QMouseEvent * event)
 {
     if (isRulerActive && (event->buttons() & Qt::LeftButton))
     {
@@ -585,14 +597,14 @@ void VolumeRenderWorker::mousePressEvent(QMouseEvent * event)
     
 }
 
-void VolumeRenderWorker::mouseReleaseEvent(QMouseEvent * event)
+void VolumeOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 {
     
 }
 
 
 
-void VolumeRenderWorker::mouseMoveEvent(QMouseEvent *event)
+void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent *event)
 {
     if ((event->buttons() & Qt::LeftButton) && isRulerActive)
     {
@@ -717,7 +729,7 @@ void VolumeRenderWorker::mouseMoveEvent(QMouseEvent *event)
     
 }
 
-void VolumeRenderWorker::setUB_a(double value)
+void VolumeOpenGLWidget::setUB_a(double value)
 {
     UB.setA(value);
     if ((isCLInitialized && isGLInitialized))
@@ -727,7 +739,7 @@ void VolumeRenderWorker::setUB_a(double value)
     }
 }
 
-void VolumeRenderWorker::setUB_b(double value)
+void VolumeOpenGLWidget::setUB_b(double value)
 {
     UB.setB(value);
     if ((isCLInitialized && isGLInitialized))
@@ -736,7 +748,7 @@ void VolumeRenderWorker::setUB_b(double value)
         updateUnitCellText();
     }
 }
-void VolumeRenderWorker::setUB_c(double value)
+void VolumeOpenGLWidget::setUB_c(double value)
 {
     UB.setC(value);
     if ((isCLInitialized && isGLInitialized))
@@ -746,7 +758,7 @@ void VolumeRenderWorker::setUB_c(double value)
     }
 }
 
-void VolumeRenderWorker::setUB_alpha(double value)
+void VolumeOpenGLWidget::setUB_alpha(double value)
 {
     UB.setAlpha(value*pi/180.0);
     if ((isCLInitialized && isGLInitialized))
@@ -755,7 +767,7 @@ void VolumeRenderWorker::setUB_alpha(double value)
         updateUnitCellText();
     }
 }
-void VolumeRenderWorker::setUB_beta(double value)
+void VolumeOpenGLWidget::setUB_beta(double value)
 {
     UB.setBeta(value*pi/180.0);
     if ((isCLInitialized && isGLInitialized))
@@ -764,7 +776,7 @@ void VolumeRenderWorker::setUB_beta(double value)
         updateUnitCellText();
     }
 }
-void VolumeRenderWorker::setUB_gamma(double value)
+void VolumeOpenGLWidget::setUB_gamma(double value)
 {
     UB.setGamma(value*pi/180.0);
     if ((isCLInitialized && isGLInitialized))
@@ -775,19 +787,19 @@ void VolumeRenderWorker::setUB_gamma(double value)
 }
 
 
-void VolumeRenderWorker::setUBMatrix(UBMatrix<double> & mat)
+void VolumeOpenGLWidget::setUBMatrix(UBMatrix<double> & mat)
 {
     this->UB = mat;
     this->U.setIdentity(4);
     U.setFrom3x3(UB.getUMatrix());
 }
 
-UBMatrix<double> & VolumeRenderWorker::getUBMatrix()
+UBMatrix<double> & VolumeOpenGLWidget::getUBMatrix()
 {
     return UB;
 }
 
-void VolumeRenderWorker::updateUnitCellText()
+void VolumeOpenGLWidget::updateUnitCellText()
 {
     /* Generates a unit cell grid based on an UB matrix. The grid consists of one set of reciprocal basis vectors per hkl */
     
@@ -841,7 +853,7 @@ void VolumeRenderWorker::updateUnitCellText()
     }
 }
 
-void VolumeRenderWorker::updateUnitCellVertices()
+void VolumeOpenGLWidget::updateUnitCellVertices()
 {
     /* Generates a unit cell grid based on an UB matrix. The grid consists of one set of reciprocal basis vectors per hkl */
     
@@ -908,14 +920,14 @@ void VolumeRenderWorker::updateUnitCellVertices()
     unitcell_nodes = n_basis*6;
 }
 
-void VolumeRenderWorker::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
+void VolumeOpenGLWidget::setVbo(GLuint vbo, float * buf, size_t length, GLenum usage)
 {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*length, buf, usage);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VolumeRenderWorker::drawUnitCell(QPainter * painter)
+void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
 {
     beginRawGLCalls(painter);
     
@@ -968,7 +980,7 @@ void VolumeRenderWorker::drawUnitCell(QPainter * painter)
     endRawGLCalls(painter);
 }
 
-void VolumeRenderWorker::drawHelpCell(QPainter * painter)
+void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
 {
     // Generate the vertices for the minicell
     Matrix<double> B = UB.getBMatrix();
@@ -1118,7 +1130,7 @@ void VolumeRenderWorker::drawHelpCell(QPainter * painter)
     painter->setFont(*normal_font);
 }
 
-void VolumeRenderWorker::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)
+void VolumeOpenGLWidget::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)
 {
     Matrix<float> pos_3d_matrix;
     Matrix<float> pos_2d_matrix(4, 1);
@@ -1132,7 +1144,7 @@ void VolumeRenderWorker::getPosition2D(float * pos_2d, float * pos_3d, Matrix<do
     pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
 }
 
-void VolumeRenderWorker::getPosition2D(double * pos_2d, double * pos_3d, Matrix<double> * transform)
+void VolumeOpenGLWidget::getPosition2D(double * pos_2d, double * pos_3d, Matrix<double> * transform)
 {
     Matrix<double> pos_3d_matrix;
     Matrix<double> pos_2d_matrix(4, 1);
@@ -1146,7 +1158,7 @@ void VolumeRenderWorker::getPosition2D(double * pos_2d, double * pos_3d, Matrix<
     pos_2d[1] = pos_2d_matrix[1]/pos_2d_matrix[3];
 }
 
-void VolumeRenderWorker::drawMarkers(QPainter * painter)
+void VolumeOpenGLWidget::drawMarkers(QPainter * painter)
 {
     beginRawGLCalls(painter);
     
@@ -1192,7 +1204,7 @@ void VolumeRenderWorker::drawMarkers(QPainter * painter)
 }
 
 
-void VolumeRenderWorker::drawCountIntegral(QPainter * painter)
+void VolumeOpenGLWidget::drawCountIntegral(QPainter * painter)
 {
     float sum = sumViewBox();
 
@@ -1206,7 +1218,7 @@ void VolumeRenderWorker::drawCountIntegral(QPainter * painter)
     painter->drawText(sum_string_rect, Qt::AlignCenter, sum_string);
 }
 
-void VolumeRenderWorker::drawHklText(QPainter * painter)
+void VolumeOpenGLWidget::drawHklText(QPainter * painter)
 {
     painter->setFont(*hkl_font);
     
@@ -1225,7 +1237,7 @@ void VolumeRenderWorker::drawHklText(QPainter * painter)
     painter->setFont(*normal_font);    
 }
 
-void VolumeRenderWorker::setCenterLine()
+void VolumeOpenGLWidget::setCenterLine()
 {
     centerline_coords[3] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0])*0.5;
     centerline_coords[4] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2])*0.5;
@@ -1236,7 +1248,7 @@ void VolumeRenderWorker::setCenterLine()
 }
 
 
-void VolumeRenderWorker::drawCenterLine(QPainter * painter)
+void VolumeOpenGLWidget::drawCenterLine(QPainter * painter)
 {
     beginRawGLCalls(painter);
     
@@ -1263,7 +1275,7 @@ void VolumeRenderWorker::drawCenterLine(QPainter * painter)
     endRawGLCalls(painter);
 }
 
-void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm)
+void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm)
 {
     Matrix<float> point_coords(1,3*100, 0.0);
     point_coords[0*3+2] = -5;
@@ -1318,7 +1330,7 @@ void VolumeRenderWorker::drawSenseOfRotation(double zeta, double eta, double rpm
     std_3d_col_program->release();
 }
 
-void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
+void VolumeOpenGLWidget::wheelEvent(QWheelEvent* ev)
 {
     if (!isDataExtentReadOnly)
     {
@@ -1359,7 +1371,7 @@ void VolumeRenderWorker::wheelEvent(QWheelEvent* ev)
     }
 }
 
-void VolumeRenderWorker::initializePaintTools()
+void VolumeOpenGLWidget::initializePaintTools()
 {
     // Fonts
     normal_font = new QFont("Helvetica", 13);
@@ -1388,7 +1400,7 @@ void VolumeRenderWorker::initializePaintTools()
     normal_brush->setStyle(Qt::NoBrush);
 }
 
-void VolumeRenderWorker::initializeCL()
+void VolumeOpenGLWidget::initializeCL()
 {
     initializeOpenCLFunctions();
     
@@ -1489,7 +1501,7 @@ void VolumeRenderWorker::initializeCL()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setViewMatrices()
+void VolumeOpenGLWidget::setViewMatrices()
 {
     normalization_scaling[0] = bbox_scaling[0] * projection_scaling[0] *2.0 / (data_extent[1] - data_extent[0]);
     normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
@@ -1528,7 +1540,7 @@ void VolumeRenderWorker::setViewMatrices()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setDataExtent()
+void VolumeOpenGLWidget::setDataExtent()
 {
     err = QOpenCLEnqueueWriteBuffer (context_cl.queue(),
         cl_data_extent,
@@ -1558,7 +1570,7 @@ void VolumeRenderWorker::setDataExtent()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setTsfParameters()
+void VolumeOpenGLWidget::setTsfParameters()
 {
     if(!(isCLInitialized && isGLInitialized)) return;
     
@@ -1585,7 +1597,7 @@ void VolumeRenderWorker::setTsfParameters()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setMiscArrays()
+void VolumeOpenGLWidget::setMiscArrays()
 {
 //    model_misc_floats.print(2,"misc floats");
     if(!(isCLInitialized && isGLInitialized)) return;
@@ -1621,7 +1633,7 @@ void VolumeRenderWorker::setMiscArrays()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setRayTexture(int percentage)
+void VolumeOpenGLWidget::setRayTexture(int percentage)
 {
     if (!isCLInitialized || !isGLInitialized) return;
     if (1)
@@ -1728,7 +1740,7 @@ void VolumeRenderWorker::setRayTexture(int percentage)
     }
 }
 
-void VolumeRenderWorker::setTsfTexture()
+void VolumeOpenGLWidget::setTsfTexture()
 {
     if(!(isCLInitialized && isGLInitialized)) return;
     
@@ -1808,7 +1820,7 @@ void VolumeRenderWorker::setTsfTexture()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-float VolumeRenderWorker::sumViewBox()
+float VolumeOpenGLWidget::sumViewBox()
 {
     /* Sample the viewing box and put the values in an array. pr = parallel reduction */
     int box_samples_per_side = 256; // Power of two. This dictates the integration resolution
@@ -1858,7 +1870,7 @@ float VolumeRenderWorker::sumViewBox()
     return sum;
 }
 
-void VolumeRenderWorker::takeScreenShot(QString path)
+void VolumeOpenGLWidget::takeScreenShot(QString path)
 {
     // Set resolution back to former value
     setRayTexture(100);
@@ -1892,7 +1904,7 @@ void VolumeRenderWorker::takeScreenShot(QString path)
 }
 
 
-void VolumeRenderWorker::drawIntegral(QPainter *painter)
+void VolumeOpenGLWidget::drawIntegral(QPainter *painter)
 {
     // Sum the rows and columns of the integrated texture (which resides as a pure OpenCL image buffer)
 
@@ -2163,7 +2175,7 @@ void VolumeRenderWorker::drawIntegral(QPainter *painter)
 }
 
 
-void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
+void VolumeOpenGLWidget::beginRawGLCalls(QPainter * painter)
 {
     painter->beginNativePainting();
     glEnable(GL_BLEND);
@@ -2171,24 +2183,24 @@ void VolumeRenderWorker::beginRawGLCalls(QPainter * painter)
     glEnable(GL_MULTISAMPLE);
 }
 
-void VolumeRenderWorker::endRawGLCalls(QPainter * painter)
+void VolumeOpenGLWidget::endRawGLCalls(QPainter * painter)
 {
     glDisable(GL_BLEND);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
 }
 
-void VolumeRenderWorker::setMiniCell()
+void VolumeOpenGLWidget::setMiniCell()
 {
     isMiniCellActive = !isMiniCellActive;
 }
 
-void VolumeRenderWorker::setOrthoGrid()
+void VolumeOpenGLWidget::setOrthoGrid()
 {
     isOrthoGridActive = !isOrthoGridActive;
 }
 
-void VolumeRenderWorker::drawRuler(QPainter * painter)
+void VolumeOpenGLWidget::drawRuler(QPainter * painter)
 {
     // Draw ruler and alignment crosses 
     QVector<QLine> lines;
@@ -2229,7 +2241,7 @@ void VolumeRenderWorker::drawRuler(QPainter * painter)
     painter->drawText(centerline_string_rect, Qt::AlignCenter, centerline_string);
 }
 
-void VolumeRenderWorker::drawGrid(QPainter * painter)
+void VolumeOpenGLWidget::drawGrid(QPainter * painter)
 {
     // Draw grid lines, the center of the screen is (0,0)
     double screen_width = pixel_size[0]*this->width();
@@ -2319,7 +2331,7 @@ void VolumeRenderWorker::drawGrid(QPainter * painter)
     }
 }
 
-void VolumeRenderWorker::alignSlicetoAStar()
+void VolumeOpenGLWidget::alignSlicetoAStar()
 {
     Matrix<double> vec(4,1,1);
     vec[0] = UB[0];
@@ -2337,7 +2349,7 @@ void VolumeRenderWorker::alignSlicetoAStar()
     setViewMatrices();
 }
 
-void VolumeRenderWorker::alignSlicetoBStar()
+void VolumeOpenGLWidget::alignSlicetoBStar()
 {
     Matrix<double> vec(4,1,1);
     vec[0] = UB[1];
@@ -2355,7 +2367,7 @@ void VolumeRenderWorker::alignSlicetoBStar()
     setViewMatrices();
 }
 
-void VolumeRenderWorker::alignSlicetoCStar()
+void VolumeOpenGLWidget::alignSlicetoCStar()
 {
     Matrix<double> vec(4,1,1);
     vec[0] = UB[2];
@@ -2374,7 +2386,7 @@ void VolumeRenderWorker::alignSlicetoCStar()
 }
 
 
-void VolumeRenderWorker::alignAStartoZ()
+void VolumeOpenGLWidget::alignAStartoZ()
 {
     Matrix<double> vec(4,1,1);
     vec[0] = UB[0];
@@ -2393,7 +2405,7 @@ void VolumeRenderWorker::alignAStartoZ()
 
 //    view_matrix.inverse4x4(1);
 }
-void VolumeRenderWorker::alignBStartoZ()
+void VolumeOpenGLWidget::alignBStartoZ()
 {
     Matrix<double> vec(4,1,1);
     vec[0] = UB[1];
@@ -2410,7 +2422,7 @@ void VolumeRenderWorker::alignBStartoZ()
     
     setViewMatrices();
 }
-void VolumeRenderWorker::alignCStartoZ()
+void VolumeOpenGLWidget::alignCStartoZ()
 {
     Matrix<double> vec(4,1,1);
     vec[0] = UB[2];
@@ -2429,7 +2441,7 @@ void VolumeRenderWorker::alignCStartoZ()
 }
 
 
-void VolumeRenderWorker::alignLabXtoSliceX()
+void VolumeOpenGLWidget::alignLabXtoSliceX()
 {
     RotationMatrix<double> x_aligned;
     x_aligned.setYRotation(pi*0.5);
@@ -2437,14 +2449,14 @@ void VolumeRenderWorker::alignLabXtoSliceX()
     rotation =  x_aligned * scalebar_rotation.inverse4x4();
 }
 
-void VolumeRenderWorker::alignLabYtoSliceY()
+void VolumeOpenGLWidget::alignLabYtoSliceY()
 {
     RotationMatrix<double> y_aligned;
     y_aligned.setXRotation(-pi*0.5);
     
     rotation =  y_aligned * scalebar_rotation.inverse4x4();
 }
-void VolumeRenderWorker::alignLabZtoSliceZ()
+void VolumeOpenGLWidget::alignLabZtoSliceZ()
 {
     RotationMatrix<double> z_aligned;
     z_aligned.setYRotation(0.0);
@@ -2452,33 +2464,33 @@ void VolumeRenderWorker::alignLabZtoSliceZ()
     rotation =  z_aligned * scalebar_rotation.inverse4x4();
 }
 
-void VolumeRenderWorker::alignSliceToLab()
+void VolumeOpenGLWidget::alignSliceToLab()
 {
     scalebar_rotation.setIdentity(4);
 }
 
-void VolumeRenderWorker::rotateLeft()
+void VolumeOpenGLWidget::rotateLeft()
 {
     RotationMatrix<double> rot;
     rot.setYRotation(pi*0.25);
     
     rotation = rot * rotation;
 }
-void VolumeRenderWorker::rotateRight()
+void VolumeOpenGLWidget::rotateRight()
 {
     RotationMatrix<double> rot;
     rot.setYRotation(-pi*0.25);
     
     rotation = rot * rotation;
 }
-void VolumeRenderWorker::rotateUp()
+void VolumeOpenGLWidget::rotateUp()
 {
     RotationMatrix<double> rot;
     rot.setXRotation(pi*0.25);
     
     rotation = rot * rotation;
 }
-void VolumeRenderWorker::rotateDown()
+void VolumeOpenGLWidget::rotateDown()
 {
     RotationMatrix<double> rot;
     rot.setXRotation(-pi*0.25);
@@ -2486,14 +2498,14 @@ void VolumeRenderWorker::rotateDown()
     rotation = rot * rotation;
 }
 
-void VolumeRenderWorker::rollCW()
+void VolumeOpenGLWidget::rollCW()
 {
     RotationMatrix<double> rot;
     rot.setZRotation(pi*0.25);
     
     rotation = rot * rotation;
 }
-void VolumeRenderWorker::rollCCW()
+void VolumeOpenGLWidget::rollCCW()
 {
     RotationMatrix<double> rot;
     rot.setZRotation(-pi*0.25);
@@ -2501,7 +2513,7 @@ void VolumeRenderWorker::rollCCW()
     rotation = rot * rotation;
 }
 
-void VolumeRenderWorker::computePixelSize()
+void VolumeOpenGLWidget::computePixelSize()
 {
     setViewMatrices();
 
@@ -2541,7 +2553,7 @@ void VolumeRenderWorker::computePixelSize()
     pixel_size[1] = std::sqrt(h_vec[0]*h_vec[0] + h_vec[1]*h_vec[1] + h_vec[2]*h_vec[2]);
 }
 
-void VolumeRenderWorker::drawOverlay(QPainter * painter)
+void VolumeOpenGLWidget::drawOverlay(QPainter * painter)
 {
     painter->setPen(*normal_pen);
     painter->setFont(*normal_font);
@@ -2617,7 +2629,7 @@ void VolumeRenderWorker::drawOverlay(QPainter * painter)
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);*/
 }
 
-void VolumeRenderWorker::drawPositionScalebars(QPainter * painter)
+void VolumeOpenGLWidget::drawPositionScalebars(QPainter * painter)
 {
     beginRawGLCalls(painter);
     
@@ -2645,7 +2657,7 @@ void VolumeRenderWorker::drawPositionScalebars(QPainter * painter)
 }
 
 
-void VolumeRenderWorker::drawLabFrame(QPainter *painter)
+void VolumeOpenGLWidget::drawLabFrame(QPainter *painter)
 {
     beginRawGLCalls(painter);
     
@@ -2695,7 +2707,7 @@ void VolumeRenderWorker::drawLabFrame(QPainter *painter)
     painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *this->width(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *this->height()), QString("Z"));
 }
 
-void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
+void VolumeOpenGLWidget::drawCountScalebar(QPainter *painter)
 {
     /*
      * Based on the current display values (min and max), draw ticks on the counts scalebar. There are major and minor ticks.
@@ -2869,7 +2881,7 @@ void VolumeRenderWorker::drawCountScalebar(QPainter *painter)
     
 }
 
-Matrix<GLfloat> VolumeRenderWorker::glRect(QRectF & qt_rect)
+Matrix<GLfloat> VolumeOpenGLWidget::glRect(QRectF & qt_rect)
 {
     Matrix<GLfloat> gl_rect(1,8);
 
@@ -2895,7 +2907,7 @@ Matrix<GLfloat> VolumeRenderWorker::glRect(QRectF & qt_rect)
     return gl_rect;
 }
 
-void VolumeRenderWorker::addMarker()
+void VolumeOpenGLWidget::addMarker()
 {
     if (markers.size() < 10)
     {
@@ -2919,7 +2931,7 @@ void VolumeRenderWorker::addMarker()
     }
 }
 
-void VolumeRenderWorker::tickzerize(double min, double max, double size, double min_interdist, double * qualified_exponent, double * start, size_t * num_ticks)
+void VolumeOpenGLWidget::tickzerize(double min, double max, double size, double min_interdist, double * qualified_exponent, double * start, size_t * num_ticks)
 {
     double delta = max - min;
     double exponent = -10;
@@ -2937,7 +2949,7 @@ void VolumeRenderWorker::tickzerize(double min, double max, double size, double 
     *start = ((int) ceil(min * pow(10.0, -*qualified_exponent))) * pow(10.0, *qualified_exponent);; 
 }
 
-void VolumeRenderWorker::drawRayTex(QPainter *painter)
+void VolumeOpenGLWidget::drawRayTex(QPainter *painter)
 {
     beginRawGLCalls(painter);
     
@@ -2990,7 +3002,7 @@ void VolumeRenderWorker::drawRayTex(QPainter *painter)
     endRawGLCalls(painter);
 }
 
-void VolumeRenderWorker::raytrace(cl_kernel kernel)
+void VolumeOpenGLWidget::raytrace(cl_kernel kernel)
 {
     setShadowVector();
 
@@ -3034,7 +3046,7 @@ void VolumeRenderWorker::raytrace(cl_kernel kernel)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
+void VolumeOpenGLWidget::setSvo(SparseVoxelOcttree * svo)
 {
     data_extent.setDeep(4, 2, svo->getExtent()->data());
     data_view_extent.setDeep(4, 2, svo->getExtent()->data());
@@ -3122,14 +3134,14 @@ void VolumeRenderWorker::setSvo(SparseVoxelOcttree * svo)
     isSvoInitialized = true;
 }
 
-void VolumeRenderWorker::resetViewMatrix()
+void VolumeOpenGLWidget::resetViewMatrix()
 {
     data_scaling.setIdentity(4);
     scalebar_rotation.setIdentity (4);
     data_translation.setIdentity(4);
 }
 
-size_t VolumeRenderWorker::setScaleBars()
+size_t VolumeOpenGLWidget::setScaleBars()
 {
     // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
     double length = data_view_extent[1] - data_view_extent[0];
@@ -3283,22 +3295,22 @@ size_t VolumeRenderWorker::setScaleBars()
     return coord_counter;
 }
 
-void VolumeRenderWorker::setQuality(int value)
+void VolumeOpenGLWidget::setQuality(int value)
 {
    quality_percentage = value;
 }
 
-void VolumeRenderWorker::refreshTexture()
+void VolumeOpenGLWidget::refreshTexture()
 {
    setRayTexture(quality_percentage);
 }
 
-void VolumeRenderWorker::setCountIntegration()
+void VolumeOpenGLWidget::setCountIntegration()
 {
     isCountIntegrationActive = !isCountIntegrationActive;
 }
 
-void VolumeRenderWorker::setProjection()
+void VolumeOpenGLWidget::setProjection()
 {
     isOrthonormal = !isOrthonormal;
     ctc_matrix.setProjection(isOrthonormal);
@@ -3312,12 +3324,12 @@ void VolumeRenderWorker::setProjection()
     projection_scaling[10] = f;
 }
 
-void VolumeRenderWorker::setLabFrame()
+void VolumeOpenGLWidget::setLabFrame()
 {
     isLabFrameActive = !isLabFrameActive;
 }
 
-void VolumeRenderWorker::setBackground()
+void VolumeOpenGLWidget::setBackground()
 {
     isBackgroundBlack = !isBackgroundBlack;
 
@@ -3338,38 +3350,38 @@ void VolumeRenderWorker::setBackground()
     fill_brush->setColor(fill_color);
 }
 
-void VolumeRenderWorker::setURotation()
+void VolumeOpenGLWidget::setURotation()
 {
     isURotationActive = !isURotationActive;
 }
 
-void VolumeRenderWorker::setLog(bool value)
+void VolumeOpenGLWidget::setLog(bool value)
 {
     isLogarithmic = value;
     setMiscArrays();
 }
-void VolumeRenderWorker::setLogarithmic2D()
+void VolumeOpenGLWidget::setLogarithmic2D()
 {
     isLogarithmic2D = !isLogarithmic2D;
 }
-void VolumeRenderWorker::setDataStructure()
+void VolumeOpenGLWidget::setDataStructure()
 {
     isDSActive = !isDSActive;
     setMiscArrays();
 }
-void VolumeRenderWorker::setSlicing()
+void VolumeOpenGLWidget::setSlicing()
 {
     isSlicingActive = !isSlicingActive;
     setMiscArrays();
 }
-void VolumeRenderWorker::setShadow()
+void VolumeOpenGLWidget::setShadow()
 {
     isShadowActive = !isShadowActive;
 
     setMiscArrays();
 }
 
-void VolumeRenderWorker::setShadowVector()
+void VolumeOpenGLWidget::setShadowVector()
 {
     Matrix<float> shadow_kernel_arg;
 
@@ -3381,19 +3393,19 @@ void VolumeRenderWorker::setShadowVector()
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeRenderWorker::setIntegration2D()
+void VolumeOpenGLWidget::setIntegration2D()
 {
     isIntegration2DActive = !isIntegration2DActive;
 
     setMiscArrays();
 }
-void VolumeRenderWorker::setIntegration3D()
+void VolumeOpenGLWidget::setIntegration3D()
 {
     isIntegration3DActive = !isIntegration3DActive;
 
     setMiscArrays();
 }
-void VolumeRenderWorker::setViewMode(int value)
+void VolumeOpenGLWidget::setViewMode(int value)
 {
     // This could be done more neatly by maintaining a simple index to indicate the mode. Sins of the past.
 
@@ -3415,17 +3427,17 @@ void VolumeRenderWorker::setViewMode(int value)
     setMiscArrays();
 }
 
-void VolumeRenderWorker::setTsfColor(int value)
+void VolumeOpenGLWidget::setTsfColor(int value)
 {
     tsf_color_scheme = value;
     if (isInitialized) setTsfTexture();
 }
-void VolumeRenderWorker::setTsfAlpha(int value)
+void VolumeOpenGLWidget::setTsfAlpha(int value)
 {
     tsf_alpha_scheme = value;
     if (isInitialized) setTsfTexture();
 }
-void VolumeRenderWorker::setDataMin(double value)
+void VolumeOpenGLWidget::setDataMin(double value)
 {
     if (isModelActive)
     {
@@ -3437,7 +3449,7 @@ void VolumeRenderWorker::setDataMin(double value)
     }
     setTsfParameters();
 }
-void VolumeRenderWorker::setDataMax(double value)
+void VolumeOpenGLWidget::setDataMax(double value)
 {
     if (isModelActive)
     {
@@ -3449,7 +3461,7 @@ void VolumeRenderWorker::setDataMax(double value)
     }
     setTsfParameters();
 }
-void VolumeRenderWorker::setAlpha(double value)
+void VolumeOpenGLWidget::setAlpha(double value)
 {
     if (isModelActive)
     {
@@ -3461,7 +3473,7 @@ void VolumeRenderWorker::setAlpha(double value)
     }
     setTsfParameters();
 }
-void VolumeRenderWorker::setBrightness(double value)
+void VolumeOpenGLWidget::setBrightness(double value)
 {
     if (isModelActive)
     {
@@ -3474,52 +3486,52 @@ void VolumeRenderWorker::setBrightness(double value)
     setTsfParameters();
 }
 
-void VolumeRenderWorker::setUnitcell()
+void VolumeOpenGLWidget::setUnitcell()
 {
     isUnitcellActive = !isUnitcellActive;
 }
 
 
-void VolumeRenderWorker::setModel()
+void VolumeOpenGLWidget::setModel()
 {
     isModelActive = !isModelActive;
 }
-void VolumeRenderWorker::setModelParam0(double value)
+void VolumeOpenGLWidget::setModelParam0(double value)
 {
     model_misc_floats[0] = value;
     setMiscArrays();
 }
-void VolumeRenderWorker::setModelParam1(double value)
+void VolumeOpenGLWidget::setModelParam1(double value)
 {
     model_misc_floats[1] = value;
     setMiscArrays();
 }
-void VolumeRenderWorker::setModelParam2(double value)
+void VolumeOpenGLWidget::setModelParam2(double value)
 {
     model_misc_floats[2] = value;
     setMiscArrays();
 }
-void VolumeRenderWorker::setModelParam3(double value)
+void VolumeOpenGLWidget::setModelParam3(double value)
 {
     model_misc_floats[3] = value;
     setMiscArrays();
 }
-void VolumeRenderWorker::setModelParam4(double value)
+void VolumeOpenGLWidget::setModelParam4(double value)
 {
     model_misc_floats[4] = value;
     setMiscArrays();
 }
-void VolumeRenderWorker::setModelParam5(double value)
+void VolumeOpenGLWidget::setModelParam5(double value)
 {
     model_misc_floats[5] = value;
     setMiscArrays();
 }
 
-void VolumeRenderWorker::setScalebar()
+void VolumeOpenGLWidget::setScalebar()
 {
     isScalebarActive = !isScalebarActive;
 }
-void VolumeRenderWorker::toggleRuler()
+void VolumeOpenGLWidget::toggleRuler()
 {
     isRulerActive = !isRulerActive;
 }

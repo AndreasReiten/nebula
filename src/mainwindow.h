@@ -362,10 +362,10 @@ private:
     QPlainTextEdit * outputPlainTextEdit;
 
 protected:
-    ImagePreviewWorker * imageOpenGLWidget;
+    ImageOpenGLWidget * imageOpenGLWidget;
 
     // OpenGL rendering widgets
-    VolumeRenderWorker *volumeOpenGLWidget;
+    VolumeOpenGLWidget *volumeOpenGLWidget;
 
     /* Image browser toolbar */
     QToolBar * imageToolBar;

@@ -14,21 +14,37 @@
 #include <QOpenGLShaderProgram>
 #include <QElapsedTimer>
 #include <QMouseEvent>
+#include <QThread>
 
 #include "../../opengl/qxopengllib.h"
 #include "../../file/qxfilelib.h"
 #include "../../opencl/qxopencllib.h"
 #include "../../math/qxmathlib.h"
 
-class ImagePreviewWorker : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
+class ImageWorker : public QObject
+{
+    Q_OBJECT
+
+public slots:
+    void doWork(const QString &parameter) {
+        QString result;
+        /* ... here is the expensive or blocking operation ... */
+        emit resultReady(result);
+    }
+
+signals:
+    void resultReady(const QString &result);
+};
+
+class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
 {
     Q_OBJECT
 public:
     int projectFile(DetectorFile * file, Selection selection, Matrix<float> *samples, size_t *n_samples);
     void setReducedPixels(Matrix<float> * reduced_pixels);
     
-    explicit ImagePreviewWorker(QObject *parent = 0);
-    ~ImagePreviewWorker();
+    explicit ImageOpenGLWidget(QObject *parent = 0);
+    ~ImageOpenGLWidget();
     SeriesSet set();
     
 signals:
@@ -105,6 +121,9 @@ public slots:
     
     
 private:
+    QThread * workerThread;
+    ImageWorker * imageWorker;
+
     QPointF posGLtoQt(QPointF coord);
     QPointF posQttoGL(QPointF coord);
 
