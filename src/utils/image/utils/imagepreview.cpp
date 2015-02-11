@@ -7,6 +7,7 @@
 #include <QFontMetrics>
 #include <QOpenGLFramebufferObject>
 
+
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1000e6;
 
 ImageWorker::ImageWorker()
@@ -2544,9 +2545,6 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter *painter)
     if (pixel_x >= frame.getFastDimension()) pixel_x = frame.getFastDimension()-1;
     if (pixel_y >= frame.getSlowDimension()) pixel_y = frame.getSlowDimension()-1;
     
-    QString tip;
-    tip += "Pixel (x,y) "+QString::number((int) pixel_x)+", "+QString::number((int) pixel_y)+"\n";
-    
     // Intensity
     float value = 0;
     
@@ -2583,49 +2581,52 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter *painter)
             0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
-    
-    
-    tip += "Intensity "+QString::number(value,'g',4)+"\n";
-    
-    // The scattering angle 2-theta
-    tip += "Scattering angle (2ϴ) "+QString::number(180*getScatteringAngle(frame, pixel_x, pixel_y)/pi,'f',2)+"°\n";
-    
     // Position
     Matrix<double> Q(1,3);
     Q = getScatteringVector(frame, pixel_x, pixel_y);
 
-    tip += "Q Position (x,y,z) "+QString::number(Q[0],'f',2)+", "+QString::number(Q[1],'f',2)+", "+QString::number(Q[2],'f',2)+" ("+QString::number(vecLength(Q),'f',2)+") ("+QString::number(1.0/vecLength(Q),'f',2)+")\n";
-    
-    // Weight center
-    tip += "Weight center (x,y) "+QString::number(p_set.current()->current()->selection().weighted_x(),'f',2)+", "+QString::number(p_set.current()->current()->selection().weighted_y(),'f',2)+"\n";
-    
-    // Sum
-    tip += "Integral "+QString::number(p_set.current()->current()->selection().integral(),'f',2);
-    
+    QString tip;
+    tip += "<p style=\"font-family: monospace, times, serif; font-size:10pt; font-style:italic; color:white\">";
+    tip += "<font color=\"white\">X:</font> <font color=\"#85DAFF\">"+QString::number((int) pixel_x)+"</font>, Y: <font color=\"#85DAFF\">"+QString::number((int) pixel_y)+"</font>";
+    tip += ", Value: <font color=\"#85DAFF\">"+QString::number(value,'e',4)+"</font>";
+    tip += ", Q[<font color=\"#85DAFF\">"+QString::number(Q[0],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[1],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[2],'f',2)+"</font>]";
+    tip += " (<font color=\"#85DAFF\">"+QString::number(vecLength(Q),'f',2)+"</font> Å) (<font color=\"#85DAFF\">"+QString::number(1.0/vecLength(Q),'f',2)+"</font> Å<sup>-1</sup>)";
+    tip += ", 2&theta;: <font color=\"#85DAFF\">"+QString::number(180*getScatteringAngle(frame, pixel_x, pixel_y)/pi,'f',2)+"</font>&deg;";
+    tip += ", Sum: <font color=\"#85DAFF\">"+QString::number(p_set.current()->current()->selection().integral(),'f',2)+"</font>";
+    tip += ", Mass: <font color=\"#85DAFF\">"+QString::number(p_set.current()->current()->selection().weighted_x(),'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(p_set.current()->current()->selection().weighted_y(),'f',2)+"</font>";
+    tip += "</p>";
+
     // Prepare painter 
-    QFont font("Helvetica",10);
+    QFont font("Monospace",10);
     QFontMetrics fm(font);
     
     QBrush brush(Qt::SolidPattern);
     brush.setColor(QColor(0,0,0,155));
 
     QPen pen(Qt::white);
-    painter->setFont(font);
+//    painter->setFont(font);
     painter->setPen(pen);
     painter->setBrush(brush);
     
     
     // Define the area assigned to displaying the tooltip
-    QRect area = fm.boundingRect (this->geometry(), Qt::AlignLeft, tip);
+//    QRect area = fm.boundingRect (this->geometry(), Qt::AlignLeft, tip);
     
-    area.moveBottomLeft(QPoint(5,this->height()-5));
+//    area.moveBottomLeft(QPoint(5,this->height()-5));
     
+    QRect area(QPoint(0, this->height()-fm.height()), QPoint(this->width(), this->height()));
+
     area += QMargins(2,2,2,2);
     painter->drawRect(area);
     area -= QMargins(2,2,2,2);
+
+    m_staticText.setTextWidth(area.width());
     
+    m_staticText.setText(tip);
+
     // Draw tooltip
-    painter->drawText(area, Qt::AlignLeft, tip);
+//    painter->drawText(area, Qt::AlignLeft, tip);
+    painter->drawStaticText(area.topLeft(), m_staticText);
 }
 
 void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter *painter)

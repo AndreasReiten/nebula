@@ -15,6 +15,8 @@
 #include <QElapsedTimer>
 #include <QMouseEvent>
 #include <QThread>
+#include <QStaticText>
+
 
 #include "../../opengl/qxopengllib.h"
 #include "../../file/qxfilelib.h"
@@ -159,6 +161,8 @@ public slots:
     
     
 private:
+    QStaticText m_staticText;
+
     QThread * workerThread;
     ImageWorker * imageWorker;
 
