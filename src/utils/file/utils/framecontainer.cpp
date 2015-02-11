@@ -143,7 +143,7 @@ ImageSeries::ImageSeries(const ImageSeries & other)
 {
     p_images = other.images();
     p_path = other.path();
-    p_i = 0;
+    p_i = other.i();
     p_i_memory = 0;
     
 }
@@ -343,7 +343,7 @@ SeriesSet::SeriesSet()
 SeriesSet::SeriesSet(const SeriesSet & other)
 {
     p_series = other.series();
-    p_i = 0;
+    p_i = other.i();
     p_i_memory = 0;
     
 }

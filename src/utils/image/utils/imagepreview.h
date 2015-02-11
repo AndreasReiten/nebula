@@ -21,19 +21,51 @@
 #include "../../opencl/qxopencllib.h"
 #include "../../math/qxmathlib.h"
 
-class ImageWorker : public QObject
+//class Trace 
+//{
+//public:
+//    Trace();
+//    ~Trace();
+    
+//    void setData(Matrix<float>);
+//    Matrix<float> getData();
+    
+//    void setWidth();
+//    size_t getWidth();
+//private:
+//    Matrix<float> data;
+//    size_t width, height;
+//};
+
+class ImageWorker : public QObject, protected OpenCLFunctions
 {
     Q_OBJECT
+    
+public:
+    ImageWorker();
+    ~ImageWorker();
+    void setOpenCLContext(OpenCLContext * context);
+    void setTraceContainer(QList<Matrix<float>> * list);
 
 public slots:
-    void doWork(const QString &parameter) {
-        QString result;
-        /* ... here is the expensive or blocking operation ... */
-        emit resultReady(result);
-    }
+    void traceSeries(SeriesSet set);
 
 signals:
-    void resultReady(const QString &result);
+    void traceFinished();
+    void visibilityChanged(bool value);
+    void pathChanged(QString path);
+    void progressRangeChanged(int,int);
+    void progressChanged(int);
+
+private:
+    OpenCLContext * context_cl;
+    cl_kernel cl_buffer_max;
+    QList<Matrix<float>> * traces;
+    
+    
+    void initializeOpenCLKernels();
+    cl_int err;
+    cl_program program;
 };
 
 class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
@@ -46,8 +78,11 @@ public:
     explicit ImageOpenGLWidget(QObject *parent = 0);
     ~ImageOpenGLWidget();
     SeriesSet set();
+    ImageWorker *worker();
     
 signals:
+    void runTraceWorker(SeriesSet set);
+    
     void changedMessageString(QString str);
     void changedMemoryUsage(int value);
     void changedFormatMemoryUsage(QString str);
@@ -69,6 +104,9 @@ signals:
     void showProgressBar(bool value);
     
 public slots:
+    void setSeriesTrace();
+    void traceSeriesSlot();
+    
     void setBeamOverrideActive(bool value);
     void setBeamXOverride(double value);
     void setBeamYOverride(double value);
@@ -96,7 +134,7 @@ public slots:
     void centerImage();
     void analyze(QString str);
     void applyPlaneMarker(QString str);
-    void traceSet();
+//    void traceSeries();
     void showWeightCenter(bool value);
     void setSet(SeriesSet s);
     void setFrameByIndex(int i);
@@ -189,7 +227,7 @@ private:
     QList<Matrix<float>> set_trace;
     SeriesSet p_set;
     cl_mem series_interpol_gpu_3Dimg;
-    void setSeriesMaxFrame();
+    
 
     // GPU functions
     void imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> &param, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, float mean, float deviation, int task);

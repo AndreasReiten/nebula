@@ -678,6 +678,11 @@ void MainWindow::initConnects()
     /*this <-> misc*/
     connect(fileFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
     connect(fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
+//    connect(imageOpenGLWidget->worker(), SIGNAL(visibilityChanged(bool)), , SLOT());
+    connect(imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
+    connect(imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
+    connect(imageOpenGLWidget->worker(), SIGNAL(progressRangeChanged(int,int)), generalProgressBar, SLOT(setRange(int,int)));
+    connect(imageOpenGLWidget->worker(), SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
     
     // KK
     connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadPaths()));
@@ -703,7 +708,7 @@ void MainWindow::initConnects()
     connect(imageOpenGLWidget, SIGNAL(imageRangeChanged(int,int)), this, SLOT(setImageRange(int, int)));
     connect(imageOpenGLWidget, SIGNAL(currentIndexChanged(int)), imageSpinBox, SLOT(setValue(int)));
     connect(this, SIGNAL(setChanged(SeriesSet)), imageOpenGLWidget, SLOT(setSet(SeriesSet)));
-    connect(traceSetPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(traceSet()));
+    connect(traceSeriesPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(traceSeriesSlot()));
     connect(correctionPlaneSpinBox, SIGNAL(valueChanged(int)), imageOpenGLWidget, SLOT(setLsqSamples(int)));
     connect(traceTextureCheckBox,SIGNAL(toggled(bool)),imageOpenGLWidget,SLOT(toggleTraceTexture(bool)));
     connect(imageOpenGLWidget, SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
@@ -1148,7 +1153,7 @@ void MainWindow::initGUI()
     
     // Corrections dock widget
     {
-        traceSetPushButton = new QPushButton("Trace set");
+        traceSeriesPushButton = new QPushButton("Trace set");
         traceTextureCheckBox = new QCheckBox("Show");
         
         correctionNoiseDoubleSpinBox = new QDoubleSpinBox;
@@ -1180,7 +1185,7 @@ void MainWindow::initGUI()
         gridLayout->setVerticalSpacing(2);
         gridLayout->setContentsMargins(5,5,5,5);
         gridLayout->setRowStretch(9,1);
-        gridLayout->addWidget(traceSetPushButton,0,0,1,1);
+        gridLayout->addWidget(traceSeriesPushButton,0,0,1,1);
         gridLayout->addWidget(traceTextureCheckBox,0,1,1,1);
         gridLayout->addWidget(correctionPlaneCheckBox,1,0,1,1);
         gridLayout->addWidget(correctionPlaneSpinBox,1,1,1,1);

@@ -9,6 +9,129 @@
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1000e6;
 
+ImageWorker::ImageWorker()
+{
+    initializeOpenCLFunctions();
+}
+
+ImageWorker::~ImageWorker()
+{
+    
+}
+
+void ImageWorker::setOpenCLContext(OpenCLContext * context)
+{
+    context_cl = context;
+    
+    initializeOpenCLKernels();
+}
+
+void ImageWorker::setTraceContainer(QList<Matrix<float>> * list)
+{
+    traces = list;
+}
+
+void ImageWorker::initializeOpenCLKernels()
+{
+    // Build programs from OpenCL kernel source
+    QStringList paths;
+    paths << "cl/image_preview.cl";
+
+    program = context_cl->createProgram(paths, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    context_cl->buildProgram(&program, "-Werror");
+
+    // Kernel handles
+    cl_buffer_max =  QOpenCLCreateKernel(program, "bufferMax", &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+}
+
+void ImageWorker::traceSeries(SeriesSet set)
+{
+    emit visibilityChanged(false);
+    
+    DetectorFile frame;
+    
+    frame.set(set.current()->begin()->path());
+    
+    Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
+
+    cl_mem trace_image_gpu = QOpenCLCreateBuffer( context_cl->context(),
+            CL_MEM_COPY_HOST_PTR,
+            zeros_like_frame.bytes(),
+            zeros_like_frame.data(),
+            &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // For each image in the series
+    for (int j = 0; j < set.current()->size(); j++)
+    {
+        frame.readData();
+        
+        // Read data and send to a VRAM buffer. 
+        cl_mem image_gpu = QOpenCLCreateBuffer( context_cl->context(),
+                CL_MEM_COPY_HOST_PTR,
+                frame.data().bytes(),
+                frame.data().data(),
+                &err);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        
+        // Use OpenCL to check data against a second VRAM buffer, keeping the max value
+        Matrix<size_t> global_ws(1,2);
+        Matrix<size_t> local_ws(1,2);
+
+        local_ws[0] = 16;
+        local_ws[1] = 16;
+
+        global_ws[0] = frame.getFastDimension() + local_ws[0] - frame.getFastDimension()%local_ws[0];
+        global_ws[1] = frame.getSlowDimension() + local_ws[1] - frame.getSlowDimension()%local_ws[1];
+
+        Matrix<int> image_size(1,2);
+        image_size[0] = frame.getFastDimension();
+        image_size[1] = frame.getSlowDimension();
+
+        err =   QOpenCLSetKernelArg(cl_buffer_max,  0, sizeof(cl_mem), (void *) &image_gpu);
+        err |=   QOpenCLSetKernelArg(cl_buffer_max, 1, sizeof(cl_mem), (void *) &trace_image_gpu);
+        err |=   QOpenCLSetKernelArg(cl_buffer_max, 2, sizeof(cl_int2), image_size.data());
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+        err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_buffer_max, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+        err =  QOpenCLReleaseMemObject(image_gpu);
+        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        
+        frame.set(set.current()->next()->path());
+        
+        emit pathChanged(set.current()->current()->path());
+        emit progressRangeChanged(0,set.current()->size()-1);
+        emit progressChanged(set.current()->i());
+    }
+
+    // Read back the second VRAM buffer and store in system RAM for later usage 
+    Matrix<float> trace_image(frame.getSlowDimension(),frame.getFastDimension());
+
+    err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+        trace_image_gpu,
+        CL_TRUE,
+        0,
+        trace_image.bytes(),
+        trace_image.data(),
+        0, NULL, NULL);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    
+    (*traces)[set.i()] = trace_image;
+
+    err =  QOpenCLReleaseMemObject(trace_image_gpu);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    emit visibilityChanged(true);
+    
+    emit traceFinished();
+}
+
+
 ImageOpenGLWidget::ImageOpenGLWidget(QObject *parent) :
     isBeamOverrideActive(false),
     isImageTexInitialized(false),
@@ -28,8 +151,12 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject *parent) :
     // Worker
     workerThread = new QThread;
     imageWorker = new ImageWorker;
+    imageWorker->setTraceContainer(&set_trace);
     imageWorker->moveToThread(workerThread);
     connect(workerThread, SIGNAL(finished()), imageWorker, SLOT(deleteLater()));
+    connect(this, SIGNAL(runTraceWorker(SeriesSet)), imageWorker, SLOT(traceSeries(SeriesSet)));
+    connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(setFrame()));
+    connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(setSeriesTrace()));
 //    connect(this, &Controller::operate, worker, &Worker::doWork);
 //    connect(worker, imageWorker::resultReady, this, Controller::handleResults);
     workerThread->start();
@@ -56,6 +183,11 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject *parent) :
     image_buffer_size.set(1,2,2);
     
     prev_pixel.set(1,2,0);
+}
+
+ImageWorker * ImageOpenGLWidget::worker()
+{
+    return imageWorker;
 }
 
 void ImageOpenGLWidget::paintGL()
@@ -214,6 +346,11 @@ ImageOpenGLWidget::~ImageOpenGLWidget()
     workerThread->wait();
 }
 
+void ImageOpenGLWidget::traceSeriesSlot()
+{
+    emit runTraceWorker(p_set);
+}
+
 void ImageOpenGLWidget::setBeamOverrideActive(bool value)
 {
     isBeamOverrideActive = value;
@@ -287,7 +424,7 @@ void ImageOpenGLWidget::reconstruct()
                 break;
             }
 
-            emit progressRangeChanged(0, p_set.current()->size());
+            emit progressRangeChanged(0, p_set.current()->size()-1);
 
             // Draw the frame and update the intensity OpenCL buffer prior to further operations. 
             // setFrame() calls calculus() which carries out any corrections
@@ -328,7 +465,7 @@ void ImageOpenGLWidget::reconstruct()
             }
             
             // Update the progress bar
-            emit progressChanged(j+1);
+            emit progressChanged(j);
         }
         
         p_set.current()->loadSavedIndex();
@@ -943,8 +1080,8 @@ void ImageOpenGLWidget::setFrame()
     
     // Emit the image instead of components
     emit pathChanged(p_set.current()->current()->path());
-    emit progressRangeChanged(0,p_set.current()->size());
-    emit progressChanged(p_set.current()->i()+1);
+    emit progressRangeChanged(0,p_set.current()->size()-1);
+    emit progressChanged(p_set.current()->i());
 }
 
 
@@ -1215,6 +1352,9 @@ void ImageOpenGLWidget::toggleTraceTexture(bool value)
         Selection analysis_area = p_set.current()->current()->selection();
         refreshSelection(&analysis_area);
         p_set.current()->current()->setSelection(analysis_area);
+        
+        setSeriesTrace();
+        setFrame();   
     }
 }
 
@@ -1263,7 +1403,7 @@ void ImageOpenGLWidget::analyze(QString str)
         p_set.current()->saveCurrentIndex();
         p_set.current()->begin();
         
-        emit progressRangeChanged(0, p_set.current()->size());
+        emit progressRangeChanged(0, p_set.current()->size()-1);
 
         for (int i = 0; i < p_set.current()->size(); i++)
         {
@@ -1285,7 +1425,7 @@ void ImageOpenGLWidget::analyze(QString str)
 
             p_set.current()->next();
             
-            emit progressChanged(i+1);
+            emit progressChanged(i);
         }
 
         p_set.current()->loadSavedIndex();
@@ -1326,7 +1466,7 @@ void ImageOpenGLWidget::analyze(QString str)
             p_set.current()->saveCurrentIndex();
             p_set.current()->begin();
 
-            emit progressRangeChanged(0, p_set.current()->size());
+            emit progressRangeChanged(0, p_set.current()->size()-1);
             
             Matrix<double> weightpoint(1,3,0);
             
@@ -1349,7 +1489,7 @@ void ImageOpenGLWidget::analyze(QString str)
 
                 p_set.current()->next();
                 
-                emit progressChanged(j+1);
+                emit progressChanged(j);
             }
 
             if (integral > 0)
@@ -1534,11 +1674,27 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
         
         emit imageRangeChanged(0,p_set.current()->size()-1);
         setFrame();
-        
 
         centerImage();
-
-        isSetTraced = false;
+        
+        set_trace.clear();
+        
+        p_set.begin();
+        
+        // Fill trace with empty frames
+        for (size_t i = 0; i < p_set.size(); i++)
+        {
+            frame.set(p_set.current()->current()->path());
+            
+            Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
+            
+            set_trace << zeros_like_frame;
+            
+            p_set.next();
+        }
+        p_set.begin();
+        
+        isSetTraced = true;
     }
 }
 
@@ -1578,7 +1734,7 @@ void ImageOpenGLWidget::nextSeries()
         emit imageRangeChanged(0,p_set.current()->size()-1);
         emit currentIndexChanged(p_set.current()->i());
 
-        if (isSetTraced) setSeriesMaxFrame();
+        if (isSetTraced) setSeriesTrace();
         setFrame();
     }
 }
@@ -1593,117 +1749,100 @@ void ImageOpenGLWidget::prevSeries()
         emit imageRangeChanged(0,p_set.current()->size()-1);
         emit currentIndexChanged(p_set.current()->i());
 
-        if (isSetTraced) setSeriesMaxFrame();
+        if (isSetTraced) setSeriesTrace();
         setFrame();
     }
 }
 
-void ImageOpenGLWidget::traceSet()
-{
-    emit visibilityChanged(false);
-
-    set_trace.clear();
-
-    p_set.saveCurrentIndex();
+//void ImageOpenGLWidget::traceSeries()
+//{
+//    emit visibilityChanged(false);
     
-    frame.set(p_set.begin()->begin()->path());
+//    p_set.current()->saveCurrentIndex();
     
-    // For each series
-    for (int i = 0; i < p_set.size(); i++)
-    {
-        emit progressRangeChanged(0, p_set.current()->size());
+//    frame.set(p_set.current()->begin()->path());
+    
+//    Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
+
+//    cl_mem trace_image_gpu = QOpenCLCreateBuffer( context_cl.context(),
+//            CL_MEM_COPY_HOST_PTR,
+//            zeros_like_frame.bytes(),
+//            zeros_like_frame.data(),
+//            &err);
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+//    // For each image in the series
+//    for (int j = 0; j < p_set.current()->size(); j++)
+//    {
+//        frame.readData();
         
-        p_set.current()->saveCurrentIndex();
+//        // Read data and send to a VRAM buffer. 
+//        cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
+//                CL_MEM_COPY_HOST_PTR,
+//                frame.data().bytes(),
+//                frame.data().data(),
+//                &err);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
+//        // Use OpenCL to check data against a second VRAM buffer, keeping the max value
+//        Matrix<size_t> global_ws(1,2);
+//        Matrix<size_t> local_ws(1,2);
 
-        cl_mem max_image_gpu = QOpenCLCreateBuffer( context_cl.context(),
-                CL_MEM_COPY_HOST_PTR,
-                zeros_like_frame.bytes(),
-                zeros_like_frame.data(),
-                &err);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//        local_ws[0] = 16;
+//        local_ws[1] = 16;
 
-        p_set.current()->begin();
+//        global_ws[0] = frame.getFastDimension() + local_ws[0] - frame.getFastDimension()%local_ws[0];
+//        global_ws[1] = frame.getSlowDimension() + local_ws[1] - frame.getSlowDimension()%local_ws[1];
+
+//        Matrix<int> image_size(1,2);
+//        image_size[0] = frame.getFastDimension();
+//        image_size[1] = frame.getSlowDimension();
+
+//        err =   QOpenCLSetKernelArg(cl_buffer_max,  0, sizeof(cl_mem), (void *) &image_gpu);
+//        err |=   QOpenCLSetKernelArg(cl_buffer_max, 1, sizeof(cl_mem), (void *) &trace_image_gpu);
+//        err |=   QOpenCLSetKernelArg(cl_buffer_max, 2, sizeof(cl_int2), image_size.data());
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+//        err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_buffer_max, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+//        err =  QOpenCLReleaseMemObject(image_gpu);
+//        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        // For each image in the series
-        for (int j = 0; j < p_set.current()->size(); j++)
-        {
-            // Read data and send to a VRAM buffer. 
-            frame.readData();
+//        frame.set(p_set.current()->next()->path());
+        
+//        emit pathChanged(p_set.current()->current()->path());
+//        emit progressRangeChanged(0,p_set.current()->size());
+//        emit progressChanged(p_set.current()->i());
+//    }
 
-            cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
-                    CL_MEM_COPY_HOST_PTR,
-                    frame.data().bytes(),
-                    frame.data().data(),
-                    &err);
-            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-            
-            // Use OpenCL to check data against a second VRAM buffer, keeping the max value
-            Matrix<size_t> global_ws(1,2);
-            Matrix<size_t> local_ws(1,2);
+//    // Read back the second VRAM buffer and store in system RAM for later usage 
+//    Matrix<float> trace_image(frame.getSlowDimension(),frame.getFastDimension());
 
-            local_ws[0] = 16;
-            local_ws[1] = 16;
-
-            global_ws[0] = frame.getFastDimension() + local_ws[0] - frame.getFastDimension()%local_ws[0];
-            global_ws[1] = frame.getSlowDimension() + local_ws[1] - frame.getSlowDimension()%local_ws[1];
-
-            Matrix<int> image_size(1,2);
-            image_size[0] = frame.getFastDimension();
-            image_size[1] = frame.getSlowDimension();
-
-            err =   QOpenCLSetKernelArg(cl_buffer_max,  0, sizeof(cl_mem), (void *) &image_gpu);
-            err |=   QOpenCLSetKernelArg(cl_buffer_max, 1, sizeof(cl_mem), (void *) &max_image_gpu);
-            err |=   QOpenCLSetKernelArg(cl_buffer_max, 2, sizeof(cl_int2), image_size.data());
-            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_buffer_max, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
-            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-            err =  QOpenCLReleaseMemObject(image_gpu);
-            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-            
-            frame.set(p_set.current()->next()->path());
-            
-            emit pathChanged(p_set.current()->current()->path());
-            emit progressRangeChanged(0,p_set.current()->size());
-            emit progressChanged(p_set.current()->i()+1);
-        }
-
-        // Read back the second VRAM buffer and store in system RAM for later usage 
-        Matrix<float> max_image(frame.getSlowDimension(),frame.getFastDimension());
-
-        err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
-            max_image_gpu,
-            CL_TRUE,
-            0,
-            max_image.bytes(),
-            max_image.data(),
-            0, NULL, NULL);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
+//        trace_image_gpu,
+//        CL_TRUE,
+//        0,
+//        trace_image.bytes(),
+//        trace_image.data(),
+//        0, NULL, NULL);
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
 
-        set_trace << max_image;
+//    set_trace[p_set.i()] = trace_image;
 
-        err =  QOpenCLReleaseMemObject(max_image_gpu);
-        if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+//    err =  QOpenCLReleaseMemObject(trace_image_gpu);
+//    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        p_set.current()->loadSavedIndex();
-        p_set.next();
-    }
+//    p_set.current()->loadSavedIndex();
+
+//    emit visibilityChanged(true);
     
-    p_set.loadSavedIndex();
+//    setSeriesTrace();
+//    setFrame();    
+//}
 
-    emit visibilityChanged(true);
-    
-    isSetTraced = true;
-    
-    setSeriesMaxFrame();
-    setFrame();    
-}
-
-void ImageOpenGLWidget::setSeriesMaxFrame()
+void ImageOpenGLWidget::setSeriesTrace()
 {
     err =  QOpenCLReleaseMemObject(image_data_trace_cl);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1831,6 +1970,8 @@ void ImageOpenGLWidget::initializeCL()
     context_cl.initSharedContext();
     context_cl.initCommandQueue();
     context_cl.initResources();
+    
+    imageWorker->setOpenCLContext(&context_cl);
     
     // Build programs from OpenCL kernel source
     QStringList paths;
@@ -2702,8 +2843,6 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
     float move_scaling = 1.0;
     
     pos = event->pos();
-    
-    qDebug() << prev_pos << pos;
     
     if ((event->buttons() & Qt::LeftButton))
     {

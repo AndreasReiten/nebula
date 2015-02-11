@@ -320,7 +320,7 @@ private:
     // Corrections dock widget
     QWidget * correctionWidget;
     QDockWidget * correctionDock;
-    QPushButton * traceSetPushButton;
+    QPushButton * traceSeriesPushButton;
     QCheckBox * traceTextureCheckBox;
     QDoubleSpinBox * correctionNoiseDoubleSpinBox;
     QSpinBox * correctionClutterSpinBox;
