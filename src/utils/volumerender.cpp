@@ -26,6 +26,72 @@
 #include <QPainter>
 #include <QOpenGLFramebufferObject>
 
+
+VolumeWorker::VolumeWorker()
+{
+    initializeOpenCLFunctions();
+}
+
+VolumeWorker::~VolumeWorker()
+{
+
+}
+
+void VolumeWorker::setOpenCLContext(OpenCLContext * context)
+{
+    context_cl = context;
+}
+
+void VolumeWorker::setKernel(cl_kernel kernel)
+{
+    p_kernel = kernel;
+}
+
+void VolumeWorker::raytrace()
+{
+    /*
+//    setShadowVector();
+
+    // Aquire shared CL/GL objects
+    glFinish();
+    err = QOpenCLEnqueueAcquireGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Launch rendering kernel
+    Matrix<size_t> area_per_call(1,2);
+    area_per_call[0] = 128;
+    area_per_call[1] = 128;
+
+    Matrix<size_t> call_offset(1,2);
+    call_offset[0] = 0;
+    call_offset[1] = 0;
+
+    // Launch the kernel
+    for (size_t glb_x = 0; glb_x < ray_glb_ws[0]; glb_x += area_per_call[0])
+    {
+        for (size_t glb_y = 0; glb_y < ray_glb_ws[1]; glb_y += area_per_call[1])
+        {
+            call_offset[0] = glb_x;
+            call_offset[1] = glb_y;
+
+            err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), p_kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        }
+    }
+
+    err = QOpenCLFinish(context_cl->queue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    // Release shared CL/GL objects
+    err = QOpenCLEnqueueReleaseGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    err = QOpenCLFinish(context_cl->queue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+    */
+}
+
+
 VolumeOpenGLWidget::VolumeOpenGLWidget(QObject *parent)
     : isCLInitialized(false),
       isGLInitialized(false),
@@ -1639,20 +1705,20 @@ void VolumeOpenGLWidget::setRayTexture(int percentage)
     if (1)
     {
         // Set a texture for the volume rendering kernel
-        Matrix<int> ray_tex_new(1, 2);
+        Matrix<int> ray_tex_dim_new(1, 2);
 
-        ray_tex_new[0] = (int)(sqrt((double) percentage * 0.01) * (float)this->width());
-        ray_tex_new[1] = (int)(sqrt((double) percentage * 0.01) * (float)this->height());
+        ray_tex_dim_new[0] = (int)(sqrt((double) percentage * 0.01) * (float)this->width());
+        ray_tex_dim_new[1] = (int)(sqrt((double) percentage * 0.01) * (float)this->height());
 
         // Clamp
-        if (ray_tex_new[0] < 16) ray_tex_new[0] = 16;
-        if (ray_tex_new[1] < 16) ray_tex_new[1] = 16;
+        if (ray_tex_dim_new[0] < 16) ray_tex_dim_new[0] = 16;
+        if (ray_tex_dim_new[1] < 16) ray_tex_dim_new[1] = 16;
 
-        if (ray_tex_new[0] > this->width()) ray_tex_new[0] = this->width();
-        if (ray_tex_new[1] > this->height()) ray_tex_new[1] = this->height();
+        if (ray_tex_dim_new[0] > this->width()) ray_tex_dim_new[0] = this->width();
+        if (ray_tex_dim_new[1] > this->height()) ray_tex_dim_new[1] = this->height();
 
         // Calculate the actual quality factor multiplier
-        ray_tex_dim = ray_tex_new;
+        ray_tex_dim = ray_tex_dim_new;
 
         // Global work size
         if (ray_tex_dim[0] % ray_loc_ws[0]) ray_glb_ws[0] = ray_loc_ws[0]*(1 + (ray_tex_dim[0] / ray_loc_ws[0]));
@@ -1660,8 +1726,8 @@ void VolumeOpenGLWidget::setRayTexture(int percentage)
         if (ray_tex_dim[1] % ray_loc_ws[1]) ray_glb_ws[1] = ray_loc_ws[1]*(1 + (ray_tex_dim[1] / ray_loc_ws[1]));
         else ray_glb_ws[1] = ray_tex_dim[1];
 
-        if (isRayTexInitialized){
-            
+        if (isRayTexInitialized)
+        {
             err = QOpenCLReleaseMemObject(ray_tex_cl);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }

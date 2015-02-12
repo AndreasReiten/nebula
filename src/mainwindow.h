@@ -99,7 +99,7 @@ private:
 //    OpenCLContext * context_cl;
     
     /* UI elements for UB matrix */
-    QDockWidget * unitCellDock;
+    QDockWidget * unitCellDockWidget;
     QWidget * unitCellWidget;
     
     void loadParFile();
@@ -154,8 +154,11 @@ private:
     QLineEdit * fileFilter;
     
     /* Header dock widget */
-    QDockWidget * fileHeaderDock;
-    QPlainTextEdit * fileHeaderEdit;
+    QDockWidget * fileHeaderDockOne;
+    QPlainTextEdit * fileHeaderEditOne;
+
+    QDockWidget * fileHeaderDockTwo;
+    QPlainTextEdit * fileHeaderEditTwo;
     
     // Buttons
     QPushButton *reconstructButton;
@@ -298,9 +301,10 @@ private:
     QCheckBox * volumeRenderLogCheckBox;
 
     QElapsedTimer timer;
-    Highlighter *error_highlighter;
-    Highlighter *result_highlighter;
-    Highlighter *header_highlighter;
+    Highlighter *msgLogHighlighter;
+    Highlighter *textResultHighlighter;
+    Highlighter *headerHighlighterOne;
+    Highlighter *headerHighlighterTwo;
     
     QTabWidget *tabWidget;
     
@@ -317,6 +321,7 @@ private:
     QWidget *functionWidget;
     QWidget *unitcellWidget;
     QWidget *setFilesWidget;
+    QMainWindow * browserMainWindow;
     
     
     // Corrections dock widget

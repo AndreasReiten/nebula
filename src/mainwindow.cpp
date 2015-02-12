@@ -163,7 +163,8 @@ void MainWindow::loadBrowserPaths()
 void MainWindow::setHeader(QString path)
 {
     DetectorFile file(path);
-    fileHeaderEdit->setPlainText(file.getHeaderText());
+    fileHeaderEditOne->setPlainText(file.getHeaderText());
+    fileHeaderEditTwo->setPlainText(file.getHeaderText());
 }
 
 void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
@@ -599,11 +600,11 @@ void MainWindow::loadUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
-    if ((tab==0) || (tab==1)) fileHeaderDock->show();
-    else fileHeaderDock->hide();
+//    if ((tab==0) || (tab==1)) fileHeaderDockOne->show();
+//    else fileHeaderDockOne->hide();
     
-    if ((tab==0) || (tab==1)) outputDockWidget->show();
-    else outputDockWidget->hide();
+//    if ((tab==0) || (tab==1)) outputDockWidget->show();
+//    else outputDockWidget->hide();
 }
 
 
@@ -895,7 +896,19 @@ void MainWindow::initGUI()
         gridLayout->addWidget(fileFilter,0,0,1,2);
         gridLayout->addWidget(fileTreeView,2,0,1,2);
         gridLayout->addWidget(loadPathsPushButton,3,0,1,2);
+
         setFilesWidget->setLayout(gridLayout);
+
+        fileHeaderEditOne = new QPlainTextEdit;
+        headerHighlighterOne = new Highlighter(fileHeaderEditOne->document());
+        fileHeaderEditOne->setReadOnly(true);
+
+        fileHeaderDockOne = new QDockWidget(tr("Frame header info"), this);
+        fileHeaderDockOne->setWidget(fileHeaderEditOne);
+
+        browserMainWindow = new QMainWindow;
+        browserMainWindow->setCentralWidget(setFilesWidget);
+        browserMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockOne);
     }
 
     /*      3D View widget      */
@@ -1295,7 +1308,7 @@ void MainWindow::initGUI()
         gridLayout->addWidget(volumeRenderLogCheckBox,7,0,1,2);
                     
         graphicsWidget->setLayout(gridLayout);
-        graphicsDockWidget->setFixedHeight(graphicsWidget->minimumSizeHint().height()*1.1);
+//        graphicsDockWidget->setFixedHeight(graphicsWidget->minimumSizeHint().height()*1.1);
         graphicsDockWidget->setWidget(graphicsWidget);
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, graphicsDockWidget);
@@ -1303,7 +1316,7 @@ void MainWindow::initGUI()
     
     /* Unitcell dock widget */
     {
-        unitCellDock = new QDockWidget(tr("UB matrix"), this);
+        unitCellDockWidget = new QDockWidget(tr("UB matrix"), this);
         unitCellWidget = new QWidget;
         
         // Real space unit cell
@@ -1383,7 +1396,7 @@ void MainWindow::initGUI()
         gridLayout->setHorizontalSpacing(5);
         gridLayout->setVerticalSpacing(2);
         gridLayout->setContentsMargins(5,5,5,5);
-        gridLayout->setRowStretch(9,1);
+        gridLayout->setRowStretch(10,1);
         
         gridLayout->addWidget(aNormSpinBox,0,0,1,2);
         gridLayout->addWidget(bNormSpinBox,0,2,1,2);
@@ -1413,12 +1426,12 @@ void MainWindow::initGUI()
         
         unitCellWidget->setLayout(gridLayout);
         
-        unitCellDock->setWidget(unitCellWidget);
+        unitCellDockWidget->setWidget(unitCellWidget);
         
-        unitCellDock->setFixedHeight(unitCellWidget->minimumSizeHint().height()*1.15);
+//        unitCellDockWidget->setFixedHeight(unitCellWidget->minimumSizeHint().height()*1.15);
         
-        viewMenu->addAction(unitCellDock->toggleViewAction());
-        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, unitCellDock);
+        viewMenu->addAction(unitCellDockWidget->toggleViewAction());
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, unitCellDockWidget);
     }
 
     
@@ -1502,6 +1515,9 @@ void MainWindow::initGUI()
         fileDockWidget->setMaximumHeight(fileControlsWidget->minimumSizeHint().height()*1.1);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, fileDockWidget);
+
+
+
     }
     
     /*Voxelize dock widget*/
@@ -1560,7 +1576,19 @@ void MainWindow::initGUI()
         viewMenu->addAction(voxelizeDockWidget->toggleViewAction());
         imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, voxelizeDockWidget);
     }
-    
+
+    /* Header dock widget */
+    {
+        fileHeaderEditTwo = new QPlainTextEdit;
+        headerHighlighterTwo = new Highlighter(fileHeaderEditTwo->document());
+        fileHeaderEditTwo->setReadOnly(true);
+
+        fileHeaderDockTwo = new QDockWidget(tr("Frame header info"), this);
+        fileHeaderDockTwo->setWidget(fileHeaderEditTwo);
+        viewMenu->addAction(fileDockWidget->toggleViewAction());
+        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockTwo);
+    }
+
 
     
     /* Function dock widget */
@@ -1610,7 +1638,7 @@ void MainWindow::initGUI()
         functionWidget->setLayout(gridLayout);
         
         functionDockWidget->setWidget(functionWidget);
-        functionDockWidget->setFixedHeight(functionWidget->minimumSizeHint().height());
+//        functionDockWidget->setFixedHeight(functionWidget->minimumSizeHint().height());
         viewMenu->addAction(functionDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::RightDockWidgetArea, functionDockWidget);
         functionDockWidget->hide();
@@ -1625,7 +1653,7 @@ void MainWindow::initGUI()
 
         // Text output
         errorTextEdit = new QPlainTextEdit;
-        error_highlighter = new Highlighter(errorTextEdit->document());
+        msgLogHighlighter = new Highlighter(errorTextEdit->document());
         
         errorTextEdit->setReadOnly(true);
 
@@ -1642,30 +1670,18 @@ void MainWindow::initGUI()
         this->addDockWidget(Qt::BottomDockWidgetArea, outputDockWidget);
     }
 
-    // File header dock widget
-    {
-        fileHeaderEdit = new QPlainTextEdit;
-        header_highlighter = new Highlighter(fileHeaderEdit->document());
-        fileHeaderEdit->setReadOnly(true);
-
-        fileHeaderDock = new QDockWidget(tr("Frame header info"), this);
-        fileHeaderDock->setWidget(fileHeaderEdit);
-        this->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDock);
-    }
-
-    
     /* Text output widget */
     outputPlainTextEdit = new QPlainTextEdit("Output in plain text.");
-    result_highlighter = new Highlighter(outputPlainTextEdit->document());
+    textResultHighlighter = new Highlighter(outputPlainTextEdit->document());
     outputPlainTextEdit->setReadOnly(true);
     
     /*      Tab widget      */
     tabWidget = new QTabWidget;
 
     // Add tabs
-    tabWidget->addTab(setFilesWidget, tr("File selection"));
-    tabWidget->addTab(imageMainWindow, tr("Reconstruction"));
-    tabWidget->addTab(volumeRenderMainWindow, tr("Visualization"));
+    tabWidget->addTab(browserMainWindow, tr("Browse"));
+    tabWidget->addTab(imageMainWindow, tr("Reconstruct"));
+    tabWidget->addTab(volumeRenderMainWindow, tr("Visualize"));
     tabWidget->addTab(outputPlainTextEdit, "Text output");
 
     // Put into main layout

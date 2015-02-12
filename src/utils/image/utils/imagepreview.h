@@ -23,22 +23,6 @@
 #include "../../opencl/qxopencllib.h"
 #include "../../math/qxmathlib.h"
 
-//class Trace 
-//{
-//public:
-//    Trace();
-//    ~Trace();
-    
-//    void setData(Matrix<float>);
-//    Matrix<float> getData();
-    
-//    void setWidth();
-//    size_t getWidth();
-//private:
-//    Matrix<float> data;
-//    size_t width, height;
-//};
-
 class ImageWorker : public QObject, protected OpenCLFunctions
 {
     Q_OBJECT

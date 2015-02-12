@@ -11,19 +11,25 @@
 #include "svo/qxsvolib.h"
 #include "marker.h"
 
-class VolumeWorker : public QObject
+class VolumeWorker : public QObject, protected OpenCLFunctions
 {
     Q_OBJECT
+public:
+    VolumeWorker();
+    ~VolumeWorker();
+    void setOpenCLContext(OpenCLContext * context);
+    void setKernel(cl_kernel kernel);
 
 public slots:
-    void doWork(const QString &parameter) {
-        QString result;
-        /* ... here is the expensive or blocking operation ... */
-        emit resultReady(result);
-    }
+    void raytrace();
 
 signals:
-    void resultReady(const QString &result);
+    void rayTraceFinished();
+
+private:
+    OpenCLContext * context_cl;
+    cl_kernel p_kernel;
+    cl_int err;
 };
 
 class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
