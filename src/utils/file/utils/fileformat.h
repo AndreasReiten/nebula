@@ -32,8 +32,12 @@ class DetectorFile
         QString getPath() const;
         QString info();
 
-        int set(QString path);
+        int setPath(QString path);
         int readData();
+        bool isNaive();
+        bool isValid();
+        bool isDataRead();
+        bool isHeaderRead();
 
         void setNaive();
         
@@ -115,12 +119,16 @@ class DetectorFile
 
         QString path;
         size_t fast_dimension, slow_dimension;
-
-        int STATUS_OK;
+        
+        bool p_isNaive;
+        bool isFileValid;
+        bool isFileHeaderRead;
+        bool isFileDataRead;
+//        int STATUS_OK;
 
         float srchrad_sugg_low, srchrad_sugg_high;
 
-        void suggestSearchRadius();
+        void setSearchRadiusHint();
         int readHeader();
         QString regExp(QString * regular_expression, QString * source, size_t offset, size_t i);
 

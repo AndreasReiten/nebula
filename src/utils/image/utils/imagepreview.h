@@ -324,7 +324,7 @@ private:
     bool isTsfTexInitialized;
     bool isCLInitialized;
     bool isGLInitialized;
-    bool isFrameValid;
+//    bool isFrameValid;
     bool isWeightCenterActive;
     bool isInterpolGpuInitialized;
     bool isSetTraced;

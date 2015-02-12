@@ -26,20 +26,29 @@ DetectorFile::~DetectorFile()
 DetectorFile::DetectorFile() :
     active_angle(2),
     fast_dimension(0),
-    slow_dimension(0)
+    slow_dimension(0),
+    isFileValid(false),
+    isFileDataRead(false),
+    isFileHeaderRead(false),
+    p_isNaive(false)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
-    STATUS_OK = 0;
+//    STATUS_OK = 0;
 }
 DetectorFile::DetectorFile(QString path):
-    active_angle(2)
+    active_angle(2),
+    isFileValid(false),
+    isFileDataRead(false),
+    isFileHeaderRead(false),
+    p_isNaive(false)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     max_counts = 0;
-    STATUS_OK = this->set(path);
+    this->setPath(path);
+    isValid();
 }
 
 void DetectorFile::setNaive()
@@ -68,7 +77,12 @@ void DetectorFile::setNaive()
 //        value += 1;
 //    }
 
-    STATUS_OK = 1;
+//    STATUS_OK = 1;
+    
+    p_isNaive = true;
+    isFileValid = true;
+    isFileDataRead = true;
+    isFileHeaderRead = true;
 }
 
 float DetectorFile::intensity(int x, int y)
@@ -114,11 +128,44 @@ QString DetectorFile::getHeaderText()
     return text;
 }
 
-int DetectorFile::set(QString path)
+bool DetectorFile::isValid()
+{
+    if (!isFileValid)
+    {
+        QFileInfo file_info(path);
+        isFileValid =  (file_info.exists() && file_info.isReadable() && file_info.isFile());
+    }
+    return isFileValid;
+}
+
+bool DetectorFile::isNaive()
+{
+    return p_isNaive;
+}
+
+bool DetectorFile::isDataRead()
+{
+    return isFileDataRead;
+}
+
+bool DetectorFile::isHeaderRead()
+{
+    return isFileHeaderRead;
+}
+
+int DetectorFile::setPath(QString path)
 {
 //    this->context_cl = context;
-
-    this->path = path;
+    if (this->path == path) return 1;
+    else this->path = path;
+    
+    isFileValid = false;
+    isFileHeaderRead = false;
+    isFileDataRead = false;
+            
+    if (!isValid()) return 0;
+    
+    
     if (!this->readHeader()) return 0;
 
     if (detector == "PILATUS 1M")
@@ -141,7 +188,7 @@ int DetectorFile::set(QString path)
         std::cout << "Unknown detector: " << detector.toStdString().c_str() << std::endl;
         return 0;
     }
-    this->suggestSearchRadius();
+    this->setSearchRadiusHint();
 
     return 1;
 }
@@ -197,6 +244,8 @@ float DetectorFile::getExpTime()
 
 int DetectorFile::readHeader()
 {
+    if (isFileHeaderRead) return isFileHeaderRead;
+    
     const float pi = 4.0*atan(1.0);
 
     // Based on the PILATUS 1.2 header convention. Regular expressions are used to fetch header values
@@ -288,7 +337,8 @@ int DetectorFile::readHeader()
 
 
 
-    return 1;
+    isFileHeaderRead = true;
+    return isFileHeaderRead;
 }
 
 QString DetectorFile::getPath() const
@@ -408,6 +458,8 @@ float DetectorFile::getPixSizeY()
 
 int DetectorFile::readData()
 {
+    if (isFileDataRead) return isFileDataRead;
+    
     // Open file
     std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
     if (!in)
@@ -489,12 +541,12 @@ int DetectorFile::readData()
     }
     delete[] buf;
     
-    
-    return 1;
+    isFileDataRead = true;
+    return isFileDataRead;
 }
 
 
-void DetectorFile::suggestSearchRadius()
+void DetectorFile::setSearchRadiusHint()
 {
     /* A search radius can be found based on the projected size of a pixel in reciprocal space. The following calculations assume a detector that can be translated but not rotated. Could give a fair estimate even for a rotating detector*/
 

@@ -125,7 +125,7 @@ void MainWindow::initWorkers()
     connect(imageOpenGLWidget, SIGNAL(qSpaceInfoChanged(float,float,float)), voxelizeWorker, SLOT(setQSpaceInfo(float,float,float)));
 }
 
-void MainWindow::loadPaths()
+void MainWindow::loadBrowserPaths()
 {
     QMessageBox confirmationMsgBox;
     
@@ -461,7 +461,7 @@ void MainWindow::aboutOpenGL()
         tr("<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>"));
 }
 
-void MainWindow::openUnitcellFile()
+void MainWindow::loadUnitcellFile()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open file"), "", tr(".par (*.par);; All files (*)"));
 
@@ -665,7 +665,7 @@ void MainWindow::initConnects()
     connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_beta(double)));
     connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_gamma(double)));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeVolumeScreenshot()));
-    connect(openSvoAct, SIGNAL(triggered()), this, SLOT(openSvo()));
+    connect(openSvoAct, SIGNAL(triggered()), this, SLOT(loadSvo()));
     connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
     connect(saveLoadedSvoAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvo()));
     connect(saveSvoButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
@@ -685,7 +685,7 @@ void MainWindow::initConnects()
     connect(imageOpenGLWidget->worker(), SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
     
     // KK
-    connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadPaths()));
+    connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadBrowserPaths()));
     connect(batchSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setBatchSize(int)));
     connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionLorentz(bool)));
     connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setMode(int)));
@@ -801,7 +801,7 @@ void MainWindow::saveLoadedSvo()
 }
 
 
-void MainWindow::openSvo()
+void MainWindow::loadSvo()
 {
     QString file_name = QFileDialog::getOpenFileName(this, tr("Open file"), working_dir, tr(".svo (*.svo);; All files (*)"));
 
@@ -992,7 +992,7 @@ void MainWindow::initGUI()
 
         showWeightCenterAction = new QAction(QIcon(":/art/weight_center.png"), tr("Toggle weight center visual"), this);
         showWeightCenterAction->setCheckable(true);
-        showWeightCenterAction->setChecked(true);
+        showWeightCenterAction->setChecked(false);
         
         imageToolBar = new QToolBar("Image");
         imageToolBar->addAction(saveProjectAction);
@@ -1153,7 +1153,7 @@ void MainWindow::initGUI()
     
     // Corrections dock widget
     {
-        traceSeriesPushButton = new QPushButton("Trace set");
+        traceSeriesPushButton = new QPushButton("Generate trace");
         traceTextureCheckBox = new QCheckBox("Show");
         
         correctionNoiseDoubleSpinBox = new QDoubleSpinBox;
@@ -1626,6 +1626,7 @@ void MainWindow::initGUI()
         // Text output
         errorTextEdit = new QPlainTextEdit;
         error_highlighter = new Highlighter(errorTextEdit->document());
+        
         errorTextEdit->setReadOnly(true);
 
         // Layout
@@ -1644,6 +1645,7 @@ void MainWindow::initGUI()
     // File header dock widget
     {
         fileHeaderEdit = new QPlainTextEdit;
+        header_highlighter = new Highlighter(fileHeaderEdit->document());
         fileHeaderEdit->setReadOnly(true);
 
         fileHeaderDock = new QDockWidget(tr("Frame header info"), this);
@@ -1653,7 +1655,8 @@ void MainWindow::initGUI()
 
     
     /* Text output widget */
-    outputPlainTextEdit = new QPlainTextEdit("Certain output may be written in plain text here");
+    outputPlainTextEdit = new QPlainTextEdit("Output in plain text.");
+    result_highlighter = new Highlighter(outputPlainTextEdit->document());
     outputPlainTextEdit->setReadOnly(true);
     
     /*      Tab widget      */

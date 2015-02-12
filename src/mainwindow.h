@@ -42,7 +42,7 @@ private slots:
     void setCurrentSvoLevel(int value);
     void setTab(int tab);
 
-    void openSvo();
+    void loadSvo();
     void saveSvo();
     void saveLoadedSvo();
 
@@ -53,10 +53,10 @@ private slots:
     void print(QString str);
     void setGeneralProgressFormat(QString str);
     void setMemoryUsageFormat(QString str);
-    void openUnitcellFile();
+    void loadUnitcellFile();
     void initWorkers();
 
-    void loadPaths();
+    void loadBrowserPaths();
     void setHeader(QString path);
     
     void saveProject();
@@ -299,7 +299,9 @@ private:
 
     QElapsedTimer timer;
     Highlighter *error_highlighter;
-
+    Highlighter *result_highlighter;
+    Highlighter *header_highlighter;
+    
     QTabWidget *tabWidget;
     
     

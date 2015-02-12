@@ -54,7 +54,7 @@ void ImageWorker::traceSeries(SeriesSet set)
     
     DetectorFile frame;
     
-    frame.set(set.current()->begin()->path());
+    frame.setPath(set.current()->begin()->path());
     
     Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
 
@@ -103,7 +103,7 @@ void ImageWorker::traceSeries(SeriesSet set)
         err =  QOpenCLReleaseMemObject(image_gpu);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        frame.set(set.current()->next()->path());
+        frame.setPath(set.current()->next()->path());
         
         emit pathChanged(set.current()->current()->path());
         emit progressRangeChanged(0,set.current()->size()-1);
@@ -139,7 +139,7 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject *parent) :
     isTsfTexInitialized(false),
     isCLInitialized(false),
     isGLInitialized(false),
-    isFrameValid(false),
+//    isFrameValid(false),
     isWeightCenterActive(false),
     isInterpolGpuInitialized(false),
     isSetTraced(false),
@@ -158,6 +158,7 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject *parent) :
     connect(this, SIGNAL(runTraceWorker(SeriesSet)), imageWorker, SLOT(traceSeries(SeriesSet)));
     connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(setFrame()));
     connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(setSeriesTrace()));
+    connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(update()));
 //    connect(this, &Controller::operate, worker, &Worker::doWork);
 //    connect(worker, imageWorker::resultReady, this, Controller::handleResults);
     workerThread->start();
@@ -193,6 +194,8 @@ ImageWorker * ImageOpenGLWidget::worker()
 
 void ImageOpenGLWidget::paintGL()
 {
+    if (!frame.isValid() || !frame.isDataRead()) return;
+    
     QPainter painter(this);
 
     painter.setRenderHint(QPainter::Antialiasing);
@@ -205,6 +208,8 @@ void ImageOpenGLWidget::paintGL()
 
     glViewport(0, 0, this->width()*retinaScale, this->height()*retinaScale);
 
+    endRawGLCalls(&painter);
+    
     if(!p_set.isEmpty())
     {
         beginRawGLCalls(&painter);
@@ -226,7 +231,7 @@ void ImageOpenGLWidget::paintGL()
         }
 
         // Draw weight center
-        ColorMatrix<float> analysis_wp_color(0.0,0.0,0.0,1.0);
+        ColorMatrix<float> analysis_wp_color(0.0,0.0,0.0,0.8);
         if (isWeightCenterActive) drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
 
         drawConeEwaldIntersect(&painter);
@@ -325,6 +330,8 @@ void ImageOpenGLWidget::initializeGL()
 
     setTsfTexture(1);
     setTsfAlpha(2);
+    setFrame();
+    centerImage();
 }
 
 GLuint ImageOpenGLWidget::loadShader(GLenum type, const char *source)
@@ -758,7 +765,7 @@ void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, 
      * Display an image buffer object, matching intensity to color
      * */
     
-    if (!isFrameValid) return;
+    if (!frame.isValid() || !frame.isDataRead()) return;
         
     // Aquire shared CL/GL objects
     makeCurrent();
@@ -924,7 +931,7 @@ void ImageOpenGLWidget::calculus()
     /*
      * Carry out calculations on an image buffer, such as corrections and calculation of variance and skewness 
      * */
-    if (!isFrameValid) return;
+    if (!frame.isValid() || !frame.isDataRead()) return;
 
     Matrix<size_t> origin(2,1,0);
     
@@ -1023,13 +1030,13 @@ void ImageOpenGLWidget::calculus()
 
 void ImageOpenGLWidget::setFrame()
 {
-    if (!isCLInitialized || !isGLInitialized) return;
+    if (!isCLInitialized || !isGLInitialized  || !frame.isValid()) return;
     
     // Set the frame
-    if (!frame.set(p_set.current()->current()->path())) return;
+    if (!frame.setPath(p_set.current()->current()->path())) return;
     if(!frame.readData()) return;
 
-    isFrameValid = true;
+//    isFrameValid = true;
 
 //    frame.setNaive();
     
@@ -1198,6 +1205,8 @@ void ImageOpenGLWidget::refreshDisplay()
      * Refresh the image buffer 
      * */
     
+    if (!frame.isValid() || !frame.isDataRead()) return;
+    
     Matrix<size_t> local_ws(1,2);
     local_ws[0] = 8;
     local_ws[1] = 8;
@@ -1210,7 +1219,7 @@ void ImageOpenGLWidget::refreshDisplay()
     data_limit[0] = parameter[12];
     data_limit[1] = parameter[13];
     
-    if (isFrameValid) maintainImageTexture(image_size);
+    maintainImageTexture(image_size);
     
     if (mode == 0)
     {
@@ -1379,12 +1388,12 @@ void ImageOpenGLWidget::analyze(QString str)
 {
     emit visibilityChanged(false);
     
+    toggleTraceTexture(false);
+    
     if (str == "undef")
     {
         setFrame();
-        {
-            update();
-        }
+        update();
 
         QString result;
         result += "# Analysis of single frame\n";
@@ -1397,9 +1406,13 @@ void ImageOpenGLWidget::analyze(QString str)
     }
     else if(str == "Series")
     {
+        
+        Matrix<double> q_weightpoint(1,3,0);
+        double x_weightpoint = 0;
+        double y_weightpoint = 0;
+        double angle_weightpoint = 0;
         double integral = 0;
-        Matrix<double> weightpoint(1,3,0);
-
+        
         QString frames;
         p_set.current()->saveCurrentIndex();
         p_set.current()->begin();
@@ -1410,17 +1423,22 @@ void ImageOpenGLWidget::analyze(QString str)
         {
             // Draw the frame and update the intensity OpenCL buffer prior to further operations
             setFrame();
-            {
-                update();
-            }
+            update();
 
             // Math
-            Matrix<double> Q = getScatteringVector(frame, p_set.current()->current()->selection().weighted_x(), p_set.current()->current()->selection().weighted_y());
+            double wt_x = p_set.current()->current()->selection().weighted_x();
+            double wt_y = p_set.current()->current()->selection().weighted_y();
+            double sum = p_set.current()->current()->selection().integral();
+            
+            x_weightpoint += sum*wt_x;
+            y_weightpoint += sum*wt_y;
+            angle_weightpoint += sum*(frame.start_angle + frame.angle_increment*0.5); 
+            
+            Matrix<double> Q = getScatteringVector(frame, wt_x, wt_y);
 
-            weightpoint += p_set.current()->current()->selection().integral()*Q;
+            q_weightpoint += sum*Q;
 
-
-            integral += p_set.current()->current()->selection().integral();
+            integral += sum;
 
             frames += integrationFrameString(frame, *p_set.current()->current());
 
@@ -1433,11 +1451,17 @@ void ImageOpenGLWidget::analyze(QString str)
 
         if (integral > 0)
         {
-            weightpoint = weightpoint / integral;
+            q_weightpoint = q_weightpoint / integral;
+            x_weightpoint = x_weightpoint / integral;
+            y_weightpoint = y_weightpoint / integral;
+            angle_weightpoint = angle_weightpoint / integral;
         }
         else
         {
-            weightpoint.set(1,3,0);
+            q_weightpoint.set(1,3,0);
+            x_weightpoint = 0;
+            y_weightpoint = 0;
+            angle_weightpoint = 0;
         }
 
         QString result;
@@ -1445,7 +1469,8 @@ void ImageOpenGLWidget::analyze(QString str)
         result += "# "+QDateTime::currentDateTime().toString("yyyy.MM.dd HH:mm:ss t")+"\n";
         result += "#\n";
         result += "# Sum of total integrated area in series "+QString::number(integral,'E')+"\n";
-        result += "# Weightpoint xyz "+QString::number(weightpoint[0],'E')+" "+QString::number(weightpoint[1],'E')+" "+QString::number(weightpoint[2],'E')+" "+QString::number(vecLength(weightpoint),'E')+"\n";
+        result += "# Weightpoint X:"+QString::number(x_weightpoint)+" Y:"+QString::number(y_weightpoint)+" Angle:"+QString::number(angle_weightpoint*180.0/pi)+"\n";
+        result += "# Q weightpoint xyz "+QString::number(q_weightpoint[0],'E')+" "+QString::number(q_weightpoint[1],'E')+" "+QString::number(q_weightpoint[2],'E')+" "+QString::number(vecLength(q_weightpoint),'E')+"\n";
         result += "# Analysis of the individual frames (integral, origin x, origin y, width, height, weight x, weight y, Qx, Qy, Qz, |Q|, 2theta, background, origin x, origin y, width, height, path)\n";
         result += frames;
 
@@ -1453,11 +1478,16 @@ void ImageOpenGLWidget::analyze(QString str)
     }
     else if(str == "Set")
     {
-        double integral = 0;
         QStringList series_integral;
-        QStringList series_weightpoint;
+        QStringList series_xyangle_weightpoint;
+        QStringList series_q_weightpoint;
         QStringList series_frames;
         QString str;
+        
+        double x_weightpoint = 0;
+        double y_weightpoint = 0;
+        double angle_weightpoint = 0;
+        double integral = 0;
 
         p_set.saveCurrentIndex();
         p_set.begin();
@@ -1469,22 +1499,24 @@ void ImageOpenGLWidget::analyze(QString str)
 
             emit progressRangeChanged(0, p_set.current()->size()-1);
             
-            Matrix<double> weightpoint(1,3,0);
+            Matrix<double> q_weightpoint(1,3,0);
             
             for (int j = 0; j < p_set.current()->size(); j++)
             {
                 // Draw the frame and update the intensity OpenCL buffer prior to further operations
                 setFrame();
-                {
-                    update();
-                }
+                update();
 
                 // Math
-                Matrix<double> Q = getScatteringVector(frame, p_set.current()->current()->selection().weighted_x(), p_set.current()->current()->selection().weighted_y());
+                double wt_x = p_set.current()->current()->selection().weighted_x();
+                double wt_y = p_set.current()->current()->selection().weighted_y();
+                double sum = p_set.current()->current()->selection().integral();
+                
+                Matrix<double> Q = getScatteringVector(frame, wt_x, wt_y);
 
-                weightpoint += p_set.current()->current()->selection().integral()*Q;
+                q_weightpoint += sum*Q;
 
-                integral += p_set.current()->current()->selection().integral();
+                integral += sum;
 
                 str += integrationFrameString(frame, *p_set.current()->current());
 
@@ -1495,15 +1527,23 @@ void ImageOpenGLWidget::analyze(QString str)
 
             if (integral > 0)
             {
-                weightpoint = weightpoint / integral;
+                q_weightpoint = q_weightpoint / integral;
+                x_weightpoint = x_weightpoint / integral;
+                y_weightpoint = y_weightpoint / integral;
+                angle_weightpoint = angle_weightpoint / integral;
             }
             else
             {
-                weightpoint.set(1,3,0);
+                q_weightpoint.set(1,3,0);
+                x_weightpoint = 0;
+                y_weightpoint = 0;
+                angle_weightpoint = 0;
             }
 
-            series_weightpoint << QString::number(weightpoint[0],'E')+" "+QString::number(weightpoint[1],'E')+" "+QString::number(weightpoint[2],'E')+" "+QString::number(vecLength(weightpoint),'E')+"\n";
-
+            series_q_weightpoint << QString::number(q_weightpoint[0],'E')+" "+QString::number(q_weightpoint[1],'E')+" "+QString::number(q_weightpoint[2],'E')+" "+QString::number(vecLength(q_weightpoint),'E')+"\n";
+            
+            series_xyangle_weightpoint << QString::number(x_weightpoint)+" "+QString::number(y_weightpoint)+" "+QString::number(angle_weightpoint*180.0/pi)+"\n";
+            
             series_integral << QString(QString::number(integral,'E')+"\n");
             integral = 0;
 
@@ -1519,16 +1559,21 @@ void ImageOpenGLWidget::analyze(QString str)
 
         QString result;
 
-        result += "# Analysis of frames in several seriess\n";
+        result += "# Analysis of frames in several series\n";
         result += "# "+QDateTime::currentDateTime().toString("yyyy.MM.dd HH:mm:ss t")+"\n";
         result += "#\n";
-        result += "# Sum of total integrated area in seriess\n";
+        result += "# Sum of total integrated area in series\n";
         foreach(const QString &str, series_integral)
         {
             result += str;
         }
-        result += "# Weightpoints in seriess (Qx, Qy, Qz, |Q|)\n";
-        foreach(const QString &str, series_weightpoint)
+        result += "# Weightpoints in series (x, y, angle)\n";
+        foreach(const QString &str, series_xyangle_weightpoint)
+        {
+            result += str;
+        }
+        result += "# Weightpoints in series (Qx, Qy, Qz, |Q|)\n";
+        foreach(const QString &str, series_q_weightpoint)
         {
             result += str;
         }
@@ -1685,7 +1730,7 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
         // Fill trace with empty frames
         for (size_t i = 0; i < p_set.size(); i++)
         {
-            frame.set(p_set.current()->current()->path());
+            frame.setPath(p_set.current()->current()->path());
             
             Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
             
@@ -1697,6 +1742,9 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
         
         isSetTraced = true;
     }
+    
+    setFrame();
+    centerImage();
 }
 
 void ImageOpenGLWidget::removeCurrentImage()
@@ -1869,7 +1917,7 @@ void ImageOpenGLWidget::selectionCalculus(Selection * area, cl_mem image_data_cl
      * on the selected area. The buffers are then summed, effectively doing operations such as integration
      * */
     
-    if (!isFrameValid) return;
+    if (!frame.isValid() || !frame.isDataRead()) return;
     
     // Set the size of the cl buffer that will be used to store the data in the marked selection. The padded size is neccessary for the subsequent parallel reduction
     int selection_read_size = area->width()*area->height();
@@ -2416,9 +2464,7 @@ void ImageOpenGLWidget::setVbo(GLuint vbo, float * buf, size_t length, GLenum us
 void ImageOpenGLWidget::drawWeightpoint(Selection area, QPainter *painter, Matrix<float> &color)
 {
     // Change to draw a faded polygon
-    ColorMatrix<float> selection_lines_color(0.0f,0.0f,0.0f,1.0f);
-    
-    glLineWidth(2.5);
+    glLineWidth(1.5);
 
     float x0 = (((qreal) area.left() + 0.5*this->width()) / (qreal) this->width()) * 2.0 - 1.0; // Left
     float x2 = (((qreal) area.x() + area.width()  + 0.5*this->width())/ (qreal) this->width()) * 2.0 - 1.0; // Right
@@ -2430,6 +2476,7 @@ void ImageOpenGLWidget::drawWeightpoint(Selection area, QPainter *painter, Matri
     
     float x_offset = (x2 - x0)*0.02;
     float y_offset = (y2 - y0)*0.02;
+    
     
     Matrix<GLfloat> selection_lines(8,2);
     selection_lines[0] = x0;
@@ -2524,8 +2571,6 @@ double ImageOpenGLWidget::getScatteringAngle(DetectorFile & f, double x, double 
 
 void ImageOpenGLWidget::drawPixelToolTip(QPainter *painter)
 {
-    if (isFrameValid == false) return;
-    
     //Position
     Matrix<double> screen_pixel_pos(4,1,0); // Uses GL coordinates
     screen_pixel_pos[0] = 2.0 * (double) pos.x()/(double) this->width() - 1.0;
@@ -2590,7 +2635,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter *painter)
     tip += "<font color=\"white\">X:</font> <font color=\"#85DAFF\">"+QString::number((int) pixel_x)+"</font>, Y: <font color=\"#85DAFF\">"+QString::number((int) pixel_y)+"</font>";
     tip += ", Value: <font color=\"#85DAFF\">"+QString::number(value,'e',4)+"</font>";
     tip += ", Q[<font color=\"#85DAFF\">"+QString::number(Q[0],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[1],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[2],'f',2)+"</font>]";
-    tip += " (<font color=\"#85DAFF\">"+QString::number(vecLength(Q),'f',2)+"</font> Å) (<font color=\"#85DAFF\">"+QString::number(1.0/vecLength(Q),'f',2)+"</font> Å<sup>-1</sup>)";
+    tip += " (<font color=\"#85DAFF\">"+QString::number(vecLength(Q),'f',2)+"</font> Å<sup>-1</sup>) (<font color=\"#85DAFF\">"+QString::number(1.0/vecLength(Q),'f',2)+"</font> Å)";
     tip += ", 2&theta;: <font color=\"#85DAFF\">"+QString::number(180*getScatteringAngle(frame, pixel_x, pixel_y)/pi,'f',2)+"</font>&deg;";
     tip += ", Sum: <font color=\"#85DAFF\">"+QString::number(p_set.current()->current()->selection().integral(),'f',2)+"</font>";
     tip += ", Mass: <font color=\"#85DAFF\">"+QString::number(p_set.current()->current()->selection().weighted_x(),'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(p_set.current()->current()->selection().weighted_y(),'f',2)+"</font>";
@@ -2652,6 +2697,9 @@ void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter *painter)
     painter->setPen(pen);
     
     painter->drawEllipse(QPoint(beam_screen_pos[0],beam_screen_pos[1]), radius, radius);
+    
+    pen.setStyle(Qt::DashDotLine);
+    painter->setPen(pen);
     
     painter->drawLine(QPoint(beam_screen_pos[0],beam_screen_pos[1]), pos);
 }
@@ -2839,7 +2887,7 @@ QPoint ImageOpenGLWidget::getImagePixel(QPoint pos)
 
 void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 {
-    if (!isFrameValid) return;
+    if (!frame.isValid() || !frame.isDataRead()) return;
 
     float move_scaling = 1.0;
     
@@ -2908,7 +2956,7 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
 void ImageOpenGLWidget::mousePressEvent(QMouseEvent *event)
 {
-    if (!isFrameValid) return;
+    if (!frame.isValid() || !frame.isDataRead()) return;
 
     pos = event->pos();
     
@@ -2966,12 +3014,12 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent *event)
 
 void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (!isFrameValid) return;
+    if (!frame.isValid() || !frame.isDataRead()) return;
 
     pos =  event->pos();
     
-    // A bit overkill to set shit on mouse release as well as mouse move
-    if ((event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
+    // A bit overkill to set [...] on mouse release as well as mouse move
+    if ((event->modifiers() & Qt::ShiftModifier) && !(event->buttons() & Qt::LeftButton))
     {
         Selection analysis_area = p_set.current()->current()->selection();
         
@@ -2985,7 +3033,7 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
         
         p_set.current()->current()->setSelection(analysis_area);
     }
-    else if((event->modifiers() & Qt::ControlModifier) && (event->buttons() & Qt::LeftButton))
+    else if((event->modifiers() & Qt::ControlModifier) && !(event->buttons() & Qt::LeftButton))
     {
         Selection analysis_area = p_set.current()->current()->selection();
         
