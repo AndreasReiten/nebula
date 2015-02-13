@@ -30,7 +30,7 @@ class ImageWorker : public QObject, protected OpenCLFunctions
 public:
     ImageWorker();
     ~ImageWorker();
-    void setOpenCLContext(OpenCLContext * context);
+    void setOpenCLContext(OpenCLContext context);
     void setTraceContainer(QList<Matrix<float>> * list);
 
 public slots:
@@ -44,7 +44,7 @@ signals:
     void progressChanged(int);
 
 private:
-    OpenCLContext * context_cl;
+    OpenCLContext context_cl;
     cl_kernel cl_buffer_max;
     QList<Matrix<float>> * traces;
     

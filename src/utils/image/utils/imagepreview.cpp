@@ -20,7 +20,7 @@ ImageWorker::~ImageWorker()
     
 }
 
-void ImageWorker::setOpenCLContext(OpenCLContext * context)
+void ImageWorker::setOpenCLContext(OpenCLContext context)
 {
     context_cl = context;
     
@@ -38,10 +38,10 @@ void ImageWorker::initializeOpenCLKernels()
     QStringList paths;
     paths << "cl/image_preview.cl";
 
-    program = context_cl->createProgram(paths, &err);
+    program = context_cl.createProgram(paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-    context_cl->buildProgram(&program, "-Werror");
+    context_cl.buildProgram(&program, "-Werror");
 
     // Kernel handles
     cl_buffer_max =  QOpenCLCreateKernel(program, "bufferMax", &err);
@@ -58,7 +58,7 @@ void ImageWorker::traceSeries(SeriesSet set)
     
     Matrix<float> zeros_like_frame(frame.getSlowDimension(), frame.getFastDimension(), 0.0f);
 
-    cl_mem trace_image_gpu = QOpenCLCreateBuffer( context_cl->context(),
+    cl_mem trace_image_gpu = QOpenCLCreateBuffer( context_cl.context(),
             CL_MEM_COPY_HOST_PTR,
             zeros_like_frame.bytes(),
             zeros_like_frame.data(),
@@ -71,7 +71,7 @@ void ImageWorker::traceSeries(SeriesSet set)
         frame.readData();
         
         // Read data and send to a VRAM buffer. 
-        cl_mem image_gpu = QOpenCLCreateBuffer( context_cl->context(),
+        cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
                 CL_MEM_COPY_HOST_PTR,
                 frame.data().bytes(),
                 frame.data().data(),
@@ -97,7 +97,7 @@ void ImageWorker::traceSeries(SeriesSet set)
         err |=   QOpenCLSetKernelArg(cl_buffer_max, 2, sizeof(cl_int2), image_size.data());
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-        err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), cl_buffer_max, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+        err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_buffer_max, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
         err =  QOpenCLReleaseMemObject(image_gpu);
@@ -113,7 +113,7 @@ void ImageWorker::traceSeries(SeriesSet set)
     // Read back the second VRAM buffer and store in system RAM for later usage 
     Matrix<float> trace_image(frame.getSlowDimension(),frame.getFastDimension());
 
-    err =   QOpenCLEnqueueReadBuffer ( context_cl->queue(),
+    err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
         trace_image_gpu,
         CL_TRUE,
         0,
@@ -2020,7 +2020,7 @@ void ImageOpenGLWidget::initializeCL()
     context_cl.initCommandQueue();
     context_cl.initResources();
     
-    imageWorker->setOpenCLContext(&context_cl);
+    imageWorker->setOpenCLContext(context_cl);
     
     // Build programs from OpenCL kernel source
     QStringList paths;
@@ -2948,10 +2948,8 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
             }
         }
     }
-    
-    update();
-    
     prev_pos = pos;
+    update();
 }
 
 void ImageOpenGLWidget::mousePressEvent(QMouseEvent *event)
@@ -3009,7 +3007,7 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent *event)
         p_set.current()->current()->setSelection(analysis_area);
     }
     
-
+    update();
 }
 
 void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
@@ -3018,7 +3016,7 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
 
     pos =  event->pos();
     
-    // A bit overkill to set [...] on mouse release as well as mouse move
+    // A bit overkill to set [...] on mouse release as well as mouse move and push
     if ((event->modifiers() & Qt::ShiftModifier) && !(event->buttons() & Qt::LeftButton))
     {
         Selection analysis_area = p_set.current()->current()->selection();
@@ -3060,6 +3058,7 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent *event)
     // Recalculate
     calculus();
     refreshDisplay();
+    update();
 }   
 
 void ImageOpenGLWidget::wheelEvent(QWheelEvent* event)

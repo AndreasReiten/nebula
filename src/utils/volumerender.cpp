@@ -37,7 +37,7 @@ VolumeWorker::~VolumeWorker()
 
 }
 
-void VolumeWorker::setOpenCLContext(OpenCLContext * context)
+void VolumeWorker::setOpenCLContext(OpenCLContext context)
 {
     context_cl = context;
 }
@@ -47,16 +47,13 @@ void VolumeWorker::setKernel(cl_kernel kernel)
     p_kernel = kernel;
 }
 
-void VolumeWorker::raytrace()
+//void VolumeWorker::setRayTexture(cl_mem texture)
+//{
+//    ray_tex_cl = texture;
+//}
+
+void VolumeWorker::raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws)
 {
-    /*
-//    setShadowVector();
-
-    // Aquire shared CL/GL objects
-    glFinish();
-    err = QOpenCLEnqueueAcquireGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
     // Launch rendering kernel
     Matrix<size_t> area_per_call(1,2);
     area_per_call[0] = 128;
@@ -74,21 +71,15 @@ void VolumeWorker::raytrace()
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), p_kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
 
-    err = QOpenCLFinish(context_cl->queue());
+    err = QOpenCLFinish(context_cl.queue());
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-    // Release shared CL/GL objects
-    err = QOpenCLEnqueueReleaseGLObjects(context_cl->queue(), 1, &ray_tex_cl, 0, 0, 0);
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-    err = QOpenCLFinish(context_cl->queue());
-    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-    */
+    
+    emit rayTraceFinished();
 }
 
 
@@ -1474,6 +1465,8 @@ void VolumeOpenGLWidget::initializeCL()
     context_cl.initSharedContext();
     context_cl.initCommandQueue();
     context_cl.initResources();
+    
+    volumeWorker->setOpenCLContext(context_cl);
 
     // Build program from OpenCL kernel source
     QStringList paths;
@@ -1751,6 +1744,8 @@ void VolumeOpenGLWidget::setRayTexture(int percentage)
         // Convert to CL texture
         ray_tex_cl = QOpenCLCreateFromGLTexture2D(context_cl.context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, ray_tex_gl, &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        
+//        volumeWorker->setRayTexture(ray_tex_cl);
         
         isRayTexInitialized = true;
 
@@ -3020,6 +3015,8 @@ void VolumeOpenGLWidget::drawRayTex(QPainter *painter)
     beginRawGLCalls(painter);
     
     // Volume rendering
+    setShadowVector();
+    
     if (isModelActive) raytrace(cl_model_raytrace);
     else if(isSvoInitialized) raytrace(cl_svo_raytrace);
 
@@ -3070,8 +3067,6 @@ void VolumeOpenGLWidget::drawRayTex(QPainter *painter)
 
 void VolumeOpenGLWidget::raytrace(cl_kernel kernel)
 {
-    setShadowVector();
-
     // Aquire shared CL/GL objects
     glFinish();
     err = QOpenCLEnqueueAcquireGLObjects(context_cl.queue(), 1, &ray_tex_cl, 0, 0, 0);

@@ -17,18 +17,20 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
 public:
     VolumeWorker();
     ~VolumeWorker();
-    void setOpenCLContext(OpenCLContext * context);
+    void setOpenCLContext(OpenCLContext context);
     void setKernel(cl_kernel kernel);
+//    void setRayTexture(cl_mem texture);
 
 public slots:
-    void raytrace();
+    void raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws);
 
 signals:
     void rayTraceFinished();
 
 private:
-    OpenCLContext * context_cl;
+    OpenCLContext context_cl;
     cl_kernel p_kernel;
+//    cl_mem ray_tex_cl;
     cl_int err;
 };
 
