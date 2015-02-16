@@ -67,7 +67,7 @@ HEADERS += \
     src/utils/lib.h \
     src/utils/svo/utils/bricknode.h \
     src/utils/svo/utils/searchnode.h \
-    src/utils/svo/utils/sparsevoxelocttree.h \
+    src/utils/svo/utils/sparsevoxeloctree.h \
     src/utils/marker.h \
     src/utils/texthighlighter.h \
     src/utils/volumerender.h \
@@ -92,7 +92,7 @@ SOURCES += \
     src/utils/svo/qxsvolib.cpp \
     src/utils/svo/utils/bricknode.cpp \
     src/utils/svo/utils/searchnode.cpp \
-    src/utils/svo/utils/sparsevoxelocttree.cpp \
+    src/utils/svo/utils/sparsevoxeloctree.cpp \
     src/utils/marker.cpp \
     src/utils/texthighlighter.cpp \
     src/utils/volumerender.cpp \

@@ -225,8 +225,8 @@ private:
     QAction * saveImageAct;
     
     
-    SparseVoxelOcttree svo_inprocess;
-    SparseVoxelOcttree svo_loaded;
+    SparseVoxelOctree svo_inprocess;
+    SparseVoxelOctree svo_loaded;
 
     void closeEvent(QCloseEvent *event);
     void initActions();

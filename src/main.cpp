@@ -20,7 +20,7 @@
  * (Somewhat time consuming) Implement LP correction with convenient GUI. Polarization corr. based on beam polarization. Lorentz correction based on sample rotation axis (given by two angles)
  * (Somewhat time consuming) Implement clutter removal, median filter, flux and exposure normalization
  * (Quick) Save all parameters in save files and make the program relaxed regarding version. "Use what you can"-approach
- * When generating an octtree, allow to save at any level less than or equal to the max chosen one.
+ * When generating an octree, allow to save at any level less than or equal to the max chosen one.
  * (Time consuming) Implement a transfer function editor.
  * (Time consuming) Shadows
  * (Time consuming) Pre-integrated transfer functions

@@ -4,7 +4,7 @@
 #include "../../math/qxmathlib.h"
 
 class SearchNode {
-    /* This class represents a node in the "search octtree" data structure. It is used in order to create bricks for the GPU octtree. */
+    /* This class represents a node in the "search octree" data structure. It is used in order to create bricks for the GPU octree. */
     public:
         SearchNode();
         SearchNode(SearchNode * parent, double * extent);

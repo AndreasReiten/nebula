@@ -2,7 +2,7 @@
 #define OCTNODE_H
 
 /*
- * This class represents a node in the sparse voxel octtree. The nodes lie in an array. This is a convenience class to make the data structure more managable. 
+ * This class represents a node in the sparse voxel octree. The nodes lie in an array. This is a convenience class to make the data structure more managable. 
  * */
 
 class BrickNode {

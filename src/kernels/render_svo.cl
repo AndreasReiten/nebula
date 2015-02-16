@@ -146,7 +146,7 @@ __kernel void svoRayTrace(
             box_ray_xyz = box_ray_origin;
             box_ray_xyz_prev = box_ray_origin;
 
-            // Merged bits in the octtree can be read using these bitmasks:
+            // Merged bits in the octree can be read using these bitmasks:
             uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
             uint mask_data_flag = ((1 << 1) - 1) << 30;
             uint mask_child_index = ((1 << 30) - 1) << 0;
@@ -154,7 +154,7 @@ __kernel void svoRayTrace(
             uint mask_brick_id_y = ((1 << 10) - 1) << 10;
             uint mask_brick_id_z = ((1 << 10) - 1) << 0;
 
-            /* Traverse the octtree. For each step, descend into the octree until a) The resolution is appreciable or b) The final level of the octree is reached. During any descent, empty nodes might be found. In such case, the ray is advanced forward without sampling to the next sample that is not in said node. Stuff inside this while loop is what really takes time and therefore should be optimized
+            /* Traverse the octree. For each step, descend into the octree until a) The resolution is appreciable or b) The final level of the octree is reached. During any descent, empty nodes might be found. In such case, the ray is advanced forward without sampling to the next sample that is not in said node. Stuff inside this while loop is what really takes time and therefore should be optimized
              * */
 
             if (isSlicingActive)
@@ -199,7 +199,7 @@ __kernel void svoRayTrace(
                     {
                         box_ray_xyz = box_ray_origin + d[i] * box_ray_delta;
 
-                        // Descend into the octtree data structure
+                        // Descend into the octree data structure
                         // Index trackers for the traversal.
                         index_this_lvl = 0;
                         index_prev_lvl = 0;
@@ -208,17 +208,17 @@ __kernel void svoRayTrace(
                         cone_diameter = (cone_diameter_near + length(box_ray_xyz - ray_near.xyz) * cone_diameter_increment);
                         cone_diameter = clamp(cone_diameter, cone_diameter_low, cone_diameter_high);
 
-                        // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
+                        // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octree levels)
                         step_length = cone_diameter * 0.25f;
                         ray_add_box = direction * step_length;
 
-                         // We use a normalized convention during octtree traversal. The normalized convention makes it easier to think about the octtree traversal.
+                         // We use a normalized convention during octree traversal. The normalized convention makes it easier to think about the octree traversal.
                         norm_pos_this_lvl = native_divide( (float3)(box_ray_xyz.x - data_extent[0], box_ray_xyz.y - data_extent[2], box_ray_xyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
 
                         norm_index = convert_int3(norm_pos_this_lvl);
                         norm_index = clamp(norm_index, 0, 1);
 
-                        // Traverse the octtree
+                        // Traverse the octree
                         for (int j = 0; j < n_tree_levels; j++)
                         {
                             voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
@@ -366,17 +366,17 @@ __kernel void svoRayTrace(
                     cone_diameter = (cone_diameter_near + length(box_ray_xyz - ray_near.xyz) * cone_diameter_increment);
                     cone_diameter = clamp(cone_diameter, cone_diameter_low, cone_diameter_high);
 
-                    // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
+                    // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octree levels)
                     step_length = cone_diameter * 0.25f;
                     ray_add_box = direction * step_length;
 
-                     // We use a normalized convention. The normalized convention makes it easier to think about the octtree traversal.
+                     // We use a normalized convention. The normalized convention makes it easier to think about the octree traversal.
                     norm_pos_this_lvl = native_divide( (float3)(box_ray_xyz.x - data_extent[0], box_ray_xyz.y - data_extent[2], box_ray_xyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
 
                     norm_index = convert_int3(norm_pos_this_lvl);
                     norm_index = clamp(norm_index, 0, 1);
 
-                    // Traverse the octtree
+                    // Traverse the octree
                     for (int j = 0; j < n_tree_levels; j++)
                     {
                         voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));

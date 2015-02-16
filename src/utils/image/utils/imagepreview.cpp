@@ -493,7 +493,7 @@ void ImageOpenGLWidget::reconstruct()
 
         emit changedMessageString(" "+QString::number(n_ok_files)+" files were successfully processed ("+QString::number(size_raw/1000000.0, 'f', 3)+" MB -> "+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB, " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
-        // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
+        // From q and the search radius it is straigthforward to calculate the required resolution and thus octree level
         float resolution_min = 2*suggested_q/suggested_search_radius_high;
         float resolution_max = 2*suggested_q/suggested_search_radius_low;
 

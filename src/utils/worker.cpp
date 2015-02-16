@@ -149,7 +149,7 @@ void BaseWorker::resolveOpenCLFunctions()
 //    this->tsf_img_clgl = tsf_img_clgl;
 //}
 
-void BaseWorker::setSVOFile(SparseVoxelOcttree * svo)
+void BaseWorker::setSVOFile(SparseVoxelOctree * svo)
 {
 
     this->svo = svo;
@@ -323,7 +323,7 @@ void BaseWorker::setSet(SeriesSet set)
 //    {
 //        emit changedMessageString(" "+QString::number(files->size())+" of "+QString::number(file_paths->size())+" files were processed successfully (" + QString::number(t) + " ms, "+QString::number((float)t/(float)files->size(), 'g', 3)+" ms/file)");
 
-//        // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
+//        // From q and the search radius it is straigthforward to calculate the required resolution and thus octree level
 //        float resolution_min = 2*suggested_q/suggested_search_radius_high;
 //        float resolution_max = 2*suggested_q/suggested_search_radius_low;
 
@@ -979,7 +979,7 @@ void BaseWorker::setSet(SeriesSet set)
 
 //        emit changedMessageString(" "+QString::number(n_ok_files)+" files were successfully processed ("+QString::number(size_raw/1000000.0, 'f', 3)+" MB -> "+QString::number((float)reduced_pixels->bytes()/(float)1000000.0, 'f', 3)+" MB, " + QString::number(t) + " ms, "+QString::number((float)t/(float)n_ok_files, 'g', 3)+" ms/file)");
 
-//        // From q and the search radius it is straigthforward to calculate the required resolution and thus octtree level
+//        // From q and the search radius it is straigthforward to calculate the required resolution and thus octree level
 //        float resolution_min = 2*suggested_q/suggested_search_radius_high;
 //        float resolution_max = 2*suggested_q/suggested_search_radius_low;
 
@@ -1086,7 +1086,7 @@ void VoxelizeWorker::process()
         emit changedRangeGenericProcess(0, 100);
         emit showProgressBar(true);
 
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Generating Sparse Voxel Octtree "+QString::number(svo->getLevels())+" levels deep.");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Generating Sparse Voxel Octree "+QString::number(svo->getLevels())+" levels deep.");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] The source data is "+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB");
 
         // The number of data points in a single brick
@@ -1182,7 +1182,7 @@ void VoxelizeWorker::process()
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
-        // Place all data points in an octtree data structure from which to construct the bricks in the brick pool
+        // Place all data points in an octree data structure from which to construct the bricks in the brick pool
         SearchNode root(NULL, svo->getExtent()->data());
         
 //        qDebug() << "Voxelize size" << reduced_pixels->size();
@@ -1200,9 +1200,9 @@ void VoxelizeWorker::process()
         
         if (!kill_flag)
         {
-            /* Create an octtree from brick data. The nodes are maintained in a linear array rather than a tree. This is mainly due to (current) lack of proper support for recursion on GPUs */
-            Matrix<BrickNode> gpuHelpOcttree(1, n_max_bricks*16);
-            gpuHelpOcttree[0].setParent(0);
+            /* Create an octree from brick data. The nodes are maintained in a linear array rather than a tree. This is mainly due to (current) lack of proper support for recursion on GPUs */
+            Matrix<BrickNode> gpuHelpOctree(1, n_max_bricks*16);
+            gpuHelpOctree[0].setParent(0);
             
             // An array to store number of nodes per level
             Matrix<unsigned int> nodes;
@@ -1263,13 +1263,13 @@ void VoxelizeWorker::process()
                         currentId = nodes_prev_lvls + n_nodes_treated + n_nodes_treated_in_cluster;
                         
                         // Set the level
-                        gpuHelpOcttree[currentId].setLevel(lvl);
+                        gpuHelpOctree[currentId].setLevel(lvl);
 
                         // Set the brick id
-                        gpuHelpOcttree[currentId].calcBrickId((n_nodes_treated + n_nodes_treated_in_cluster)%8 ,&gpuHelpOcttree[gpuHelpOcttree[currentId].getParent()]);
+                        gpuHelpOctree[currentId].calcBrickId((n_nodes_treated + n_nodes_treated_in_cluster)%8 ,&gpuHelpOctree[gpuHelpOctree[currentId].getParent()]);
 
                         // Based on brick id calculate the brick extent 
-                        unsigned int * brick_id = gpuHelpOcttree[currentId].getBrickId();
+                        unsigned int * brick_id = gpuHelpOctree[currentId].getBrickId();
                         
                         brick_extent[n_nodes_treated_in_cluster*6 + 0] = svo->getExtent()->at(0) + tmp*brick_id[0];
                         brick_extent[n_nodes_treated_in_cluster*6 + 1] = svo->getExtent()->at(0) + tmp*(brick_id[0]+1);
@@ -1445,22 +1445,22 @@ void VoxelizeWorker::process()
                         // If a node has no relevant data
                         if ((sum_check[j] <= 0.0))
                         {
-                            gpuHelpOcttree[currentId].setDataFlag(0);
-                            gpuHelpOcttree[currentId].setMsdFlag(1);
-                            gpuHelpOcttree[currentId].setChild(0);
+                            gpuHelpOctree[currentId].setDataFlag(0);
+                            gpuHelpOctree[currentId].setMsdFlag(1);
+                            gpuHelpOctree[currentId].setChild(0);
                         }
                         // Else a node has data and possibly qualifies for children
                         else
                         {
                             if ((non_empty_node_counter+1)*n_points_brick*sizeof(float) >= BRICK_POOL_HARD_MAX_BYTES)
                             {
-                                emit popup(QString("Warning - Data Overflow"), QString("The dataset you are trying to create grew too large, and exceeded the limit of " +QString::number(BRICK_POOL_HARD_MAX_BYTES/1e6)+ " MB. The issue can be remedied by applying more stringent reconstruction parameters or by reducing the octtree level."));
+                                emit popup(QString("Warning - Data Overflow"), QString("The dataset you are trying to create grew too large, and exceeded the limit of " +QString::number(BRICK_POOL_HARD_MAX_BYTES/1e6)+ " MB. The issue can be remedied by applying more stringent reconstruction parameters or by reducing the octree level."));
                                 kill_flag = true;
                                 break;
                             }
                             
-                            gpuHelpOcttree[currentId].setDataFlag(1);
-                            gpuHelpOcttree[currentId].setMsdFlag(0);
+                            gpuHelpOctree[currentId].setDataFlag(1);
+                            gpuHelpOctree[currentId].setMsdFlag(0);
 
                             // Set maximum subdivision if the max level is reached or if the variance of the brick data is small compared to the average.
                             float average = sum_check[j]/(float)n_points_brick;
@@ -1471,11 +1471,11 @@ void VoxelizeWorker::process()
                                 ((std_dev <= 0.2 * average) && (svo->getLevels() - lvl < 3 ))) // Voxel data is self-similar
                             {
 //                                qDebug() << "Terminated brick early at lvl" << lvl << "Average:" << sum_check[j]/(float)n_points_brick << "Variance:" << variance_check[j];
-                                gpuHelpOcttree[currentId].setMsdFlag(1);
+                                gpuHelpOctree[currentId].setMsdFlag(1);
                             }
 
                             // Set the pool id of the brick corresponding to the node
-                            gpuHelpOcttree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
+                            gpuHelpOctree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
 
                             // Find the max sum of a brick
                             if (sum_check[j] > max_brick_sum) max_brick_sum = sum_check[j];
@@ -1510,15 +1510,15 @@ void VoxelizeWorker::process()
                             non_empty_node_counter++;
                             
                             // Account for children
-                            if (!gpuHelpOcttree[currentId].getMsdFlag())
+                            if (!gpuHelpOctree[currentId].getMsdFlag())
                             {
                                 unsigned int childId = nodes_prev_lvls + nodes[lvl] + nodes[lvl+1];
-                                gpuHelpOcttree[currentId].setChild(childId); // Index points to first child only
+                                gpuHelpOctree[currentId].setChild(childId); // Index points to first child only
 
                                 // For each child
                                 for (size_t k = 0; k < 8; k++)
                                 {
-                                    gpuHelpOcttree[childId+k].setParent(currentId);
+                                    gpuHelpOctree[childId+k].setParent(currentId);
                                     nodes[lvl+1]++;
                                 }
                             }
@@ -1556,8 +1556,8 @@ void VoxelizeWorker::process()
 
                 for (size_t i = 0; i < nodes_prev_lvls; i++)
                 {
-                    svo->index[i] = getOctIndex(gpuHelpOcttree[i].getMsdFlag(), gpuHelpOcttree[i].getDataFlag(), gpuHelpOcttree[i].getChild());
-                    svo->brick[i] = getOctBrick(gpuHelpOcttree[i].getPoolId()[0], gpuHelpOcttree[i].getPoolId()[1], gpuHelpOcttree[i].getPoolId()[2]);
+                    svo->index[i] = getOctIndex(gpuHelpOctree[i].getMsdFlag(), gpuHelpOctree[i].getDataFlag(), gpuHelpOctree[i].getChild());
+                    svo->brick[i] = getOctBrick(gpuHelpOctree[i].getPoolId()[0], gpuHelpOctree[i].getPoolId()[1], gpuHelpOctree[i].getPoolId()[2]);
 
                     emit changedGenericProgress((i+1)*100/nodes_prev_lvls);
                 }

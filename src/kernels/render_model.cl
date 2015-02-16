@@ -196,7 +196,7 @@ __kernel void modelRayTrace(
                     // Calculate the cone diameter at the current ray position
                     cone_diameter = (cone_diameter_near + length(box_ray_xyz - ray_near.xyz) * cone_diameter_increment);
 
-                    // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octtree levels)
+                    // The step length is chosen such that there is roughly a set number of samples (4) per voxel. This number changes based on the pseudo-level the ray is currently traversing (interpolation between two octree levels)
                     step_length = cone_diameter;
                     ray_add_box = direction * step_length;
 

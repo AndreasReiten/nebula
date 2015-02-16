@@ -26,7 +26,7 @@ __kernel void boxSample(
     float sample_interdist = native_divide(data_view_extent[1] - data_view_extent[0], (float) get_global_size(0));
     float volume = sample_interdist*sample_interdist*sample_interdist;
 
-    // Merged bits in the octtree can be read using these bitmasks
+    // Merged bits in the octree can be read using these bitmasks
     uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
     uint mask_data_flag = ((1 << 1) - 1) << 30;
     uint mask_child_index = ((1 << 30) - 1) << 0;
@@ -56,7 +56,7 @@ __kernel void boxSample(
     }
     else
     {
-        // Traverse the octtree
+        // Traverse the octree
         for (int j = 0; j < n_tree_levels; j++)
         {
             voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));

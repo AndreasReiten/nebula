@@ -1548,11 +1548,11 @@ void MainWindow::initGUI()
         
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
-        svoLevelSpinBox->setPrefix("Octtree levels: ");
+        svoLevelSpinBox->setPrefix("Octree levels: ");
 
         voxelizeButton = new QPushButton;
         voxelizeButton->setIcon(QIcon(":/art/proceed.png"));
-        voxelizeButton->setText("Generate tree");
+        voxelizeButton->setText("Generate octree");
         
         saveSvoButton = new QPushButton;
         saveSvoButton->setIcon(QIcon(":/art/save.png"));

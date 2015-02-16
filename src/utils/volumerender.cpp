@@ -3107,7 +3107,7 @@ void VolumeOpenGLWidget::raytrace(cl_kernel kernel)
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
-void VolumeOpenGLWidget::setSvo(SparseVoxelOcttree * svo)
+void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
 {
     data_extent.setDeep(4, 2, svo->getExtent()->data());
     data_view_extent.setDeep(4, 2, svo->getExtent()->data());

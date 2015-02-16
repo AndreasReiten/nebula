@@ -41,7 +41,7 @@ public:
     explicit VolumeOpenGLWidget(QObject *parent = 0);
     ~VolumeOpenGLWidget();
 
-    void setSvo(SparseVoxelOcttree * svo);
+    void setSvo(SparseVoxelOctree * svo);
     void setUBMatrix(UBMatrix<double> & mat);
     UBMatrix<double> & getUBMatrix();
 

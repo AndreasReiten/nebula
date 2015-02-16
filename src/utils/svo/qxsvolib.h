@@ -3,6 +3,6 @@
 
 #include "utils/bricknode.h"
 #include "utils/searchnode.h"
-#include "utils/sparsevoxelocttree.h"
+#include "utils/sparsevoxeloctree.h"
 
 #endif // QXSVOLIB_H
