@@ -25,6 +25,7 @@
 #include <QScreen>
 #include <QPainter>
 #include <QOpenGLFramebufferObject>
+#include <QCoreApplication>
 
 
 VolumeWorker::VolumeWorker()
@@ -1947,15 +1948,22 @@ void VolumeOpenGLWidget::takeScreenShot(QString path)
     format.setTextureTarget(GL_TEXTURE_2D);
     format.setInternalTextureFormat(GL_RGBA32F);
 
-    QOpenGLFramebufferObject buffy(this->width(), this->height(), format);
+//    QOpenGLFramebufferObject buffy(this->width(), this->height(), format);
 
-    buffy.bind();
+//    buffy.bind();
     
     // Render into buffer using max quality
-    buffy.release();
+    glReadBuffer(GL_FRONT);
+    paintGL();
+    glFlush(); 
+//    repaint();
+    
+    
+//    buffy.release();
     
     // Save buffer as image
-    buffy.toImage().save(path);
+//    buffy.toImage().save(path);
+    this->grabFramebuffer().save(path);
     
     // Set resolution back to former value
     setRayTexture(quality_percentage);
