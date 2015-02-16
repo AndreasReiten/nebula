@@ -96,8 +96,6 @@ signals:
     void setPulled(SeriesSet set);
     
 private:
-//    OpenCLContext * context_cl;
-    
     /* UI elements for UB matrix */
     QDockWidget * unitCellDockWidget;
     QWidget * unitCellWidget;
