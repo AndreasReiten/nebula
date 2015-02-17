@@ -115,7 +115,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject *parent)
       n_marker_indices(0),
       quality_percentage(15),
       displayDistance(true),
-      displayFps(true),
+//      displayFps(true),
       displayResolution(true)
 {
     // Worker
@@ -1937,7 +1937,7 @@ void VolumeOpenGLWidget::takeScreenShot(QString path)
     // Set resolution back to former value
     setRayTexture(100);
     displayDistance = false;
-    displayFps = false;
+//    displayFps = false;
     displayResolution = false;
     
     QOpenGLFramebufferObjectFormat format;
@@ -1968,7 +1968,7 @@ void VolumeOpenGLWidget::takeScreenShot(QString path)
     // Set resolution back to former value
     setRayTexture(quality_percentage);
     displayDistance = true;
-    displayFps = true;
+//    displayFps = true;
     displayResolution = true;
 }
 

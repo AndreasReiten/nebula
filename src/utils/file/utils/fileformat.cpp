@@ -34,7 +34,7 @@ DetectorFile::DetectorFile() :
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
-    max_counts = 0;
+    p_max_counts = 0;
 //    STATUS_OK = 0;
 }
 DetectorFile::DetectorFile(QString path):
@@ -46,7 +46,7 @@ DetectorFile::DetectorFile(QString path):
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
-    max_counts = 0;
+    p_max_counts = 0;
     this->setPath(path);
     isValid();
 }
@@ -94,34 +94,34 @@ float DetectorFile::intensity(int x, int y)
     else return 0;
 }
 
-float DetectorFile::getWavelength()
+float DetectorFile::wavelength()
 {
-    return wavelength;
+    return p_wavelength;
 }
 
 QString DetectorFile::getHeaderText()
 {
     std::stringstream ss;
     ss << "__Detector___________" << std::endl;
-    ss << "Detector:    " << detector.toStdString().c_str() << std::endl;
-    ss << "Pixel size:  " << pixel_size_x << " x " << pixel_size_y << " m"<<  std::endl;
-    ss << "Exposure time:   "<< exposure_time << " s" << std::endl;
-    ss << "Count cutoff:    "<< count_cutoff << std::endl << std::endl;
+    ss << "Detector:    " << p_detector.toStdString().c_str() << std::endl;
+    ss << "Pixel size:  " << p_pixel_size_x << " x " << p_pixel_size_y << " m"<<  std::endl;
+    ss << "Exposure time:   "<< p_exposure_time << " s" << std::endl;
+    ss << "Count cutoff:    "<< p_count_cutoff << std::endl << std::endl;
     
     
     ss << "__Beam_______________" << std::endl;
-    ss << "Wavelength:  " << wavelength << " Å"<< std::endl;
-    ss << "Flux:        "<< flux << std::endl << std::endl;
+    ss << "Wavelength:  " << p_wavelength << " Å"<< std::endl;
+    ss << "Flux:        "<< p_flux << std::endl << std::endl;
 
     
     ss << "__Geometry___________" << std::endl;
-    ss << "Detector distance:   " << detector_distance << " m" << std::endl;
-    ss << "Beam x y:        "<< beam_x << ", "<< beam_y << " pixels" << std::endl;
-    ss << "Start angle:     "<< start_angle*180.0/pi << " deg" << std::endl;
-    ss << "Angle increment: "<< angle_increment*180.0/pi << " deg"<< std::endl;
-    ss << "Omega:           "<< omega*180.0/pi   << " deg" << std::endl;
-    ss << "Kappa:           "<< kappa*180.0/pi   << " deg" << std::endl;
-    ss << "Phi:             "<< phi*180.0/pi << " deg" << std::endl << std::endl;
+    ss << "Detector distance:   " << p_detector_distance << " m" << std::endl;
+    ss << "Beam x y:        "<< p_beam_x << ", "<< p_beam_y << " pixels" << std::endl;
+    ss << "Start angle:     "<< p_start_angle*180.0/pi << " deg" << std::endl;
+    ss << "Angle increment: "<< p_angle_increment*180.0/pi << " deg"<< std::endl;
+    ss << "Omega:           "<< p_omega*180.0/pi   << " deg" << std::endl;
+    ss << "Kappa:           "<< p_kappa*180.0/pi   << " deg" << std::endl;
+    ss << "Phi:             "<< p_phi*180.0/pi << " deg" << std::endl << std::endl;
     
     QString text(ss.str().c_str());
 
@@ -168,24 +168,24 @@ int DetectorFile::setPath(QString path)
     
     if (!this->readHeader()) return 0;
 
-    if (detector == "PILATUS 1M")
+    if (p_detector == "PILATUS 1M")
     {
         fast_dimension = 981;
         slow_dimension = 1043;
     }
-    else if (detector == "PILATUS 2M")
+    else if (p_detector == "PILATUS 2M")
     {
         fast_dimension = 1475;
         slow_dimension = 1679;
     }
-    else if (detector == "PILATUS 6M")
+    else if (p_detector == "PILATUS 6M")
     {
         fast_dimension = 2463;
         slow_dimension = 2527;
     }
     else
     {
-        std::cout << "Unknown detector: " << detector.toStdString().c_str() << std::endl;
+        std::cout << "Unknown detector: " << p_detector.toStdString().c_str() << std::endl;
         return 0;
     }
     this->setSearchRadiusHint();
@@ -205,19 +205,19 @@ float DetectorFile::getSearchRadiusHighSuggestion()
 }
 float DetectorFile::getQSuggestion()
 {
-    return 1.0/wavelength;
+    return 1.0/p_wavelength;
 }
 
-int DetectorFile::getFastDimension() const
+int DetectorFile::fastDimension() const
 {
     return fast_dimension;
 }
-int DetectorFile::getSlowDimension() const
+int DetectorFile::slowDimension() const
 {
     return slow_dimension;
 }
 
-size_t DetectorFile::getBytes() const
+size_t DetectorFile::bytes() const
 {
     return data_buf.bytes();
 }
@@ -227,19 +227,63 @@ Matrix<float> & DetectorFile::data()
     return data_buf;
 }
 
-float DetectorFile::getMaxCount()
+float DetectorFile::maxCount()
 {
-    return max_counts;
+    return p_max_counts;
 }
 
-
-float DetectorFile::getFlux()
+void DetectorFile::setAlpha(float value)
 {
-    return flux;
+    p_alpha = value;
 }
-float DetectorFile::getExpTime()
+
+void DetectorFile::setBeta(float value)
 {
-    return exposure_time;
+    p_beta = value;
+}
+
+float DetectorFile::alpha()
+{
+    return p_alpha;
+}
+
+float DetectorFile::beta()
+{
+    return p_beta;
+}
+
+float DetectorFile::angleIncrement()
+{
+    return p_angle_increment;
+}
+
+float DetectorFile::startAngle()
+{
+    return p_start_angle;
+}
+
+float DetectorFile::phi()
+{
+    return p_phi;
+}
+
+float DetectorFile::omega()
+{
+    return p_omega;
+}
+
+float DetectorFile::kappa()
+{
+    return p_kappa;
+}
+
+float DetectorFile::flux()
+{
+    return p_flux;
+}
+float DetectorFile::expTime()
+{
+    return p_exposure_time;
 }
 
 int DetectorFile::readHeader()
@@ -291,11 +335,11 @@ int DetectorFile::readHeader()
 
     // Fetch keywords!
     /* Non-optional keywords */
-    detector = regExp(&reqExpDetector, &header, 0, 1);
-    pixel_size_x = regExp(&reqPixSizex, &header, 0, 1).toFloat();
-    pixel_size_y = regExp(&reqPixSizey, &header, 0, 1).toFloat();
+    p_detector = regExp(&reqExpDetector, &header, 0, 1);
+    p_pixel_size_x = regExp(&reqPixSizex, &header, 0, 1).toFloat();
+    p_pixel_size_y = regExp(&reqPixSizey, &header, 0, 1).toFloat();
     //~ silicon_sensor_thickness = regExp(&, &header, 0, 1).toFloat();
-    exposure_time = regExp(&reqExpTime, &header, 0, 1).toFloat();
+    p_exposure_time = regExp(&reqExpTime, &header, 0, 1).toFloat();
     //~ exposure_period = regExp(&, &header, 0, 1).toFloat();
     //~ tau = regExp(&, &header, 0, 1).toFloat();
     //~ count_cutoff = regExp(&, &header, 0, 1).toInt();
@@ -308,26 +352,26 @@ int DetectorFile::readHeader()
     //~ image_path = regExp(&, &header, 0, 1);
 
     /* Optional keywords */
-    wavelength = regExp(&optExpWl, &header, 0, 1).toFloat();
+    p_wavelength = regExp(&optExpWl, &header, 0, 1).toFloat();
     //~ energy_range_low = regExp(&, &header, 0, 1).toInt();
     //~ energy_range_high = regExp(&, &header, 0, 1).toInt();
-    detector_distance = regExp(&optExpDd, &header, 0, 1).toFloat();
+    p_detector_distance = regExp(&optExpDd, &header, 0, 1).toFloat();
     //~ detector_voffset = regExp(&, &header, 0, 1).toFloat();
-    beam_x = regExp(&optExpBeamx, &header, 0, 1).toFloat();
-    beam_y = regExp(&optExpBeamy, &header, 0, 1).toFloat();
-    flux = regExp(&optExpFlux, &header, 0, 1).toFloat();
+    p_beam_x = regExp(&optExpBeamx, &header, 0, 1).toFloat();
+    p_beam_y = regExp(&optExpBeamy, &header, 0, 1).toFloat();
+    p_flux = regExp(&optExpFlux, &header, 0, 1).toFloat();
     //~ filter_transmission = regExp(&, &header, 0, 1).toFloat();
-    start_angle = regExp(&optExpStAng, &header, 0, 1).toFloat()*pi/180.0;
-    angle_increment = regExp(&optExpAngInc, &header, 0, 1).toFloat()*pi/180.0;
+    p_start_angle = regExp(&optExpStAng, &header, 0, 1).toFloat()*pi/180.0;
+    p_angle_increment = regExp(&optExpAngInc, &header, 0, 1).toFloat()*pi/180.0;
     //~ detector_2theta = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
     //~ polarization = regExp(&, &header, 0, 1).toFloat();
 //    ~ alpha = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    kappa = regExp(&optExpKappa, &header, 0, 1).toFloat()*pi/180.0;
-    phi = regExp(&optExpPhi, &header, 0, 1).toFloat()*pi/180.0;
+    p_kappa = regExp(&optExpKappa, &header, 0, 1).toFloat()*pi/180.0;
+    p_phi = regExp(&optExpPhi, &header, 0, 1).toFloat()*pi/180.0;
     //~ phi_increment = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
     //~ chi = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
     //~ chi_increment = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    omega = regExp(&optExpOmega, &header, 0, 1).toFloat()*pi/180.0;
+    p_omega = regExp(&optExpOmega, &header, 0, 1).toFloat()*pi/180.0;
     //~ omega_increment = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
     //~ oscillation_axis = regExp(&, &header, 0, 1);
     //~ n_oscillations = regExp(&, &header, 0, 1).toInt();
@@ -379,25 +423,25 @@ void DetectorFile::print()
     ss << "Path: " << path.toStdString().c_str() << std::endl;
     ss << "Data elements: " << data_buf.size() << std::endl;
     ss << "Dimensions: " << fast_dimension << " x " << slow_dimension << std::endl;
-    ss << "Max counts: " << max_counts << std::endl;
+    ss << "Max counts: " << p_max_counts << std::endl;
     ss << "Search radius: " << srchrad_sugg_low << " " << srchrad_sugg_high << std::endl; 
     ss << "..." << std::endl;
-    ss << "Detector: " << detector.toStdString().c_str() << std::endl;
-    ss << "Pixel size: " << pixel_size_x << " x " << pixel_size_y << std::endl;
-    ss << "Exposure time: " << exposure_time << std::endl;
-    ss << "Exposure period: " << exposure_period << std::endl;
-    ss << "Count cutoff: " << count_cutoff << std::endl;    
-    ss << "Wavelength: " << wavelength << std::endl;
-    ss << "Detector distance: " << detector_distance << std::endl;
-    ss << "Beam position: " << beam_x << " x " << beam_y << std::endl;
-    ss << "Flux: " << flux << std::endl;
-    ss << "Start angle: " << start_angle << std::endl;
-    ss << "Angle increment: " << angle_increment << std::endl;
-    ss << "Alpha: " << alpha << std::endl;
-    ss << "Beta: " << beta << std::endl;
-    ss << "Kappa: " << kappa << std::endl;
-    ss << "Phi: " << phi << std::endl;
-    ss << "Omega: " << omega << std::endl;
+    ss << "Detector: " << p_detector.toStdString().c_str() << std::endl;
+    ss << "Pixel size: " << p_pixel_size_x << " x " << p_pixel_size_y << std::endl;
+    ss << "Exposure time: " << p_exposure_time << std::endl;
+    ss << "Exposure period: " << p_exposure_period << std::endl;
+    ss << "Count cutoff: " << p_count_cutoff << std::endl;    
+    ss << "Wavelength: " << p_wavelength << std::endl;
+    ss << "Detector distance: " << p_detector_distance << std::endl;
+    ss << "Beam position: " << p_beam_x << " x " << p_beam_y << std::endl;
+    ss << "Flux: " << p_flux << std::endl;
+    ss << "Start angle: " << p_start_angle << std::endl;
+    ss << "Angle increment: " << p_angle_increment << std::endl;
+    ss << "Alpha: " << p_alpha << std::endl;
+    ss << "Beta: " << p_beta << std::endl;
+    ss << "Kappa: " << p_kappa << std::endl;
+    ss << "Phi: " << p_phi << std::endl;
+    ss << "Omega: " << p_omega << std::endl;
     
     qDebug() << ss.str().c_str();
 }
@@ -409,50 +453,50 @@ QString DetectorFile::info()
     ss << "# Path: " << path.toStdString().c_str() << std::endl;
     ss << "# Data elements: " << data_buf.size() << std::endl;
     ss << "# Dimensions: " << fast_dimension << " x " << slow_dimension << std::endl;
-    ss << "# Max counts: " << max_counts << std::endl;
+    ss << "# Max counts: " << p_max_counts << std::endl;
     ss << "# ..." << std::endl;
-    ss << "# Detector: " << detector.toStdString().c_str() << std::endl;
-    ss << "# Pixel size: " << pixel_size_x << " x " << pixel_size_y << std::endl;
-    ss << "# Exposure time: " << exposure_time << std::endl;
-    ss << "# Exposure period: " << exposure_period << std::endl;
-    ss << "# Count cutoff: " << count_cutoff << std::endl;    
-    ss << "# Wavelength: " << wavelength << std::endl;
-    ss << "# Detector distance: " << detector_distance << std::endl;
-    ss << "# Beam position: " << beam_x << " x " << beam_y << std::endl;
-    ss << "# Flux: " << flux << std::endl;
-    ss << "# Start angle: " << start_angle << std::endl;
-    ss << "# Angle increment: " << angle_increment << std::endl;
-    ss << "# Alpha: " << alpha << std::endl;
-    ss << "# Beta: " << beta << std::endl;
-    ss << "# Kappa: " << kappa << std::endl;
-    ss << "# Phi: " << phi << std::endl;
-    ss << "# Omega: " << omega << std::endl;
+    ss << "# Detector: " << p_detector.toStdString().c_str() << std::endl;
+    ss << "# Pixel size: " << p_pixel_size_x << " x " << p_pixel_size_y << std::endl;
+    ss << "# Exposure time: " << p_exposure_time << std::endl;
+    ss << "# Exposure period: " << p_exposure_period << std::endl;
+    ss << "# Count cutoff: " << p_count_cutoff << std::endl;    
+    ss << "# Wavelength: " << p_wavelength << std::endl;
+    ss << "# Detector distance: " << p_detector_distance << std::endl;
+    ss << "# Beam position: " << p_beam_x << " x " << p_beam_y << std::endl;
+    ss << "# Flux: " << p_flux << std::endl;
+    ss << "# Start angle: " << p_start_angle << std::endl;
+    ss << "# Angle increment: " << p_angle_increment << std::endl;
+    ss << "# Alpha: " << p_alpha << std::endl;
+    ss << "# Beta: " << p_beta << std::endl;
+    ss << "# Kappa: " << p_kappa << std::endl;
+    ss << "# Phi: " << p_phi << std::endl;
+    ss << "# Omega: " << p_omega << std::endl;
     
     return QString(ss.str().c_str());
 }
 
 
 
-float DetectorFile::getDetectorDist()
+float DetectorFile::detectorDist()
 {
-    return detector_distance;
+    return p_detector_distance;
 }
 
-float DetectorFile::getBeamX()
+float DetectorFile::beamX()
 {
-    return beam_x;
+    return p_beam_x;
 }
-float DetectorFile::getBeamY()
+float DetectorFile::beamY()
 {
-    return beam_y;
+    return p_beam_y;
 }
-float DetectorFile::getPixSizeX()
+float DetectorFile::pixSizeX()
 {
-    return pixel_size_x;
+    return p_pixel_size_x;
 }
-float DetectorFile::getPixSizeY()
+float DetectorFile::pixSizeY()
 {
-    return pixel_size_y;
+    return p_pixel_size_y;
 }
 
 
@@ -536,7 +580,7 @@ int DetectorFile::readData()
             
             data_buf[i*fast_dimension+j] = (float) counts;
 
-            if (max_counts < counts) max_counts = counts;
+            if (p_max_counts < counts) p_max_counts = counts;
         }
     }
     delete[] buf;
@@ -548,7 +592,9 @@ int DetectorFile::readData()
 
 void DetectorFile::setSearchRadiusHint()
 {
-    /* A search radius can be found based on the projected size of a pixel in reciprocal space. The following calculations assume a detector that can be translated but not rotated. Could give a fair estimate even for a rotating detector*/
+    /* A search radius can be found based on the projected size of a pixel in reciprocal space. The following calculations assume a detector that can be translated but not rotated. Could give a fair estimate even for a rotating detector */
+    
+    // TODO: This function should not be in this class, as it depends on the beam center override and is not contextually linked to this object
 
     // For several pixel position extrema:
     float y_config[] = {(float) 0, (float) slow_dimension/2, (float) slow_dimension-1, (float) slow_dimension-1, (float) 0};
@@ -558,9 +604,9 @@ void DetectorFile::setSearchRadiusHint()
     {
         // Calculate the projected size of the pixel onto the Ewald sphere. In effect, we find the width along the diagonal of a rectangular pixel
         float xyz_a[3] = {
-            (float)(-detector_distance),
-            (float)(((y_config[i]-0.5) - beam_x) * pixel_size_x),
-            (float)(((z_config[i]-0.5) - beam_y) * pixel_size_y)};
+            (float)(-p_detector_distance),
+            (float)(((y_config[i]-0.5) - p_beam_x) * p_pixel_size_x),
+            (float)(((z_config[i]-0.5) - p_beam_y) * p_pixel_size_y)};
 
         float len_xyz_a = sqrt(xyz_a[0]*xyz_a[0] + xyz_a[1]*xyz_a[1] + xyz_a[2]*xyz_a[2]);
 
@@ -569,9 +615,9 @@ void DetectorFile::setSearchRadiusHint()
         xyz_a[2] /= len_xyz_a;
 
         float xyz_b[3] = {
-            (float)(-detector_distance),
-            (float)(((y_config[i]+0.5) - beam_x) * pixel_size_y),
-            (float)(((z_config[i]+0.5) - beam_y) * pixel_size_x)};
+            (float)(-p_detector_distance),
+            (float)(((y_config[i]+0.5) - p_beam_x) * p_pixel_size_y),
+            (float)(((z_config[i]+0.5) - p_beam_y) * p_pixel_size_x)};
 
         float len_xyz_b = sqrt(xyz_b[0]*xyz_b[0] + xyz_b[1]*xyz_b[1] + xyz_b[2]*xyz_b[2]);
 
@@ -579,7 +625,7 @@ void DetectorFile::setSearchRadiusHint()
         xyz_b[1] /= len_xyz_b;
         xyz_b[2] /= len_xyz_b;
 
-        float k = 1/wavelength;
+        float k = 1/p_wavelength;
 
         float k_a[3] = {k*xyz_a[0], k*xyz_a[1], k*xyz_a[2]};
         float k_b[3] = {k*xyz_b[0], k*xyz_b[1], k*xyz_b[2]};

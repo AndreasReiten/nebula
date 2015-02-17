@@ -207,7 +207,7 @@ void MainWindow::setStartConditions()
 {
     tabWidget->setCurrentIndex(0);
 
-    svoLevelSpinBox->setValue(11);
+    svoLevelSpinBox->setValue(10);
 
     volumeRenderDataMinSpinBox->setValue(1.0);
     volumeRenderDataMaxSpinBox->setValue(10);
@@ -736,6 +736,9 @@ void MainWindow::initConnects()
     connect(imageOpenGLWidget, SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(voxelizeWorker, SIGNAL(showProgressBar(bool)), memoryUsageProgressBar, SLOT(setVisible(bool)));
+    connect(beamOverrideCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setBeamOverrideActive(bool)));
+    connect(beamXOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamXOverride(double)));
+    connect(beamYOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamYOverride(double)));
 }
 
 void MainWindow::setGeneralProgressFormat(QString str)

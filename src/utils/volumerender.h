@@ -225,7 +225,7 @@ private:
     bool isMiniCellActive;
     bool isCountIntegrationActive;
     bool displayDistance;
-    bool displayFps;
+//    bool displayFps;
     bool displayResolution;
     bool isHklTextActive;
     

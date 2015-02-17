@@ -145,6 +145,8 @@ public slots:
     
     
 private:
+    float beam_x_override, beam_y_override; 
+    
     QStaticText m_staticText;
 
     QThread * workerThread;
@@ -282,7 +284,7 @@ private:
     Matrix<size_t> image_buffer_size;
     
     // Eventually merge the following two objects into a single class, or at least name them appropriately
-    DetectorFile frame;
+    DetectorFile file;
 
     void initializeCL();
     void setParameter(Matrix<float> &data);
@@ -301,7 +303,7 @@ private:
     void drawPixelToolTip(QPainter * painter);
     void drawPlaneMarkerToolTip(QPainter *painter);
     void drawConeEwaldIntersect(QPainter *painter);
-
+    
     // Boolean checks
     bool isBeamOverrideActive;
     bool isImageTexInitialized;
@@ -310,9 +312,9 @@ private:
     bool isGLInitialized;
 //    bool isFrameValid;
     bool isWeightCenterActive;
-    bool isInterpolGpuInitialized;
+//    bool isInterpolGpuInitialized;
     bool isSetTraced;
-    bool isSwapped;
+//    bool isSwapped;
     
     int texture_number;
     
