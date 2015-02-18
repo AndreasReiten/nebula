@@ -274,6 +274,7 @@ VolumeOpenGLWidget::~VolumeOpenGLWidget()
 void VolumeOpenGLWidget::toggleHkl()
 {
     isHklTextActive = !isHklTextActive;
+    update();
 }
 
 void VolumeOpenGLWidget::paintGL()
@@ -3558,6 +3559,7 @@ void VolumeOpenGLWidget::setBrightness(double value)
 void VolumeOpenGLWidget::setUnitcell()
 {
     isUnitcellActive = !isUnitcellActive;
+    update();
 }
 
 

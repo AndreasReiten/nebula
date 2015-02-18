@@ -129,18 +129,6 @@ void FileSelectionModel::removeFile(QString path)
     checklist.remove(persistent_index);
 }
 
-//QStringList FileSelectionModel::getFiles()
-//{
-//    QStringList paths;
-//    foreach (const QPersistentModelIndex &value, checklist)
-//    {
-//        QModelIndex index = value;
-//        if (index.isValid() && fileInfo(index).isFile()) paths << filePath(index);
-//    }
-
-//    return paths;
-//}
-
 QMap<QString, QStringList>  FileSelectionModel::getPaths()
 {
     QMap<QString, QStringList> paths;
@@ -156,17 +144,6 @@ QMap<QString, QStringList>  FileSelectionModel::getPaths()
         paths[i.key()].sort();
         ++i;
     }
-
-//    foreach (const QStringList &list, paths)
-//    {
-//        qDebug() << "New directory";
-
-//        foreach (const QString &path, list)
-//        {
-//            qDebug() << path;
-//        }
-//    }
-
 
     return paths;
 }

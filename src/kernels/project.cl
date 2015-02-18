@@ -45,9 +45,6 @@ __kernel void FRAME_FILTER(
             (id_glb.y < selection.w)) // Bottom
         {
             Q.w = source[id_glb.y*target_dim.x + id_glb.x]; //id_glb.y * image_size.x + id_glb.x; //
-            // Noise filter
-//            intensity = clamp(intensity, threshold_one.x, threshold_one.y); // All readings within noise thresholds
-//            intensity -= threshold_one.x; // Subtracts the noise
             
             if (Q.w > 0.0f)
             {
@@ -66,30 +63,12 @@ __kernel void FRAME_FILTER(
                 
                 // Titlt the detector around origo assuming it correctly coincides with the actual center of rotation ( not yet implemented)
     
-//                {
-                    // XYZ now has the direction of the scattered ray with respect to the incident one. This can be used to calculate the scattering angle for correction purposes. lab_theta and lab_phi are not to be confused with the detector/sample angles. These are simply the circular coordinate representation of the pixel position
-//                    float lab_theta = asin(native_divide(Q.y, k));
-//                    float lab_phi = atan2(Q.z,-Q.x);
-    
-                    /* Lorentz Polarization correction - The Lorentz part will depend on the scanning axis, but has to be applied if the frames are integrated over some time */
-    
-                    // Assuming rotation around the z-axis of the lab frame:
-//                    float L = fabs(native_sin(lab_theta));
-    
-                    // The polarization correction also needs a bit more work...
-//                    Q.w *= L;
-//                }
-    
                 // Sample rotation
                 float3 temp = Q.xyz;
     
                 Q.x = temp.x * sample_rotation_matrix[0] + temp.y * sample_rotation_matrix[1] + temp.z * sample_rotation_matrix[2];
                 Q.y = temp.x * sample_rotation_matrix[4] + temp.y * sample_rotation_matrix[5] + temp.z * sample_rotation_matrix[6];
                 Q.z = temp.x * sample_rotation_matrix[8] + temp.y * sample_rotation_matrix[9] + temp.z * sample_rotation_matrix[10];
-    
-//                Q.w = clamp(Q.w, threshold_two.x, threshold_two.y); 
-//                Q.w -= threshold_two.x; 
-                
             }
         }    
         else 

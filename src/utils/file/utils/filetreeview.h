@@ -12,13 +12,6 @@
 #include <QFileInfoList>
 #include <QDir>
 
-
-//#include <QString>
-//#include <QList>
-//#include <QModelIndex>
-//#include <QStringList>
-//#include <QVariant>
-
 class FileTreeView : public QTreeView
 {
     Q_OBJECT
@@ -46,7 +39,6 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
     bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);
     int columnCount(const QModelIndex& parent = QModelIndex()) const;
-//    QStringList getFiles(); // Deprecated
     QMap<QString, QStringList> getPaths();
 
 private:

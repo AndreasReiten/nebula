@@ -596,12 +596,20 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
         PHI.setArbRotation(file->beta(), 0, -(phi+offset_phi)); 
         KAPPA.setArbRotation(file->alpha(), 0, -(kappa+offset_kappa));
         OMEGA.setZRotation(-(omega+offset_omega));
+        
+//        qDebug() << "phi, kappa, omega:" << phi << kappa << omega; 
     }
     
     // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
     
     RotationMatrix<double> sampleRotMat;
     sampleRotMat = PHI*KAPPA*OMEGA;
+    
+//    PHI.print(3);
+//    KAPPA.print(3);
+//    OMEGA.print(3);
+    
+//    sampleRotMat.print(3);
 
     cl_mem sample_rotation_matrix_cl = QOpenCLCreateBuffer(context_cl.context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
@@ -1914,6 +1922,8 @@ void ImageOpenGLWidget::prevSeries()
 
 void ImageOpenGLWidget::setSeriesTrace()
 {
+    if (!isCLInitialized || !isGLInitialized) return;
+    
     err =  QOpenCLReleaseMemObject(image_data_trace_cl);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -2564,9 +2574,7 @@ Matrix<double> ImageOpenGLWidget::getScatteringVector(DetectorFile & f, double x
     k_f[1] =    f.pixSizeX() * ((double) (f.slowDimension() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
     k_f[2] =    f.pixSizeY() * ((double) (f.fastDimension() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
     
-    k_f = vecNormalize(k_f);
-    k_f = k*k_f;
-    
+    k_f = k*vecNormalize(k_f);
 
     Matrix<double> Q(1,3,0);
     Q = k_f - k_i;
@@ -2588,8 +2596,7 @@ double ImageOpenGLWidget::getScatteringAngle(DetectorFile & f, double x, double 
     k_f[1] =    f.pixSizeX() * ((double) (f.slowDimension() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
     k_f[2] =    f.pixSizeY() * ((double) (f.fastDimension() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
     
-    k_f = vecNormalize(k_f);
-    k_f = k*k_f;
+    k_f = k*vecNormalize(k_f);
     
     return acos(vecDot(k_f, k_i)/(k*k));
 }
