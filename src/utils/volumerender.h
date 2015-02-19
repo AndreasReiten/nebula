@@ -83,11 +83,11 @@ public slots:
     void takeScreenShot(QString path);
     void updateUnitCellText();
     void updateUnitCellVertices();
-    void setURotation();
+    void setURotation(bool value);
     void setHCurrent(int value);
     void setKCurrent(int value);
     void setLCurrent(int value);
-    void setMiniCell();
+    void setMiniCell(bool value);
     void setLabFrame();
     void setViewMode(int value);
     

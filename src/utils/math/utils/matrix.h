@@ -806,7 +806,7 @@ const Matrix<T> Matrix<T>::operator * (const Matrix& M) const
 
     if (this->p_n != M.m())
     {
-        qWarning("Matrix dimesions do not agree!");
+        qWarning(QString("Matrix dimesions do not agree! ("+QString::number(p_m)+", "+QString::number(p_n)+") x ("+QString::number(M.m())+", "+QString::number(M.n())+")").toStdString().c_str());
         return c;
     }
 

@@ -1436,7 +1436,7 @@ void ImageOpenGLWidget::analyze(QString str)
     else if(str == "Series")
     {
         
-        Matrix<double> q_weightpoint(1,3,0);
+        Matrix<double> q_weightpoint(3,1,0);
         double x_weightpoint = 0;
         double y_weightpoint = 0;
         double angle_weightpoint = 0;
@@ -1528,7 +1528,7 @@ void ImageOpenGLWidget::analyze(QString str)
 
             emit progressRangeChanged(0, p_set.current()->size()-1);
             
-            Matrix<double> q_weightpoint(1,3,0);
+            Matrix<double> q_weightpoint(3,1,0);
             
             for (int j = 0; j < p_set.current()->size(); j++)
             {
@@ -2572,18 +2572,17 @@ Matrix<double> ImageOpenGLWidget::getScatteringVector(DetectorFile & f, double x
 
     double k = 1.0f/f.wavelength(); // Multiply with 2pi if desired
 
-    Matrix<double> k_i(1,3,0);
+    Matrix<double> k_i(3,1,0);
     k_i[0] = -k;
     
-    Matrix<double> k_f(1,3,0);
+    Matrix<double> k_f(3,1,0);
     k_f[0] =    -f.detectorDist();
     k_f[1] =    f.pixSizeX() * ((double) (f.slowDimension() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
     k_f[2] =    f.pixSizeY() * ((double) (f.fastDimension() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
     
     k_f = k*vecNormalize(k_f);
 
-    Matrix<double> Q(1,3,0);
-    Q = k_f - k_i;
+    Matrix<double> Q = k_f - k_i;
     
     return Q;
 }
@@ -2667,15 +2666,56 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter *painter)
             0, NULL, NULL);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
     }
-    // Position
-    Matrix<double> Q(1,3);
-    Q = getScatteringVector(file, pixel_x, pixel_y);
+    // Q vector
+    Matrix<double> Q = getScatteringVector(file, pixel_x, pixel_y);
+    
+    // G vector, de-rotated
+    RotationMatrix<double> PHI;
+    RotationMatrix<double> KAPPA;
+    RotationMatrix<double> OMEGA;
+    {
+        double phi = 0, kappa = 0, omega = 0;
+        if(active_rotation == "Phi")
+        {
+            phi = file.startAngle() + 0.5*file.angleIncrement();
+            kappa = file.kappa();
+            omega = file.omega();
+        }
+        else if(active_rotation == "Kappa") 
+        {
+            phi = file.phi();
+            kappa = file.startAngle() + 0.5*file.angleIncrement();
+            omega = file.omega();
+        }
+        else if(active_rotation == "Omega") 
+        {
+            phi = file.phi();
+            kappa = file.kappa();
+            omega = file.startAngle() + 0.5*file.angleIncrement();
+        }
+        else
+        {
+            qDebug() << "No rotation angle set!" << active_rotation;
+        }
+        
+        PHI.setArbRotation(0.000891863, 0, -(phi+offset_phi)); 
+        KAPPA.setArbRotation(0.8735582, 0, -(kappa+offset_kappa));
+        OMEGA.setZRotation(-(omega+offset_omega));
+    }
+    
+    RotationMatrix<double> sampleRotMat;
+    sampleRotMat = PHI*KAPPA*OMEGA;
+    
+    Matrix<double> G = sampleRotMat.to3x3()*Q;
+    
+//    qDebug() << atan2(G[0],G[1])*180/pi;
 
     QString tip;
     tip += "<p style=\"font-family: monospace, times, serif; font-size:10pt; font-style:italic; color:white\">";
     tip += "<font color=\"white\">X:</font> <font color=\"#85DAFF\">"+QString::number((int) pixel_x_bounded)+"</font>, Y: <font color=\"#85DAFF\">"+QString::number((int) pixel_y_bounded)+"</font>";
     tip += ", Value: <font color=\"#85DAFF\">"+QString::number(value,'e',4)+"</font>";
     tip += ", Q[<font color=\"#85DAFF\">"+QString::number(Q[0],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[1],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[2],'f',2)+"</font>]";
+    tip += ", G<sub>rot</sub>[<font color=\"#85DAFF\">"+QString::number(G[0],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(G[1],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(G[2],'f',2)+"</font>]";
     tip += " (<font color=\"#85DAFF\">"+QString::number(vecLength(Q),'f',2)+"</font> Å<sup>-1</sup>) (<font color=\"#85DAFF\">"+QString::number(1.0/vecLength(Q),'f',2)+"</font> Å)";
     tip += ", 2&theta;: <font color=\"#85DAFF\">"+QString::number(180*getScatteringAngle(file, pixel_x, pixel_y)/pi,'f',2)+"</font>&deg;";
     tip += ", Sum: <font color=\"#85DAFF\">"+QString::number(p_set.current()->current()->selection().integral(),'f',2)+"</font>";

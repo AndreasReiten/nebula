@@ -245,7 +245,7 @@ void OpenCLContext::initDevices()
 
     if (num_platforms > 0)
     {
-        qDebug() << "Found" << num_platforms << "OpenCL platform(s). Using the first one.";
+//        qDebug() << "Found" << num_platforms << "OpenCL platform(s). Using the first one.";
         for (size_t i = 0; i < num_platforms; i++)
         {
             char platform_name[128];
@@ -253,7 +253,7 @@ void OpenCLContext::initDevices()
             err = QOpenCLGetPlatformInfo(platform[i], CL_PLATFORM_NAME, sizeof(char)*128, platform_name, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-            qDebug() << i << ":" << platform_name;
+//            qDebug() << i << ":" << platform_name;
         }
     }
     else if (num_platforms == 0)
@@ -269,7 +269,7 @@ void OpenCLContext::initDevices()
 
     if (num_devices > 0)
     {
-        qDebug() << "Found" << num_devices << " OpenCL device(s). Using the first one.";
+//        qDebug() << "Found" << num_devices << " OpenCL device(s). Using the first one.";
         for (size_t i = 0; i < num_devices; i++)
         {
             char device_name[128];
@@ -277,7 +277,7 @@ void OpenCLContext::initDevices()
             err = QOpenCLGetDeviceInfo(device[i], CL_DEVICE_NAME, sizeof(char)*128, device_name, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
-            qDebug() << i << ":" << device_name;
+//            qDebug() << i << ":" << device_name;
         }
     }
     else if (num_devices == 0)

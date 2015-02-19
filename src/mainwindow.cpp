@@ -650,13 +650,16 @@ void MainWindow::initConnects()
     connect(this->rulerAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(toggleRuler()));
     connect(this->markAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(addMarker()));
     connect(this->labFrameAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setLabFrame()));
-    connect(this->rotateCellButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setURotation()));
+//    connect(this->rotateCellButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setURotation()));
     connect(this->toggleHklButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(toggleHkl()));
     connect(this->toggleCellButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setUnitcell()));
     connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setHCurrent(int)));
     connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setKCurrent(int)));
     connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setLCurrent(int)));
     connect(this->integrateCountsAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setCountIntegration()));
+    connect(this->helpCellOverlayButton, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setMiniCell(bool)));
+    connect(this->rotateCellButton, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setURotation(bool)));
+    
     
 //    /* this <-> this */
     connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_a(double)));

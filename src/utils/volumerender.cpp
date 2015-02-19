@@ -611,7 +611,7 @@ void VolumeOpenGLWidget::mousePressEvent(QMouseEvent * event)
             }
         }
         
-        if ((event->buttons() & Qt::ControlModifier))
+        if ((event->modifiers() & Qt::ControlModifier))
         {
             markers.remove(closest);
             glDeleteBuffers(1, &marker_vbo[closest]);
@@ -675,7 +675,7 @@ void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent *event)
     
     {
         float move_scaling = 0.6;
-        if((event->buttons() & Qt::ControlModifier)) move_scaling = 0.1;
+        if((event->modifiers() & Qt::ControlModifier)) move_scaling = 0.1;
 
         if ((event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton) && !isRulerActive)
         {
@@ -690,13 +690,13 @@ void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent *event)
             RotationMatrix<double> roll_rotation;
             roll_rotation.setArbRotation(-0.5*pi, eta, roll);
             
-            if ((event->buttons() & Qt::ShiftModifier) && isURotationActive && isUnitcellActive)
+            if ((event->modifiers() & Qt::ShiftModifier) && isURotationActive && isUnitcellActive)
             {
                 U = rotation.inverse4x4() * roll_rotation * rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
-            else if((event->buttons() & Qt::ShiftModifier)) 
+            else if((event->modifiers() & Qt::ShiftModifier)) 
             {
                 scalebar_rotation = rotation.inverse4x4() * roll_rotation * rotation * scalebar_rotation;
             }
@@ -721,13 +721,13 @@ void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent *event)
             
             roll_rotation.setArbRotation(0, 0, roll);
 
-            if ((event->buttons() & Qt::ShiftModifier) && isURotationActive && isUnitcellActive)
+            if ((event->modifiers() & Qt::ShiftModifier) && isURotationActive && isUnitcellActive)
             {
                 U = rotation.inverse4x4() * roll_rotation *  rotation * U;
                 UB.setUMatrix(U.to3x3());
                 updateUnitCellText();
             }
-            else if((event->buttons() & Qt::ShiftModifier)) 
+            else if((event->modifiers() & Qt::ShiftModifier)) 
             {
                 scalebar_rotation = rotation.inverse4x4() * roll_rotation *  rotation * scalebar_rotation;
             }
@@ -2252,9 +2252,9 @@ void VolumeOpenGLWidget::endRawGLCalls(QPainter * painter)
     painter->endNativePainting();
 }
 
-void VolumeOpenGLWidget::setMiniCell()
+void VolumeOpenGLWidget::setMiniCell(bool value)
 {
-    isMiniCellActive = !isMiniCellActive;
+    isMiniCellActive = value;
 }
 
 void VolumeOpenGLWidget::setOrthoGrid()
@@ -2409,6 +2409,8 @@ void VolumeOpenGLWidget::alignSlicetoAStar()
     scalebar_rotation = zeta_rotation * eta_rotation;
 
     setViewMatrices();
+    
+    update();
 }
 
 void VolumeOpenGLWidget::alignSlicetoBStar()
@@ -2427,6 +2429,8 @@ void VolumeOpenGLWidget::alignSlicetoBStar()
     scalebar_rotation = zeta_rotation * eta_rotation;
 
     setViewMatrices();
+    
+    update();
 }
 
 void VolumeOpenGLWidget::alignSlicetoCStar()
@@ -2445,6 +2449,8 @@ void VolumeOpenGLWidget::alignSlicetoCStar()
     scalebar_rotation = zeta_rotation * eta_rotation;
 
     setViewMatrices();
+    
+    update();
 }
 
 
@@ -2464,6 +2470,8 @@ void VolumeOpenGLWidget::alignAStartoZ()
     rotation = eta_rotation * zeta_rotation;
     
     setViewMatrices();
+    
+    update();
 
 //    view_matrix.inverse4x4(1);
 }
@@ -2483,6 +2491,8 @@ void VolumeOpenGLWidget::alignBStartoZ()
     rotation = eta_rotation * zeta_rotation;
     
     setViewMatrices();
+    
+    update();
 }
 void VolumeOpenGLWidget::alignCStartoZ()
 {
@@ -2500,6 +2510,8 @@ void VolumeOpenGLWidget::alignCStartoZ()
     rotation = eta_rotation * zeta_rotation;
 
     setViewMatrices();
+    
+    update();
 }
 
 
@@ -2509,6 +2521,8 @@ void VolumeOpenGLWidget::alignLabXtoSliceX()
     x_aligned.setYRotation(pi*0.5);
     
     rotation =  x_aligned * scalebar_rotation.inverse4x4();
+    
+    update();
 }
 
 void VolumeOpenGLWidget::alignLabYtoSliceY()
@@ -2517,6 +2531,8 @@ void VolumeOpenGLWidget::alignLabYtoSliceY()
     y_aligned.setXRotation(-pi*0.5);
     
     rotation =  y_aligned * scalebar_rotation.inverse4x4();
+    
+    update();
 }
 void VolumeOpenGLWidget::alignLabZtoSliceZ()
 {
@@ -2524,11 +2540,15 @@ void VolumeOpenGLWidget::alignLabZtoSliceZ()
     z_aligned.setYRotation(0.0);
     
     rotation =  z_aligned * scalebar_rotation.inverse4x4();
+    
+    update();
 }
 
 void VolumeOpenGLWidget::alignSliceToLab()
 {
     scalebar_rotation.setIdentity(4);
+    
+    update();
 }
 
 void VolumeOpenGLWidget::rotateLeft()
@@ -2537,6 +2557,8 @@ void VolumeOpenGLWidget::rotateLeft()
     rot.setYRotation(pi*0.25);
     
     rotation = rot * rotation;
+    
+    update();
 }
 void VolumeOpenGLWidget::rotateRight()
 {
@@ -2544,6 +2566,8 @@ void VolumeOpenGLWidget::rotateRight()
     rot.setYRotation(-pi*0.25);
     
     rotation = rot * rotation;
+    
+    update();
 }
 void VolumeOpenGLWidget::rotateUp()
 {
@@ -2551,6 +2575,8 @@ void VolumeOpenGLWidget::rotateUp()
     rot.setXRotation(pi*0.25);
     
     rotation = rot * rotation;
+    
+    update();
 }
 void VolumeOpenGLWidget::rotateDown()
 {
@@ -2558,6 +2584,8 @@ void VolumeOpenGLWidget::rotateDown()
     rot.setXRotation(-pi*0.25);
     
     rotation = rot * rotation;
+    
+    update();
 }
 
 void VolumeOpenGLWidget::rollCW()
@@ -2566,6 +2594,8 @@ void VolumeOpenGLWidget::rollCW()
     rot.setZRotation(pi*0.25);
     
     rotation = rot * rotation;
+    
+    update();
 }
 void VolumeOpenGLWidget::rollCCW()
 {
@@ -2573,6 +2603,8 @@ void VolumeOpenGLWidget::rollCCW()
     rot.setZRotation(-pi*0.25);
     
     rotation = rot * rotation;
+    
+    update();
 }
 
 void VolumeOpenGLWidget::computePixelSize()
@@ -3412,9 +3444,9 @@ void VolumeOpenGLWidget::setBackground()
     fill_brush->setColor(fill_color);
 }
 
-void VolumeOpenGLWidget::setURotation()
+void VolumeOpenGLWidget::setURotation(bool value)
 {
-    isURotationActive = !isURotationActive;
+    isURotationActive = value;
 }
 
 void VolumeOpenGLWidget::setLog(bool value)
