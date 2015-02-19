@@ -14,7 +14,7 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
- * Make container classes for OpenCL objects, possibly in QOpenCLFunctions, that automate destruction and can tell if an object has been initialized
+ * Make container classes for OpenCL objects, possibly in QOpenCLFunctions, that automate destruction and can tell if an object has been initialized. OpenCL functions can be modified to take them as input arguments.
  * (Done) Make QOpenCL class similar to QOpenGLFunctions
  * (Time consuming) Switch to QOpenGLWidget
  * (Somewhat time consuming) Remove hard memory requirements in cases where information about max RAM is known (case for vRAM). Adapt to hardware.

@@ -196,7 +196,9 @@ void ImageOpenGLWidget::paintGL()
 {
     if (!file.isValid() || !file.isDataRead()) return;
     
-    QPainter painter(this);
+    QOpenGLPaintDevice paint_device_gl(this->size());
+
+    QPainter painter(&paint_device_gl);
 
     painter.setRenderHint(QPainter::Antialiasing);
     
@@ -212,13 +214,14 @@ void ImageOpenGLWidget::paintGL()
     
     if(!p_set.isEmpty())
     {
-        beginRawGLCalls(&painter);
+
 
         QRectF image_rect(QPoint(0,0),QSizeF(file.fastDimension(), file.slowDimension()));
         image_rect.moveTopLeft(QPointF((qreal) this->width()*0.5, (qreal) this->height()*0.5));
 
-        drawImage(image_rect, image_tex_gl, &painter);
 
+        beginRawGLCalls(&painter);
+        drawImage(image_rect, image_tex_gl, &painter);
         endRawGLCalls(&painter);
 
         ColorMatrix<float> analysis_area_color(0.0,0,0,0.3);
@@ -231,8 +234,11 @@ void ImageOpenGLWidget::paintGL()
         }
 
         // Draw weight center
-        ColorMatrix<float> analysis_wp_color(0.0,0.0,0.0,0.8);
-        if (isWeightCenterActive) drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
+        if (isWeightCenterActive)
+        {
+            ColorMatrix<float> analysis_wp_color(0.0,0.0,0.0,0.8);
+            drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
+        }
 
         drawConeEwaldIntersect(&painter);
         drawPixelToolTip(&painter);
@@ -3147,34 +3153,31 @@ SeriesSet ImageOpenGLWidget::set()
 void ImageOpenGLWidget::takeScreenShot(QString path)
 {
     QOpenGLFramebufferObjectFormat format;
-
-    format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-    format.setMipmap(true);
     format.setSamples(64);
-    format.setTextureTarget(GL_TEXTURE_2D);
     format.setInternalTextureFormat(GL_RGBA32F);
 
-    QOpenGLFramebufferObject buffy(this->width(), this->height(), format);
+    QOpenGLFramebufferObject buffy(this->size(), format);
 
     buffy.bind();
-    
-    // Render into buffer
-    update();
-    
+
+    // Render into buffer using max quality
+    paintGL();
+    glFinish();
+
+    buffy.release();
+
     // Save buffer as image
     buffy.toImage().save(path);
-    
-    buffy.release();
 }
 
 void ImageOpenGLWidget::saveImage(QString path)
 {
     QOpenGLFramebufferObjectFormat format;
 
-    format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-    format.setMipmap(true);
+//    format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+//    format.setMipmap(true);
     format.setSamples(64);
-    format.setTextureTarget(GL_TEXTURE_2D);
+//    format.setTextureTarget(GL_TEXTURE_2D);
     format.setInternalTextureFormat(GL_RGBA32F);
 
     QOpenGLFramebufferObject buffy(file.fastDimension(), file.slowDimension(), format);
@@ -3191,9 +3194,7 @@ void ImageOpenGLWidget::saveImage(QString path)
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    const qreal retinaScale = this->devicePixelRatio();
-
-    glViewport(0, 0, file.fastDimension() * retinaScale, file.slowDimension() * retinaScale);
+    glViewport(0, 0, file.fastDimension(), file.slowDimension());
 
     if(!p_set.isEmpty())
     {

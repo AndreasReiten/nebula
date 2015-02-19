@@ -30,39 +30,7 @@
 MainWindow::MainWindow() :
     hasPendingChanges(0),
     batch_size(10)
-{
-//    RotationMatrix<double> Xrot, Yrot, Zrot, ArbRot;
-//    Xrot.setXRotation(1.1);
-//    Xrot.print(3);
-//    Yrot.setYRotation(1.1);
-//    Yrot.print(3);
-//    Zrot.setZRotation(1.1);
-//    Zrot.print(3);
-//    ArbRot.setArbRotation(1.1,2.2,0.5);
-//    ArbRot.print(3);
-    
-//    RotationMatrix<double> PHI;
-//    RotationMatrix<double> KAPPA;
-//    RotationMatrix<double> OMEGA;
-        
-//        PHI.setArbRotation(0.000891863, 0, -11.1828); 
-//        KAPPA.setArbRotation(0.8735582, 0, 134.0);
-//        OMEGA.setZRotation(-76.0);
-        
-//    Matrix<double> sampleRotMat = PHI*KAPPA*OMEGA;
-    
-//    PHI.print(3);
-//    KAPPA.print(3);
-//    OMEGA.print(3);
-    
-//    Matrix<double> Q(4,1,0);
-//    Q[0] = 0.44922106;
-//    Q[1] = 0.9454269;
-//    Q[2] = -0.23766188;
-    
-//    sampleRotMat.print(3);
-//    (sampleRotMat*Q).print(3);
-    
+{   
     // Set some default values
     reduced_pixels.set(0,0);
     

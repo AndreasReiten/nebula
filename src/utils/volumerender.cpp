@@ -279,7 +279,9 @@ void VolumeOpenGLWidget::toggleHkl()
 
 void VolumeOpenGLWidget::paintGL()
 {
-    QPainter painter(this);
+    QOpenGLPaintDevice paint_device_gl(this->size());
+
+    QPainter painter(&paint_device_gl);
 
     painter.setRenderHint(QPainter::Antialiasing);
     
@@ -1938,38 +1940,28 @@ void VolumeOpenGLWidget::takeScreenShot(QString path)
     // Set resolution back to former value
     setRayTexture(100);
     displayDistance = false;
-//    displayFps = false;
     displayResolution = false;
     
     QOpenGLFramebufferObjectFormat format;
-
-    format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-    format.setMipmap(true);
     format.setSamples(64);
-    format.setTextureTarget(GL_TEXTURE_2D);
     format.setInternalTextureFormat(GL_RGBA32F);
 
-//    QOpenGLFramebufferObject buffy(this->width(), this->height(), format);
+    QOpenGLFramebufferObject buffy(this->size(), format);
 
-//    buffy.bind();
+    buffy.bind();
     
     // Render into buffer using max quality
-    glReadBuffer(GL_FRONT);
     paintGL();
-    glFlush(); 
-//    repaint();
+    glFinish();
     
-    
-//    buffy.release();
+    buffy.release();
     
     // Save buffer as image
-//    buffy.toImage().save(path);
-    this->grabFramebuffer().save(path);
-    
+    buffy.toImage().save(path);
+
     // Set resolution back to former value
     setRayTexture(quality_percentage);
     displayDistance = true;
-//    displayFps = true;
     displayResolution = true;
 }
 
