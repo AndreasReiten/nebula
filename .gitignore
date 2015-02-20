@@ -1,0 +1,7 @@
+*.a
+*.log
+*.pro.user
+*.orig
+*.directory
+*.pro.user.*
+Makefile
