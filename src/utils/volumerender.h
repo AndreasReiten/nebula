@@ -23,9 +23,11 @@ public:
 
 public slots:
     void raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws);
-
+    void resolveLineIntegral();
+    
 signals:
     void rayTraceFinished();
+    void integralResolved();
 
 private:
     OpenCLContext context_cl;
@@ -49,6 +51,8 @@ signals:
     void changedMessageString(QString str);
 
 public slots:
+    void saveLineIntegralAsImage(QString path);
+    void saveLineIntegralAsText(QString path);
     void toggleHkl();
     void setCountIntegration();
     void addMarker();
@@ -309,7 +313,8 @@ private:
     void drawSenseOfRotation(double zeta, double eta, double rpm);
     void drawHklText(QPainter * painter);
     void drawCountIntegral(QPainter *painter);
-    
+    void drawLineIntegrationVolumeVisualAssist(QPainter * painter);
+    void drawLineIntegral(QPainter * painter, QRect position);
     
     int fps_string_width_prev;
     

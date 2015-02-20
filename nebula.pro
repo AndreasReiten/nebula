@@ -101,3 +101,6 @@ SOURCES += \
     src/mainwindow.cpp \
     src/utils/file/utils/framecontainer.cpp \
     src/utils/file/utils/selection.cpp
+
+DISTFILES += \
+    src/utils/opencl/cl/line_integral.cl

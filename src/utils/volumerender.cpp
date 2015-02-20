@@ -1309,6 +1309,31 @@ void VolumeOpenGLWidget::setCenterLine()
 }
 
 
+void VolumeWorker::resolveLineIntegral()
+{
+    
+}
+
+void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painter)
+{
+    
+}
+
+void VolumeOpenGLWidget::drawLineIntegral(QPainter * painter, QRect position)
+{
+    
+}
+
+void VolumeOpenGLWidget::saveLineIntegralAsImage(QString path)
+{
+    
+}
+
+void VolumeOpenGLWidget::saveLineIntegralAsText(QString path)
+{
+    
+}
+
 void VolumeOpenGLWidget::drawCenterLine(QPainter * painter)
 {
     beginRawGLCalls(painter);
