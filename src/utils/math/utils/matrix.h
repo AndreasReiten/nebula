@@ -15,6 +15,7 @@
 #include <vector>
 #include <QDebug>
 #include <QColor>
+#include <QDataStream>
 
 
 const double pi = 4.0*atan(1.0);
@@ -78,12 +79,11 @@ class Matrix {
         size_t m() const;
         size_t n() const;
         size_t size() const;
-//        size_t bsize() const;
         size_t bytes() const;
         
         void print(int precision = 0, const char * id = "") const;
         
-        // Vector math friends. Declared as friends so that they can be called independently of an object
+        // Vector math friends. Declared as friends so that they can be called independently of an object. TODO: declare outside of class
         template <class F>
         friend F vecLength(const Matrix<F> A);
         
@@ -117,6 +117,31 @@ class Matrix {
         /* Swap function as per C++11 idiom */
         void swap(Matrix &first, Matrix &second);
 };
+
+template<class T> QDebug operator<<(QDebug dbg, const Matrix<T> &m)
+{
+    dbg.nospace() << "(...)";
+    return dbg.maybeSpace();
+}
+
+template<class T> QDataStream &operator<<(QDataStream &out, const Matrix<T> &m)
+{
+    out << (qint64) m.m() << (qint64) m.n() << m.toQVector();
+
+    return out;
+}
+
+template<class T> QDataStream &operator>>(QDataStream &in, Matrix<T> &mat)
+{
+    qint64 m;
+    qint64 n;
+    QVector<T> data;
+
+    in >> m >> n >> data;
+
+    mat.setDeep((size_t) m, (size_t) n, data.data());
+    return in;
+}
 
 template<class T> Matrix<T> operator* (const T& factor, const Matrix<T> &M)
 {
@@ -188,12 +213,6 @@ F vecDot(const Matrix<F> A, const Matrix<F> B)
 
     return value;
 }
-
-//template <class F>
-//Matrix<F> operator*(F factor, const Matrix<F> A)
-//{
-//    return A*factor;
-//}
 
 template <class F>
 F vecLength(const Matrix<F> A)

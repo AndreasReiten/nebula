@@ -21,7 +21,6 @@ void FileTreeView::itemChanged(const QModelIndex & item)
     {
         emit fileChanged(mod->filePath(item));
     }
-
 }
 
 

@@ -121,14 +121,12 @@ QDataStream &operator>>(QDataStream &in, ImageInfo &image)
 {
     QString path;
     Selection selection;
-//    Selection background;
     QList<Selection> plane_marker;
 
     in >> path >> selection >> plane_marker;
     image.setPath(path);
     image.setSelection(selection);
     image.setPlaneMarker(plane_marker);
-//    image.setBackground(background);
 
     return in;
 }

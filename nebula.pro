@@ -65,13 +65,13 @@ HEADERS += \
     src/utils/svo/utils/bricknode.h \
     src/utils/svo/utils/searchnode.h \
     src/utils/svo/utils/sparsevoxeloctree.h \
-    src/utils/misc/marker.h \
     src/utils/misc/texthighlighter.h \
     src/utils/volume/volumerender.h \
     src/utils/worker/worker.h \
     src/mainwindow.h \
     src/utils/file/utils/framecontainer.h \
-    src/utils/file/utils/selection.h
+    src/utils/file/utils/selection.h \
+    src/utils/misc/line.h
 
 SOURCES += \
     src/utils/file/utils/fileformat.cpp \
@@ -86,12 +86,12 @@ SOURCES += \
     src/utils/svo/utils/bricknode.cpp \
     src/utils/svo/utils/searchnode.cpp \
     src/utils/svo/utils/sparsevoxeloctree.cpp \
-    src/utils/misc/marker.cpp \
     src/utils/misc/texthighlighter.cpp \
     src/utils/volume/volumerender.cpp \
     src/utils/worker/worker.cpp \
     src/utils/file/utils/framecontainer.cpp \
     src/utils/file/utils/selection.cpp \
     src/main.cpp \
-    src/mainwindow.cpp
+    src/mainwindow.cpp \
+    src/utils/misc/line.cpp
 

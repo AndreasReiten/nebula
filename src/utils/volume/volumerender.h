@@ -10,7 +10,7 @@
 #include "../opencl/qxopencllib.h"
 #include "../file/qxfilelib.h"
 #include "../svo/qxsvolib.h"
-#include "../misc/marker.h"
+#include "../misc/line.h"
 
 class VolumeWorker : public QObject, protected OpenCLFunctions
 {
@@ -233,6 +233,9 @@ private:
 //    bool displayFps;
     bool displayResolution;
     bool isHklTextActive;
+
+    // Lines
+    QList<Line> integration_lines;
     
     // Markers
     QVector<Marker> markers;
