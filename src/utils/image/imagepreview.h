@@ -18,7 +18,7 @@
 #include <QStaticText>
 
 
-#include "../../opengl/qxopengllib.h"
+#include "../../misc/transferfunction.h"
 #include "../../file/qxfilelib.h"
 #include "../../opencl/qxopencllib.h"
 #include "../../math/qxmathlib.h"

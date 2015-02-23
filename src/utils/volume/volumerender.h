@@ -1,15 +1,16 @@
 #ifndef VOLUMERENDER_H
 #define VOLUMERENDER_H
 
-#include<QThread>
+#include <QThread>
+#include <QOpenGLShaderProgram>
+#include <QElapsedTimer>
 
-#include "math/qxmathlib.h"
-#include "opencl/qxopencllib.h"
-#include "opengl/qxopengllib.h"
-#include "file/qxfilelib.h"
-#include "image/qximagelib.h"
-#include "svo/qxsvolib.h"
-#include "marker.h"
+#include "../math/qxmathlib.h"
+#include "../misc/transferfunction.h"
+#include "../opencl/qxopencllib.h"
+#include "../file/qxfilelib.h"
+#include "../svo/qxsvolib.h"
+#include "../misc/marker.h"
 
 class VolumeWorker : public QObject, protected OpenCLFunctions
 {

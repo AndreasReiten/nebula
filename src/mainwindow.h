@@ -16,13 +16,12 @@
 
 #include "utils/math/qxmathlib.h"
 #include "utils/opencl/qxopencllib.h"
-#include "utils/opengl/qxopengllib.h"
 #include "utils/file/qxfilelib.h"
-#include "utils/image/qximagelib.h"
+#include "utils/image/imagepreview.h"
 #include "utils/svo/qxsvolib.h"
-#include "utils/texthighlighter.h"
-#include "utils/volumerender.h"
-#include "utils/worker.h"
+#include "utils/misc/texthighlighter.h"
+#include "utils/volume/volumerender.h"
+#include "utils/worker/worker.h"
 
 
 class MainWindow : public QMainWindow

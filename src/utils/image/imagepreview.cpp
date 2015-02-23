@@ -36,7 +36,7 @@ void ImageWorker::initializeOpenCLKernels()
 {
     // Build programs from OpenCL kernel source
     QStringList paths;
-    paths << "cl/image_preview.cl";
+    paths << "kernels/image_preview.cl";
 
     program = context_cl.createProgram(paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -262,8 +262,8 @@ void ImageOpenGLWidget::initializeGL()
 
     // Shader for drawing textures in 2D
     std_2d_tex_program = new QOpenGLShaderProgram(this);
-    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_2d_tex.v.glsl");
-    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_2d_tex.f.glsl");
+    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_2d_tex.v.glsl");
+    std_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/std_2d_tex.f.glsl");
     if (!std_2d_tex_program->link()) qFatal(std_2d_tex_program->log().toStdString().c_str());
 
     if ((std_2d_tex_fragpos = std_2d_tex_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
@@ -273,8 +273,8 @@ void ImageOpenGLWidget::initializeGL()
 
     // Shader for drawing textures in 2D with a highlighted rectangle
     rect_hl_2d_tex_program = new QOpenGLShaderProgram(this);
-    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/rect_hl_2d_tex.v.glsl");
-    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/rect_hl_2d_tex.f.glsl");
+    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/rect_hl_2d_tex.v.glsl");
+    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/rect_hl_2d_tex.f.glsl");
     if (!rect_hl_2d_tex_program->link()) qFatal(rect_hl_2d_tex_program->log().toStdString().c_str());
 
     if ((rect_hl_2d_tex_fragpos = rect_hl_2d_tex_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
@@ -284,8 +284,8 @@ void ImageOpenGLWidget::initializeGL()
 
     // Shader for drawing lines and similar in 3D
     std_3d_col_program = new QOpenGLShaderProgram(this);
-    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_3d_col.v.glsl");
-    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_3d_col.f.glsl");
+    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_3d_col.v.glsl");
+    std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/std_3d_col.f.glsl");
     if (!std_3d_col_program->link()) qFatal(std_3d_col_program->log().toStdString().c_str());
 
     if ((std_3d_col_fragpos = std_3d_col_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
@@ -294,8 +294,8 @@ void ImageOpenGLWidget::initializeGL()
 
     // Shader for drawing lines and similar in 2D
     std_2d_col_program = new QOpenGLShaderProgram(this);
-    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_2d_col.v.glsl");
-    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_2d_col.f.glsl");
+    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_2d_col.v.glsl");
+    std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/std_2d_col.f.glsl");
     if (!std_2d_col_program->link()) qFatal(std_2d_col_program->log().toStdString().c_str());
 
     if ((std_2d_col_fragpos = std_2d_col_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
@@ -304,8 +304,8 @@ void ImageOpenGLWidget::initializeGL()
 
     // Shader for blending two textures
     std_blend_program = new QOpenGLShaderProgram(this);
-    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/std_blend.v.glsl");
-    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/std_blend.f.glsl");
+    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_blend.v.glsl");
+    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/std_blend.f.glsl");
     if (!std_blend_program->link()) qFatal(std_blend_program->log().toStdString().c_str());
 
     if ((std_blend_fragpos = std_blend_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
@@ -316,8 +316,8 @@ void ImageOpenGLWidget::initializeGL()
 
     // Shader for drawing a (reciprocal) unitcell grid
     unitcell_program = new QOpenGLShaderProgram(this);
-    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "glsl/unitcell.v.glsl");
-    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "glsl/unitcell.f.glsl");
+    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/unitcell.v.glsl");
+    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/unitcell.f.glsl");
     if (!unitcell_program->link()) qFatal(unitcell_program->log().toStdString().c_str());
 
     if ((unitcell_fragpos = unitcell_program->attributeLocation("fragpos")) == -1) qFatal("Invalid attribute");
@@ -2063,7 +2063,7 @@ void ImageOpenGLWidget::initializeCL()
     
     // Build programs from OpenCL kernel source
     QStringList paths;
-    paths << "cl/image_preview.cl";
+    paths << "kernels/image_preview.cl";
     paths << "kernels/project.cl";
 
     program = context_cl.createProgram(paths, &err);

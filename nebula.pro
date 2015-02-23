@@ -28,29 +28,29 @@ OTHER_FILES += \
     src/kernels/integrate.cl \
     src/kernels/box_sampler.cl \
     src/kernels/models.cl \
-    src/utils/opengl/glsl/std_2d_col.f.glsl \
-    src/utils/opengl/glsl/std_2d_col.v.glsl \
-    src/utils/opengl/glsl/std_2d_tex.f.glsl \
-    src/utils/opengl/glsl/std_2d_tex.v.glsl \
-    src/utils/opengl/glsl/std_3d_col.f.glsl \
-    src/utils/opengl/glsl/std_3d_col.v.glsl \
-    src/utils/opengl/glsl/std_blend.f.glsl \
-    src/utils/opengl/glsl/std_blend.v.glsl \
-    src/utils/opengl/glsl/unitcell.f.glsl \
-    src/utils/opengl/glsl/unitcell.v.glsl \
-    src/utils/opengl/glsl/rect_hl_2d_tex.f.glsl \
-    src/utils/opengl/glsl/rect_hl_2d_tex.v.glsl \
-    src/utils/opencl/cl/image_preview.cl \
-    src/utils/opencl/cl/mem_functions.cl \
-    src/utils/opencl/cl/parallel_reduce.cl \
-    src/utils/opencl/cl/background_filter.cl
+    src/kernels/image_preview.cl \
+    src/kernels/mem_functions.cl \
+    src/kernels/parallel_reduce.cl \
+    src/kernels/background_filter.cl \
+    src/kernels/line_integral.cl \
+    src/shaders/std_2d_col.f.glsl \
+    src/shaders/std_2d_col.v.glsl \
+    src/shaders/std_2d_tex.f.glsl \
+    src/shaders/std_2d_tex.v.glsl \
+    src/shaders/std_3d_col.f.glsl \
+    src/shaders/std_3d_col.v.glsl \
+    src/shaders/std_blend.f.glsl \
+    src/shaders/std_blend.v.glsl \
+    src/shaders/unitcell.f.glsl \
+    src/shaders/unitcell.v.glsl \
+    src/shaders/rect_hl_2d_tex.f.glsl \
+    src/shaders/rect_hl_2d_tex.v.glsl
 
 HEADERS += \
     src/utils/file/utils/fileformat.h \
     src/utils/file/utils/filetreeview.h \
     src/utils/file/qxfilelib.h \
-    src/utils/image/utils/imagepreview.h \
-    src/utils/image/qximagelib.h \
+    src/utils/image/imagepreview.h \
     src/utils/math/utils/ccmatrix.h \
     src/utils/math/utils/colormatrix.h \
     src/utils/math/utils/matrix.h \
@@ -59,19 +59,16 @@ HEADERS += \
     src/utils/math/qxmathlib.h \
     src/utils/opencl/utils/contextcl.h \
     src/utils/opencl/qxopencllib.h \
-#    src/utils/opengl/utils/openglwindow.h \
-#    src/utils/opengl/utils/sharedcontext.h \
-    src/utils/opengl/utils/transferfunction.h \
-    src/utils/opengl/qxopengllib.h \
+    src/utils/misc/transferfunction.h \
     src/utils/svo/qxsvolib.h \
     src/utils/lib.h \
     src/utils/svo/utils/bricknode.h \
     src/utils/svo/utils/searchnode.h \
     src/utils/svo/utils/sparsevoxeloctree.h \
-    src/utils/marker.h \
-    src/utils/texthighlighter.h \
-    src/utils/volumerender.h \
-    src/utils/worker.h \
+    src/utils/misc/marker.h \
+    src/utils/misc/texthighlighter.h \
+    src/utils/volume/volumerender.h \
+    src/utils/worker/worker.h \
     src/mainwindow.h \
     src/utils/file/utils/framecontainer.h \
     src/utils/file/utils/selection.h
@@ -80,27 +77,21 @@ SOURCES += \
     src/utils/file/utils/fileformat.cpp \
     src/utils/file/utils/filetreeview.cpp \
     src/utils/file/qxfilelib.cpp \
-    src/utils/image/utils/imagepreview.cpp \
-    src/utils/image/qximagelib.cpp \
+    src/utils/image/imagepreview.cpp \
     src/utils/math/qxmathlib.cpp \
     src/utils/opencl/utils/contextcl.cpp \
     src/utils/opencl/qxopencllib.cpp \
-#    src/utils/opengl/utils/openglwindow.cpp \
-#    src/utils/opengl/utils/sharedcontext.cpp \
-    src/utils/opengl/utils/transferfunction.cpp \
-    src/utils/opengl/qxopengllib.cpp \
+    src/utils/misc/transferfunction.cpp \
     src/utils/svo/qxsvolib.cpp \
     src/utils/svo/utils/bricknode.cpp \
     src/utils/svo/utils/searchnode.cpp \
     src/utils/svo/utils/sparsevoxeloctree.cpp \
-    src/utils/marker.cpp \
-    src/utils/texthighlighter.cpp \
-    src/utils/volumerender.cpp \
-    src/utils/worker.cpp \
-    src/main.cpp \
-    src/mainwindow.cpp \
+    src/utils/misc/marker.cpp \
+    src/utils/misc/texthighlighter.cpp \
+    src/utils/volume/volumerender.cpp \
+    src/utils/worker/worker.cpp \
     src/utils/file/utils/framecontainer.cpp \
-    src/utils/file/utils/selection.cpp
+    src/utils/file/utils/selection.cpp \
+    src/main.cpp \
+    src/mainwindow.cpp
 
-DISTFILES += \
-    src/utils/opencl/cl/line_integral.cl

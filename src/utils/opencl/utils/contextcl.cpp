@@ -191,19 +191,6 @@ cl_program OpenCLContext::createProgram(QStringList paths, cl_int * err)
     return QOpenCLCreateProgramWithSource(p_context, paths.size(), sources.data(), lengths.data(), err);
 }
 
-//void OpenCLContext::initializeGL()
-//{
-//    // Initialize OpenGL
-//    QOpenGLFunctions::initializeOpenGLFunctions();
-//    context_cl = new OpenCLContext;
-//    context_cl.initDevices();
-//    context_cl.initSharedContext();
-//    context_cl.initCommandQueue();
-//    context_cl.initResources();
-    
-//    qDebug() << context();
-//}
-
 void OpenCLContext::buildProgram(cl_program * program, const char * options)
 {
     // Build source
@@ -237,7 +224,6 @@ void OpenCLContext::initDevices()
 {
     // Get platforms
     cl_uint num_platform_entries = 64;
-//    cl_platform_id platform[64];
     cl_uint num_platforms;
 
     err = QOpenCLGetPlatformIDs(num_platform_entries, platform, &num_platforms);
@@ -245,15 +231,12 @@ void OpenCLContext::initDevices()
 
     if (num_platforms > 0)
     {
-//        qDebug() << "Found" << num_platforms << "OpenCL platform(s). Using the first one.";
         for (size_t i = 0; i < num_platforms; i++)
         {
             char platform_name[128];
 
             err = QOpenCLGetPlatformInfo(platform[i], CL_PLATFORM_NAME, sizeof(char)*128, platform_name, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//            qDebug() << i << ":" << platform_name;
         }
     }
     else if (num_platforms == 0)
@@ -269,15 +252,12 @@ void OpenCLContext::initDevices()
 
     if (num_devices > 0)
     {
-//        qDebug() << "Found" << num_devices << " OpenCL device(s). Using the first one.";
         for (size_t i = 0; i < num_devices; i++)
         {
             char device_name[128];
 
             err = QOpenCLGetDeviceInfo(device[i], CL_DEVICE_NAME, sizeof(char)*128, device_name, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
-
-//            qDebug() << i << ":" << device_name;
         }
     }
     else if (num_devices == 0)
@@ -339,8 +319,8 @@ void OpenCLContext::initResources()
 {
     // Build program from OpenCL kernel source
     QStringList paths;
-    paths << "cl/mem_functions.cl";
-    paths << "cl/parallel_reduce.cl";
+    paths << "kernels/mem_functions.cl";
+    paths << "kernels/parallel_reduce.cl";
 
     program = createProgram(paths, &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
