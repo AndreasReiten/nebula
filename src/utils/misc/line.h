@@ -2,33 +2,9 @@
 #define LINE_H
 
 #include <QTableView>
-#include <QStandardItemModel>
+#include <QList>
 
 #include "../math/qxmathlib.h"
-#include "../opencl/qxopencllib.h"
-#include "../file/qxfilelib.h"
-#include "../svo/qxsvolib.h"
-
-class LineView : public QTableView
-{
-    Q_OBJECT
-public:
-    explicit LineView(QWidget *parent = 0);
-};
-
-
-class LineModel : public QStandardItemModel
-{
-    Q_OBJECT
-    
-public:
-    explicit LineModel(QWidget *parent = 0);
-    
-    Qt::ItemFlags flags(const QModelIndex& index) const;
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
-    bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);
-    int columnCount(const QModelIndex& parent = QModelIndex()) const;
-};
 
 class Line
 {
@@ -49,7 +25,7 @@ public:
     
     Matrix<double> effectivePosA();
     Matrix<double> effectivePosB();
-    double length();
+    const double length() const;
     double distancePointToLine(Matrix<double> pos);
     const Matrix<double> & positionA() const;
     const Matrix<double> & positionB() const;
@@ -80,32 +56,5 @@ QDebug operator<<(QDebug dbg, const Line &line);
 
 QDataStream &operator<<(QDataStream &out, const Line &line);
 QDataStream &operator>>(QDataStream &in, Line &line);
-
-
-
-class Marker
-{
-public:
-    Marker();
-    Marker(double x, double y, double z);
-    
-    ~Marker();
-    
-    float *getColor();
-    double getDistance(double x, double y, double z);
-    void setTagged(bool value);
-    Matrix<float> &  getVerts();
-    bool getTagged();
-    Matrix<double> &getCenter();
-    
-private:
-    bool isTagged;
-    Matrix<double> xyz;
-    
-    Matrix<float> tagged_color;
-    Matrix<float> untagged_color;
-    
-    Matrix<float> vertices;
-};
 
 #endif // LINE_H

@@ -71,7 +71,9 @@ HEADERS += \
     src/mainwindow.h \
     src/utils/file/utils/framecontainer.h \
     src/utils/file/utils/selection.h \
-    src/utils/misc/line.h
+    src/utils/misc/line.h \
+    src/utils/misc/marker.h \
+    src/utils/misc/linemodel.h
 
 SOURCES += \
     src/utils/file/utils/fileformat.cpp \
@@ -93,5 +95,7 @@ SOURCES += \
     src/utils/file/utils/selection.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
-    src/utils/misc/line.cpp
+    src/utils/misc/line.cpp \
+    src/utils/misc/marker.cpp \
+    src/utils/misc/linemodel.cpp
 

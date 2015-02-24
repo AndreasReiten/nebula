@@ -54,7 +54,7 @@ MainWindow::MainWindow() :
     setCentralWidget(mainWidget);
     readSettings();
     print("[Nebula] Welcome to Nebula!");
-    setWindowTitle(tr("Nebula[*]"));
+    setWindowTitle("Nebula[*]");
     
     // Set start conditions
     setStartConditions();
@@ -284,7 +284,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::saveProject()
 {
-    QString file_name = QFileDialog::getSaveFileName(this, tr("Save project"), working_dir, tr(".qt (*.qt);; All Files (*)"));
+    QString file_name = QFileDialog::getSaveFileName(this, "Save project", working_dir, ".qt (*.qt);; All Files (*)");
     
     if (file_name != "")
     {
@@ -323,7 +323,7 @@ void MainWindow::transferSet()
 
 void MainWindow::loadProject()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Open project"), working_dir, tr(".qt (*.qt);; All Files (*)"));
+    QString file_name = QFileDialog::getOpenFileName(this, "Open project", working_dir, ".qt (*.qt);; All Files (*)");
 
     if (file_name != "")
     {
@@ -370,75 +370,75 @@ void MainWindow::initActions()
 
 
     // Actions
-    exitAct = new QAction(tr("E&xit program"), this);
-    aboutAct = new QAction(tr("&About Nebula"), this);
-    aboutQtAct = new QAction(tr("About &Qt"), this);
-    aboutOpenCLAct = new QAction(tr("About OpenCL"), this);
-    aboutOpenGLAct = new QAction(tr("About OpenGL"), this);
-    openSvoAct = new QAction(QIcon(":/art/open.png"), tr("Open SVO"), this);
-    saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), tr("Save SVO"), this);
-    saveLoadedSvoAct = new QAction(QIcon(":/art/save.png"), tr("Save current SVO"), this);
-    dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), tr("Toggle data structure"), this);
+    exitAct = new QAction("E&xit program", this);
+    aboutAct = new QAction("&About Nebula", this);
+    aboutQtAct = new QAction("About &Qt", this);
+    aboutOpenCLAct = new QAction("About OpenCL", this);
+    aboutOpenGLAct = new QAction("About OpenGL", this);
+    openSvoAct = new QAction(QIcon(":/art/open.png"), "Open SVO", this);
+    saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), "Save SVO", this);
+    saveLoadedSvoAct = new QAction(QIcon(":/art/save.png"), "Save current SVO", this);
+    dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), "Toggle data structure", this);
     dataStructureAct->setCheckable(true);
-    backgroundAct = new QAction(QIcon(":/art/background.png"), tr("Toggle background color"), this);
+    backgroundAct = new QAction(QIcon(":/art/background.png"), "Toggle background color", this);
     backgroundAct->setCheckable(true);
-    projectionAct = new QAction(QIcon(":/art/projection.png"), tr("Toggle projection"), this);
+    projectionAct = new QAction(QIcon(":/art/projection.png"), "Toggle projection", this);
     projectionAct->setCheckable(true);
     projectionAct->setChecked(true);
-    screenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("&Take screenshot"), this);
-    scalebarAct = new QAction(QIcon(":/art/scalebar.png"), tr("&Toggle scalebars"), this);
+    screenshotAct = new QAction(QIcon(":/art/screenshot.png"), "&Take screenshot", this);
+    scalebarAct = new QAction(QIcon(":/art/scalebar.png"), "&Toggle scalebars", this);
     scalebarAct->setCheckable(true);
     scalebarAct->setChecked(true);
-    sliceAct = new QAction(QIcon(":/art/slice.png"), tr("&Toggle slicing"), this);
+    sliceAct = new QAction(QIcon(":/art/slice.png"), "&Toggle slicing", this);
     sliceAct->setCheckable(true);
     sliceAct->setChecked(false);
-    integrate2DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->1D integration"), this);
+    integrate2DAct = new QAction(QIcon(":/art/integrate.png"), "&Toggle 3D->1D integration", this);
     integrate2DAct->setCheckable(true);
-    integrate3DAct = new QAction(QIcon(":/art/integrate.png"), tr("&Toggle 3D->2D integration"), this);
+    integrate3DAct = new QAction(QIcon(":/art/integrate.png"), "&Toggle 3D->2D integration", this);
     integrate3DAct->setCheckable(true);
     integrate3DAct->setChecked(true);
-    logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), tr("&Toggle logarithmic"), this);
+    logIntegrate2DAct = new QAction(QIcon(":/art/log.png"), "&Toggle logarithmic", this);
     logIntegrate2DAct->setCheckable(true);
-    shadowAct = new QAction(QIcon(":/art/shadow.png"), tr("&Toggle shadows"), this);
+    shadowAct = new QAction(QIcon(":/art/shadow.png"), "&Toggle shadows", this);
     shadowAct->setCheckable(true);
-    orthoGridAct = new QAction(QIcon(":/art/grid.png"), tr("&Toggle orthonormal grid"), this);
+    orthoGridAct = new QAction(QIcon(":/art/grid.png"), "&Toggle orthonormal grid", this);
     orthoGridAct->setCheckable(true);
     
-    rulerAct = new QAction(QIcon(":/art/ruler.png"), tr("&Toggle ruler"), this);
+    rulerAct = new QAction(QIcon(":/art/ruler.png"), "&Toggle ruler", this);
     rulerAct->setCheckable(true);
     
-    markAct = new QAction(QIcon(":/art/marker.png"), tr("&Add marker"), this);
-    labFrameAct = new QAction(QIcon(":/art/labframe.png"), tr("&View lab frame"), this);
+    markAct = new QAction(QIcon(":/art/marker.png"), "&Add marker", this);
+    labFrameAct = new QAction(QIcon(":/art/labframe.png"), "&View lab frame", this);
     labFrameAct->setCheckable(true);
     labFrameAct->setChecked(true);
     
-    alignLabXtoSliceXAct = new QAction(QIcon(":/art/align_x.png"), tr("Align lab frame to slice frame x"), this);
-    alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), tr("Align lab frame to slice frame y"), this);
-    alignLabZtoSliceZAct = new QAction(QIcon(":/art/align_z.png"), tr("Align lab frame to slice frame z"), this);
-    alignSliceToLabAct = new QAction(QIcon(":/art/align_slice_frame_to_lab_frame"), tr("Align slice frame to lab frame"), this);
+    alignLabXtoSliceXAct = new QAction(QIcon(":/art/align_x.png"), "Align lab frame to slice frame x", this);
+    alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), "Align lab frame to slice frame y", this);
+    alignLabZtoSliceZAct = new QAction(QIcon(":/art/align_z.png"), "Align lab frame to slice frame z", this);
+    alignSliceToLabAct = new QAction(QIcon(":/art/align_slice_frame_to_lab_frame"), "Align slice frame to lab frame", this);
     
-    rotateRightAct = new QAction(QIcon(":/art/rotate_right.png"), tr("Rotate right"), this);
-    rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), tr("Rotate left"), this);
-    rotateUpAct = new QAction(QIcon(":/art/rotate_up.png"), tr("Rotate up"), this);
-    rotateDownAct = new QAction(QIcon(":/art/rotate_down.png"), tr("Rotate down"), this);
-    rollCW = new QAction(QIcon(":/art/roll_cw.png"), tr("Roll clockwise"), this);
-    rollCCW = new QAction(QIcon(":/art/roll_ccw.png"), tr("Roll counterclockwise"), this);
-    integrateCountsAct = new QAction(QIcon(":/art/integrate_counts.png"), tr("Integrate intensity in the view box"), this);
+    rotateRightAct = new QAction(QIcon(":/art/rotate_right.png"), "Rotate right", this);
+    rotateLeftAct = new QAction(QIcon(":/art/rotate_left.png"), "Rotate left", this);
+    rotateUpAct = new QAction(QIcon(":/art/rotate_up.png"), "Rotate up", this);
+    rotateDownAct = new QAction(QIcon(":/art/rotate_down.png"), "Rotate down", this);
+    rollCW = new QAction(QIcon(":/art/roll_cw.png"), "Roll clockwise", this);
+    rollCCW = new QAction(QIcon(":/art/roll_ccw.png"), "Roll counterclockwise", this);
+    integrateCountsAct = new QAction(QIcon(":/art/integrate_counts.png"), "Integrate intensity in the view box", this);
     integrateCountsAct->setCheckable(true);
     integrateCountsAct->setChecked(false);
     
-    imageScreenshotAct = new QAction(QIcon(":/art/screenshot.png"), tr("Take screenshot"), this);
+    imageScreenshotAct = new QAction(QIcon(":/art/screenshot.png"), "Take screenshot", this);
     imageScreenshotAct->setCheckable(false);
     
-    saveImageAct = new QAction(QIcon(":/art/screenshot.png"), tr("Save image"), this);
+    saveImageAct = new QAction(QIcon(":/art/screenshot.png"), "Save image", this);
     saveImageAct->setCheckable(false);
     
     // Action Tips
-    exitAct->setStatusTip(tr("Exit Nebula"));
-    aboutAct->setStatusTip(tr("About"));
-    aboutQtAct->setStatusTip(tr("About Qt"));
-    aboutOpenCLAct->setStatusTip(tr("About OpenCL"));
-    aboutOpenGLAct->setStatusTip(tr("About OpenGL"));
+    exitAct->setStatusTip("Exit Nebula");
+    aboutAct->setStatusTip("About");
+    aboutQtAct->setStatusTip("About Qt");
+    aboutOpenCLAct->setStatusTip("About OpenCL");
+    aboutOpenGLAct->setStatusTip("About OpenGL");
 
     // Shortcuts
     exitAct->setShortcuts(QKeySequence::Quit);
@@ -446,25 +446,25 @@ void MainWindow::initActions()
 
 void MainWindow::about()
 {
-    QMessageBox::about(this, tr("About Nebula"),
-        tr("<h1>About Nebula</h1> <b>Nebula</b> is primarily a program to reduce, visualize, and analyze diffuse X-ray scattering. <br> <a href=\"www.github.org/\">github.org</a> <h1>Lisencing (GPL v. 2)</h1> This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program; if not, see <a href=\"https://www.gnu.org/licenses/\">http://www.gnu.org/licenses/</a>. Linking Nebula statically or dynamically with other modules is making a combined work based on Nebula. Thus, the terms and conditions of the GNU General Public License cover the whole combination."));
+    QMessageBox::about(this, "About Nebula",
+        "<h1>About Nebula</h1> <b>Nebula</b> is primarily a program to reduce, visualize, and analyze diffuse X-ray scattering. <br> <a href=\"www.github.org/\">github.org</a> <h1>Lisencing (GPL v. 2)</h1> This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program; if not, see <a href=\"https://www.gnu.org/licenses/\">http://www.gnu.org/licenses/</a>. Linking Nebula statically or dynamically with other modules is making a combined work based on Nebula. Thus, the terms and conditions of the GNU General Public License cover the whole combination.");
 }
 
 void MainWindow::aboutOpenCL()
 {
-    QMessageBox::about(this, tr("About OpenCL"),
-        tr("<h1>About OpenCL</h1> <b>OpenCL</b> is the first open, royalty-free standard for cross-platform, parallel programming of modern processors found in personal computers, servers and handheld/embedded devices. OpenCL (Open Computing Language) greatly improves speed and responsiveness for a wide spectrum of applications in numerous market categories from gaming and entertainment to scientific and medical software. <br> <a href=\"https://www.khronos.org/opencl/\">https://www.khronos.org/opencl</a>"));
+    QMessageBox::about(this, "About OpenCL",
+        "<h1>About OpenCL</h1> <b>OpenCL</b> is the first open, royalty-free standard for cross-platform, parallel programming of modern processors found in personal computers, servers and handheld/embedded devices. OpenCL (Open Computing Language) greatly improves speed and responsiveness for a wide spectrum of applications in numerous market categories from gaming and entertainment to scientific and medical software. <br> <a href=\"https://www.khronos.org/opencl/\">https://www.khronos.org/opencl</a>");
 }
 
 void MainWindow::aboutOpenGL()
 {
-    QMessageBox::about(this, tr("About OpenGL"),
-        tr("<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>"));
+    QMessageBox::about(this, "About OpenGL",
+        "<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>");
 }
 
 void MainWindow::loadUnitcellFile()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open file"), "", tr(".par (*.par);; All files (*)"));
+    QString fileName = QFileDialog::getOpenFileName(this, "Open file", "", ".par (*.par);; All files (*)");
 
     if ((fileName != ""))
     {
@@ -600,11 +600,6 @@ void MainWindow::loadUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
-//    if ((tab==0) || (tab==1)) fileHeaderDockOne->show();
-//    else fileHeaderDockOne->hide();
-    
-//    if ((tab==0) || (tab==1)) outputDockWidget->show();
-//    else outputDockWidget->hide();
 }
 
 
@@ -650,7 +645,6 @@ void MainWindow::initConnects()
     connect(this->rulerAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(toggleRuler()));
     connect(this->markAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(addMarker()));
     connect(this->labFrameAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setLabFrame()));
-//    connect(this->rotateCellButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setURotation()));
     connect(this->toggleHklButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(toggleHkl()));
     connect(this->toggleCellButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setUnitcell()));
     connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setHCurrent(int)));
@@ -660,6 +654,8 @@ void MainWindow::initConnects()
     connect(this->helpCellOverlayButton, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setMiniCell(bool)));
     connect(this->rotateCellButton, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setURotation(bool)));
     
+    connect(insertLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(addLine()));
+    connect(removeLinePushButton, SIGNAL(clicked()), lineModel, SLOT(removeMarkedLine()));
     
 //    /* this <-> this */
     connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_a(double)));
@@ -682,7 +678,6 @@ void MainWindow::initConnects()
     /*this <-> misc*/
     connect(fileFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
     connect(fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
-//    connect(imageOpenGLWidget->worker(), SIGNAL(visibilityChanged(bool)), , SLOT());
     connect(imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
     connect(imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
     connect(imageOpenGLWidget->worker(), SIGNAL(progressRangeChanged(int,int)), generalProgressBar, SLOT(setRange(int,int)));
@@ -756,9 +751,9 @@ void MainWindow::setMemoryUsageFormat(QString str)
 
 void MainWindow::saveSvo()
 {
-    if (svo_inprocess.index.size() > 0)
+    if (svo_inprocess.index()->size() > 0)
     {
-        QString file_name = QFileDialog::getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
+        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir, ".svo (*.svo);; All files (*)");
 
         if (file_name != "")
         {
@@ -766,13 +761,13 @@ void MainWindow::saveSvo()
             working_dir = info.absoluteDir().path();
 
             // View settings
-            svo_inprocess.view_mode = 0;
-            svo_inprocess.view_tsf_style = 2;
-            svo_inprocess.view_tsf_texture = 1;
-            svo_inprocess.view_data_min = 0;
-            svo_inprocess.view_data_max = 100;
-            svo_inprocess.view_alpha = 0.05;
-            svo_inprocess.view_brightness = 2.0;
+            svo_inprocess.setViewMode(0);
+            svo_inprocess.setViewTsfStyle(2);
+            svo_inprocess.setViewTsfTexture(1);
+            svo_inprocess.setViewDataMin(0);
+            svo_inprocess.setViewDataMax(100);
+            svo_inprocess.setViewAlpha(0.05);
+            svo_inprocess.setViewBrightness(2.0);
             
             svo_inprocess.save(file_name);
         }
@@ -782,9 +777,9 @@ void MainWindow::saveSvo()
 
 void MainWindow::saveLoadedSvo()
 {
-    if (svo_loaded.getBrickNumber() > 0)
+    if (svo_loaded.brickNumber() > 0)
     {
-        QString file_name = QFileDialog::getSaveFileName(this, tr("Save file"), working_dir, tr(".svo (*.svo);; All files (*)"));
+        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir, ".svo (*.svo);; All files (*)");
 
         if (file_name != "")
         {
@@ -792,13 +787,13 @@ void MainWindow::saveLoadedSvo()
             working_dir = info.absoluteDir().path();
 
             // View settings
-            svo_loaded.view_mode = volumeRenderViewModeComboBox->currentIndex();
-            svo_loaded.view_tsf_style = imagePreviewTsfAlphaComboBox->currentIndex();
-            svo_loaded.view_tsf_texture = volumeRenderTsfComboBox->currentIndex();
-            svo_loaded.view_data_min = volumeRenderDataMinSpinBox->value();
-            svo_loaded.view_data_max = volumeRenderDataMaxSpinBox->value();
-            svo_loaded.view_alpha = volumeRenderAlphaSpinBox->value();
-            svo_loaded.view_brightness = volumeRenderBrightnessSpinBox->value();
+            svo_loaded.setViewMode(volumeRenderViewModeComboBox->currentIndex());
+            svo_loaded.setViewTsfStyle(imagePreviewTsfAlphaComboBox->currentIndex());
+            svo_loaded.setViewTsfTexture(volumeRenderTsfComboBox->currentIndex());
+            svo_loaded.setViewDataMin(volumeRenderDataMinSpinBox->value());
+            svo_loaded.setViewDataMax(volumeRenderDataMaxSpinBox->value());
+            svo_loaded.setViewAlpha(volumeRenderAlphaSpinBox->value());
+            svo_loaded.setViewBrightness(volumeRenderBrightnessSpinBox->value());
             
             svo_loaded.setUB(volumeOpenGLWidget->getUBMatrix());
             svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
@@ -810,7 +805,7 @@ void MainWindow::saveLoadedSvo()
 
 void MainWindow::loadSvo()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Open file"), working_dir, tr(".svo (*.svo);; All files (*)"));
+    QString file_name = QFileDialog::getOpenFileName(this, "Open file", working_dir, ".svo (*.svo);; All files (*)");
 
     if ((file_name != ""))
     {
@@ -819,18 +814,19 @@ void MainWindow::loadSvo()
 
         svo_loaded.open(file_name);
         volumeOpenGLWidget->setSvo(&(svo_loaded));
+        lineModel->setLines(svo_loaded.lines());
         
-        volumeRenderViewModeComboBox->setCurrentIndex(svo_loaded.view_mode);
-        imagePreviewTsfAlphaComboBox->setCurrentIndex(svo_loaded.view_tsf_style);
-        volumeRenderTsfComboBox->setCurrentIndex(svo_loaded.view_tsf_texture);
-        volumeRenderAlphaSpinBox->setValue(svo_loaded.view_alpha);
-        volumeRenderBrightnessSpinBox->setValue(svo_loaded.view_brightness);
-        volumeRenderDataMinSpinBox->setValue(svo_loaded.view_data_min);
-        volumeRenderDataMaxSpinBox->setValue(svo_loaded.view_data_max);
+        volumeRenderViewModeComboBox->setCurrentIndex(svo_loaded.viewMode());
+        imagePreviewTsfAlphaComboBox->setCurrentIndex(svo_loaded.viewTsfStyle());
+        volumeRenderTsfComboBox->setCurrentIndex(svo_loaded.viewTsfTexture());
+        volumeRenderAlphaSpinBox->setValue(svo_loaded.viewAlpha());
+        volumeRenderBrightnessSpinBox->setValue(svo_loaded.viewBrightness());
+        volumeRenderDataMinSpinBox->setValue(svo_loaded.viewDataMin());
+        volumeRenderDataMaxSpinBox->setValue(svo_loaded.viewDataMax());
         
         UBMatrix<double> UB;
         
-        UB = svo_loaded.getUB();
+        UB = svo_loaded.UB();
         
         if (UB.size() == 3*3)
         {
@@ -846,11 +842,11 @@ void MainWindow::loadSvo()
         }
         
         svoHeaderEdit->setDocumentTitle(file_name);
-        svoHeaderEdit->setPlainText(svo_loaded.getMetaData());
+        svoHeaderEdit->setPlainText(svo_loaded.metaData());
 
         print("\n["+QString(this->metaObject()->className())+"] Loaded file: \""+file_name+"\"");
         
-        setWindowTitle(tr("Nebula[*] (")+file_name+")");
+        setWindowTitle("Nebula[*] ("+file_name+")");
     }
 }
 
@@ -859,8 +855,8 @@ void MainWindow::loadSvo()
 void MainWindow::initMenus()
 {
     mainMenu = new QMenuBar;
-    viewMenu = new QMenu(tr("V&iew"));
-    helpMenu = new QMenu(tr("&Help"));
+    viewMenu = new QMenu("V&iew");
+    helpMenu = new QMenu("&Help");
 
     helpMenu->addAction(aboutAct);
     helpMenu->addAction(aboutQtAct);
@@ -911,7 +907,7 @@ void MainWindow::initGUI()
         headerHighlighterOne = new Highlighter(fileHeaderEditOne->document());
         fileHeaderEditOne->setReadOnly(true);
 
-        fileHeaderDockOne = new QDockWidget(tr("Frame header info"), this);
+        fileHeaderDockOne = new QDockWidget("Frame header info", this);
         fileHeaderDockOne->setWidget(fileHeaderEditOne);
 
         browserMainWindow = new QMainWindow;
@@ -936,7 +932,7 @@ void MainWindow::initGUI()
 
 
         // Toolbar
-        viewToolBar = new QToolBar(tr("3D view"));
+        viewToolBar = new QToolBar("3D view");
         viewToolBar->addAction(openSvoAct);
         viewToolBar->addAction(saveLoadedSvoAct);
         
@@ -997,21 +993,21 @@ void MainWindow::initGUI()
         imageMainWindow = new QMainWindow;
         imageMainWindow->setAnimated(false);
 
-        saveProjectAction = new QAction(QIcon(":/art/save.png"), tr("Save project"), this);
-        loadProjectAction = new QAction(QIcon(":/art/open.png"), tr("Load project"), this);
+        saveProjectAction = new QAction(QIcon(":/art/save.png"), "Save project", this);
+        loadProjectAction = new QAction(QIcon(":/art/open.png"), "Load project", this);
 
-        squareAreaSelectAlphaAction = new QAction(QIcon(":/art/select.png"), tr("Toggle pixel selection"), this);
+        squareAreaSelectAlphaAction = new QAction(QIcon(":/art/select.png"), "Toggle pixel selection", this);
         squareAreaSelectAlphaAction->setCheckable(true);
         squareAreaSelectAlphaAction->setChecked(false);
 
-        squareAreaSelectBetaAction = new QAction(QIcon(":/art/select2.png"), tr("Toggle background selection"), this);
+        squareAreaSelectBetaAction = new QAction(QIcon(":/art/select2.png"), "Toggle background selection", this);
         squareAreaSelectBetaAction->setCheckable(true);
         squareAreaSelectBetaAction->setChecked(false);
 
-        centerImageAction = new QAction(QIcon(":/art/center.png"), tr("Center image"), this);
+        centerImageAction = new QAction(QIcon(":/art/center.png"), "Center image", this);
         centerImageAction->setCheckable(false);
 
-        showWeightCenterAction = new QAction(QIcon(":/art/weight_center.png"), tr("Toggle weight center visual"), this);
+        showWeightCenterAction = new QAction(QIcon(":/art/weight_center.png"), "Toggle weight center visual", this);
         showWeightCenterAction->setCheckable(true);
         showWeightCenterAction->setChecked(false);
         
@@ -1294,7 +1290,7 @@ void MainWindow::initGUI()
         qualitySlider->setToolTip("Set texture resolution");
         qualitySlider->setTickPosition(QSlider::NoTicks);
 
-        graphicsDockWidget = new QDockWidget(tr("Display settings"), this);
+        graphicsDockWidget = new QDockWidget("Display settings", this);
         graphicsWidget = new QWidget;
 
         QGridLayout * gridLayout = new QGridLayout;
@@ -1324,7 +1320,7 @@ void MainWindow::initGUI()
     
     /* Unitcell dock widget */
     {
-        unitCellDockWidget = new QDockWidget(tr("UB matrix"), this);
+        unitCellDockWidget = new QDockWidget("UB matrix", this);
         unitCellWidget = new QWidget;
         
         // Real space unit cell
@@ -1445,7 +1441,7 @@ void MainWindow::initGUI()
     
     /* SVO metadata text edit */
     {
-        svoHeaderDock = new QDockWidget(tr("File info/notes"), this);
+        svoHeaderDock = new QDockWidget("File info/notes", this);
         svoHeaderEdit = new QPlainTextEdit;
         
         svoHeaderDock->setWidget(svoHeaderEdit);
@@ -1518,7 +1514,7 @@ void MainWindow::initGUI()
         
         fileControlsWidget->setLayout(gridLayout);
         
-        fileDockWidget = new QDockWidget(tr("Reconstruction corrections"), this);
+        fileDockWidget = new QDockWidget("Reconstruction corrections", this);
         fileDockWidget->setWidget(fileControlsWidget);
         fileDockWidget->setMaximumHeight(fileControlsWidget->minimumSizeHint().height()*1.1);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
@@ -1591,7 +1587,7 @@ void MainWindow::initGUI()
         headerHighlighterTwo = new Highlighter(fileHeaderEditTwo->document());
         fileHeaderEditTwo->setReadOnly(true);
 
-        fileHeaderDockTwo = new QDockWidget(tr("Frame header info"), this);
+        fileHeaderDockTwo = new QDockWidget("Frame header info", this);
         fileHeaderDockTwo->setWidget(fileHeaderEditTwo);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockTwo);
@@ -1601,7 +1597,7 @@ void MainWindow::initGUI()
     
     /* Function dock widget */
     {
-        functionToggleButton = new QPushButton(tr("Toggle"));
+        functionToggleButton = new QPushButton("Toggle");
         funcParamASpinBox = new QDoubleSpinBox;
         funcParamASpinBox->setDecimals(3);
         funcParamASpinBox->setRange(0, 100);
@@ -1630,7 +1626,7 @@ void MainWindow::initGUI()
         funcParamDSpinBox->setAccelerated(1);
         funcParamDSpinBox->setPrefix("Var 4: ");
 
-        functionDockWidget = new QDockWidget(tr("Model settings"), this);
+        functionDockWidget = new QDockWidget("Model settings", this);
         functionWidget = new QWidget;
 
         QGridLayout * gridLayout = new QGridLayout;
@@ -1652,11 +1648,37 @@ void MainWindow::initGUI()
         functionDockWidget->hide();
     }
 
-
+    /* Line dock widget */
+    {
+        lineModel = new LineModel();
+        
+        lineView = new QTableView;
+        lineView->setModel(lineModel);
+        
+        insertLinePushButton = new QPushButton("Insert");
+        removeLinePushButton = new QPushButton("Remove");
+        
+        QGridLayout * gridLayout = new QGridLayout;
+        gridLayout->setHorizontalSpacing(5);
+        gridLayout->setVerticalSpacing(0);
+        gridLayout->setContentsMargins(5,5,5,5); 
+        gridLayout->setRowStretch(4,1);
+        gridLayout->addWidget(lineView,0,0,1,4);
+        gridLayout->addWidget(insertLinePushButton,1,0,1,2);
+        gridLayout->addWidget(removeLinePushButton,1,2,1,2);
+        
+        lineWidget = new QWidget;
+        lineWidget->setLayout(gridLayout);
+        
+        lineDockWidget = new QDockWidget("Lines");
+        lineDockWidget->setWidget(lineWidget);
+        viewMenu->addAction(lineDockWidget->toggleViewAction());
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, lineDockWidget);
+    }
 
     /* Output Widget */
     {
-        outputDockWidget = new QDockWidget(tr("Message log"), this);
+        outputDockWidget = new QDockWidget("Message log", this);
         botWidget = new QWidget;
 
         // Text output
@@ -1687,9 +1709,9 @@ void MainWindow::initGUI()
     tabWidget = new QTabWidget;
 
     // Add tabs
-    tabWidget->addTab(browserMainWindow, tr("Browse"));
-    tabWidget->addTab(imageMainWindow, tr("Reconstruct"));
-    tabWidget->addTab(volumeRenderMainWindow, tr("Visualize"));
+    tabWidget->addTab(browserMainWindow, "Browse");
+    tabWidget->addTab(imageMainWindow, "Reconstruct");
+    tabWidget->addTab(volumeRenderMainWindow, "Visualize");
     tabWidget->addTab(outputPlainTextEdit, "Text output");
 
     // Put into main layout
@@ -1700,6 +1722,11 @@ void MainWindow::initGUI()
     
     mainWidget = new QWidget(this);
     mainWidget->setLayout(mainLayout);
+
+    // Tabify docks
+    volumeRenderMainWindow->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
+    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, svoHeaderDock);
+    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, lineDockWidget);
     
 }
 
@@ -1759,8 +1786,8 @@ void MainWindow::takeImageScreenshotFunction()
     QDateTime dateTime = dateTime.currentDateTime();
     QString initialPath = screenshot_dir + QString("/screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
 
-    QString file_name = QFileDialog::getSaveFileName(this, tr("Save as"), initialPath,
-                                                tr("%1 files (*.%2);;All files (*)")
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as", initialPath,
+                                                QString("%1 files (*.%2);;All files (*)")
                                                 .arg(format.toUpper())
                                                 .arg(format));
     if (file_name !="")
@@ -1779,8 +1806,8 @@ void MainWindow::saveImageFunction()
     QDateTime dateTime = dateTime.currentDateTime();
     QString initialPath = screenshot_dir + QString("/image_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
 
-    QString file_name = QFileDialog::getSaveFileName(this, tr("Save as"), initialPath,
-                                                tr("%1 files (*.%2);;All files (*)")
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as", initialPath,
+                                                QString("%1 files (*.%2);;All files (*)")
                                                 .arg(format.toUpper())
                                                 .arg(format));
     if (file_name !="")
@@ -1833,8 +1860,8 @@ void MainWindow::takeVolumeScreenshot()
     QDateTime dateTime = dateTime.currentDateTime();
     QString initialPath = screenshot_dir + QString("/screenshot_"+dateTime.toString("yyyy_MM_dd_hh_mm_ss")) +"."+ format;
 
-    QString file_name = QFileDialog::getSaveFileName(this, tr("Save as"), initialPath,
-                                                tr("%1 files (*.%2);;All files (*)")
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as", initialPath,
+                                                QString("%1 files (*.%2);;All files (*)")
                                                 .arg(format.toUpper())
                                                 .arg(format));
     if (file_name !="")

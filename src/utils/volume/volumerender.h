@@ -11,6 +11,7 @@
 #include "../file/qxfilelib.h"
 #include "../svo/qxsvolib.h"
 #include "../misc/line.h"
+#include "../misc/marker.h"
 
 class VolumeWorker : public QObject, protected OpenCLFunctions
 {
@@ -52,6 +53,7 @@ signals:
     void changedMessageString(QString str);
 
 public slots:
+    void addLine();
     void saveLineIntegralAsImage(QString path);
     void saveLineIntegralAsText(QString path);
     void toggleHkl();
@@ -136,6 +138,8 @@ public slots:
     void setUB_gamma(double value);
     
 private:
+    QList<Line> * lines;
+    
     QThread * workerThread;
     VolumeWorker * volumeWorker;
 

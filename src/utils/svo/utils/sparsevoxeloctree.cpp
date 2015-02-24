@@ -13,16 +13,16 @@
 
 SparseVoxelOctree::SparseVoxelOctree()
 {
-    this->filesize = 0;
-    this->levels = 2;
-    this->brick_inner_dimension = 7;
-    this->brick_outer_dimension = 8;
-    this->brick_pool_power = 7;
-    this->extent.reserve(1,8);
-    this->version_major = 0;
-    this->version_minor = 4;
-    this->minmax.reserve(1,2);
-    UB.setIdentity(3);
+    this->p_filesize = 0;
+    this->p_levels = 2;
+    this->p_brick_inner_dimension = 7;
+    this->p_brick_outer_dimension = 8;
+    this->p_brick_pool_power = 7;
+    this->p_extent.reserve(1,8);
+    this->p_version_major = 0;
+    this->p_version_minor = 4;
+    this->p_minmax.reserve(1,2);
+    p_ub.setIdentity(3);
 };
 
 SparseVoxelOctree::~SparseVoxelOctree()
@@ -34,22 +34,22 @@ void SparseVoxelOctree::print()
     std::stringstream ss;
     ss << std::endl;
     ss << "____ SparseVoxelOctree ____" << std::endl;
-    ss << "Brick inner dimension:   "<< brick_inner_dimension << std::endl;
-    ss << "Brick outer dimension:   "<< brick_outer_dimension << std::endl;
-    ss << "Brick pool power:        "<< brick_pool_power << std::endl;
-    ss << "Levels:                  "<< levels << std::endl;
-    ss << "File version:            "<< version_major << "." << version_minor << std::endl;
-    ss << "Index elements:          "<< index.size() << std::endl;
-    ss << "Brick elements:          "<< brick.size() << std::endl;
-    ss << "Pool size:               "<< pool.size() << std::endl;
-    ss << "Data min:                "<< minmax[0] << std::endl;
-    ss << "Data max:                "<< minmax[1] << std::endl;
+    ss << "Brick inner dimension:   "<< p_brick_inner_dimension << std::endl;
+    ss << "Brick outer dimension:   "<< p_brick_outer_dimension << std::endl;
+    ss << "Brick pool power:        "<< p_brick_pool_power << std::endl;
+    ss << "Levels:                  "<< p_levels << std::endl;
+    ss << "File version:            "<< p_version_major << "." << p_version_minor << std::endl;
+    ss << "Index elements:          "<< p_index.size() << std::endl;
+    ss << "Brick elements:          "<< p_brick.size() << std::endl;
+    ss << "Pool size:               "<< p_pool.size() << std::endl;
+    ss << "Data min:                "<< p_minmax[0] << std::endl;
+    ss << "Data max:                "<< p_minmax[1] << std::endl;
     
-    ss << "View data min:           "<< view_data_min << std::endl;
-    ss << "View data max:           "<< view_data_max << std::endl;
-    ss << "View alpha:              "<< view_alpha << std::endl;
-    ss << "View brightness:         "<< view_brightness << std::endl;
-    ss << "View mode:               "<< view_mode << std::endl;
+    ss << "View data min:           "<< p_view_data_min << std::endl;
+    ss << "View data max:           "<< p_view_data_max << std::endl;
+    ss << "View alpha:              "<< p_view_alpha << std::endl;
+    ss << "View brightness:         "<< p_view_brightness << std::endl;
+    ss << "View mode:               "<< p_view_mode << std::endl;
 //    ss << "Metadata:                \n"<< metadata.toStdString() << std::endl;
 //    ss << "UB:" << UB << std::endl;
 //    ss << "Extent:" << extent << std::endl;
@@ -62,46 +62,46 @@ void SparseVoxelOctree::print()
 
 void SparseVoxelOctree::setExtent(float Q)
 {
-    this->extent[0] = -Q;
-    this->extent[1] = Q;
-    this->extent[2] = -Q;
-    this->extent[3] = Q;
-    this->extent[4] = -Q;
-    this->extent[5] = Q;
-    this->extent[6] = 1;
-    this->extent[7] = 1;
+    this->p_extent[0] = -Q;
+    this->p_extent[1] = Q;
+    this->p_extent[2] = -Q;
+    this->p_extent[3] = Q;
+    this->p_extent[4] = -Q;
+    this->p_extent[5] = Q;
+    this->p_extent[6] = 1;
+    this->p_extent[7] = 1;
 }
 
-Matrix<double> * SparseVoxelOctree::getExtent()
+Matrix<double> SparseVoxelOctree::extent()
 {
-    return &extent;
+    return p_extent;
 }
-Matrix<double> * SparseVoxelOctree::getMinMax()
+Matrix<double> SparseVoxelOctree::minMax()
 {
-    return &minmax;
+    return p_minmax;
 }
 
 void SparseVoxelOctree::setLevels(int value)
 {
-    this->levels = value;
+    this->p_levels = value;
 }
 
 void SparseVoxelOctree::set(unsigned int levels, unsigned int brick_inner_dimension, unsigned int brick_outer_dimension, unsigned int brick_pool_power)
 {
-    this->levels = levels;
-    this->brick_inner_dimension = brick_inner_dimension;
-    this->brick_outer_dimension = brick_outer_dimension;
-    this->brick_pool_power = brick_pool_power;
+    this->p_levels = levels;
+    this->p_brick_inner_dimension = brick_inner_dimension;
+    this->p_brick_outer_dimension = brick_outer_dimension;
+    this->p_brick_pool_power = brick_pool_power;
 }
 
 void SparseVoxelOctree::setMetaData(QString text)
 {
-    metadata = text;    
+    p_metadata = text;    
 }
 
-QString SparseVoxelOctree::getMetaData()
+QString SparseVoxelOctree::metaData()
 {
-    return metadata;
+    return p_metadata;
 }
 
 void SparseVoxelOctree::save(QString path)
@@ -115,17 +115,17 @@ void SparseVoxelOctree::save(QString path)
             QDataStream out(&file);
             out << (qint64) 0;
             out << (qint64) 4;
-            out << brick_outer_dimension;
-            out << brick_inner_dimension;
-            out << brick_pool_power;
-            out << levels;
-            out << minmax.toQVector();
-            out << extent.toQVector();
-            out << pool.toQVector();
-            out << index.toQVector();
-            out << brick.toQVector();
-            out << UB.toQVector();
-            out << metadata;
+            out << p_brick_outer_dimension;
+            out << p_brick_inner_dimension;
+            out << p_brick_pool_power;
+            out << p_levels;
+            out << p_minmax;
+            out << p_extent;
+            out << p_pool;
+            out << p_index;
+            out << p_brick;
+            out << p_ub;
+            out << p_metadata;
             
             // v 0.4
             // Creation settings
@@ -140,13 +140,16 @@ void SparseVoxelOctree::save(QString path)
             out << creation_file_paths;
             
             // View settings
-            out << view_mode;
-            out << view_tsf_style;
-            out << view_tsf_texture;
-            out << view_data_min;
-            out << view_data_max;
-            out << view_alpha;
-            out << view_brightness;
+            out << p_view_mode;
+            out << p_view_tsf_style;
+            out << p_view_tsf_texture;
+            out << p_view_data_min;
+            out << p_view_data_max;
+            out << p_view_alpha;
+            out << p_view_brightness;
+            
+            // v 0.5
+            out << p_lines;
             
             file.close();
         }
@@ -157,61 +160,44 @@ void SparseVoxelOctree::save(QString path)
 
 void SparseVoxelOctree::setMax(float value)
 {
-    minmax[1] = value;
+    p_minmax[1] = value;
 }
 
 void SparseVoxelOctree::setMin(float value)
 {
-    minmax[0] = value;
+    p_minmax[0] = value;
 }
 
 void SparseVoxelOctree::setUB(UBMatrix<double> mat)
 {
-    UB = mat;
+    p_ub = mat;
 }
 
 void SparseVoxelOctree::open(QString path)
 {
-    // Disabled chunking and compression due to problems under Windows.
-    // TODO: The svo objects should have qdatastream << and >> operators
     if ((path != ""))
     {
-        // v 0.3
-        QVector<double> qvec_extent;
-        QVector<float> qvec_pool;
-        QVector<unsigned int> qvec_index;
-        QVector<unsigned int> qvec_brick;
-        QVector<double> qvec_ub;
-        QVector<double> qvec_minmax;
-
         QFile file(path);
         if (file.open(QIODevice::ReadOnly))
         {
             QDataStream in(&file);
             
-            in >> version_major;
-            in >> version_minor;
-            in >> brick_outer_dimension;
-            in >> brick_inner_dimension;
-            in >> brick_pool_power;
-            in >> levels;
-            in >> qvec_minmax;
-            in >> qvec_extent;
-            in >> qvec_pool;
-            in >> qvec_index;
-            in >> qvec_brick;
-            in >> qvec_ub;
-            in >> metadata;
+            in >> p_version_major;
+            in >> p_version_minor;
+            in >> p_brick_outer_dimension;
+            in >> p_brick_inner_dimension;
+            in >> p_brick_pool_power;
+            in >> p_levels;
+            in >> p_minmax;
+            in >> p_extent;
+            in >> p_pool;
+            in >> p_index;
+            in >> p_brick;
+            in >> p_ub;
+            in >> p_metadata;
     
-            minmax.setDeep(1, qvec_minmax.size(), qvec_minmax.data());
-            extent.setDeep(1, qvec_extent.size(), qvec_extent.data());
-            pool.setDeep(1, qvec_pool.size(), qvec_pool.data());
-            index.setDeep(1, qvec_index.size(), qvec_index.data());
-            brick.setDeep(1, qvec_brick.size(), qvec_brick.data());
-            UB.setDeep(3, 3, qvec_ub.data());
-            
             // v 0.4
-            if ((version_major >= 0) && (version_minor >= 4))
+            if ((p_version_major >= 0) && (p_version_minor >= 4))
             {
                 // Creation settings
                 in >> creation_date;
@@ -225,13 +211,13 @@ void SparseVoxelOctree::open(QString path)
                 in >> creation_file_paths;
                 
                 // View settings
-                in >> view_mode;
-                in >> view_tsf_style;
-                in >> view_tsf_texture;
-                in >> view_data_min;
-                in >> view_data_max;
-                in >> view_alpha;
-                in >> view_brightness;
+                in >> p_view_mode;
+                in >> p_view_tsf_style;
+                in >> p_view_tsf_texture;
+                in >> p_view_data_min;
+                in >> p_view_data_max;
+                in >> p_view_alpha;
+                in >> p_view_brightness;
             }
             else 
             {
@@ -246,13 +232,19 @@ void SparseVoxelOctree::open(QString path)
                 creation_correction_phi = -1;
                 
                 // View settings
-                view_mode = 0;
-                view_tsf_style = 2;
-                view_tsf_texture = 1;
-                view_data_min = 0;
-                view_data_max = minmax.at(1);
-                view_alpha = 0.05;
-                view_brightness = 2.0;
+                p_view_mode = 0;
+                p_view_tsf_style = 2;
+                p_view_tsf_texture = 1;
+                p_view_data_min = 0;
+                p_view_data_max = p_minmax.at(1);
+                p_view_alpha = 0.05;
+                p_view_brightness = 2.0;
+            }
+            
+            // v 0.5
+            if ((p_version_major >= 0) && (p_version_minor >= 5))
+            {
+                in >> p_lines;
             }
             
             file.close();
@@ -260,36 +252,109 @@ void SparseVoxelOctree::open(QString path)
     }
     this->print();
 }
-unsigned int SparseVoxelOctree::getLevels()
+unsigned int SparseVoxelOctree::levels()
 {
-    return levels;
+    return p_levels;
 }
 
 
-UBMatrix<double> SparseVoxelOctree::getUB()
+UBMatrix<double> SparseVoxelOctree::UB()
 {
-    return UB;
+    return p_ub;
 }
 
-unsigned int SparseVoxelOctree::getBrickPoolPower()
+unsigned int SparseVoxelOctree::brickPoolPower()
 {
-    return brick_pool_power;
+    return p_brick_pool_power;
 }
-unsigned int SparseVoxelOctree::getBrickInnerDimension()
+unsigned int SparseVoxelOctree::brickInnerDimension()
 {
-    return brick_inner_dimension;
+    return p_brick_inner_dimension;
 }
-unsigned int SparseVoxelOctree::getBrickOuterDimension()
+unsigned int SparseVoxelOctree::brickOuterDimension()
 {
-    return brick_outer_dimension;
-}
-
-unsigned int SparseVoxelOctree::getBrickNumber()
-{
-    return pool.size()/(brick_outer_dimension*brick_outer_dimension*brick_outer_dimension);
+    return p_brick_outer_dimension;
 }
 
-quint64 SparseVoxelOctree::getBytes()
+unsigned int SparseVoxelOctree::brickNumber()
 {
-    return brick.bytes() + index.bytes() + pool.bytes();
+    return p_pool.size()/(p_brick_outer_dimension*p_brick_outer_dimension*p_brick_outer_dimension);
+}
+
+quint64 SparseVoxelOctree::bytes()
+{
+    return p_brick.bytes() + p_index.bytes() + p_pool.bytes();
+}
+
+QList<Line> * SparseVoxelOctree::lines()
+{
+    return &p_lines;
+}
+Matrix<unsigned int> * SparseVoxelOctree::index()
+{
+    return &p_index;
+}
+Matrix<unsigned int> * SparseVoxelOctree::brick()
+{
+    return &p_brick;
+}
+Matrix<float> * SparseVoxelOctree::pool()
+{
+    return &p_pool;
+}
+qreal SparseVoxelOctree::viewMode()
+{
+    return p_view_mode;
+}
+qreal SparseVoxelOctree::viewTsfStyle()
+{
+    return p_view_tsf_style;
+}
+qreal SparseVoxelOctree::viewTsfTexture()
+{
+    return p_view_tsf_texture;
+}
+qreal SparseVoxelOctree::viewDataMin()
+{
+    return p_view_data_min;
+}
+qreal SparseVoxelOctree::viewDataMax()
+{
+    return p_view_data_max;
+}
+qreal SparseVoxelOctree::viewAlpha()
+{
+    return p_view_alpha;
+}
+qreal SparseVoxelOctree::viewBrightness()
+{
+    return p_view_brightness;
+}
+void SparseVoxelOctree::setViewMode(qreal value)
+{
+     p_view_mode = value;
+}
+void SparseVoxelOctree::setViewTsfStyle(qreal value)
+{
+     p_view_tsf_style = value;
+}
+void SparseVoxelOctree::setViewTsfTexture(qreal value)
+{
+     p_view_tsf_texture = value;
+}
+void SparseVoxelOctree::setViewDataMin(qreal value)
+{
+     p_view_data_min = value;
+}
+void SparseVoxelOctree::setViewDataMax(qreal value)
+{
+     p_view_data_max = value;
+}
+void SparseVoxelOctree::setViewAlpha(qreal value)
+{
+     p_view_alpha = value;
+}
+void SparseVoxelOctree::setViewBrightness(qreal value)
+{
+     p_view_brightness = value;
 }

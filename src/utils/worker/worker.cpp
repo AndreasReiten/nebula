@@ -1086,11 +1086,11 @@ void VoxelizeWorker::process()
         emit changedRangeGenericProcess(0, 100);
         emit showProgressBar(true);
 
-        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Generating Sparse Voxel Octree "+QString::number(svo->getLevels())+" levels deep.");
+        emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Generating Sparse Voxel Octree "+QString::number(svo->levels())+" levels deep.");
         emit changedMessageString("\n["+QString(this->metaObject()->className())+"] The source data is "+QString::number(reduced_pixels->bytes()/1000000.0, 'g', 3)+" MB");
 
         // The number of data points in a single brick
-        size_t n_points_brick = svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension();
+        size_t n_points_brick = svo->brickOuterDimension()*svo->brickOuterDimension()*svo->brickOuterDimension();
 
         // Save the extent of the volume
         svo->setExtent(suggested_q);
@@ -1100,12 +1100,12 @@ void VoxelizeWorker::process()
 
         // Prepare the brick pool in which we will store bricks
         Matrix<int> pool_dimension(1, 4, 0);
-        pool_dimension[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-        pool_dimension[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-        pool_dimension[2] = (BRICK_POOL_SOFT_MAX_BYTES/(sizeof(cl_float)*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower()));
+        pool_dimension[0] = (1 << svo->brickPoolPower())*svo->brickOuterDimension();
+        pool_dimension[1] = (1 << svo->brickPoolPower())*svo->brickOuterDimension();
+        pool_dimension[2] = (BRICK_POOL_SOFT_MAX_BYTES/(sizeof(cl_float)*svo->brickOuterDimension()*svo->brickOuterDimension()*svo->brickOuterDimension())) / ((1 << svo->brickPoolPower())*(1 << svo->brickPoolPower()));
 
         if (pool_dimension[2] < 1) pool_dimension[2] = 1;
-        pool_dimension[2] *= svo->getBrickOuterDimension();
+        pool_dimension[2] *= svo->brickOuterDimension();
 
         size_t BRICK_POOL_HARD_MAX_BYTES = pool_dimension[0]*pool_dimension[1]*pool_dimension[2]*sizeof(float);
 
@@ -1125,7 +1125,7 @@ void VoxelizeWorker::process()
 
         cl_mem pool_cluster_cl = QOpenCLCreateBuffer(context_cl.context(),
             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-            MAX_NODES_PER_CLUSTER*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(float),
+            MAX_NODES_PER_CLUSTER*svo->brickOuterDimension()*svo->brickOuterDimension()*svo->brickOuterDimension()*sizeof(float),
             NULL,
             &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1183,7 +1183,7 @@ void VoxelizeWorker::process()
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
         // Place all data points in an octree data structure from which to construct the bricks in the brick pool
-        SearchNode root(NULL, svo->getExtent()->data());
+        SearchNode root(NULL, svo->extent().data());
         
 //        qDebug() << "Voxelize size" << reduced_pixels->size();
         
@@ -1225,18 +1225,18 @@ void VoxelizeWorker::process()
             
             
             // Cycle through the levels
-            for (size_t lvl = 0; lvl < svo->getLevels(); lvl++)
+            for (size_t lvl = 0; lvl < svo->levels(); lvl++)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+")");
-                emit changedFormatGenericProgress("Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->getBrickInnerDimension() * (1 <<  lvl))+"): %p%");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->brickInnerDimension() * (1 <<  lvl))+")");
+                emit changedFormatGenericProgress("Constructing Level "+QString::number(lvl+1)+" (dim: "+QString::number(svo->brickInnerDimension() * (1 <<  lvl))+"): %p%");
 
                 timer.start();
 
                 // Find the correct range search radius, which will be smaller for each level until it approaches the distance between samples in the data set
-                float search_radius = sqrt(3.0f)*0.5f*((svo->getExtent()->at(1)-svo->getExtent()->at(0))/ (svo->getBrickInnerDimension()*(1 << lvl)));
+                float search_radius = sqrt(3.0f)*0.5f*((svo->extent().at(1)-svo->extent().at(0))/ (svo->brickInnerDimension()*(1 << lvl)));
                 if (search_radius < suggested_search_radius_high) search_radius = suggested_search_radius_high;
 
-                double tmp = (svo->getExtent()->at(1) - svo->getExtent()->at(0)) / (1 << lvl);
+                double tmp = (svo->extent().at(1) - svo->extent().at(0)) / (1 << lvl);
 
                 size_t n_nodes_treated = 0;
 
@@ -1271,12 +1271,12 @@ void VoxelizeWorker::process()
                         // Based on brick id calculate the brick extent 
                         unsigned int * brick_id = gpuHelpOctree[currentId].getBrickId();
                         
-                        brick_extent[n_nodes_treated_in_cluster*6 + 0] = svo->getExtent()->at(0) + tmp*brick_id[0];
-                        brick_extent[n_nodes_treated_in_cluster*6 + 1] = svo->getExtent()->at(0) + tmp*(brick_id[0]+1);
-                        brick_extent[n_nodes_treated_in_cluster*6 + 2] = svo->getExtent()->at(2) + tmp*brick_id[1];
-                        brick_extent[n_nodes_treated_in_cluster*6 + 3] = svo->getExtent()->at(2) + tmp*(brick_id[1]+1);
-                        brick_extent[n_nodes_treated_in_cluster*6 + 4] = svo->getExtent()->at(4) + tmp*brick_id[2];
-                        brick_extent[n_nodes_treated_in_cluster*6 + 5] = svo->getExtent()->at(4) + tmp*(brick_id[2]+1);
+                        brick_extent[n_nodes_treated_in_cluster*6 + 0] = svo->extent().at(0) + tmp*brick_id[0];
+                        brick_extent[n_nodes_treated_in_cluster*6 + 1] = svo->extent().at(0) + tmp*(brick_id[0]+1);
+                        brick_extent[n_nodes_treated_in_cluster*6 + 2] = svo->extent().at(2) + tmp*brick_id[1];
+                        brick_extent[n_nodes_treated_in_cluster*6 + 3] = svo->extent().at(2) + tmp*(brick_id[1]+1);
+                        brick_extent[n_nodes_treated_in_cluster*6 + 4] = svo->extent().at(4) + tmp*brick_id[2];
+                        brick_extent[n_nodes_treated_in_cluster*6 + 5] = svo->extent().at(4) + tmp*(brick_id[2]+1);
                         
                         // Offset of points accumulated thus far
                         point_data_offset[n_nodes_treated_in_cluster] = n_points_harvested;
@@ -1366,8 +1366,8 @@ void VoxelizeWorker::process()
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 5, sizeof(cl_mem), (void *) &min_check_cl);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 6, sizeof(cl_mem), (void *) &sum_check_cl);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 7, sizeof(cl_mem), (void *) &variance_check_cl);
-                    err |= QOpenCLSetKernelArg( voxelize_kernel, 8, svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*sizeof(cl_float), NULL);
-                    int tmp = svo->getBrickOuterDimension(); // why a separate variable?
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 8, svo->brickOuterDimension()*svo->brickOuterDimension()*svo->brickOuterDimension()*sizeof(cl_float), NULL);
+                    int tmp = svo->brickOuterDimension(); // why a separate variable?
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 9, sizeof(cl_int), &tmp);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 10, sizeof(cl_float), &search_radius);
                     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1466,16 +1466,16 @@ void VoxelizeWorker::process()
                             float average = sum_check[j]/(float)n_points_brick;
                             float std_dev = sqrt(variance_check[j]);
 
-                            if ((lvl >= svo->getLevels() - 1) || // Max level
-                                ((std_dev <= 0.5 * average) && (min_check[j] > 0) && (svo->getLevels() - lvl < 3 )) || // Voxel data is self-similar and all voxels are non-zero
-                                ((std_dev <= 0.2 * average) && (svo->getLevels() - lvl < 3 ))) // Voxel data is self-similar
+                            if ((lvl >= svo->levels() - 1) || // Max level
+                                ((std_dev <= 0.5 * average) && (min_check[j] > 0) && (svo->levels() - lvl < 3 )) || // Voxel data is self-similar and all voxels are non-zero
+                                ((std_dev <= 0.2 * average) && (svo->levels() - lvl < 3 ))) // Voxel data is self-similar
                             {
 //                                qDebug() << "Terminated brick early at lvl" << lvl << "Average:" << sum_check[j]/(float)n_points_brick << "Variance:" << variance_check[j];
                                 gpuHelpOctree[currentId].setMsdFlag(1);
                             }
 
                             // Set the pool id of the brick corresponding to the node
-                            gpuHelpOctree[currentId].calcPoolId(svo->getBrickPoolPower(), non_empty_node_counter);
+                            gpuHelpOctree[currentId].calcPoolId(svo->brickPoolPower(), non_empty_node_counter);
 
                             // Find the max sum of a brick
                             if (sum_check[j] > max_brick_sum) max_brick_sum = sum_check[j];
@@ -1485,7 +1485,7 @@ void VoxelizeWorker::process()
                             err = QOpenCLSetKernelArg( fill_kernel, 0, sizeof(cl_mem), (void *) &pool_cluster_cl);
                             err |= QOpenCLSetKernelArg( fill_kernel, 1, sizeof(cl_mem), (void *) &pool_cl);
                             err |= QOpenCLSetKernelArg( fill_kernel, 2, sizeof(cl_int4), pool_dimension.data());
-                            int tmp = svo->getBrickOuterDimension(); // ?
+                            int tmp = svo->brickOuterDimension(); // ?
                             err |= QOpenCLSetKernelArg( fill_kernel, 3, sizeof(cl_uint), &tmp);
                             err |= QOpenCLSetKernelArg( fill_kernel, 4, sizeof(cl_uint), &non_empty_node_counter);
                             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
@@ -1535,7 +1535,7 @@ void VoxelizeWorker::process()
                 if (kill_flag)
                 {
 
-                    QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(lvl+1)+" of "+QString::number(svo->getLevels())+"!");
+                    QString str("\n["+QString(this->metaObject()->className())+"] Warning: Process killed at iteration "+QString::number(lvl+1)+" of "+QString::number(svo->levels())+"!");
 
                     emit changedMessageString(str);
                     break;
@@ -1551,22 +1551,22 @@ void VoxelizeWorker::process()
             {
                 // Use the node structure to populate the GPU arrays
                 emit changedFormatGenericProgress(QString(" Transforming: %p%"));
-                svo->index.reserve(1, nodes_prev_lvls);
-                svo->brick.reserve(1, nodes_prev_lvls);
+                svo->index()->reserve(1, nodes_prev_lvls);
+                svo->brick()->reserve(1, nodes_prev_lvls);
 
                 for (size_t i = 0; i < nodes_prev_lvls; i++)
                 {
-                    svo->index[i] = getOctIndex(gpuHelpOctree[i].getMsdFlag(), gpuHelpOctree[i].getDataFlag(), gpuHelpOctree[i].getChild());
-                    svo->brick[i] = getOctBrick(gpuHelpOctree[i].getPoolId()[0], gpuHelpOctree[i].getPoolId()[1], gpuHelpOctree[i].getPoolId()[2]);
+                    (*svo->index())[i] = getOctIndex(gpuHelpOctree[i].getMsdFlag(), gpuHelpOctree[i].getDataFlag(), gpuHelpOctree[i].getChild());
+                    (*svo->brick())[i] = getOctBrick(gpuHelpOctree[i].getPoolId()[0], gpuHelpOctree[i].getPoolId()[1], gpuHelpOctree[i].getPoolId()[2]);
 
                     emit changedGenericProgress((i+1)*100/nodes_prev_lvls);
                 }
 
                 // Round up to the lowest number of bricks that is multiple of the brick pool dimensions. Use this value to reserve data for the data pool
-                unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->getBrickOuterDimension()*svo->getBrickOuterDimension()))));
+                unsigned int non_empty_node_counter_rounded_up = non_empty_node_counter + ((pool_dimension[0] * pool_dimension[1] / (svo->brickOuterDimension()*svo->brickOuterDimension())) - (non_empty_node_counter % (pool_dimension[0] * pool_dimension[1] / (svo->brickOuterDimension()*svo->brickOuterDimension()))));
 
                 // Read results
-                svo->pool.reserve(1, non_empty_node_counter_rounded_up*n_points_brick);
+                svo->pool()->reserve(1, non_empty_node_counter_rounded_up*n_points_brick);
                 
                 svo->setMin(0.0f);
                 svo->setMax(max_brick_sum/(float)(n_points_brick));
@@ -1576,14 +1576,14 @@ void VoxelizeWorker::process()
                     CL_TRUE,
                     0,
                     non_empty_node_counter_rounded_up*n_points_brick*sizeof(float),
-                    svo->pool.data(),
+                    svo->pool()->data(),
                     0, NULL, NULL);
                 if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
             }
 
             if (!kill_flag)
             {
-                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Done ("+QString::number(totaltime.elapsed())+" ms).\nThe dataset consists of "+QString::number(nodes_prev_lvls)+" bricks and is approx "+QString::number((svo->getBytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
+                emit changedMessageString("\n["+QString(this->metaObject()->className())+"] Done ("+QString::number(totaltime.elapsed())+" ms).\nThe dataset consists of "+QString::number(nodes_prev_lvls)+" bricks and is approx "+QString::number((svo->bytes())/1e6, 'g', 3)+" MB\nThe dataset can now be saved");
 
             }
         }

@@ -1309,10 +1309,28 @@ void VolumeOpenGLWidget::setCenterLine()
     setVbo(centerline_vbo, centerline_coords.data(), 6, GL_STATIC_DRAW);
 }
 
-
 void VolumeWorker::resolveLineIntegral()
 {
     
+}
+
+void VolumeOpenGLWidget::addLine()
+{
+    if (!isSvoInitialized) return;
+    
+    Matrix<double> a(3,1);
+    a[0] = data_view_extent[0];
+    a[1] = data_view_extent[1];
+    a[2] = data_view_extent[2];
+            
+    Matrix<double> b(3,1);
+    b[0] = data_view_extent[0];
+    b[1] = data_view_extent[1];
+    b[2] = data_view_extent[2];
+    
+    lines->append(Line(a,b));
+    
+    update();
 }
 
 void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painter)
@@ -3168,13 +3186,15 @@ void VolumeOpenGLWidget::raytrace(cl_kernel kernel)
 
 void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
 {
-    data_extent.setDeep(4, 2, svo->getExtent()->data());
-    data_view_extent.setDeep(4, 2, svo->getExtent()->data());
+    lines = svo->lines();
+    
+    data_extent.setDeep(4, 2, svo->extent().data());
+    data_view_extent.setDeep(4, 2, svo->extent().data());
 
-    misc_ints[0] = (int) svo->getLevels();;
-    misc_ints[1] = (int) svo->getBrickOuterDimension();
-    tsf_parameters_svo[2] = svo->getMinMax()->at(0);
-    tsf_parameters_svo[3] = svo->getMinMax()->at(1);
+    misc_ints[0] = (int) svo->levels();;
+    misc_ints[1] = (int) svo->brickOuterDimension();
+    tsf_parameters_svo[2] = svo->minMax().at(0);
+    tsf_parameters_svo[3] = svo->minMax().at(1);
 
     setDataExtent();
     resetViewMatrix();
@@ -3182,12 +3202,12 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     setTsfParameters();
     isModelActive = false;
 
-    size_t n_bricks = svo->pool.size()/(svo->getBrickOuterDimension()*svo->getBrickOuterDimension()*svo->getBrickOuterDimension());
+    size_t n_bricks = svo->pool()->size()/(svo->brickOuterDimension()*svo->brickOuterDimension()*svo->brickOuterDimension());
 
     Matrix<size_t> pool_dim(1,3);
-    pool_dim[0] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-    pool_dim[1] = (1 << svo->getBrickPoolPower())*svo->getBrickOuterDimension();
-    pool_dim[2] = ((n_bricks) / ((1 << svo->getBrickPoolPower())*(1 << svo->getBrickPoolPower())) + 1)*svo->getBrickOuterDimension();
+    pool_dim[0] = (1 << svo->brickPoolPower())*svo->brickOuterDimension();
+    pool_dim[1] = (1 << svo->brickPoolPower())*svo->brickOuterDimension();
+    pool_dim[2] = ((n_bricks) / ((1 << svo->brickPoolPower())*(1 << svo->brickPoolPower())) + 1)*svo->brickOuterDimension();
     
     // Load the contents into a CL texture
     if (isSvoInitialized){
@@ -3205,15 +3225,15 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
 
     cl_svo_index = QOpenCLCreateBuffer(context_cl.context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        svo->index.size()*sizeof(cl_uint),
-        svo->index.data(),
+        svo->index()->size()*sizeof(cl_uint),
+        svo->index()->data(),
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
     cl_svo_brick = QOpenCLCreateBuffer(context_cl.context(),
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        svo->brick.size()*sizeof(cl_uint),
-        svo->brick.data(),
+        svo->brick()->size()*sizeof(cl_uint),
+        svo->brick()->data(),
         &err);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 
@@ -3224,9 +3244,9 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     Matrix<float> tmp(1, pool_dim[0]*pool_dim[1]*pool_dim[2], 0);
     
     // This will be obsolete when the voxels are stored in a better way
-    for (size_t i = 0; i < svo->pool.size(); i++)
+    for (size_t i = 0; i < svo->pool()->size(); i++)
     {
-        tmp[i] = svo->pool[i];    
+        tmp[i] = (*svo->pool())[i];    
     }
     
     cl_svo_pool = QOpenCLCreateImage3D ( context_cl.context(),

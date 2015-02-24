@@ -13,6 +13,7 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QFileDialog>
+#include <QTableView>
 
 #include "utils/math/qxmathlib.h"
 #include "utils/opencl/qxopencllib.h"
@@ -20,6 +21,8 @@
 #include "utils/image/imagepreview.h"
 #include "utils/svo/qxsvolib.h"
 #include "utils/misc/texthighlighter.h"
+#include "utils/misc/line.h"
+#include "utils/misc/linemodel.h"
 #include "utils/volume/volumerender.h"
 #include "utils/worker/worker.h"
 
@@ -95,6 +98,14 @@ signals:
     void setPulled(SeriesSet set);
     
 private:
+    // Line dock widget
+    QDockWidget * lineDockWidget;
+    QWidget * lineWidget;
+    QTableView * lineView;
+    LineModel * lineModel;
+    QPushButton * insertLinePushButton;
+    QPushButton * removeLinePushButton;
+    
     /* UI elements for UB matrix */
     QDockWidget * unitCellDockWidget;
     QWidget * unitCellWidget;

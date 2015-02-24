@@ -16,6 +16,7 @@ Selection::Selection(const Selection & other)
     p_weighted_y = other.weighted_y();
     p_isMouseSelected = other.selected();
 }
+
 Selection::~Selection()
 {
 
