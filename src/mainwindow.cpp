@@ -656,6 +656,7 @@ void MainWindow::initConnects()
     
     connect(insertLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(addLine()));
     connect(removeLinePushButton, SIGNAL(clicked()), lineModel, SLOT(removeMarkedLine()));
+    connect(volumeOpenGLWidget, SIGNAL(linesChanged()), lineModel, SLOT(refresh()));
     
 //    /* this <-> this */
     connect(this->aNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_a(double)));

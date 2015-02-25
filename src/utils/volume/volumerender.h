@@ -51,6 +51,7 @@ public:
 
 signals:
     void changedMessageString(QString str);
+    void linesChanged();
 
 public slots:
     void addLine();

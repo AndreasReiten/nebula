@@ -13,17 +13,19 @@ LineModel::LineModel(QWidget *parent) :
 //    lines << Line(2,-2,2,1,1,1);
 //    lines << Line(1,1,1,1,1,1);
     
-    lines = new QList<Line>;
+    p_lines = new QList<Line>;
+
+    p_columns = 2;
 }
 
 int LineModel::rowCount(const QModelIndex & /*parent*/) const
 {
-    return lines->size();
+    return p_lines->size();
 }
 
 int LineModel::columnCount(const QModelIndex & /*parent*/) const
 {
-    return 2;
+    return p_columns;
 }
 
 QVariant LineModel::data(const QModelIndex &index, int role) const
@@ -33,9 +35,9 @@ QVariant LineModel::data(const QModelIndex &index, int role) const
         switch (index.column()) 
         {
         case 0:
-            return lines->at(index.row()).comment();
+            return p_lines->at(index.row()).comment();
         case 1:
-            return lines->at(index.row()).length();
+            return p_lines->at(index.row()).length();
         default:
             return QString("...");
         }
@@ -69,7 +71,7 @@ bool LineModel::setData(const QModelIndex & index, const QVariant & value, int r
         {
         case 0:
             if (value.toString() != "")
-            (*lines)[index.row()].setComment(value.toString());
+            (*p_lines)[index.row()].setComment(value.toString());
             break;
         }
     }
@@ -78,7 +80,7 @@ bool LineModel::setData(const QModelIndex & index, const QVariant & value, int r
 
 void LineModel::setLines(QList<Line> * list)
 {
-    lines = list;
+    p_lines = list;
 }
 
 Qt::ItemFlags LineModel::flags(const QModelIndex & /*index*/) const
@@ -88,13 +90,18 @@ Qt::ItemFlags LineModel::flags(const QModelIndex & /*index*/) const
 
 void LineModel::removeMarkedLine()
 {
-    for (int i = 0; i < lines->size(); i++) 
+    for (int i = 0; i < p_lines->size(); i++)
     {
-        if (lines->at(i).tagged() == true)
+        if (p_lines->at(i).tagged() == true)
         {
-            lines->removeAt(i);
+            p_lines->removeAt(i);
             i--;
         }
     }
 }
 
+void LineModel::refresh()
+{
+    beginResetModel();
+    endResetModel();
+}

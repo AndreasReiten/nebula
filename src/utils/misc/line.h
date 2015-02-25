@@ -25,15 +25,15 @@ public:
     
     Matrix<double> effectivePosA();
     Matrix<double> effectivePosB();
-    const double length() const;
+    double length() const;
     double distancePointToLine(Matrix<double> pos);
     const Matrix<double> & positionA() const;
     const Matrix<double> & positionB() const;
-    const double offsetA() const;
-    const double offsetB() const;
+    double offsetA() const;
+    double offsetB() const;
     Matrix<float> & vertices();
     const QString comment() const; 
-    const bool tagged() const;
+    bool tagged() const;
         
 private:
     bool p_is_tagged;

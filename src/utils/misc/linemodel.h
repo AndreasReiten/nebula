@@ -28,13 +28,14 @@ public:
 public slots:
     void setLines(QList<Line> * list);
     void removeMarkedLine();
-    
+    void refresh();
     
 private:
-    QList<Line> * lines;
+    QList<Line> * p_lines;
+    int p_columns;
     
 signals:
-    void linesChanged(QList<Line> lines);
+    void linesChanged(QList<Line> p_lines);
 };
 
 #endif

@@ -80,7 +80,7 @@ void Line::setOffsetB(double value)
     p_offset_b = value;
 }
 
-const double Line::length() const
+double Line::length() const
 {
     return vecLength(p_position_a - p_position_b) + p_offset_a + p_offset_b;
 }
@@ -132,11 +132,11 @@ const Matrix<double> &Line::positionB() const
     return p_position_b;
 }
 
-const double Line::offsetA() const
+double Line::offsetA() const
 {
     return p_offset_a;
 }
-const double Line::offsetB() const
+double Line::offsetB() const
 {
     return p_offset_b;
 }
@@ -145,7 +145,7 @@ Matrix<float> & Line::vertices()
 {
     return vertices();
 }
-const bool Line::tagged() const
+bool Line::tagged() const
 {
     return p_is_tagged;
 }

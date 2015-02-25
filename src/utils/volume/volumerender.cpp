@@ -49,11 +49,6 @@ void VolumeWorker::setKernel(cl_kernel kernel)
     p_kernel = kernel;
 }
 
-//void VolumeWorker::setRayTexture(cl_mem texture)
-//{
-//    ray_tex_cl = texture;
-//}
-
 void VolumeWorker::raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws)
 {
     // Launch rendering kernel
@@ -1330,6 +1325,8 @@ void VolumeOpenGLWidget::addLine()
     
     lines->append(Line(a,b));
     
+    emit linesChanged();
+
     update();
 }
 
