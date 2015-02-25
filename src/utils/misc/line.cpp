@@ -171,6 +171,27 @@ void Line::computeVertices()
     p_verts_computed = true;
 }
 
+//void Line::genVbo()
+//{
+//    glGenBuffers(1, &p_vbo);
+//}
+
+//void Line::delVbo()
+//{
+//    glDeleteBuffers(1, &p_vbo);
+//}
+//void Line::setVbo()
+//{
+//    glBindBuffer(GL_ARRAY_BUFFER, p_vbo);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*6, p_vertices.data(), GL_DYNAMIC_DRAW);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//}
+
+GLuint * Line::vbo()
+{
+    return &p_vbo;
+}
+
 QDebug operator<<(QDebug dbg, const Line &line)
 {
     dbg.nospace() << "(...)";

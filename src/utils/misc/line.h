@@ -3,10 +3,11 @@
 
 #include <QTableView>
 #include <QList>
+#include <QOpenGLFunctions>
 
 #include "../math/qxmathlib.h"
 
-class Line
+class Line : protected QOpenGLFunctions
 {
     // The length of the line is given by: vecLen(position_a - position_b) + offset_a + offset_b
     
@@ -15,13 +16,18 @@ public:
     Line(Matrix<double> pos_a, Matrix<double> pos_b);
     Line(double x0, double y0, double z0, double x1, double y1, double z1);
     ~Line();
+
+//    void genVbo();
+//    void delVbo();
+//    void setVbo();
+    GLuint * vbo();
     
     void setPositionA(Matrix<double> pos);
     void setPositionB(Matrix<double> pos);
     void setTagged(bool value);
     void setComment(QString str);
     void setOffsetA(double value);
-    void setOffsetB(double value);    
+    void setOffsetB(double value); 
     
     Matrix<double> effectivePosA();
     Matrix<double> effectivePosB();
@@ -36,6 +42,8 @@ public:
     bool tagged() const;
         
 private:
+    GLuint p_vbo;
+    
     bool p_is_tagged;
     bool p_verts_computed;
     

@@ -340,13 +340,13 @@ void ImageOpenGLWidget::initializeGL()
     centerImage();
 }
 
-GLuint ImageOpenGLWidget::loadShader(GLenum type, const char *source)
-{
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, 0);
-    glCompileShader(shader);
-    return shader;
-}
+//GLuint ImageOpenGLWidget::loadShader(GLenum type, const char *source)
+//{
+//    GLuint shader = glCreateShader(type);
+//    glShaderSource(shader, 1, &source, 0);
+//    glCompileShader(shader);
+//    return shader;
+//}
 
 ImageOpenGLWidget::~ImageOpenGLWidget()
 {

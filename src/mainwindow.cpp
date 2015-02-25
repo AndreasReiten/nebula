@@ -284,7 +284,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::saveProject()
 {
-    QString file_name = QFileDialog::getSaveFileName(this, "Save project", working_dir, ".qt (*.qt);; All Files (*)");
+    QString file_name = QFileDialog::getSaveFileName(this, "Save project", working_dir);
     
     if (file_name != "")
     {
@@ -323,7 +323,7 @@ void MainWindow::transferSet()
 
 void MainWindow::loadProject()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, "Open project", working_dir, ".qt (*.qt);; All Files (*)");
+    QString file_name = QFileDialog::getOpenFileName(this, "Open project", working_dir);
 
     if (file_name != "")
     {
@@ -464,7 +464,7 @@ void MainWindow::aboutOpenGL()
 
 void MainWindow::loadUnitcellFile()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Open file", "", ".par (*.par);; All files (*)");
+    QString fileName = QFileDialog::getOpenFileName(this, "Open file");
 
     if ((fileName != ""))
     {
@@ -754,7 +754,7 @@ void MainWindow::saveSvo()
 {
     if (svo_inprocess.index()->size() > 0)
     {
-        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir, ".svo (*.svo);; All files (*)");
+        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir);
 
         if (file_name != "")
         {
@@ -780,7 +780,7 @@ void MainWindow::saveLoadedSvo()
 {
     if (svo_loaded.brickNumber() > 0)
     {
-        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir, ".svo (*.svo);; All files (*)");
+        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir);
 
         if (file_name != "")
         {
@@ -806,7 +806,7 @@ void MainWindow::saveLoadedSvo()
 
 void MainWindow::loadSvo()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, "Open file", working_dir, ".svo (*.svo);; All files (*)");
+    QString file_name = QFileDialog::getOpenFileName(this, "Open file", working_dir);
 
     if ((file_name != ""))
     {

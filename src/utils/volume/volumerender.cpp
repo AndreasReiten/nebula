@@ -1324,6 +1324,11 @@ void VolumeOpenGLWidget::addLine()
     b[2] = data_view_extent[2];
     
     lines->append(Line(a,b));
+    glGenBuffers(1, lines->last().vbo());
+    
+    glBindBuffer(GL_ARRAY_BUFFER, *lines->last().vbo());
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*6, lines->last().vertices().data(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     emit linesChanged();
 
@@ -1335,7 +1340,7 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
     
 }
 
-void VolumeOpenGLWidget::drawLineIntegral(QPainter * painter, QRect position)
+void VolumeOpenGLWidget::drawLineIntegralGraph(QPainter * painter, QRect position)
 {
     
 }

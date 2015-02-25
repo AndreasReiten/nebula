@@ -21,7 +21,6 @@ public:
     ~VolumeWorker();
     void setOpenCLContext(OpenCLContext context);
     void setKernel(cl_kernel kernel);
-//    void setRayTexture(cl_mem texture);
 
 public slots:
     void raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws);
@@ -34,7 +33,6 @@ signals:
 private:
     OpenCLContext context_cl;
     cl_kernel p_kernel;
-//    cl_mem ray_tex_cl;
     cl_int err;
 };
 
@@ -153,7 +151,7 @@ private:
     void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
     Matrix<GLfloat> glRect(QRectF &qt_rect);
 
-    GLuint loadShader(GLenum type, const char *source);
+//    GLuint loadShader(GLenum type, const char *source);
 
     // Shaders
     GLint std_2d_tex_fragpos;
@@ -323,7 +321,7 @@ private:
     void drawHklText(QPainter * painter);
     void drawCountIntegral(QPainter *painter);
     void drawLineIntegrationVolumeVisualAssist(QPainter * painter);
-    void drawLineIntegral(QPainter * painter, QRect position);
+    void drawLineIntegralGraph(QPainter * painter, QRect position);
     
     int fps_string_width_prev;
     

@@ -98,6 +98,8 @@ void LineModel::removeMarkedLine()
             i--;
         }
     }
+    
+    refresh();
 }
 
 void LineModel::refresh()
