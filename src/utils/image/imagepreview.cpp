@@ -2703,7 +2703,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter *painter)
 //    qDebug() << atan2(G[0],G[1])*180/pi;
 
     QString tip;
-    tip += "<p style=\"font-family: monospace, times, serif; font-size:10pt; font-style:italic; color:white\">";
+    tip += "<p style=\"font-family: monospace, times, serif; font-size:10pt; font-style:italic; font-weight:normal; color:white\">";
     tip += "<font color=\"white\">X:</font> <font color=\"#85DAFF\">"+QString::number((int) pixel_x_bounded)+"</font>, Y: <font color=\"#85DAFF\">"+QString::number((int) pixel_y_bounded)+"</font>";
     tip += ", Value: <font color=\"#85DAFF\">"+QString::number(value,'e',4)+"</font>";
     tip += ", Q[<font color=\"#85DAFF\">"+QString::number(Q[0],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[1],'f',2)+"</font>, <font color=\"#85DAFF\">"+QString::number(Q[2],'f',2)+"</font>]";

@@ -1342,6 +1342,13 @@ void VolumeOpenGLWidget::addLine()
     update();
 }
 
+void VolumeOpenGLWidget::refreshLine(int value)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[value].vbo());
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*6, lines->at(value).vertices().data(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painter)
 {
     beginRawGLCalls(painter);
@@ -1365,15 +1372,11 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
             glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
         }
 
-        (*lines)[i].vertices().print(2);
-
         glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[i].vbo());
         glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-//        glEnable(GL_DEPTH_TEST);
         glDrawArrays(GL_LINES,  0, 2);
-//        glDisable(GL_DEPTH_TEST);
     }
 
     glDisableVertexAttribArray(std_3d_col_fragpos);

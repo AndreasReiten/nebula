@@ -90,6 +90,8 @@ void Line::setOffsetA(double value)
 void Line::setOffsetB(double value)
 {
     p_offset_b = value;
+    
+    computeVertices();
 }
 
 double Line::length() const
@@ -153,7 +155,7 @@ double Line::offsetB() const
     return p_offset_b;
 }
 
-Matrix<float> & Line::vertices()
+const Matrix<float> & Line::vertices() const
 {
     return p_vertices;
 }

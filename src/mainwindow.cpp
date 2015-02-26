@@ -738,6 +738,11 @@ void MainWindow::initConnects()
     connect(beamOverrideCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setBeamOverrideActive(bool)));
     connect(beamXOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamXOverride(double)));
     connect(beamYOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamYOverride(double)));
+    
+    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineModel, SLOT(highlight(QModelIndex)));
+    connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(refreshLine(int)));
+    connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
+    connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
 }
 
 void MainWindow::setGeneralProgressFormat(QString str)
@@ -991,8 +996,8 @@ void MainWindow::initGUI()
         imageOpenGLWidget->setFormat(format_gl);
         imageOpenGLWidget->setMouseTracking(true);
         
-        imageMainWindow = new QMainWindow;
-        imageMainWindow->setAnimated(false);
+        reconstructionMainWindow = new QMainWindow;
+        reconstructionMainWindow->setAnimated(false);
 
         saveProjectAction = new QAction(QIcon(":/art/save.png"), "Save project", this);
         loadProjectAction = new QAction(QIcon(":/art/open.png"), "Load project", this);
@@ -1024,9 +1029,9 @@ void MainWindow::initGUI()
         connect(imageOpenGLWidget, SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
         connect(imageOpenGLWidget, SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
 
-        imageMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
+        reconstructionMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
 
-        imageMainWindow->setCentralWidget(imageOpenGLWidget);
+        reconstructionMainWindow->setCentralWidget(imageOpenGLWidget);
     }
     
     /* Image browser display widget */
@@ -1079,7 +1084,7 @@ void MainWindow::initGUI()
     
         imageSettingsDock =  new QDockWidget("Display settings");
         imageSettingsDock->setWidget(imageSettingsWidget);
-        imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
+        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
         
         connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)), Qt::QueuedConnection);
         connect(imagePreviewTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
@@ -1138,7 +1143,7 @@ void MainWindow::initGUI()
     
         navigationDock =  new QDockWidget("Navigation");
         navigationDock->setWidget(navigationWidget);
-        imageMainWindow->addDockWidget(Qt::BottomDockWidgetArea, navigationDock);
+        reconstructionMainWindow->addDockWidget(Qt::BottomDockWidgetArea, navigationDock);
     }
     
     // Operations dock widget
@@ -1166,7 +1171,7 @@ void MainWindow::initGUI()
     
         selectionDock =  new QDockWidget("Frame-by-frame operations");
         selectionDock->setWidget(selectionWidget);
-        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, selectionDock); 
+        reconstructionMainWindow->addDockWidget(Qt::RightDockWidgetArea, selectionDock); 
     }
     
     // Corrections dock widget
@@ -1224,7 +1229,7 @@ void MainWindow::initGUI()
         
         correctionDock =  new QDockWidget("Frame-by-frame corrections");
         correctionDock->setWidget(correctionWidget);
-        imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
+        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
     }
     
     
@@ -1519,7 +1524,7 @@ void MainWindow::initGUI()
         fileDockWidget->setWidget(fileControlsWidget);
         fileDockWidget->setMaximumHeight(fileControlsWidget->minimumSizeHint().height()*1.1);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
-        imageMainWindow->addDockWidget(Qt::LeftDockWidgetArea, fileDockWidget);
+        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, fileDockWidget);
 
 
 
@@ -1579,7 +1584,7 @@ void MainWindow::initGUI()
         voxelizeDockWidget = new QDockWidget("Reconstruction operations");
         voxelizeDockWidget->setWidget(voxelizeWidget);
         viewMenu->addAction(voxelizeDockWidget->toggleViewAction());
-        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, voxelizeDockWidget);
+        reconstructionMainWindow->addDockWidget(Qt::RightDockWidgetArea, voxelizeDockWidget);
     }
 
     /* Header dock widget */
@@ -1591,7 +1596,7 @@ void MainWindow::initGUI()
         fileHeaderDockTwo = new QDockWidget("Frame header info", this);
         fileHeaderDockTwo->setWidget(fileHeaderEditTwo);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
-        imageMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockTwo);
+        reconstructionMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockTwo);
     }
 
 
@@ -1674,7 +1679,7 @@ void MainWindow::initGUI()
         lineDockWidget = new QDockWidget("Lines");
         lineDockWidget->setWidget(lineWidget);
         viewMenu->addAction(lineDockWidget->toggleViewAction());
-        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, lineDockWidget);
+        volumeRenderMainWindow->addDockWidget(Qt::BottomDockWidgetArea, lineDockWidget);
     }
 
     /* Output Widget */
@@ -1711,7 +1716,7 @@ void MainWindow::initGUI()
 
     // Add tabs
     tabWidget->addTab(browserMainWindow, "Browse");
-    tabWidget->addTab(imageMainWindow, "Reconstruct");
+    tabWidget->addTab(reconstructionMainWindow, "Reconstruct");
     tabWidget->addTab(volumeRenderMainWindow, "Visualize");
     tabWidget->addTab(outputPlainTextEdit, "Text output");
 
@@ -1727,7 +1732,7 @@ void MainWindow::initGUI()
     // Tabify docks
     volumeRenderMainWindow->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
     volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, svoHeaderDock);
-    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, lineDockWidget);
+//    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, lineDockWidget);
     
 }
 

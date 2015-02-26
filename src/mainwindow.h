@@ -195,7 +195,7 @@ private:
     
     
     // Image browser widget
-    QMainWindow * imageMainWindow;
+    QMainWindow * reconstructionMainWindow;
 
     // Actions
     QAction *shadowAct;

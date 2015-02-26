@@ -10,6 +10,7 @@
 //};
 
 #include <QAbstractTableModel>
+#include <QColor>
 
 class LineModel : public QAbstractTableModel
 {
@@ -29,6 +30,7 @@ public slots:
     void setLines(QList<Line> * list);
     void removeMarkedLine();
     void refresh();
+    void highlight(QModelIndex index);
     
 private:
     QList<Line> * p_lines;
@@ -36,6 +38,7 @@ private:
     
 signals:
     void linesChanged(QList<Line> p_lines);
+    void lineChanged(int value);
 };
 
 #endif

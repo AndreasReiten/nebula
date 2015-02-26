@@ -37,7 +37,7 @@ public:
     const Matrix<double> & positionB() const;
     double offsetA() const;
     double offsetB() const;
-    Matrix<float> & vertices();
+    const Matrix<float> &vertices() const;
     const QString comment() const; 
     bool tagged() const;
         

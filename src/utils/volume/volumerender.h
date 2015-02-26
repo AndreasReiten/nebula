@@ -52,6 +52,7 @@ signals:
     void linesChanged();
 
 public slots:
+    void refreshLine(int value);
     void addLine();
     void saveLineIntegralAsImage(QString path);
     void saveLineIntegralAsText(QString path);
