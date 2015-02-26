@@ -1,6 +1,6 @@
-attribute highp vec2 fragpos;
-attribute highp vec2 texpos;
-varying highp vec2 f_texpos;
+attribute  vec2 fragpos;
+attribute  vec2 texpos;
+varying  vec2 f_texpos;
 
 
 void main(void)

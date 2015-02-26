@@ -2,6 +2,8 @@
 
 Line::Line()
 {
+    p_is_tagged = false;
+    p_verts_computed = false;
     p_comment = "<No comment>";
     p_position_a.set(3,1,0);
     p_position_b.set(3,1,0);
@@ -9,10 +11,14 @@ Line::Line()
     p_offset_b = 0;
     
     p_vertices.set(3,2,0);
+
+    computeVertices();
 }
 
 Line::Line(Matrix<double> pos_a, Matrix<double> pos_b)
 {
+    p_is_tagged = false;
+    p_verts_computed = false;
     p_comment = "<No comment>";
     p_position_a = pos_a;
     p_position_b = pos_b;
@@ -20,9 +26,13 @@ Line::Line(Matrix<double> pos_a, Matrix<double> pos_b)
     p_offset_b = 0;
     
     p_vertices.set(3,2,0);
+
+    computeVertices();
 }
 Line::Line(double x0, double y0, double z0, double x1, double y1, double z1)
 {
+    p_is_tagged = false;
+    p_verts_computed = false;
     p_comment = "<No comment>";
     p_position_a.set(3,1);
     p_position_b.set(3,1);
@@ -39,6 +49,8 @@ Line::Line(double x0, double y0, double z0, double x1, double y1, double z1)
     p_offset_b = 0;
     
     p_vertices.set(3,2,0);
+
+    computeVertices();
 }
 Line::~Line()
 {
@@ -143,7 +155,7 @@ double Line::offsetB() const
 
 Matrix<float> & Line::vertices()
 {
-    return vertices();
+    return p_vertices;
 }
 bool Line::tagged() const
 {

@@ -6,8 +6,9 @@
 
 #include "../math/qxmathlib.h"
 
-class GLSLFunctions : protected QOpenGLFunctions
+class GLSLFunctions : private QOpenGLFunctions
 {
+public:
     GLSLFunctions();
     ~GLSLFunctions();
     
@@ -19,8 +20,6 @@ class GLSLFunctions : protected QOpenGLFunctions
 
     void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
     Matrix<GLfloat> glRect(QRectF &qt_rect, size_t width, size_t height);
-
-//    GLuint loadShader(GLenum type, const char *source);
 
     // Shaders
     GLint std_2d_tex_fragpos;

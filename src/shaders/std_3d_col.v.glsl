@@ -1,5 +1,5 @@
-attribute highp vec3 fragpos;
-uniform highp mat4 transform;
+attribute  vec3 fragpos;
+uniform  mat4 transform;
 
 void main(void)
 {

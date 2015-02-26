@@ -73,8 +73,8 @@ HEADERS += \
     src/utils/file/utils/selection.h \
     src/utils/misc/line.h \
     src/utils/misc/marker.h \
-    src/utils/misc/linemodel.h \
-    src/utils/glsl/glslfunctions.h
+    src/utils/misc/linemodel.h
+#    src/utils/glsl/glslfunctions.h
 
 SOURCES += \
     src/utils/file/utils/fileformat.cpp \
@@ -98,6 +98,6 @@ SOURCES += \
     src/mainwindow.cpp \
     src/utils/misc/line.cpp \
     src/utils/misc/marker.cpp \
-    src/utils/misc/linemodel.cpp \
-    src/utils/glsl/glslfunctions.cpp
+    src/utils/misc/linemodel.cpp
+#    src/utils/glsl/glslfunctions.cpp
 

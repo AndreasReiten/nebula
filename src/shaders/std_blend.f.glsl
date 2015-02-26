@@ -1,7 +1,7 @@
-uniform highp sampler2D texture_alpha;
-uniform highp sampler2D texture_beta;
-uniform lowp int method;
-varying highp vec2 f_texpos;
+uniform  sampler2D texture_alpha;
+uniform  sampler2D texture_beta;
+uniform  int method;
+varying  vec2 f_texpos;
 
 void main ()
 {

@@ -275,6 +275,8 @@ void VolumeOpenGLWidget::toggleHkl()
 
 void VolumeOpenGLWidget::paintGL()
 {
+    // The problem is that the Z buffer prevents OpenGL from drawing pixels that are behind things that have already been drawn
+
     QOpenGLPaintDevice paint_device_gl(this->size());
 
     QPainter painter(&paint_device_gl);
@@ -296,24 +298,28 @@ void VolumeOpenGLWidget::paintGL()
     
     if (isScalebarActive) drawPositionScalebars(&painter);
     if (isLabFrameActive) drawCenterLine(&painter);
-    if (isUnitcellActive) drawUnitCell(&painter);
+
     if (isLabFrameActive) drawLabFrame(&painter);
-    
+    if (isSvoInitialized) drawLineIntegrationVolumeVisualAssist(&painter);
+
     isDataExtentReadOnly = false;
 
     // Draw raytracing texture
     drawRayTex(&painter);
-    
+
+
+
     // Compute the projected pixel size in orthonormal configuration
-    computePixelSize();
+//    computePixelSize();
 
     if (isIntegration2DActive) drawIntegral(&painter);
     
     drawOverlay(&painter);
     if (isHklTextActive) drawHklText(&painter);
     if (n_marker_indices > 0) drawMarkers(&painter);
-    if (isMiniCellActive) drawHelpCell(&painter);
-    drawCountScalebar(&painter);
+    if (isMiniCellActive) drawHelpCell(&painter); //
+    if (isUnitcellActive) drawUnitCell(&painter);
+    drawCountScalebar(&painter); //
     if (isSvoInitialized && isCountIntegrationActive) drawCountIntegral(&painter);
 }
 
@@ -987,7 +993,8 @@ void VolumeOpenGLWidget::setVbo(GLuint vbo, float * buf, size_t length, GLenum u
 void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
 {
     beginRawGLCalls(painter);
-    
+//    glDisable(GL_DEPTH_TEST); // Because
+
     glLineWidth(0.7);
     unitcell_program->bind();
     glEnableVertexAttribArray(unitcell_fragpos);
@@ -1118,8 +1125,9 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     painter->drawRoundedRect(minicell_rect, 5, 5, Qt::AbsoluteSize);
     
     beginRawGLCalls(painter);
-    
-    setVbo(minicell_vbo, vetices.data(), vetices.size(), GL_STATIC_DRAW);
+//    glDisable(GL_DEPTH_TEST);
+
+    setVbo(minicell_vbo, vetices.data(), vetices.size(), GL_DYNAMIC_DRAW);
     
     
     // Generate indices for glDrawElements
@@ -1168,7 +1176,6 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     std_3d_col_program->release();
     
     glViewport(0,0,this->width()*retinaScale,this->height()*retinaScale);
-    
     
     endRawGLCalls(painter);
     
@@ -1235,9 +1242,9 @@ void VolumeOpenGLWidget::drawMarkers(QPainter * painter)
         glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         
-        glEnable(GL_DEPTH_TEST);
+//        glEnable(GL_DEPTH_TEST);
         glDrawArrays(GL_LINES,  0, 6);
-        glDisable(GL_DEPTH_TEST);
+//        glDisable(GL_DEPTH_TEST);
     }
     glLineWidth(1.5);
     
@@ -1315,13 +1322,13 @@ void VolumeOpenGLWidget::addLine()
     
     Matrix<double> a(3,1);
     a[0] = data_view_extent[0];
-    a[1] = data_view_extent[1];
-    a[2] = data_view_extent[2];
+    a[1] = data_view_extent[2];
+    a[2] = data_view_extent[4];
             
     Matrix<double> b(3,1);
-    b[0] = data_view_extent[0];
-    b[1] = data_view_extent[1];
-    b[2] = data_view_extent[2];
+    b[0] = data_view_extent[1];
+    b[1] = data_view_extent[3];
+    b[2] = data_view_extent[5];
     
     lines->append(Line(a,b));
     glGenBuffers(1, lines->last().vbo());
@@ -1337,7 +1344,43 @@ void VolumeOpenGLWidget::addLine()
 
 void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painter)
 {
-    
+    beginRawGLCalls(painter);
+
+    glLineWidth(3.0);
+
+    std_3d_col_program->bind();
+
+    glEnableVertexAttribArray(std_3d_col_fragpos);
+
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+
+    for (int i = 0; i < lines->size(); i++)
+    {
+        if (lines->at(i).tagged())
+        {
+            glUniform4fv(std_3d_col_color, 1, magenta_light.data());
+        }
+        else
+        {
+            glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
+        }
+
+        (*lines)[i].vertices().print(2);
+
+        glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[i].vbo());
+        glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+//        glEnable(GL_DEPTH_TEST);
+        glDrawArrays(GL_LINES,  0, 2);
+//        glDisable(GL_DEPTH_TEST);
+    }
+
+    glDisableVertexAttribArray(std_3d_col_fragpos);
+
+    std_3d_col_program->release();
+
+    endRawGLCalls(painter);
 }
 
 void VolumeOpenGLWidget::drawLineIntegralGraph(QPainter * painter, QRect position)
@@ -2287,6 +2330,7 @@ void VolumeOpenGLWidget::beginRawGLCalls(QPainter * painter)
 {
     painter->beginNativePainting();
     glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
 }
@@ -2294,6 +2338,7 @@ void VolumeOpenGLWidget::beginRawGLCalls(QPainter * painter)
 void VolumeOpenGLWidget::endRawGLCalls(QPainter * painter)
 {
     glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE);
     painter->endNativePainting();
 }
@@ -2940,6 +2985,8 @@ void VolumeOpenGLWidget::drawCountScalebar(QPainter *painter)
         }
         
         beginRawGLCalls(painter);
+        glDisable(GL_DEPTH_TEST);
+
         setVbo(count_scalebar_vbo, ticks.toFloat().data(), iter*4, GL_STATIC_DRAW);
         
         // Draw transfer function texture
@@ -3092,7 +3139,7 @@ void VolumeOpenGLWidget::tickzerize(double min, double max, double size, double 
 void VolumeOpenGLWidget::drawRayTex(QPainter *painter)
 {
     beginRawGLCalls(painter);
-    
+
     // Volume rendering
     setShadowVector();
     
@@ -3132,6 +3179,7 @@ void VolumeOpenGLWidget::drawRayTex(QPainter *painter)
         glEnableVertexAttribArray(std_2d_tex_fragpos);
         glEnableVertexAttribArray(std_2d_tex_pos);
 
+        glDisable(GL_DEPTH_TEST);
         glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
         glDisableVertexAttribArray(std_2d_tex_pos);

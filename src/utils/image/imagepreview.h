@@ -22,6 +22,7 @@
 #include "../../file/qxfilelib.h"
 #include "../../opencl/qxopencllib.h"
 #include "../../math/qxmathlib.h"
+//#include "../../glsl/glslfunctions.h"
 
 class ImageWorker : public QObject, protected OpenCLFunctions
 {
@@ -158,7 +159,7 @@ private:
     void setVbo(GLuint vbo, float * buf, size_t length, GLenum usage);
     Matrix<GLfloat> glRect(QRectF &qt_rect);
 
-//    GLuint loadShader(GLenum type, const char *source);
+    GLuint loadShader(GLenum type, const char *source);
 
     // Shaders
     GLint std_2d_tex_fragpos;

@@ -1,4 +1,4 @@
-uniform lowp vec4 color;
+uniform  vec4 color;
 
 void main(void)
 {
