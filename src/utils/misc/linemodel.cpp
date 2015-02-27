@@ -201,6 +201,7 @@ void LineModel::setLines(QList<Line> * list)
 Qt::ItemFlags LineModel::flags(const QModelIndex & index) const
 {
     if (index.column() < p_columns - 1) return Qt::ItemIsSelectable |  Qt::ItemIsEditable | Qt::ItemIsEnabled ;
+    else return Qt::ItemIsEnabled ;
 }
 
 void LineModel::removeMarkedLine()

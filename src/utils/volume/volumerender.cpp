@@ -110,7 +110,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject *parent)
       isCountIntegrationActive(false),
       n_marker_indices(0),
       quality_percentage(15),
-      displayDistance(true),
+      displayDistance(false),
 //      displayFps(true),
       displayResolution(true)
 {
@@ -203,7 +203,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject *parent)
 
     // Scalebars
     position_scalebar_ticks.reserve(100,3);
-    count_scalebar_ticks.reserve(100,3);
+    count_major_scalebar_ticks.reserve(100,3);
     count_minor_scalebar_ticks.reserve(100,3);
     n_count_scalebar_ticks = 0;
     n_count_minor_scalebar_ticks = 0;
@@ -1055,61 +1055,61 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     hd[1] = (B[3] + B[4] + B[5])*0.5;       
     hd[2] = (B[6] + B[7] + B[8])*0.5;
     
-    Matrix<float> vetices(8,3,0);
+    Matrix<float> vertices(8,3,0);
     
-    vetices[3*0+0] = 0 - hd[0];
-    vetices[3*0+1] = 0 - hd[1];
-    vetices[3*0+2] = 0 - hd[2];
+    vertices[3*0+0] = 0 - hd[0];
+    vertices[3*0+1] = 0 - hd[1];
+    vertices[3*0+2] = 0 - hd[2];
     
-    vetices[3*1+0] = B[0] - hd[0];
-    vetices[3*1+1] = B[3] - hd[1];
-    vetices[3*1+2] = B[6] - hd[2];
+    vertices[3*1+0] = B[0] - hd[0];
+    vertices[3*1+1] = B[3] - hd[1];
+    vertices[3*1+2] = B[6] - hd[2];
     
-    vetices[3*2+0] = B[1] - hd[0];
-    vetices[3*2+1] = B[4] - hd[1];
-    vetices[3*2+2] = B[7] - hd[2];
+    vertices[3*2+0] = B[1] - hd[0];
+    vertices[3*2+1] = B[4] - hd[1];
+    vertices[3*2+2] = B[7] - hd[2];
     
-    vetices[3*3+0] = B[2] - hd[0];
-    vetices[3*3+1] = B[5] - hd[1];
-    vetices[3*3+2] = B[8] - hd[2];
+    vertices[3*3+0] = B[2] - hd[0];
+    vertices[3*3+1] = B[5] - hd[1];
+    vertices[3*3+2] = B[8] - hd[2];
     
-    vetices[3*4+0] = B[0] + B[1] - hd[0];
-    vetices[3*4+1] = B[3] + B[4] - hd[1];
-    vetices[3*4+2] = B[6] + B[7] - hd[2];
+    vertices[3*4+0] = B[0] + B[1] - hd[0];
+    vertices[3*4+1] = B[3] + B[4] - hd[1];
+    vertices[3*4+2] = B[6] + B[7] - hd[2];
     
-    vetices[3*5+0] = B[1] + B[2] - hd[0];
-    vetices[3*5+1] = B[4] + B[5] - hd[1];
-    vetices[3*5+2] = B[7] + B[8] - hd[2];
+    vertices[3*5+0] = B[1] + B[2] - hd[0];
+    vertices[3*5+1] = B[4] + B[5] - hd[1];
+    vertices[3*5+2] = B[7] + B[8] - hd[2];
     
-    vetices[3*6+0] = B[0] + B[2] - hd[0];
-    vetices[3*6+1] = B[3] + B[5] - hd[1];
-    vetices[3*6+2] = B[6] + B[8] - hd[2];
+    vertices[3*6+0] = B[0] + B[2] - hd[0];
+    vertices[3*6+1] = B[3] + B[5] - hd[1];
+    vertices[3*6+2] = B[6] + B[8] - hd[2];
     
-    vetices[3*7+0] = B[0] + B[1] + B[2] - hd[0];
-    vetices[3*7+1] = B[3] + B[4] + B[5] - hd[1];
-    vetices[3*7+2] = B[6] + B[7] + B[8] - hd[2];
+    vertices[3*7+0] = B[0] + B[1] + B[2] - hd[0];
+    vertices[3*7+1] = B[3] + B[4] + B[5] - hd[1];
+    vertices[3*7+2] = B[6] + B[7] + B[8] - hd[2];
     
     
     // Scaling. The cell has four diagonals. We find the longest one  and scale the cell to it
     Matrix<float> diagonal_one(1,3);
-    diagonal_one[0] = vetices[3*0+0] - vetices[3*7+0];
-    diagonal_one[1] = vetices[3*0+1] - vetices[3*7+1];
-    diagonal_one[2] = vetices[3*0+1] - vetices[3*7+2];
+    diagonal_one[0] = vertices[3*0+0] - vertices[3*7+0];
+    diagonal_one[1] = vertices[3*0+1] - vertices[3*7+1];
+    diagonal_one[2] = vertices[3*0+1] - vertices[3*7+2];
     
     Matrix<float> diagonal_two(1,3);
-    diagonal_two[0] = vetices[3*1+0] - vetices[3*5+0];
-    diagonal_two[1] = vetices[3*1+1] - vetices[3*5+1];
-    diagonal_two[2] = vetices[3*1+2] - vetices[3*5+2];
+    diagonal_two[0] = vertices[3*1+0] - vertices[3*5+0];
+    diagonal_two[1] = vertices[3*1+1] - vertices[3*5+1];
+    diagonal_two[2] = vertices[3*1+2] - vertices[3*5+2];
 
     Matrix<float> diagonal_three(1,3);
-    diagonal_three[0] = vetices[3*2+0] - vetices[3*6+0];
-    diagonal_three[1] = vetices[3*2+1] - vetices[3*6+1];
-    diagonal_three[2] = vetices[3*2+2] - vetices[3*6+2];
+    diagonal_three[0] = vertices[3*2+0] - vertices[3*6+0];
+    diagonal_three[1] = vertices[3*2+1] - vertices[3*6+1];
+    diagonal_three[2] = vertices[3*2+2] - vertices[3*6+2];
     
     Matrix<float> diagonal_four(1,3);
-    diagonal_four[0] = vetices[3*3+0] - vetices[3*4+0];
-    diagonal_four[1] = vetices[3*3+1] - vetices[3*4+1];
-    diagonal_four[2] = vetices[3*3+2] - vetices[3*4+2];
+    diagonal_four[0] = vertices[3*3+0] - vertices[3*4+0];
+    diagonal_four[1] = vertices[3*3+1] - vertices[3*4+1];
+    diagonal_four[2] = vertices[3*3+2] - vertices[3*4+2];
     
     double scale_factor = 1.5/std::max(vecLength(diagonal_one),std::max(vecLength(diagonal_two),std::max(vecLength(diagonal_three),vecLength(diagonal_four))));
     
@@ -1117,17 +1117,17 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     minicell_scaling[5] = scale_factor;
     minicell_scaling[10] = scale_factor;
     
-    // Minicell backdrop
-    QRect minicell_rect(0,0,200,200);
+    // Minicell backdrop (Defines overall position)
+    double rect_side = std::min(this->width(), this->height())*0.3;
+    QRectF minicell_rect(this->width() - rect_side - 5, 5, rect_side,rect_side);
 
     painter->setPen(*normal_pen);
     painter->setBrush(*fill_brush);
     painter->drawRoundedRect(minicell_rect, 5, 5, Qt::AbsoluteSize);
     
     beginRawGLCalls(painter);
-//    glDisable(GL_DEPTH_TEST);
 
-    setVbo(minicell_vbo, vetices.data(), vetices.size(), GL_DYNAMIC_DRAW);
+    setVbo(minicell_vbo, vertices.data(), vertices.size(), GL_DYNAMIC_DRAW);
     
     
     // Generate indices for glDrawElements
@@ -1143,7 +1143,10 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     
     // Draw it
     const qreal retinaScale = this->devicePixelRatio();
-    glViewport(0,(this->height()-200)*retinaScale,200*retinaScale,200*retinaScale);
+    glViewport(minicell_rect.left(),
+               (this->height()-minicell_rect.bottom())*retinaScale,
+               minicell_rect.width()*retinaScale,
+               minicell_rect.height()*retinaScale);
     glLineWidth(3.0);
     
     std_3d_col_program->bind();
@@ -1181,15 +1184,15 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     
     // Minicell text
     Matrix<float> x_2d(1,2,0), y_2d(1,2,0), z_2d(1,2,0);
-    getPosition2D(x_2d.data(), vetices.data()+3, &minicell_view_matrix);
-    getPosition2D(y_2d.data(), vetices.data()+6, &minicell_view_matrix);
-    getPosition2D(z_2d.data(), vetices.data()+9, &minicell_view_matrix);
+    getPosition2D(x_2d.data(), vertices.data()+3, &minicell_view_matrix);
+    getPosition2D(y_2d.data(), vertices.data()+6, &minicell_view_matrix);
+    getPosition2D(z_2d.data(), vertices.data()+9, &minicell_view_matrix);
     
     painter->setFont(*minicell_font);
     
-    painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( x_2d[1]+ 1.0) * 0.5) *200), QString("a*"));
-    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( y_2d[1]+ 1.0) * 0.5) *200), QString("b*"));
-    painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *200, (1.0 - ( z_2d[1]+ 1.0) * 0.5) *200), QString("c*"));
+    painter->drawText(QPointF((x_2d[0]+ 1.0) * 0.5 *minicell_rect.width() + minicell_rect.left(), (1.0 - ( x_2d[1]+ 1.0) * 0.5) *minicell_rect.height() + minicell_rect.top()), QString("a*"));
+    painter->drawText(QPointF((y_2d[0]+ 1.0) * 0.5 *minicell_rect.width() + minicell_rect.left(), (1.0 - ( y_2d[1]+ 1.0) * 0.5) *minicell_rect.height() + minicell_rect.top()), QString("b*"));
+    painter->drawText(QPointF((z_2d[0]+ 1.0) * 0.5 *minicell_rect.width() + minicell_rect.left(), (1.0 - ( z_2d[1]+ 1.0) * 0.5) *minicell_rect.height() + minicell_rect.top()), QString("c*"));
     
     painter->setFont(*normal_font);
 }
@@ -2031,7 +2034,6 @@ void VolumeOpenGLWidget::takeScreenShot(QString path)
 {
     // Set resolution back to former value
     setRayTexture(100);
-    displayDistance = false;
     displayResolution = false;
     
     QOpenGLFramebufferObjectFormat format;
@@ -2053,7 +2055,6 @@ void VolumeOpenGLWidget::takeScreenShot(QString path)
 
     // Set resolution back to former value
     setRayTexture(quality_percentage);
-    displayDistance = true;
     displayResolution = true;
 }
 
@@ -2898,25 +2899,30 @@ void VolumeOpenGLWidget::drawLabFrame(QPainter *painter)
 void VolumeOpenGLWidget::drawCountScalebar(QPainter *painter)
 {
     /*
-     * Based on the current display values (min and max), draw ticks on the counts scalebar. There are major and minor ticks.
+     * Based on the current display values (min and max), draw ticks on the counts scalebar. There are major and minor ticks. This function shold be redone to better treat the case of logarithmic values
      * */
     
     double data_min, data_max;
     double tick_interdist_min = 10; // pixels
     double exponent;
     
-    // Draw transfer function bounding box
-    QRectF tsf_rect(0, 0, 20, this->height() - (fps_string_rect.bottom() + 5) - 100);
-    tsf_rect += QMargins(35,20,5,15);
-    tsf_rect.moveTopRight(QPoint(this->width()-5, fps_string_rect.bottom() + 15));
+    // Draw transfer function bounding box (Defines position)
+    double height = 0.7*this->height();
+    double width = height*0.1;
+    QRectF tsf_rect(5, (this->height()-height)*0.5, width, height);
     
-    // Backdrop
-    painter->setPen(*normal_pen);
-    painter->setBrush(*fill_brush);
-    painter->drawRoundedRect(tsf_rect, 5, 5, Qt::AbsoluteSize);
+    QBrush brush(QColor(0,0,0,0));
+    QPen pen(QColor(clear_color_inverse.toQColor()));
+
+    // Painter
+    QFont f("Monospace", 9);
+    QFontMetricsF fm(f);
+    painter->setFont(f);
+    painter->setPen(pen);
+    painter->setBrush(brush);
+    painter->drawRect(tsf_rect);
     
     // Rectangle in GL coords    
-    tsf_rect -= QMargins(35,20,5,15);
     Matrix<GLfloat> gl_tsf_rect;
     gl_tsf_rect = glRect(tsf_rect);
     
@@ -2953,21 +2959,22 @@ void VolumeOpenGLWidget::drawCountScalebar(QPainter *painter)
         
         while ((current < data_max) && (iter < ticks.size()/4))
         {
-            ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-10)/ (double) this->width())*2.0;
+            ticks[iter*4+0] = -1.0 + ((tsf_rect.right()-tsf_rect.width()*0.15)/ (double) this->width())*2.0;
             ticks[iter*4+1] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) this->height())*2.0;
-            ticks[iter*4+2] = -1.0 + (tsf_rect.right()/ (double) this->width())*2.0;
+            ticks[iter*4+2] = -1.0 + ((tsf_rect.right()+tsf_rect.width()*0.1)/ (double) this->width())*2.0;
             ticks[iter*4+3] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min)/(data_max-data_min)*tsf_rect.height())/ (double) this->height())*2.0;
             
             if (((int)round(current*pow(10.0, -exponent)) % 10) == 0)
             {
-                ticks[iter*4+0] = -1.0 + ((tsf_rect.left()-25)/ (double) this->width())*2.0;
+                ticks[iter*4+0] = -1.0 + ((tsf_rect.right()-tsf_rect.width()*0.35)/ (double) this->width())*2.0;
+                ticks[iter*4+2] = -1.0 + ((tsf_rect.right()+tsf_rect.width()*0.25)/ (double) this->width())*2.0;
                 
-                if(n_count_scalebar_ticks < count_scalebar_ticks.size())
+                if(n_count_scalebar_ticks < count_major_scalebar_ticks.size())
                 {
-                    count_scalebar_ticks[n_count_scalebar_ticks*3+0] = tsf_rect.left()-30;
-                    count_scalebar_ticks[n_count_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height() - 2;
-                    if (isLogarithmic) count_scalebar_ticks[n_count_scalebar_ticks*3+2] = pow(10,current);
-                    else count_scalebar_ticks[n_count_scalebar_ticks*3+2] = current;
+                    count_major_scalebar_ticks[n_count_scalebar_ticks*3+0] = tsf_rect.right()+tsf_rect.width()*0.40;
+                    count_major_scalebar_ticks[n_count_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height() + fm.xHeight()*0.5;
+                    if (isLogarithmic) count_major_scalebar_ticks[n_count_scalebar_ticks*3+2] = pow(10,current);
+                    else count_major_scalebar_ticks[n_count_scalebar_ticks*3+2] = current;
                     
                     n_count_scalebar_ticks++;
                 }
@@ -2975,8 +2982,8 @@ void VolumeOpenGLWidget::drawCountScalebar(QPainter *painter)
             
             if(n_count_minor_scalebar_ticks < count_minor_scalebar_ticks.size())
             {
-                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+0] = tsf_rect.left()-30;
-                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height() - 2;
+                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+0] = tsf_rect.right()+tsf_rect.width()*0.20;
+                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+1] = tsf_rect.bottom() - (current - data_min)/(data_max-data_min)*tsf_rect.height() + fm.xHeight()*0.5;
                 if (isLogarithmic) count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = pow(10,current);
                 else count_minor_scalebar_ticks[n_count_minor_scalebar_ticks*3+2] = current;
                 
@@ -3036,7 +3043,9 @@ void VolumeOpenGLWidget::drawCountScalebar(QPainter *painter)
         glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, identity.data());
     
         glUniform4fv(std_2d_col_color, 1, clear_color_inverse.data());
-    
+
+        glLineWidth(1.0);
+
         glDrawArrays(GL_LINES,  0, iter*2);
     
         glDisableVertexAttribArray(std_2d_col_fragpos);
@@ -3046,18 +3055,13 @@ void VolumeOpenGLWidget::drawCountScalebar(QPainter *painter)
         endRawGLCalls(painter);
     }
     
-    // Enveloping background
-    painter->setBrush(*normal_brush);
-    painter->setPen(*normal_pen);
-    painter->drawRect(tsf_rect);
-    
     // Count scalebar tick labels
     if (n_count_scalebar_ticks >= 2)
     {
         for (size_t i = 0; i < n_count_scalebar_ticks; i++)
         {
-            double value = count_scalebar_ticks[i*3+2];
-            painter->drawText(QPointF(count_scalebar_ticks[i*3+0], count_scalebar_ticks[i*3+1]), QString::number(value, 'g', 4));
+            double value = count_major_scalebar_ticks[i*3+2];
+            painter->drawText(QPointF(count_major_scalebar_ticks[i*3+0], count_major_scalebar_ticks[i*3+1]), QString::number(value, 'g', 4));
         }
     }
     else

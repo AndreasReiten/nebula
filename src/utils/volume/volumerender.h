@@ -352,7 +352,7 @@ private:
     
     
     Matrix<float> position_scalebar_ticks;
-    Matrix<float> count_scalebar_ticks;
+    Matrix<float> count_major_scalebar_ticks;
     Matrix<float> count_minor_scalebar_ticks;
     
     

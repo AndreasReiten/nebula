@@ -20,7 +20,7 @@ SparseVoxelOctree::SparseVoxelOctree()
     this->p_brick_pool_power = 7;
     this->p_extent.reserve(1,8);
     this->p_version_major = 0;
-    this->p_version_minor = 4;
+    this->p_version_minor = 5;
     this->p_minmax.reserve(1,2);
     p_ub.setIdentity(3);
 };
