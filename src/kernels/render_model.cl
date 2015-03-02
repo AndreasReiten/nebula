@@ -8,7 +8,7 @@ __kernel void modelRayTrace(
     __constant float * tsf_var,
     __constant float * parameters,
     __constant int * misc_int,
-    __constant float * scalebar_rotation,
+    __constant float * scalebar_rotation, // Used for slicing, which is done orthonormally to the scalebar axes
     __write_only image2d_t integration_tex,
     float4 shadow_vector)
 {
