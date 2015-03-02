@@ -740,7 +740,9 @@ void MainWindow::initConnects()
     connect(beamYOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamYOverride(double)));
     
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineModel, SLOT(highlight(QModelIndex)));
+    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(refreshLine(int)));
+    connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(update()));
     connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
 }
@@ -1323,6 +1325,17 @@ void MainWindow::initGUI()
         viewMenu->addAction(graphicsDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, graphicsDockWidget);
     }
+
+    /* PlotWidget */
+    {
+        plotDockWidget = new QDockWidget("Plot");
+
+        plotWidget = new PlotWidget;
+
+        plotDockWidget->setWidget(plotWidget);
+        viewMenu->addAction(plotDockWidget->toggleViewAction());
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotDockWidget);
+    }
     
     /* Unitcell dock widget */
     {
@@ -1732,7 +1745,7 @@ void MainWindow::initGUI()
     // Tabify docks
     volumeRenderMainWindow->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
     volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, svoHeaderDock);
-//    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, lineDockWidget);
+    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, plotDockWidget);
     
 }
 

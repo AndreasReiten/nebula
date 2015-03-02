@@ -1753,6 +1753,8 @@ void VolumeOpenGLWidget::setTsfParameters()
     err = QOpenCLSetKernelArg(cl_model_raytrace, 6, sizeof(cl_mem), &cl_tsf_parameters_model);
     err |= QOpenCLSetKernelArg(cl_svo_raytrace, 10, sizeof(cl_mem), &cl_tsf_parameters_svo);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    update();
 }
 
 void VolumeOpenGLWidget::setMiscArrays()
@@ -1789,6 +1791,8 @@ void VolumeOpenGLWidget::setMiscArrays()
     err |= QOpenCLSetKernelArg(cl_model_raytrace, 8, sizeof(cl_mem), &cl_misc_ints);
     err |= QOpenCLSetKernelArg(cl_svo_raytrace, 11, sizeof(cl_mem), &cl_misc_ints);
     if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    update();
 }
 
 void VolumeOpenGLWidget::setRayTexture(int percentage)

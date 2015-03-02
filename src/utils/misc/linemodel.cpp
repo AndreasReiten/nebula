@@ -157,23 +157,23 @@ bool LineModel::setData(const QModelIndex & index, const QVariant & value, int r
         }
         case 4:
         {
-            Matrix<double> pos = (*p_lines)[index.row()].positionA();
+            Matrix<double> pos = (*p_lines)[index.row()].positionB();
             pos[0] = value.toDouble();
-            (*p_lines)[index.row()].setPositionA(pos);
+            (*p_lines)[index.row()].setPositionB(pos);
             break;
         }
         case 5:
         {
-            Matrix<double> pos = (*p_lines)[index.row()].positionA();
+            Matrix<double> pos = (*p_lines)[index.row()].positionB();
             pos[1] = value.toDouble();
-            (*p_lines)[index.row()].setPositionA(pos);
+            (*p_lines)[index.row()].setPositionB(pos);
             break;
         }
         case 6:
         {
-            Matrix<double> pos = (*p_lines)[index.row()].positionA();
+            Matrix<double> pos = (*p_lines)[index.row()].positionB();
             pos[2] = value.toDouble();
-            (*p_lines)[index.row()].setPositionA(pos);
+            (*p_lines)[index.row()].setPositionB(pos);
             break;
         }
         case 7:

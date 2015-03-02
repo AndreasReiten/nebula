@@ -73,7 +73,8 @@ HEADERS += \
     src/utils/file/utils/selection.h \
     src/utils/misc/line.h \
     src/utils/misc/marker.h \
-    src/utils/misc/linemodel.h
+    src/utils/misc/linemodel.h \
+    src/utils/misc/plotwidget.h
 #    src/utils/glsl/glslfunctions.h
 
 SOURCES += \
@@ -98,6 +99,7 @@ SOURCES += \
     src/mainwindow.cpp \
     src/utils/misc/line.cpp \
     src/utils/misc/marker.cpp \
-    src/utils/misc/linemodel.cpp
+    src/utils/misc/linemodel.cpp \
+    src/utils/misc/plotwidget.cpp
 #    src/utils/glsl/glslfunctions.cpp
 

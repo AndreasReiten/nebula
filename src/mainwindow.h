@@ -22,6 +22,7 @@
 #include "utils/svo/qxsvolib.h"
 #include "utils/misc/texthighlighter.h"
 #include "utils/misc/line.h"
+#include "utils/misc/plotwidget.h"
 #include "utils/misc/linemodel.h"
 #include "utils/volume/volumerender.h"
 #include "utils/worker/worker.h"
@@ -98,6 +99,10 @@ signals:
     void setPulled(SeriesSet set);
     
 private:
+    // PlotWidget
+    QDockWidget * plotDockWidget;
+    PlotWidget * plotWidget;
+
     // Line dock widget
     QDockWidget * lineDockWidget;
     QWidget * lineWidget;
