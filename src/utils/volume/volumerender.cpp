@@ -42,11 +42,29 @@ VolumeWorker::~VolumeWorker()
 void VolumeWorker::setOpenCLContext(OpenCLContext context)
 {
     context_cl = context;
+    
+    initializeOpenCLKernels();
+}
+
+void VolumeWorker::initializeOpenCLKernels()
+{
+    // Build programs from OpenCL kernel source
+    QStringList paths;
+    paths << "kernels/line_integral.cl";
+
+    program = context_cl.createProgram(paths, &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    context_cl.buildProgram(&program, "-Werror");
+
+    // Kernel handles
+    p_line_integral_kernel =  QOpenCLCreateKernel(program, "integrateLine", &err);
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
 }
 
 void VolumeWorker::setKernel(cl_kernel kernel)
 {
-    p_kernel = kernel;
+    p_raytrace_kernel = kernel;
 }
 
 void VolumeWorker::raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws)
@@ -68,7 +86,7 @@ void VolumeWorker::raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_raytrace_kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
             if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         }
     }
@@ -1314,9 +1332,9 @@ void VolumeOpenGLWidget::setCenterLine()
     setVbo(centerline_vbo, centerline_coords.data(), 6, GL_STATIC_DRAW);
 }
 
-void VolumeWorker::resolveLineIntegral()
+void VolumeWorker::resolveLineIntegral(Line line)
 {
-    
+    p_prism_side = 1.0; // Must be determined by application and stored in line object.
 }
 
 void VolumeOpenGLWidget::addLine()
@@ -1389,10 +1407,6 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
     endRawGLCalls(painter);
 }
 
-void VolumeOpenGLWidget::drawLineIntegralGraph(QPainter * painter, QRect position)
-{
-    
-}
 
 void VolumeOpenGLWidget::saveLineIntegralAsImage(QString path)
 {

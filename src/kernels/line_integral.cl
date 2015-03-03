@@ -1,89 +1,121 @@
 __kernel void integrateLine(
-    __read_only image3d_t bricks,
-    __global uint * oct_index,
-    __global uint * oct_brick,
-    sampler_t brick_sampler,
+    __read_only image3d_t bricks, sampler_t brick_sampler,
+    __global uint * oct_index, __global uint * oct_brick,
     __constant float * data_extent,
     __constant int * misc_int,
-    __local float * addition_array,
-    __global float * result
-
-)
+    __global float * result,
+    float3 a, float3 b, float3 c, int3 samples_abc,
+    __local float * addition_array
+    )
 {
-    int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
-
+    /* Problem layout
+    *(y)
+    * ^ 
+    * |W W W W W 
+    * |G G G G G
+    * |W W W W W
+    * |G G G G G
+    * |W W W W W
+    * |G G G G G
+    * |-------------------> (x)
+    *
+    * --------------------> (Results vector)
+    *
+    * WGs have dimension n^2 x 1. The WI position in the work matrix translates to an 
+    * WGs are spawned in horizontal batches left to right:
+    *
+    * W W W W W 
+    * G G G G G ->
+    *
+    * The sampling geometry is that of a rectangular prism with extent given by three vectors a*samples.x, b*samples.y, and c*size_glb_(0). 
+    * The vector c is spanned by a line from A to B in the host program, and a and b are dictated by it. 
+    **/
+    
     int id_loc_effective = get_local_id(0) + get_local_id(1)*get_local_size(0);
+    int size_loc_effective = samples_abc.x*samples_abc.y;
     
-    int4 pool_dim = get_image_dim(bricks);
-    
-    int n_tree_levels = misc_int[0];
-    int brick_dim = misc_int[1];
+    if (id_loc_effective < size_loc_effective)
+    {    
+        int4 pool_dim = get_image_dim(bricks);
         
-    // Some variables we will need during ray traversal
-    uint index_this_lvl, brick, isMsd, isEmpty;
-    float3 norm_pos_this_lvl;
-    float4 lookup_pos;
-    uint4 brick_id;
-    int3 norm_index;
-
-    // Merged bits in the octree can be read using these bitmasks:
-    uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
-    uint mask_data_flag = ((1 << 1) - 1) << 30;
-    uint mask_child_index = ((1 << 30) - 1) << 0;
-    uint mask_brick_id_x = ((1 << 10) - 1) << 20;
-    uint mask_brick_id_y = ((1 << 10) - 1) << 10;
-    uint mask_brick_id_z = ((1 << 10) - 1) << 0;
+        int n_tree_levels = misc_int[0];
+        int brick_dim = misc_int[1];
+            
+        // Some variables we will need during ray traversal
+        uint index, brick, isMsd, isEmpty;
+        float3 norm_pos;
+        float4 lookup_pos;
+        uint4 brick_id;
+        int3 norm_index;
     
-    /* Sample the octree */
-    // xyz position (function of global id)
-    float3 pos = (float3)(0,0,0);
+        // Merged bits in the octree can be read using these bitmasks:
+        uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
+        uint mask_data_flag = ((1 << 1) - 1) << 30;
+        uint mask_child_index = ((1 << 30) - 1) << 0;
+        uint mask_brick_id_x = ((1 << 10) - 1) << 20;
+        uint mask_brick_id_y = ((1 << 10) - 1) << 10;
+        uint mask_brick_id_z = ((1 << 10) - 1) << 0;
+        
+        /* Sample the octree */
+        int i_a = id_loc_effective % samples_abc.x; 
+        int i_b = id_loc_effective / samples_abc.x;
+        int i_c = get_global_id(0);    
 
-    // Descend into the octree data structure
-    // Index trackers for the traversal.
-    index_this_lvl = 0;
-
-     // We use a normalized convention during octree traversal. The normalized convention makes it easier to think about the octree traversal.
-    norm_pos_this_lvl = native_divide( (float3)(pos.x - data_extent[0], pos.y - data_extent[2], pos.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
-
-    norm_index = convert_int3(norm_pos_this_lvl);
-    norm_index = clamp(norm_index, 0, 1);
-
-    // Traverse the octree
-    for (int j = 0; j < n_tree_levels; j++)
-    {
-        voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
-        if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
-
-        brick = oct_index[index_this_lvl];
-        isMsd = (brick & mask_msd_flag) >> 31;
-        isEmpty = !((brick & mask_data_flag) >> 30);
-
-        if (isMsd)
+        // xyz position (function of global id)
+        float3 pos = (float3)(
+        a.x*((float)i_a) + b.x*((float)i_a) + c.x*((float)i_a),
+        a.y*((float)i_b) + b.y*((float)i_b) + c.y*((float)i_b),
+        a.z*((float)i_c) + b.z*((float)i_c) + c.z*((float)i_c));
+    
+        // Descend into the octree data structure
+        // Index trackers for the traversal.
+        index = 0;
+    
+         // We use a normalized convention during octree traversal. The normalized convention makes it easier to think about the octree traversal.
+        norm_pos = native_divide( (float3)(pos.x - data_extent[0], pos.y - data_extent[2], pos.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
+    
+        norm_index = convert_int3(norm_pos);
+        norm_index = clamp(norm_index, 0, 1);
+    
+        // Traverse the octree
+        for (int j = 0; j < n_tree_levels; j++)
         {
-            if (isEmpty) addition_array[id_loc_effective] = 0;
-
-            // Sample brick
-            brick = oct_brick[index_this_lvl];
-            brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
-
-            lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
-
-            addition_array[id_loc_effective] = read_imagef(bricks, brick_sampler, lookup_pos).w;
-
-            break;
-        }
-        else
-        {
-            // Descend to the next level
-            index_this_lvl = (brick & mask_child_index);
-            index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
-
-            norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
-            norm_index = convert_int3(norm_pos_this_lvl);
-            norm_index = clamp(norm_index, 0, 1);
+            brick = oct_index[index];
+            isMsd = (brick & mask_msd_flag) >> 31;
+            isEmpty = !((brick & mask_data_flag) >> 30);
+    
+            if (isMsd)
+            {
+                if (isEmpty) addition_array[id_loc_effective] = 0;
+    
+                // Sample brick
+                brick = oct_brick[index];
+                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+    
+                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos, 0.0f)*3.5f , convert_float4(pool_dim));
+    
+                addition_array[id_loc_effective] = read_imagef(bricks, brick_sampler, lookup_pos).w;
+    
+                break;
+            }
+            else
+            {
+                // Descend to the next level
+                index = (brick & mask_child_index);
+                index += norm_index.x + norm_index.y*2 + norm_index.z*4;
+    
+                norm_pos = (norm_pos - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
+                norm_index = convert_int3(norm_pos);
+                norm_index = clamp(norm_index, 0, 1);
+            }
         }
     }
+    else
+    {
+        addition_array[id_loc_effective] = 0;
+    }
 
+    // Sum values in the local buffer (parallel reduction) and add them to the relevant position in the result vector
     barrier(CLK_LOCAL_MEM_FENCE);
     for (unsigned int i = get_local_size(0)/2; i > 0; i >>= 1)
     {
@@ -96,6 +128,6 @@ __kernel void integrateLine(
 
     if (get_local_id(0) == 0)
     {
-        result[id_glb.y] = addition_array[0];
+        result[get_global_id(0)] += addition_array[0];
     }
 }

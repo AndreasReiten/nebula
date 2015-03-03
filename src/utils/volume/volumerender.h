@@ -24,7 +24,7 @@ public:
 
 public slots:
     void raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws);
-    void resolveLineIntegral();
+    void resolveLineIntegral(Line line);
     
 signals:
     void rayTraceFinished();
@@ -32,8 +32,13 @@ signals:
 
 private:
     OpenCLContext context_cl;
-    cl_kernel p_kernel;
+    cl_kernel p_line_integral_kernel, p_raytrace_kernel;
+    
+    void initializeOpenCLKernels();
     cl_int err;
+    cl_program program;
+    
+    double p_prism_side;
 };
 
 class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
@@ -322,7 +327,6 @@ private:
     void drawHklText(QPainter * painter);
     void drawCountIntegral(QPainter *painter);
     void drawLineIntegrationVolumeVisualAssist(QPainter * painter);
-    void drawLineIntegralGraph(QPainter * painter, QRect position);
     
     int fps_string_width_prev;
     
