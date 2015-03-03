@@ -37,8 +37,6 @@ private:
     void initializeOpenCLKernels();
     cl_int err;
     cl_program program;
-    
-    double p_prism_side;
 };
 
 class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions

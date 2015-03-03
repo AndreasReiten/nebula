@@ -13,13 +13,11 @@ class Line : protected QOpenGLFunctions
     
 public:
     Line();
+    Line(const Line & other);
     Line(Matrix<double> pos_a, Matrix<double> pos_b);
     Line(double x0, double y0, double z0, double x1, double y1, double z1);
     ~Line();
 
-//    void genVbo();
-//    void delVbo();
-//    void setVbo();
     GLuint * vbo();
     
     void setPositionA(Matrix<double> pos);
@@ -28,6 +26,16 @@ public:
     void setComment(QString str);
     void setOffsetA(double value);
     void setOffsetB(double value); 
+    
+    void setPrismSideA(double value);
+    void setPrismSideB(double value);
+    
+    double prismSideA() const;
+    double prismSideB() const;
+    
+    const Matrix<double> aVec() const;
+    const Matrix<double> bVec() const;
+    const Matrix<double> cVec() const;
     
     Matrix<double> effectivePosA();
     Matrix<double> effectivePosB();
@@ -42,6 +50,11 @@ public:
     bool tagged() const;
         
 private:
+    Matrix<double> p_a;
+    Matrix<double> p_b;
+    Matrix<double> p_c;
+    
+    
     GLuint p_vbo;
     
     bool p_is_tagged;
@@ -56,6 +69,10 @@ private:
     Matrix<float> p_vertices;
     
     void computeVertices();
+    void computePrism();
+    
+    double p_prism_side_a;
+    double p_prism_side_b;
 };
 
 Q_DECLARE_METATYPE(Line);

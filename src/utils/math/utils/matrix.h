@@ -694,7 +694,7 @@ const Matrix<T> Matrix<T>::operator + (const Matrix& M) const
 
     if ((this->p_n != M.n()) || (this->p_m != M.m()))
     {
-        qWarning("Matrix dimesions do not agree!");
+        qFatal("Matrix dimesions do not agree!");
         return c;
     }
 
@@ -734,7 +734,7 @@ const Matrix<T> Matrix<T>::operator - (const Matrix& M) const
 
     if ((this->p_n != M.n()) || (this->p_m != M.m()))
     {
-        qWarning("Matrix dimesions do not agree!");
+        qFatal("Matrix dimesions do not agree!");
         return c;
     }
 
@@ -867,7 +867,7 @@ const Matrix<T> Matrix<T>::operator / (const Matrix& M) const
     
     if ((this->p_n != M.n()) || (this->p_m != M.m()))
     {
-        qWarning("Matrix dimesions do not agree!");
+        qFatal("Matrix dimesions do not agree!");
         return c;
     }
     
@@ -900,7 +900,7 @@ const Matrix<T> Matrix<T>::operator += (const Matrix& M)
 {
     if ((this->p_n != M.n()) || (this->p_m != M.m()))
     {
-        qWarning("Matrix dimesions do not agree!");
+        qFatal("Matrix dimesions do not agree!");
         return *this;
     }
     
@@ -934,7 +934,7 @@ const Matrix<T> Matrix<T>::operator -= (const Matrix& M) const
 {
     if ((this->p_n != M.n()) || (this->p_m != M.m()))
     {
-        qWarning("Matrix dimesions do not agree!");
+        qFatal("Matrix dimesions do not agree!");
         return *this;
     }
     

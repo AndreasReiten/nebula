@@ -4,7 +4,7 @@ __kernel void integrateLine(
     __constant float * data_extent,
     __constant int * misc_int,
     __global float * result,
-    float3 a, float3 b, float3 c, int3 samples_abc,
+    float3 base_pos, float3 a, float3 b, float3 c, int3 samples_abc,
     __local float * addition_array
     )
 {
@@ -62,7 +62,7 @@ __kernel void integrateLine(
         int i_c = get_global_id(0);    
 
         // xyz position (function of global id)
-        float3 pos = (float3)(
+        float3 pos = base_pos + (float3)(
         a.x*((float)i_a) + b.x*((float)i_a) + c.x*((float)i_a),
         a.y*((float)i_b) + b.y*((float)i_b) + c.y*((float)i_b),
         a.z*((float)i_c) + b.z*((float)i_c) + c.z*((float)i_c));

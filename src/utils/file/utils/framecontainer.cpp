@@ -11,14 +11,12 @@ ImageInfo::ImageInfo()
     {
         plane_sample <<  Selection(40*(i%2), (i/2)*(LSQ_SAMPLE_SIZE+8), LSQ_SAMPLE_SIZE, LSQ_SAMPLE_SIZE);
     }
-    //    p_background = Selection(0,0,1e5,1e5);
 }
 
 ImageInfo::ImageInfo(const ImageInfo & other)
 {
     p_selection = other.selection();
     plane_sample = other.planeMarker();
-//    p_background = other.background();
     p_path = other.path();
 }
 

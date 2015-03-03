@@ -27,14 +27,16 @@ class DetectorFile
     public:
         ~DetectorFile();
         DetectorFile();
-        DetectorFile(QString path);
+        DetectorFile(const DetectorFile & other);
+        DetectorFile(QString p_path);
 
-        QString getPath() const;
+        QString path() const;
         QString info();
+        QString detector() const;
 
-        int setPath(QString path);
+        int setPath(QString p_path);
         int readData();
-        bool isNaive();
+        bool isNaive() const;
         bool isValid();
         bool isDataRead();
         bool isHeaderRead();
@@ -45,33 +47,33 @@ class DetectorFile
         
         float intensity(int x, int y);
 
-        Matrix<float> & data();
+        const Matrix<float> &data() const;
         int fastDimension() const;
         int slowDimension() const;
         size_t bytes() const;
-        float alpha();
-        float beta();
-        float getSearchRadiusLowSuggestion();
-        float getSearchRadiusHighSuggestion();
+        float alpha() const;
+        float beta() const;
+        float getSearchRadiusLowSuggestion() const;
+        float getSearchRadiusHighSuggestion() const;
         float getQSuggestion();
-        float maxCount();
-        float startAngle();
-        float angleIncrement();
-        float phi();
-        float omega();
-        float kappa();
+        float maxCount() const;
+        float startAngle() const;
+        float angleIncrement() const;
+        float phi() const;
+        float omega() const;
+        float kappa() const;
         void clearData();
-        float flux();
-        float expTime();
-        float wavelength();
-        float detectorDist();
-        float beamX();
-        float beamY();
-        float pixSizeX();
-        float pixSizeY();
+        float flux() const;
+        float expTime() const;
+        float wavelength() const;
+        float detectorDist() const;
+        float beamX() const;
+        float beamY() const;
+        float pixSizeX() const;
+        float pixSizeY() const;
         void print();
         QString getHeaderText();
-        Matrix<float> &getData();
+        
         
     private:
         /* Non-optional keywords */
@@ -105,11 +107,8 @@ class DetectorFile
         float p_alpha;
         float p_kappa;
         float p_phi;
-        float p_phi_increment;
         float p_chi;
-        float p_chi_increment;
         float p_omega;
-        float p_omega_increment;
         QString p_oscillation_axis;
         int p_n_oscillations;
         float p_start_position;
@@ -122,18 +121,15 @@ class DetectorFile
         float p_max_counts;
         
         // Misc
-        int active_angle;
         Matrix<float> data_buf;
-        
 
-        QString path;
+        QString p_path;
         size_t fast_dimension, slow_dimension;
         
         bool p_isNaive;
         bool isFileValid;
         bool isFileHeaderRead;
         bool isFileDataRead;
-//        int STATUS_OK;
 
         float srchrad_sugg_low, srchrad_sugg_high;
 

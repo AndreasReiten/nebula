@@ -1334,7 +1334,8 @@ void VolumeOpenGLWidget::setCenterLine()
 
 void VolumeWorker::resolveLineIntegral(Line line)
 {
-    p_prism_side = 1.0; // Must be determined by application and stored in line object.
+        
+    
 }
 
 void VolumeOpenGLWidget::addLine()
@@ -1355,7 +1356,7 @@ void VolumeOpenGLWidget::addLine()
     glGenBuffers(1, lines->last().vbo());
     
     glBindBuffer(GL_ARRAY_BUFFER, *lines->last().vbo());
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*6, lines->last().vertices().data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, lines->last().vertices().bytes(), lines->last().vertices().data(), GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     emit linesChanged();
@@ -1366,7 +1367,7 @@ void VolumeOpenGLWidget::addLine()
 void VolumeOpenGLWidget::refreshLine(int value)
 {
     glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[value].vbo());
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*6, lines->at(value).vertices().data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, lines->at(value).vertices().bytes(), lines->at(value).vertices().data(), GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -1397,7 +1398,8 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
         glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glDrawArrays(GL_LINES,  0, 2);
+        GLuint indices[] = {0,1,  2,5, 3,8, 6,9, 4,7,  4,6, 7,9, 5,8, 2,3,  5,7, 8,9, 3,6, 2,4};
+        glDrawElements(GL_LINES,  14, GL_UNSIGNED_INT, indices);
     }
 
     glDisableVertexAttribArray(std_3d_col_fragpos);
@@ -3563,6 +3565,8 @@ void VolumeOpenGLWidget::setBackground()
     normal_pen->setColor(normal_color);
     anything_pen->setColor(normal_color);
     fill_brush->setColor(fill_color);
+    
+    update();
 }
 
 void VolumeOpenGLWidget::setURotation(bool value)

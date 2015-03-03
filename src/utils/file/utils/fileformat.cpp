@@ -24,7 +24,6 @@ DetectorFile::~DetectorFile()
 
 }
 DetectorFile::DetectorFile() :
-    active_angle(2),
     fast_dimension(0),
     slow_dimension(0),
     isFileValid(false),
@@ -35,10 +34,73 @@ DetectorFile::DetectorFile() :
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     p_max_counts = 0;
-//    STATUS_OK = 0;
 }
+
+DetectorFile::DetectorFile(const DetectorFile & other)
+{
+    /* Non-optional keywords */
+    p_detector = other.detector();
+    p_pixel_size_x = other.pixSizeX();
+    p_pixel_size_y = other.pixSizeY();
+    p_exposure_time = other.expTime();
+//    p_exposure_period = other.;
+//    p_tau = other.;
+//    p_count_cutoff = other;
+//    p_threshold_setting = other.;
+//    p_gain_setting = other.;
+//    p_n_excluded_pixels = other.;
+//    p_excluded_pixels = other.;
+//    p_flat_field = other.;
+//    p_time_file = other.;
+//    p_image_path = other.;
+
+    /* Optional keywords */
+    p_wavelength = other.wavelength();
+//    p_energy_range_low = other.;
+//    p_energy_range_high = other.;
+    p_detector_distance = other.detectorDist();
+//    p_detector_voffset = other.;
+    p_beam_x = other.beamX();
+    p_beam_y = other.beamY();
+    p_flux = other.flux();
+//    p_filter_transmission = other.;
+    p_start_angle = other.startAngle();
+    p_angle_increment = other.angleIncrement();
+//    p_detector_2theta = other.;
+//    p_polarization = other.;
+    p_alpha = other.alpha();
+    p_kappa = other.beta();
+    p_phi = other.phi();
+//    p_chi = other.ch;
+    p_omega = other.omega();
+//    p_oscillation_axis = other.;
+//    p_n_oscillations = other.;
+//    p_start_position = other.st;
+//    p_position_increment = other.;
+//    p_shutter_time = other.s;
+//    p_background_flux = other.;
+//    p_backgroundExpTime = other.;
+    p_beta = other.beta();
+    
+    p_max_counts = other.maxCount();
+    
+    // Misc
+    data_buf = other.data();
+
+    p_path = other.path();
+    fast_dimension = other.fastDimension();
+    slow_dimension = other.slowDimension();
+    
+    p_isNaive = other.isNaive();
+    isFileValid = false;
+    isFileHeaderRead = false;
+    isFileDataRead = false;
+
+    srchrad_sugg_low = other.getSearchRadiusLowSuggestion();
+    srchrad_sugg_high = other.getSearchRadiusHighSuggestion();
+}
+
 DetectorFile::DetectorFile(QString path):
-    active_angle(2),
     isFileValid(false),
     isFileDataRead(false),
     isFileHeaderRead(false),
@@ -49,6 +111,11 @@ DetectorFile::DetectorFile(QString path):
     p_max_counts = 0;
     this->setPath(path);
     isValid();
+}
+
+QString DetectorFile::detector() const
+{
+    return p_detector;
 }
 
 void DetectorFile::setNaive()
@@ -68,17 +135,6 @@ void DetectorFile::setNaive()
     
     data_buf.setDeep(slow_dimension, fast_dimension, buf);
 
-//    float value = 0;
-
-//    for (int i = 0; i < data_buf.size(); i++)
-//    {
-//        data_buf[i] = value;
-
-//        value += 1;
-//    }
-
-//    STATUS_OK = 1;
-    
     p_isNaive = true;
     isFileValid = true;
     isFileDataRead = true;
@@ -94,7 +150,7 @@ float DetectorFile::intensity(int x, int y)
     else return 0;
 }
 
-float DetectorFile::wavelength()
+float DetectorFile::wavelength()  const
 {
     return p_wavelength;
 }
@@ -132,13 +188,13 @@ bool DetectorFile::isValid()
 {
     if (!isFileValid)
     {
-        QFileInfo file_info(path);
+        QFileInfo file_info(p_path);
         isFileValid =  (file_info.exists() && file_info.isReadable() && file_info.isFile());
     }
     return isFileValid;
 }
 
-bool DetectorFile::isNaive()
+bool DetectorFile::isNaive() const
 {
     return p_isNaive;
 }
@@ -156,8 +212,8 @@ bool DetectorFile::isHeaderRead()
 int DetectorFile::setPath(QString path)
 {
 //    this->context_cl = context;
-    if (this->path == path) return 1;
-    else this->path = path;
+    if (this->p_path == path) return 1;
+    else this->p_path = path;
     
     isFileValid = false;
     isFileHeaderRead = false;
@@ -195,11 +251,11 @@ int DetectorFile::setPath(QString path)
 
 
 
-float DetectorFile::getSearchRadiusLowSuggestion()
+float DetectorFile::getSearchRadiusLowSuggestion() const
 {
     return srchrad_sugg_low;
 }
-float DetectorFile::getSearchRadiusHighSuggestion()
+float DetectorFile::getSearchRadiusHighSuggestion() const
 {
     return srchrad_sugg_high;
 }
@@ -222,12 +278,12 @@ size_t DetectorFile::bytes() const
     return data_buf.bytes();
 }
 
-Matrix<float> & DetectorFile::data()
+const Matrix<float> & DetectorFile::data() const
 {
     return data_buf;
 }
 
-float DetectorFile::maxCount()
+float DetectorFile::maxCount() const
 {
     return p_max_counts;
 }
@@ -242,46 +298,46 @@ void DetectorFile::setBeta(float value)
     p_beta = value;
 }
 
-float DetectorFile::alpha()
+float DetectorFile::alpha() const
 {
     return p_alpha;
 }
 
-float DetectorFile::beta()
+float DetectorFile::beta() const
 {
     return p_beta;
 }
 
-float DetectorFile::angleIncrement()
+float DetectorFile::angleIncrement() const
 {
     return p_angle_increment;
 }
 
-float DetectorFile::startAngle()
+float DetectorFile::startAngle() const
 {
     return p_start_angle;
 }
 
-float DetectorFile::phi()
+float DetectorFile::phi() const
 {
     return p_phi;
 }
 
-float DetectorFile::omega()
+float DetectorFile::omega() const
 {
     return p_omega;
 }
 
-float DetectorFile::kappa()
+float DetectorFile::kappa() const
 {
     return p_kappa;
 }
 
-float DetectorFile::flux()
+float DetectorFile::flux()  const
 {
     return p_flux;
 }
-float DetectorFile::expTime()
+float DetectorFile::expTime() const
 {
     return p_exposure_time;
 }
@@ -311,22 +367,22 @@ int DetectorFile::readHeader()
 
 
     // Open file
-    QFileInfo file_info(path);
+    QFileInfo file_info(p_path);
     if (!file_info.exists())
     {
-        qDebug() << "File does not exist: " << path.toStdString().c_str();
+        qDebug() << "File does not exist: " << p_path.toStdString().c_str();
         return 0;
     }
     else if (file_info.size() <= 0)
     {
-        qDebug() << "File does not exist: " << path.toStdString().c_str();
+        qDebug() << "File does not exist: " << p_path.toStdString().c_str();
         return 0;
     }
     // Read file
-    QFile file(path.toStdString().c_str());
+    QFile file(p_path.toStdString().c_str());
     if (!file.open(QIODevice::ReadOnly))
     {
-        qDebug() << "Error reading file: " << path.toStdString().c_str();
+        qDebug() << "Error reading file: " << p_path.toStdString().c_str();
         return 0;
     }
     QString header = file.read(4096);
@@ -385,9 +441,9 @@ int DetectorFile::readHeader()
     return isFileHeaderRead;
 }
 
-QString DetectorFile::getPath() const
+QString DetectorFile::path() const
 {
-    return path;
+    return p_path;
 }
 
 QString DetectorFile::regExp(QString * regular_expression, QString * source, size_t offset, size_t i)
@@ -405,12 +461,6 @@ QString DetectorFile::regExp(QString * regular_expression, QString * source, siz
     }
 }
 
-Matrix<float> & DetectorFile::getData()
-{
-    return data_buf;
-}
-
-
 void DetectorFile::clearData()
 {
     data_buf.clear();
@@ -420,7 +470,7 @@ void DetectorFile::print()
 {
     std::stringstream ss;
     ss << "__________ PILATUS FILE __________" << std::endl;
-    ss << "Path: " << path.toStdString().c_str() << std::endl;
+    ss << "Path: " << p_path.toStdString().c_str() << std::endl;
     ss << "Data elements: " << data_buf.size() << std::endl;
     ss << "Dimensions: " << fast_dimension << " x " << slow_dimension << std::endl;
     ss << "Max counts: " << p_max_counts << std::endl;
@@ -450,7 +500,7 @@ QString DetectorFile::info()
 {
     std::stringstream ss;
     ss << "#__________ PILATUS FILE __________" << std::endl;
-    ss << "# Path: " << path.toStdString().c_str() << std::endl;
+    ss << "# Path: " << p_path.toStdString().c_str() << std::endl;
     ss << "# Data elements: " << data_buf.size() << std::endl;
     ss << "# Dimensions: " << fast_dimension << " x " << slow_dimension << std::endl;
     ss << "# Max counts: " << p_max_counts << std::endl;
@@ -477,24 +527,24 @@ QString DetectorFile::info()
 
 
 
-float DetectorFile::detectorDist()
+float DetectorFile::detectorDist() const
 {
     return p_detector_distance;
 }
 
-float DetectorFile::beamX()
+float DetectorFile::beamX() const
 {
     return p_beam_x;
 }
-float DetectorFile::beamY()
+float DetectorFile::beamY() const
 {
     return p_beam_y;
 }
-float DetectorFile::pixSizeX()
+float DetectorFile::pixSizeX() const
 {
     return p_pixel_size_x;
 }
-float DetectorFile::pixSizeY()
+float DetectorFile::pixSizeY() const
 {
     return p_pixel_size_y;
 }
@@ -505,10 +555,10 @@ int DetectorFile::readData()
     if (isFileDataRead) return isFileDataRead;
     
     // Open file
-    std::ifstream in(path.toStdString().c_str(), std::ios::in | std::ios::binary);
+    std::ifstream in(p_path.toStdString().c_str(), std::ios::in | std::ios::binary);
     if (!in)
     {
-        std::cout << "Error reading file: " << path.toStdString().c_str() << std::endl;
+        std::cout << "Error reading file: " << p_path.toStdString().c_str() << std::endl;
         return 0;
     }
 

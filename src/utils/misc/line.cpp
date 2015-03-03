@@ -10,8 +10,39 @@ Line::Line()
     p_offset_a = 0;
     p_offset_b = 0;
     
-    p_vertices.set(3,2,0);
+    p_vertices.set(3,10,0);
+    p_a.set(3,1,0);
+    p_b.set(3,1,0);
+    p_c.set(3,1,0);
+    
+    p_prism_side_a = 0.01;
+    p_prism_side_b = 0.01;
 
+    computePrism();
+    computeVertices();
+}
+
+Line::Line(const Line & other)
+{
+    p_a = other.aVec();
+    p_b = other.bVec();
+    p_c = other.cVec();
+    
+    p_is_tagged = other.tagged();
+    p_verts_computed = false;
+    
+    p_offset_a = other.offsetA();
+    p_offset_b = other.offsetB();
+    p_comment = other.comment();
+    
+    p_position_a = other.positionA();
+    p_position_b = other.positionB();
+    p_vertices = other.vertices();
+    
+    p_prism_side_a = other.prismSideA();
+    p_prism_side_b = other.prismSideB();
+    
+    computePrism();
     computeVertices();
 }
 
@@ -25,8 +56,15 @@ Line::Line(Matrix<double> pos_a, Matrix<double> pos_b)
     p_offset_a = 0;
     p_offset_b = 0;
     
-    p_vertices.set(3,2,0);
+    p_vertices.set(3,10,0);
+    p_a.set(3,1,0);
+    p_b.set(3,1,0);
+    p_c.set(3,1,0);
+    
+    p_prism_side_a = 0.01;
+    p_prism_side_b = 0.01;
 
+    computePrism();
     computeVertices();
 }
 Line::Line(double x0, double y0, double z0, double x1, double y1, double z1)
@@ -48,8 +86,15 @@ Line::Line(double x0, double y0, double z0, double x1, double y1, double z1)
     p_offset_a = 0;
     p_offset_b = 0;
     
-    p_vertices.set(3,2,0);
+    p_vertices.set(3,10,0);
+    p_a.set(3,1,0);
+    p_b.set(3,1,0);
+    p_c.set(3,1,0);
+    
+    p_prism_side_a = 0.01;
+    p_prism_side_b = 0.01;
 
+    computePrism();
     computeVertices();
 }
 Line::~Line()
@@ -57,16 +102,59 @@ Line::~Line()
     
 }
 
+
+void Line::setPrismSideA(double value)
+{
+    p_prism_side_a = value;
+    
+    computePrism();
+    computeVertices();
+}
+void Line::setPrismSideB(double value)
+{
+    p_prism_side_b = value;
+    
+    computePrism();
+    computeVertices();
+}
+
+double Line::prismSideA() const
+{
+    return p_prism_side_a;
+}
+
+double Line::prismSideB() const
+{
+    return p_prism_side_b;
+}
+
+const Matrix<double> Line::aVec() const
+{
+    return p_a;
+}
+
+const Matrix<double> Line::bVec() const
+{
+    return p_b;
+}
+
+const Matrix<double> Line::cVec() const
+{
+    return p_c;
+}
+
 void Line::setPositionA(Matrix<double> pos)
 {
     p_position_a = pos;
     
+    computePrism();
     computeVertices();
 }
 void Line::setPositionB(Matrix<double> pos)
 {
     p_position_b = pos;
     
+    computePrism();
     computeVertices();
 }
 void Line::setTagged(bool value)
@@ -77,6 +165,7 @@ void Line::setComment(QString str)
 {
     p_comment = str;
     
+    computePrism();
     computeVertices();
 }
 
@@ -84,6 +173,7 @@ void Line::setOffsetA(double value)
 {
     p_offset_a = value;
     
+    computePrism();
     computeVertices();
 }
 
@@ -91,7 +181,22 @@ void Line::setOffsetB(double value)
 {
     p_offset_b = value;
     
+    computePrism();
     computeVertices();
+}
+
+void Line::computePrism()
+{
+    // These vectors span the rectangular integration prism
+    p_c = effectivePosB() - effectivePosA();
+    
+    p_a[0] = 0;
+    p_a[1] = p_c[2];
+    p_a[2] = p_c[1];
+    
+    p_a = vecNormalize(p_a)*p_prism_side_a;
+    
+    p_b = vecNormalize(vecCross(p_c, p_a))*p_prism_side_b; // The arguments of the cross product are not permutable
 }
 
 double Line::length() const
@@ -174,6 +279,9 @@ void Line::computeVertices()
     Matrix<double> eff_pos_a = effectivePosA();
     Matrix<double> eff_pos_b = effectivePosB();
     
+    Matrix<double> base_pos;
+    base_pos = eff_pos_a - 0.5*p_a - 0.5*p_b;
+    
     p_vertices[0] = eff_pos_a[0];
     p_vertices[1] = eff_pos_a[1];
     p_vertices[2] = eff_pos_a[2];
@@ -182,24 +290,40 @@ void Line::computeVertices()
     p_vertices[4] = eff_pos_b[1];
     p_vertices[5] = eff_pos_b[2];
     
+    p_vertices[6] = base_pos[0];
+    p_vertices[7] = base_pos[1];
+    p_vertices[8] = base_pos[2];
+    
+    p_vertices[9] = base_pos[0] + p_a[0];
+    p_vertices[10] = base_pos[1] + p_a[1];
+    p_vertices[11] = base_pos[2] + p_a[2];
+    
+    p_vertices[12] = base_pos[0] + p_b[0];
+    p_vertices[13] = base_pos[1] + p_b[1];
+    p_vertices[14] = base_pos[2] + p_b[2];
+    
+    p_vertices[15] = base_pos[0] + p_c[0];
+    p_vertices[16] = base_pos[1] + p_c[1];
+    p_vertices[17] = base_pos[2] + p_c[2];
+    
+    p_vertices[18] = base_pos[0] + p_a[0] + p_b[0];
+    p_vertices[19] = base_pos[1] + p_a[1] + p_b[1];
+    p_vertices[20] = base_pos[2] + p_a[2] + p_b[2];
+    
+    p_vertices[21] = base_pos[0] + p_b[0] + p_c[0];
+    p_vertices[22] = base_pos[1] + p_b[1] + p_c[1];
+    p_vertices[23] = base_pos[2] + p_b[2] + p_c[2];
+    
+    p_vertices[24] = base_pos[0] + p_c[0] + p_a[0];
+    p_vertices[25] = base_pos[1] + p_c[1] + p_a[1];
+    p_vertices[26] = base_pos[2] + p_c[2] + p_a[2];
+    
+    p_vertices[27] = base_pos[0] + p_a[0] + p_b[0] + p_c[0];
+    p_vertices[28] = base_pos[1] + p_a[1] + p_b[1] + p_c[1];
+    p_vertices[29] = base_pos[2] + p_a[2] + p_b[2] + p_c[2];
+    
     p_verts_computed = true;
 }
-
-//void Line::genVbo()
-//{
-//    glGenBuffers(1, &p_vbo);
-//}
-
-//void Line::delVbo()
-//{
-//    glDeleteBuffers(1, &p_vbo);
-//}
-//void Line::setVbo()
-//{
-//    glBindBuffer(GL_ARRAY_BUFFER, p_vbo);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT)*6, p_vertices.data(), GL_DYNAMIC_DRAW);
-//    glBindBuffer(GL_ARRAY_BUFFER, 0);
-//}
 
 GLuint * Line::vbo()
 {

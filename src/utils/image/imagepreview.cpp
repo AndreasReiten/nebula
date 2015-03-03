@@ -74,7 +74,7 @@ void ImageWorker::traceSeries(SeriesSet set)
         cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
                 CL_MEM_COPY_HOST_PTR,
                 frame.data().bytes(),
-                frame.data().data(),
+                (void *) frame.data().data(),
                 &err);
         if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
         
@@ -1057,10 +1057,6 @@ void ImageOpenGLWidget::setFrame()
     if (!file.setPath(p_set.current()->current()->path())) return;
     if(!file.readData()) return;
 
-//    isFrameValid = true;
-
-//    frame.setNaive();
-    
     Selection analysis_area = p_set.current()->current()->selection();
 
     // Restrict selection, this could be moved elsewhere and it would look better
@@ -1335,6 +1331,8 @@ void ImageOpenGLWidget::setCorrectionNoise(bool value)
         refreshSelection(&analysis_area);
         p_set.current()->current()->setSelection(analysis_area);
     }
+    
+    update();
 }
 void ImageOpenGLWidget::setCorrectionPlane(bool value)
 {
@@ -1349,6 +1347,8 @@ void ImageOpenGLWidget::setCorrectionPlane(bool value)
         refreshSelection(&analysis_area);
         p_set.current()->current()->setSelection(analysis_area);
     }
+    
+    update();
 }
 void ImageOpenGLWidget::setCorrectionClutter(bool value)
 {
@@ -1387,6 +1387,8 @@ void ImageOpenGLWidget::toggleTraceTexture(bool value)
         setSeriesTrace();
         setFrame();   
     }
+    
+    update();
 }
 
 
@@ -1403,6 +1405,8 @@ void ImageOpenGLWidget::setLsqSamples(int value)
         refreshSelection(&analysis_area);
         p_set.current()->current()->setSelection(analysis_area);
     }
+    
+    update();
 }
 
 void ImageOpenGLWidget::analyze(QString str)
@@ -2219,6 +2223,8 @@ void ImageOpenGLWidget::setTsfTexture(int value)
     setTsf(tsf);
     
     refreshDisplay();
+    
+    update();
 }
 void ImageOpenGLWidget::setTsfAlpha(int value)
 {
@@ -2230,12 +2236,16 @@ void ImageOpenGLWidget::setTsfAlpha(int value)
     setTsf(tsf);
 
     refreshDisplay();
+    
+    update();
 }
 void ImageOpenGLWidget::setLog(bool value)
 {
     isLog = (int) value;
     
     refreshDisplay();
+    
+    update();
 }
 
 void ImageOpenGLWidget::setDataMin(double value)
@@ -2244,6 +2254,8 @@ void ImageOpenGLWidget::setDataMin(double value)
     setParameter(parameter);
 
     refreshDisplay();
+    
+    update();
 }
 void ImageOpenGLWidget::setDataMax(double value)
 {
@@ -2251,6 +2263,8 @@ void ImageOpenGLWidget::setDataMax(double value)
     setParameter(parameter);
 
     refreshDisplay();
+    
+    update();
 }
 
 void ImageOpenGLWidget::setNoise(double value)
@@ -2268,6 +2282,7 @@ void ImageOpenGLWidget::setNoise(double value)
         p_set.current()->current()->setSelection(analysis_area);
     }
     
+    update();
 }
 
 void ImageOpenGLWidget::beginRawGLCalls(QPainter * painter)
@@ -2866,6 +2881,8 @@ void ImageOpenGLWidget::setMode(int value)
         refreshSelection(&analysis_area);
         p_set.current()->current()->setSelection(analysis_area);
     }
+    
+    update();
 }
 
 void ImageOpenGLWidget::setCorrectionLorentz(bool value)
@@ -2881,6 +2898,8 @@ void ImageOpenGLWidget::setCorrectionLorentz(bool value)
         refreshSelection(&analysis_area);
         p_set.current()->current()->setSelection(analysis_area);
     }
+    
+    update();
 }
 
 void ImageOpenGLWidget::setCorrectionBackground(bool value)
@@ -2896,6 +2915,8 @@ void ImageOpenGLWidget::setCorrectionBackground(bool value)
         refreshSelection(&analysis_area);
         p_set.current()->current()->setSelection(analysis_area);
     }
+    
+    update();
 }
 
 void ImageOpenGLWidget::setParameter(Matrix<float> & data)

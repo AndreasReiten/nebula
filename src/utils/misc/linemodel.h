@@ -2,12 +2,6 @@
 #define LINEMODEL_H
 
 #include "line.h"
-//class LineView : public QTableView
-//{
-//    Q_OBJECT
-//public:
-//    explicit LineView(QWidget *parent = 0);
-//};
 
 #include <QAbstractTableModel>
 #include <QColor>

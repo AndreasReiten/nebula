@@ -1,21 +1,11 @@
 #include "linemodel.h"
 
-//LineView::LineView(QWidget *parent) :
-//    QTableView(parent)
-//{
-
-//}
-
 LineModel::LineModel(QWidget *parent) :
     QAbstractTableModel(parent)
 {
-//    lines << Line(0,0,0,1,1,1);
-//    lines << Line(2,-2,2,1,1,1);
-//    lines << Line(1,1,1,1,1,1);
-    
     p_lines = new QList<Line>;
 
-    p_columns = 10;
+    p_columns = 12;
 }
 
 int LineModel::rowCount(const QModelIndex & /*parent*/) const
@@ -54,6 +44,10 @@ QVariant LineModel::data(const QModelIndex &index, int role) const
             return p_lines->at(index.row()).offsetB();
         case 9:
             return p_lines->at(index.row()).length();
+        case 10:
+            return p_lines->at(index.row()).prismSideA();
+        case 11:
+            return p_lines->at(index.row()).prismSideB();
         }
     }
     else if (role == Qt::BackgroundRole)
@@ -83,7 +77,11 @@ QVariant LineModel::data(const QModelIndex &index, int role) const
         case 8:
             return QString::number(p_lines->at(index.row()).offsetB());
         case 9:
-            return p_lines->at(index.row()).length();
+            return QString::number(p_lines->at(index.row()).length());
+        case 10:
+            return QString::number(p_lines->at(index.row()).prismSideA());
+        case 11:
+            return QString::number(p_lines->at(index.row()).prismSideB());
         }
     }
     return QVariant();(1.0,0.1,0.7,0.9);
@@ -117,6 +115,10 @@ QVariant LineModel::headerData(int section, Qt::Orientation orientation, int rol
                 return QString("Offset1");
             case 9:
                 return QString("Length");
+            case 10:
+                return QString("Side0");
+            case 11:
+                return QString("Side1");
             }
         }
     }
@@ -184,6 +186,20 @@ bool LineModel::setData(const QModelIndex & index, const QVariant & value, int r
         case 8:
         {
             (*p_lines)[index.row()].setOffsetB(value.toDouble());
+            break;
+        }
+        case 9:
+        {
+            break;
+        }
+        case 10:
+        {
+            (*p_lines)[index.row()].setPrismSideA(value.toDouble());
+            break;
+        }
+        case 11:
+        {
+            (*p_lines)[index.row()].setPrismSideB(value.toDouble());
             break;
         }
         }
