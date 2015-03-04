@@ -8,9 +8,9 @@ Selection::Selection()
     p_isMouseSelected = false;
 }
 
-Selection::Selection(const Selection & other)
+Selection::Selection(const Selection &other)
 {
-    this->setRect(other.x(),other.y(),other.width(),other.height());
+    this->setRect(other.x(), other.y(), other.width(), other.height());
     p_integral = other.integral();
     p_weighted_x = other.weighted_x();
     p_weighted_y = other.weighted_y();
@@ -24,7 +24,7 @@ Selection::~Selection()
 
 Matrix<int> Selection::lrtb()
 {
-    Matrix<int> buf(1,4);
+    Matrix<int> buf(1, 4);
     buf[0] = this->left();
     buf[1] = this->left() + this->width();
     buf[2] = this->top();
@@ -39,7 +39,7 @@ double Selection::integral() const
 
 double Selection::average() const
 {
-    return p_integral/(double)(this->width()*this->height());
+    return p_integral / (double)(this->width() * this->height());
 }
 
 double Selection::weighted_x() const
@@ -71,21 +71,43 @@ void Selection::setSelected(bool value)
 
 void Selection::restrictToRect(QRect rect)
 {
-//    qDebug() << "Restrict to:" << rect;
+    //    qDebug() << "Restrict to:" << rect;
 
-//    qDebug() << "UnRestricted:" << *this;
+    //    qDebug() << "UnRestricted:" << *this;
 
     // First ensure the size is ok
-    if (this->width() > rect.width()) this->setWidth(rect.width());
-    if (this->height() > rect.height()) this->setHeight(rect.height());
+    if (this->width() > rect.width())
+    {
+        this->setWidth(rect.width());
+    }
+
+    if (this->height() > rect.height())
+    {
+        this->setHeight(rect.height());
+    }
 
     // Then move the rectangle so it lies within the bounding rect
-    if (this->left() < rect.left()) this->moveLeft(rect.left());
-    if (this->right() > rect.right()) this->moveRight(rect.right());
-    if (this->top() < rect.top()) this->moveTop(rect.top());
-    if (this->bottom() > rect.bottom()) this->moveBottom(rect.bottom());
+    if (this->left() < rect.left())
+    {
+        this->moveLeft(rect.left());
+    }
 
-//    qDebug() << "Restricted:" << *this;
+    if (this->right() > rect.right())
+    {
+        this->moveRight(rect.right());
+    }
+
+    if (this->top() < rect.top())
+    {
+        this->moveTop(rect.top());
+    }
+
+    if (this->bottom() > rect.bottom())
+    {
+        this->moveBottom(rect.bottom());
+    }
+
+    //    qDebug() << "Restricted:" << *this;
 }
 
 bool Selection::selected() const
@@ -93,17 +115,17 @@ bool Selection::selected() const
     return p_isMouseSelected;
 }
 
-Selection& Selection::operator = (QRect other)
+Selection &Selection::operator = (QRect other)
 {
-    this->setRect(other.x(),other.y(),other.width(),other.height());
+    this->setRect(other.x(), other.y(), other.width(), other.height());
 
-//    qDebug() << "Used rect copy";
+    //    qDebug() << "Used rect copy";
     return * this;
 }
 
-Selection& Selection::operator = (Selection other)
+Selection &Selection::operator = (Selection other)
 {
-    this->setRect(other.x(),other.y(),other.width(),other.height());
+    this->setRect(other.x(), other.y(), other.width(), other.height());
 
     p_integral = other.integral();
     p_weighted_x = other.weighted_x();
@@ -111,14 +133,14 @@ Selection& Selection::operator = (Selection other)
     p_isMouseSelected = other.selected();
 
 
-//    qDebug() << p_isMouseSelected << other.selected();
+    //    qDebug() << p_isMouseSelected << other.selected();
     return * this;
 }
 
 QDebug operator<<(QDebug dbg, const Selection &selection)
 {
     QRect tmp;
-    tmp.setRect(selection.x(),selection.y(),selection.width(),selection.height());
+    tmp.setRect(selection.x(), selection.y(), selection.width(), selection.height());
 
     dbg.nospace() << "Selection()" << tmp << selection.integral();
     return dbg.maybeSpace();
@@ -127,8 +149,8 @@ QDebug operator<<(QDebug dbg, const Selection &selection)
 QDataStream &operator<<(QDataStream &out, const Selection &selection)
 {
     QRect tmp;
-    tmp.setRect(selection.x(), selection.y(),selection.width(), selection.height());
-    
+    tmp.setRect(selection.x(), selection.y(), selection.width(), selection.height());
+
     out << tmp << selection.integral() << selection.weighted_x() << selection.weighted_y() << selection.selected();
 
     return out;

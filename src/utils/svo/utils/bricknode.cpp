@@ -19,29 +19,29 @@ BrickNode::~BrickNode()
 
 void BrickNode::print()
 {
-    std::cout << "-----------------"<<  std::endl;
-    std::cout << "Node at L"<< level << ": "<<  std::endl;
-    std::cout << "Parent: "<< parent <<  std::endl;
-    std::cout << "Child: "<< child <<  std::endl;
-    std::cout << "Msd: "<< msdFlag <<  std::endl;
-    std::cout << "Data: "<< dataFlag <<  std::endl;
-    std::cout << "Brick id: ["<< brick_id[0] << ", "<< brick_id[1] << ", "<< brick_id[2] << "]" << std::endl;
-    std::cout << "Pool id: ["<< poolId[0] << ", "<< poolId[1] << ", "<< poolId[2] << "]" << std::endl;
+    std::cout << "-----------------" <<  std::endl;
+    std::cout << "Node at L" << level << ": " <<  std::endl;
+    std::cout << "Parent: " << parent <<  std::endl;
+    std::cout << "Child: " << child <<  std::endl;
+    std::cout << "Msd: " << msdFlag <<  std::endl;
+    std::cout << "Data: " << dataFlag <<  std::endl;
+    std::cout << "Brick id: [" << brick_id[0] << ", " << brick_id[1] << ", " << brick_id[2] << "]" << std::endl;
+    std::cout << "Pool id: [" << poolId[0] << ", " << poolId[1] << ", " << poolId[2] << "]" << std::endl;
 }
 
 void BrickNode::calcPoolId(unsigned int pp, unsigned int n)
 {
     // n = current number of bricks
     // pp = the power of the brick pool (power of two)
-    
+
     // Bitwise operations used here:
     // X / 2^n = X >> n
     // X % 2^n = X & (2^n - 1)
     // 2^n = 1 << n
-    
+
     poolId[0] = (n & ((1 << pp) - 1));
-    poolId[1] = (n & ((1 << pp*2) - 1)) >> pp;
-    poolId[2] = n >> (pp*2);
+    poolId[1] = (n & ((1 << pp * 2) - 1)) >> pp;
+    poolId[2] = n >> (pp * 2);
 }
 
 
@@ -60,9 +60,9 @@ void BrickNode::calcBrickId(unsigned int octant, BrickNode * par)
         unsigned int * parentBrickId = par->getBrickId();
 
         // The brick id of this brick
-        this->brick_id[0] = parentBrickId[0]*2 + oct_x;
-        this->brick_id[1] = parentBrickId[1]*2 + oct_y;
-        this->brick_id[2] = parentBrickId[2]*2 + oct_z;
+        this->brick_id[0] = parentBrickId[0] * 2 + oct_x;
+        this->brick_id[1] = parentBrickId[1] * 2 + oct_y;
+        this->brick_id[2] = parentBrickId[2] * 2 + oct_z;
     }
     else
     {
@@ -136,7 +136,7 @@ unsigned int BrickNode::getBrickId1D()
 {
     // Requires the correct level to be set first
 
-    unsigned int brickId1D = brick_id[0] + brick_id[1]*(1 << level) + brick_id[2]*(1 << level)*(1 << level);
+    unsigned int brickId1D = brick_id[0] + brick_id[1] * (1 << level) + brick_id[2] * (1 << level) * (1 << level);
 
     return brickId1D;
 }

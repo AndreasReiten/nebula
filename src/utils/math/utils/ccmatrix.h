@@ -5,13 +5,14 @@
 
 /* CCMatrix */
 template <class T>
-class CCMatrix : public Matrix<T>{
+class CCMatrix : public Matrix<T>
+{
     public:
         CCMatrix();
         ~CCMatrix();
 
-        CCMatrix<T>& operator = (Matrix<T> other);
-        CCMatrix<T>& operator = (CCMatrix<T> other);
+        CCMatrix<T> &operator = (Matrix<T> other);
+        CCMatrix<T> &operator = (CCMatrix<T> other);
 
         void setN(double N);
         void setF(double F);
@@ -19,16 +20,16 @@ class CCMatrix : public Matrix<T>{
         void setWindow(size_t w, size_t h);
         void setProjection(bool value);
 
-        private:
-            double N, F, fov;
-            size_t w, h;
-            int projection;
+    private:
+        double N, F, fov;
+        size_t w, h;
+        int projection;
 };
 
 template <class T>
 CCMatrix<T>::CCMatrix()
 {
-    this->set(4,4,0);
+    this->set(4, 4, 0);
     this->w = 1.0;
     this->projection = true;
     this->N = 1.0;
@@ -43,7 +44,7 @@ CCMatrix<T>::~CCMatrix()
 }
 
 template <class T>
-CCMatrix<T>& CCMatrix<T>::operator = (Matrix<T> other)
+CCMatrix<T> &CCMatrix<T>::operator = (Matrix<T> other)
 {
     this->swap(*this, other);
 
@@ -51,7 +52,7 @@ CCMatrix<T>& CCMatrix<T>::operator = (Matrix<T> other)
 }
 
 template <class T>
-CCMatrix<T>& CCMatrix<T>::operator = (CCMatrix<T> other)
+CCMatrix<T> &CCMatrix<T>::operator = (CCMatrix<T> other)
 {
     this->swap(*this, other);
 
@@ -95,10 +96,10 @@ void CCMatrix<T>::setProjection(bool value)
     if (this->projection == 0)
     {
         // Perspective
-        this->data()[0] = 1.0 / std::tan(0.5*fov * pi / 180.0) * (double) h / (double) w;
-        this->data()[5] = 1.0 / std::tan(0.5*fov * pi / 180.0);
-        this->data()[10] = (F + N)/(N - F);
-        this->data()[11] = 2.0*F*N/(N - F);
+        this->data()[0] = 1.0 / std::tan(0.5 * fov * pi / 180.0) * (double) h / (double) w;
+        this->data()[5] = 1.0 / std::tan(0.5 * fov * pi / 180.0);
+        this->data()[10] = (F + N) / (N - F);
+        this->data()[11] = 2.0 * F * N / (N - F);
         this->data()[14] = -1.0;
         this->data()[15] = 0.0;
     }
@@ -107,8 +108,8 @@ void CCMatrix<T>::setProjection(bool value)
         // Orthonormal
         this->data()[0] = (double) h / (double) w;
         this->data()[5] = 1.0;
-        this->data()[10] = 2.0/(N - F);
-        this->data()[11] = (F + N)/(N - F);
+        this->data()[10] = 2.0 / (N - F);
+        this->data()[11] = (F + N) / (N - F);
         this->data()[14] = 0.0;
         this->data()[15] = 1.0;
     }

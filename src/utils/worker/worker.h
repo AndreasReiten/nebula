@@ -12,14 +12,14 @@
 
 class BaseWorker : public QObject
 {
-    Q_OBJECT
+        Q_OBJECT
 
     public:
         BaseWorker();
         ~BaseWorker();
 
         void setReducedPixels(Matrix<float> * reduced_pixels);
-//        void setOpenCLContext(OpenCLContext * context);
+        //        void setOpenCLContext(OpenCLContext * context);
         void setSVOFile(SparseVoxelOctree * svo);
 
     signals:
@@ -46,7 +46,7 @@ class BaseWorker : public QObject
     protected:
         // Runtime
         bool kill_flag;
-        
+
         // OpenCL
         OpenCLContext context_cl;
         cl_int err;
@@ -63,175 +63,175 @@ class BaseWorker : public QObject
         int active_angle;
         SeriesSet set;
         Matrix<float> * reduced_pixels;
-        
+
         double offset_omega;
         double offset_kappa;
         double offset_phi;
-        
+
         size_t GLOBAL_VRAM_ALLOC_MAX;
 
         // Resolved OpenCL functions
         void resolveOpenCLFunctions();
 
         typedef cl_int (*PROTOTYPE_QOpenCLGetPlatformIDs)(  	cl_uint num_entries,
-                                                                cl_platform_id *platforms,
-                                                                cl_uint *num_platforms);
+                cl_platform_id * platforms,
+                cl_uint * num_platforms);
 
         typedef cl_int (*PROTOTYPE_QOpenCLGetDeviceIDs)(        cl_platform_id platform,
-                                                                cl_device_type device_type,
-                                                                cl_uint num_entries,
-                                                                cl_device_id *device,
-                                                                cl_uint *num_devices);
+                cl_device_type device_type,
+                cl_uint num_entries,
+                cl_device_id * device,
+                cl_uint * num_devices);
 
         typedef cl_int (*PROTOTYPE_QOpenCLGetPlatformInfo)( 	cl_platform_id platform,
-                                                                cl_platform_info param_name,
-                                                                size_t param_value_size,
-                                                                void *param_value,
-                                                                size_t *param_value_size_ret);
+                cl_platform_info param_name,
+                size_t param_value_size,
+                void * param_value,
+                size_t * param_value_size_ret);
 
         typedef cl_int (*PROTOTYPE_QOpenCLGetDeviceInfo)(       cl_device_id device,
-                                                                cl_device_info param_name,
-                                                                size_t param_value_size,
-                                                                void *param_value,
-                                                                size_t *param_value_size_ret);
+                cl_device_info param_name,
+                size_t param_value_size,
+                void * param_value,
+                size_t * param_value_size_ret);
 
         typedef cl_program (*PROTOTYPE_QOpenCLCreateProgramWithSource)( 	cl_context context,
-                                                                        cl_uint count,
-                                                                        const char **strings,
-                                                                        const size_t *lengths,
-                                                                        cl_int *errcode_ret);
+                cl_uint count,
+                const char ** strings,
+                const size_t * lengths,
+                cl_int * errcode_ret);
         typedef cl_int (*PROTOTYPE_QOpenCLGetProgramBuildInfo)( 	cl_program  program,
-                                                                    cl_device_id  device,
-                                                                    cl_program_build_info  param_name,
-                                                                    size_t  param_value_size,
-                                                                    void  *param_value,
-                                                                    size_t  *param_value_size_ret);
-        typedef cl_context (*PROTOTYPE_QOpenCLCreateContext)( 	cl_context_properties *properties,
-                                                            cl_uint num_devices,
-                                                            const cl_device_id *devices,
-                                                            void *pfn_notify (
-                                                            const char *errinfo,
-                                                            const void *private_info,
-                                                            size_t cb,
-                                                            void *user_data),
-                                                            void *user_data,
-                                                            cl_int *errcode_ret);
+                cl_device_id  device,
+                cl_program_build_info  param_name,
+                size_t  param_value_size,
+                void * param_value,
+                size_t * param_value_size_ret);
+        typedef cl_context (*PROTOTYPE_QOpenCLCreateContext)( 	cl_context_properties * properties,
+                cl_uint num_devices,
+                const cl_device_id * devices,
+                void * pfn_notify (
+                    const char * errinfo,
+                    const void * private_info,
+                    size_t cb,
+                    void * user_data),
+                void * user_data,
+                cl_int * errcode_ret);
 
         typedef cl_command_queue (*PROTOTYPE_QOpenCLCreateCommandQueue)( 	cl_context context,
-                                                        cl_device_id device,
-                                                        cl_command_queue_properties properties,
-                                                        cl_int *errcode_ret);
+                cl_device_id device,
+                cl_command_queue_properties properties,
+                cl_int * errcode_ret);
 
         typedef cl_int (*PROTOTYPE_QOpenCLSetKernelArg) ( 	cl_kernel kernel,
-                                                            cl_uint arg_index,
-                                                            size_t arg_size,
-                                                            const void *arg_value);
+                cl_uint arg_index,
+                size_t arg_size,
+                const void * arg_value);
 
         typedef cl_int (*PROTOTYPE_QOpenCLEnqueueNDRangeKernel)( 	cl_command_queue command_queue,
-                                                                    cl_kernel kernel,
-                                                                    cl_uint work_dim,
-                                                                    const size_t *global_work_offset,
-                                                                    const size_t *global_work_size,
-                                                                    const size_t *local_work_size,
-                                                                    cl_uint num_events_in_wait_list,
-                                                                    const cl_event *event_wait_list,
-                                                                    cl_event *event);
+                cl_kernel kernel,
+                cl_uint work_dim,
+                const size_t * global_work_offset,
+                const size_t * global_work_size,
+                const size_t * local_work_size,
+                cl_uint num_events_in_wait_list,
+                const cl_event * event_wait_list,
+                cl_event * event);
 
         typedef cl_int (*PROTOTYPE_QOpenCLFinish)( 	cl_command_queue command_queue);
 
         typedef cl_int (*PROTOTYPE_QOpenCLEnqueueAcquireGLObjects)( 	cl_command_queue command_queue,
-                                                                        cl_uint num_objects,
-                                                                        const cl_mem *mem_objects,
-                                                                        cl_uint num_events_in_wait_list,
-                                                                        const cl_event *event_wait_list,
-                                                                        cl_event *event);
+                cl_uint num_objects,
+                const cl_mem * mem_objects,
+                cl_uint num_events_in_wait_list,
+                const cl_event * event_wait_list,
+                cl_event * event);
 
         typedef cl_int (*PROTOTYPE_QOpenCLEnqueueReleaseGLObjects)( 	cl_command_queue command_queue,
-                                                                        cl_uint num_objects,
-                                                                        const cl_mem *mem_objects,
-                                                                        cl_uint num_events_in_wait_list,
-                                                                        const cl_event *event_wait_list,
-                                                                        cl_event *event);
+                cl_uint num_objects,
+                const cl_mem * mem_objects,
+                cl_uint num_events_in_wait_list,
+                const cl_event * event_wait_list,
+                cl_event * event);
 
         typedef cl_int (*PROTOTYPE_QOpenCLEnqueueReadBuffer)( 	cl_command_queue command_queue,
-                                                                cl_mem buffer,
-                                                                cl_bool blocking_read,
-                                                                size_t offset,
-                                                                size_t cb,
-                                                                void *ptr,
-                                                                cl_uint num_events_in_wait_list,
-                                                                const cl_event *event_wait_list,
-                                                                cl_event *event);
+                cl_mem buffer,
+                cl_bool blocking_read,
+                size_t offset,
+                size_t cb,
+                void * ptr,
+                cl_uint num_events_in_wait_list,
+                const cl_event * event_wait_list,
+                cl_event * event);
 
         typedef cl_mem (*PROTOTYPE_QOpenCLCreateBuffer) ( 	cl_context context,
-                                                            cl_mem_flags flags,
-                                                            size_t size,
-                                                            void *host_ptr,
-                                                            cl_int *errcode_ret);
+                cl_mem_flags flags,
+                size_t size,
+                void * host_ptr,
+                cl_int * errcode_ret);
 
         typedef cl_int (*PROTOTYPE_QOpenCLReleaseMemObject) ( 	cl_mem memobj);
 
         typedef cl_mem (*PROTOTYPE_QOpenCLCreateFromGLTexture2D) ( 	cl_context context,
-                                                                    cl_mem_flags flags,
-                                                                    GLenum texture_target,
-                                                                    GLint miplevel,
-                                                                    GLuint texture,
-                                                                    cl_int *errcode_ret);
+                cl_mem_flags flags,
+                GLenum texture_target,
+                GLint miplevel,
+                GLuint texture,
+                cl_int * errcode_ret);
 
         typedef cl_sampler (*PROTOTYPE_QOpenCLCreateSampler)( 	cl_context context,
-                                                            cl_bool normalized_coords,
-                                                            cl_addressing_mode addressing_mode,
-                                                            cl_filter_mode filter_mode,
-                                                            cl_int *errcode_ret);
+                cl_bool normalized_coords,
+                cl_addressing_mode addressing_mode,
+                cl_filter_mode filter_mode,
+                cl_int * errcode_ret);
 
         typedef cl_int (*PROTOTYPE_QOpenCLEnqueueWriteBuffer) ( 	cl_command_queue command_queue,
-                                                                    cl_mem buffer,
-                                                                    cl_bool blocking_write,
-                                                                    size_t offset,
-                                                                    size_t cb,
-                                                                    const void *ptr,
-                                                                    cl_uint num_events_in_wait_list,
-                                                                    const cl_event *event_wait_list,
-                                                                    cl_event *event);
+                cl_mem buffer,
+                cl_bool blocking_write,
+                size_t offset,
+                size_t cb,
+                const void * ptr,
+                cl_uint num_events_in_wait_list,
+                const cl_event * event_wait_list,
+                cl_event * event);
 
         typedef cl_kernel (*PROTOTYPE_QOpenCLCreateKernel) ( 	cl_program  program,
-                                                            const char *kernel_name,
-                                                            cl_int *errcode_ret);
+                const char * kernel_name,
+                cl_int * errcode_ret);
 
         typedef cl_int (*PROTOTYPE_QOpenCLReleaseSampler) ( 	cl_sampler sampler);
 
         typedef cl_int (*PROTOTYPE_QOpenCLEnqueueReadImage)( 	cl_command_queue command_queue,
-                                                                cl_mem image,
-                                                                cl_bool blocking_read,
-                                                                const size_t origin[3],
-                                                                const size_t region[3],
-                                                                size_t row_pitch,
-                                                                size_t slice_pitch,
-                                                                void *ptr,
-                                                                cl_uint num_events_in_wait_list,
-                                                                const cl_event *event_wait_list,
-                                                                cl_event *event);
+                cl_mem image,
+                cl_bool blocking_read,
+                const size_t origin[3],
+                const size_t region[3],
+                size_t row_pitch,
+                size_t slice_pitch,
+                void * ptr,
+                cl_uint num_events_in_wait_list,
+                const cl_event * event_wait_list,
+                cl_event * event);
 
         typedef cl_mem (*PROTOTYPE_QOpenCLCreateImage2D)( 	cl_context context,
-                                                            cl_mem_flags flags,
-                                                            const cl_image_format *image_format,
-                                                            size_t image_width,
-                                                            size_t image_height,
-                                                            size_t image_row_pitch,
-                                                            void *host_ptr,
-                                                            cl_int *errcode_ret);
+                cl_mem_flags flags,
+                const cl_image_format * image_format,
+                size_t image_width,
+                size_t image_height,
+                size_t image_row_pitch,
+                void * host_ptr,
+                cl_int * errcode_ret);
 
 
         typedef cl_mem (*PROTOTYPE_QOpenCLCreateImage3D) ( 	cl_context context,
-                                                            cl_mem_flags flags,
-                                                            const cl_image_format *image_format,
-                                                            size_t image_width,
-                                                            size_t image_height,
-                                                            size_t image_depth,
-                                                            size_t image_row_pitch,
-                                                            size_t image_slice_pitch,
-                                                            void *host_ptr,
-                                                            cl_int *errcode_ret);
+                cl_mem_flags flags,
+                const cl_image_format * image_format,
+                size_t image_width,
+                size_t image_height,
+                size_t image_depth,
+                size_t image_row_pitch,
+                size_t image_slice_pitch,
+                void * host_ptr,
+                cl_int * errcode_ret);
 
         typedef cl_int (*PROTOTYPE_QOpenCLReleaseKernel)  ( 	cl_kernel kernel);
 
@@ -271,10 +271,10 @@ class BaseWorker : public QObject
 //        ReconstructWorker();
 //        ~ReconstructWorker();
 //        int projectFile(DetectorFile * file, Selection selection);
-        
+
 //    public slots:
 //        void initializeCLKernel();
-        
+
 //    private slots:
 //        void process();
 
@@ -285,7 +285,7 @@ class BaseWorker : public QObject
 
 class VoxelizeWorker : public BaseWorker
 {
-    Q_OBJECT
+        Q_OBJECT
 
     public:
         VoxelizeWorker();
@@ -302,7 +302,7 @@ class VoxelizeWorker : public BaseWorker
     protected:
         cl_kernel voxelize_kernel;
         cl_kernel fill_kernel;
-        
+
         unsigned int getOctIndex(unsigned int msdFlag, unsigned int dataFlag, unsigned int child);
         unsigned int getOctBrick(unsigned int poolX, unsigned int poolY, unsigned int poolZ);
 };

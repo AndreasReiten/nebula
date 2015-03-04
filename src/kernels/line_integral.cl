@@ -1,5 +1,5 @@
 __kernel void integrateLine(
-    __read_only image3d_t bricks, sampler_t brick_sampler,
+    __read_only image3d_t pool, sampler_t pool_sampler,
     __global uint * oct_index, __global uint * oct_brick,
     __constant float * data_extent,
     __constant int * misc_int,
@@ -32,11 +32,12 @@ __kernel void integrateLine(
     **/
     
     int id_loc_effective = get_local_id(0) + get_local_id(1)*get_local_size(0);
-    int size_loc_effective = samples_abc.x*samples_abc.y;
+    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
+    int2 problem_size = (int2)(samples_abc.x*samples_abc.y, samples_abc.z);
     
-    if (id_loc_effective < size_loc_effective)
+    if ((id_glb.x < problem_size.x) && (id_glb.y < problem_size.y))
     {    
-        int4 pool_dim = get_image_dim(bricks);
+        int4 pool_dim = get_image_dim(pool);
         
         int n_tree_levels = misc_int[0];
         int brick_dim = misc_int[1];
@@ -94,7 +95,7 @@ __kernel void integrateLine(
     
                 lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos, 0.0f)*3.5f , convert_float4(pool_dim));
     
-                addition_array[id_loc_effective] = read_imagef(bricks, brick_sampler, lookup_pos).w;
+                addition_array[id_loc_effective] = read_imagef(pool, pool_sampler, lookup_pos).w;
     
                 break;
             }

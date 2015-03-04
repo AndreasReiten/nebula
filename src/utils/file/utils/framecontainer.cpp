@@ -5,15 +5,15 @@ int ImageInfo::LSQ_SAMPLE_SIZE = 32;
 
 ImageInfo::ImageInfo()
 {
-    p_selection = Selection(0,0,1e5,1e5);
-    
+    p_selection = Selection(0, 0, 1e5, 1e5);
+
     for (int i = 0; i < MAX_LSQ_SAMPLES; i++)
     {
-        plane_sample <<  Selection(40*(i%2), (i/2)*(LSQ_SAMPLE_SIZE+8), LSQ_SAMPLE_SIZE, LSQ_SAMPLE_SIZE);
+        plane_sample <<  Selection(40 * (i % 2), (i / 2) * (LSQ_SAMPLE_SIZE + 8), LSQ_SAMPLE_SIZE, LSQ_SAMPLE_SIZE);
     }
 }
 
-ImageInfo::ImageInfo(const ImageInfo & other)
+ImageInfo::ImageInfo(const ImageInfo &other)
 {
     p_selection = other.selection();
     plane_sample = other.planeMarker();
@@ -50,7 +50,7 @@ Selection ImageInfo::selection() const
     return p_selection;
 }
 
-Selection * ImageInfo::selectionPtr() 
+Selection * ImageInfo::selectionPtr()
 {
     return &p_selection;
 }
@@ -60,11 +60,11 @@ Selection * ImageInfo::selectionPtr()
 //    return p_background;
 //}
 
-ImageInfo& ImageInfo::operator = (ImageInfo other)
+ImageInfo &ImageInfo::operator = (ImageInfo other)
 {
     p_path = other.path();
     p_selection = other.selection();
-//    p_background = other.background();
+    //    p_background = other.background();
 
     return * this;
 }
@@ -77,19 +77,19 @@ void ImageInfo::setPlaneMarker(QList<Selection> marker)
 
 void ImageInfo::setPlaneMarkerTest(QList<Selection> marker)
 {
-//    qDebug() << "And so we copy";
+    //    qDebug() << "And so we copy";
 
-//    for (int i = 0; i < marker.size(); i++)
-//    {
-//        qDebug() << marker[i].selected() << marker[i].integral();
-//    }
+    //    for (int i = 0; i < marker.size(); i++)
+    //    {
+    //        qDebug() << marker[i].selected() << marker[i].integral();
+    //    }
 
     plane_sample = marker;
 
-//    for (int i = 0; i < marker.size(); i++)
-//    {
-//        qDebug() << plane_marker[i].selected();
-//    }
+    //    for (int i = 0; i < marker.size(); i++)
+    //    {
+    //        qDebug() << plane_marker[i].selected();
+    //    }
 }
 //    void setBackground(Selection rect);
 QList<Selection> ImageInfo::planeMarker() const
@@ -135,13 +135,13 @@ ImageSeries::ImageSeries()
     p_i = 0;
     p_i_memory = 0;
 }
-ImageSeries::ImageSeries(const ImageSeries & other)
+ImageSeries::ImageSeries(const ImageSeries &other)
 {
     p_images = other.images();
     p_path = other.path();
     p_i = other.i();
     p_i_memory = 0;
-    
+
 }
 ImageSeries::~ImageSeries()
 {
@@ -261,13 +261,14 @@ ImageInfo * ImageSeries::at(int value)
     {
         value = p_images.size() - 1;
     }
+
     if (value < 0)
     {
         p_i = 0;
     }
 
     p_i = value;
-    
+
     return &p_images[p_i];
 }
 
@@ -288,15 +289,21 @@ ImageInfo * ImageSeries::begin()
     return &p_images[p_i];
 }
 
-const QList<ImageInfo> & ImageSeries::images() const
+const QList<ImageInfo> &ImageSeries::images() const
 {
     return p_images;
 }
 
-bool ImageSeries::operator ==(const ImageSeries& other)
+bool ImageSeries::operator ==(const ImageSeries &other)
 {
-    if (this->path() == other.path()) return true;
-    else return false;
+    if (this->path() == other.path())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 QDebug operator<<(QDebug dbg, const ImageSeries &image_series)
@@ -336,12 +343,12 @@ SeriesSet::SeriesSet()
     p_i = 0;
     p_i_memory = 0;
 }
-SeriesSet::SeriesSet(const SeriesSet & other)
+SeriesSet::SeriesSet(const SeriesSet &other)
 {
     p_series = other.series();
     p_i = other.i();
     p_i_memory = 0;
-    
+
 }
 SeriesSet::~SeriesSet()
 {
@@ -392,7 +399,10 @@ bool SeriesSet::isEmpty()
 {
     for (int i = 0; i < p_series.size(); i++)
     {
-        if (p_series[i].size()) return false;
+        if (p_series[i].size())
+        {
+            return false;
+        }
     }
 
     return true;
@@ -463,7 +473,7 @@ QStringList SeriesSet::paths()
 ImageSeries SeriesSet::oneSeries()
 {
     ImageSeries series;
-    
+
     for (int i = 0; i < p_series.size(); i++)
     {
         for (int j = 0; j < p_series[i].images().size(); j++)

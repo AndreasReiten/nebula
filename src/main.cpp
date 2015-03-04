@@ -25,7 +25,7 @@
  * (Time consuming) Implement a transfer function editor.
  * (Time consuming) Shadows
  * (Time consuming) Pre-integrated transfer functions
- * (Quick) Try opening folder structure in file browser when opening project file. Ability to append more unique files if requested.  
+ * (Quick) Try opening folder structure in file browser when opening project file. Ability to append more unique files if requested.
  * (Low priority) Radial selectivity. I. e. confining viewable area to a spherical shell
  * (Time consuming) A solid linear texture edit (tsf function)
  * (Done) Area selection prior to reduction to limit data size.
@@ -52,60 +52,69 @@
 void writeToLogAndPrint(QString text, QString file, bool append)
 {
     QDateTime dateTime = dateTime.currentDateTime();
-    QString dateTimeString = QString("["+dateTime.toString("hh:mm:ss")+"] ");
+    QString dateTimeString = QString("[" + dateTime.toString("hh:mm:ss") + "] ");
 
     std::ofstream myfile (file.toStdString().c_str(), std::ios::out | ((append == true) ? std::ios::app : std::ios::trunc));
+
     if (myfile.is_open())
     {
         myfile << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
-        std::cout << "[Log]"<< dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
+        std::cout << "[Log]" << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
     }
-    else std::cout << "Unable to open log file" << std::endl;
+    else
+    {
+        std::cout << "Unable to open log file" << std::endl;
+    }
 }
 
 void appOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     QByteArray localMsg = msg.toLocal8Bit();
-    switch (type) {
-    case QtDebugMsg:
-        writeToLogAndPrint("Debug: "+
-                    QString(localMsg.constData())+" ("+
-                    QString(context.file)+":"+
-                    QString::number(context.line)+", " +
-                    QString(context.function)+")", "nebula.log", 1);
-        break;
-    case QtWarningMsg:
-        writeToLogAndPrint("Warning: "+
-                           QString(localMsg.constData())+" ("+
-                           QString(context.file)+":"+
-                           QString::number(context.line)+", " +
-                           QString(context.function)+")", "nebula.log", 1);
-        break;
-    case QtCriticalMsg:
-        writeToLogAndPrint("Critical: "+
-                           QString(localMsg.constData())+" ("+
-                           QString(context.file)+":"+
-                           QString::number(context.line)+", " +
-                           QString(context.function)+")", "nebula.log", 1);
-        break;
-    case QtFatalMsg:
-        writeToLogAndPrint("Fatal: "+
-                           QString(localMsg.constData())+" ("+
-                           QString(context.file)+":"+
-                           QString::number(context.line)+", " +
-                           QString(context.function)+")", "nebula.log", 1);
-        abort();
+
+    switch (type)
+    {
+        case QtDebugMsg:
+            writeToLogAndPrint("Debug: " +
+                               QString(localMsg.constData()) + " (" +
+                               QString(context.file) + ":" +
+                               QString::number(context.line) + ", " +
+                               QString(context.function) + ")", "nebula.log", 1);
+            break;
+
+        case QtWarningMsg:
+            writeToLogAndPrint("Warning: " +
+                               QString(localMsg.constData()) + " (" +
+                               QString(context.file) + ":" +
+                               QString::number(context.line) + ", " +
+                               QString(context.function) + ")", "nebula.log", 1);
+            break;
+
+        case QtCriticalMsg:
+            writeToLogAndPrint("Critical: " +
+                               QString(localMsg.constData()) + " (" +
+                               QString(context.file) + ":" +
+                               QString::number(context.line) + ", " +
+                               QString(context.function) + ")", "nebula.log", 1);
+            break;
+
+        case QtFatalMsg:
+            writeToLogAndPrint("Fatal: " +
+                               QString(localMsg.constData()) + " (" +
+                               QString(context.file) + ":" +
+                               QString::number(context.line) + ", " +
+                               QString(context.function) + ")", "nebula.log", 1);
+            abort();
     }
 }
 
 
 /* This is the top level of the GUI application*/
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
     // Initialize the log file
     QDateTime dateTime = dateTime.currentDateTime();
     QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
-    writeToLogAndPrint("### NEBULA LOG "+dateTimeString+" ###", "nebula.log", 0);
+    writeToLogAndPrint("### NEBULA LOG " + dateTimeString + " ###", "nebula.log", 0);
 
     // Handle Qt messages
     qInstallMessageHandler(appOutput);
@@ -115,6 +124,8 @@ int main(int argc, char **argv)
     qRegisterMetaType<ImageSeries>();
     qRegisterMetaType<SeriesSet>();
     qRegisterMetaType<Selection>();
+    qRegisterMetaType<DetectorFile>();
+    qRegisterMetaType<Line>();
 
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));

@@ -3,14 +3,15 @@
 
 #include "../../math/qxmathlib.h"
 
-class SearchNode {
-    /* This class represents a node in the "search octree" data structure. It is used in order to create bricks for the GPU octree. */
+class SearchNode
+{
+        /* This class represents a node in the "search octree" data structure. It is used in order to create bricks for the GPU octree. */
     public:
         SearchNode();
         SearchNode(SearchNode * parent, double * extent);
         ~SearchNode();
 
-//        void setOpenCLContext(OpenCLContext *context);
+        //        void setOpenCLContext(OpenCLContext *context);
         void clearChildren();
         void clearPoints();
         void insert(float * point);
@@ -23,12 +24,12 @@ class SearchNode {
         void setParent(SearchNode * parent);
 
         bool getData(size_t max_points,
-                     double *brick_extent,
+                     double * brick_extent,
                      float * point_data,
-                     size_t *accumulated_points,
+                     size_t * accumulated_points,
                      float search_radius);
-        
-        
+
+
         float getIDW(float * sample, float p, float search_radius);
         unsigned int getLevel();
         unsigned int getOctant(float * point, bool * isOutofBounds);
@@ -49,8 +50,8 @@ class SearchNode {
 
         bool isEmpty;
         bool isMsd;
-//        cl_int err;
+        //        cl_int err;
 
-//        OpenCLContext * context;
+        //        OpenCLContext * context;
 };
 #endif

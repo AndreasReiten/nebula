@@ -18,10 +18,10 @@ SparseVoxelOctree::SparseVoxelOctree()
     this->p_brick_inner_dimension = 7;
     this->p_brick_outer_dimension = 8;
     this->p_brick_pool_power = 7;
-    this->p_extent.reserve(1,8);
+    this->p_extent.reserve(1, 8);
     this->p_version_major = 0;
     this->p_version_minor = 5;
-    this->p_minmax.reserve(1,2);
+    this->p_minmax.reserve(1, 2);
     p_ub.setIdentity(3);
 };
 
@@ -34,29 +34,29 @@ void SparseVoxelOctree::print()
     std::stringstream ss;
     ss << std::endl;
     ss << "____ SparseVoxelOctree ____" << std::endl;
-    ss << "Brick inner dimension:   "<< p_brick_inner_dimension << std::endl;
-    ss << "Brick outer dimension:   "<< p_brick_outer_dimension << std::endl;
-    ss << "Brick pool power:        "<< p_brick_pool_power << std::endl;
-    ss << "Levels:                  "<< p_levels << std::endl;
-    ss << "File version:            "<< p_version_major << "." << p_version_minor << std::endl;
-    ss << "Index elements:          "<< p_index.size() << std::endl;
-    ss << "Brick elements:          "<< p_brick.size() << std::endl;
-    ss << "Pool size:               "<< p_pool.size() << std::endl;
-    ss << "Data min:                "<< p_minmax[0] << std::endl;
-    ss << "Data max:                "<< p_minmax[1] << std::endl;
-    
-    ss << "View data min:           "<< p_view_data_min << std::endl;
-    ss << "View data max:           "<< p_view_data_max << std::endl;
-    ss << "View alpha:              "<< p_view_alpha << std::endl;
-    ss << "View brightness:         "<< p_view_brightness << std::endl;
-    ss << "View mode:               "<< p_view_mode << std::endl;
-//    ss << "Metadata:                \n"<< metadata.toStdString() << std::endl;
-//    ss << "UB:" << UB << std::endl;
-//    ss << "Extent:" << extent << std::endl;
+    ss << "Brick inner dimension:   " << p_brick_inner_dimension << std::endl;
+    ss << "Brick outer dimension:   " << p_brick_outer_dimension << std::endl;
+    ss << "Brick pool power:        " << p_brick_pool_power << std::endl;
+    ss << "Levels:                  " << p_levels << std::endl;
+    ss << "File version:            " << p_version_major << "." << p_version_minor << std::endl;
+    ss << "Index elements:          " << p_index.size() << std::endl;
+    ss << "Brick elements:          " << p_brick.size() << std::endl;
+    ss << "Pool size:               " << p_pool.size() << std::endl;
+    ss << "Data min:                " << p_minmax[0] << std::endl;
+    ss << "Data max:                " << p_minmax[1] << std::endl;
+
+    ss << "View data min:           " << p_view_data_min << std::endl;
+    ss << "View data max:           " << p_view_data_max << std::endl;
+    ss << "View alpha:              " << p_view_alpha << std::endl;
+    ss << "View brightness:         " << p_view_brightness << std::endl;
+    ss << "View mode:               " << p_view_mode << std::endl;
+    //    ss << "Metadata:                \n"<< metadata.toStdString() << std::endl;
+    //    ss << "UB:" << UB << std::endl;
+    //    ss << "Extent:" << extent << std::endl;
     ss << "____________________________\n";
-    
+
     qDebug() << ss.str().c_str();
-    
+
 }
 
 
@@ -96,7 +96,7 @@ void SparseVoxelOctree::set(unsigned int levels, unsigned int brick_inner_dimens
 
 void SparseVoxelOctree::setMetaData(QString text)
 {
-    p_metadata = text;    
+    p_metadata = text;
 }
 
 QString SparseVoxelOctree::metaData()
@@ -109,9 +109,10 @@ void SparseVoxelOctree::save(QString path)
     if (path != "")
     {
         QFile file(path);
+
         if (file.open(QIODevice::WriteOnly))
         {
-            // v 0.3 
+            // v 0.3
             QDataStream out(&file);
             out << (qint64) 0;
             out << (qint64) 4;
@@ -126,7 +127,7 @@ void SparseVoxelOctree::save(QString path)
             out << p_brick;
             out << p_ub;
             out << p_metadata;
-            
+
             // v 0.4
             // Creation settings
             out << creation_date;
@@ -138,7 +139,7 @@ void SparseVoxelOctree::save(QString path)
             out << creation_correction_kappa;
             out << creation_correction_phi;
             out << creation_file_paths;
-            
+
             // View settings
             out << p_view_mode;
             out << p_view_tsf_style;
@@ -147,10 +148,10 @@ void SparseVoxelOctree::save(QString path)
             out << p_view_data_max;
             out << p_view_alpha;
             out << p_view_brightness;
-            
+
             // v 0.5
             out << p_lines;
-            
+
             file.close();
         }
     }
@@ -178,10 +179,11 @@ void SparseVoxelOctree::open(QString path)
     if ((path != ""))
     {
         QFile file(path);
+
         if (file.open(QIODevice::ReadOnly))
         {
             QDataStream in(&file);
-            
+
             in >> p_version_major;
             in >> p_version_minor;
             in >> p_brick_outer_dimension;
@@ -195,7 +197,7 @@ void SparseVoxelOctree::open(QString path)
             in >> p_brick;
             in >> p_ub;
             in >> p_metadata;
-    
+
             // v 0.4
             if ((p_version_major >= 0) && (p_version_minor >= 4))
             {
@@ -209,7 +211,7 @@ void SparseVoxelOctree::open(QString path)
                 in >> creation_correction_kappa;
                 in >> creation_correction_phi;
                 in >> creation_file_paths;
-                
+
                 // View settings
                 in >> p_view_mode;
                 in >> p_view_tsf_style;
@@ -219,7 +221,7 @@ void SparseVoxelOctree::open(QString path)
                 in >> p_view_alpha;
                 in >> p_view_brightness;
             }
-            else 
+            else
             {
                 // Creation settings
                 creation_date = QFileInfo(file).created();
@@ -230,7 +232,7 @@ void SparseVoxelOctree::open(QString path)
                 creation_correction_omega = -1;
                 creation_correction_kappa = -1;
                 creation_correction_phi = -1;
-                
+
                 // View settings
                 p_view_mode = 0;
                 p_view_tsf_style = 2;
@@ -240,16 +242,17 @@ void SparseVoxelOctree::open(QString path)
                 p_view_alpha = 0.05;
                 p_view_brightness = 2.0;
             }
-            
+
             // v 0.5
             if ((p_version_major >= 0) && (p_version_minor >= 5))
             {
                 in >> p_lines;
             }
-            
+
             file.close();
         }
     }
+
     this->print();
 }
 unsigned int SparseVoxelOctree::levels()
@@ -278,7 +281,7 @@ unsigned int SparseVoxelOctree::brickOuterDimension()
 
 unsigned int SparseVoxelOctree::brickNumber()
 {
-    return p_pool.size()/(p_brick_outer_dimension*p_brick_outer_dimension*p_brick_outer_dimension);
+    return p_pool.size() / (p_brick_outer_dimension * p_brick_outer_dimension * p_brick_outer_dimension);
 }
 
 quint64 SparseVoxelOctree::bytes()
@@ -332,29 +335,29 @@ qreal SparseVoxelOctree::viewBrightness()
 }
 void SparseVoxelOctree::setViewMode(qreal value)
 {
-     p_view_mode = value;
+    p_view_mode = value;
 }
 void SparseVoxelOctree::setViewTsfStyle(qreal value)
 {
-     p_view_tsf_style = value;
+    p_view_tsf_style = value;
 }
 void SparseVoxelOctree::setViewTsfTexture(qreal value)
 {
-     p_view_tsf_texture = value;
+    p_view_tsf_texture = value;
 }
 void SparseVoxelOctree::setViewDataMin(qreal value)
 {
-     p_view_data_min = value;
+    p_view_data_min = value;
 }
 void SparseVoxelOctree::setViewDataMax(qreal value)
 {
-     p_view_data_max = value;
+    p_view_data_max = value;
 }
 void SparseVoxelOctree::setViewAlpha(qreal value)
 {
-     p_view_alpha = value;
+    p_view_alpha = value;
 }
 void SparseVoxelOctree::setViewBrightness(qreal value)
 {
-     p_view_brightness = value;
+    p_view_brightness = value;
 }

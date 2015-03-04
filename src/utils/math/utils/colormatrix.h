@@ -4,14 +4,15 @@
 #include "matrix.h"
 
 template <class T>
-class ColorMatrix : public Matrix<T>{
+class ColorMatrix : public Matrix<T>
+{
     public:
         ColorMatrix();
         ColorMatrix(T R, T G, T B, T A);
         ~ColorMatrix();
 
-        ColorMatrix<T>& operator = (Matrix<T> other);
-        ColorMatrix<T>& operator = (ColorMatrix<T> other);
+        ColorMatrix<T> &operator = (Matrix<T> other);
+        ColorMatrix<T> &operator = (ColorMatrix<T> other);
 
         QColor toQColor();
 
@@ -21,13 +22,13 @@ class ColorMatrix : public Matrix<T>{
 template <class T>
 ColorMatrix<T>::ColorMatrix()
 {
-    this->reserve(1,4);
+    this->reserve(1, 4);
 }
 
 template <class T>
 ColorMatrix<T>::ColorMatrix(T R, T G, T B, T A)
 {
-    this->reserve(1,4);
+    this->reserve(1, 4);
     this->data()[0] = R;
     this->data()[1] = G;
     this->data()[2] = B;
@@ -41,15 +42,19 @@ ColorMatrix<T>::~ColorMatrix()
 }
 
 template <class T>
-ColorMatrix<T>& ColorMatrix<T>::operator = (Matrix<T> other)
+ColorMatrix<T> &ColorMatrix<T>::operator = (Matrix<T> other)
 {
-    if (other.size() != this->size()) qWarning() << "Sizes do not match: "<< other.size() << "!=" << this->size();
+    if (other.size() != this->size())
+    {
+        qWarning() << "Sizes do not match: " << other.size() << "!=" << this->size();
+    }
+
     this->swap(*this, other);
     return * this;
 }
 
 template <class T>
-ColorMatrix<T>& ColorMatrix<T>::operator = (ColorMatrix<T> other)
+ColorMatrix<T> &ColorMatrix<T>::operator = (ColorMatrix<T> other)
 {
     this->swap(*this, other);
     return * this;
@@ -70,7 +75,7 @@ QColor ColorMatrix<T>::toQColor()
 template <class T>
 void ColorMatrix<T>::set(T R, T G, T B, T A)
 {
-    this->reserve(1,4);
+    this->reserve(1, 4);
     this->data()[0] = R;
     this->data()[1] = G;
     this->data()[2] = B;

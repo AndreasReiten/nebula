@@ -23,11 +23,11 @@
 
 class DetectorFile
 {
-    /* Refer to PILATUS CBF header specs for details */
+        /* Refer to PILATUS CBF header specs for details */
     public:
         ~DetectorFile();
         DetectorFile();
-        DetectorFile(const DetectorFile & other);
+        DetectorFile(const DetectorFile &other);
         DetectorFile(QString p_path);
 
         QString path() const;
@@ -44,7 +44,7 @@ class DetectorFile
         void setNaive();
         void setAlpha(float value);
         void setBeta(float value);
-        
+
         float intensity(int x, int y);
 
         const Matrix<float> &data() const;
@@ -73,8 +73,8 @@ class DetectorFile
         float pixSizeY() const;
         void print();
         QString getHeaderText();
-        
-        
+
+
     private:
         /* Non-optional keywords */
         QString p_detector;
@@ -117,15 +117,15 @@ class DetectorFile
         float p_background_flux;
         float p_backgroundExpTime;
         float p_beta;
-        
+
         float p_max_counts;
-        
+
         // Misc
         Matrix<float> data_buf;
 
         QString p_path;
         size_t fast_dimension, slow_dimension;
-        
+
         bool p_isNaive;
         bool isFileValid;
         bool isFileHeaderRead;

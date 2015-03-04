@@ -33,11 +33,11 @@
 #define __OPENCL_CL_GL_H
 
 #ifdef __APPLE__
-#include <OpenCL/cl.h>
-#include <OpenGL/CGLDevice.h>
+    #include <OpenCL/cl.h>
+    #include <OpenGL/CGLDevice.h>
 #else
-#include <CL/cl.h>
-#endif	
+    #include <CL/cl.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,7 @@ extern "C" {
 typedef cl_uint     cl_gl_object_type;
 typedef cl_uint     cl_gl_texture_info;
 typedef cl_uint     cl_gl_platform_info;
-typedef struct __GLsync *cl_GLsync;
+typedef struct __GLsync * cl_GLsync;
 
 /* cl_gl_object_type */
 #define CL_GL_OBJECT_BUFFER             0x2000
@@ -90,7 +90,7 @@ extern CL_API_ENTRY cl_int CL_API_CALL
 clGetGLObjectInfo(cl_mem                /* memobj */,
                   cl_gl_object_type *   /* gl_object_type */,
                   cl_GLuint *              /* gl_object_name */) CL_API_SUFFIX__VERSION_1_0;
-                  
+
 extern CL_API_ENTRY cl_int CL_API_CALL
 clGetGLTextureInfo(cl_mem               /* memobj */,
                    cl_gl_texture_info   /* param_name */,
@@ -141,12 +141,12 @@ clGetGLContextInfoKHR(const cl_context_properties * /* properties */,
                       void *                        /* param_value */,
                       size_t *                      /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
 
-typedef CL_API_ENTRY cl_int (CL_API_CALL *clGetGLContextInfoKHR_fn)(
+typedef CL_API_ENTRY cl_int (CL_API_CALL * clGetGLContextInfoKHR_fn)(
     const cl_context_properties * properties,
     cl_gl_context_info            param_name,
     size_t                        param_value_size,
-    void *                        param_value,
-    size_t *                      param_value_size_ret);
+    void             *            param_value,
+    size_t            *           param_value_size_ret);
 
 #ifdef __cplusplus
 }

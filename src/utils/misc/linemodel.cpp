@@ -1,6 +1,6 @@
 #include "linemodel.h"
 
-LineModel::LineModel(QWidget *parent) :
+LineModel::LineModel(QWidget * parent) :
     QAbstractTableModel(parent)
 {
     p_lines = new QList<Line>;
@@ -22,190 +22,241 @@ QVariant LineModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole)
     {
-        switch (index.column()) 
+        switch (index.column())
         {
-        case 0:
-            return p_lines->at(index.row()).comment();
-        case 1:
-            return p_lines->at(index.row()).positionA()[0];
-        case 2:
-            return p_lines->at(index.row()).positionA()[1];
-        case 3:
-            return p_lines->at(index.row()).positionA()[2];
-        case 4:
-            return p_lines->at(index.row()).positionB()[0];
-        case 5:
-            return p_lines->at(index.row()).positionB()[1];
-        case 6:
-            return p_lines->at(index.row()).positionB()[2];
-        case 7:
-            return p_lines->at(index.row()).offsetA();
-        case 8:
-            return p_lines->at(index.row()).offsetB();
-        case 9:
-            return p_lines->at(index.row()).length();
-        case 10:
-            return p_lines->at(index.row()).prismSideA();
-        case 11:
-            return p_lines->at(index.row()).prismSideB();
+            case 0:
+                return p_lines->at(index.row()).comment();
+
+            case 1:
+                return p_lines->at(index.row()).positionA()[0];
+
+            case 2:
+                return p_lines->at(index.row()).positionA()[1];
+
+            case 3:
+                return p_lines->at(index.row()).positionA()[2];
+
+            case 4:
+                return p_lines->at(index.row()).positionB()[0];
+
+            case 5:
+                return p_lines->at(index.row()).positionB()[1];
+
+            case 6:
+                return p_lines->at(index.row()).positionB()[2];
+
+            case 7:
+                return p_lines->at(index.row()).offsetA();
+
+            case 8:
+                return p_lines->at(index.row()).offsetB();
+
+            case 9:
+                return p_lines->at(index.row()).length();
+
+            case 10:
+                return p_lines->at(index.row()).prismSideA();
+
+            case 11:
+                return p_lines->at(index.row()).prismSideB();
         }
     }
     else if (role == Qt::BackgroundRole)
     {
-        if (p_lines->at(index.row()).tagged()) return QColor(255,25,167,100);
-    }
-    else if(role == Qt::EditRole)
-    {
-        switch (index.column()) 
+        if (p_lines->at(index.row()).tagged())
         {
-        case 0:
-            return p_lines->at(index.row()).comment();
-        case 1:
-            return QString::number(p_lines->at(index.row()).positionA()[0]);
-        case 2:
-            return QString::number(p_lines->at(index.row()).positionA()[1]);
-        case 3:
-            return QString::number(p_lines->at(index.row()).positionA()[2]);
-        case 4:
-            return QString::number(p_lines->at(index.row()).positionB()[0]);
-        case 5:
-            return QString::number(p_lines->at(index.row()).positionB()[1]);
-        case 6:
-            return QString::number(p_lines->at(index.row()).positionB()[2]);
-        case 7:
-            return QString::number(p_lines->at(index.row()).offsetA());
-        case 8:
-            return QString::number(p_lines->at(index.row()).offsetB());
-        case 9:
-            return QString::number(p_lines->at(index.row()).length());
-        case 10:
-            return QString::number(p_lines->at(index.row()).prismSideA());
-        case 11:
-            return QString::number(p_lines->at(index.row()).prismSideB());
+            return QColor(255, 25, 167, 100);
         }
     }
-    return QVariant();(1.0,0.1,0.7,0.9);
+    else if (role == Qt::EditRole)
+    {
+        switch (index.column())
+        {
+            case 0:
+                return p_lines->at(index.row()).comment();
+
+            case 1:
+                return QString::number(p_lines->at(index.row()).positionA()[0]);
+
+            case 2:
+                return QString::number(p_lines->at(index.row()).positionA()[1]);
+
+            case 3:
+                return QString::number(p_lines->at(index.row()).positionA()[2]);
+
+            case 4:
+                return QString::number(p_lines->at(index.row()).positionB()[0]);
+
+            case 5:
+                return QString::number(p_lines->at(index.row()).positionB()[1]);
+
+            case 6:
+                return QString::number(p_lines->at(index.row()).positionB()[2]);
+
+            case 7:
+                return QString::number(p_lines->at(index.row()).offsetA());
+
+            case 8:
+                return QString::number(p_lines->at(index.row()).offsetB());
+
+            case 9:
+                return QString::number(p_lines->at(index.row()).length());
+
+            case 10:
+                return QString::number(p_lines->at(index.row()).prismSideA());
+
+            case 11:
+                return QString::number(p_lines->at(index.row()).prismSideB());
+        }
+    }
+
+    return QVariant();
+    (1.0, 0.1, 0.7, 0.9);
 }
 
 QVariant LineModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole)
     {
-        if (orientation == Qt::Horizontal) 
+        if (orientation == Qt::Horizontal)
         {
             switch (section)
             {
-            case 0:
-                return QString("Comment");
-            case 1:
-                return QString("x0");
-            case 2:
-                return QString("y0");
-            case 3:
-                return QString("z0");
-            case 4:
-                return QString("x1");
-            case 5:
-                return QString("y1");
-            case 6:
-                return QString("z1");
-            case 7:
-                return QString("Offset0");
-            case 8:
-                return QString("Offset1");
-            case 9:
-                return QString("Length");
-            case 10:
-                return QString("Side0");
-            case 11:
-                return QString("Side1");
+                case 0:
+                    return QString("Comment");
+
+                case 1:
+                    return QString("x0");
+
+                case 2:
+                    return QString("y0");
+
+                case 3:
+                    return QString("z0");
+
+                case 4:
+                    return QString("x1");
+
+                case 5:
+                    return QString("y1");
+
+                case 6:
+                    return QString("z1");
+
+                case 7:
+                    return QString("Offset0");
+
+                case 8:
+                    return QString("Offset1");
+
+                case 9:
+                    return QString("Length");
+
+                case 10:
+                    return QString("Side0");
+
+                case 11:
+                    return QString("Side1");
             }
         }
     }
+
     return QVariant();
 }
 
-bool LineModel::setData(const QModelIndex & index, const QVariant & value, int role)
+bool LineModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (role == Qt::EditRole)
     {
-        switch (index.column()) 
+        switch (index.column())
         {
-        case 0:
-        {
-            (*p_lines)[index.row()].setComment(value.toString());
-            break;
+            case 0:
+            {
+                (*p_lines)[index.row()].setComment(value.toString());
+                break;
+            }
+
+            case 1:
+            {
+                Matrix<double> pos = (*p_lines)[index.row()].positionA();
+                pos[0] = value.toDouble();
+                (*p_lines)[index.row()].setPositionA(pos);
+                break;
+            }
+
+            case 2:
+            {
+                Matrix<double> pos = (*p_lines)[index.row()].positionA();
+                pos[1] = value.toDouble();
+                (*p_lines)[index.row()].setPositionA(pos);
+                break;
+            }
+
+            case 3:
+            {
+                Matrix<double> pos = (*p_lines)[index.row()].positionA();
+                pos[2] = value.toDouble();
+                (*p_lines)[index.row()].setPositionA(pos);
+                break;
+            }
+
+            case 4:
+            {
+                Matrix<double> pos = (*p_lines)[index.row()].positionB();
+                pos[0] = value.toDouble();
+                (*p_lines)[index.row()].setPositionB(pos);
+                break;
+            }
+
+            case 5:
+            {
+                Matrix<double> pos = (*p_lines)[index.row()].positionB();
+                pos[1] = value.toDouble();
+                (*p_lines)[index.row()].setPositionB(pos);
+                break;
+            }
+
+            case 6:
+            {
+                Matrix<double> pos = (*p_lines)[index.row()].positionB();
+                pos[2] = value.toDouble();
+                (*p_lines)[index.row()].setPositionB(pos);
+                break;
+            }
+
+            case 7:
+            {
+                (*p_lines)[index.row()].setOffsetA(value.toDouble());
+                break;
+            }
+
+            case 8:
+            {
+                (*p_lines)[index.row()].setOffsetB(value.toDouble());
+                break;
+            }
+
+            case 9:
+            {
+                break;
+            }
+
+            case 10:
+            {
+                (*p_lines)[index.row()].setPrismSideA(value.toDouble());
+                break;
+            }
+
+            case 11:
+            {
+                (*p_lines)[index.row()].setPrismSideB(value.toDouble());
+                break;
+            }
         }
-        case 1:
-        {
-            Matrix<double> pos = (*p_lines)[index.row()].positionA();
-            pos[0] = value.toDouble();
-            (*p_lines)[index.row()].setPositionA(pos);
-            break;
-        }
-        case 2:
-        {
-            Matrix<double> pos = (*p_lines)[index.row()].positionA();
-            pos[1] = value.toDouble();
-            (*p_lines)[index.row()].setPositionA(pos);
-            break;
-        }
-        case 3:
-        {
-            Matrix<double> pos = (*p_lines)[index.row()].positionA();
-            pos[2] = value.toDouble();
-            (*p_lines)[index.row()].setPositionA(pos);
-            break;
-        }
-        case 4:
-        {
-            Matrix<double> pos = (*p_lines)[index.row()].positionB();
-            pos[0] = value.toDouble();
-            (*p_lines)[index.row()].setPositionB(pos);
-            break;
-        }
-        case 5:
-        {
-            Matrix<double> pos = (*p_lines)[index.row()].positionB();
-            pos[1] = value.toDouble();
-            (*p_lines)[index.row()].setPositionB(pos);
-            break;
-        }
-        case 6:
-        {
-            Matrix<double> pos = (*p_lines)[index.row()].positionB();
-            pos[2] = value.toDouble();
-            (*p_lines)[index.row()].setPositionB(pos);
-            break;
-        }
-        case 7:
-        {
-            (*p_lines)[index.row()].setOffsetA(value.toDouble());
-            break;
-        }
-        case 8:
-        {
-            (*p_lines)[index.row()].setOffsetB(value.toDouble());
-            break;
-        }
-        case 9:
-        {
-            break;
-        }
-        case 10:
-        {
-            (*p_lines)[index.row()].setPrismSideA(value.toDouble());
-            break;
-        }
-        case 11:
-        {
-            (*p_lines)[index.row()].setPrismSideB(value.toDouble());
-            break;
-        }
-        }
-        
+
         emit lineChanged(index.row());
     }
+
     return true;
 }
 
@@ -214,10 +265,16 @@ void LineModel::setLines(QList<Line> * list)
     p_lines = list;
 }
 
-Qt::ItemFlags LineModel::flags(const QModelIndex & index) const
+Qt::ItemFlags LineModel::flags(const QModelIndex &index) const
 {
-    if (index.column() < p_columns - 1) return Qt::ItemIsSelectable |  Qt::ItemIsEditable | Qt::ItemIsEnabled ;
-    else return Qt::ItemIsEnabled ;
+    if (index.column() < p_columns - 1)
+    {
+        return Qt::ItemIsSelectable |  Qt::ItemIsEditable | Qt::ItemIsEnabled ;
+    }
+    else
+    {
+        return Qt::ItemIsEnabled ;
+    }
 }
 
 void LineModel::removeMarkedLine()
@@ -230,7 +287,7 @@ void LineModel::removeMarkedLine()
             i--;
         }
     }
-    
+
     refresh();
 }
 

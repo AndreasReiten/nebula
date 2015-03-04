@@ -4,7 +4,7 @@
 #include <QPaintEvent>
 #include <QLinearGradient>
 
-PlotWidget::PlotWidget(QWidget *parent) :
+PlotWidget::PlotWidget(QWidget * parent) :
     QWidget(parent),
     isLog(false)
 {
@@ -13,15 +13,16 @@ PlotWidget::PlotWidget(QWidget *parent) :
     p_y_min = 0;
     p_y_max = 1.9;
 
-    double buf[] = {0.0,0.0,
-                    0.1,0.1,
-                    0.2,0.2,
-                    0.4,0.4,
-                    0.7,1.2,
-                    0.9,1.9};
+    double buf[] = {0.0, 0.0,
+                    0.1, 0.1,
+                    0.2, 0.2,
+                    0.4, 0.4,
+                    0.7, 1.2,
+                    0.9, 1.9
+                   };
     Matrix<double> data;
 
-    data.setDeep(2,6,buf);
+    data.setDeep(2, 6, buf);
     p_data = data;
 }
 
@@ -51,7 +52,7 @@ void PlotWidget::paintEvent(QPaintEvent * event)
 {
 
     // Paint the graph as a QPolygon inside rect
-    QRectF rect(this->rect() - QMargins(20,20,20,20));
+    QRectF rect(this->rect() - QMargins(20, 20, 20, 20));
 
     QPainter painter(this);
 
@@ -61,9 +62,10 @@ void PlotWidget::paintEvent(QPaintEvent * event)
     for (size_t i = 0; i < p_data.n(); i++)
     {
         polygon << QPointF(
-                        ((p_data[i*2] - p_x_min)/(p_x_max - p_x_min))* rect.width() + rect.left() ,
-                        (rect.height() - ((p_data[i*2+1] - p_y_min)/(p_y_max - p_y_min))* rect.height()) + rect.top());
+                    ((p_data[i * 2] - p_x_min) / (p_x_max - p_x_min))* rect.width() + rect.left() ,
+                    (rect.height() - ((p_data[i * 2 + 1] - p_y_min) / (p_y_max - p_y_min))* rect.height()) + rect.top());
     }
+
     polygon << rect.bottomRight();
 
     painter.setRenderHint(QPainter::Antialiasing);
@@ -74,9 +76,9 @@ void PlotWidget::paintEvent(QPaintEvent * event)
 
     painter.drawRect(rect);
 
-//    QLinearGradient lgrad(QPointF(0,0), QPointF(rect.top(),rect.bottom()));
-//                lgrad.setColorAt(0.0, Qt::blue);
-//                lgrad.setColorAt(1.0, Qt::transparent);
+    //    QLinearGradient lgrad(QPointF(0,0), QPointF(rect.top(),rect.bottom()));
+    //                lgrad.setColorAt(0.0, Qt::blue);
+    //                lgrad.setColorAt(1.0, Qt::transparent);
 
     QBrush lgrad_brush(Qt::black);
     painter.setBrush(lgrad_brush);

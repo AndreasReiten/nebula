@@ -5,14 +5,15 @@
 
 /* RotationMatrix */
 template <class T>
-class RotationMatrix : public Matrix<T>{
+class RotationMatrix : public Matrix<T>
+{
     public:
         RotationMatrix();
         ~RotationMatrix();
 
 
-        RotationMatrix<T>& operator = (Matrix<T> other);
-        RotationMatrix<T>& operator = (RotationMatrix<T> other);
+        RotationMatrix<T> &operator = (Matrix<T> other);
+        RotationMatrix<T> &operator = (RotationMatrix<T> other);
 
         void setXRotation(double value);
         void setYRotation(double value);
@@ -65,7 +66,7 @@ RotationMatrix<T>::~RotationMatrix()
 
 
 template <class T>
-RotationMatrix<T>& RotationMatrix<T>::operator = (Matrix<T> other)
+RotationMatrix<T> &RotationMatrix<T>::operator = (Matrix<T> other)
 {
     this->swap(*this, other);
 
@@ -73,7 +74,7 @@ RotationMatrix<T>& RotationMatrix<T>::operator = (Matrix<T> other)
 }
 
 template <class T>
-RotationMatrix<T>& RotationMatrix<T>::operator = (RotationMatrix<T> other)
+RotationMatrix<T> &RotationMatrix<T>::operator = (RotationMatrix<T> other)
 {
     this->swap(*this, other);
 
