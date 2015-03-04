@@ -97,6 +97,45 @@ void VolumeWorker::raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws
     emit rayTraceFinished();
 }
 
+void VolumeWorker::resolveLineIntegral(Line line)
+{
+
+    // Kernel launch parameters
+    Matrix<size_t> loc_ws(1,2);
+    loc_ws[0] = 1;
+    loc_ws[1] = 512;
+
+    Matrix<size_t> glb_ws(1,2);
+    glb_ws[0] = 1;
+    glb_ws[1] = 512;
+
+    Matrix<size_t> area_per_call(1,2);
+    area_per_call[0] = 128;
+    area_per_call[1] = 128;
+
+    Matrix<size_t> call_offset(1,2);
+    call_offset[0] = 0;
+    call_offset[1] = 0;
+
+    // Launch kernel
+    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
+    {
+        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
+        {
+            call_offset[0] = glb_x;
+            call_offset[1] = glb_y;
+
+            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_line_integral_kernel, 2, call_offset.data(), area_per_call.data(), loc_ws.data(), 0, NULL, NULL);
+            if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+        }
+    }
+
+    err = QOpenCLFinish(context_cl.queue());
+    if ( err != CL_SUCCESS) qFatal(cl_error_cstring(err));
+
+    emit integralResolved();
+
+}
 
 VolumeOpenGLWidget::VolumeOpenGLWidget(QObject *parent)
     : isCLInitialized(false),
@@ -1330,12 +1369,6 @@ void VolumeOpenGLWidget::setCenterLine()
 
     // Center line
     setVbo(centerline_vbo, centerline_coords.data(), 6, GL_STATIC_DRAW);
-}
-
-void VolumeWorker::resolveLineIntegral(Line line)
-{
-        
-    
 }
 
 void VolumeOpenGLWidget::addLine()
