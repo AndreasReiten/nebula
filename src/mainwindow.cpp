@@ -1577,7 +1577,7 @@ void MainWindow::initGUI()
         
         saveSvoButton = new QPushButton;
         saveSvoButton->setIcon(QIcon(":/art/save.png"));
-        saveSvoButton->setText("Save tree");
+        saveSvoButton->setText("Save");
         
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setContentsMargins(5,5,5,5);
@@ -1587,8 +1587,8 @@ void MainWindow::initGUI()
         gridLayout->addWidget(reconstructButton,0,0,1,1);
         gridLayout->addWidget(killButton,0,1,1,1);
         gridLayout->addWidget(svoLevelSpinBox,1,0,1,2);
-        gridLayout->addWidget(voxelizeButton,2,0,1,2);
-        gridLayout->addWidget(saveSvoButton,3,0,1,2);
+        gridLayout->addWidget(voxelizeButton,2,0,1,1);
+        gridLayout->addWidget(saveSvoButton,2,1,1,1);
         
         
         voxelizeWidget = new QWidget;

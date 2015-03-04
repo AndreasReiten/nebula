@@ -84,30 +84,30 @@ class Matrix {
         void print(int precision = 0, const char * id = "") const;
         
         // Vector math friends. Declared as friends so that they can be called independently of an object. TODO: declare outside of class
-        template <class F>
-        friend F vecLength(const Matrix<F> A);
+//        template <class F>
+//        friend F vecLength(const Matrix<F> A);
         
-        template <class F>
-        friend Matrix<F> vecNormalize(const Matrix<F> A);
+//        template <class F>
+//        friend Matrix<F> vecNormalize(const Matrix<F> A);
         
-        template <class F>
-        friend Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B);
+//        template <class F>
+//        friend Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B);
         
-        template <class F>
-        friend F vecDot(const Matrix<F> A, const Matrix<F> B);
+//        template <class F>
+//        friend F vecDot(const Matrix<F> A, const Matrix<F> B);
         
-        template <class F>
-        friend F zeta(const Matrix<F> A);
+//        template <class F>
+//        friend F zeta(const Matrix<F> A);
         
-        template <class F>
-        friend F eta(const Matrix<F> A);
+//        template <class F>
+//        friend F eta(const Matrix<F> A);
         
         // Other friends
 //        template <class F>
 //        friend Matrix<F> operator*(F factor, const Matrix<F> B);
         
-        template <class F>
-        friend std::ostream & operator << (std::ostream & stream, const Matrix<F> M);
+//        template <class F>
+//        friend std::ostream & operator << (std::ostream & stream, const Matrix<F> M);
 
     protected:
         size_t p_m;
@@ -186,7 +186,7 @@ Matrix<T>::Matrix()
 template <class F>
 Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B)
 {
-    Matrix<F> C(1,3,0);
+    Matrix<F> C = A;
 
     if ((A.m()*A.n() != 3) || (B.m()*B.n() != 3))
     {
@@ -198,6 +198,7 @@ Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B)
         C[1] = A[2]*B[0] - A[0]*B[2];
         C[2] = A[0]*B[1] - A[1]*B[0];
     }
+
     return C;
 }
 

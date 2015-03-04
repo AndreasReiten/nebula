@@ -1801,6 +1801,8 @@ void ImageOpenGLWidget::setFrameByIndex(int i)
         p_set.current()->at(i);
         setFrame();
     }
+
+    update();
 }
 
 void ImageOpenGLWidget::nextSeries()
@@ -1817,6 +1819,8 @@ void ImageOpenGLWidget::nextSeries()
         if (isSetTraced) setSeriesTrace();
         setFrame();
     }
+
+    update();
 }
 void ImageOpenGLWidget::prevSeries()
 {
@@ -1832,6 +1836,8 @@ void ImageOpenGLWidget::prevSeries()
         if (isSetTraced) setSeriesTrace();
         setFrame();
     }
+
+    update();
 }
 
 //void ImageOpenGLWidget::traceSeries()

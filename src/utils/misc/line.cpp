@@ -190,9 +190,9 @@ void Line::computePrism()
     // These vectors span the rectangular integration prism
     p_c = effectivePosB() - effectivePosA();
     
-    p_a[0] = 0;
-    p_a[1] = p_c[2];
-    p_a[2] = p_c[1];
+    p_a[0] = p_c[2];
+    p_a[1] = 0;
+    p_a[2] = -p_c[0];
     
     p_a = vecNormalize(p_a)*p_prism_side_a;
     

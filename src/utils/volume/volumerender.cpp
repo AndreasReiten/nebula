@@ -1375,7 +1375,7 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
 {
     beginRawGLCalls(painter);
 
-    glLineWidth(3.0);
+
 
     std_3d_col_program->bind();
 
@@ -1385,21 +1385,23 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
 
     for (int i = 0; i < lines->size(); i++)
     {
-        if (lines->at(i).tagged())
-        {
-            glUniform4fv(std_3d_col_color, 1, magenta_light.data());
-        }
-        else
-        {
-            glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
-        }
+        glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
 
         glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[i].vbo());
         glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        GLuint indices[] = {0,1,  2,5, 3,8, 6,9, 4,7,  4,6, 7,9, 5,8, 2,3,  5,7, 8,9, 3,6, 2,4};
-        glDrawElements(GL_LINES,  14, GL_UNSIGNED_INT, indices);
+        GLuint indices_a[] = {2,5, 3,8, 6,9, 4,7,  4,6, 7,9, 5,8, 2,3,  5,7, 8,9, 3,6, 2,4};
+        glLineWidth(1.0);
+        glDrawElements(GL_LINES,  24, GL_UNSIGNED_INT, indices_a);
+
+        GLuint indices_b[] = {0,1};
+        glLineWidth(2.0);
+        if (lines->at(i).tagged())
+        {
+            glUniform4fv(std_3d_col_color, 1, magenta_light.data());
+        }
+        glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, indices_b);
     }
 
     glDisableVertexAttribArray(std_3d_col_fragpos);
@@ -3650,11 +3652,13 @@ void VolumeOpenGLWidget::setTsfColor(int value)
 {
     tsf_color_scheme = value;
     if (isInitialized) setTsfTexture();
+    update();
 }
 void VolumeOpenGLWidget::setTsfAlpha(int value)
 {
     tsf_alpha_scheme = value;
     if (isInitialized) setTsfTexture();
+    update();
 }
 void VolumeOpenGLWidget::setDataMin(double value)
 {
