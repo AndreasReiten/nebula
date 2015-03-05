@@ -159,15 +159,6 @@ void VolumeWorker::resolveLineIntegral(Line line)
     loc_ws[0] = 1;
     loc_ws[1] = 512;
 
-    Matrix<size_t> area_per_call(1, 2);
-    area_per_call[0] = 32;
-    area_per_call[1] = 512;
-
-    Matrix<size_t> call_offset(1, 2);
-    call_offset[0] = 0;
-    call_offset[1] = 0;
-
-
     // Samples in each direction
     Matrix<int> samples(3,1);
 
@@ -196,16 +187,16 @@ void VolumeWorker::resolveLineIntegral(Line line)
     // Other kernel variables
     Matrix<size_t> glb_ws(1, 2);
     glb_ws[0] = samples[2];
-    glb_ws[1] = loc_ws[1]*(((samples[0]*samples[1] % loc_ws[1]) ? 1 : 0) + samples[0]*samples[1] / loc_ws[1]);
+    glb_ws[1] = loc_ws[1];
 
     Matrix<double> aVecSegment = vecNormalize(line.aVec())*sample_interdist_ab;
     Matrix<double> bVecSegment = vecNormalize(line.bVec())*sample_interdist_ab;
     Matrix<double> cVecSegment = vecNormalize(line.cVec())*sample_interdist_c;
     
-    p_line_integral_data.set(1,samples[2],0);
+    p_line_integral_data.set(1,samples[2]);
     
     cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
-                             CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+                             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                              p_line_integral_data.bytes(),
                              p_line_integral_data.data(), &err);
 
@@ -228,11 +219,14 @@ void VolumeWorker::resolveLineIntegral(Line line)
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 10, sizeof(cl_float3), cVecSegment.toFloat().data());
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 11, sizeof(cl_int3), samples.data());
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 12, sizeof(cl_float)*loc_ws[1], NULL);
-
+    
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+    
     glb_ws.print(0,"glb_ws");
     loc_ws.print(0,"loc_ws");
-
-    area_per_call.print(0,"area_per_call");
 
     line.basePos().print(3,"basePos");
     aVecSegment.print(6,"aVecSegment");
@@ -240,26 +234,13 @@ void VolumeWorker::resolveLineIntegral(Line line)
     cVecSegment.print(6,"cVecSegment");
     samples.print(3,"samples");
 
+    
+
+    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_line_integral_kernel, 2, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
-    }
-
-    // Launch kernel
-    for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
-    {
-        for (size_t glb_y = 0; glb_y < glb_ws[1]; glb_y += area_per_call[1])
-        {
-            call_offset[0] = glb_x;
-            call_offset[1] = glb_y;
-
-            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_line_integral_kernel, 2, call_offset.data(), area_per_call.data(), loc_ws.data(), 0, NULL, NULL);
-
-            if ( err != CL_SUCCESS)
-            {
-                qFatal(cl_error_cstring(err));
-            }
-        }
     }
 
     err = QOpenCLFinish(context_cl.queue());
@@ -276,8 +257,6 @@ void VolumeWorker::resolveLineIntegral(Line line)
                                      p_line_integral_data.bytes(),
                                      p_line_integral_data.data(),
                                      0, NULL, NULL);
-
-//    p_line_integral_data.print(3,"Result");
 
     if ( err != CL_SUCCESS)
     {
@@ -297,7 +276,6 @@ void VolumeWorker::resolveLineIntegral(Line line)
     p_line_integral_ymin = 0;
     p_line_integral_ymax = p_line_integral_data.max();
     emit lineIntegralResolved();
-
 }
 
 VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
@@ -1803,6 +1781,35 @@ void VolumeOpenGLWidget::refreshLine(int value)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     emit lineChanged(lines->at(value));
+}
+
+void VolumeOpenGLWidget::zoomToTaggedLine()
+{
+    
+}
+
+void VolumeOpenGLWidget::zoomToBox(Matrix<double> box)
+{
+    // Box [x0,x1,y0,y1,z0,z1]
+    // Set the translation
+    data_translation[3] = -box[0] + 0.5*(box[1] - box[0]);
+    data_translation[7] = -box[2] + 0.5*(box[3] - box[2]);
+    data_translation[11] = -box[4] + 0.5*(box[5] - box[4]);
+    
+    // Set the zoom
+    data_scaling[0] = (data_extent[1] - data_extent[0])/(box[1] - box[0]);
+    data_scaling[5] = (data_extent[3] - data_extent[2])/(box[3] - box[2]);
+    data_scaling[10] = (data_extent[5] - data_extent[4])/(box[5] - box[4]);
+    
+    // Set the view extent
+    data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
+    
+    update();
+}
+
+void VolumeOpenGLWidget::refreshLineIntegral(QModelIndex index)
+{
+    emit refreshLine(index.row());
 }
 
 void VolumeOpenGLWidget::releaseLines()
@@ -4222,6 +4229,8 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     genLines();
 
     isSvoInitialized = true;
+    
+    update();
 }
 
 void VolumeOpenGLWidget::resetViewMatrix()

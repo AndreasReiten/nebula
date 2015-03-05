@@ -759,12 +759,13 @@ void MainWindow::initConnects()
     connect(beamXOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamXOverride(double)));
     connect(beamYOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamYOverride(double)));
 
-    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineModel, SLOT(highlight(QModelIndex)));
-    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
+//    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineModel, SLOT(highlight(QModelIndex)));
+//    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(refreshLine(int)));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(update()));
-    connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
-    connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
+    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
+    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
+    connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(refreshLineIntegral(QModelIndex)));
     connect(volumeOpenGLWidget->worker(), SIGNAL(lineIntegralResolved()), this, SLOT(setLineIntegralPlot()));
 }
 

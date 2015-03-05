@@ -68,6 +68,16 @@ QVariant LineModel::data(const QModelIndex &index, int role) const
             return QColor(255, 25, 167, 100);
         }
     }
+    else if ((index.column() == 0) && (role == Qt::CheckStateRole))
+    {
+        if (p_lines->at(index.row()).tagged()) 
+        {
+            return Qt::Checked;
+        }
+        {
+            return Qt::Unchecked;
+        }
+    }
     else if (role == Qt::EditRole)
     {
         switch (index.column())
@@ -256,6 +266,18 @@ bool LineModel::setData(const QModelIndex &index, const QVariant &value, int rol
 
         emit lineChanged(index.row());
     }
+    else if ((index.column() == 0) && (role == Qt::CheckStateRole))
+    {
+        if (value == Qt::Checked)
+        {
+            (*p_lines)[index.row()].setTagged(true);
+        }
+        else 
+        {
+            (*p_lines)[index.row()].setTagged(false);
+        }
+        emit dataChanged(index,index.sibling(index.row(),p_columns-1));    
+    }
 
     return true;
 }
@@ -269,14 +291,23 @@ void LineModel::setLines(QList<Line> * list)
 
 Qt::ItemFlags LineModel::flags(const QModelIndex &index) const
 {
-    if (index.column() < p_columns - 1)
+    Qt::ItemFlags f = QAbstractTableModel::flags(index);
+    
+    if (index.column() == 0)
     {
-        return Qt::ItemIsSelectable |  Qt::ItemIsEditable | Qt::ItemIsEnabled ;
+        f |= Qt::ItemIsUserCheckable;
+    }
+    
+    if (index.column() != 9)
+    {
+        f |= Qt::ItemIsEditable | Qt::ItemIsEnabled ;
     }
     else
     {
-        return Qt::ItemIsEnabled ;
+        f |= Qt::ItemIsEnabled ;
     }
+    
+    return f;
 }
 
 void LineModel::removeMarkedLine()
