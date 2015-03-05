@@ -28,6 +28,13 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
             cl_mem * oct_brick,
             cl_mem * data_extent,
             cl_mem * misc_int);
+        
+        Matrix<double> getLineIntegralData();
+        double getLineIntegralXmin();
+        double getLineIntegralXmax();
+        
+        double getLineIntegralYmin();
+        double getLineIntegralYmax();
 
     public slots:
         void raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws);
@@ -35,7 +42,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
 
     signals:
         void rayTraceFinished();
-        void integralResolved();
+        void lineIntegralResolved();
 
     private:
         OpenCLContext context_cl;
@@ -51,6 +58,12 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         cl_mem * p_oct_brick;
         cl_mem * p_data_extent;
         cl_mem * p_misc_int;
+        
+        Matrix<float> p_line_integral_data;
+        double p_line_integral_xmin;
+        double p_line_integral_xmax;
+        double p_line_integral_ymin;
+        double p_line_integral_ymax;
 };
 
 class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
@@ -63,6 +76,8 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setSvo(SparseVoxelOctree * svo);
         void setUBMatrix(UBMatrix<double> &mat);
         UBMatrix<double> &getUBMatrix();
+        
+        VolumeWorker * worker();
 
     signals:
         void changedMessageString(QString str);

@@ -77,6 +77,7 @@ class MainWindow : public QMainWindow
         void setApplyMode(QString str);
         void setBatchSize(int value);
         void setImageRange(int low, int high);
+        void setLineIntegralPlot();
 
     signals:
         void testToWindow();

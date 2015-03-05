@@ -12,18 +12,18 @@ PlotWidget::PlotWidget(QWidget * parent) :
     p_x_max = 1;
     p_y_min = 0;
     p_y_max = 1.9;
+    
+    double buf_x[] = {0.0,0.1,0.2,0.4,0.7,0.9};
 
-    double buf[] = {0.0, 0.0,
-                    0.1, 0.1,
-                    0.2, 0.2,
-                    0.4, 0.4,
-                    0.7, 1.2,
-                    0.9, 1.9
-                   };
-    Matrix<double> data;
+    p_x_data.setDeep(1, 6, buf_x);
 
-    data.setDeep(2, 6, buf);
-    p_data = data;
+    double buf_y[] = { 0.0,0.1,0.2,0.4,1.2,1.9};
+
+    p_y_data.setDeep(1, 6, buf_y);
+    
+//    paintTimer = new QTimer;
+    
+//    connect(this, SIGNAL(paintRequest()), paintTimer, SLOT(start()));
 }
 
 PlotWidget::~PlotWidget()
@@ -31,14 +31,21 @@ PlotWidget::~PlotWidget()
 
 }
 
-void PlotWidget::plot(double xmin, double xmax, double ymin, double ymax, Matrix<double> &data)
+void PlotWidget::plot(double xmin, double xmax, double ymin, double ymax, const Matrix<double> &x_data, const Matrix<double> &y_data)
 {
     p_x_min = xmin;
     p_x_max = xmax;
     p_y_min = ymin;
     p_y_max = ymax;
 
-    p_data = data;
+    p_x_data = x_data;
+    
+    p_y_data = y_data;
+    
+    
+    qDebug() << p_x_min << p_x_max << p_y_min << p_y_max;
+    p_x_data.print(0,"Data X");
+    p_y_data.print(0,"Data Y");
 
     update();
 }
@@ -50,7 +57,6 @@ void PlotWidget::setLog(bool value)
 
 void PlotWidget::paintEvent(QPaintEvent * event)
 {
-
     // Paint the graph as a QPolygon inside rect
     QRectF rect(this->rect() - QMargins(20, 20, 20, 20));
 
@@ -59,11 +65,11 @@ void PlotWidget::paintEvent(QPaintEvent * event)
     QPolygonF polygon;
     polygon << rect.bottomLeft();
 
-    for (size_t i = 0; i < p_data.n(); i++)
+    for (size_t i = 0; i < p_y_data.n(); i++)
     {
         polygon << QPointF(
-                    ((p_data[i * 2] - p_x_min) / (p_x_max - p_x_min))* rect.width() + rect.left() ,
-                    (rect.height() - ((p_data[i * 2 + 1] - p_y_min) / (p_y_max - p_y_min))* rect.height()) + rect.top());
+                    ((p_x_data[i] - p_x_min) / (p_x_max - p_x_min))* rect.width() + rect.left() ,
+                    (rect.height() - ((p_y_data[i] - p_y_min) / (p_y_max - p_y_min))* rect.height()) + rect.top());
     }
 
     polygon << rect.bottomRight();

@@ -1,7 +1,6 @@
 #ifndef FRAMECONTAINER_H
 #define FRAMECONTAINER_H
 
-//#include <QMetaType>
 #include <QString>
 #include <QRect>
 #include <QDebug>

@@ -765,6 +765,7 @@ void MainWindow::initConnects()
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(update()));
     connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
+    connect(volumeOpenGLWidget->worker(), SIGNAL(lineIntegralResolved()), this, SLOT(setLineIntegralPlot()));
 }
 
 void MainWindow::setGeneralProgressFormat(QString str)
@@ -1818,6 +1819,24 @@ void MainWindow::setBatchSize(int value)
 void MainWindow::setImageRange(int low, int high)
 {
     imageSpinBox->setRange(low, high);
+}
+
+void MainWindow::setLineIntegralPlot()
+{
+    Matrix<double> y_data = volumeOpenGLWidget->worker()->getLineIntegralData();
+    
+    Matrix<double> x_data(y_data.m(), y_data.n());
+    
+    for (int i = 0; i < x_data.size(); i++)
+    {
+        x_data[i] = volumeOpenGLWidget->worker()->getLineIntegralXmin() +  i*(volumeOpenGLWidget->worker()->getLineIntegralXmax() - volumeOpenGLWidget->worker()->getLineIntegralXmin())/(x_data.size() - 1);
+    }
+    
+    plotWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
+                     volumeOpenGLWidget->worker()->getLineIntegralXmax(),
+                     volumeOpenGLWidget->worker()->getLineIntegralYmin(),
+                     volumeOpenGLWidget->worker()->getLineIntegralYmax(), 
+                     x_data, y_data);
 }
 
 void MainWindow::takeImageScreenshotFunction()

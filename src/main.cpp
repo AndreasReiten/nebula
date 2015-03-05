@@ -126,6 +126,7 @@ int main(int argc, char ** argv)
     qRegisterMetaType<Selection>();
     qRegisterMetaType<DetectorFile>();
     qRegisterMetaType<Line>();
+//    qRegisterMetaType<Matrix>();
 
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/art/app.png"));

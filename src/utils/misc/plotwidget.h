@@ -2,6 +2,7 @@
 #define PLOTWIDGET_H
 
 #include <QWidget>
+//#include <QTimer>
 #include "../math/qxmathlib.h"
 
 class PlotWidget : public QWidget
@@ -12,9 +13,10 @@ class PlotWidget : public QWidget
         ~PlotWidget();
 
     signals:
-
+//        void paintRequest();
+        
     public slots:
-        void plot(double xmin, double xmax, double ymin, double ymax, Matrix<double> &data);
+        void plot(double xmin, double xmax, double ymin, double ymax, const Matrix<double> &x_data, const Matrix<double> &y_data);
         void setLog(bool value);
 
     protected:
@@ -28,7 +30,10 @@ class PlotWidget : public QWidget
         double p_y_min;
         double p_y_max;
 
-        Matrix<double> p_data;
+        Matrix<double> p_x_data;
+        Matrix<double> p_y_data;
+        
+//        QTimer * paintTimer;
 };
 
 #endif // PLOTWIDGET_H

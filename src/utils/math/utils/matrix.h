@@ -13,6 +13,7 @@
 #include <limits>
 #include <cstring>
 #include <vector>
+
 #include <QDebug>
 #include <QColor>
 #include <QDataStream>
@@ -41,7 +42,6 @@ class Matrix
         const Matrix operator -= (const Matrix &) const;
         const Matrix operator -= (const T &) const;
 
-        //        const Matrix operator * (const T&, const Matrix&) const;
         const Matrix operator - (const Matrix &) const;
         const Matrix operator - (const T &) const;
         const Matrix operator - () const;
@@ -59,12 +59,14 @@ class Matrix
         Matrix<T> inverse4x4(int verbose = false) const;
         Matrix<T> colmajor() const;
         Matrix<float> toFloat() const;
+        Matrix<double> toDouble() const;
         Matrix<int> toInt() const;
         QVector<T> toQVector() const;
 
+        T max();
+        T min();
         T sum();
 
-        //        void normalize();
         void setIdentity(size_t p_n);
         void set(size_t p_m, size_t p_n);
         void set(size_t p_m, size_t p_n, T value);
@@ -84,32 +86,6 @@ class Matrix
 
         void print(int precision = 0, const char * id = "") const;
 
-        // Vector math friends. Declared as friends so that they can be called independently of an object. TODO: declare outside of class
-        //        template <class F>
-        //        friend F vecLength(const Matrix<F> A);
-
-        //        template <class F>
-        //        friend Matrix<F> vecNormalize(const Matrix<F> A);
-
-        //        template <class F>
-        //        friend Matrix<F> vecCross(const Matrix<F> A, const Matrix<F> B);
-
-        //        template <class F>
-        //        friend F vecDot(const Matrix<F> A, const Matrix<F> B);
-
-        //        template <class F>
-        //        friend F zeta(const Matrix<F> A);
-
-        //        template <class F>
-        //        friend F eta(const Matrix<F> A);
-
-        // Other friends
-        //        template <class F>
-        //        friend Matrix<F> operator*(F factor, const Matrix<F> B);
-
-        //        template <class F>
-        //        friend std::ostream & operator << (std::ostream & stream, const Matrix<F> M);
-
     protected:
         size_t p_m;
         size_t p_n;
@@ -118,6 +94,8 @@ class Matrix
         /* Swap function as per C++11 idiom */
         void swap(Matrix &first, Matrix &second);
 };
+
+//Q_DECLARE_METATYPE(Matrix);
 
 template<class T> QDebug operator<<(QDebug dbg, const Matrix<T> &m)
 {
@@ -378,6 +356,37 @@ T Matrix<T>::sum()
     return sum;
 }
 
+template <class T>
+T Matrix<T>::min()
+{
+    T value = std::numeric_limits<T>::max();;
+
+    for (size_t i = 0; i < p_n; i++)
+    {
+        for (size_t j = 0; j < p_m; j++)
+        {
+            if (value  >  p_buffer[i * p_m + j])  value = p_buffer[i * p_m + j];
+        }
+    }
+
+    return value;
+}
+
+template <class T>
+T Matrix<T>::max()
+{
+    T value = std::numeric_limits<T>::min();;
+
+    for (size_t i = 0; i < p_n; i++)
+    {
+        for (size_t j = 0; j < p_m; j++)
+        {
+            if (value  <  p_buffer[i * p_m + j])  value = p_buffer[i * p_m + j];
+        }
+    }
+
+    return value;
+}
 
 template <class T>
 void Matrix<T>::swap(Matrix &first, Matrix &second)
@@ -395,6 +404,19 @@ Matrix<float> Matrix<T>::toFloat() const
     for (size_t i = 0; i < this->p_m * this->p_n; i++)
     {
         buf[i] = (float) this->p_buffer[i];
+    }
+
+    return buf;
+}
+
+template <class T>
+Matrix<double> Matrix<T>::toDouble() const
+{
+    Matrix<double> buf(this->p_m, this->p_n);
+
+    for (size_t i = 0; i < this->p_m * this->p_n; i++)
+    {
+        buf[i] = (double) this->p_buffer[i];
     }
 
     return buf;
@@ -865,12 +887,6 @@ const Matrix<T> Matrix<T>::operator * (const T &factor) const
 
     return c;
 }
-
-//template <class T>
-//const Matrix<T> Matrix<T>::operator * (const T& factor, const Matrix& M) const
-//{
-//    return M * factor;
-//}
 
 template <class T>
 const Matrix<T> Matrix<T>::operator * (const Matrix &M) const

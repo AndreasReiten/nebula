@@ -71,7 +71,7 @@ __kernel void integrateLine(
         a.y*((float)i_b) + b.y*((float)i_b) + c.y*((float)i_b),
         a.z*((float)i_c) + b.z*((float)i_c) + c.z*((float)i_c));
     
-        // Descend into the octree data structure
+        // Descend into the octree data struget_global_id(0)cture
         // Index trackers for the traversal.
         index = 0;
     
@@ -132,6 +132,6 @@ __kernel void integrateLine(
 
     if (get_local_id(0) == 0)
     {
-        result[get_global_id(0)] += addition_array[0];
+        result[id_glb.x] += 1;//get_global_id(0);//addition_array[0];
     }
 }

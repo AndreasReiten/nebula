@@ -5,15 +5,11 @@
  * The DetectorFile class.
  * */
 
-/* GL and CL*/
-// It might be cleaner to exclude opencl from this lib and rather use opencl as a method in a parent
-//#include <QMetaType>
-
 /* QT */
 //class QString;
 
 /* User libs */
-#include "../../opencl/qxopencllib.h"
+//#include "../../opencl/qxopencllib.h"
 #include "../../math/qxmathlib.h"
 
 

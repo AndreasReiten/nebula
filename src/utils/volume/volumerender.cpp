@@ -69,6 +69,31 @@ void VolumeWorker::initializeOpenCLKernels()
     }
 }
 
+Matrix<double> VolumeWorker::getLineIntegralData()
+{
+    return p_line_integral_data.toDouble();
+}
+
+double VolumeWorker::getLineIntegralXmin()
+{
+    return p_line_integral_xmin;
+}
+
+double VolumeWorker::getLineIntegralXmax()
+{
+    return p_line_integral_xmax;
+}
+
+double VolumeWorker::getLineIntegralYmin()
+{
+    return p_line_integral_ymin;
+}
+
+double VolumeWorker::getLineIntegralYmax()
+{
+    return p_line_integral_ymax;
+}
+
 void VolumeWorker::setKernel(cl_kernel kernel)
 {
     p_raytrace_kernel = kernel;
@@ -150,7 +175,7 @@ void VolumeWorker::resolveLineIntegral(Line line)
     double sampling_freq_c = 256;
     double sample_interdist_ab;
     double sample_interdist_c = line.length() / (double) sampling_freq_c;
-
+    
     if (line.prismSideA() >= line.prismSideB())
     {
         sample_interdist_ab = line.prismSideA() / (double) (sampling_freq_ab - 1);
@@ -171,16 +196,18 @@ void VolumeWorker::resolveLineIntegral(Line line)
     // Other kernel variables
     Matrix<size_t> glb_ws(1, 2);
     glb_ws[0] = samples[2];
-    glb_ws[1] = loc_ws[1]*(1 + samples[0]*samples[1] / loc_ws[1]);
+    glb_ws[1] = loc_ws[1]*(((samples[0]*samples[1] % loc_ws[1]) ? 1 : 0) + samples[0]*samples[1] / loc_ws[1]);
 
     Matrix<double> aVecSegment = vecNormalize(line.aVec())*sample_interdist_ab;
     Matrix<double> bVecSegment = vecNormalize(line.bVec())*sample_interdist_ab;
     Matrix<double> cVecSegment = vecNormalize(line.cVec())*sample_interdist_c;
-
+    
+    p_line_integral_data.set(1,samples[2],0);
+    
     cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
-                             CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-                             samples[2]*sizeof(cl_float),
-                             NULL, &err);
+                             CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+                             p_line_integral_data.bytes(),
+                             p_line_integral_data.data(), &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -242,17 +269,15 @@ void VolumeWorker::resolveLineIntegral(Line line)
         qFatal(cl_error_cstring(err));
     }
 
-    Matrix<float> result(1,samples[2]);
-
     err = QOpenCLEnqueueReadBuffer ( context_cl.queue(),
                                      result_cl,
                                      CL_TRUE,
                                      0,
-                                     result.bytes(),
-                                     result.data(),
+                                     p_line_integral_data.bytes(),
+                                     p_line_integral_data.data(),
                                      0, NULL, NULL);
 
-    result.print(3,"Result");
+//    p_line_integral_data.print(3,"Result");
 
     if ( err != CL_SUCCESS)
     {
@@ -266,7 +291,12 @@ void VolumeWorker::resolveLineIntegral(Line line)
         qFatal(cl_error_cstring(err));
     }
 
-    emit integralResolved();
+    
+    p_line_integral_xmin = 0;
+    p_line_integral_xmax = line.length();
+    p_line_integral_ymin = 0;
+    p_line_integral_ymax = p_line_integral_data.max();
+    emit lineIntegralResolved();
 
 }
 
@@ -1266,6 +1296,11 @@ void VolumeOpenGLWidget::setUBMatrix(UBMatrix<double> &mat)
     update();
 }
 
+VolumeWorker * VolumeOpenGLWidget::worker()
+{
+    return volumeWorker;
+}
+
 UBMatrix<double> &VolumeOpenGLWidget::getUBMatrix()
 {
     return UB;
@@ -1800,8 +1835,6 @@ void VolumeOpenGLWidget::genLines()
 void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painter)
 {
     beginRawGLCalls(painter);
-
-
 
     std_3d_col_program->bind();
 
