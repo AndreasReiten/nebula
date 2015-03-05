@@ -114,8 +114,8 @@ void SparseVoxelOctree::save(QString path)
         {
             // v 0.3
             QDataStream out(&file);
-            out << (qint64) 0;
-            out << (qint64) 4;
+            out << (quint64) 0;
+            out << (quint64) 5;
             out << p_brick_outer_dimension;
             out << p_brick_inner_dimension;
             out << p_brick_pool_power;
@@ -150,6 +150,8 @@ void SparseVoxelOctree::save(QString path)
             out << p_view_brightness;
 
             // v 0.5
+            qDebug() << p_lines.size();
+
             out << p_lines;
 
             file.close();
@@ -243,9 +245,12 @@ void SparseVoxelOctree::open(QString path)
                 p_view_brightness = 2.0;
             }
 
+            qDebug() << p_version_major << p_version_minor;
+
             // v 0.5
             if ((p_version_major >= 0) && (p_version_minor >= 5))
             {
+                qDebug() << "Loading p_lines";
                 in >> p_lines;
             }
 

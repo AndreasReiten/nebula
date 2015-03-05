@@ -37,10 +37,11 @@ Line::Line(const Line &other)
 
     p_position_a = other.positionA();
     p_position_b = other.positionB();
-    p_vertices = other.vertices();
 
     p_prism_side_a = other.prismSideA();
     p_prism_side_b = other.prismSideB();
+
+    p_vertices.set(3, 10, 0);
 
     computePrism();
     computeVertices();
@@ -350,7 +351,7 @@ QDebug operator<<(QDebug dbg, const Line &line)
 
 QDataStream &operator<<(QDataStream &out, const Line &line)
 {
-    out << line.comment() << line.tagged() << line.positionA() << line.positionB() << line.offsetA() << line.offsetB();
+    out << line.comment() << line.tagged() << line.positionA() << line.positionB() << line.offsetA() << line.offsetB()  << line.prismSideA() << line.prismSideB();
 
     return out;
 }
@@ -363,8 +364,10 @@ QDataStream &operator>>(QDataStream &in, Line &line)
     Matrix<double> position_b;
     double offset_a;
     double offset_b;
+    double prism_side_a;
+    double prism_side_b;
 
-    in >> comment >> isTagged >> position_a >> position_b >> offset_a >> offset_b;
+    in >> comment >> isTagged >> position_a >> position_b >> offset_a >> offset_b >> prism_side_a >> prism_side_b;
 
     line.setComment(comment);
     line.setTagged(isTagged);
@@ -372,6 +375,8 @@ QDataStream &operator>>(QDataStream &in, Line &line)
     line.setPositionB(position_b);
     line.setOffsetA(offset_a);
     line.setOffsetB(offset_b);
+    line.setPrismSideA(prism_side_a);
+    line.setPrismSideB(prism_side_b);
     return in;
 }
 

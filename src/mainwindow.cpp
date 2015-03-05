@@ -852,6 +852,8 @@ void MainWindow::loadSvo()
         volumeRenderDataMinSpinBox->setValue(svo_loaded.viewDataMin());
         volumeRenderDataMaxSpinBox->setValue(svo_loaded.viewDataMax());
 
+        qDebug() << svo_loaded.lines()->size();
+
         UBMatrix<double> UB;
 
         UB = svo_loaded.UB();

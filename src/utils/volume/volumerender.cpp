@@ -156,14 +156,14 @@ void VolumeWorker::resolveLineIntegral(Line line)
         sample_interdist_ab = line.prismSideA() / (double) (sampling_freq_ab - 1);
 
         samples[0] = sampling_freq_ab;
-        samples[1] = line.prismSideB() / sample_interdist_ab;
+        samples[1] = (line.prismSideB() / sample_interdist_ab)+1;
         samples[2] = sampling_freq_c;
     }
     else
     {
         sample_interdist_ab = line.prismSideB() / (double) (sampling_freq_ab - 1);
 
-        samples[0] = line.prismSideA() / sample_interdist_ab;
+        samples[0] = (line.prismSideA() / sample_interdist_ab)+1;
         samples[1] = sampling_freq_ab;
         samples[2] = sampling_freq_c;
     }
@@ -202,9 +202,16 @@ void VolumeWorker::resolveLineIntegral(Line line)
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 11, sizeof(cl_int3), samples.data());
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 12, sizeof(cl_float)*loc_ws[1], NULL);
 
-//    aVecSegment.print(3,"aVecSegment");
-//    bVecSegment.print(3,"bVecSegment");
-//    cVecSegment.print(3,"cVecSegment");
+    glb_ws.print(0,"glb_ws");
+    loc_ws.print(0,"loc_ws");
+
+    area_per_call.print(0,"area_per_call");
+
+    line.basePos().print(3,"basePos");
+    aVecSegment.print(6,"aVecSegment");
+    bVecSegment.print(6,"bVecSegment");
+    cVecSegment.print(6,"cVecSegment");
+    samples.print(3,"samples");
 
     if ( err != CL_SUCCESS)
     {
@@ -1183,6 +1190,8 @@ void VolumeOpenGLWidget::setUB_a(double value)
         updateUnitCellVertices();
         updateUnitCellText();
     }
+
+    update();
 }
 
 void VolumeOpenGLWidget::setUB_b(double value)
@@ -1194,6 +1203,8 @@ void VolumeOpenGLWidget::setUB_b(double value)
         updateUnitCellVertices();
         updateUnitCellText();
     }
+
+    update();
 }
 void VolumeOpenGLWidget::setUB_c(double value)
 {
@@ -1204,6 +1215,8 @@ void VolumeOpenGLWidget::setUB_c(double value)
         updateUnitCellVertices();
         updateUnitCellText();
     }
+
+    update();
 }
 
 void VolumeOpenGLWidget::setUB_alpha(double value)
@@ -1215,6 +1228,8 @@ void VolumeOpenGLWidget::setUB_alpha(double value)
         updateUnitCellVertices();
         updateUnitCellText();
     }
+
+    update();
 }
 void VolumeOpenGLWidget::setUB_beta(double value)
 {
@@ -1225,6 +1240,8 @@ void VolumeOpenGLWidget::setUB_beta(double value)
         updateUnitCellVertices();
         updateUnitCellText();
     }
+
+    update();
 }
 void VolumeOpenGLWidget::setUB_gamma(double value)
 {
@@ -1235,6 +1252,8 @@ void VolumeOpenGLWidget::setUB_gamma(double value)
         updateUnitCellVertices();
         updateUnitCellText();
     }
+
+    update();
 }
 
 
@@ -1243,6 +1262,8 @@ void VolumeOpenGLWidget::setUBMatrix(UBMatrix<double> &mat)
     this->UB = mat;
     this->U.setIdentity(4);
     U.setFrom3x3(UB.getUMatrix());
+
+    update();
 }
 
 UBMatrix<double> &VolumeOpenGLWidget::getUBMatrix()
@@ -1747,6 +1768,33 @@ void VolumeOpenGLWidget::refreshLine(int value)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     emit lineChanged(lines->at(value));
+}
+
+void VolumeOpenGLWidget::releaseLines()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    for (int i = 0; i < lines->size(); i++)
+    {
+        glDeleteBuffers(1, (*lines)[i].vbo());
+    }
+}
+
+void VolumeOpenGLWidget::genLines()
+{
+    for (int i = 0; i < lines->size(); i++)
+    {
+        glGenBuffers(1, (*lines)[i].vbo());
+
+        glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[i].vbo());
+        glBufferData(GL_ARRAY_BUFFER, (*lines)[i].vertices().bytes(), (*lines)[i].vertices().data(), GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    if (lines->size() > 0) emit lineChanged(lines->last());
 }
 
 void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painter)
@@ -4015,6 +4063,7 @@ void VolumeOpenGLWidget::raytrace(cl_kernel kernel)
 
 void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
 {
+    releaseLines();
     lines = svo->lines();
 
     data_extent.setDeep(4, 2, svo->extent().data());
@@ -4136,6 +4185,8 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     {
         qFatal(cl_error_cstring(err));
     }
+
+    genLines();
 
     isSvoInitialized = true;
 }

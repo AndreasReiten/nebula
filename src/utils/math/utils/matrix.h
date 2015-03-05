@@ -125,9 +125,9 @@ template<class T> QDebug operator<<(QDebug dbg, const Matrix<T> &m)
     return dbg.maybeSpace();
 }
 
-template<class T> QDataStream &operator<<(QDataStream &out, const Matrix<T> &m)
+template<class T> QDataStream &operator<<(QDataStream &out, const Matrix<T> &mat)
 {
-    out << (qint64) m.m() << (qint64) m.n() << m.toQVector();
+    out << (qint64) mat.m() << (qint64) mat.n() << mat.toQVector();
 
     return out;
 }

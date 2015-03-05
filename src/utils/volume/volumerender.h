@@ -71,6 +71,8 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
 
     public slots:
         void refreshLine(int value);
+        void releaseLines();
+        void genLines();
         void addLine();
         void saveLineIntegralAsImage(QString path);
         void saveLineIntegralAsText(QString path);

@@ -263,6 +263,8 @@ bool LineModel::setData(const QModelIndex &index, const QVariant &value, int rol
 void LineModel::setLines(QList<Line> * list)
 {
     p_lines = list;
+
+    refresh();
 }
 
 Qt::ItemFlags LineModel::flags(const QModelIndex &index) const

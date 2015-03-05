@@ -8,7 +8,10 @@ __kernel void integrateLine(
     __local float * addition_array
     )
 {
-    /* Problem layout
+    /*
+    * Sample and integrate a rectangular volume around a line
+    *
+    * Problem layout
     *(y)
     * ^ 
     * |W W W W W 
