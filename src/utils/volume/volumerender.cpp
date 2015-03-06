@@ -2961,9 +2961,11 @@ void VolumeOpenGLWidget::drawIntegral(QPainter * painter)
 
         painter->setRenderHint(QPainter::Antialiasing);
 
+//        QBrush brush(clear_color_inverse.toQColor(),Qt::SolidPattern);
+        
         QLinearGradient lgrad(QPointF(0, 0), QPointF(this->width() / 10.0, 0));
         lgrad.setColorAt(0.0, Qt::transparent);
-        lgrad.setColorAt(1.0, Qt::blue);
+        lgrad.setColorAt(1.0, clear_color_inverse.toQColor());
 
         QBrush histogram_brush_lg(lgrad);
 
@@ -3122,7 +3124,7 @@ void VolumeOpenGLWidget::drawIntegral(QPainter * painter)
         painter->setRenderHint(QPainter::Antialiasing);
 
         QLinearGradient lgrad(QPointF(0, this->height() * 0.9), QPointF(0, this->height()));
-        lgrad.setColorAt(0.0, Qt::blue);
+        lgrad.setColorAt(0.0, clear_color_inverse.toQColor());
         lgrad.setColorAt(1.0, Qt::transparent);
 
         QBrush histogram_brush_lg(lgrad);

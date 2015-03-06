@@ -103,3 +103,6 @@ SOURCES += \
     src/utils/misc/plotwidget.cpp
 #    src/utils/glsl/glslfunctions.cpp
 
+DISTFILES += \
+    src/kernels/weightpoint_sampler.cl
+

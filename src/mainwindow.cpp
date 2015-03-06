@@ -620,6 +620,9 @@ void MainWindow::loadUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
+    
+    if (tab >= 2) outputDockWidget->hide();
+    else outputDockWidget->show();
 }
 
 
