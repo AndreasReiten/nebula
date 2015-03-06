@@ -31,8 +31,8 @@ class LineModel : public QAbstractTableModel
         int p_columns;
 
     signals:
-        void linesChanged(QList<Line> p_lines);
         void lineChanged(int value);
+        void lineChecked(int value);
 };
 
 #endif

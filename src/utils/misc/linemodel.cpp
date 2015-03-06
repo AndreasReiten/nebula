@@ -271,6 +271,7 @@ bool LineModel::setData(const QModelIndex &index, const QVariant &value, int rol
         if (value == Qt::Checked)
         {
             (*p_lines)[index.row()].setTagged(true);
+            lineChecked(index.row());
         }
         else 
         {

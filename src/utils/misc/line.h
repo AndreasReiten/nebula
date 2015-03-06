@@ -38,8 +38,8 @@ class Line : protected QOpenGLFunctions
         const Matrix<double> bVec() const;
         const Matrix<double> cVec() const;
 
-        Matrix<double> effectivePosA();
-        Matrix<double> effectivePosB();
+        const Matrix<double> effectivePosA() const;
+        const Matrix<double> effectivePosB() const;
         double length() const;
         double distancePointToLine(Matrix<double> pos);
         const Matrix<double> &positionA() const;

@@ -219,12 +219,12 @@ double Line::length() const
 }
 
 
-Matrix<double> Line::effectivePosA()
+const Matrix<double> Line::effectivePosA() const
 {
     return p_position_a + vecNormalize(p_position_a - p_position_b) * p_offset_a;
 }
 
-Matrix<double> Line::effectivePosB()
+const Matrix<double> Line::effectivePosB() const
 {
     return p_position_b + vecNormalize(p_position_b - p_position_a) * p_offset_b;
 }

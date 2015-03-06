@@ -85,7 +85,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void lineChanged(Line line);
 
     public slots:
-        void zoomToTaggedLine();
+        void zoomToLineIndex(int value);
         void zoomToBox(Matrix<double> box);
         void refreshLineIntegral(QModelIndex index);
         void refreshLine(int value);

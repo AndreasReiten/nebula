@@ -67,9 +67,9 @@ __kernel void integrateLine(
     
             // xyz position (function of global id)
             float3 pos = base_pos + (float3)(
-            a.x*((float)i_a) + b.x*((float)i_a) + c.x*((float)i_a),
-            a.y*((float)i_b) + b.y*((float)i_b) + c.y*((float)i_b),
-            a.z*((float)i_c) + b.z*((float)i_c) + c.z*((float)i_c));
+            a.x*((float)i_a) + b.x*((float)i_b) + c.x*((float)i_c),
+            a.y*((float)i_a) + b.y*((float)i_b) + c.y*((float)i_c),
+            a.z*((float)i_a) + b.z*((float)i_b) + c.z*((float)i_c));
         
             // Descend into the octree data struget_global_id(0)cture
             // Index trackers for the traversal.

@@ -763,10 +763,12 @@ void MainWindow::initConnects()
 //    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(refreshLine(int)));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(update()));
+    connect(lineModel, SIGNAL(lineChecked(int)), volumeOpenGLWidget, SLOT(zoomToLineIndex(int)));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(refreshLineIntegral(QModelIndex)));
     connect(volumeOpenGLWidget->worker(), SIGNAL(lineIntegralResolved()), this, SLOT(setLineIntegralPlot()));
+
 }
 
 void MainWindow::setGeneralProgressFormat(QString str)
