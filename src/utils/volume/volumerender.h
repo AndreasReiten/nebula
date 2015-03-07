@@ -27,7 +27,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
             cl_mem * oct_index,
             cl_mem * oct_brick,
             cl_mem * data_extent,
-            cl_mem * data_view_extent
+            cl_mem * data_view_extent,
             cl_mem * misc_int);
         
         Matrix<double> getLineIntegralData();

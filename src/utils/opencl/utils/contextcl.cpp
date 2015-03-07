@@ -481,6 +481,8 @@ void OpenCLContext::initSharedContext()
     {
         qFatal(cl_error_cstring(err));
     }
+
+    qDebug() << cl_easy_context_info(p_context);
 }
 
 void OpenCLContext::initNormalContext()
@@ -494,6 +496,8 @@ void OpenCLContext::initNormalContext()
     {
         qFatal(cl_error_cstring(err));
     }
+
+    qDebug() << cl_easy_context_info(p_context);
 }
 
 void OpenCLContext::initCommandQueue()
@@ -597,15 +601,75 @@ QString OpenCLContext::cl_easy_device_info(cl_device_id device)
     QString str;
 
     char device_name[128];
+    cl_ulong device_global_mem_size;
+    cl_ulong device_local_mem_size;
+    cl_uint device_max_compute_units;
+    cl_ulong device_max_mem_alloc_size;
+    cl_uint device_max_work_item_dimensions;
 
     cl_int err = QOpenCLGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(char) * 128, device_name, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &device_global_mem_size, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &device_local_mem_size, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &device_max_compute_units, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &device_max_mem_alloc_size, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), &device_max_work_item_dimensions, NULL);
+
+    Matrix<size_t> device_max_work_item_sizes(1,device_max_work_item_dimensions);
+
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, device_max_work_item_sizes.bytes(), device_max_work_item_sizes.data(), NULL);
+
+    cl_uint device_max_clock_frequency;
+    cl_bool device_image_support;
+    size_t device_image2d_max_height;
+    size_t device_image2d_max_width;
+    size_t device_image3d_max_height;
+    size_t device_image3d_max_width;
+    size_t device_image3d_max_depth;
+
+    char device_version[128];
+    char driver_version[128];
+
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint), &device_max_clock_frequency, NULL);
+
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_IMAGE_SUPPORT, sizeof(cl_bool), &device_image_support, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_IMAGE2D_MAX_HEIGHT, sizeof(size_t), &device_image2d_max_height, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_IMAGE2D_MAX_WIDTH, sizeof(size_t), &device_image2d_max_width, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_IMAGE3D_MAX_DEPTH, sizeof(size_t), &device_image3d_max_depth, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_IMAGE3D_MAX_HEIGHT, sizeof(size_t), &device_image3d_max_height, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_IMAGE3D_MAX_WIDTH, sizeof(size_t), &device_image3d_max_width, NULL);
+
+    err |= QOpenCLGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(char)*128, device_version, NULL);
+    err |= QOpenCLGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(char)*128, driver_version, NULL);
+
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    str += device_name;
+    str += "CL_DEVICE_NAME\t"+QString(device_name)+"\n";
+    str += "CL_DEVICE_GLOBAL_MEM_SIZE\t"+QString::number(device_global_mem_size)+"\n";
+    str += "CL_DEVICE_LOCAL_MEM_SIZE\t"+QString::number(device_local_mem_size)+"\n";
+    str += "CL_DEVICE_MAX_COMPUTE_UNITS\t"+QString::number(device_max_compute_units)+"\n";
+    str += "CL_DEVICE_MAX_MEM_ALLOC_SIZE\t"+QString::number(device_max_mem_alloc_size)+"\n";
+    str += "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS\t"+QString::number(device_max_work_item_dimensions)+"\n";
+    str += "CL_DEVICE_MAX_WORK_ITEM_SIZES\t";
+
+    for (size_t i = 0; i < device_max_work_item_sizes.size(); i++)
+    {
+        str += QString::number(device_max_work_item_sizes[i])+" ";
+    }
+    str += "\n";
+
+    str += "CL_DEVICE_MAX_CLOCK_FREQUENCY\t"+QString::number(device_max_clock_frequency)+"\n";
+    str += "CL_DEVICE_IMAGE_SUPPORT\t"+QString::number(device_image_support)+"\n";
+    str += "CL_DEVICE_IMAGE2D_MAX_HEIGHT\t"+QString::number(device_image2d_max_height)+"\n";
+    str += "CL_DEVICE_IMAGE2D_MAX_WIDTH\t"+QString::number(device_image2d_max_width)+"\n";
+    str += "CL_DEVICE_IMAGE3D_MAX_HEIGHT\t"+QString::number(device_image3d_max_width)+"\n";
+    str += "CL_DEVICE_IMAGE3D_MAX_WIDTH\t"+QString::number(device_image3d_max_height)+"\n";
+    str += "CL_DEVICE_IMAGE3D_MAX_DEPTH\t"+QString::number(device_image3d_max_depth)+"\n";
+    str += "CL_DEVICE_VERSION\t"+QString(device_version)+"\n";
+    str += "CL_DRIVER_VERSION\t"+QString(driver_version);
 
     return str;
 }
