@@ -50,6 +50,7 @@ void VolumeWorker::initializeOpenCLKernels()
     // Build programs from OpenCL kernel source
     QStringList paths;
     paths << "kernels/line_integral.cl";
+    paths << "kernels/weightpoint_sampler.cl";
 
     program = context_cl.createProgram(paths, &err);
 
@@ -62,6 +63,13 @@ void VolumeWorker::initializeOpenCLKernels()
 
     // Kernel handles
     p_line_integral_kernel =  QOpenCLCreateKernel(program, "integrateLine", &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    p_weightpoint_kernel =  QOpenCLCreateKernel(program, "weightpointSampler", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -142,6 +150,7 @@ void VolumeWorker::setCLObjects(cl_mem * pool,
     cl_mem * oct_index,
     cl_mem * oct_brick,
     cl_mem * data_extent,
+    cl_mem * data_view_extent,
     cl_mem * misc_int)
 {
     p_pool = pool;
@@ -149,7 +158,79 @@ void VolumeWorker::setCLObjects(cl_mem * pool,
     p_oct_index = oct_index;
     p_oct_brick = oct_brick;
     p_data_extent = data_extent;
+    p_data_view_extent = data_view_extent;
     p_misc_int = misc_int;
+}
+
+void VolumeWorker::resolveWeightpoint()
+{
+    Matrix<size_t> loc_ws(1, 3, 8);
+    Matrix<size_t> glb_ws(1, 3, 64);
+
+    Matrix<float> p_result(1,(glb_ws[0]/loc_ws[0])*(glb_ws[1]/loc_ws[1])*(glb_ws[2]/loc_ws[2]));
+
+    cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
+                             CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+                             p_result.bytes(),
+                             p_result.data(), &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Kernel arguments
+    err = QOpenCLSetKernelArg(p_line_integral_kernel, 0, sizeof(cl_mem), (void *) p_pool);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 1, sizeof(cl_sampler), p_pool_sampler);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 2, sizeof(cl_mem), (void *) p_oct_index);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 3, sizeof(cl_mem), (void *) p_oct_brick);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 5, sizeof(cl_mem), (void *) p_data_view_extent);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 6, sizeof(cl_mem), (void *) p_misc_int);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 7, sizeof(cl_mem), (void *) &result_cl);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 8, sizeof(cl_float)*loc_ws[0]*loc_ws[1]*loc_ws[2], NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_weightpoint_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLFinish(context_cl.queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLEnqueueReadBuffer ( context_cl.queue(),
+                                     result_cl,
+                                     CL_TRUE,
+                                     0,
+                                     p_result.bytes(),
+                                     p_result.data(),
+                                     0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLReleaseMemObject(result_cl);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+
+//    emit weightpointResolved();
 }
 
 void VolumeWorker::resolveLineIntegral(Line line)
@@ -317,7 +398,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     volumeWorker = new VolumeWorker;
     volumeWorker->moveToThread(workerThread);
     connect(workerThread, SIGNAL(finished()), volumeWorker, SLOT(deleteLater()));
-    volumeWorker->setCLObjects(&cl_svo_pool, &cl_svo_pool_sampler, &cl_svo_index, &cl_svo_brick, &cl_data_extent, &cl_misc_ints);
+    volumeWorker->setCLObjects(&cl_svo_pool, &cl_svo_pool_sampler, &cl_svo_index, &cl_svo_brick, &cl_data_extent, &cl_data_view_extent, &cl_misc_ints);
     connect(this, SIGNAL(lineChanged(Line)), volumeWorker, SLOT(resolveLineIntegral(Line)));
     //    connect(this, &Controller::operate, worker, &Worker::doWork);
     //    connect(worker, volumeWorker::resultReady, this, Controller::handleResults);

@@ -17,11 +17,6 @@ __kernel void weightpointSampler(
     int id_loc_linear = id_loc.x + id_loc.y*size_loc.x + id_loc.z*size_loc.x*size_loc.y;
     int id_result = id_grp.x + id_grp.y*size_grp.x + id_grp.z*size_grp.x*size_grp.y;
 
-    if ((id_loc.x == 0) && (id_loc.y == 0) && (id_loc.z == 0))
-    {
-        result[id_result] = 0;
-    }
-    
     int4 pool_dim = get_image_dim(pool);
     
     int n_tree_levels = misc_int[0];
@@ -47,7 +42,7 @@ __kernel void weightpointSampler(
     float3 pos = (float3)(
                         data_view_extent[0] + (0.5+(float)id_glb.x)*((data_view_extent[1] - data_view_extent[0])/(size_glb.x-1)),
                         data_view_extent[2] + (0.5+(float)id_glb.y)*((data_view_extent[3] - data_view_extent[2])/(size_glb.y-1)),
-                        data_view_extent[4] + (0.5+(float)id_glb.z)*((data_view_extent[5] - data_view_extent[4])/(size_glb.z-1)))
+                        data_view_extent[4] + (0.5+(float)id_glb.z)*((data_view_extent[5] - data_view_extent[4])/(size_glb.z-1)));
 
     // Descend into the octree data struget_global_id(0)cture
     // Index trackers for the traversal.

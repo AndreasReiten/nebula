@@ -27,6 +27,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
             cl_mem * oct_index,
             cl_mem * oct_brick,
             cl_mem * data_extent,
+            cl_mem * data_view_extent
             cl_mem * misc_int);
         
         Matrix<double> getLineIntegralData();
@@ -39,14 +40,16 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
     public slots:
         void raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws);
         void resolveLineIntegral(Line line);
+        void resolveWeightpoint();
 
     signals:
         void rayTraceFinished();
         void lineIntegralResolved();
-
+        void weightpointResolved(double x, double y, double z);
     private:
         OpenCLContext context_cl;
         cl_kernel p_line_integral_kernel, p_raytrace_kernel;
+        cl_kernel p_weightpoint_kernel;
 
         void initializeOpenCLKernels();
         cl_int err;
@@ -57,8 +60,9 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         cl_mem * p_oct_index;
         cl_mem * p_oct_brick;
         cl_mem * p_data_extent;
+        cl_mem * p_data_view_extent;
         cl_mem * p_misc_int;
-        
+
         Matrix<float> p_line_integral_data;
         double p_line_integral_xmin;
         double p_line_integral_xmax;
