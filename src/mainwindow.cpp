@@ -620,9 +620,15 @@ void MainWindow::loadUnitcellFile()
 
 void MainWindow::setTab(int tab)
 {
-    
-    if (tab >= 2) outputDockWidget->hide();
-    else outputDockWidget->show();
+
+    if (tab >= 2)
+    {
+        outputDockWidget->hide();
+    }
+    else
+    {
+        outputDockWidget->show();
+    }
 }
 
 
@@ -762,8 +768,8 @@ void MainWindow::initConnects()
     connect(beamXOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamXOverride(double)));
     connect(beamYOverrideSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setBeamYOverride(double)));
 
-//    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineModel, SLOT(highlight(QModelIndex)));
-//    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
+    //    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineModel, SLOT(highlight(QModelIndex)));
+    //    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(refreshLine(int)));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(update()));
     connect(lineModel, SIGNAL(lineChecked(int)), volumeOpenGLWidget, SLOT(zoomToLineIndex(int)));
@@ -1830,18 +1836,18 @@ void MainWindow::setImageRange(int low, int high)
 void MainWindow::setLineIntegralPlot()
 {
     Matrix<double> y_data = volumeOpenGLWidget->worker()->getLineIntegralData();
-    
+
     Matrix<double> x_data(y_data.m(), y_data.n());
-    
+
     for (int i = 0; i < x_data.size(); i++)
     {
-        x_data[i] = volumeOpenGLWidget->worker()->getLineIntegralXmin() +  i*(volumeOpenGLWidget->worker()->getLineIntegralXmax() - volumeOpenGLWidget->worker()->getLineIntegralXmin())/(x_data.size() - 1);
+        x_data[i] = volumeOpenGLWidget->worker()->getLineIntegralXmin() +  i * (volumeOpenGLWidget->worker()->getLineIntegralXmax() - volumeOpenGLWidget->worker()->getLineIntegralXmin()) / (x_data.size() - 1);
     }
-    
+
     plotWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
                      volumeOpenGLWidget->worker()->getLineIntegralXmax(),
                      volumeOpenGLWidget->worker()->getLineIntegralYmin(),
-                     volumeOpenGLWidget->worker()->getLineIntegralYmax(), 
+                     volumeOpenGLWidget->worker()->getLineIntegralYmax(),
                      x_data, y_data);
 }
 

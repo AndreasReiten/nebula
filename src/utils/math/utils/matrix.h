@@ -365,7 +365,10 @@ T Matrix<T>::min()
     {
         for (size_t j = 0; j < p_m; j++)
         {
-            if (value  >  p_buffer[i * p_m + j])  value = p_buffer[i * p_m + j];
+            if (value  >  p_buffer[i * p_m + j])
+            {
+                value = p_buffer[i * p_m + j];
+            }
         }
     }
 
@@ -381,7 +384,10 @@ T Matrix<T>::max()
     {
         for (size_t j = 0; j < p_m; j++)
         {
-            if (value  <  p_buffer[i * p_m + j])  value = p_buffer[i * p_m + j];
+            if (value  <  p_buffer[i * p_m + j])
+            {
+                value = p_buffer[i * p_m + j];
+            }
         }
     }
 

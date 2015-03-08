@@ -23,17 +23,17 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         void setKernel(cl_kernel kernel);
 
         void setCLObjects(cl_mem * pool,
-            cl_sampler * pool_sampler,
-            cl_mem * oct_index,
-            cl_mem * oct_brick,
-            cl_mem * data_extent,
-            cl_mem * data_view_extent,
-            cl_mem * misc_int);
-        
+                          cl_sampler * pool_sampler,
+                          cl_mem * oct_index,
+                          cl_mem * oct_brick,
+                          cl_mem * data_extent,
+                          cl_mem * data_view_extent,
+                          cl_mem * misc_int);
+
         Matrix<double> getLineIntegralData();
         double getLineIntegralXmin();
         double getLineIntegralXmax();
-        
+
         double getLineIntegralYmin();
         double getLineIntegralYmax();
 
@@ -80,7 +80,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setSvo(SparseVoxelOctree * svo);
         void setUBMatrix(UBMatrix<double> &mat);
         UBMatrix<double> &getUBMatrix();
-        
+
         VolumeWorker * worker();
 
     signals:

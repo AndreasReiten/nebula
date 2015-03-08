@@ -16,6 +16,8 @@ __kernel void weightpointSampler(
     
     int id_loc_linear = id_loc.x + id_loc.y*size_loc.x + id_loc.z*size_loc.x*size_loc.y;
     int id_result = id_grp.x + id_grp.y*size_grp.x + id_grp.z*size_grp.x*size_grp.y;
+    int size_loc_linear = size_loc.x*size_loc.y*size_loc.z;
+    int size_grp_linear = size_grp.x*size_grp.y*size_grp.z;
 
     int4 pool_dim = get_image_dim(pool);
     
@@ -67,15 +69,28 @@ __kernel void weightpointSampler(
         
         if (isMsd || isLowEnough)
         {
-            if (isEmpty) addition_array[id_loc.y] = 0;
+            if (isEmpty)
+            {
+                addition_array[id_loc_linear] = 0;
+                addition_array[id_loc_linear + size_loc_linear*1] = 0;
+                addition_array[id_loc_linear + size_loc_linear*2] = 0;
+                addition_array[id_loc_linear + size_loc_linear*3] = 0;
+            }
+            else
+            {
+                // Sample brick
+                brick = oct_brick[index];
+                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-            // Sample brick
-            brick = oct_brick[index];
-            brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos, 0.0f)*3.5f , convert_float4(pool_dim));
 
-            lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos, 0.0f)*3.5f , convert_float4(pool_dim));
+                float intensity = read_imagef(pool, pool_sampler, lookup_pos).w;
 
-            addition_array[id_loc.y] = read_imagef(pool, pool_sampler, lookup_pos).w;
+                addition_array[id_loc_linear] = intensity * pos.x;
+                addition_array[id_loc_linear + size_loc_linear*1] = intensity * pos.y;
+                addition_array[id_loc_linear + size_loc_linear*2] = intensity * pos.z;
+                addition_array[id_loc_linear + size_loc_linear*3] = intensity;
+            }
 
             break;
         }
@@ -93,11 +108,14 @@ __kernel void weightpointSampler(
         
     // Sum values in the local buffer (parallel reduction) and add them to the relevant position in the result vector
     barrier(CLK_LOCAL_MEM_FENCE);
-    for (unsigned int i = (size_loc.x*size_loc.y*size_loc.z)/2; i > 0; i >>= 1)
+    for (unsigned int i = (size_loc_linear)/2; i > 0; i >>= 1)
     {
         if (get_local_id(1) < i)
         {
             addition_array[id_loc_linear] += addition_array[i + id_loc_linear];
+            addition_array[id_loc_linear + size_loc_linear*1] += addition_array[i + id_loc_linear + size_loc_linear*1];
+            addition_array[id_loc_linear + size_loc_linear*2] += addition_array[i + id_loc_linear + size_loc_linear*2];
+            addition_array[id_loc_linear + size_loc_linear*3] += addition_array[i + id_loc_linear + size_loc_linear*3];
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -105,5 +123,8 @@ __kernel void weightpointSampler(
     if ((id_loc.x == 0) && (id_loc.y == 0) && (id_loc.z == 0))
     {
         result[id_result] = addition_array[0];
+        result[id_result + size_grp_linear*1] = addition_array[size_loc_linear*1];
+        result[id_result + size_grp_linear*2] = addition_array[size_loc_linear*2];
+        result[id_result + size_grp_linear*3] = addition_array[size_loc_linear*3];
     }
 }

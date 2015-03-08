@@ -13,8 +13,8 @@ class PlotWidget : public QWidget
         ~PlotWidget();
 
     signals:
-//        void paintRequest();
-        
+        //        void paintRequest();
+
     public slots:
         void plot(double xmin, double xmax, double ymin, double ymax, const Matrix<double> &x_data, const Matrix<double> &y_data);
         void setLog(bool value);
@@ -32,8 +32,8 @@ class PlotWidget : public QWidget
 
         Matrix<double> p_x_data;
         Matrix<double> p_y_data;
-        
-//        QTimer * paintTimer;
+
+        //        QTimer * paintTimer;
 };
 
 #endif // PLOTWIDGET_H

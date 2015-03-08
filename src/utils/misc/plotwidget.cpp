@@ -12,18 +12,18 @@ PlotWidget::PlotWidget(QWidget * parent) :
     p_x_max = 1;
     p_y_min = 0;
     p_y_max = 1.9;
-    
-    double buf_x[] = {0.0,0.1,0.2,0.4,0.7,0.9};
+
+    double buf_x[] = {0.0, 0.1, 0.2, 0.4, 0.7, 0.9};
 
     p_x_data.setDeep(1, 6, buf_x);
 
-    double buf_y[] = { 0.0,0.1,0.2,0.4,1.2,1.9};
+    double buf_y[] = { 0.0, 0.1, 0.2, 0.4, 1.2, 1.9};
 
     p_y_data.setDeep(1, 6, buf_y);
-    
-//    paintTimer = new QTimer;
-    
-//    connect(this, SIGNAL(paintRequest()), paintTimer, SLOT(start()));
+
+    //    paintTimer = new QTimer;
+
+    //    connect(this, SIGNAL(paintRequest()), paintTimer, SLOT(start()));
 }
 
 PlotWidget::~PlotWidget()
@@ -39,13 +39,13 @@ void PlotWidget::plot(double xmin, double xmax, double ymin, double ymax, const 
     p_y_max = ymax;
 
     p_x_data = x_data;
-    
+
     p_y_data = y_data;
-    
-    
+
+
     qDebug() << p_x_min << p_x_max << p_y_min << p_y_max;
-    p_x_data.print(0,"Data X");
-    p_y_data.print(0,"Data Y");
+    p_x_data.print(0, "Data X");
+    p_y_data.print(0, "Data Y");
 
     update();
 }

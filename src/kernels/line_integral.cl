@@ -91,15 +91,16 @@ __kernel void integrateLine(
                 if (isMsd)
                 {
                     if (isEmpty) addition_array[id_loc.y] = 0;
-        
-                    // Sample brick
-                    brick = oct_brick[index];
-                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
-        
-                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos, 0.0f)*3.5f , convert_float4(pool_dim));
-        
-                    addition_array[id_loc.y] = read_imagef(pool, pool_sampler, lookup_pos).w;
-        
+                    else
+                    {
+                        // Sample brick
+                        brick = oct_brick[index];
+                        brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+
+                        lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos, 0.0f)*3.5f , convert_float4(pool_dim));
+
+                        addition_array[id_loc.y] = read_imagef(pool, pool_sampler, lookup_pos).w;
+                    }
                     break;
                 }
                 else
