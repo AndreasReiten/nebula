@@ -110,6 +110,8 @@ class MainWindow : public QMainWindow
         QTableView * lineView;
         LineModel * lineModel;
         QPushButton * insertLinePushButton;
+        QPushButton * setLinePosAPushButton;
+        QPushButton * setLinePosBPushButton;
         QPushButton * removeLinePushButton;
 
         /* UI elements for UB matrix */

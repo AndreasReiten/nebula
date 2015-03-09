@@ -14,6 +14,8 @@
  * along with Nebula.  If not, see <http://www.gnu.org/licenses/>. */
 
 /* Notes:
+ * Some cl and gl resources are not released before program exit
+ * Some clSetKernelArg calls are redundant
  * Make container classes for OpenCL objects, possibly in QOpenCLFunctions, that automate destruction and can tell if an object has been initialized. OpenCL functions can be modified to take them as input arguments.
  * (Done) Make QOpenCL class similar to QOpenGLFunctions
  * (Time consuming) Switch to QOpenGLWidget

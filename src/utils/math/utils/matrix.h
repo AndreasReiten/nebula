@@ -66,6 +66,7 @@ class Matrix
         T max();
         T min();
         T sum();
+        T sum(size_t first, size_t last);
 
         void setIdentity(size_t p_n);
         void set(size_t p_m, size_t p_n);
@@ -355,6 +356,20 @@ T Matrix<T>::sum()
 
     return sum;
 }
+
+template <class T>
+T Matrix<T>::sum(size_t first, size_t last)
+{
+    T sum = 0;
+
+    for (size_t i = first; i < std::min(last + 1, p_m * p_n); i++)
+    {
+        sum += p_buffer[i];
+    }
+
+    return sum;
+}
+
 
 template <class T>
 T Matrix<T>::min()

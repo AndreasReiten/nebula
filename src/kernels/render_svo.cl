@@ -13,9 +13,9 @@ __kernel void svoRayTrace(
     __constant int * misc_int,
     __constant float * scalebar_rotation,
     __write_only image2d_t integration_tex
-    )
+)
 {
-    int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
+    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
 
     int2 ray_tex_dim = get_image_dim(ray_tex);
     int2 tsf_tex_dim = get_image_dim(tsf_tex);
@@ -38,8 +38,16 @@ __kernel void svoRayTrace(
 
     if (isLogActive)
     {
-        if (data_offset_low <= 0.0f) data_offset_low = 0.01f;
-        if (data_offset_high <= 0.0f) data_offset_high = 0.01f;
+        if (data_offset_low <= 0.0f)
+        {
+            data_offset_low = 0.01f;
+        }
+
+        if (data_offset_high <= 0.0f)
+        {
+            data_offset_high = 0.01f;
+        }
+
         data_offset_low = log10(data_offset_low);
         data_offset_high = log10(data_offset_high);
     }
@@ -60,8 +68,8 @@ __kernel void svoRayTrace(
             float3 pixel_radius_near, pixel_radius_far;
 
             // Normalized device coordinates (ndc) of the pixel and its edge (in screen coordinates)
-            float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f)/convert_float2(ray_tex_dim)) - 1.0f);
-            float2 ndc_edge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f))/convert_float2(ray_tex_dim)) - 1.0f);
+            float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f) / convert_float2(ray_tex_dim)) - 1.0f);
+            float2 ndc_edge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f)) / convert_float2(ray_tex_dim)) - 1.0f);
 
             // Ray origin and exit point (screen coordinates)
             // z = 1 corresponds to far plane
@@ -83,15 +91,15 @@ __kernel void svoRayTrace(
             pixel_radius_far = rayFarEdge.xyz - ray_far.xyz;
 
             // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central ray_delta vector
-            float3 a1Near = native_divide(dot(pixel_radius_near, ray_delta),dot(ray_delta,ray_delta))*ray_delta;
+            float3 a1Near = native_divide(dot(pixel_radius_near, ray_delta), dot(ray_delta, ray_delta)) * ray_delta;
             float3 a2Near = pixel_radius_near - a1Near;
 
-            float3 a1Far = native_divide(dot(pixel_radius_far, ray_delta),dot(ray_delta,ray_delta))*ray_delta;
+            float3 a1Far = native_divide(dot(pixel_radius_far, ray_delta), dot(ray_delta, ray_delta)) * ray_delta;
             float3 a2Far = pixel_radius_far - a1Far;
 
             // The geometry of the cone
-            cone_diameter_increment = 2.0f*native_divide( length(a2Far - a2Near), length(ray_delta - a1Near + a1Far) );
-            cone_diameter_near = 2.0f*length(a2Near); // small approximation
+            cone_diameter_increment = 2.0f * native_divide( length(a2Far - a2Near), length(ray_delta - a1Near + a1Far) );
+            cone_diameter_near = 2.0f * length(a2Near); // small approximation
         }
 
         // To limit resource spending we limit the ray to the intersection between itself and a bounding box
@@ -101,12 +109,12 @@ __kernel void svoRayTrace(
             // Construct a bounding box from the intersect between data_view_extent and data_extent
             float bbox[6];
 
-            bbox[0] = fmax(data_extent[0],data_view_extent[0]);
-            bbox[1] = fmin(data_extent[1],data_view_extent[1]);
-            bbox[2] = fmax(data_extent[2],data_view_extent[2]);
-            bbox[3] = fmin(data_extent[3],data_view_extent[3]);
-            bbox[4] = fmax(data_extent[4],data_view_extent[4]);
-            bbox[5] = fmin(data_extent[5],data_view_extent[5]);
+            bbox[0] = fmax(data_extent[0], data_view_extent[0]);
+            bbox[1] = fmin(data_extent[1], data_view_extent[1]);
+            bbox[2] = fmax(data_extent[2], data_view_extent[2]);
+            bbox[3] = fmin(data_extent[3], data_view_extent[3]);
+            bbox[4] = fmax(data_extent[4], data_view_extent[4]);
+            bbox[5] = fmin(data_extent[5], data_view_extent[5]);
 
             // Does the ray intersect?
             if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
@@ -119,7 +127,7 @@ __kernel void svoRayTrace(
         float step_length = 1.0f;
 
         // In the case that the ray actually hits the bounding box, prepare for volume sampling and color accumulation
-        if(hit)
+        if (hit)
         {
             // The geometry of the intersecting part of the ray
             float3 box_ray_origin = ray_near.xyz + t_near * ray_delta.xyz;
@@ -131,8 +139,8 @@ __kernel void svoRayTrace(
             // Some variables we will need during ray traversal
             float skip_length, intensity, voxel_size_this_lvl, voxel_size_prev_lvl;
             float cone_diameter;
-            float cone_diameter_low = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (n_tree_levels-1))));
-            float cone_diameter_high = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (0))));
+            float cone_diameter_low = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (n_tree_levels - 1))));
+            float cone_diameter_high = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (0))));
             uint index_this_lvl, index_prev_lvl, brick, isMsd, isLowEnough, isEmpty;
             float3 box_ray_xyz, box_ray_xyz_prev, ray_add_box;
             float3 norm_pos_this_lvl, norm_pos_prev_lvl;
@@ -161,10 +169,10 @@ __kernel void svoRayTrace(
             {
                 // Ray-plane intersection
                 float4 center = (float4)(
-                    data_view_extent[0] + 0.5*(data_view_extent[1] - data_view_extent[0]),
-                    data_view_extent[2] + 0.5*(data_view_extent[3] - data_view_extent[2]),
-                    data_view_extent[4] + 0.5*(data_view_extent[5] - data_view_extent[4]),
-                    0);
+                                    data_view_extent[0] + 0.5 * (data_view_extent[1] - data_view_extent[0]),
+                                    data_view_extent[2] + 0.5 * (data_view_extent[3] - data_view_extent[2]),
+                                    data_view_extent[4] + 0.5 * (data_view_extent[5] - data_view_extent[4]),
+                                    0);
 
                 // Plane normals
                 float4 normal[3];
@@ -183,8 +191,14 @@ __kernel void svoRayTrace(
                     float nominator = dot(center - (float4)(box_ray_origin, 0.0f), normal[i]);
                     float denominator = dot((float4)(box_ray_delta, 0.0f), normal[i]);
 
-                    if (denominator != 0.0f)  d[i] = nominator / denominator;
-                    else d[i] = -1.0f;
+                    if (denominator != 0.0f)
+                    {
+                        d[i] = nominator / denominator;
+                    }
+                    else
+                    {
+                        d[i] = -1.0f;
+                    }
                 }
 
 
@@ -212,7 +226,7 @@ __kernel void svoRayTrace(
                         step_length = cone_diameter * 0.25f;
                         ray_add_box = direction * step_length;
 
-                         // We use a normalized convention during octree traversal. The normalized convention makes it easier to think about the octree traversal.
+                        // We use a normalized convention during octree traversal. The normalized convention makes it easier to think about the octree traversal.
                         norm_pos_this_lvl = native_divide( (float3)(box_ray_xyz.x - data_extent[0], box_ray_xyz.y - data_extent[2], box_ray_xyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
 
                         norm_index = convert_int3(norm_pos_this_lvl);
@@ -221,8 +235,12 @@ __kernel void svoRayTrace(
                         // Traverse the octree
                         for (int j = 0; j < n_tree_levels; j++)
                         {
-                            voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
-                            if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
+                            voxel_size_this_lvl = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << j)));
+
+                            if (j > 0)
+                            {
+                                voxel_size_prev_lvl = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (j - 1))));
+                            }
 
                             brick = oct_index[index_this_lvl];
                             isMsd = (brick & mask_msd_flag) >> 31;
@@ -235,14 +253,14 @@ __kernel void svoRayTrace(
 
                                 if (isDsActive)
                                 {
-                                    sample = (float4)(1.0f,1.0f,1.0f, 0.5f);
-                                    color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
-                                    color.w = color.w +(1.0f - color.w)*sample.w;
+                                    sample = (float4)(1.0f, 1.0f, 1.0f, 0.5f);
+                                    color.xyz = color.xyz + (1.0f - color.w) * sample.xyz * sample.w;
+                                    color.w = color.w + (1.0f - color.w) * sample.w;
                                 }
 
                                 // This ugly shit needs to go
-                                tmp_a = norm_pos_this_lvl - 5.0f*direction;
-                                tmp_b = 15.0f*direction;
+                                tmp_a = norm_pos_this_lvl - 5.0f * direction;
+                                tmp_b = 15.0f * direction;
                                 hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
 
                                 if (hit)
@@ -261,7 +279,7 @@ __kernel void svoRayTrace(
                                     brick = oct_brick[index_prev_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
                                     intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
@@ -269,62 +287,104 @@ __kernel void svoRayTrace(
                                     brick = oct_brick[index_this_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
                                     intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                     // Linear interpolation between the two intensities
-                                    intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
+                                    intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl) * native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
                                 }
                                 else
                                 {
                                     brick = oct_brick[index_this_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
                                     intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
                                 }
 
                                 if (isDsActive)
                                 {
-                                    if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 0.50f);
-                                    else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
-                                    else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 0.60f);
-                                    else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 0.60f);
-                                    else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
-                                    else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 0.65f);
-                                    else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 0.70f);
-                                    else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 0.75f);
-                                    else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 0.80f);
-                                    else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 0.85f);
-                                    else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 0.90f);
-                                    else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 0.95f);
-                                    else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                    else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                    if (j == 0)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 3.0f, 0.50f);
+                                    }
+                                    else if (j == 1)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
+                                    }
+                                    else if (j == 2)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.60f);
+                                    }
+                                    else if (j == 3)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.60f);
+                                    }
+                                    else if (j == 4)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
+                                    }
+                                    else if (j == 5)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.65f);
+                                    }
+                                    else if (j == 6)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.70f);
+                                    }
+                                    else if (j == 7)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.75f);
+                                    }
+                                    else if (j == 8)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.80f);
+                                    }
+                                    else if (j == 9)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.85f);
+                                    }
+                                    else if (j == 10)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.90f);
+                                    }
+                                    else if (j == 11)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.95f);
+                                    }
+                                    else if (j == 12)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+                                    }
+                                    else
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+                                    }
 
-                                    float dist = fast_length(norm_pos_this_lvl-(float3)(1.0f));
-                                    sample = mix(sample,(float4)(0.0f,0.0f,0.0f,1.0f), dist*dist-0.7);
+                                    float dist = fast_length(norm_pos_this_lvl - (float3)(1.0f));
+                                    sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7);
 
 
-                                    color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
-                                    color.w = color.w +(1.f - color.w)*sample.w;
+                                    color.xyz = color.xyz + (1.f - color.w) * sample.xyz * sample.w;
+                                    color.w = color.w + (1.f - color.w) * sample.w;
                                     break;
                                 }
 
 
                                 // Sample color
-                                if(isLogActive)
+                                if (isLogActive)
                                 {
                                     intensity = log10(intensity);
                                 }
 
-                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
-                                color.xyz += (1.f - color.w)*sample.xyz*sample.w;
-                                color.w += (1.f - color.w)*sample.w;
+                                color.xyz += (1.f - color.w) * sample.xyz * sample.w;
+                                color.w += (1.f - color.w) * sample.w;
 
                                 break;
                             }
@@ -336,10 +396,10 @@ __kernel void svoRayTrace(
 
                                 // Descend to the next level
                                 index_this_lvl = (brick & mask_child_index);
-                                index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
+                                index_this_lvl += norm_index.x + norm_index.y * 2 + norm_index.z * 4;
 
                                 //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
-                                norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
+                                norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z)) * 2.0f;
                                 norm_index = convert_int3(norm_pos_this_lvl);
                                 norm_index = clamp(norm_index, 0, 1);
                             }
@@ -353,11 +413,14 @@ __kernel void svoRayTrace(
                 while ( fast_length(box_ray_xyz - box_ray_origin) < fast_length(box_ray_delta) )
                 {
                     // Break off early if the accumulated alpha is high enough
-                    if (!isIntegration3DActive) 
+                    if (!isIntegration3DActive)
                     {
-                        if (color.w > 0.995f) break;
+                        if (color.w > 0.995f)
+                        {
+                            break;
+                        }
                     }
-                    
+
                     // Index trackers for the traversal.
                     index_this_lvl = 0;
                     index_prev_lvl = 0;
@@ -370,7 +433,7 @@ __kernel void svoRayTrace(
                     step_length = cone_diameter * 0.25f;
                     ray_add_box = direction * step_length;
 
-                     // We use a normalized convention. The normalized convention makes it easier to think about the octree traversal.
+                    // We use a normalized convention. The normalized convention makes it easier to think about the octree traversal.
                     norm_pos_this_lvl = native_divide( (float3)(box_ray_xyz.x - data_extent[0], box_ray_xyz.y - data_extent[2], box_ray_xyz.z - data_extent[4]), (float3)(data_extent[1] - data_extent[0], data_extent[3] - data_extent[2], data_extent[5] - data_extent[4])) * 2.0f;
 
                     norm_index = convert_int3(norm_pos_this_lvl);
@@ -379,8 +442,13 @@ __kernel void svoRayTrace(
                     // Traverse the octree
                     for (int j = 0; j < n_tree_levels; j++)
                     {
-                        voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
-                        if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
+                        voxel_size_this_lvl = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << j)));
+
+                        if (j > 0)
+                        {
+                            voxel_size_prev_lvl = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (j - 1))));
+                        }
+
                         brick = oct_index[index_this_lvl];
 
                         isMsd = (brick & mask_msd_flag) >> 31;
@@ -395,33 +463,75 @@ __kernel void svoRayTrace(
                                 /* Color the data structure*/
                                 if (!isEmpty)
                                 {
-                                    if (j == 0) sample = (float4)(0.2f,0.3f,3.0f, 0.50f);
-                                    else if (j == 1) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
-                                    else if (j == 2) sample = (float4)(0.2f,1.0f,0.3f, 0.60f);
-                                    else if (j == 3) sample = (float4)(0.2f,0.3f,1.0f, 0.60f);
-                                    else if (j == 4) sample = (float4)(1.0f,0.3f,0.2f, 0.60f);
-                                    else if (j == 5) sample = (float4)(0.2f,1.0f,0.3f, 0.65f);
-                                    else if (j == 6) sample = (float4)(0.2f,0.3f,1.0f, 0.70f);
-                                    else if (j == 7) sample = (float4)(1.0f,0.3f,0.2f, 0.75f);
-                                    else if (j == 8) sample = (float4)(0.2f,1.0f,0.3f, 0.80f);
-                                    else if (j == 9) sample = (float4)(0.2f,0.3f,1.0f, 0.85f);
-                                    else if (j == 10) sample = (float4)(1.0f,0.3f,0.2f, 0.90f);
-                                    else if (j == 11) sample = (float4)(0.2f,1.0f,0.3f, 0.95f);
-                                    else if (j == 12) sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
-                                    else sample = (float4)(0.2f,0.3f,1.0f, 1.00f);
+                                    if (j == 0)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 3.0f, 0.50f);
+                                    }
+                                    else if (j == 1)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
+                                    }
+                                    else if (j == 2)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.60f);
+                                    }
+                                    else if (j == 3)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.60f);
+                                    }
+                                    else if (j == 4)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
+                                    }
+                                    else if (j == 5)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.65f);
+                                    }
+                                    else if (j == 6)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.70f);
+                                    }
+                                    else if (j == 7)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.75f);
+                                    }
+                                    else if (j == 8)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.80f);
+                                    }
+                                    else if (j == 9)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.85f);
+                                    }
+                                    else if (j == 10)
+                                    {
+                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.90f);
+                                    }
+                                    else if (j == 11)
+                                    {
+                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.95f);
+                                    }
+                                    else if (j == 12)
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+                                    }
+                                    else
+                                    {
+                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+                                    }
 
-                                    float dist = fast_length(norm_pos_this_lvl-(float3)(1.0f));
-                                    sample = mix(sample,(float4)(0.0f,0.0f,0.0f,1.0f), dist*dist-0.7);
+                                    float dist = fast_length(norm_pos_this_lvl - (float3)(1.0f));
+                                    sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7);
 
-                                    color.xyz = color.xyz +(1.f - color.w)*sample.xyz*sample.w;
-                                    color.w = color.w +(1.f - color.w)*sample.w;
+                                    color.xyz = color.xyz + (1.f - color.w) * sample.xyz * sample.w;
+                                    color.w = color.w + (1.f - color.w) * sample.w;
                                     box_ray_xyz += ray_add_box;
                                 }
                                 else
                                 {
-                                    sample = (float4)(1.0f,1.0f,1.0f, 0.08f);
-                                    color.xyz = color.xyz +(1.0f - color.w)*sample.xyz*sample.w;
-                                    color.w = color.w +(1.0f - color.w)*sample.w;
+                                    sample = (float4)(1.0f, 1.0f, 1.0f, 0.08f);
+                                    color.xyz = color.xyz + (1.0f - color.w) * sample.xyz * sample.w;
+                                    color.w = color.w + (1.0f - color.w) * sample.w;
                                 }
                             }
                             else if (j >= 1)
@@ -432,53 +542,61 @@ __kernel void svoRayTrace(
                                 brick = oct_brick[index_prev_lvl];
                                 brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
                                 intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                 // The brick in the current level
-                                if (isEmpty) intensity_this_lvl = 0;
+                                if (isEmpty)
+                                {
+                                    intensity_this_lvl = 0;
+                                }
                                 else
                                 {
                                     brick = oct_brick[index_this_lvl];
                                     brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
                                     intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
                                 }
 
                                 // Linear interpolation between the two intensities
                                 clamp(cone_diameter, voxel_size_this_lvl, voxel_size_prev_lvl);
 
-                                intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
+                                intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl) * native_divide(cone_diameter - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
                             }
                             else
                             {
                                 brick = oct_brick[index_this_lvl];
                                 brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
 
-                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                                lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
                                 intensity = read_imagef(bricks, brick_sampler, lookup_pos).w;
                             }
 
 
                             integrated_intensity += intensity * step_length;
+
                             if (!isIntegration3DActive)
                             {
-                                if(isLogActive)
+                                if (isLogActive)
                                 {
-                                    if (intensity < 0.f) intensity = 0.f;
+                                    if (intensity < 0.f)
+                                    {
+                                        intensity = 0.f;
+                                    }
+
                                     intensity = log10(intensity);
                                 }
 
-                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
+                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
 
-                                sample.w *= alpha*native_divide(cone_diameter, cone_diameter_low);
+                                sample.w *= alpha * native_divide(cone_diameter, cone_diameter_low);
 
-                                color.xyz += (1.f - color.w)*sample.xyz*sample.w;
-                                color.w += (1.f - color.w)*sample.w;
+                                color.xyz += (1.f - color.w) * sample.xyz * sample.w;
+                                color.w += (1.f - color.w) * sample.w;
                             }
 
 
@@ -487,13 +605,13 @@ __kernel void svoRayTrace(
                             {
                                 // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
 
-                                tmp_a = norm_pos_this_lvl - 5.0f*direction;
-                                tmp_b = 15.0f*direction;
+                                tmp_a = norm_pos_this_lvl - 5.0f * direction;
+                                tmp_b = 15.0f * direction;
                                 hit = boundingBoxIntersectNorm(tmp_a, tmp_b, &t_near, &t_far);
 
                                 if (hit)
                                 {
-                                    skip_length =  ceil(native_divide(0.5f * fast_length((tmp_a + t_far*tmp_b) - norm_pos_this_lvl) * (brick_dim-1) * voxel_size_this_lvl, step_length))* step_length;
+                                    skip_length =  ceil(native_divide(0.5f * fast_length((tmp_a + t_far * tmp_b) - norm_pos_this_lvl) * (brick_dim - 1) * voxel_size_this_lvl, step_length)) * step_length;
                                     box_ray_xyz += skip_length * direction;
                                 }
                             }
@@ -512,38 +630,54 @@ __kernel void svoRayTrace(
 
                             // Descend to the next level
                             index_this_lvl = (oct_index[index_this_lvl] & mask_child_index);
-                            index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
+                            index_this_lvl += norm_index.x + norm_index.y * 2 + norm_index.z * 4;
 
                             //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
-                            norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
+                            norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z)) * 2.0f;
                             norm_index = convert_int3(norm_pos_this_lvl);
                             norm_index = clamp(norm_index, 0, 1);
                         }
                     }
 
                     // Help the ray progress in case it gets stuck between two bricks
-                    if (fast_distance(box_ray_xyz, box_ray_xyz_prev) < step_length*0.5f) box_ray_xyz += ray_add_box;
+                    if (fast_distance(box_ray_xyz, box_ray_xyz_prev) < step_length * 0.5f)
+                    {
+                        box_ray_xyz += ray_add_box;
+                    }
 
                     box_ray_xyz_prev = box_ray_xyz;
                 }
             }
-            if (!isDsActive)color *= brightness;
+
+            if (!isDsActive)
+            {
+                color *= brightness;
+            }
         }
-        write_imagef(integration_tex, id_glb, (float4)(integrated_intensity*cone_diameter_near));
+
+        write_imagef(integration_tex, id_glb, (float4)(integrated_intensity * cone_diameter_near));
+
         if (isIntegration3DActive  && !isSlicingActive && !isDsActive)
         {
-            if(isLogActive)
+            if (isLogActive)
             {
-                if (integrated_intensity < 0.f) integrated_intensity = 0.f;
+                if (integrated_intensity < 0.f)
+                {
+                    integrated_intensity = 0.f;
+                }
+
                 integrated_intensity = log10(integrated_intensity);
             }
-    
-            float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low)/(data_offset_high - data_offset_low)), 0.5f);
-    
+
+            float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+
             sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
-    
+
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }
-        else write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+        else
+        {
+            write_imagef(ray_tex, id_glb, clamp(color, 0.0f, 1.0f));
+        }
     }
 }

@@ -13,9 +13,9 @@ __kernel void boxSample(
     int4 pool_dim = get_image_dim(pool);
 
     float3 pos;
-    pos.x = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0])*native_divide((float)get_global_id(0)+0.5,(float)get_global_size(0));
-    pos.y = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2])*native_divide((float)get_global_id(1)+0.5,(float)get_global_size(1));
-    pos.z = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4])*native_divide((float)get_global_id(2)+0.5,(float)get_global_size(2));
+    pos.x = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * native_divide((float)get_global_id(0) + 0.5, (float)get_global_size(0));
+    pos.y = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * native_divide((float)get_global_id(1) + 0.5, (float)get_global_size(1));
+    pos.z = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * native_divide((float)get_global_id(2) + 0.5, (float)get_global_size(2));
 
     uint node_brick, node_index, isMsd, isLowEnough, isEmpty;
     float4 lookup_pos;
@@ -24,7 +24,7 @@ __kernel void boxSample(
     float intensity, intensity_prev_lvl, intensity_this_lvl;
     float voxel_size_prev_lvl, voxel_size_this_lvl;
     float sample_interdist = native_divide(data_view_extent[1] - data_view_extent[0], (float) get_global_size(0));
-    float volume = sample_interdist*sample_interdist*sample_interdist;
+    float volume = sample_interdist * sample_interdist * sample_interdist;
 
     // Merged bits in the octree can be read using these bitmasks
     uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
@@ -49,8 +49,8 @@ __kernel void boxSample(
 
     // Check if the sample is within the data
     if ((pos.x < data_extent[0]) || (pos.x > data_extent[1]) ||
-        (pos.y < data_extent[2]) || (pos.y > data_extent[3]) ||
-        (pos.z < data_extent[4]) || (pos.z > data_extent[5]))
+            (pos.y < data_extent[2]) || (pos.y > data_extent[3]) ||
+            (pos.z < data_extent[4]) || (pos.z > data_extent[5]))
     {
         output[get_global_id(0) + get_global_id(1)*get_global_size(0) + get_global_id(2)*get_global_size(0)*get_global_size(1)] = 0.0;
     }
@@ -59,50 +59,54 @@ __kernel void boxSample(
         // Traverse the octree
         for (int j = 0; j < n_tree_levels; j++)
         {
-            voxel_size_this_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << j)));
-            if (j > 0) voxel_size_prev_lvl = (data_extent[1] - data_extent[0])/((float)((brick_dim-1) * (1 << (j-1))));
+            voxel_size_this_lvl = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << j)));
+
+            if (j > 0)
+            {
+                voxel_size_prev_lvl = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (j - 1))));
+            }
 
             node_index = oct_index[index_this_lvl];
             node_brick = oct_brick[index_this_lvl];
 
             isMsd = (node_index & mask_msd_flag) >> 31;
             isEmpty = !((node_index & mask_data_flag) >> 30);
-//            isLowEnough = (sample_interdist > voxel_size_this_lvl);
+            //            isLowEnough = (sample_interdist > voxel_size_this_lvl);
 
-//// BUG: Seems to me that the quadrilinear interpolation and early termination from isLowEnough results in quite incorrect integration although it is hard to say for sure.
+            //// BUG: Seems to me that the quadrilinear interpolation and early termination from isLowEnough results in quite incorrect integration although it is hard to say for sure.
             if (isMsd  || isEmpty)// || isLowEnough)
             {
-//                // Sample brick
-//                if (j >= 1)
-//                {
-//                    /* Quadrilinear interpolation between two bricks */
+                //                // Sample brick
+                //                if (j >= 1)
+                //                {
+                //                    /* Quadrilinear interpolation between two bricks */
 
-//                    // The brick in the level above
-//                    node_brick = oct_brick[index_prev_lvl];
-//                    brick_id = (uint4)((node_brick & mask_brick_id_x) >> 20, (node_brick & mask_brick_id_y) >> 10, node_brick & mask_brick_id_z, 0);
+                //                    // The brick in the level above
+                //                    node_brick = oct_brick[index_prev_lvl];
+                //                    brick_id = (uint4)((node_brick & mask_brick_id_x) >> 20, (node_brick & mask_brick_id_y) >> 10, node_brick & mask_brick_id_z, 0);
 
-//                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                //                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
 
-//                    intensity_prev_lvl = read_imagef(pool, brick_sampler, lookup_pos).w;
+                //                    intensity_prev_lvl = read_imagef(pool, brick_sampler, lookup_pos).w;
 
-//                    // The brick in the current level
-//                    if (isEmpty) intensity_this_lvl = 0;
-//                    else
-//                    {
-//                        node_brick = oct_brick[index_this_lvl];
-//                        brick_id = (uint4)((node_brick & mask_brick_id_x) >> 20, (node_brick & mask_brick_id_y) >> 10, node_brick & mask_brick_id_z, 0);
+                //                    // The brick in the current level
+                //                    if (isEmpty) intensity_this_lvl = 0;
+                //                    else
+                //                    {
+                //                        node_brick = oct_brick[index_this_lvl];
+                //                        brick_id = (uint4)((node_brick & mask_brick_id_x) >> 20, (node_brick & mask_brick_id_y) >> 10, node_brick & mask_brick_id_z, 0);
 
-//                        lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
-//                        intensity_this_lvl = read_imagef(pool, brick_sampler, lookup_pos).w;
-//                    }
+                //                        lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                //                        intensity_this_lvl = read_imagef(pool, brick_sampler, lookup_pos).w;
+                //                    }
 
-//                    // Linear interpolation between the two intensities
-//                    clamp(sample_interdist, voxel_size_this_lvl, voxel_size_prev_lvl);
+                //                    // Linear interpolation between the two intensities
+                //                    clamp(sample_interdist, voxel_size_this_lvl, voxel_size_prev_lvl);
 
-//                    intensity = intensity_this_lvl + (intensity_prev_lvl - intensity_this_lvl)*native_divide(sample_interdist - voxel_size_this_lvl, voxel_size_prev_lvl - voxel_size_this_lvl);
-////                    intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(sample_interdist - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
-//                }
-//                else
+                //                    intensity = intensity_this_lvl + (intensity_prev_lvl - intensity_this_lvl)*native_divide(sample_interdist - voxel_size_this_lvl, voxel_size_prev_lvl - voxel_size_this_lvl);
+                ////                    intensity = intensity_prev_lvl + (intensity_this_lvl - intensity_prev_lvl)*native_divide(sample_interdist - voxel_size_prev_lvl, voxel_size_this_lvl - voxel_size_prev_lvl);
+                //                }
+                //                else
                 if (isEmpty)
                 {
                     intensity = 0.0f;
@@ -112,7 +116,7 @@ __kernel void boxSample(
                     node_brick = oct_brick[index_this_lvl];
                     brick_id = (uint4)((node_brick & mask_brick_id_x) >> 20, (node_brick & mask_brick_id_y) >> 10, node_brick & mask_brick_id_z, 0);
 
-                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f)*3.5f , convert_float4(pool_dim));
+                    lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
                     intensity = read_imagef(pool, brick_sampler, lookup_pos).w;
                 }
 
@@ -127,9 +131,9 @@ __kernel void boxSample(
 
                 // Prepare to descend to the next level
                 index_this_lvl = (node_index & mask_child_index);
-                index_this_lvl += norm_index.x + norm_index.y*2 + norm_index.z*4;
+                index_this_lvl += norm_index.x + norm_index.y * 2 + norm_index.z * 4;
 
-                norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z))*2.0f;
+                norm_pos_this_lvl = (norm_pos_this_lvl - (float3)((float)norm_index.x, (float)norm_index.y, (float)norm_index.z)) * 2.0f;
                 norm_index = convert_int3(norm_pos_this_lvl);
                 norm_index = clamp(norm_index, 0, 1);
             }

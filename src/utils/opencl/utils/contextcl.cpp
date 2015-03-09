@@ -663,7 +663,7 @@ QString OpenCLContext::cl_easy_device_info(cl_device_id device)
     str += "\n";
 
     str += "CL_DEVICE_MAX_CLOCK_FREQUENCY\t" + QString::number(device_max_clock_frequency) + "\n";
-    str += "CL_DEVICE_IMAGE_SUPPORT\t" + QString::number(device_image_support) + "\n";
+    str += "CL_DEVICE_IMAGE_SUPPORT\t" + (device_image_support ? QString("Yes") : QString("No")) + "\n";
     str += "CL_DEVICE_IMAGE2D_MAX_HEIGHT\t" + QString::number(device_image2d_max_height) + "\n";
     str += "CL_DEVICE_IMAGE2D_MAX_WIDTH\t" + QString::number(device_image2d_max_width) + "\n";
     str += "CL_DEVICE_IMAGE3D_MAX_HEIGHT\t" + QString::number(device_image3d_max_width) + "\n";

@@ -5,9 +5,9 @@ __kernel void imageDisplay(
     sampler_t tsf_sampler,
     float2 data_limit,
     int log
-    )
+)
 {
-    int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
+    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
     int2 image_dim = get_image_dim(frame_image);
 
     if ((id_glb.x < image_dim.x) && (id_glb.y < image_dim.y))
@@ -16,10 +16,14 @@ __kernel void imageDisplay(
 
         float2 tsf_position;
         float4 sample;
-        
+
         if (log)
         {
-            if (data_limit.x <= 0.00001) data_limit.x = 0.00001;
+            if (data_limit.x <= 0.00001)
+            {
+                data_limit.x = 0.00001;
+            }
+
             if (intensity <= 0.00001)
             {
                 tsf_position = (float2)(0.0f, 0.5f);
@@ -42,11 +46,11 @@ __kernel void imageDisplay(
 }
 
 __kernel void bufferMax(
-__global float * data_buf,
-__global float * out_buf,
-int2 image_size)
+    __global float * data_buf,
+    __global float * out_buf,
+    int2 image_size)
 {
-    int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
+    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
 
     if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
     {
@@ -69,13 +73,13 @@ __kernel void imageCalculus(
     int isCorrectionFluxActive,
     int isCorrectionExposureActive,
     float4 plane
-//    __global float * xyzi_buf
-//    __read_only image3d_t background,
-//    sampler_t bg_sampler,
-//    int sample_interdist,
-//    int image_number,
-//    int correction_background
-    )
+    //    __global float * xyzi_buf
+    //    __read_only image3d_t background,
+    //    sampler_t bg_sampler,
+    //    int sample_interdist,
+    //    int image_number,
+    //    int correction_background
+)
 {
     // The frame has its axes like this, looking from the source to
     // the detector in the zero rotation position. We use the
@@ -104,7 +108,7 @@ __kernel void imageCalculus(
     float pix_size_x = parameter[10];
     float pix_size_y = parameter[11];
 
-    int2 id_glb = (int2)(get_global_id(0),get_global_id(1));
+    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
 
     if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
     {
@@ -112,24 +116,24 @@ __kernel void imageCalculus(
 
 
 
-//        if (task == -1)
-//        {
-//            float4 pos = (float4)(((float)id_glb.x+0.5f)/(float)sample_interdist, ((float)id_glb.y+0.5f)/(float)sample_interdist, (float)image_number+0.5, 0.0f);
-//            float bg = read_imagef(background, bg_sampler, pos).w;
+        //        if (task == -1)
+        //        {
+        //            float4 pos = (float4)(((float)id_glb.x+0.5f)/(float)sample_interdist, ((float)id_glb.y+0.5f)/(float)sample_interdist, (float)image_number+0.5, 0.0f);
+        //            float bg = read_imagef(background, bg_sampler, pos).w;
 
-//            out_buf[id_glb.y * image_size.x + id_glb.x] = bg;
-//        }
+        //            out_buf[id_glb.y * image_size.x + id_glb.x] = bg;
+        //        }
         if (task == 0)
         {
             // Background subtraction based on estimate
-//            if (correction_background)
-//            {
-//                float4 pos = (float4)(((float)id_glb.x+0.5f)/(float)sample_interdist, ((float)id_glb.y+0.5f)/(float)sample_interdist, (float)image_number+0.5, 0.0f);
-//                float bg = read_imagef(background, bg_sampler, pos).w;
-                
-//                value = clamp(value, bg, noise_high); // Set to at least the value of the background
-//                value -= bg; // Subtract
-//            }
+            //            if (correction_background)
+            //            {
+            //                float4 pos = (float4)(((float)id_glb.x+0.5f)/(float)sample_interdist, ((float)id_glb.y+0.5f)/(float)sample_interdist, (float)image_number+0.5, 0.0f);
+            //                float bg = read_imagef(background, bg_sampler, pos).w;
+
+            //                value = clamp(value, bg, noise_high); // Set to at least the value of the background
+            //                value -= bg; // Subtract
+            //            }
 
             // Flat background subtraction
             if (isCorrectionNoiseActive)
@@ -141,22 +145,27 @@ __kernel void imageCalculus(
             // Planar background subtraction
             if (isCorrectionPlaneActive)
             {
-                float plane_z = -(plane.x*(float)id_glb.x + plane.y*(float)id_glb.y + plane.w)/plane.z;
-                if (plane_z < 0) plane_z = 0; // Negative values do not make sense
+                float plane_z = -(plane.x * (float)id_glb.x + plane.y * (float)id_glb.y + plane.w) / plane.z;
+
+                if (plane_z < 0)
+                {
+                    plane_z = 0;    // Negative values do not make sense
+                }
+
                 value = clamp(value, plane_z, noise_high); // All readings within thresholds
                 value -= plane_z;
             }
-            
+
             // Corrections
             float4 Q = (float4)(0.0f);
-            float k = 1.0f/wavelength; // Multiply with 2pi if desired
+            float k = 1.0f / wavelength; // Multiply with 2pi if desired
 
-            float3 k_i = (float3)(-k,0.0f,0.0f);
-            float3 k_f = k*normalize((float3)(
-                -det_dist,
-                pix_size_x * ((float) (image_size.y - 0.5 - id_glb.y) - beam_x), /* DANGER */
-                pix_size_y * ((float) (image_size.x - 0.5 - id_glb.x) - beam_y))); /* DANGER */
-            
+            float3 k_i = (float3)(-k, 0.0f, 0.0f);
+            float3 k_f = k * normalize((float3)(
+                                           -det_dist,
+                                           pix_size_x * ((float) (image_size.y - 0.5 - id_glb.y) - beam_x), /* DANGER */
+                                           pix_size_y * ((float) (image_size.x - 0.5 - id_glb.x) - beam_y))); /* DANGER */
+
             Q.xyz = k_f - k_i;
             {
                 float lab_theta = asin(native_divide(fabs(Q.y), k)); // Not to be confused with 2-theta, the scattering angle
@@ -175,11 +184,11 @@ __kernel void imageCalculus(
             value -= pct_low;
 
             out_buf[id_glb.y * image_size.x + id_glb.x] = value;
-            
-//            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+0] = Q.x;
-//            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+1] = Q.y;
-//            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+2] = Q.z;
-//            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+3] = value;
+
+            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+0] = Q.x;
+            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+1] = Q.y;
+            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+2] = Q.z;
+            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+3] = value;
         }
         else if (task == 1)
         {
@@ -189,23 +198,23 @@ __kernel void imageCalculus(
         else if (task == 2)
         {
             // Calculate skewness, requires deviation and mean to be known
-//            float tmp = pow((value - mean) / deviation, 3.0);
-//            if (tmp <= 0.0001) out_buf[id_glb.y * image_size.x + id_glb.x] = 0;
-//            else out_buf[id_glb.y * image_size.x + id_glb.x] = 1;
-            
-            
+            //            float tmp = pow((value - mean) / deviation, 3.0);
+            //            if (tmp <= 0.0001) out_buf[id_glb.y * image_size.x + id_glb.x] = 0;
+            //            else out_buf[id_glb.y * image_size.x + id_glb.x] = 1;
+
+
 
             out_buf[id_glb.y * image_size.x + id_glb.x] = pow((value - mean) / deviation, 3.0);
         }
         else if (task == 3)
         {
             // Calculate x weightpoint
-            out_buf[id_glb.y * image_size.x + id_glb.x] = value*((float)id_glb.x+0.5);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.x + 0.5);
         }
         else if (task == 4)
         {
             // Calculate y weightpoint
-            out_buf[id_glb.y * image_size.x + id_glb.x] = value*((float)id_glb.y+0.5);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.y + 0.5);
         }
         else
         {

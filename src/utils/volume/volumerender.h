@@ -46,6 +46,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         void rayTraceFinished();
         void lineIntegralResolved();
         void weightpointResolved(double x, double y, double z);
+
     private:
         OpenCLContext context_cl;
         cl_kernel p_line_integral_kernel, p_raytrace_kernel;
@@ -87,8 +88,12 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void changedMessageString(QString str);
         void linesChanged();
         void lineChanged(Line line);
+        void dataViewExtentChanged();
 
     public slots:
+        void snapLinePosA();
+        void snapLinePosB();
+        void setWeightpoint(double x, double y, double z);
         void zoomToLineIndex(int value);
         void zoomToBox(Matrix<double> box);
         void refreshLineIntegral(QModelIndex index);
@@ -180,6 +185,10 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setUB_gamma(double value);
 
     private:
+        int currentLineIndex;
+        GLuint weightpoint_vbo;
+        Matrix<double> weightpoint;
+
         QList<Line> * lines;
 
         QThread * workerThread;
@@ -350,6 +359,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         GLuint point_vbo;
 
         // Drawing functions
+        void drawWeightCenter(QPainter * painter);
         void drawRayTex(QPainter * painter);
         void drawPositionScalebars(QPainter * painter);
         void drawOverlay(QPainter * painter);

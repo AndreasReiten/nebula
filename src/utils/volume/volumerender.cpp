@@ -165,14 +165,14 @@ void VolumeWorker::setCLObjects(cl_mem * pool,
 void VolumeWorker::resolveWeightpoint()
 {
     Matrix<size_t> loc_ws(1, 3, 8);
-    Matrix<size_t> glb_ws(1, 3, 64);
+    Matrix<size_t> glb_ws(1, 3, 128);
 
-    Matrix<float> p_result(1, 4 * (glb_ws[0] / loc_ws[0]) * (glb_ws[1] / loc_ws[1]) * (glb_ws[2] / loc_ws[2]));
+    Matrix<float> result(1, 4 * (glb_ws[0] / loc_ws[0]) * (glb_ws[1] / loc_ws[1]) * (glb_ws[2] / loc_ws[2]));
 
     cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
                                            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-                                           p_result.bytes(),
-                                           p_result.data(), &err);
+                                           result.bytes(),
+                                           result.data(), &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -180,15 +180,15 @@ void VolumeWorker::resolveWeightpoint()
     }
 
     // Kernel arguments
-    err = QOpenCLSetKernelArg(p_line_integral_kernel, 0, sizeof(cl_mem), (void *) p_pool);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 1, sizeof(cl_sampler), p_pool_sampler);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 2, sizeof(cl_mem), (void *) p_oct_index);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 3, sizeof(cl_mem), (void *) p_oct_brick);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 5, sizeof(cl_mem), (void *) p_data_view_extent);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 6, sizeof(cl_mem), (void *) p_misc_int);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 7, sizeof(cl_mem), (void *) &result_cl);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 8, 4 * sizeof(cl_float) * loc_ws[0] * loc_ws[1] * loc_ws[2], NULL);
+    err = QOpenCLSetKernelArg(p_weightpoint_kernel, 0, sizeof(cl_mem), (void *) p_pool);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 1, sizeof(cl_sampler), p_pool_sampler);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 2, sizeof(cl_mem), (void *) p_oct_index);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 3, sizeof(cl_mem), (void *) p_oct_brick);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 5, sizeof(cl_mem), (void *) p_data_view_extent);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 6, sizeof(cl_mem), (void *) p_misc_int);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 7, sizeof(cl_mem), (void *) &result_cl);
+    err |= QOpenCLSetKernelArg(p_weightpoint_kernel, 8, 4 * sizeof(cl_float) * loc_ws[0] * loc_ws[1] * loc_ws[2], NULL);
 
     if ( err != CL_SUCCESS)
     {
@@ -213,8 +213,8 @@ void VolumeWorker::resolveWeightpoint()
                                      result_cl,
                                      CL_TRUE,
                                      0,
-                                     p_result.bytes(),
-                                     p_result.data(),
+                                     result.bytes(),
+                                     result.data(),
                                      0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
@@ -229,8 +229,25 @@ void VolumeWorker::resolveWeightpoint()
         qFatal(cl_error_cstring(err));
     }
 
+    double xi = result.sum(0, result.size() * 1 / 4);
+    double yi = result.sum(result.size() * 1 / 4, result.size() * 2 / 4);
+    double zi = result.sum(result.size() * 2 / 4, result.size() * 3 / 4);
+    double i = result.sum(result.size() * 3 / 4, result.size() * 4 / 4);
 
-    //    emit weightpointResolved();
+    double x = xi / i;
+    double y = yi / i;
+    double z = zi / i;
+
+//    qDebug() << x << y << z << i;
+
+    if (i <= 0)
+    {
+        x = 0;
+        y = 0;
+        z = 0;
+    }
+
+    emit weightpointResolved(x, y, z);
 }
 
 void VolumeWorker::resolveLineIntegral(Line line)
@@ -244,7 +261,7 @@ void VolumeWorker::resolveLineIntegral(Line line)
     Matrix<int> samples(3, 1);
 
     double sampling_freq_ab = 128;
-    double sampling_freq_c = 256;
+    double sampling_freq_c = 1024;
     double sample_interdist_ab;
     double sample_interdist_c = line.length() / (double) sampling_freq_c;
 
@@ -306,14 +323,14 @@ void VolumeWorker::resolveLineIntegral(Line line)
         qFatal(cl_error_cstring(err));
     }
 
-    glb_ws.print(0, "glb_ws");
-    loc_ws.print(0, "loc_ws");
+//    glb_ws.print(0, "glb_ws");
+//    loc_ws.print(0, "loc_ws");
 
-    line.basePos().print(3, "basePos");
-    aVecSegment.print(6, "aVecSegment");
-    bVecSegment.print(6, "bVecSegment");
-    cVecSegment.print(6, "cVecSegment");
-    samples.print(3, "samples");
+//    line.basePos().print(3, "basePos");
+//    aVecSegment.print(6, "aVecSegment");
+//    bVecSegment.print(6, "bVecSegment");
+//    cVecSegment.print(6, "cVecSegment");
+//    samples.print(3, "samples");
 
 
 
@@ -391,7 +408,8 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
       quality_percentage(15),
       displayDistance(false),
       //      displayFps(true),
-      displayResolution(true)
+      displayResolution(true),
+      currentLineIndex(0)
 {
     // Worker
     workerThread = new QThread;
@@ -400,10 +418,13 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     connect(workerThread, SIGNAL(finished()), volumeWorker, SLOT(deleteLater()));
     volumeWorker->setCLObjects(&cl_svo_pool, &cl_svo_pool_sampler, &cl_svo_index, &cl_svo_brick, &cl_data_extent, &cl_data_view_extent, &cl_misc_ints);
     connect(this, SIGNAL(lineChanged(Line)), volumeWorker, SLOT(resolveLineIntegral(Line)));
+    connect(this, SIGNAL(dataViewExtentChanged()), volumeWorker, SLOT(resolveWeightpoint()));
+    connect(volumeWorker, SIGNAL(weightpointResolved(double,double,double)), this, SLOT(setWeightpoint(double,double,double)));
     //    connect(this, &Controller::operate, worker, &Worker::doWork);
     //    connect(worker, volumeWorker::resultReady, this, Controller::handleResults);
     workerThread->start();
 
+    weightpoint.set(3,1),0;
 
     // Marker
     markers_selected_indices.set(100, 1, 0);
@@ -600,6 +621,7 @@ void VolumeOpenGLWidget::paintGL()
     if (isSvoInitialized)
     {
         drawLineIntegrationVolumeVisualAssist(&painter);
+        drawWeightCenter(&painter);
     }
 
     isDataExtentReadOnly = false;
@@ -690,9 +712,11 @@ void VolumeOpenGLWidget::initializeGL()
     glGenBuffers(1, &unitcell_vbo);
     glGenBuffers(1, &marker_centers_vbo);
     glGenBuffers(1, &minicell_vbo);
+    glGenBuffers(1, &weightpoint_vbo);
     glGenTextures(1, &ray_tex_gl);
     glGenTextures(1, &tsf_tex_gl);
     glGenTextures(1, &tsf_tex_gl_thumb);
+
 
     // Shader for drawing textures in 2D
     std_2d_tex_program = new QOpenGLShaderProgram(this);
@@ -1865,6 +1889,45 @@ void VolumeOpenGLWidget::refreshLine(int value)
     emit lineChanged(lines->at(value));
 }
 
+void VolumeOpenGLWidget::snapLinePosA()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].setPositionA(weightpoint);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
+}
+
+void VolumeOpenGLWidget::snapLinePosB()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].setPositionB(weightpoint);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
+}
+
+void VolumeOpenGLWidget::setWeightpoint(double x, double y, double z)
+{
+    weightpoint[0] = x;
+    weightpoint[1] = y;
+    weightpoint[2] = z;
+}
+
 void VolumeOpenGLWidget::zoomToLineIndex(int value)
 {
     Matrix<double> a = lines->at(value).effectivePosA();
@@ -1895,9 +1958,14 @@ void VolumeOpenGLWidget::zoomToBox(Matrix<double> box)
     data_translation[11] = -(box[4] + 0.5 * (box[5] - box[4]));
 
     // Set the zoom
-    data_scaling[0] = 0.33 * (data_extent[1] - data_extent[0]) / (box[1] - box[0]);
-    data_scaling[5] = 0.33 * (data_extent[3] - data_extent[2]) / (box[3] - box[2]);
-    data_scaling[10] = 0.33 * (data_extent[5] - data_extent[4]) / (box[5] - box[4]);
+    double max_side = std::max(std::max(box[1] - box[0], box[3] - box[2]), box[5] - box[4]);
+
+    data_scaling[0] = 0.33 * (data_extent[1] - data_extent[0]) / max_side;
+    data_scaling[5] = 0.33 * (data_extent[3] - data_extent[2]) / max_side;
+    data_scaling[10] = 0.33 * (data_extent[5] - data_extent[4]) / max_side;
+
+//    data_translation.print(3, "Data translation");
+//    data_scaling.print(3, "Data scaling");
 
     // Set the view extent
     data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
@@ -1907,6 +1975,7 @@ void VolumeOpenGLWidget::zoomToBox(Matrix<double> box)
 
 void VolumeOpenGLWidget::refreshLineIntegral(QModelIndex index)
 {
+    currentLineIndex = index.row();
     emit refreshLine(index.row());
 }
 
@@ -2075,7 +2144,7 @@ void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm
 
 void VolumeOpenGLWidget::wheelEvent(QWheelEvent * ev)
 {
-    if (!isDataExtentReadOnly)
+//    if (!isDataExtentReadOnly)
     {
         float move_scaling = 1.0;
 
@@ -2410,6 +2479,8 @@ void VolumeOpenGLWidget::setDataExtent()
     {
         qFatal(cl_error_cstring(err));
     }
+
+    if (isSvoInitialized) emit dataViewExtentChanged();
 }
 
 void VolumeOpenGLWidget::setTsfParameters()
@@ -3715,6 +3786,60 @@ void VolumeOpenGLWidget::drawOverlay(QPainter * painter)
 
     painter->drawRoundedRect(multiplier_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);*/
+}
+
+void VolumeOpenGLWidget::drawWeightCenter(QPainter * painter)
+{
+    beginRawGLCalls(painter);
+
+    Matrix<float> weightpoint_vertices(6,3);
+    weightpoint_vertices[0] = data_view_extent[0];
+    weightpoint_vertices[1] = weightpoint[1];
+    weightpoint_vertices[2] = weightpoint[2];
+
+    weightpoint_vertices[3] = data_view_extent[1];
+    weightpoint_vertices[4] = weightpoint[1];
+    weightpoint_vertices[5] = weightpoint[2];
+
+
+    weightpoint_vertices[6] = weightpoint[0];
+    weightpoint_vertices[7] = data_view_extent[2];
+    weightpoint_vertices[8] = weightpoint[2];
+
+    weightpoint_vertices[9] = weightpoint[0];
+    weightpoint_vertices[10] = data_view_extent[3];
+    weightpoint_vertices[11] = weightpoint[2];
+
+
+    weightpoint_vertices[12] = weightpoint[0];
+    weightpoint_vertices[13] = weightpoint[1];
+    weightpoint_vertices[14] = data_view_extent[4];
+
+    weightpoint_vertices[15] = weightpoint[0];
+    weightpoint_vertices[16] = weightpoint[1];
+    weightpoint_vertices[17] = data_view_extent[5];
+
+
+    setVbo(weightpoint_vbo, weightpoint_vertices.data(), weightpoint_vertices.size(), GL_DYNAMIC_DRAW);
+
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
+
+    glBindBuffer(GL_ARRAY_BUFFER, weightpoint_vbo);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUniform4fv(std_3d_col_color, 1, red.data());
+
+    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+
+    glDrawArrays(GL_LINES,  0, 6);
+
+    glDisableVertexAttribArray(std_3d_col_fragpos);
+
+    std_3d_col_program->release();
+
+    endRawGLCalls(painter);
 }
 
 void VolumeOpenGLWidget::drawPositionScalebars(QPainter * painter)

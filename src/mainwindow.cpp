@@ -777,6 +777,8 @@ void MainWindow::initConnects()
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(refreshLineIntegral(QModelIndex)));
     connect(volumeOpenGLWidget->worker(), SIGNAL(lineIntegralResolved()), this, SLOT(setLineIntegralPlot()));
+    connect(setLinePosAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosA()));
+    connect(setLinePosBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosB()));
 
 }
 
@@ -1711,15 +1713,19 @@ void MainWindow::initGUI()
 
         insertLinePushButton = new QPushButton("Insert");
         removeLinePushButton = new QPushButton("Remove");
+        setLinePosAPushButton = new QPushButton("Snap A");
+        setLinePosBPushButton = new QPushButton("Snap B");
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
         gridLayout->setVerticalSpacing(0);
         gridLayout->setContentsMargins(5, 5, 5, 5);
-        gridLayout->setRowStretch(4, 1);
-        gridLayout->addWidget(lineView, 0, 0, 1, 4);
+        gridLayout->setRowStretch(2, 1);
+        gridLayout->addWidget(lineView, 0, 0, 1, 8);
         gridLayout->addWidget(insertLinePushButton, 1, 0, 1, 2);
-        gridLayout->addWidget(removeLinePushButton, 1, 2, 1, 2);
+        gridLayout->addWidget(setLinePosAPushButton, 1, 2, 1, 2);
+        gridLayout->addWidget(setLinePosBPushButton, 1, 4, 1, 2);
+        gridLayout->addWidget(removeLinePushButton, 1, 7, 1, 1);
 
         lineWidget = new QWidget;
         lineWidget->setLayout(gridLayout);
