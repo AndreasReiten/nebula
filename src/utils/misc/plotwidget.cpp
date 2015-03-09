@@ -43,9 +43,9 @@ void PlotWidget::plot(double xmin, double xmax, double ymin, double ymax, const 
     p_y_data = y_data;
 
 
-//    qDebug() << p_x_min << p_x_max << p_y_min << p_y_max;
-//    p_x_data.print(0, "Data X");
-//    p_y_data.print(0, "Data Y");
+    //    qDebug() << p_x_min << p_x_max << p_y_min << p_y_max;
+    //    p_x_data.print(0, "Data X");
+    //    p_y_data.print(0, "Data Y");
 
     update();
 }

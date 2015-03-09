@@ -238,7 +238,7 @@ void VolumeWorker::resolveWeightpoint()
     double y = yi / i;
     double z = zi / i;
 
-//    qDebug() << x << y << z << i;
+    //    qDebug() << x << y << z << i;
 
     if (i <= 0)
     {
@@ -323,14 +323,14 @@ void VolumeWorker::resolveLineIntegral(Line line)
         qFatal(cl_error_cstring(err));
     }
 
-//    glb_ws.print(0, "glb_ws");
-//    loc_ws.print(0, "loc_ws");
+    //    glb_ws.print(0, "glb_ws");
+    //    loc_ws.print(0, "loc_ws");
 
-//    line.basePos().print(3, "basePos");
-//    aVecSegment.print(6, "aVecSegment");
-//    bVecSegment.print(6, "bVecSegment");
-//    cVecSegment.print(6, "cVecSegment");
-//    samples.print(3, "samples");
+    //    line.basePos().print(3, "basePos");
+    //    aVecSegment.print(6, "aVecSegment");
+    //    bVecSegment.print(6, "bVecSegment");
+    //    cVecSegment.print(6, "cVecSegment");
+    //    samples.print(3, "samples");
 
 
 
@@ -419,12 +419,12 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     volumeWorker->setCLObjects(&cl_svo_pool, &cl_svo_pool_sampler, &cl_svo_index, &cl_svo_brick, &cl_data_extent, &cl_data_view_extent, &cl_misc_ints);
     connect(this, SIGNAL(lineChanged(Line)), volumeWorker, SLOT(resolveLineIntegral(Line)));
     connect(this, SIGNAL(dataViewExtentChanged()), volumeWorker, SLOT(resolveWeightpoint()));
-    connect(volumeWorker, SIGNAL(weightpointResolved(double,double,double)), this, SLOT(setWeightpoint(double,double,double)));
+    connect(volumeWorker, SIGNAL(weightpointResolved(double, double, double)), this, SLOT(setWeightpoint(double, double, double)));
     //    connect(this, &Controller::operate, worker, &Worker::doWork);
     //    connect(worker, volumeWorker::resultReady, this, Controller::handleResults);
     workerThread->start();
 
-    weightpoint.set(3,1),0;
+    weightpoint.set(3, 1), 0;
 
     // Marker
     markers_selected_indices.set(100, 1, 0);
@@ -1964,8 +1964,8 @@ void VolumeOpenGLWidget::zoomToBox(Matrix<double> box)
     data_scaling[5] = 0.33 * (data_extent[3] - data_extent[2]) / max_side;
     data_scaling[10] = 0.33 * (data_extent[5] - data_extent[4]) / max_side;
 
-//    data_translation.print(3, "Data translation");
-//    data_scaling.print(3, "Data scaling");
+    //    data_translation.print(3, "Data translation");
+    //    data_scaling.print(3, "Data scaling");
 
     // Set the view extent
     data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
@@ -2144,7 +2144,7 @@ void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm
 
 void VolumeOpenGLWidget::wheelEvent(QWheelEvent * ev)
 {
-//    if (!isDataExtentReadOnly)
+    //    if (!isDataExtentReadOnly)
     {
         float move_scaling = 1.0;
 
@@ -2480,7 +2480,10 @@ void VolumeOpenGLWidget::setDataExtent()
         qFatal(cl_error_cstring(err));
     }
 
-    if (isSvoInitialized) emit dataViewExtentChanged();
+    if (isSvoInitialized)
+    {
+        emit dataViewExtentChanged();
+    }
 }
 
 void VolumeOpenGLWidget::setTsfParameters()
@@ -3792,7 +3795,7 @@ void VolumeOpenGLWidget::drawWeightCenter(QPainter * painter)
 {
     beginRawGLCalls(painter);
 
-    Matrix<float> weightpoint_vertices(6,3);
+    Matrix<float> weightpoint_vertices(6, 3);
     weightpoint_vertices[0] = data_view_extent[0];
     weightpoint_vertices[1] = weightpoint[1];
     weightpoint_vertices[2] = weightpoint[2];
