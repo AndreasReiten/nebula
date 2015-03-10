@@ -847,6 +847,7 @@ void MainWindow::initConnects()
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(refreshLineIntegral(QModelIndex)));
     connect(volumeOpenGLWidget->worker(), SIGNAL(lineIntegralResolved()), this, SLOT(setLineIntegralPlot()));
+    connect(volumeOpenGLWidget->worker(), SIGNAL(planeIntegralResolved()), this, SLOT(setPlaneIntegralPlot()));
     connect(setLinePosAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosA()));
     connect(setLinePosBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosB()));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(zoomToLineModelIndex(QModelIndex)));
@@ -1921,6 +1922,24 @@ void MainWindow::setImageRange(int low, int high)
 }
 
 void MainWindow::setLineIntegralPlot()
+{
+    Matrix<double> y_data = volumeOpenGLWidget->worker()->getLineIntegralData();
+
+    Matrix<double> x_data(y_data.m(), y_data.n());
+
+    for (int i = 0; i < x_data.size(); i++)
+    {
+        x_data[i] = volumeOpenGLWidget->worker()->getLineIntegralXmin() +  i * (volumeOpenGLWidget->worker()->getLineIntegralXmax() - volumeOpenGLWidget->worker()->getLineIntegralXmin()) / (x_data.size() - 1);
+    }
+
+    plotLineWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
+                     volumeOpenGLWidget->worker()->getLineIntegralXmax(),
+                     volumeOpenGLWidget->worker()->getLineIntegralYmin(),
+                     volumeOpenGLWidget->worker()->getLineIntegralYmax(),
+                     x_data, y_data);
+}
+
+void MainWindow::setPlaneIntegralPlot()
 {
     Matrix<double> y_data = volumeOpenGLWidget->worker()->getLineIntegralData();
 

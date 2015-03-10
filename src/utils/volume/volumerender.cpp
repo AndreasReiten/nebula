@@ -538,6 +538,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     connect(workerThread, SIGNAL(finished()), volumeWorker, SLOT(deleteLater()));
     volumeWorker->setCLObjects(&cl_svo_pool, &cl_svo_pool_sampler, &cl_svo_index, &cl_svo_brick, &cl_data_extent, &cl_data_view_extent, &cl_misc_ints);
     connect(this, SIGNAL(lineChanged(Line)), volumeWorker, SLOT(resolveLineIntegral(Line)));
+    connect(this, SIGNAL(lineChanged(Line)), volumeWorker, SLOT(resolvePlaneIntegral(Line)));
     connect(this, SIGNAL(dataViewExtentChanged()), volumeWorker, SLOT(resolveWeightpoint()));
     connect(volumeWorker, SIGNAL(weightpointResolved(double, double, double)), this, SLOT(setWeightpoint(double, double, double)));
     //    connect(this, &Controller::operate, worker, &Worker::doWork);
