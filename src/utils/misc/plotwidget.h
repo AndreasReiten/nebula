@@ -2,18 +2,19 @@
 #define PLOTWIDGET_H
 
 #include <QWidget>
-//#include <QTimer>
+#include <QPixmap>
+#include <QLabel>
+#include <QImage>
+#include <QScrollArea>
+
 #include "../math/qxmathlib.h"
 
-class PlotWidget : public QWidget
+class PlotLineWidget : public QWidget
 {
         Q_OBJECT
     public:
-        explicit PlotWidget(QWidget * parent = 0);
-        ~PlotWidget();
-
-    signals:
-        //        void paintRequest();
+        explicit PlotLineWidget(QWidget * parent = 0);
+        ~PlotLineWidget();
 
     public slots:
         void plot(double xmin, double xmax, double ymin, double ymax, const Matrix<double> &x_data, const Matrix<double> &y_data);
@@ -32,8 +33,26 @@ class PlotWidget : public QWidget
 
         Matrix<double> p_x_data;
         Matrix<double> p_y_data;
+};
 
-        //        QTimer * paintTimer;
+class PlotSurfaceWidget : public QScrollArea
+{
+        Q_OBJECT
+    public:
+        explicit PlotSurfaceWidget(QWidget * parent = 0);
+        ~PlotSurfaceWidget();
+
+    public slots:
+        void plot(const Matrix<double> &data);
+        void setLog(bool value);
+
+    private:
+        void resizeEvent(QResizeEvent * event);
+        
+        bool isLog;
+
+        QLabel * p_label;
+        Matrix<uchar> p_data;
 };
 
 #endif // PLOTWIDGET_H

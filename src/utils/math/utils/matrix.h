@@ -63,10 +63,10 @@ class Matrix
         Matrix<int> toInt() const;
         QVector<T> toQVector() const;
 
-        T max();
-        T min();
-        T sum();
-        T sum(size_t first, size_t last);
+        T max() const;
+        T min() const;
+        T sum() const;
+        T sum(size_t first, size_t last) const;
 
         void setIdentity(size_t p_n);
         void set(size_t p_m, size_t p_n);
@@ -342,7 +342,7 @@ void Matrix<T>::resize(size_t m, size_t n)
 
 
 template <class T>
-T Matrix<T>::sum()
+T Matrix<T>::sum() const
 {
     T sum = 0;
 
@@ -358,7 +358,7 @@ T Matrix<T>::sum()
 }
 
 template <class T>
-T Matrix<T>::sum(size_t first, size_t last)
+T Matrix<T>::sum(size_t first, size_t last) const
 {
     T sum = 0;
 
@@ -372,7 +372,7 @@ T Matrix<T>::sum(size_t first, size_t last)
 
 
 template <class T>
-T Matrix<T>::min()
+T Matrix<T>::min() const
 {
     T value = std::numeric_limits<T>::max();;
 
@@ -391,7 +391,7 @@ T Matrix<T>::min()
 }
 
 template <class T>
-T Matrix<T>::max()
+T Matrix<T>::max() const
 {
     T value = std::numeric_limits<T>::min();;
 

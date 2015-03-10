@@ -104,5 +104,6 @@ SOURCES += \
 #    src/utils/glsl/glslfunctions.cpp
 
 DISTFILES += \
-    src/kernels/weightpoint_sampler.cl
+    src/kernels/weightpoint_sampler.cl \
+    src/kernels/plane_integral.cl
 

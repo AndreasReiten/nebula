@@ -467,7 +467,7 @@ void MainWindow::initActions()
     screenshotAct = new QAction(QIcon(":/art/screenshot.png"), "&Take screenshot", this);
     scalebarAct = new QAction(QIcon(":/art/scalebar.png"), "&Toggle scalebars", this);
     scalebarAct->setCheckable(true);
-    scalebarAct->setChecked(true);
+    scalebarAct->setChecked(false);
     sliceAct = new QAction(QIcon(":/art/slice.png"), "&Toggle slicing", this);
     sliceAct->setCheckable(true);
     sliceAct->setChecked(false);
@@ -489,7 +489,7 @@ void MainWindow::initActions()
     markAct = new QAction(QIcon(":/art/marker.png"), "&Add marker", this);
     labFrameAct = new QAction(QIcon(":/art/labframe.png"), "&View lab frame", this);
     labFrameAct->setCheckable(true);
-    labFrameAct->setChecked(true);
+    labFrameAct->setChecked(false);
 
     alignLabXtoSliceXAct = new QAction(QIcon(":/art/align_x.png"), "Align lab frame to slice frame x", this);
     alignLabYtoSliceYAct = new QAction(QIcon(":/art/align_y.png"), "Align lab frame to slice frame y", this);
@@ -1435,14 +1435,25 @@ void MainWindow::initGUI()
 
     /* PlotWidget */
     {
-        plotDockWidget = new QDockWidget("Plot");
+        plotLineDockWidget = new QDockWidget("Line integral plot");
 
-        plotWidget = new PlotWidget;
+        plotLineWidget = new PlotLineWidget;
 
-        plotDockWidget->setWidget(plotWidget);
-        viewMenu->addAction(plotDockWidget->toggleViewAction());
-        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotDockWidget);
+        plotLineDockWidget->setWidget(plotLineWidget);
+        viewMenu->addAction(plotLineDockWidget->toggleViewAction());
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotLineDockWidget);
     }
+    
+    {
+        plotSurfaceDockWidget = new QDockWidget("Surface integral plot");
+
+        plotSurfaceWidget = new PlotSurfaceWidget;
+
+        plotSurfaceDockWidget->setWidget(plotSurfaceWidget);
+        viewMenu->addAction(plotSurfaceDockWidget->toggleViewAction());
+        volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotSurfaceDockWidget);
+    }
+    
 
     /* Unitcell dock widget */
     {
@@ -1856,8 +1867,8 @@ void MainWindow::initGUI()
     // Tabify docks
     volumeRenderMainWindow->setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
     volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, svoHeaderDock);
-    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, plotDockWidget);
-
+    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, plotLineDockWidget);
+    volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, plotSurfaceDockWidget);
 }
 
 void MainWindow::applyAnalytics()
@@ -1920,7 +1931,7 @@ void MainWindow::setLineIntegralPlot()
         x_data[i] = volumeOpenGLWidget->worker()->getLineIntegralXmin() +  i * (volumeOpenGLWidget->worker()->getLineIntegralXmax() - volumeOpenGLWidget->worker()->getLineIntegralXmin()) / (x_data.size() - 1);
     }
 
-    plotWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
+    plotLineWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
                      volumeOpenGLWidget->worker()->getLineIntegralXmax(),
                      volumeOpenGLWidget->worker()->getLineIntegralYmin(),
                      volumeOpenGLWidget->worker()->getLineIntegralYmax(),

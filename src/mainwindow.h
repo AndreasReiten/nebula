@@ -101,8 +101,11 @@ class MainWindow : public QMainWindow
 
     private:
         // PlotWidget
-        QDockWidget * plotDockWidget;
-        PlotWidget * plotWidget;
+        QDockWidget * plotLineDockWidget;
+        PlotLineWidget * plotLineWidget;
+        
+        QDockWidget * plotSurfaceDockWidget;
+        PlotSurfaceWidget * plotSurfaceWidget;
 
         // Line dock widget
         QDockWidget * lineDockWidget;

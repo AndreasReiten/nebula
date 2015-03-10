@@ -40,16 +40,18 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
     public slots:
         void raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws);
         void resolveLineIntegral(Line line);
+        void resolvePlaneIntegral(Line line);
         void resolveWeightpoint();
 
     signals:
         void rayTraceFinished();
         void lineIntegralResolved();
+        void planeIntegralResolved();
         void weightpointResolved(double x, double y, double z);
 
     private:
         OpenCLContext context_cl;
-        cl_kernel p_line_integral_kernel, p_raytrace_kernel;
+        cl_kernel p_line_integral_kernel, p_plane_integral_kernel, p_raytrace_kernel;
         cl_kernel p_weightpoint_kernel;
 
         void initializeOpenCLKernels();
@@ -69,6 +71,8 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         double p_line_integral_xmax;
         double p_line_integral_ymin;
         double p_line_integral_ymax;
+        
+        Matrix<float> p_plane_integral_data;
 };
 
 class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions

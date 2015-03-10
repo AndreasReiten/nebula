@@ -50,6 +50,7 @@ void VolumeWorker::initializeOpenCLKernels()
     // Build programs from OpenCL kernel source
     QStringList paths;
     paths << "kernels/line_integral.cl";
+    paths << "kernels/plane_integral.cl";
     paths << "kernels/weightpoint_sampler.cl";
 
     program = context_cl.createProgram(paths, &err);
@@ -63,6 +64,13 @@ void VolumeWorker::initializeOpenCLKernels()
 
     // Kernel handles
     p_line_integral_kernel =  QOpenCLCreateKernel(program, "integrateLine", &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+    
+    p_plane_integral_kernel =  QOpenCLCreateKernel(program, "integratePlane", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -260,26 +268,26 @@ void VolumeWorker::resolveLineIntegral(Line line)
     // Samples in each direction
     Matrix<int> samples(3, 1);
 
-    double sampling_freq_ab = 128;
-    double sampling_freq_c = 1024;
+    double n_samples_ab = 128;
+    double n_samples_c = 1024;
     double sample_interdist_ab;
-    double sample_interdist_c = line.length() / (double) sampling_freq_c;
+    double sample_interdist_c = line.length() / (double) n_samples_c;
 
     if (line.prismSideA() >= line.prismSideB())
     {
-        sample_interdist_ab = line.prismSideA() / (double) (sampling_freq_ab - 1);
+        sample_interdist_ab = line.prismSideA() / (double) (n_samples_ab - 1);
 
-        samples[0] = sampling_freq_ab;
+        samples[0] = n_samples_ab;
         samples[1] = (line.prismSideB() / sample_interdist_ab) + 1;
-        samples[2] = sampling_freq_c;
+        samples[2] = n_samples_c;
     }
     else
     {
-        sample_interdist_ab = line.prismSideB() / (double) (sampling_freq_ab - 1);
+        sample_interdist_ab = line.prismSideB() / (double) (n_samples_ab - 1);
 
         samples[0] = (line.prismSideA() / sample_interdist_ab) + 1;
-        samples[1] = sampling_freq_ab;
-        samples[2] = sampling_freq_c;
+        samples[1] = n_samples_ab;
+        samples[2] = n_samples_c;
     }
 
     // Other kernel variables
@@ -376,6 +384,119 @@ void VolumeWorker::resolveLineIntegral(Line line)
     emit lineIntegralResolved();
 }
 
+void VolumeWorker::resolvePlaneIntegral(Line line)
+{
+    // Kernel launch parameters
+    Matrix<size_t> loc_ws(3, 1);
+    loc_ws[0] = 1;
+    loc_ws[1] = 1;
+    loc_ws[2] = 512;
+
+    // Samples in each direction
+    Matrix<int> samples(3, 1);
+
+    double n_samples_ab = 128;
+    double n_samples_c = 1024;
+    double sample_interdist_ab;
+    double sample_interdist_c = line.length() / (double) n_samples_c;
+
+    if (line.prismSideA() >= line.prismSideB())
+    {
+        sample_interdist_ab = line.prismSideA() / (double) (n_samples_ab - 1);
+
+        samples[0] = n_samples_ab;
+        samples[1] = (line.prismSideB() / sample_interdist_ab) + 1;
+        samples[2] = n_samples_c;
+    }
+    else
+    {
+        sample_interdist_ab = line.prismSideB() / (double) (n_samples_ab - 1);
+
+        samples[0] = (line.prismSideA() / sample_interdist_ab) + 1;
+        samples[1] = n_samples_ab;
+        samples[2] = n_samples_c;
+    }
+
+    // Other kernel variables
+    Matrix<size_t> glb_ws(1, 3);
+    glb_ws[0] = samples[0];
+    glb_ws[1] = samples[1];
+    glb_ws[2] = loc_ws[2];
+
+    Matrix<double> aVecSegment = vecNormalize(line.aVec()) * sample_interdist_ab;
+    Matrix<double> bVecSegment = vecNormalize(line.bVec()) * sample_interdist_ab;
+    Matrix<double> cVecSegment = vecNormalize(line.cVec()) * sample_interdist_c;
+
+    p_plane_integral_data.set(samples[0], samples[1]*4);
+
+    cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
+                                           CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+                                           p_line_integral_data.bytes(),
+                                           p_line_integral_data.data(), &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Kernel arguments
+    err = QOpenCLSetKernelArg(p_line_integral_kernel, 0, sizeof(cl_mem), (void *) p_pool);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 1, sizeof(cl_sampler), p_pool_sampler);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 2, sizeof(cl_mem), (void *) p_oct_index);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 3, sizeof(cl_mem), (void *) p_oct_brick);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 5, sizeof(cl_mem), (void *) p_misc_int);
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 6, sizeof(cl_mem), (void *) &result_cl); // Have here
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 7, sizeof(cl_float3), line.basePos().toFloat().data());
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 8, sizeof(cl_float3), aVecSegment.toFloat().data());
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 9, sizeof(cl_float3), bVecSegment.toFloat().data());
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 10, sizeof(cl_float3), cVecSegment.toFloat().data());
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 11, sizeof(cl_int3), samples.data());
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 12, sizeof(cl_float) * loc_ws[2], NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_line_integral_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLFinish(context_cl.queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLEnqueueReadBuffer ( context_cl.queue(),
+                                     result_cl,
+                                     CL_TRUE,
+                                     0,
+                                     p_line_integral_data.bytes(),
+                                     p_line_integral_data.data(),
+                                     0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLReleaseMemObject(result_cl);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    emit planeIntegralResolved();
+}
+
+
 VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     : isCLInitialized(false),
       isGLInitialized(false),
@@ -388,7 +509,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
       isModelActive(true),
       isUnitcellActive(true),
       isSvoInitialized(false),
-      isScalebarActive(true),
+      isScalebarActive(false),
       isSlicingActive(false),
       isIntegration2DActive(false),
       isIntegration3DActive(true),
@@ -401,13 +522,12 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
       isRulerActive(false),
       isHklTextActive(true),
       isURotationActive(false),
-      isLabFrameActive(true),
+      isLabFrameActive(false),
       isMiniCellActive(true),
       isCountIntegrationActive(false),
       n_marker_indices(0),
       quality_percentage(15),
       displayDistance(false),
-      //      displayFps(true),
       displayResolution(true),
       currentLineIndex(0)
 {
