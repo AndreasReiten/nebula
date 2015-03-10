@@ -301,16 +301,16 @@ class MainWindow : public QMainWindow
         QDoubleSpinBox * funcParamCSpinBox;
         QDoubleSpinBox * funcParamDSpinBox;
 
-        QDoubleSpinBox * volumeRenderDataMinSpinBox;
-        QDoubleSpinBox * volumeRenderDataMaxSpinBox;
-        QDoubleSpinBox * volumeRenderAlphaSpinBox;
-        QDoubleSpinBox * volumeRenderBrightnessSpinBox;
+        QDoubleSpinBox * volumeDataMinSpinBox;
+        QDoubleSpinBox * volumeDataMaxSpinBox;
+        QDoubleSpinBox * volumeAlphaSpinBox;
+        QDoubleSpinBox * volumeBrightnessSpinBox;
 
         QCheckBox * beamOverrideCheckBox;
 
-        QComboBox * volumeRenderTsfComboBox;
-        QComboBox * volumeRenderTsfAlphaComboBox;
-        QComboBox * volumeRenderViewModeComboBox;
+        QComboBox * volumeTsfTextureComboBox;
+        QComboBox * volumeTsfAlphaComboBox;
+        QComboBox * volumeViewModeComboBox;
 
         QSlider * qualitySlider;
 
@@ -345,11 +345,11 @@ class MainWindow : public QMainWindow
         QDockWidget * correctionDock;
         QPushButton * traceSeriesPushButton;
         QCheckBox * traceTextureCheckBox;
-        QDoubleSpinBox * correctionNoiseDoubleSpinBox;
+        QDoubleSpinBox * correctionFlatDoubleSpinBox;
         QSpinBox * correctionClutterSpinBox;
         QSpinBox * correctionMedianSpinBox;
         QSpinBox * correctionPlaneSpinBox;
-        QCheckBox * correctionNoiseCheckBox;
+        QCheckBox * correctionFlatCheckBox;
         QCheckBox * correctionPlaneCheckBox;
         QCheckBox * correctionClutterCheckBox;
         QCheckBox * correctionMedianCheckBox;
@@ -403,13 +403,13 @@ class MainWindow : public QMainWindow
 
         /* Image browser view settings widget */
         QComboBox * imageModeComboBox;
-        QComboBox * imagePreviewTsfTextureComboBox;
-        QComboBox * imagePreviewTsfAlphaComboBox;
+        QComboBox * imageTsfTextureComboBox;
+        QComboBox * imageTsfAlphaComboBox;
 
-        QDoubleSpinBox * imagePreviewDataMinDoubleSpinBox;
-        QDoubleSpinBox * imagePreviewDataMaxDoubleSpinBox;
+        QDoubleSpinBox * imageDataMinDoubleSpinBox;
+        QDoubleSpinBox * imageDataMaxDoubleSpinBox;
 
-        QCheckBox * imagePreviewLogCheckBox;
+        QCheckBox * imageLogCheckBox;
 
         QWidget * imageSettingsWidget;
         QDockWidget * imageSettingsDock;

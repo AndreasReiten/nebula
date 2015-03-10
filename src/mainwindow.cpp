@@ -216,14 +216,14 @@ void MainWindow::setStartConditions()
 
     svoLevelSpinBox->setValue(10);
 
-    volumeRenderDataMinSpinBox->setValue(1.0);
-    volumeRenderDataMaxSpinBox->setValue(10);
-    volumeRenderAlphaSpinBox->setValue(1.0);
-    volumeRenderBrightnessSpinBox->setValue(2.0);
-    volumeRenderTsfAlphaComboBox->setCurrentIndex(2);
-    volumeRenderViewModeComboBox->setCurrentIndex(1);
-    volumeRenderViewModeComboBox->setCurrentIndex(0);
-    volumeRenderTsfComboBox->setCurrentIndex(1);
+    volumeDataMinSpinBox->setValue(1.0);
+    volumeDataMaxSpinBox->setValue(10);
+    volumeAlphaSpinBox->setValue(1.0);
+    volumeBrightnessSpinBox->setValue(2.0);
+    volumeTsfAlphaComboBox->setCurrentIndex(2);
+    volumeViewModeComboBox->setCurrentIndex(1);
+    volumeViewModeComboBox->setCurrentIndex(0);
+    volumeTsfTextureComboBox->setCurrentIndex(1);
     volumeRenderLogCheckBox->setChecked(true);
 
     batchSizeSpinBox->setValue(10);
@@ -231,19 +231,19 @@ void MainWindow::setStartConditions()
     correctionPlaneCheckBox->setChecked(true);
     correctionPlaneCheckBox->setChecked(false);
 
-    correctionNoiseDoubleSpinBox->setValue(1);
-    correctionNoiseDoubleSpinBox->setValue(0);
+    correctionFlatDoubleSpinBox->setValue(1);
+    correctionFlatDoubleSpinBox->setValue(0);
 
     selectionModeComboBox->setCurrentIndex(1);
     selectionModeComboBox->setCurrentIndex(0);
 
     correctionPlaneSpinBox->setValue(10);
 
-    imagePreviewTsfTextureComboBox->setCurrentIndex(1);
-    imagePreviewTsfAlphaComboBox->setCurrentIndex(2);
-    imagePreviewDataMinDoubleSpinBox->setValue(0.01);
-    imagePreviewDataMaxDoubleSpinBox->setValue(1000);
-    imagePreviewLogCheckBox->setChecked(true);
+    imageTsfTextureComboBox->setCurrentIndex(1);
+    imageTsfAlphaComboBox->setCurrentIndex(2);
+    imageDataMinDoubleSpinBox->setValue(0.01);
+    imageDataMaxDoubleSpinBox->setValue(1000);
+    imageLogCheckBox->setChecked(true);
     correctionLorentzCheckBox->setChecked(true);
     imageModeComboBox->setCurrentIndex(1);
     imageModeComboBox->setCurrentIndex(0);
@@ -278,9 +278,6 @@ void MainWindow::setStartConditions()
     aNormSpinBox->setValue(1);
     bNormSpinBox->setValue(1);
     cNormSpinBox->setValue(1);
-
-
-
 }
 
 void MainWindow::closeEvent(QCloseEvent * event)
@@ -306,19 +303,36 @@ void MainWindow::saveProject()
 
             out << imageOpenGLWidget->set();
             out << imageModeComboBox->currentText();
-            out << imagePreviewTsfTextureComboBox->currentText();
-            out << imagePreviewTsfAlphaComboBox->currentText();
-            out << (double) imagePreviewDataMinDoubleSpinBox->value();
-            out << (double) imagePreviewDataMaxDoubleSpinBox->value();
-            out << (bool) imagePreviewLogCheckBox->isChecked();
-            out << (bool) correctionLorentzCheckBox->isChecked();
-            out << (double) correctionNoiseDoubleSpinBox->value();
+            out << imageTsfTextureComboBox->currentText();
+            out << imageTsfAlphaComboBox->currentText();
+            out << (qreal) imageDataMinDoubleSpinBox->value();
+            out << (qreal) imageDataMaxDoubleSpinBox->value();
+            out << (qint32) imageLogCheckBox->isChecked();
+
+            out << (qint32) correctionPlaneCheckBox->isChecked();
+            out << (qint32) correctionPlaneSpinBox->value();
+            out << (qint32) correctionFlatCheckBox->isChecked();
+            out << (qreal) correctionFlatDoubleSpinBox->value();
+            out << (qint32) correctionClutterCheckBox->isChecked();
+            out << (qint32) correctionClutterSpinBox->value();
+            out << (qint32) correctionMedianCheckBox->isChecked();
+            out << (qint32) correctionMedianSpinBox->value();
+            out << (qint32) correctionLorentzCheckBox->isChecked();
+            out << (qint32) correctionPolarizationCheckBox->isChecked();
+            out << (qint32) correctionFluxCheckBox->isChecked();
+            out << (qint32) correctionExposureCheckBox->isChecked();
+
+            out << (qint32) beamOverrideCheckBox->isChecked();
+            out << (qreal) beamXOverrideSpinBox->value();
+            out << (qreal) beamYOverrideSpinBox->value();
+            out << (QString) activeAngleComboBox->currentText();
+            out << (qreal) omegaCorrectionSpinBox->value();
+            out << (qreal) kappaCorrectionSpinBox->value();
+            out << (qreal) phiCorrectionSpinBox->value();
 
             file.close();
         }
     }
-
-
     hasPendingChanges = false;
 }
 
@@ -344,30 +358,88 @@ void MainWindow::loadProject()
         {
             SeriesSet set;
 
-            QString mode;
-            QString tsfTexture;
-            QString tsfAlpha;
+            QString image_mode;
+            QString tsf_texture;
+            QString tsf_alpha;
 
-            double dataMin;
-            double dataMax;
-            bool log;
-            bool lorentzCorrection;
-            double noise;
+            qreal data_min;
+            qreal data_max;
+            quint32 log;
+
+            qint32 correction_plane_check_box;
+            qint32 correction_plane_spin_box;
+            qint32 correction_flat_check_box;
+            qreal correction_flatDouble_spin_box;
+            qint32 correction_clutter_check_box;
+            qint32 correction_clutter_spin_box;
+            qint32 correction_median_check_box;
+            qint32 correction_median_spin_box;
+            qint32 correction_lorentz_check_box;
+            qint32 correction_polarization_check_box;
+            qint32 correction_flux_check_box;
+            qint32 correction_exposure_check_box;
+
+            qint32 beam_override_check_box;
+            qreal beamx_override_spin_box;
+            qreal beamy_override_spin_box;
+            QString active_angle_combo_box;
+            qreal omega_correction_spin_box;
+            qreal kappa_correction_spin_box;
+            qreal phi_correction_spin_box;
 
             QDataStream in(&file);
 
-            in >> set >> mode >> tsfTexture >> tsfAlpha >> dataMin >> dataMax >> log >> lorentzCorrection >> noise;
+            in >> set >> image_mode >> tsf_texture >> tsf_alpha >> data_min >> data_max >> log;
+            in >> correction_plane_check_box;
+            in >> correction_plane_spin_box;
+            in >> correction_flat_check_box;
+            in >> correction_flatDouble_spin_box;
+            in >> correction_clutter_check_box;
+            in >> correction_clutter_spin_box;
+            in >> correction_median_check_box;
+            in >> correction_median_spin_box;
+            in >> correction_lorentz_check_box;
+            in >> correction_polarization_check_box;
+            in >> correction_flux_check_box;
+            in >> correction_exposure_check_box;
+
+            in >> beam_override_check_box;
+            in >> beamx_override_spin_box;
+            in >> beamy_override_spin_box;
+            in >> active_angle_combo_box;
+            in >> omega_correction_spin_box;
+            in >> kappa_correction_spin_box;
+            in >> phi_correction_spin_box;
 
             emit setChanged(set);
 
-            imageModeComboBox->setCurrentText(mode);
-            imagePreviewTsfTextureComboBox->setCurrentText(tsfTexture);
-            imagePreviewTsfAlphaComboBox->setCurrentText(tsfAlpha);
-            imagePreviewDataMinDoubleSpinBox->setValue(dataMin);
-            imagePreviewDataMaxDoubleSpinBox->setValue(dataMax);
-            imagePreviewLogCheckBox->setChecked(log);
-            correctionLorentzCheckBox->setChecked(lorentzCorrection);
-            correctionNoiseDoubleSpinBox->setValue(noise);
+            imageModeComboBox->setCurrentText(image_mode);
+            imageTsfTextureComboBox->setCurrentText(tsf_texture);
+            imageTsfAlphaComboBox->setCurrentText(tsf_alpha);
+            imageDataMinDoubleSpinBox->setValue(data_min);
+            imageDataMaxDoubleSpinBox->setValue(data_max);
+            imageLogCheckBox->setChecked(log);
+
+            correctionPlaneCheckBox->setChecked(correction_plane_check_box);
+            correctionPlaneSpinBox->setValue(correction_plane_spin_box);
+            correctionFlatCheckBox->setChecked(correction_flat_check_box);
+            correctionFlatDoubleSpinBox->setValue(correction_flatDouble_spin_box);
+            correctionClutterCheckBox->setChecked(correction_clutter_check_box);
+            correctionClutterSpinBox->setValue(correction_clutter_spin_box);
+            correctionMedianCheckBox->setChecked(correction_median_check_box);
+            correctionMedianSpinBox->setValue(correction_median_spin_box);
+            correctionLorentzCheckBox->setChecked(correction_lorentz_check_box);
+            correctionPolarizationCheckBox->setChecked(correction_polarization_check_box);
+            correctionFluxCheckBox->setChecked(correction_flux_check_box);
+            correctionExposureCheckBox->setChecked(correction_exposure_check_box);
+
+            beamOverrideCheckBox->setChecked(beam_override_check_box);
+            beamXOverrideSpinBox->setValue(beamx_override_spin_box);
+            beamYOverrideSpinBox->setValue(beamy_override_spin_box);
+            activeAngleComboBox->setCurrentText(active_angle_combo_box);
+            omegaCorrectionSpinBox->setValue(omega_correction_spin_box);
+            kappaCorrectionSpinBox->setValue(kappa_correction_spin_box);
+            phiCorrectionSpinBox->setValue(phi_correction_spin_box);
 
             file.close();
         }
@@ -376,8 +448,6 @@ void MainWindow::loadProject()
 
 void MainWindow::initActions()
 {
-
-
     // Actions
     exitAct = new QAction("E&xit program", this);
     aboutAct = new QAction("&About Nebula", this);
@@ -647,13 +717,13 @@ void MainWindow::initConnects()
     connect(this->backgroundAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setBackground()));
     connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setLogarithmic2D()));
     connect(this->dataStructureAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setDataStructure()));
-    connect(this->volumeRenderTsfComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setTsfColor(int)));
-    connect(this->volumeRenderViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setViewMode(int)));
-    connect(this->volumeRenderTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setTsfAlpha(int)));
-    connect(this->volumeRenderDataMinSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setDataMin(double)));
-    connect(this->volumeRenderDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setDataMax(double)));
-    connect(this->volumeRenderAlphaSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setAlpha(double)));
-    connect(this->volumeRenderBrightnessSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setBrightness(double)));
+    connect(this->volumeTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setTsfColor(int)));
+    connect(this->volumeViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setViewMode(int)));
+    connect(this->volumeTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setTsfAlpha(int)));
+    connect(this->volumeDataMinSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setDataMin(double)));
+    connect(this->volumeDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setDataMax(double)));
+    connect(this->volumeAlphaSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setAlpha(double)));
+    connect(this->volumeBrightnessSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setBrightness(double)));
     connect(this->functionToggleButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setModel()));
     connect(this->funcParamASpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setModelParam0(double)));
     connect(this->funcParamBSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setModelParam1(double)));
@@ -742,7 +812,7 @@ void MainWindow::initConnects()
     connect(traceTextureCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(toggleTraceTexture(bool)));
     connect(imageOpenGLWidget, SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
     connect(imageOpenGLWidget, SIGNAL(progressRangeChanged(int, int)), generalProgressBar, SLOT(setRange(int, int)));
-    connect(correctionNoiseCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionNoise(bool)));
+    connect(correctionFlatCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionNoise(bool)));
     connect(correctionPlaneCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionPlane(bool)));
     connect(correctionClutterCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionClutter(bool)));
     connect(correctionMedianCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionMedian(bool)));
@@ -755,8 +825,8 @@ void MainWindow::initConnects()
     connect(applyPlaneMarkerPushButton, SIGNAL(clicked()), this, SLOT(applyPlaneMarker()));
     connect(applySelectionPushButton, SIGNAL(clicked()), this, SLOT(applySelection()));
     connect(selectionModeComboBox, SIGNAL(currentTextChanged(QString)), this, SLOT(setApplyMode(QString)));
-    connect(correctionNoiseDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setNoise(double)));
-    connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), correctionNoiseDoubleSpinBox, SLOT(setValue(double)));
+    connect(correctionFlatDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setNoise(double)));
+    connect(imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), correctionFlatDoubleSpinBox, SLOT(setValue(double)));
     connect(saveImageAct, SIGNAL(triggered()), this, SLOT(saveImageFunction()));
     connect(this, SIGNAL(saveImage(QString)), imageOpenGLWidget, SLOT(saveImage(QString)));
     connect(imageScreenshotAct, SIGNAL(triggered()), this, SLOT(takeImageScreenshotFunction()));
@@ -772,13 +842,14 @@ void MainWindow::initConnects()
     //    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(refreshLine(int)));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(update()));
-    connect(lineModel, SIGNAL(lineChecked(int)), volumeOpenGLWidget, SLOT(zoomToLineIndex(int)));
+//    connect(lineModel, SIGNAL(lineChecked(int)), volumeOpenGLWidget, SLOT(zoomToLineIndex(int)));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(refreshLineIntegral(QModelIndex)));
     connect(volumeOpenGLWidget->worker(), SIGNAL(lineIntegralResolved()), this, SLOT(setLineIntegralPlot()));
     connect(setLinePosAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosA()));
     connect(setLinePosBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosB()));
+    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(zoomToLineModelIndex(QModelIndex)));
 
 }
 
@@ -830,13 +901,13 @@ void MainWindow::saveLoadedSvo()
             working_dir = info.absoluteDir().path();
 
             // View settings
-            svo_loaded.setViewMode(volumeRenderViewModeComboBox->currentIndex());
-            svo_loaded.setViewTsfStyle(imagePreviewTsfAlphaComboBox->currentIndex());
-            svo_loaded.setViewTsfTexture(volumeRenderTsfComboBox->currentIndex());
-            svo_loaded.setViewDataMin(volumeRenderDataMinSpinBox->value());
-            svo_loaded.setViewDataMax(volumeRenderDataMaxSpinBox->value());
-            svo_loaded.setViewAlpha(volumeRenderAlphaSpinBox->value());
-            svo_loaded.setViewBrightness(volumeRenderBrightnessSpinBox->value());
+            svo_loaded.setViewMode(volumeViewModeComboBox->currentIndex());
+            svo_loaded.setViewTsfStyle(volumeTsfAlphaComboBox->currentIndex());
+            svo_loaded.setViewTsfTexture(volumeTsfTextureComboBox->currentIndex());
+            svo_loaded.setViewDataMin(volumeDataMinSpinBox->value());
+            svo_loaded.setViewDataMax(volumeDataMaxSpinBox->value());
+            svo_loaded.setViewAlpha(volumeAlphaSpinBox->value());
+            svo_loaded.setViewBrightness(volumeBrightnessSpinBox->value());
 
             svo_loaded.setUB(volumeOpenGLWidget->getUBMatrix());
             svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
@@ -858,16 +929,15 @@ void MainWindow::loadSvo()
         svo_loaded.open(file_name);
         volumeOpenGLWidget->setSvo(&(svo_loaded));
         lineModel->setLines(svo_loaded.lines());
+        lineView->resizeColumnToContents(0);
 
-        volumeRenderViewModeComboBox->setCurrentIndex(svo_loaded.viewMode());
-        imagePreviewTsfAlphaComboBox->setCurrentIndex(svo_loaded.viewTsfStyle());
-        volumeRenderTsfComboBox->setCurrentIndex(svo_loaded.viewTsfTexture());
-        volumeRenderAlphaSpinBox->setValue(svo_loaded.viewAlpha());
-        volumeRenderBrightnessSpinBox->setValue(svo_loaded.viewBrightness());
-        volumeRenderDataMinSpinBox->setValue(svo_loaded.viewDataMin());
-        volumeRenderDataMaxSpinBox->setValue(svo_loaded.viewDataMax());
-
-        qDebug() << svo_loaded.lines()->size();
+        volumeViewModeComboBox->setCurrentIndex(svo_loaded.viewMode());
+        volumeTsfAlphaComboBox->setCurrentIndex(svo_loaded.viewTsfStyle());
+        volumeTsfTextureComboBox->setCurrentIndex(svo_loaded.viewTsfTexture());
+        volumeAlphaSpinBox->setValue(svo_loaded.viewAlpha());
+        volumeBrightnessSpinBox->setValue(svo_loaded.viewBrightness());
+        volumeDataMinSpinBox->setValue(svo_loaded.viewDataMin());
+        volumeDataMaxSpinBox->setValue(svo_loaded.viewDataMax());
 
         UBMatrix<double> UB;
 
@@ -1080,31 +1150,31 @@ void MainWindow::initGUI()
         imageModeComboBox->addItem("Variance");
         imageModeComboBox->addItem("Skewness");
 
-        imagePreviewTsfTextureComboBox = new QComboBox;
-        imagePreviewTsfTextureComboBox->addItem(trUtf8("Rainbow"));
-        imagePreviewTsfTextureComboBox->addItem(trUtf8("Hot"));
-        imagePreviewTsfTextureComboBox->addItem(trUtf8("Hsv"));
-        imagePreviewTsfTextureComboBox->addItem(trUtf8("Galaxy"));
-        imagePreviewTsfTextureComboBox->addItem(trUtf8("Binary"));
-        imagePreviewTsfTextureComboBox->addItem(trUtf8("Yranib"));
+        imageTsfTextureComboBox = new QComboBox;
+        imageTsfTextureComboBox->addItem(trUtf8("Rainbow"));
+        imageTsfTextureComboBox->addItem(trUtf8("Hot"));
+        imageTsfTextureComboBox->addItem(trUtf8("Hsv"));
+        imageTsfTextureComboBox->addItem(trUtf8("Galaxy"));
+        imageTsfTextureComboBox->addItem(trUtf8("Binary"));
+        imageTsfTextureComboBox->addItem(trUtf8("Yranib"));
 
-        imagePreviewTsfAlphaComboBox = new QComboBox;
-        imagePreviewTsfAlphaComboBox->addItem("Linear");
-        imagePreviewTsfAlphaComboBox->addItem("Exponential");
-        imagePreviewTsfAlphaComboBox->addItem("Uniform");
-        imagePreviewTsfAlphaComboBox->addItem("Opaque");
+        imageTsfAlphaComboBox = new QComboBox;
+        imageTsfAlphaComboBox->addItem("Linear");
+        imageTsfAlphaComboBox->addItem("Exponential");
+        imageTsfAlphaComboBox->addItem("Uniform");
+        imageTsfAlphaComboBox->addItem("Opaque");
 
-        imagePreviewDataMinDoubleSpinBox = new QDoubleSpinBox;
-        imagePreviewDataMinDoubleSpinBox->setRange(-1e9, 1e9);
-        imagePreviewDataMinDoubleSpinBox->setAccelerated(true);
-        imagePreviewDataMinDoubleSpinBox->setPrefix("Data min: ");
+        imageDataMinDoubleSpinBox = new QDoubleSpinBox;
+        imageDataMinDoubleSpinBox->setRange(-1e9, 1e9);
+        imageDataMinDoubleSpinBox->setAccelerated(true);
+        imageDataMinDoubleSpinBox->setPrefix("Data min: ");
 
-        imagePreviewDataMaxDoubleSpinBox = new QDoubleSpinBox;
-        imagePreviewDataMaxDoubleSpinBox->setRange(-1e9, 1e9);
-        imagePreviewDataMaxDoubleSpinBox->setAccelerated(true);
-        imagePreviewDataMaxDoubleSpinBox->setPrefix("Data max: ");
+        imageDataMaxDoubleSpinBox = new QDoubleSpinBox;
+        imageDataMaxDoubleSpinBox->setRange(-1e9, 1e9);
+        imageDataMaxDoubleSpinBox->setAccelerated(true);
+        imageDataMaxDoubleSpinBox->setPrefix("Data max: ");
 
-        imagePreviewLogCheckBox = new QCheckBox("Log");
+        imageLogCheckBox = new QCheckBox("Log");
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1112,11 +1182,11 @@ void MainWindow::initGUI()
         gridLayout->setContentsMargins(5, 5, 5, 5);
         gridLayout->setRowStretch(5, 1);
         gridLayout->addWidget(imageModeComboBox, 0, 1, 1, 2);
-        gridLayout->addWidget(imagePreviewTsfTextureComboBox, 1, 1, 1, 1);
-        gridLayout->addWidget(imagePreviewTsfAlphaComboBox, 1, 2, 1, 1);
-        gridLayout->addWidget(imagePreviewDataMinDoubleSpinBox, 2, 1, 1, 2);
-        gridLayout->addWidget(imagePreviewDataMaxDoubleSpinBox, 3, 1, 1, 2);
-        gridLayout->addWidget(imagePreviewLogCheckBox, 4, 1, 1, 1);
+        gridLayout->addWidget(imageTsfTextureComboBox, 1, 1, 1, 1);
+        gridLayout->addWidget(imageTsfAlphaComboBox, 1, 2, 1, 1);
+        gridLayout->addWidget(imageDataMinDoubleSpinBox, 2, 1, 1, 2);
+        gridLayout->addWidget(imageDataMaxDoubleSpinBox, 3, 1, 1, 2);
+        gridLayout->addWidget(imageLogCheckBox, 4, 1, 1, 1);
 
         imageSettingsWidget = new QWidget;
         imageSettingsWidget->setLayout(gridLayout);
@@ -1125,11 +1195,11 @@ void MainWindow::initGUI()
         imageSettingsDock->setWidget(imageSettingsWidget);
         reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
 
-        connect(imagePreviewTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)), Qt::QueuedConnection);
-        connect(imagePreviewTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
-        connect(imagePreviewDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
-        connect(imagePreviewDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
-        connect(imagePreviewLogCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setLog(bool)));
+        connect(imageTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)), Qt::QueuedConnection);
+        connect(imageTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
+        connect(imageDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
+        connect(imageDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
+        connect(imageLogCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setLog(bool)));
         connect(this, SIGNAL(centerImage()), imageOpenGLWidget, SLOT(centerImage()));
 
     }
@@ -1218,8 +1288,8 @@ void MainWindow::initGUI()
         traceSeriesPushButton = new QPushButton("Generate trace");
         traceTextureCheckBox = new QCheckBox("Show");
 
-        correctionNoiseDoubleSpinBox = new QDoubleSpinBox;
-        correctionNoiseDoubleSpinBox->setRange(0, 1e4);
+        correctionFlatDoubleSpinBox = new QDoubleSpinBox;
+        correctionFlatDoubleSpinBox->setRange(0, 1e4);
 
         correctionClutterSpinBox = new QSpinBox;
         correctionClutterSpinBox->setRange(0, 100);
@@ -1233,7 +1303,7 @@ void MainWindow::initGUI()
         correctionPlaneSpinBox->setRange(3, 20);
         correctionPlaneSpinBox->setPrefix("Samples: ");
 
-        correctionNoiseCheckBox = new QCheckBox("Flat b/g subtract");
+        correctionFlatCheckBox = new QCheckBox("Flat b/g subtract");
         correctionPlaneCheckBox = new QCheckBox("Planar b/g subtract");
         correctionClutterCheckBox = new QCheckBox("Clutter removal");
         correctionMedianCheckBox = new QCheckBox("Median filter");
@@ -1251,8 +1321,8 @@ void MainWindow::initGUI()
         gridLayout->addWidget(traceTextureCheckBox, 0, 1, 1, 1);
         gridLayout->addWidget(correctionPlaneCheckBox, 1, 0, 1, 1);
         gridLayout->addWidget(correctionPlaneSpinBox, 1, 1, 1, 1);
-        gridLayout->addWidget(correctionNoiseCheckBox, 2, 0, 1, 1);
-        gridLayout->addWidget(correctionNoiseDoubleSpinBox, 2, 1, 1, 1);
+        gridLayout->addWidget(correctionFlatCheckBox, 2, 0, 1, 1);
+        gridLayout->addWidget(correctionFlatDoubleSpinBox, 2, 1, 1, 1);
         gridLayout->addWidget(correctionClutterCheckBox, 3, 0, 1, 1);
         gridLayout->addWidget(correctionClutterSpinBox, 3, 1, 1, 1);
         gridLayout->addWidget(correctionMedianCheckBox, 4, 0, 1, 1);
@@ -1280,51 +1350,51 @@ void MainWindow::initGUI()
         QLabel * label_quality = new QLabel(QString("Texture quality: "));
         QLabel * label_mode = new QLabel(QString("View mode: "));
 
-        volumeRenderDataMinSpinBox = new QDoubleSpinBox;
-        volumeRenderDataMinSpinBox->setDecimals(2);
-        volumeRenderDataMinSpinBox->setRange(0, 1e9);
-        volumeRenderDataMinSpinBox->setSingleStep(1);
-        volumeRenderDataMinSpinBox->setAccelerated(1);
-        volumeRenderDataMinSpinBox->setPrefix("Data min: ");
+        volumeDataMinSpinBox = new QDoubleSpinBox;
+        volumeDataMinSpinBox->setDecimals(2);
+        volumeDataMinSpinBox->setRange(0, 1e9);
+        volumeDataMinSpinBox->setSingleStep(1);
+        volumeDataMinSpinBox->setAccelerated(1);
+        volumeDataMinSpinBox->setPrefix("Data min: ");
 
-        volumeRenderDataMaxSpinBox = new QDoubleSpinBox;
-        volumeRenderDataMaxSpinBox->setDecimals(1);
-        volumeRenderDataMaxSpinBox->setRange(0, 1e9);
-        volumeRenderDataMaxSpinBox->setSingleStep(1);
-        volumeRenderDataMaxSpinBox->setAccelerated(1);
-        volumeRenderDataMaxSpinBox->setPrefix("Data max: ");
+        volumeDataMaxSpinBox = new QDoubleSpinBox;
+        volumeDataMaxSpinBox->setDecimals(1);
+        volumeDataMaxSpinBox->setRange(0, 1e9);
+        volumeDataMaxSpinBox->setSingleStep(1);
+        volumeDataMaxSpinBox->setAccelerated(1);
+        volumeDataMaxSpinBox->setPrefix("Data max: ");
 
-        volumeRenderAlphaSpinBox = new QDoubleSpinBox;
-        volumeRenderAlphaSpinBox->setDecimals(4);
-        volumeRenderAlphaSpinBox->setRange(0, 10);
-        volumeRenderAlphaSpinBox->setSingleStep(0.1);
-        volumeRenderAlphaSpinBox->setAccelerated(1);
-        volumeRenderAlphaSpinBox->setPrefix("Alpha: ");
+        volumeAlphaSpinBox = new QDoubleSpinBox;
+        volumeAlphaSpinBox->setDecimals(4);
+        volumeAlphaSpinBox->setRange(0, 10);
+        volumeAlphaSpinBox->setSingleStep(0.1);
+        volumeAlphaSpinBox->setAccelerated(1);
+        volumeAlphaSpinBox->setPrefix("Alpha: ");
 
-        volumeRenderBrightnessSpinBox = new QDoubleSpinBox;
-        volumeRenderBrightnessSpinBox->setDecimals(4);
-        volumeRenderBrightnessSpinBox->setRange(0, 10);
-        volumeRenderBrightnessSpinBox->setSingleStep(0.1);
-        volumeRenderBrightnessSpinBox->setAccelerated(1);
-        volumeRenderBrightnessSpinBox->setPrefix("Brightness: ");
+        volumeBrightnessSpinBox = new QDoubleSpinBox;
+        volumeBrightnessSpinBox->setDecimals(4);
+        volumeBrightnessSpinBox->setRange(0, 10);
+        volumeBrightnessSpinBox->setSingleStep(0.1);
+        volumeBrightnessSpinBox->setAccelerated(1);
+        volumeBrightnessSpinBox->setPrefix("Brightness: ");
 
-        volumeRenderViewModeComboBox = new QComboBox;
-        volumeRenderViewModeComboBox->addItem(trUtf8("Integrate"));
-        volumeRenderViewModeComboBox->addItem(trUtf8("Blend"));
-        volumeRenderViewModeComboBox->addItem(trUtf8("Slice"));
+        volumeViewModeComboBox = new QComboBox;
+        volumeViewModeComboBox->addItem(trUtf8("Integrate"));
+        volumeViewModeComboBox->addItem(trUtf8("Blend"));
+        volumeViewModeComboBox->addItem(trUtf8("Slice"));
 
-        volumeRenderTsfComboBox = new QComboBox;
-        volumeRenderTsfComboBox->addItem(trUtf8("Rainbow"));
-        volumeRenderTsfComboBox->addItem(trUtf8("Hot"));
-        volumeRenderTsfComboBox->addItem(trUtf8("Hsv"));
-        volumeRenderTsfComboBox->addItem(trUtf8("Galaxy"));
-        volumeRenderTsfComboBox->addItem(trUtf8("Binary"));
-        volumeRenderTsfComboBox->addItem(trUtf8("Yranib"));
+        volumeTsfTextureComboBox = new QComboBox;
+        volumeTsfTextureComboBox->addItem(trUtf8("Rainbow"));
+        volumeTsfTextureComboBox->addItem(trUtf8("Hot"));
+        volumeTsfTextureComboBox->addItem(trUtf8("Hsv"));
+        volumeTsfTextureComboBox->addItem(trUtf8("Galaxy"));
+        volumeTsfTextureComboBox->addItem(trUtf8("Binary"));
+        volumeTsfTextureComboBox->addItem(trUtf8("Yranib"));
 
-        volumeRenderTsfAlphaComboBox = new QComboBox;
-        volumeRenderTsfAlphaComboBox->addItem(trUtf8("Linear"));
-        volumeRenderTsfAlphaComboBox->addItem(trUtf8("Exponential"));
-        volumeRenderTsfAlphaComboBox->addItem(trUtf8("Uniform"));
+        volumeTsfAlphaComboBox = new QComboBox;
+        volumeTsfAlphaComboBox->addItem(trUtf8("Linear"));
+        volumeTsfAlphaComboBox->addItem(trUtf8("Exponential"));
+        volumeTsfAlphaComboBox->addItem(trUtf8("Uniform"));
 
         volumeRenderLogCheckBox = new QCheckBox("Log");
         connect(volumeRenderLogCheckBox, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setLog(bool)));
@@ -1344,14 +1414,14 @@ void MainWindow::initGUI()
         gridLayout->setContentsMargins(5, 5, 5, 5);
         gridLayout->setRowStretch(8, 1);
         gridLayout->addWidget(label_mode, 0, 0, 1, 2);
-        gridLayout->addWidget(volumeRenderViewModeComboBox, 0, 2, 1, 2);
+        gridLayout->addWidget(volumeViewModeComboBox, 0, 2, 1, 2);
         gridLayout->addWidget(label_texture, 1, 0, 1, 2);
-        gridLayout->addWidget(volumeRenderTsfComboBox, 1, 2, 1, 1);
-        gridLayout->addWidget(volumeRenderTsfAlphaComboBox, 1, 3, 1, 1);
-        gridLayout->addWidget(volumeRenderDataMinSpinBox, 2, 0, 1, 4);
-        gridLayout->addWidget(volumeRenderDataMaxSpinBox, 3, 0, 1, 4);
-        gridLayout->addWidget(volumeRenderAlphaSpinBox, 4, 0, 1, 4);
-        gridLayout->addWidget(volumeRenderBrightnessSpinBox, 5, 0, 1, 4);
+        gridLayout->addWidget(volumeTsfTextureComboBox, 1, 2, 1, 1);
+        gridLayout->addWidget(volumeTsfAlphaComboBox, 1, 3, 1, 1);
+        gridLayout->addWidget(volumeDataMinSpinBox, 2, 0, 1, 4);
+        gridLayout->addWidget(volumeDataMaxSpinBox, 3, 0, 1, 4);
+        gridLayout->addWidget(volumeAlphaSpinBox, 4, 0, 1, 4);
+        gridLayout->addWidget(volumeBrightnessSpinBox, 5, 0, 1, 4);
         gridLayout->addWidget(label_quality, 6, 0, 1, 2);
         gridLayout->addWidget(qualitySlider, 6, 2, 1, 2);
         gridLayout->addWidget(volumeRenderLogCheckBox, 7, 0, 1, 2);

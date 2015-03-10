@@ -32,7 +32,7 @@ class LineModel : public QAbstractTableModel
 
     signals:
         void lineChanged(int value);
-        void lineChecked(int value);
+//        void lineChecked(int value);
 };
 
 #endif

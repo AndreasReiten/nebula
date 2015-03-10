@@ -3300,7 +3300,7 @@ void ImageOpenGLWidget::drawPlaneMarkerToolTip(QPainter * painter)
     for (int i = 0; i < n_lsq_samples; i++)
     {
         // Draw box to indicate area
-        QFont font("Helvetica", 10);
+        QFont font("Monospace", 10);
         QFontMetrics fm(font);
 
         QBrush brush(Qt::SolidPattern);

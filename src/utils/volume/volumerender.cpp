@@ -1722,13 +1722,13 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     getPosition2D(y_2d.data(), vertices.data() + 6, &minicell_view_matrix);
     getPosition2D(z_2d.data(), vertices.data() + 9, &minicell_view_matrix);
 
-    painter->setFont(*minicell_font);
+    painter->setFont(*font_mono_13bi);
 
     painter->drawText(QPointF((x_2d[0] + 1.0) * 0.5 * minicell_rect.width() + minicell_rect.left(), (1.0 - ( x_2d[1] + 1.0) * 0.5) *minicell_rect.height() + minicell_rect.top()), QString("a*"));
     painter->drawText(QPointF((y_2d[0] + 1.0) * 0.5 * minicell_rect.width() + minicell_rect.left(), (1.0 - ( y_2d[1] + 1.0) * 0.5) *minicell_rect.height() + minicell_rect.top()), QString("b*"));
     painter->drawText(QPointF((z_2d[0] + 1.0) * 0.5 * minicell_rect.width() + minicell_rect.left(), (1.0 - ( z_2d[1] + 1.0) * 0.5) *minicell_rect.height() + minicell_rect.top()), QString("c*"));
 
-    painter->setFont(*normal_font);
+    painter->setFont(*font_mono_10b);
 }
 
 void VolumeOpenGLWidget::getPosition2D(float * pos_2d, float * pos_3d, Matrix<double> * transform)
@@ -1822,7 +1822,7 @@ void VolumeOpenGLWidget::drawCountIntegral(QPainter * painter)
 
 void VolumeOpenGLWidget::drawHklText(QPainter * painter)
 {
-    painter->setFont(*hkl_font);
+    painter->setFont(*font_mono_9i);
 
     for (size_t i = 0; i < hkl_text_counter; i++)
     {
@@ -1836,7 +1836,7 @@ void VolumeOpenGLWidget::drawHklText(QPainter * painter)
     }
 
     painter->setPen(*normal_pen);
-    painter->setFont(*normal_font);
+    painter->setFont(*font_mono_10b);
 }
 
 void VolumeOpenGLWidget::setCenterLine()
@@ -1928,6 +1928,11 @@ void VolumeOpenGLWidget::setWeightpoint(double x, double y, double z)
     weightpoint[2] = z;
 }
 
+void VolumeOpenGLWidget::zoomToLineModelIndex(QModelIndex index)
+{
+    zoomToLineIndex(index.row());
+}
+
 void VolumeOpenGLWidget::zoomToLineIndex(int value)
 {
     Matrix<double> a = lines->at(value).effectivePosA();
@@ -1949,7 +1954,7 @@ void VolumeOpenGLWidget::zoomToLineIndex(int value)
 
 void VolumeOpenGLWidget::zoomToBox(Matrix<double> box)
 {
-    box.print(3, "box");
+//    box.print(3, "box");
 
     // Box [x0,x1,y0,y1,z0,z1]
     // Set the translation
@@ -2195,18 +2200,18 @@ void VolumeOpenGLWidget::wheelEvent(QWheelEvent * ev)
 void VolumeOpenGLWidget::initializePaintTools()
 {
     // Fonts
-    normal_font = new QFont("Helvetica", 13);
-    normal_font->setBold(false);
-    hkl_font = new QFont("Helvetica", 10);
-    hkl_font->setItalic(true);
-    hkl_font->setBold(false);
-    minicell_font = new QFont("Helvetica", 15);
-    minicell_font->setBold(true);
-    minicell_font->setItalic(true);
+    font_mono_10b = new QFont("Monospace", 10);
+    font_mono_10b->setBold(false);
+    font_mono_9i = new QFont("Monospace", 9);
+    font_mono_9i->setItalic(true);
+    font_mono_9i->setBold(false);
+    font_mono_13bi = new QFont("Monospace", 13);
+    font_mono_13bi->setBold(true);
+    font_mono_13bi->setItalic(true);
 
     // Font metrics
-    normal_fontmetric = new QFontMetrics(*normal_font, this);
-    minicell_fontmetric = new QFontMetrics(*minicell_font, this);
+    normal_fontmetric = new QFontMetrics(*font_mono_10b, this);
+    minicell_fontmetric = new QFontMetrics(*font_mono_13bi, this);
 
     // Pens
     normal_pen = new QPen;
@@ -3718,7 +3723,7 @@ void VolumeOpenGLWidget::computePixelSize()
 void VolumeOpenGLWidget::drawOverlay(QPainter * painter)
 {
     painter->setPen(*normal_pen);
-    painter->setFont(*normal_font);
+    painter->setFont(*font_mono_10b);
 
     // Position scalebar tick labels
     if (isScalebarActive)
@@ -3922,7 +3927,7 @@ void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
 
     // Draw text to indicate lab reference frame directions
     painter->setPen(*normal_pen);
-    painter->setFont(*normal_font);
+    painter->setFont(*font_mono_10b);
     painter->setBrush(*fill_brush);
 
     Matrix<float> x_2d(1, 2, 0), y_2d(1, 2, 0), z_2d(1, 2, 0);

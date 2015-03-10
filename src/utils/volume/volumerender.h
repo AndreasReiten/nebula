@@ -95,6 +95,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void snapLinePosB();
         void setWeightpoint(double x, double y, double z);
         void zoomToLineIndex(int value);
+        void zoomToLineModelIndex(QModelIndex index);
         void zoomToBox(Matrix<double> box);
         void refreshLineIntegral(QModelIndex index);
         void refreshLine(int value);
@@ -501,11 +502,11 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void initializePaintTools();
         QPen * normal_pen;
         QPen * anything_pen;
-        QFont * minicell_font;
+        QFont * font_mono_13bi;
         QBrush * fill_brush;
         QBrush * normal_brush;
-        QFont * normal_font;
-        QFont * hkl_font;
+        QFont * font_mono_10b;
+        QFont * font_mono_9i;
         QFontMetrics * normal_fontmetric;
         QFontMetrics * minicell_fontmetric;
 

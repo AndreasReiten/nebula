@@ -150,7 +150,7 @@ void SparseVoxelOctree::save(QString path)
             out << p_view_brightness;
 
             // v 0.5
-            qDebug() << p_lines.size();
+//            qDebug() << p_lines.size();
 
             out << p_lines;
 
@@ -250,7 +250,7 @@ void SparseVoxelOctree::open(QString path)
             // v 0.5
             if ((p_version_major >= 0) && (p_version_minor >= 5))
             {
-                qDebug() << "Loading p_lines";
+//                qDebug() << "Loading p_lines";
                 in >> p_lines;
             }
 
