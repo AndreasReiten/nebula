@@ -191,6 +191,10 @@ bool LineModel::setData(const QModelIndex &index, const QVariant &value, int rol
     {
         switch (index.column())
         {
+            case 0:
+            {
+                break;
+            }
             case 1:
             {
                 (*p_lines)[index.row()].setComment(value.toString());

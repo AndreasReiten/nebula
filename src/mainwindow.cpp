@@ -1027,6 +1027,7 @@ void MainWindow::initGUI()
         fileHeaderDockOne->setWidget(fileHeaderEditOne);
 
         browserMainWindow = new QMainWindow;
+        browserMainWindow->setAnimated(false);
         browserMainWindow->setCentralWidget(setFilesWidget);
         browserMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockOne);
     }
@@ -1082,6 +1083,7 @@ void MainWindow::initGUI()
 
         // Volume render QMainWindow
         volumeRenderMainWindow = new QMainWindow;
+        volumeRenderMainWindow->setAnimated(false);
         volumeRenderMainWindow->setCentralWidget(volumeOpenGLWidget);
         volumeRenderMainWindow->addToolBar(Qt::TopToolBarArea, viewToolBar);
     }

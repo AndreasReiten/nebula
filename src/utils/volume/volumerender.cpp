@@ -265,6 +265,8 @@ void VolumeWorker::resolveWeightpoint()
 
 void VolumeWorker::resolveLineIntegral(Line line)
 {
+    //*
+
     // Kernel launch parameters
     Matrix<size_t> loc_ws(1, 2);
     loc_ws[0] = 1;
@@ -387,6 +389,8 @@ void VolumeWorker::resolveLineIntegral(Line line)
     p_line_integral_ymin = 0;
     p_line_integral_ymax = p_line_integral_data.max();
     emit lineIntegralResolved();
+
+    //*/
 }
 
 void VolumeWorker::resolvePlaneIntegral(Line line)
@@ -395,12 +399,12 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     Matrix<size_t> loc_ws(3, 1);
     loc_ws[0] = 1;
     loc_ws[1] = 1;
-    loc_ws[2] = 512;
+    loc_ws[2] = 64;
 
     // Samples in each direction
     Matrix<int> samples(3, 1);
 
-    double n_samples_ab = 128;
+    double n_samples_ab = 256;
     double n_samples_c = 1024;
     double sample_interdist_ab;
     double sample_interdist_c = line.length() / (double) n_samples_c;
@@ -432,10 +436,10 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     Matrix<double> bVecSegment = vecNormalize(line.bVec()) * sample_interdist_ab;
     Matrix<double> cVecSegment = vecNormalize(line.cVec()) * sample_interdist_c;
 
-    p_plane_integral_data.set(samples[0], samples[1]*4);
+    p_plane_integral_data.set(samples[0], samples[1]);
 
     cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
-                                           CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+                                           CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                                            p_plane_integral_data.bytes(),
                                            p_plane_integral_data.data(), &err);
 
@@ -451,7 +455,7 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 3, sizeof(cl_mem), (void *) p_oct_brick);
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 5, sizeof(cl_mem), (void *) p_misc_int);
-    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 6, sizeof(cl_mem), (void *) &result_cl); // Have here
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 6, sizeof(cl_mem), (void *) &result_cl);
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 7, sizeof(cl_float3), line.basePos().toFloat().data());
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 8, sizeof(cl_float3), aVecSegment.toFloat().data());
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 9, sizeof(cl_float3), bVecSegment.toFloat().data());
@@ -465,6 +469,8 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     }
 
     err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_plane_integral_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+
+
 
     if ( err != CL_SUCCESS)
     {
@@ -546,8 +552,6 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     connect(this, SIGNAL(lineChanged(Line)), volumeWorker, SLOT(resolvePlaneIntegral(Line)));
     connect(this, SIGNAL(dataViewExtentChanged()), volumeWorker, SLOT(resolveWeightpoint()));
     connect(volumeWorker, SIGNAL(weightpointResolved(double, double, double)), this, SLOT(setWeightpoint(double, double, double)));
-    //    connect(this, &Controller::operate, worker, &Worker::doWork);
-    //    connect(worker, volumeWorker::resultReady, this, Controller::handleResults);
     workerThread->start();
 
     weightpoint.set(3, 1), 0;
@@ -643,7 +647,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     // Color
     white.set(1, 1, 1, 1.0); // Note: Changed alpha from 0.4
     black.set(0, 0, 0, 1.0); // Note: Changed alpha from 0.4
-    yellow.set(1, 0.2, 0, 0.8);
+    yellow.set(1.0, 1.0, 0, 0.8);
     red.set(1, 0, 0, 1);
     green.set(0, 1, 0, 1);
     green_light.set(0.3, 1, 0.3, 0.9);
@@ -2152,25 +2156,37 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
 
     for (int i = 0; i < lines->size(); i++)
     {
+        double line_scaling;
+        if (lines->at(i).tagged())
+        {
+            line_scaling = 2.0;
+        }
+        else
+        {
+            line_scaling = 1.0;
+        }
+
         glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
 
         glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[i].vbo());
         glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        GLuint indices_a[] = {2, 5, 3, 8, 6, 9, 4, 7,  4, 6, 7, 9, 5, 8, 2, 3,  5, 7, 8, 9, 3, 6, 2, 4};
-        glLineWidth(1.0);
-        glDrawElements(GL_LINES,  24, GL_UNSIGNED_INT, indices_a);
+        GLuint indices_a[] = {2, 5, 3, 8, 6, 9, 4, 7};
+        glLineWidth(1.0 * line_scaling);
+        glDrawElements(GL_LINES,  8, GL_UNSIGNED_INT, indices_a);
 
-        GLuint indices_b[] = {0, 1};
-        glLineWidth(2.0);
+        GLuint indices_b[] = {4, 6, 7, 9, 5, 8, 2, 3,  5, 7, 8, 9, 3, 6, 2, 4};
+        glLineWidth(1.0 * line_scaling);
 
-        if (lines->at(i).tagged())
-        {
-            glUniform4fv(std_3d_col_color, 1, magenta_light.data());
-        }
+        glUniform4fv(std_3d_col_color, 1, yellow.data());
 
-        glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, indices_b);
+        glDrawElements(GL_LINES,  16, GL_UNSIGNED_INT, indices_b);
+
+        GLuint indices_c[] = {0, 1};
+        glLineWidth(2.0 * line_scaling);
+
+        glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, indices_c);
     }
 
     glDisableVertexAttribArray(std_3d_col_fragpos);
