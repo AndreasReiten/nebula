@@ -90,6 +90,11 @@ Matrix<double> VolumeWorker::getLineIntegralData()
     return p_line_integral_data.toDouble();
 }
 
+Matrix<double> VolumeWorker::getPlaneIntegralData()
+{
+    return p_plane_integral_data.toDouble();
+}
+
 double VolumeWorker::getLineIntegralXmin()
 {
     return p_line_integral_xmin;
@@ -431,8 +436,8 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
 
     cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
                                            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-                                           p_line_integral_data.bytes(),
-                                           p_line_integral_data.data(), &err);
+                                           p_plane_integral_data.bytes(),
+                                           p_plane_integral_data.data(), &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -440,26 +445,26 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     }
 
     // Kernel arguments
-    err = QOpenCLSetKernelArg(p_line_integral_kernel, 0, sizeof(cl_mem), (void *) p_pool);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 1, sizeof(cl_sampler), p_pool_sampler);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 2, sizeof(cl_mem), (void *) p_oct_index);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 3, sizeof(cl_mem), (void *) p_oct_brick);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 5, sizeof(cl_mem), (void *) p_misc_int);
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 6, sizeof(cl_mem), (void *) &result_cl); // Have here
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 7, sizeof(cl_float3), line.basePos().toFloat().data());
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 8, sizeof(cl_float3), aVecSegment.toFloat().data());
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 9, sizeof(cl_float3), bVecSegment.toFloat().data());
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 10, sizeof(cl_float3), cVecSegment.toFloat().data());
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 11, sizeof(cl_int3), samples.data());
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 12, sizeof(cl_float) * loc_ws[2], NULL);
+    err = QOpenCLSetKernelArg(p_plane_integral_kernel, 0, sizeof(cl_mem), (void *) p_pool);
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 1, sizeof(cl_sampler), p_pool_sampler);
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 2, sizeof(cl_mem), (void *) p_oct_index);
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 3, sizeof(cl_mem), (void *) p_oct_brick);
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 5, sizeof(cl_mem), (void *) p_misc_int);
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 6, sizeof(cl_mem), (void *) &result_cl); // Have here
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 7, sizeof(cl_float3), line.basePos().toFloat().data());
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 8, sizeof(cl_float3), aVecSegment.toFloat().data());
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 9, sizeof(cl_float3), bVecSegment.toFloat().data());
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 10, sizeof(cl_float3), cVecSegment.toFloat().data());
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 11, sizeof(cl_int3), samples.data());
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 12, sizeof(cl_float) * loc_ws[2], NULL);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_line_integral_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_plane_integral_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
     {
@@ -477,8 +482,8 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
                                      result_cl,
                                      CL_TRUE,
                                      0,
-                                     p_line_integral_data.bytes(),
-                                     p_line_integral_data.data(),
+                                     p_plane_integral_data.bytes(),
+                                     p_plane_integral_data.data(),
                                      0, NULL, NULL);
 
     if ( err != CL_SUCCESS)

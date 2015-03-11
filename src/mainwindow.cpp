@@ -1941,20 +1941,7 @@ void MainWindow::setLineIntegralPlot()
 
 void MainWindow::setPlaneIntegralPlot()
 {
-    Matrix<double> y_data = volumeOpenGLWidget->worker()->getLineIntegralData();
-
-    Matrix<double> x_data(y_data.m(), y_data.n());
-
-    for (int i = 0; i < x_data.size(); i++)
-    {
-        x_data[i] = volumeOpenGLWidget->worker()->getLineIntegralXmin() +  i * (volumeOpenGLWidget->worker()->getLineIntegralXmax() - volumeOpenGLWidget->worker()->getLineIntegralXmin()) / (x_data.size() - 1);
-    }
-
-    plotLineWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
-                     volumeOpenGLWidget->worker()->getLineIntegralXmax(),
-                     volumeOpenGLWidget->worker()->getLineIntegralYmin(),
-                     volumeOpenGLWidget->worker()->getLineIntegralYmax(),
-                     x_data, y_data);
+    plotSurfaceWidget->plot(volumeOpenGLWidget->worker()->getPlaneIntegralData());
 }
 
 void MainWindow::takeImageScreenshotFunction()

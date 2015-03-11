@@ -31,6 +31,8 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
                           cl_mem * misc_int);
 
         Matrix<double> getLineIntegralData();
+        Matrix<double> getPlaneIntegralData();
+        
         double getLineIntegralXmin();
         double getLineIntegralXmax();
 

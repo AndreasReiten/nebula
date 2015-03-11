@@ -12,7 +12,7 @@ __kernel void integratePlane(
     * Sample and integrate a rectangular volume onto its "primary" face
     * WGs are 1x1xNUM
     **/
-    
+    //*
     int3 id_loc = (int3)(get_local_id(0), get_local_id(1), get_local_id(2));
     int3 id_glb = (int3)(get_global_id(0), get_global_id(1), get_global_id(2));
     int3 id_grp = (int3)(get_group_id(0), get_group_id(1), get_group_id(2));
@@ -30,7 +30,7 @@ __kernel void integratePlane(
     {
         int3 id_problem = (int3)(id_grp.x, id_grp.y, id_loc_linear + iter*size_loc_linear);
         
-        //*
+
         if ((id_problem.z < size_problem.z))
         {
             int4 pool_dim = get_image_dim(pool);
@@ -126,10 +126,11 @@ __kernel void integratePlane(
             barrier(CLK_LOCAL_MEM_FENCE);
         }
 
-        //*/
+
         if (id_loc_linear == 0)
         {
             result[id_result] = addition_array[0];
         }
     }
+    //*/
 }
