@@ -2079,7 +2079,7 @@ void VolumeOpenGLWidget::zoomToLineIndex(int value)
     box[4] = std::min(a[2], b[2]);
     box[5] = std::max(a[2], b[2]);
 
-    double side_c = vecLength(b-a);
+    double side_c = vecLength(b - a);
     double side_a = lines->at(value).prismSideA();
     double side_b = lines->at(value).prismSideB();
 
