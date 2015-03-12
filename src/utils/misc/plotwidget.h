@@ -45,6 +45,7 @@ class PlotSurfaceWidget : public QScrollArea
     public slots:
         void plot(const Matrix<double> &data);
         void setLog(bool value);
+        void fitToWindow();
 
     private:
         void resizeEvent(QResizeEvent * event);

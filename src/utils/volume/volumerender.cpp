@@ -607,7 +607,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     hklCurrent.set(1, 3, 0);
 
     // hkl text
-    hkl_text.set(4 * 4 * 4, 6, 0);
+    hkl_text.set(3 * 3 * 3, 6, 0);
 
     // Timer
     session_age.start();
@@ -648,7 +648,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     white.set(1, 1, 1, 1.0); // Note: Changed alpha from 0.4
     black.set(0, 0, 0, 1.0); // Note: Changed alpha from 0.4
     yellow.set(1.00, 	0.50, 	0.00, 0.8);
-    epic.set(0.64, 	0.21, 	0.93, 0.8);
+    epic.set(0.64, 	0.21, 	0.93, 1.0);
     red.set(1, 0, 0, 1);
     green.set(0, 1, 0, 1);
     green_light.set(0.3, 1, 0.3, 0.9);
@@ -2184,7 +2184,6 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
         glDrawElements(GL_LINES,  8, GL_UNSIGNED_INT, indices_a);
 
         GLuint indices_b[] = {4, 6, 7, 9, 5, 8, 2, 3,  5, 7, 8, 9, 3, 6, 2, 4};
-        glLineWidth(2.0 * line_scaling);
 
         if (isBackgroundBlack)
         {
@@ -2198,7 +2197,6 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
         glDrawElements(GL_LINES,  16, GL_UNSIGNED_INT, indices_b);
 
         GLuint indices_c[] = {0, 1};
-        glLineWidth(4.0 * line_scaling);
 
         glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, indices_c);
     }

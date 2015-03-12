@@ -104,6 +104,10 @@ class MainWindow : public QMainWindow
         // PlotWidget
         QDockWidget * plotLineDockWidget;
         PlotLineWidget * plotLineWidget;
+        QAction * plotLineSaveAsImageAction;
+        QAction * plotLineSaveAsTextAction;
+        QToolBar * plotLineToolBar;
+        QWidget * plotLineWidgetContainter;
 
         QDockWidget * plotSurfaceDockWidget;
         PlotSurfaceWidget * plotSurfaceWidget;

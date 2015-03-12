@@ -111,8 +111,6 @@ __kernel void integratePlane(
                     norm_index = clamp(norm_index, 0, 1);
                 }
             }
-
-            //            addition_array[id_loc_linear] = 1;
         }
         else
         {

@@ -105,20 +105,20 @@ PlotSurfaceWidget::PlotSurfaceWidget(QWidget * parent) :
     p_data[15] = 255;
 
     p_label = new QLabel;
-
     p_label->setBackgroundRole(QPalette::Base);
     p_label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     p_label->setScaledContents(true);
 
     this->setBackgroundRole(QPalette::Dark);
     this->setWidget(p_label);
-    this->setWidgetResizable(true);
 
     QImage image(p_data.data(), p_data.m(), p_data.n() / 4, QImage::Format_RGB32);
 
     p_label->setPixmap(QPixmap::fromImage(image));
     p_label->adjustSize();
-    p_label->resize(p_label->pixmap()->size());
+
+
+    fitToWindow();
 }
 
 PlotSurfaceWidget::~PlotSurfaceWidget()
@@ -126,9 +126,16 @@ PlotSurfaceWidget::~PlotSurfaceWidget()
 
 }
 
+void PlotSurfaceWidget::fitToWindow()
+{
+    double scale_factor = std::min((double) this->size().width() / (double) p_label->pixmap()->width(), (double) this->size().height() / (double) p_label->pixmap()->height());
+
+    p_label->resize(scale_factor * p_label->pixmap()->size());
+}
+
 void PlotSurfaceWidget::resizeEvent(QResizeEvent * event)
 {
-    p_label->resize(event->size());
+    fitToWindow();
 }
 
 void PlotSurfaceWidget::plot(const Matrix<double> &data)
@@ -162,7 +169,8 @@ void PlotSurfaceWidget::plot(const Matrix<double> &data)
 
     p_label->setPixmap(QPixmap::fromImage(image));
     p_label->adjustSize();
-    p_label->resize(p_label->pixmap()->size());
+
+    fitToWindow();
 }
 
 void PlotSurfaceWidget::setLog(bool value)

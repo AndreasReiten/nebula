@@ -217,6 +217,7 @@ void MainWindow::setStartConditions()
     svoLevelSpinBox->setValue(10);
 
     volumeDataMinSpinBox->setValue(1.0);
+    volumeDataMinSpinBox->setValue(0.0);
     volumeDataMaxSpinBox->setValue(10);
     volumeAlphaSpinBox->setValue(1.0);
     volumeBrightnessSpinBox->setValue(2.0);
@@ -1446,7 +1447,25 @@ void MainWindow::initGUI()
 
         plotLineWidget = new PlotLineWidget;
 
-        plotLineDockWidget->setWidget(plotLineWidget);
+        plotLineSaveAsImageAction = new QAction(QIcon(":/art/save.png"), "Save as image", this);
+        plotLineSaveAsTextAction = new QAction(QIcon(":/art/save.png"), "Save as text", this);
+
+        plotLineToolBar = new QToolBar("Line integral options");
+        plotLineToolBar->addAction(plotLineSaveAsImageAction);
+        plotLineToolBar->addAction(plotLineSaveAsTextAction);
+
+        QGridLayout * gridLayout = new QGridLayout;
+        gridLayout->setHorizontalSpacing(5);
+        gridLayout->setVerticalSpacing(2);
+        gridLayout->setContentsMargins(5, 5, 5, 5);
+        gridLayout->setRowStretch(0, 1);
+        gridLayout->addWidget(plotLineWidget, 0, 0, 1, 1);
+        gridLayout->addWidget(plotLineToolBar, 1, 0, 1, 1);
+
+        plotLineWidgetContainter = new QWidget;
+        plotLineWidgetContainter->setLayout(gridLayout);
+
+        plotLineDockWidget->setWidget(plotLineWidgetContainter);
         viewMenu->addAction(plotLineDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotLineDockWidget);
     }
