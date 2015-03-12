@@ -61,6 +61,7 @@ QVariant LineModel::data(const QModelIndex &index, int role) const
                 return p_lines->at(index.row()).prismSideB();
         }
     }
+
     if (role == Qt::DecorationRole)
     {
         switch (index.column())
@@ -195,6 +196,7 @@ bool LineModel::setData(const QModelIndex &index, const QVariant &value, int rol
             {
                 break;
             }
+
             case 1:
             {
                 (*p_lines)[index.row()].setComment(value.toString());
@@ -286,7 +288,7 @@ bool LineModel::setData(const QModelIndex &index, const QVariant &value, int rol
         if (value == Qt::Checked)
         {
             (*p_lines)[index.row()].setTagged(true);
-//            lineChecked(index.row());
+            //            lineChecked(index.row());
         }
         else
         {

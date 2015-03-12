@@ -48,7 +48,7 @@ class PlotSurfaceWidget : public QScrollArea
 
     private:
         void resizeEvent(QResizeEvent * event);
-        
+
         bool isLog;
 
         QLabel * p_label;

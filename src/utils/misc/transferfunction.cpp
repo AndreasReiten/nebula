@@ -25,7 +25,7 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     double buf_hot[] =
     {
-        0.00,  0.00,  0.00,  0.00,  0.00,
+        0.00,  0.00,  0.00,  0.00,  1.00,
         1.00,  0.00,  0.00,  0.00,  1.00,
         2.00,  0.70,  0.00,  0.00,  1.00,
         3.00,  1.00,  0.00,  0.00,  1.00,
@@ -39,7 +39,7 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     double buf_galaxy[] =
     {
-        0.00,  0.00,  0.00,  1.00,  0.00,
+        0.00,  0.00,  0.00,  1.00,  1.00,
         1.00,  0.00,  0.00,  1.00,  1.00,
         2.00,  1.00,  0.00,  1.00,  1.00,
         3.00,  1.00,  0.00,  0.00,  1.00,
@@ -53,7 +53,7 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     double buf_hsv[] =
     {
-        0.00,  1.00,  0.00,  0.00,  0.00,
+        0.00,  1.00,  0.00,  0.00,  1.00,
         1.00,  1.00,  0.00,  0.00,  1.00,
         2.00,  1.00,  0.00,  1.00,  1.00,
         3.00,  0.00,  0.00,  1.00,  1.00,
@@ -67,7 +67,7 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     double buf_binary[] =
     {
-        0.00,  0.00,  0.00,  0.00,  0.00,
+        0.00,  0.00,  0.00,  0.00,  1.00,
         1.00,  0.14,  0.14,  0.14,  1.00,
         2.00,  0.29,  0.29,  0.29,  1.00,
         3.00,  0.43,  0.43,  0.43,  1.00,
@@ -81,7 +81,7 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     double buf_yranib[] =
     {
-        0.00,  1.00,  1.00,  1.00,  0.00,
+        0.00,  1.00,  1.00,  1.00,  1.00,
         1.00,  0.86,  0.86,  0.86,  1.00,
         2.00,  0.71,  0.71,  0.71,  1.00,
         3.00,  0.57,  0.57,  0.57,  1.00,
@@ -95,7 +95,7 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     double buf_rainbow[] =
     {
-        0.00,  1.00,  0.00,  0.00,  0.00,
+        0.00,  1.00,  0.00,  0.00,  1.00,
         1.00,  1.00,  0.00,  0.00,  1.00,
         2.00,  1.00,  1.00,  0.00,  1.00,
         3.00,  0.00,  1.00,  0.00,  1.00,

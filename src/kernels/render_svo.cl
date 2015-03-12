@@ -36,21 +36,21 @@ __kernel void svoRayTrace(
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
-    if (isLogActive)
-    {
-        if (data_offset_low <= 0.0f)
-        {
-            data_offset_low = 0.01f;
-        }
+    //    if (isLogActive)
+    //    {
+    //        if (data_offset_low <= 0.0f)
+    //        {
+    //            data_offset_low = 0.01f;
+    //        }
 
-        if (data_offset_high <= 0.0f)
-        {
-            data_offset_high = 0.01f;
-        }
+    //        if (data_offset_high <= 0.0f)
+    //        {
+    //            data_offset_high = 0.01f;
+    //        }
 
-        data_offset_low = log10(data_offset_low);
-        data_offset_high = log10(data_offset_high);
-    }
+    //        data_offset_low = log10(data_offset_low);
+    //        data_offset_high = log10(data_offset_high);
+    //    }
 
     // If the global id corresponds to a texel, then check if its associated ray hits our cubic bounding box. If it does - traverse along the intersecing ray segment and accumulate color
     if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
@@ -374,14 +374,21 @@ __kernel void svoRayTrace(
 
 
                                 // Sample color
+                                float2 tsf_position;
+
                                 if (isLogActive)
                                 {
-                                    intensity = log10(intensity);
+                                    float value = (log10(clamp(intensity, 0.0001, data_offset_high)) - log10(data_offset_low)) / (log10(data_offset_high) - log10(data_offset_low));
+                                    tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+                                }
+                                else
+                                {
+                                    tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
                                 }
 
-                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
 
-                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+
+                                sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
                                 color.xyz += (1.f - color.w) * sample.xyz * sample.w;
                                 color.w += (1.f - color.w) * sample.w;
@@ -579,19 +586,19 @@ __kernel void svoRayTrace(
 
                             if (!isIntegration3DActive)
                             {
+                                float2 tsf_position;
+
                                 if (isLogActive)
                                 {
-                                    if (intensity < 0.f)
-                                    {
-                                        intensity = 0.f;
-                                    }
-
-                                    intensity = log10(intensity);
+                                    float value = (log10(clamp(intensity, 0.0001, data_offset_high)) - log10(data_offset_low)) / (log10(data_offset_high) - log10(data_offset_low));
+                                    tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+                                }
+                                else
+                                {
+                                    tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
                                 }
 
-                                float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
-
-                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                                sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
                                 sample.w *= alpha * native_divide(cone_diameter, cone_diameter_low);
 
@@ -659,19 +666,20 @@ __kernel void svoRayTrace(
 
         if (isIntegration3DActive  && !isSlicingActive && !isDsActive)
         {
+            float2 tsf_position;
+
             if (isLogActive)
             {
-                if (integrated_intensity < 0.f)
-                {
-                    integrated_intensity = 0.f;
-                }
-
-                integrated_intensity = log10(integrated_intensity);
+                float value = (integrated_intensity - data_offset_low) * 1000000.0f / (data_offset_high - data_offset_low);
+                value = clamp(value, 0.01f, 1000000.0f);
+                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * (log10(value) / log10(1000000.0f)), 0.5f);
+            }
+            else
+            {
+                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
             }
 
-            float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
-
-            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+            sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }

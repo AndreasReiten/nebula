@@ -104,7 +104,7 @@ class MainWindow : public QMainWindow
         // PlotWidget
         QDockWidget * plotLineDockWidget;
         PlotLineWidget * plotLineWidget;
-        
+
         QDockWidget * plotSurfaceDockWidget;
         PlotSurfaceWidget * plotSurfaceWidget;
 
@@ -114,6 +114,8 @@ class MainWindow : public QMainWindow
         QTableView * lineView;
         LineModel * lineModel;
         QPushButton * insertLinePushButton;
+        QPushButton * snapLinePosAPushButton;
+        QPushButton * snapLinePosBPushButton;
         QPushButton * setLinePosAPushButton;
         QPushButton * setLinePosBPushButton;
         QPushButton * removeLinePushButton;

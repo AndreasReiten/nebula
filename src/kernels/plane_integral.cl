@@ -19,9 +19,9 @@ __kernel void integratePlane(
     int3 size_grp = (int3)(get_num_groups(0), get_num_groups(1), get_num_groups(2));
     int3 size_loc = (int3)(get_local_size(0), get_local_size(1), get_local_size(2));
     int3 size_glb = (int3)(get_global_size(0), get_global_size(1), get_global_size(2));
-    
+
     int3 size_problem = (int3)(samples_abc.x, samples_abc.y, samples_abc.z);
-    
+
     int id_loc_linear = id_loc.z;
     int id_result = id_grp.x + id_grp.y * size_grp.x;
     int size_loc_linear = size_loc.x * size_loc.y * size_loc.z;
@@ -33,7 +33,7 @@ __kernel void integratePlane(
 
     for (int iter = 0; iter < (size_problem.z / size_loc_linear + 1); iter++)
     {
-        int3 id_problem = (int3)(id_grp.x, id_grp.y, id_loc_linear + iter*size_loc_linear);
+        int3 id_problem = (int3)(id_grp.x, id_grp.y, id_loc_linear + iter * size_loc_linear);
 
         if ((id_problem.z < size_problem.z))
         {
@@ -112,7 +112,7 @@ __kernel void integratePlane(
                 }
             }
 
-//            addition_array[id_loc_linear] = 1;
+            //            addition_array[id_loc_linear] = 1;
         }
         else
         {

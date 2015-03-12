@@ -198,8 +198,8 @@ __kernel void modelRayTrace(
                             intensity = log10(intensity);
                         }
 
-                        float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                        float2 tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
                         color.xyz += (1.0f - color.w) * sample.xyz * sample.w;
                         color.w += (1.0f - color.w) * sample.w;
@@ -234,9 +234,9 @@ __kernel void modelRayTrace(
                             intensity = log10(intensity);
                         }
 
-                        float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+                        float2 tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
 
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
                         sample.w *= alpha;
 
                         if (isShadowActive)
@@ -293,9 +293,9 @@ __kernel void modelRayTrace(
                 integrated_intensity = log10(integrated_intensity);
             }
 
-            float2 tsfPosition = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+            float2 tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
 
-            sample = read_imagef(tsf_tex, tsf_sampler, tsfPosition);
+            sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }

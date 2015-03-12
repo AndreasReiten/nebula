@@ -69,7 +69,7 @@ void VolumeWorker::initializeOpenCLKernels()
     {
         qFatal(cl_error_cstring(err));
     }
-    
+
     p_plane_integral_kernel =  QOpenCLCreateKernel(program, "integratePlane", &err);
 
     if ( err != CL_SUCCESS)
@@ -647,7 +647,8 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     // Color
     white.set(1, 1, 1, 1.0); // Note: Changed alpha from 0.4
     black.set(0, 0, 0, 1.0); // Note: Changed alpha from 0.4
-    yellow.set(1.0, 1.0, 0, 0.8);
+    yellow.set(1.00, 	0.50, 	0.00, 0.8);
+    epic.set(0.64, 	0.21, 	0.93, 0.8);
     red.set(1, 0, 0, 1);
     green.set(0, 1, 0, 1);
     green_light.set(0.3, 1, 0.3, 0.9);
@@ -1988,13 +1989,13 @@ void VolumeOpenGLWidget::addLine()
 
     Matrix<double> a(3, 1);
     a[0] = data_view_extent[0];
-    a[1] = data_view_extent[2];
-    a[2] = data_view_extent[4];
+    a[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * 0.5;
+    a[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * 0.5;
 
     Matrix<double> b(3, 1);
     b[0] = data_view_extent[1];
-    b[1] = data_view_extent[3];
-    b[2] = data_view_extent[5];
+    b[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * 0.5;
+    b[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * 0.5;
 
     lines->append(Line(a, b));
     glGenBuffers(1, lines->last().vbo());
@@ -2084,7 +2085,7 @@ void VolumeOpenGLWidget::zoomToLineIndex(int value)
 
 void VolumeOpenGLWidget::zoomToBox(Matrix<double> box)
 {
-//    box.print(3, "box");
+    //    box.print(3, "box");
 
     // Box [x0,x1,y0,y1,z0,z1]
     // Set the translation
@@ -2157,6 +2158,7 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
     for (int i = 0; i < lines->size(); i++)
     {
         double line_scaling;
+
         if (lines->at(i).tagged())
         {
             line_scaling = 2.0;
@@ -2173,18 +2175,25 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         GLuint indices_a[] = {2, 5, 3, 8, 6, 9, 4, 7};
-        glLineWidth(1.0 * line_scaling);
+        glLineWidth(2.0 * line_scaling);
         glDrawElements(GL_LINES,  8, GL_UNSIGNED_INT, indices_a);
 
         GLuint indices_b[] = {4, 6, 7, 9, 5, 8, 2, 3,  5, 7, 8, 9, 3, 6, 2, 4};
-        glLineWidth(1.0 * line_scaling);
+        glLineWidth(2.0 * line_scaling);
 
-        glUniform4fv(std_3d_col_color, 1, yellow.data());
+        if (isBackgroundBlack)
+        {
+            glUniform4fv(std_3d_col_color, 1, yellow.data());
+        }
+        else
+        {
+            glUniform4fv(std_3d_col_color, 1, epic.data());
+        }
 
         glDrawElements(GL_LINES,  16, GL_UNSIGNED_INT, indices_b);
 
         GLuint indices_c[] = {0, 1};
-        glLineWidth(2.0 * line_scaling);
+        glLineWidth(4.0 * line_scaling);
 
         glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, indices_c);
     }
@@ -3938,6 +3947,48 @@ void VolumeOpenGLWidget::drawOverlay(QPainter * painter)
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);*/
 }
 
+void VolumeOpenGLWidget::setLinePosA()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    Matrix<double> middle(3, 1);
+    middle[0] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * 0.5;
+    middle[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * 0.5;
+    middle[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * 0.5;
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].setPositionA(middle);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
+}
+
+void VolumeOpenGLWidget::setLinePosB()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    Matrix<double> middle(3, 1);
+    middle[0] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * 0.5;
+    middle[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * 0.5;
+    middle[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * 0.5;
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].setPositionB(middle);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
+}
+
 void VolumeOpenGLWidget::drawWeightCenter(QPainter * painter)
 {
     beginRawGLCalls(painter);
@@ -3982,6 +4033,8 @@ void VolumeOpenGLWidget::drawWeightCenter(QPainter * painter)
     glUniform4fv(std_3d_col_color, 1, red.data());
 
     glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+
+    glLineWidth(2.0);
 
     glDrawArrays(GL_LINES,  0, 6);
 

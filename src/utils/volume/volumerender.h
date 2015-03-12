@@ -32,7 +32,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
 
         Matrix<double> getLineIntegralData();
         Matrix<double> getPlaneIntegralData();
-        
+
         double getLineIntegralXmin();
         double getLineIntegralXmax();
 
@@ -73,7 +73,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         double p_line_integral_xmax;
         double p_line_integral_ymin;
         double p_line_integral_ymax;
-        
+
         Matrix<float> p_plane_integral_data;
 };
 
@@ -99,6 +99,8 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
     public slots:
         void snapLinePosA();
         void snapLinePosB();
+        void setLinePosA();
+        void setLinePosB();
         void setWeightpoint(double x, double y, double z);
         void zoomToLineIndex(int value);
         void zoomToLineModelIndex(QModelIndex index);
@@ -493,6 +495,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         ColorMatrix<GLfloat> white;
         ColorMatrix<GLfloat> black;
         ColorMatrix<GLfloat> yellow;
+        ColorMatrix<GLfloat> epic;
         ColorMatrix<GLfloat> red;
         ColorMatrix<GLfloat> green;
         ColorMatrix<GLfloat> green_light;

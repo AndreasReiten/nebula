@@ -333,6 +333,7 @@ void MainWindow::saveProject()
             file.close();
         }
     }
+
     hasPendingChanges = false;
 }
 
@@ -842,14 +843,17 @@ void MainWindow::initConnects()
     //    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(refreshLine(int)));
     connect(lineModel, SIGNAL(lineChanged(int)), volumeOpenGLWidget, SLOT(update()));
-//    connect(lineModel, SIGNAL(lineChecked(int)), volumeOpenGLWidget, SLOT(zoomToLineIndex(int)));
+    //    connect(lineModel, SIGNAL(lineChecked(int)), volumeOpenGLWidget, SLOT(zoomToLineIndex(int)));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(setCurrentIndex(QModelIndex)));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), lineView, SLOT(edit(QModelIndex)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(refreshLineIntegral(QModelIndex)));
     connect(volumeOpenGLWidget->worker(), SIGNAL(lineIntegralResolved()), this, SLOT(setLineIntegralPlot()));
     connect(volumeOpenGLWidget->worker(), SIGNAL(planeIntegralResolved()), this, SLOT(setPlaneIntegralPlot()));
-    connect(setLinePosAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosA()));
-    connect(setLinePosBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosB()));
+    connect(snapLinePosAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosA()));
+    connect(snapLinePosBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLinePosB()));
+    connect(setLinePosAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setLinePosA()));
+    connect(setLinePosBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setLinePosB()));
+    connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(zoomToLineModelIndex(QModelIndex)));
 
 }
@@ -1446,7 +1450,7 @@ void MainWindow::initGUI()
         viewMenu->addAction(plotLineDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotLineDockWidget);
     }
-    
+
     {
         plotSurfaceDockWidget = new QDockWidget("Surface integral plot");
 
@@ -1456,7 +1460,7 @@ void MainWindow::initGUI()
         viewMenu->addAction(plotSurfaceDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotSurfaceDockWidget);
     }
-    
+
 
     /* Unitcell dock widget */
     {
@@ -1797,8 +1801,10 @@ void MainWindow::initGUI()
 
         insertLinePushButton = new QPushButton("Insert");
         removeLinePushButton = new QPushButton("Remove");
-        setLinePosAPushButton = new QPushButton("Snap A");
-        setLinePosBPushButton = new QPushButton("Snap B");
+        snapLinePosAPushButton = new QPushButton("Snap A");
+        snapLinePosBPushButton = new QPushButton("Snap B");
+        setLinePosAPushButton = new QPushButton("Set A");
+        setLinePosBPushButton = new QPushButton("Set B");
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1807,8 +1813,10 @@ void MainWindow::initGUI()
         gridLayout->setRowStretch(2, 1);
         gridLayout->addWidget(lineView, 0, 0, 1, 8);
         gridLayout->addWidget(insertLinePushButton, 1, 0, 1, 2);
-        gridLayout->addWidget(setLinePosAPushButton, 1, 2, 1, 2);
-        gridLayout->addWidget(setLinePosBPushButton, 1, 4, 1, 2);
+        gridLayout->addWidget(snapLinePosAPushButton, 1, 2, 1, 1);
+        gridLayout->addWidget(snapLinePosBPushButton, 1, 3, 1, 1);
+        gridLayout->addWidget(setLinePosAPushButton, 1, 4, 1, 1);
+        gridLayout->addWidget(setLinePosBPushButton, 1, 5, 1, 1);
         gridLayout->addWidget(removeLinePushButton, 1, 7, 1, 1);
 
         lineWidget = new QWidget;
@@ -1935,10 +1943,10 @@ void MainWindow::setLineIntegralPlot()
     }
 
     plotLineWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
-                     volumeOpenGLWidget->worker()->getLineIntegralXmax(),
-                     volumeOpenGLWidget->worker()->getLineIntegralYmin(),
-                     volumeOpenGLWidget->worker()->getLineIntegralYmax(),
-                     x_data, y_data);
+                         volumeOpenGLWidget->worker()->getLineIntegralXmax(),
+                         volumeOpenGLWidget->worker()->getLineIntegralYmin(),
+                         volumeOpenGLWidget->worker()->getLineIntegralYmax(),
+                         x_data, y_data);
 }
 
 void MainWindow::setPlaneIntegralPlot()

@@ -10,13 +10,13 @@ PlotLineWidget::PlotLineWidget(QWidget * parent) :
     p_x_min = 0;
     p_x_max = 1;
     p_y_min = 0;
-    p_y_max = 1.9;
+    p_y_max = 1;
 
-    double buf_x[] = {0.0, 0.1, 0.2, 0.4, 0.7, 0.9};
+    double buf_x[] = {0.0, 0.1, 0.2, 0.3, 0.4, 0.5};
 
     p_x_data.setDeep(1, 6, buf_x);
 
-    double buf_y[] = { 0.0, 0.1, 0.2, 0.4, 1.2, 1.9};
+    double buf_y[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     p_y_data.setDeep(1, 6, buf_y);
 }
@@ -81,41 +81,41 @@ void PlotLineWidget::paintEvent(QPaintEvent * event)
 
 PlotSurfaceWidget::PlotSurfaceWidget(QWidget * parent) :
     QScrollArea(parent),
-    isLog(false)
+    isLog(true)
 {
-    p_data.set(2,2*4);
-    p_data[0] = 0; // B
-    p_data[1] = 0; // G
+    p_data.set(2, 2 * 4);
+    p_data[0] = 255; // B
+    p_data[1] = 255; // G
     p_data[2] = 255; // R
     p_data[3] = 255; // A
 
-    p_data[4] = 0;
+    p_data[4] = 255;
     p_data[5] = 255;
-    p_data[6] = 0;
+    p_data[6] = 255;
     p_data[7] = 255;
-    
+
     p_data[8] = 255;
-    p_data[9] = 0;
-    p_data[10] = 0;
+    p_data[9] = 255;
+    p_data[10] = 255;
     p_data[11] = 255;
-    
+
     p_data[12] = 255;
     p_data[13] = 255;
     p_data[14] = 255;
     p_data[15] = 255;
-    
+
     p_label = new QLabel;
-    
+
     p_label->setBackgroundRole(QPalette::Base);
     p_label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     p_label->setScaledContents(true);
-    
+
     this->setBackgroundRole(QPalette::Dark);
     this->setWidget(p_label);
     this->setWidgetResizable(true);
-                
-    QImage image(p_data.data(), p_data.m(), p_data.n()/4, QImage::Format_RGB32);
-    
+
+    QImage image(p_data.data(), p_data.m(), p_data.n() / 4, QImage::Format_RGB32);
+
     p_label->setPixmap(QPixmap::fromImage(image));
     p_label->adjustSize();
     p_label->resize(p_label->pixmap()->size());
@@ -134,20 +134,32 @@ void PlotSurfaceWidget::resizeEvent(QResizeEvent * event)
 void PlotSurfaceWidget::plot(const Matrix<double> &data)
 {
 
-    p_data.resize(data.m(), data.n()*4);
-    
+    p_data.resize(data.m(), data.n() * 4);
+
     double max = data.max();
-    
+
     for (int i = 0; i < data.size(); i++)
     {
-        p_data[i*4+0] = 255 * (data[i] / max);
-        p_data[i*4+1] = 255 * (data[i] / max);
-        p_data[i*4+2] = 255 * (data[i] / max);
-        p_data[i*4+3] = 255;
+        if (isLog)
+        {
+            p_data[i * 4 + 0] = 255 * log10(std::max(1.0, (data[i] * 1000000 / max))) / log10(1000000);
+            p_data[i * 4 + 1] = 255 * log10(std::max(1.0, (data[i] * 1000000 / max))) / log10(1000000);
+            p_data[i * 4 + 2] = 255 * log10(std::max(1.0, (data[i] * 1000000 / max))) / log10(1000000);
+            p_data[i * 4 + 3] = 255;
+        }
+        else
+        {
+            p_data[i * 4 + 0] = 255 * (data[i] / max);
+            p_data[i * 4 + 1] = 255 * (data[i] / max);
+            p_data[i * 4 + 2] = 255 * (data[i] / max);
+            p_data[i * 4 + 3] = 255;
+        }
+
+
     }
-    
-    QImage image(p_data.data(), p_data.m(), p_data.n()/4, QImage::Format_RGB32);
-    
+
+    QImage image(p_data.data(), p_data.m(), p_data.n() / 4, QImage::Format_RGB32);
+
     p_label->setPixmap(QPixmap::fromImage(image));
     p_label->adjustSize();
     p_label->resize(p_label->pixmap()->size());
