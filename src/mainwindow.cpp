@@ -1374,7 +1374,7 @@ void MainWindow::initGUI()
         volumeAlphaSpinBox = new QDoubleSpinBox;
         volumeAlphaSpinBox->setDecimals(4);
         volumeAlphaSpinBox->setRange(0, 10);
-        volumeAlphaSpinBox->setSingleStep(0.1);
+        volumeAlphaSpinBox->setSingleStep(0.01);
         volumeAlphaSpinBox->setAccelerated(1);
         volumeAlphaSpinBox->setPrefix("Alpha: ");
 

@@ -104,7 +104,8 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setWeightpoint(double x, double y, double z);
         void zoomToLineIndex(int value);
         void zoomToLineModelIndex(QModelIndex index);
-        void zoomToBox(Matrix<double> box);
+        void zoomToValue(double value);
+        void translateToBox(Matrix<double> box);
         void refreshLineIntegral(QModelIndex index);
         void refreshLine(int value);
         void releaseLines();

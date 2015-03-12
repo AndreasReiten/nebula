@@ -2070,7 +2070,6 @@ void VolumeOpenGLWidget::zoomToLineIndex(int value)
     Matrix<double> b = lines->at(value).effectivePosB();
 
     Matrix<double> box(3, 2);
-
     box[0] = std::min(a[0], b[0]);
     box[1] = std::max(a[0], b[0]);
 
@@ -2080,33 +2079,39 @@ void VolumeOpenGLWidget::zoomToLineIndex(int value)
     box[4] = std::min(a[2], b[2]);
     box[5] = std::max(a[2], b[2]);
 
-    zoomToBox(box);
+    double side_c = vecLength(b-a);
+    double side_a = lines->at(value).prismSideA();
+    double side_b = lines->at(value).prismSideB();
+
+    double max_side = std::max(std::max(side_a, side_b), side_c);
+
+
+    translateToBox(box);
+    zoomToValue(0.66 * (data_extent[1] - data_extent[0]) / max_side);
+    update();
 }
 
-void VolumeOpenGLWidget::zoomToBox(Matrix<double> box)
+void VolumeOpenGLWidget::zoomToValue(double value)
 {
-    //    box.print(3, "box");
+    // Set the zoom ( a high value gives a close zoom )
+    data_scaling[0] = value;
+    data_scaling[5] = value;
+    data_scaling[10] = value;
 
+    // Set the view extent
+    data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
+}
+
+void VolumeOpenGLWidget::translateToBox(Matrix<double> box)
+{
     // Box [x0,x1,y0,y1,z0,z1]
     // Set the translation
     data_translation[3] = -(box[0] + 0.5 * (box[1] - box[0]));
     data_translation[7] = -(box[2] + 0.5 * (box[3] - box[2]));
     data_translation[11] = -(box[4] + 0.5 * (box[5] - box[4]));
 
-    // Set the zoom
-    double max_side = std::max(std::max(box[1] - box[0], box[3] - box[2]), box[5] - box[4]);
-
-    data_scaling[0] = 0.33 * (data_extent[1] - data_extent[0]) / max_side;
-    data_scaling[5] = 0.33 * (data_extent[3] - data_extent[2]) / max_side;
-    data_scaling[10] = 0.33 * (data_extent[5] - data_extent[4]) / max_side;
-
-    //    data_translation.print(3, "Data translation");
-    //    data_scaling.print(3, "Data scaling");
-
     // Set the view extent
     data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
-
-    update();
 }
 
 void VolumeOpenGLWidget::refreshLineIntegral(QModelIndex index)

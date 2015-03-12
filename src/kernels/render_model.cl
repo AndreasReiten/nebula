@@ -30,21 +30,21 @@ __kernel void modelRayTrace(
     int isShadowActive = misc_int[6];
     int isIntegration3DActive = misc_int[7];
 
-    if (isLogActive)
-    {
-        if (data_offset_low <= 0)
-        {
-            data_offset_low = 0.01f;
-        }
+//    if (isLogActive)
+//    {
+//        if (data_offset_low <= 0)
+//        {
+//            data_offset_low = 0.01f;
+//        }
 
-        if (data_offset_high <= 0)
-        {
-            data_offset_high = 0.01f;
-        }
+//        if (data_offset_high <= 0)
+//        {
+//            data_offset_high = 0.01f;
+//        }
 
-        data_offset_low = log10(data_offset_low);
-        data_offset_high = log10(data_offset_high);
-    }
+//        data_offset_low = log10(data_offset_low);
+//        data_offset_high = log10(data_offset_high);
+//    }
 
     // The color of "shadow", or rather the color associated with gradient matching
     float4 shadow_color = (float4)(0.0f, 0.0f, 0.0f, 1.0f);
@@ -188,17 +188,21 @@ __kernel void modelRayTrace(
 
                         intensity = model(box_ray_xyz, parameters);
 
+                        float2 tsf_position;
+
                         if (isLogActive)
                         {
-                            if (intensity < 1.f)
-                            {
-                                intensity = 1.f;
-                            }
+                            float value = log10(max(intensity + 1.0 - data_offset_low, 1.0)) / log10(data_offset_high - data_offset_low + 1.0);
 
-                            intensity = log10(intensity);
+                            if (value >= 0.0) tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+
+                            else tsf_position = (float2)(tsf_offset_low, 0.5f);
+                        }
+                        else
+                        {
+                            tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
                         }
 
-                        float2 tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
                         sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
                         color.xyz += (1.0f - color.w) * sample.xyz * sample.w;
@@ -224,17 +228,20 @@ __kernel void modelRayTrace(
 
                     if (!isIntegration3DActive)
                     {
+                    float2 tsf_position;
+
                         if (isLogActive)
                         {
-                            if (intensity < 0.f)
-                            {
-                                intensity = 0.f;
-                            }
+                            float value = log10(max(intensity + 1.0 - data_offset_low, 1.0)) / log10(data_offset_high - data_offset_low + 1.0);
 
-                            intensity = log10(intensity);
+                            if (value >= 0.0) tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+
+                            else tsf_position = (float2)(tsf_offset_low, 0.5f);
                         }
-
-                        float2 tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+                        else
+                        {
+                            tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+                        }
 
                         sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
                         sample.w *= alpha;
@@ -283,17 +290,34 @@ __kernel void modelRayTrace(
 
         if (isIntegration3DActive && !isSlicingActive)
         {
+//            float2 tsf_position;
+
+//            if (isLogActive)
+//            {
+//                float value = (integrated_intensity - data_offset_low) * 1000000.0f / (data_offset_high - data_offset_low);
+//                value = clamp(value, 0.01f, 1000000.0f);
+//                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * (log10(value) / log10(1000000.0f)), 0.5f);
+//            }
+//            else
+//            {
+//                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+//            }
+
+            float2 tsf_position;
+
             if (isLogActive)
             {
-                if (integrated_intensity < 0.f)
-                {
-                    integrated_intensity = 0.f;
-                }
+                float value = log10(integrated_intensity + 1.0 - data_offset_low) / log10(data_offset_high - data_offset_low + 1.0);
 
-                integrated_intensity = log10(integrated_intensity);
+                if (value >= 0.0) tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+
+                else tsf_position = (float2)(tsf_offset_low, 0.5f);
+            }
+            else
+            {
+                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
             }
 
-            float2 tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
 
             sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 

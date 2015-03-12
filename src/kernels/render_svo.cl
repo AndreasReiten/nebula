@@ -378,14 +378,17 @@ __kernel void svoRayTrace(
 
                                 if (isLogActive)
                                 {
-                                    float value = (log10(clamp(intensity, 0.0001, data_offset_high)) - log10(data_offset_low)) / (log10(data_offset_high) - log10(data_offset_low));
-                                    tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+                                    // The value range of intensity is paramount to a good visualization, as we add a flat offset of one. This is unfortunate, as the value range must be sufficiently large to achieve a proper visualization
+                                    float value = log10(max(intensity + 1.0 - data_offset_low, 1.0)) / log10(data_offset_high - data_offset_low + 1.0);
+
+                                    if (value >= 0.0) tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+
+                                    else tsf_position = (float2)(tsf_offset_low, 0.5f);
                                 }
                                 else
                                 {
                                     tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
                                 }
-
 
 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
@@ -590,8 +593,11 @@ __kernel void svoRayTrace(
 
                                 if (isLogActive)
                                 {
-                                    float value = (log10(clamp(intensity, 0.0001, data_offset_high)) - log10(data_offset_low)) / (log10(data_offset_high) - log10(data_offset_low));
-                                    tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+                                    float value = log10(max(intensity + 1.0 - data_offset_low, 1.0)) / log10(data_offset_high - data_offset_low + 1.0);
+
+                                    if (value >= 0.0) tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+
+                                    else tsf_position = (float2)(tsf_offset_low, 0.5f);
                                 }
                                 else
                                 {
@@ -678,6 +684,20 @@ __kernel void svoRayTrace(
             {
                 tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
             }
+//            float2 tsf_position;
+
+//            if (isLogActive)
+//            {
+//                float value = log10(integrated_intensity + 1.0 - data_offset_low) / log10(data_offset_high - data_offset_low + 1.0);
+
+//                if (value >= 0.0) tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
+
+//                else tsf_position = (float2)(tsf_offset_low, 0.5f);
+//            }
+//            else
+//            {
+//                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
+//            }
 
             sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
