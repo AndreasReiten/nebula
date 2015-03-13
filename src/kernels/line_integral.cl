@@ -1,11 +1,11 @@
-__kernel void integrateLine(
-    __read_only image3d_t pool, sampler_t pool_sampler,
-    __global uint * oct_index, __global uint * oct_brick,
-    __constant float * data_extent,
-    __constant int * misc_int,
-    __global float * result,
+kernel void integrateLine(
+    read_only image3d_t pool, sampler_t pool_sampler,
+    global uint * oct_index, global uint * oct_brick,
+    constant float * data_extent,
+    constant int * misc_int,
+    global float * result,
     float3 base_pos, float3 a, float3 b, float3 c, int3 samples_abc,
-    __local float * addition_array
+    local float * addition_array
 )
 {
     /*

@@ -1,18 +1,110 @@
-__kernel void svoRayTrace(
-    __write_only image2d_t ray_tex,
-    __read_only image2d_t tsf_tex,
-    __read_only image3d_t bricks,
-    __global uint * oct_index,
-    __global uint * oct_brick,
+float4 brickColor(int value)
+{
+    if (value == 0)
+    {
+        return (float4)(0.2f, 0.3f, 3.0f, 1.00f);
+    }
+    else if (value == 1)
+    {
+        return (float4)(1.0f, 0.3f, 0.2f, 1.00f);
+    }
+    else if (value == 2)
+    {
+        return (float4)(0.2f, 1.0f, 0.3f, 1.00f);
+    }
+    else if (value == 3)
+    {
+        return (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+    }
+    else if (value == 4)
+    {
+        return (float4)(1.0f, 0.3f, 0.2f, 1.00f);
+    }
+    else if (value == 5)
+    {
+        return (float4)(0.2f, 1.0f, 0.3f, 1.00f);
+    }
+    else if (value == 6)
+    {
+        return (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+    }
+    else if (value == 7)
+    {
+        return (float4)(1.0f, 0.3f, 0.2f, 1.00f);
+    }
+    else if (value == 8)
+    {
+        return (float4)(0.2f, 1.0f, 0.3f, 1.00f);
+    }
+    else if (value == 9)
+    {
+        return (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+    }
+    else if (value == 10)
+    {
+        return (float4)(1.0f, 0.3f, 0.2f, 1.00f);
+    }
+    else if (value == 11)
+    {
+        return (float4)(0.2f, 1.0f, 0.3f, 1.00f);
+    }
+    else if (value == 12)
+    {
+        return (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+    }
+    else
+    {
+        return (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+    }
+}
+
+uint4 brickId(uint value)
+{
+    // Merged bits in the octree can be read using these bitmasks:
+    uint mask_brick_id_x = ((1 << 10) - 1) << 20;
+    uint mask_brick_id_y = ((1 << 10) - 1) << 10;
+    uint mask_brick_id_z = ((1 << 10) - 1) << 0;
+
+    return (uint4)((value & mask_brick_id_x) >> 20, (value & mask_brick_id_y) >> 10, value & mask_brick_id_z, 0);
+}
+
+uint isMsd(uint value)
+{
+    uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
+
+    return (value & mask_msd_flag) >> 31;
+}
+
+uint isEmpty(uint value)
+{
+    uint mask_data_flag = ((1 << 1) - 1) << 30;
+
+    return !((value & mask_data_flag) >> 30);
+}
+
+uint child(uint value)
+{
+    uint mask_child_index = ((1 << 30) - 1) << 0;
+
+    return value & mask_child_index;
+}
+
+
+kernel void svoRayTrace(
+    write_only image2d_t ray_tex,
+    read_only image2d_t tsf_tex,
+    read_only image3d_t bricks,
+    global uint * oct_index,
+    global uint * oct_brick,
     sampler_t brick_sampler,
     sampler_t tsf_sampler,
-    __constant float * data_view_matrix,
-    __constant float * data_extent,
-    __constant float * data_view_extent,
-    __constant float * tsf_var,
-    __constant int * misc_int,
-    __constant float * scalebar_rotation,
-    __write_only image2d_t integration_tex
+    constant float * data_view_matrix,
+    constant float * data_extent,
+    constant float * data_view_extent,
+    constant float * tsf_var,
+    constant int * misc_int,
+    constant float * scalebar_rotation,
+    write_only image2d_t integration_tex
 )
 {
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
@@ -87,22 +179,15 @@ __kernel void svoRayTrace(
         }
 
         // To limit resource spending we limit the ray to the intersection between itself and a bounding box
-        int hit;
+        int hit = 0;
         float t_near, t_far;
         {
-            // Construct a bounding box from the intersect between data_view_extent and data_extent
             float bbox[6];
 
-            bbox[0] = fmax(data_extent[0], data_view_extent[0]);
-            bbox[1] = fmin(data_extent[1], data_view_extent[1]);
-            bbox[2] = fmax(data_extent[2], data_view_extent[2]);
-            bbox[3] = fmin(data_extent[3], data_view_extent[3]);
-            bbox[4] = fmax(data_extent[4], data_view_extent[4]);
-            bbox[5] = fmin(data_extent[5], data_view_extent[5]);
-
-            // Does the ray intersect?
-            if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
+            // Does the viewable bounding box intersect the extent of the data?
+            if (boxIntersect(bbox, data_extent, data_view_extent))
             {
+                // Does the ray intersect the viewable bounding box?
                 hit = boundingBoxIntersect(ray_near.xyz, ray_delta.xyz, bbox, &t_near, &t_far);
             }
         }
@@ -125,7 +210,7 @@ __kernel void svoRayTrace(
             float cone_diameter;
             float cone_diameter_low = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (n_tree_levels - 1))));
             float cone_diameter_high = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (0))));
-            uint index_this_lvl, index_prev_lvl, brick, isMsd, isLowEnough, isEmpty;
+            uint index_this_lvl, index_prev_lvl, brick, is_msd, isLowEnough, is_empty;
             float3 box_ray_xyz, box_ray_xyz_prev, ray_add_box;
             float3 norm_pos_this_lvl, norm_pos_prev_lvl;
             float3 tmp_a, tmp_b;
@@ -137,14 +222,6 @@ __kernel void svoRayTrace(
             // The traversal coordinate. We keep track of the previous position as well
             box_ray_xyz = box_ray_origin;
             box_ray_xyz_prev = box_ray_origin;
-
-            // Merged bits in the octree can be read using these bitmasks:
-            uint mask_msd_flag = ((1u << 1u) - 1u) << 31u;
-            uint mask_data_flag = ((1 << 1) - 1) << 30;
-            uint mask_child_index = ((1 << 30) - 1) << 0;
-            uint mask_brick_id_x = ((1 << 10) - 1) << 20;
-            uint mask_brick_id_y = ((1 << 10) - 1) << 10;
-            uint mask_brick_id_z = ((1 << 10) - 1) << 0;
 
             /* Traverse the octree. For each step, descend into the octree until a) The resolution is appreciable or b) The final level of the octree is reached. During any descent, empty nodes might be found. In such case, the ray is advanced forward without sampling to the next sample that is not in said node. Stuff inside this while loop is what really takes time and therefore should be optimized
              * */
@@ -227,11 +304,11 @@ __kernel void svoRayTrace(
                             }
 
                             brick = oct_index[index_this_lvl];
-                            isMsd = (brick & mask_msd_flag) >> 31;
-                            isEmpty = !((brick & mask_data_flag) >> 30);
+                            is_msd = isMsd(brick);
+                            is_empty = isEmpty(brick);
                             isLowEnough = (cone_diameter > voxel_size_this_lvl);
 
-                            if (isEmpty)
+                            if (is_empty)
                             {
                                 // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
 
@@ -252,7 +329,7 @@ __kernel void svoRayTrace(
                                     break;
                                 }
                             }
-                            else if (isMsd || isLowEnough)
+                            else if (is_msd || isLowEnough)
                             {
                                 // Sample brick
                                 if (isLowEnough && (j >= 1))
@@ -260,16 +337,14 @@ __kernel void svoRayTrace(
                                     /* Quadrilinear interpolation between two bricks */
 
                                     // The brick in the level above
-                                    brick = oct_brick[index_prev_lvl];
-                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                    brick_id = brickId(oct_brick[index_prev_lvl]);
 
                                     lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
                                     intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                     // The brick in the current level
-                                    brick = oct_brick[index_this_lvl];
-                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                    brick_id = brickId(oct_brick[index_this_lvl]);
 
                                     lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
@@ -280,8 +355,7 @@ __kernel void svoRayTrace(
                                 }
                                 else
                                 {
-                                    brick = oct_brick[index_this_lvl];
-                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                    brick_id = brickId(oct_brick[index_this_lvl]);
 
                                     lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
@@ -290,62 +364,7 @@ __kernel void svoRayTrace(
 
                                 if (isDsActive)
                                 {
-                                    if (j == 0)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 3.0f, 0.50f);
-                                    }
-                                    else if (j == 1)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
-                                    }
-                                    else if (j == 2)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.60f);
-                                    }
-                                    else if (j == 3)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.60f);
-                                    }
-                                    else if (j == 4)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
-                                    }
-                                    else if (j == 5)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.65f);
-                                    }
-                                    else if (j == 6)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.70f);
-                                    }
-                                    else if (j == 7)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.75f);
-                                    }
-                                    else if (j == 8)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.80f);
-                                    }
-                                    else if (j == 9)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.85f);
-                                    }
-                                    else if (j == 10)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.90f);
-                                    }
-                                    else if (j == 11)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.95f);
-                                    }
-                                    else if (j == 12)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
-                                    }
-                                    else
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
-                                    }
+                                    sample = brickColor(j);
 
                                     float dist = fast_length(norm_pos_this_lvl - (float3)(1.0f));
                                     sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7);
@@ -395,7 +414,7 @@ __kernel void svoRayTrace(
                                 norm_pos_prev_lvl = norm_pos_this_lvl;
 
                                 // Descend to the next level
-                                index_this_lvl = (brick & mask_child_index);
+                                index_this_lvl = child(brick);
                                 index_this_lvl += norm_index.x + norm_index.y * 2 + norm_index.z * 4;
 
                                 //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
@@ -451,74 +470,19 @@ __kernel void svoRayTrace(
 
                         brick = oct_index[index_this_lvl];
 
-                        isMsd = (brick & mask_msd_flag) >> 31;
-                        isEmpty = !((brick & mask_data_flag) >> 30);
+                        is_msd = isMsd(brick);
+                        is_empty = isEmpty(brick);
                         isLowEnough = (cone_diameter > voxel_size_this_lvl);
 
-                        if (isMsd || isLowEnough || isEmpty)
+                        if (is_msd || isLowEnough || is_empty)
                         {
                             // Sample brick
                             if (isDsActive)
                             {
                                 /* Color the data structure*/
-                                if (!isEmpty)
+                                if (!is_empty)
                                 {
-                                    if (j == 0)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 3.0f, 0.50f);
-                                    }
-                                    else if (j == 1)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
-                                    }
-                                    else if (j == 2)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.60f);
-                                    }
-                                    else if (j == 3)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.60f);
-                                    }
-                                    else if (j == 4)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.60f);
-                                    }
-                                    else if (j == 5)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.65f);
-                                    }
-                                    else if (j == 6)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.70f);
-                                    }
-                                    else if (j == 7)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.75f);
-                                    }
-                                    else if (j == 8)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.80f);
-                                    }
-                                    else if (j == 9)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 0.85f);
-                                    }
-                                    else if (j == 10)
-                                    {
-                                        sample = (float4)(1.0f, 0.3f, 0.2f, 0.90f);
-                                    }
-                                    else if (j == 11)
-                                    {
-                                        sample = (float4)(0.2f, 1.0f, 0.3f, 0.95f);
-                                    }
-                                    else if (j == 12)
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
-                                    }
-                                    else
-                                    {
-                                        sample = (float4)(0.2f, 0.3f, 1.0f, 1.00f);
-                                    }
+                                    sample = brickColor(j);
 
                                     float dist = fast_length(norm_pos_this_lvl - (float3)(1.0f));
                                     sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7);
@@ -539,21 +503,19 @@ __kernel void svoRayTrace(
                                 /* Quadrilinear interpolation between two bricks */
 
                                 // The brick in the level above
-                                brick = oct_brick[index_prev_lvl];
-                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                brick_id = brickId(oct_brick[index_prev_lvl]);
 
                                 lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_prev_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
                                 intensity_prev_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
 
                                 // The brick in the current level
-                                if (isEmpty)
+                                if (is_empty)
                                 {
                                     intensity_this_lvl = 0;
                                 }
                                 else
                                 {
-                                    brick = oct_brick[index_this_lvl];
-                                    brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                    brick_id = brickId(oct_brick[index_this_lvl]);
 
                                     lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
                                     intensity_this_lvl = read_imagef(bricks, brick_sampler, lookup_pos).w;
@@ -566,8 +528,7 @@ __kernel void svoRayTrace(
                             }
                             else
                             {
-                                brick = oct_brick[index_this_lvl];
-                                brick_id = (uint4)((brick & mask_brick_id_x) >> 20, (brick & mask_brick_id_y) >> 10, brick & mask_brick_id_z, 0);
+                                brick_id = brickId(oct_brick[index_this_lvl]);
 
                                 lookup_pos = native_divide(0.5f + convert_float4(brick_id * brick_dim)  + (float4)(norm_pos_this_lvl, 0.0f) * 3.5f , convert_float4(pool_dim));
 
@@ -612,7 +573,7 @@ __kernel void svoRayTrace(
 
 
                             /* Traverse to the next sample along the ray */
-                            if (isEmpty)
+                            if (is_empty)
                             {
                                 // Skip forward by calculating how many steps can be advanced before reaching the next node. This is done by finding the intersect between the ray and a box of sides two. The number of steps to increment by is readily given by the length of the corresponding ray segment;
 
@@ -640,7 +601,7 @@ __kernel void svoRayTrace(
                             norm_pos_prev_lvl = norm_pos_this_lvl;
 
                             // Descend to the next level
-                            index_this_lvl = (oct_index[index_this_lvl] & mask_child_index);
+                            index_this_lvl = child(oct_index[index_this_lvl]);
                             index_this_lvl += norm_index.x + norm_index.y * 2 + norm_index.z * 4;
 
                             //norm_pos_this_lvl = (norm_pos_this_lvl - convert_float(norm_index))*2.0f;
@@ -680,3 +641,4 @@ __kernel void svoRayTrace(
         }
     }
 }
+

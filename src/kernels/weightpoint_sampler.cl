@@ -1,11 +1,11 @@
-__kernel void weightpointSampler(
-    __read_only image3d_t pool, sampler_t pool_sampler,
-    __global uint * oct_index, __global uint * oct_brick,
-    __constant float * data_extent,
-    __constant float * data_view_extent,
-    __constant int * misc_int,
-    __global float * result,
-    __local float * addition_array)
+kernel void weightpointSampler(
+    read_only image3d_t pool, sampler_t pool_sampler,
+    global uint * oct_index, global uint * oct_brick,
+    constant float * data_extent,
+    constant float * data_view_extent,
+    constant int * misc_int,
+    global float * result,
+    local float * addition_array)
 {
     int3 id_loc = (int3)(get_local_id(0), get_local_id(1), get_local_id(2));
     int3 id_glb = (int3)(get_global_id(0), get_global_id(1), get_global_id(2));

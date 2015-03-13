@@ -1,15 +1,15 @@
-__kernel void modelRayTrace(
-    __write_only image2d_t ray_tex,
-    __read_only image2d_t tsf_tex,
+kernel void modelRayTrace(
+    write_only image2d_t ray_tex,
+    read_only image2d_t tsf_tex,
     sampler_t tsf_sampler,
-    __constant float * data_view_matrix,
-    __constant float * data_extent,
-    __constant float * data_view_extent,
-    __constant float * tsf_var,
-    __constant float * parameters,
-    __constant int * misc_int,
-    __constant float * scalebar_rotation, // Used for slicing, which is done orthonormally to the scalebar axes
-    __write_only image2d_t integration_tex,
+    constant float * data_view_matrix,
+    constant float * data_extent,
+    constant float * data_view_extent,
+    constant float * tsf_var,
+    constant float * parameters,
+    constant int * misc_int,
+    constant float * scalebar_rotation, // Used for slicing, which is done orthonormally to the scalebar axes
+    write_only image2d_t integration_tex,
     float4 shadow_vector)
 {
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
@@ -83,27 +83,18 @@ __kernel void modelRayTrace(
         int hit;
         float t_near, t_far;
         {
-            // Construct a bounding box from the intersect between data_view_extent and data_extent
             float bbox[6];
 
-            bbox[0] = data_view_extent[0];
-            bbox[1] = data_view_extent[1];
-            bbox[2] = data_view_extent[2];
-            bbox[3] = data_view_extent[3];
-            bbox[4] = data_view_extent[4];
-            bbox[5] = data_view_extent[5];
-
-            // Does the ray for this pixel intersect bbox?
-            if (!((bbox[0] >= bbox[1]) || (bbox[2] >= bbox[3]) || (bbox[4] >= bbox[5])))
+            // Does the viewable bounding box intersect the extent of the data?
+            if (boxIntersect(bbox, data_extent, data_view_extent))
             {
+                // Does the ray intersect the viewable bounding box?
                 hit = boundingBoxIntersect(ray_near.xyz, ray_delta.xyz, bbox, &t_near, &t_far);
             }
         }
 
         float4 color = (float4)(0.0f);
         float4 sample = (float4)(0.0f);
-
-
         float3 box_ray_delta;
 
         if (hit)

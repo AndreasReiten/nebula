@@ -1,8 +1,8 @@
-__kernel void FRAME_FILTER(
-    __write_only image2d_t xyzi_target,
-    __global float * source,
+kernel void FRAME_FILTER(
+    write_only image2d_t xyzi_target,
+    global float * source,
     sampler_t tsf_sampler,
-    __constant float * sample_rotation_matrix,
+    constant float * sample_rotation_matrix,
     float h_pixel_size_x,
     float h_pixel_size_y,
     float h_wavelength,

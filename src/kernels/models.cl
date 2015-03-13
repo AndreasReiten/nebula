@@ -1,4 +1,4 @@
-float model(float3 k, __constant float * param)
+float model(float3 k, constant float * param)
 {
 
 

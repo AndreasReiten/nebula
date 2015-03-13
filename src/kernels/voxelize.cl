@@ -1,13 +1,13 @@
-__kernel void voxelize(
-    __global float4 * point_data,
-    __global int * point_data_offset,
-    __global int * point_data_count,
-    __global float * brick_extent,
-    __global float * pool_cluster,
-    __global float * min_check,
-    __global float * sum_check,
-    __global float * variance_check,
-    __local float * addition_array,
+kernel void voxelize(
+    global float4 * point_data,
+    global int * point_data_offset,
+    global int * point_data_count,
+    global float * brick_extent,
+    global float * pool_cluster,
+    global float * min_check,
+    global float * sum_check,
+    global float * variance_check,
+    local float * addition_array,
     uint brick_outer_dimension,
     float search_radius
 )
@@ -148,9 +148,9 @@ uint target_index(int4 target_dimension, int4 id_loc , uint brick_outer_dimensio
     return index3d.x + index3d.y * target_dimension.x + index3d.z * target_dimension.x * target_dimension.y;
 }
 
-__kernel void fill(
-    __global float * pool_cluster,
-    __global float * pool,
+kernel void fill(
+    global float * pool_cluster,
+    global float * pool,
     int4 pool_dimension,
     uint brick_outer_dimension,
     uint brick_count

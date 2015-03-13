@@ -29,7 +29,7 @@ int boundingBoxIntersect(float3 r_origin, float3 r_delta, float * bbox, float * 
 
 
 
-int boundingBoxIntersect2(float3 r_origin, float3 r_delta, __constant float * bbox, float * t_near, float * t_far)
+int boundingBoxIntersect2(float3 r_origin, float3 r_delta, constant float * bbox, float * t_near, float * t_far)
 {
     // This is simple ray-box intersection: http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
 
@@ -87,7 +87,7 @@ int boundingBoxIntersectNorm(float3 r_origin, float3 r_delta, float * t_near, fl
     return smallest_t_max > largest_t_min;
 }
 
-float4 sc2xyz( __constant float * A, float4 x)
+float4 sc2xyz( constant float * A, float4 x)
 {
     // This is an adapted matrix multiplication function
 
@@ -100,7 +100,7 @@ float4 sc2xyz( __constant float * A, float4 x)
     return b;
 }
 
-float4 matrixMultiply4x4X1x4( __constant float * A, float4 x)
+float4 matrixMultiply4x4X1x4( constant float * A, float4 x)
 {
     // Multiply two matrices of dimensions (m x n) 4x4 and 4x1
     float4 result;
@@ -161,3 +161,21 @@ float2 tsfPos(float value, float data_min, float data_max, float tsf_min, float 
     }
 }
 
+int boxIntersect(float * intersect, constant float * box_a, constant float * box_b)
+{
+    intersect[0] = fmax(box_a[0], box_b[0]);
+    intersect[1] = fmin(box_a[1], box_b[1]);
+    intersect[2] = fmax(box_a[2], box_b[2]);
+    intersect[3] = fmin(box_a[3], box_b[3]);
+    intersect[4] = fmax(box_a[4], box_b[4]);
+    intersect[5] = fmin(box_a[5], box_b[5]);
+
+    if (!((intersect[0] >= intersect[1]) || (intersect[2] >= intersect[3]) || (intersect[4] >= intersect[5])))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}

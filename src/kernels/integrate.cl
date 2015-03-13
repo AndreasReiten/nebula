@@ -1,7 +1,7 @@
-__kernel void integrateImage(
-    __read_only image2d_t source,
-    __write_only image2d_t target,
-    __local float * addition_array,
+kernel void integrateImage(
+    read_only image2d_t source,
+    write_only image2d_t target,
+    local float * addition_array,
     sampler_t source_sampler,
     int direction
 )

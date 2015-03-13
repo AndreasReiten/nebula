@@ -1,13 +1,13 @@
-__kernel void boxSample(
-    __read_only image3d_t pool,
-    __global uint * oct_index,
-    __global uint * oct_brick,
-    __constant float * data_extent,
-    __constant float * data_view_extent,
+kernel void boxSample(
+    read_only image3d_t pool,
+    global uint * oct_index,
+    global uint * oct_brick,
+    constant float * data_extent,
+    constant float * data_view_extent,
     sampler_t brick_sampler,
     unsigned int n_tree_levels,
     unsigned int brick_dim,
-    __global float * output)
+    global float * output)
 {
     // Variables needed for sampling
     int4 pool_dim = get_image_dim(pool);

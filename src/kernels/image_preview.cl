@@ -1,7 +1,7 @@
-__kernel void imageDisplay(
-    __global float * data_buf,
-    __write_only image2d_t frame_image,
-    __read_only image2d_t tsf_image,
+kernel void imageDisplay(
+    global float * data_buf,
+    write_only image2d_t frame_image,
+    read_only image2d_t tsf_image,
     sampler_t tsf_sampler,
     float2 data_limit,
     int log
@@ -45,9 +45,9 @@ __kernel void imageDisplay(
     }
 }
 
-__kernel void bufferMax(
-    __global float * data_buf,
-    __global float * out_buf,
+kernel void bufferMax(
+    global float * data_buf,
+    global float * out_buf,
     int2 image_size)
 {
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
@@ -58,10 +58,10 @@ __kernel void bufferMax(
     }
 }
 
-__kernel void imageCalculus(
-    __global float * data_buf,
-    __global float * out_buf,
-    __constant float * parameter,
+kernel void imageCalculus(
+    global float * data_buf,
+    global float * out_buf,
+    constant float * parameter,
     int2 image_size,
     int correction_lorentz,
     int task,
@@ -73,8 +73,8 @@ __kernel void imageCalculus(
     int isCorrectionFluxActive,
     int isCorrectionExposureActive,
     float4 plane
-    //    __global float * xyzi_buf
-    //    __read_only image3d_t background,
+    //    global float * xyzi_buf
+    //    read_only image3d_t background,
     //    sampler_t bg_sampler,
     //    int sample_interdist,
     //    int image_number,

@@ -1,6 +1,6 @@
-__kernel void psum(
-    __global float * data,
-    __local float * addition_array,
+kernel void psum(
+    global float * data,
+    local float * addition_array,
     unsigned int read_size,
     unsigned int read_offset,
     unsigned int write_offset

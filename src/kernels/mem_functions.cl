@@ -1,9 +1,9 @@
-__kernel void rectCopyFloat(
-    __global float * buffer,
+kernel void rectCopyFloat(
+    global float * buffer,
     int2 buffer_size,
     int2 buffer_origin,
     int buffer_row_pitch,
-    __global float * copy,
+    global float * copy,
     int2 copy_size,
     int2 copy_origin,
     int copy_row_pitch,
