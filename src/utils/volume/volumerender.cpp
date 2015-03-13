@@ -28,9 +28,14 @@
 #include <QOpenGLPaintDevice>
 
 
-VolumeWorker::VolumeWorker()
+VolumeWorker::VolumeWorker() :
+    p_surface_ab_res(128),
+    p_surface_c_res(1024),
+    p_line_ab_res(128),
+    p_line_c_res(1024)
 {
     initializeOpenCLFunctions();
+
 }
 
 VolumeWorker::~VolumeWorker()
@@ -175,6 +180,23 @@ void VolumeWorker::setCLObjects(cl_mem * pool,
     p_misc_int = misc_int;
 }
 
+void VolumeWorker::setSurfaceABRes(int value)
+{
+    p_surface_ab_res = value;
+}
+void VolumeWorker::setSurfaceCRes(int value)
+{
+    p_surface_c_res = value;
+}
+void VolumeWorker::setLineABRes(int value)
+{
+    p_line_ab_res = value;
+}
+void VolumeWorker::setLineCRes(int value)
+{
+    p_line_c_res = value;
+}
+
 void VolumeWorker::resolveWeightpoint()
 {
     Matrix<size_t> loc_ws(1, 3, 8);
@@ -275,26 +297,24 @@ void VolumeWorker::resolveLineIntegral(Line line)
     // Samples in each direction
     Matrix<int> samples(3, 1);
 
-    double n_samples_ab = 128;
-    double n_samples_c = 1024;
     double sample_interdist_ab;
-    double sample_interdist_c = line.length() / (double) n_samples_c;
+    double sample_interdist_c = line.length() / (double) p_line_c_res;
 
     if (line.prismSideA() >= line.prismSideB())
     {
-        sample_interdist_ab = line.prismSideA() / (double) (n_samples_ab - 1);
+        sample_interdist_ab = line.prismSideA() / (double) (p_line_ab_res - 1);
 
-        samples[0] = n_samples_ab;
+        samples[0] = p_line_ab_res;
         samples[1] = (line.prismSideB() / sample_interdist_ab) + 1;
-        samples[2] = n_samples_c;
+        samples[2] = p_line_c_res;
     }
     else
     {
-        sample_interdist_ab = line.prismSideB() / (double) (n_samples_ab - 1);
+        sample_interdist_ab = line.prismSideB() / (double) (p_line_ab_res - 1);
 
         samples[0] = (line.prismSideA() / sample_interdist_ab) + 1;
-        samples[1] = n_samples_ab;
-        samples[2] = n_samples_c;
+        samples[1] = p_line_ab_res;
+        samples[2] = p_line_c_res;
     }
 
     // Other kernel variables
@@ -404,26 +424,24 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     // Samples in each direction
     Matrix<int> samples(3, 1);
 
-    double n_samples_ab = 256;
-    double n_samples_c = 1024;
     double sample_interdist_ab;
-    double sample_interdist_c = line.length() / (double) n_samples_c;
+    double sample_interdist_c = line.length() / (double) p_surface_c_res;
 
     if (line.prismSideA() >= line.prismSideB())
     {
-        sample_interdist_ab = line.prismSideA() / (double) (n_samples_ab - 1);
+        sample_interdist_ab = line.prismSideA() / (double) (p_surface_ab_res - 1);
 
-        samples[0] = n_samples_ab;
+        samples[0] = p_surface_ab_res;
         samples[1] = (line.prismSideB() / sample_interdist_ab) + 1;
-        samples[2] = n_samples_c;
+        samples[2] = p_surface_c_res;
     }
     else
     {
-        sample_interdist_ab = line.prismSideB() / (double) (n_samples_ab - 1);
+        sample_interdist_ab = line.prismSideB() / (double) (p_surface_ab_res - 1);
 
         samples[0] = (line.prismSideA() / sample_interdist_ab) + 1;
-        samples[1] = n_samples_ab;
-        samples[2] = n_samples_c;
+        samples[1] = p_surface_ab_res;
+        samples[2] = p_surface_c_res;
     }
 
     // Other kernel variables

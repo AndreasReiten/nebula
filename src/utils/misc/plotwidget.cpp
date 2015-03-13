@@ -45,6 +45,33 @@ void PlotLineWidget::setLog(bool value)
     isLog = value;
 }
 
+void PlotLineWidget::saveAsText()
+{
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as text");
+
+    if (file_name != "")
+    {
+        QFile file(file_name);
+
+        if (file.open(QIODevice::WriteOnly))
+        {
+            QTextStream stream(&file);
+
+            for (int i = 0; i < p_x_data.size(); i++)
+            {
+                stream << QString::number(p_x_data[i]) << "\t" << QString::number(p_y_data[i]) << "\n";
+            }
+
+            file.close();
+        }
+    }
+}
+
+void PlotLineWidget::saveAsImage()
+{
+
+}
+
 void PlotLineWidget::paintEvent(QPaintEvent * event)
 {
     // Paint the graph as a QPolygon inside rect
@@ -138,8 +165,41 @@ void PlotSurfaceWidget::resizeEvent(QResizeEvent * event)
     fitToWindow();
 }
 
+void PlotSurfaceWidget::saveAsText()
+{
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as text");
+
+    if (file_name != "")
+    {
+        QFile file(file_name);
+
+        if (file.open(QIODevice::WriteOnly))
+        {
+            QTextStream stream(&file);
+
+            for (int i = 0; i < p_raw_data.m(); i++)
+            {
+                for (int j = 0; j < p_raw_data.n(); j++)
+                {
+                    stream << QString::number(p_raw_data[i * p_raw_data.n() + j]) << "\t";
+                }
+
+                stream << "\n";
+            }
+
+            file.close();
+        }
+    }
+}
+
+void PlotSurfaceWidget::saveAsImage()
+{
+
+}
+
 void PlotSurfaceWidget::plot(const Matrix<double> &data)
 {
+    p_raw_data = data;
 
     p_data.resize(data.m(), data.n() * 4);
 

@@ -44,6 +44,10 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         void resolveLineIntegral(Line line);
         void resolvePlaneIntegral(Line line);
         void resolveWeightpoint();
+        void setSurfaceABRes(int value);
+        void setSurfaceCRes(int value);
+        void setLineABRes(int value);
+        void setLineCRes(int value);
 
     signals:
         void rayTraceFinished();
@@ -73,6 +77,11 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         double p_line_integral_xmax;
         double p_line_integral_ymin;
         double p_line_integral_ymax;
+
+        int p_surface_ab_res;
+        int p_surface_c_res;
+        int p_line_ab_res;
+        int p_line_c_res;
 
         Matrix<float> p_plane_integral_data;
 };

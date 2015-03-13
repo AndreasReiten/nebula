@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QImage>
 #include <QScrollArea>
+#include <QFileDialog>
 
 #include "../math/qxmathlib.h"
 
@@ -19,6 +20,8 @@ class PlotLineWidget : public QWidget
     public slots:
         void plot(double xmin, double xmax, double ymin, double ymax, const Matrix<double> &x_data, const Matrix<double> &y_data);
         void setLog(bool value);
+        void saveAsText();
+        void saveAsImage();
 
     protected:
         void paintEvent(QPaintEvent * event);
@@ -46,6 +49,8 @@ class PlotSurfaceWidget : public QScrollArea
         void plot(const Matrix<double> &data);
         void setLog(bool value);
         void fitToWindow();
+        void saveAsText();
+        void saveAsImage();
 
     private:
         void resizeEvent(QResizeEvent * event);
@@ -54,6 +59,7 @@ class PlotSurfaceWidget : public QScrollArea
 
         QLabel * p_label;
         Matrix<uchar> p_data;
+        Matrix<double> p_raw_data;
 };
 
 #endif // PLOTWIDGET_H

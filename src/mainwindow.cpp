@@ -279,6 +279,12 @@ void MainWindow::setStartConditions()
     aNormSpinBox->setValue(1);
     bNormSpinBox->setValue(1);
     cNormSpinBox->setValue(1);
+
+    plotLineABResSpinBox->setValue(128);
+    plotLineCResSpinBox->setValue(1024);
+
+    plotSurfaceABResSpinBox->setValue(128);
+    plotSurfaceCResSpinBox->setValue(1024);
 }
 
 void MainWindow::closeEvent(QCloseEvent * event)
@@ -856,6 +862,18 @@ void MainWindow::initConnects()
     connect(setLinePosBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setLinePosB()));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(update()));
     connect(lineView, SIGNAL(doubleClicked(QModelIndex)), volumeOpenGLWidget, SLOT(zoomToLineModelIndex(QModelIndex)));
+
+
+
+    connect(plotSurfaceSaveAsImageAction, SIGNAL(triggered()), plotSurfaceWidget, SLOT(saveAsImage()));
+    connect(plotSurfaceSaveAsTextAction, SIGNAL(triggered()), plotSurfaceWidget, SLOT(saveAsText()));
+    connect(plotSurfaceABResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setSurfaceABRes(int)));
+    connect(plotSurfaceCResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setSurfaceCRes(int)));
+
+    connect(plotLineSaveAsImageAction, SIGNAL(triggered()), plotLineWidget, SLOT(saveAsImage()));
+    connect(plotLineSaveAsTextAction, SIGNAL(triggered()), plotLineWidget, SLOT(saveAsText()));
+    connect(plotLineABResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setLineABRes(int)));
+    connect(plotLineCResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setLineCRes(int)));
 
 }
 
