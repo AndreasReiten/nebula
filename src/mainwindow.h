@@ -106,11 +106,23 @@ class MainWindow : public QMainWindow
         PlotLineWidget * plotLineWidget;
         QAction * plotLineSaveAsImageAction;
         QAction * plotLineSaveAsTextAction;
+
+        QSpinBox * plotLineABResSpinBox;
+        QSpinBox * plotLineCResSpinBox;
+
         QToolBar * plotLineToolBar;
         QWidget * plotLineWidgetContainter;
 
         QDockWidget * plotSurfaceDockWidget;
         PlotSurfaceWidget * plotSurfaceWidget;
+        QAction * plotSurfaceSaveAsImageAction;
+        QAction * plotSurfaceSaveAsTextAction;
+
+        QSpinBox * plotSurfaceABResSpinBox;
+        QSpinBox * plotSurfaceCResSpinBox;
+
+        QToolBar * plotSurfaceToolBar;
+        QWidget * plotSurfaceWidgetContainter;
 
         // Line dock widget
         QDockWidget * lineDockWidget;

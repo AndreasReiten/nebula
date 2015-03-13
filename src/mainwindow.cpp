@@ -1447,12 +1447,22 @@ void MainWindow::initGUI()
 
         plotLineWidget = new PlotLineWidget;
 
-        plotLineSaveAsImageAction = new QAction(QIcon(":/art/save.png"), "Save as image", this);
+        plotLineSaveAsImageAction = new QAction(QIcon(":/art/screenshot.png"), "Save as image", this);
         plotLineSaveAsTextAction = new QAction(QIcon(":/art/save.png"), "Save as text", this);
 
+        plotLineABResSpinBox = new QSpinBox;
+        plotLineABResSpinBox->setRange(8, 1024);
+        plotLineABResSpinBox->setPrefix("xy res: ");
+
+        plotLineCResSpinBox = new QSpinBox;
+        plotLineCResSpinBox->setRange(8, 4096);
+        plotLineCResSpinBox->setPrefix("z res: ");
+
         plotLineToolBar = new QToolBar("Line integral options");
-        plotLineToolBar->addAction(plotLineSaveAsImageAction);
         plotLineToolBar->addAction(plotLineSaveAsTextAction);
+        plotLineToolBar->addAction(plotLineSaveAsImageAction);
+        plotLineToolBar->addWidget(plotLineABResSpinBox);
+        plotLineToolBar->addWidget(plotLineCResSpinBox);
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1475,7 +1485,35 @@ void MainWindow::initGUI()
 
         plotSurfaceWidget = new PlotSurfaceWidget;
 
-        plotSurfaceDockWidget->setWidget(plotSurfaceWidget);
+        plotSurfaceSaveAsImageAction = new QAction(QIcon(":/art/screenshot.png"), "Save as image", this);
+        plotSurfaceSaveAsTextAction = new QAction(QIcon(":/art/save.png"), "Save as text", this);
+
+        plotSurfaceABResSpinBox = new QSpinBox;
+        plotSurfaceABResSpinBox->setRange(8, 1024);
+        plotSurfaceABResSpinBox->setPrefix("xy res: ");
+
+        plotSurfaceCResSpinBox = new QSpinBox;
+        plotSurfaceCResSpinBox->setRange(8, 4096);
+        plotSurfaceCResSpinBox->setPrefix("z res: ");
+
+        plotSurfaceToolBar = new QToolBar("Surface integral options");
+        plotSurfaceToolBar->addAction(plotSurfaceSaveAsTextAction);
+        plotSurfaceToolBar->addAction(plotSurfaceSaveAsImageAction);
+        plotSurfaceToolBar->addWidget(plotSurfaceABResSpinBox);
+        plotSurfaceToolBar->addWidget(plotSurfaceCResSpinBox);
+
+        QGridLayout * gridLayout = new QGridLayout;
+        gridLayout->setHorizontalSpacing(5);
+        gridLayout->setVerticalSpacing(2);
+        gridLayout->setContentsMargins(5, 5, 5, 5);
+        gridLayout->setRowStretch(0, 1);
+        gridLayout->addWidget(plotSurfaceWidget, 0, 0, 1, 1);
+        gridLayout->addWidget(plotSurfaceToolBar, 1, 0, 1, 1);
+
+        plotSurfaceWidgetContainter = new QWidget;
+        plotSurfaceWidgetContainter->setLayout(gridLayout);
+
+        plotSurfaceDockWidget->setWidget(plotSurfaceWidgetContainter);
         viewMenu->addAction(plotSurfaceDockWidget->toggleViewAction());
         volumeRenderMainWindow->addDockWidget(Qt::LeftDockWidgetArea, plotSurfaceDockWidget);
     }

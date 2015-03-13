@@ -36,22 +36,6 @@ __kernel void svoRayTrace(
     float alpha = tsf_var[4];
     float brightness = tsf_var[5];
 
-    //    if (isLogActive)
-    //    {
-    //        if (data_offset_low <= 0.0f)
-    //        {
-    //            data_offset_low = 0.01f;
-    //        }
-
-    //        if (data_offset_high <= 0.0f)
-    //        {
-    //            data_offset_high = 0.01f;
-    //        }
-
-    //        data_offset_low = log10(data_offset_low);
-    //        data_offset_high = log10(data_offset_high);
-    //    }
-
     // If the global id corresponds to a texel, then check if its associated ray hits our cubic bounding box. If it does - traverse along the intersecing ray segment and accumulate color
     if ((id_glb.x < ray_tex_dim.x) && (id_glb.y < ray_tex_dim.y))
     {
@@ -378,7 +362,6 @@ __kernel void svoRayTrace(
 
                                 if (isLogActive)
                                 {
-                                    // The value range of intensity is paramount to a good visualization, as we add a flat offset of one. This is unfortunate, as the value range must be sufficiently large to achieve a proper visualization
                                     float value = log10(max(intensity + 1.0 - data_offset_low, 1.0)) / log10(data_offset_high - data_offset_low + 1.0);
 
                                     if (value >= 0.0)
@@ -396,8 +379,9 @@ __kernel void svoRayTrace(
                                     tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
                                 }
 
-
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
+
+                                //sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e1, 1.0));
 
                                 color.xyz += (1.f - color.w) * sample.xyz * sample.w;
                                 color.w += (1.f - color.w) * sample.w;
@@ -618,6 +602,8 @@ __kernel void svoRayTrace(
 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
+                                //                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 10, 1.0));
+
                                 sample.w *= alpha * native_divide(cone_diameter, cone_diameter_low);
 
                                 color.xyz += (1.f - color.w) * sample.xyz * sample.w;
@@ -684,35 +670,7 @@ __kernel void svoRayTrace(
 
         if (isIntegration3DActive  && !isSlicingActive && !isDsActive)
         {
-            float2 tsf_position;
-
-            if (isLogActive)
-            {
-                float value = (integrated_intensity - data_offset_low) * 1000000.0f / (data_offset_high - data_offset_low);
-                value = clamp(value, 0.01f, 1000000.0f);
-                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * (log10(value) / log10(1000000.0f)), 0.5f);
-            }
-            else
-            {
-                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
-            }
-
-            //            float2 tsf_position;
-
-            //            if (isLogActive)
-            //            {
-            //                float value = log10(integrated_intensity + 1.0 - data_offset_low) / log10(data_offset_high - data_offset_low + 1.0);
-
-            //                if (value >= 0.0) tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
-
-            //                else tsf_position = (float2)(tsf_offset_low, 0.5f);
-            //            }
-            //            else
-            //            {
-            //                tsf_position = (float2)(tsf_offset_low + (tsf_offset_high - tsf_offset_low) * ((integrated_intensity - data_offset_low) / (data_offset_high - data_offset_low)), 0.5f);
-            //            }
-
-            sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6, 0.0));
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }

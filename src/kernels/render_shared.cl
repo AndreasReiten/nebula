@@ -27,6 +27,8 @@ int boundingBoxIntersect(float3 r_origin, float3 r_delta, float * bbox, float * 
     return smallest_t_max > largest_t_min;
 }
 
+
+
 int boundingBoxIntersect2(float3 r_origin, float3 r_delta, __constant float * bbox, float * t_near, float * t_far)
 {
     // This is simple ray-box intersection: http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -146,3 +148,16 @@ void selectionSort(float * a, int n)
         }
     }
 }
+
+float2 tsfPos(float value, float data_min, float data_max, float tsf_min, float tsf_max, int log, float log_multiplier, float log_offset)
+{
+    if (log)
+    {
+        return (float2)((tsf_min + (tsf_max - tsf_min) * log10(max((value + log_offset - data_min) / (data_max - data_min + log_offset) * log_multiplier, 1.0)) / log10(log_multiplier)), 0.5f);
+    }
+    else
+    {
+        return (float2)(tsf_min + (tsf_max - tsf_min) * ((value - data_min) / (data_max - data_min)), 0.5f);
+    }
+}
+
