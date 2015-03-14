@@ -670,13 +670,13 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     bbox_scaling[15] = 1.0;
     minicell_scaling.setIdentity(4);
     bbox_translation.setIdentity(4);
-//    normalization_scaling.setIdentity(4);
+    //    normalization_scaling.setIdentity(4);
     scalebar_view_matrix.setIdentity(4);
     scalebar_rotation.setIdentity(4);
-//    projection_scaling.setIdentity(4);
-//    projection_scaling[0] = 0.7;
-//    projection_scaling[5] = 0.7;
-//    projection_scaling[10] = 0.7;
+    //    projection_scaling.setIdentity(4);
+    //    projection_scaling[0] = 0.7;
+    //    projection_scaling[5] = 0.7;
+    //    projection_scaling[10] = 0.7;
     unitcell_view_matrix.setIdentity(4);
 
     double N = 0.1;
@@ -769,7 +769,10 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
 
 void VolumeOpenGLWidget::setViewExtentVbo()
 {
-    if (!isGLInitialized) return;
+    if (!isGLInitialized)
+    {
+        return;
+    }
 
     Matrix<GLfloat> vertices(8, 3, 0);
 
@@ -4974,20 +4977,20 @@ void VolumeOpenGLWidget::setProjection()
     isOrthonormal = !isOrthonormal;
     ctc_matrix.setProjection(isOrthonormal);
 
-//    float f;
+    //    float f;
 
-//    if (isOrthonormal)
-//    {
-//        f = 0.9;
-//    }
-//    else
-//    {
-//        f = 0.7;
-//    }
+    //    if (isOrthonormal)
+    //    {
+    //        f = 0.9;
+    //    }
+    //    else
+    //    {
+    //        f = 0.7;
+    //    }
 
-//    projection_scaling[0] = f;
-//    projection_scaling[5] = f;
-//    projection_scaling[10] = f;
+    //    projection_scaling[0] = f;
+    //    projection_scaling[5] = f;
+    //    projection_scaling[10] = f;
 }
 
 void VolumeOpenGLWidget::setLabFrame()

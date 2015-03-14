@@ -461,12 +461,12 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         Matrix<double> bbox_scaling;
         Matrix<double> minicell_scaling;
         Matrix<double> bbox_translation;
-//        Matrix<double> normalization_scaling;
+        //        Matrix<double> normalization_scaling;
         Matrix<double> scalebar_view_matrix;
         Matrix<double> unitcell_view_matrix;
         Matrix<double> minicell_view_matrix;
         RotationMatrix<double> scalebar_rotation;
-//        Matrix<double> projection_scaling;
+        //        Matrix<double> projection_scaling;
         RotationMatrix<double> U;
 
         // Other matrices

@@ -47,14 +47,14 @@ BoxMatrix<T>::~BoxMatrix()
 template <class T>
 Matrix<T> BoxMatrix<T>::planeXY0()
 {
-    Matrix<T> plane(4,1);
+    Matrix<T> plane(4, 1);
 
-    Matrix<T> norm(3,1,0);
-    norm[2] = (this->data()[5]-this->data()[4]);
+    Matrix<T> norm(3, 1, 0);
+    norm[2] = (this->data()[5] - this->data()[4]);
 
     norm = vecNormalize(norm);
 
-    Matrix<T> origin(3,1);
+    Matrix<T> origin(3, 1);
     origin[0] = this->data()[0];
     origin[1] = this->data()[2];
     origin[2] = this->data()[4];
@@ -70,14 +70,14 @@ Matrix<T> BoxMatrix<T>::planeXY0()
 template <class T>
 Matrix<T> BoxMatrix<T>::planeXY1()
 {
-    Matrix<T> plane(4,1);
+    Matrix<T> plane(4, 1);
 
-    Matrix<T> norm(3,1,0);
-    norm[2] = -(this->data()[5]-this->data()[4]);
+    Matrix<T> norm(3, 1, 0);
+    norm[2] = -(this->data()[5] - this->data()[4]);
 
     norm = vecNormalize(norm);
 
-    Matrix<T> origin(3,1);
+    Matrix<T> origin(3, 1);
     origin[0] = this->data()[0];
     origin[1] = this->data()[2];
     origin[2] = this->data()[5];
@@ -93,14 +93,14 @@ Matrix<T> BoxMatrix<T>::planeXY1()
 template <class T>
 Matrix<T> BoxMatrix<T>::planeXZ0()
 {
-    Matrix<T> plane(4,1);
+    Matrix<T> plane(4, 1);
 
-    Matrix<T> norm(3,1,0);
-    norm[1] = (this->data()[3]-this->data()[2]);
+    Matrix<T> norm(3, 1, 0);
+    norm[1] = (this->data()[3] - this->data()[2]);
 
     norm = vecNormalize(norm);
 
-    Matrix<T> origin(3,1);
+    Matrix<T> origin(3, 1);
     origin[0] = this->data()[0];
     origin[1] = this->data()[2];
     origin[2] = this->data()[4];
@@ -116,14 +116,14 @@ Matrix<T> BoxMatrix<T>::planeXZ0()
 template <class T>
 Matrix<T> BoxMatrix<T>::planeXZ1()
 {
-    Matrix<T> plane(4,1);
+    Matrix<T> plane(4, 1);
 
-    Matrix<T> norm(3,1,0);
-    norm[1] = -(this->data()[3]-this->data()[2]);
+    Matrix<T> norm(3, 1, 0);
+    norm[1] = -(this->data()[3] - this->data()[2]);
 
     norm = vecNormalize(norm);
 
-    Matrix<T> origin(3,1);
+    Matrix<T> origin(3, 1);
     origin[0] = this->data()[0];
     origin[1] = this->data()[3];
     origin[2] = this->data()[4];
@@ -139,14 +139,14 @@ Matrix<T> BoxMatrix<T>::planeXZ1()
 template <class T>
 Matrix<T> BoxMatrix<T>::planeYZ0()
 {
-    Matrix<T> plane(4,1);
+    Matrix<T> plane(4, 1);
 
-    Matrix<T> norm(3,1,0);
-    norm[0] = (this->data()[1]-this->data()[0]);
+    Matrix<T> norm(3, 1, 0);
+    norm[0] = (this->data()[1] - this->data()[0]);
 
     norm = vecNormalize(norm);
 
-    Matrix<T> origin(3,1);
+    Matrix<T> origin(3, 1);
     origin[0] = this->data()[0];
     origin[1] = this->data()[2];
     origin[2] = this->data()[4];
@@ -162,14 +162,14 @@ Matrix<T> BoxMatrix<T>::planeYZ0()
 template <class T>
 Matrix<T> BoxMatrix<T>::planeYZ1()
 {
-    Matrix<T> plane(4,1);
+    Matrix<T> plane(4, 1);
 
-    Matrix<T> norm(3,1,0);
-    norm[0] = -(this->data()[1]-this->data()[0]);
+    Matrix<T> norm(3, 1, 0);
+    norm[0] = -(this->data()[1] - this->data()[0]);
 
     norm = vecNormalize(norm);
 
-    Matrix<T> origin(3,1);
+    Matrix<T> origin(3, 1);
     origin[0] = this->data()[1];
     origin[1] = this->data()[2];
     origin[2] = this->data()[4];
