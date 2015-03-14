@@ -881,6 +881,7 @@ void MainWindow::initConnects()
     connect(plotLineABResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setLineABRes(int)));
     connect(plotLineCResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setLineCRes(int)));
     connect(plotLineLogCheckBox, SIGNAL(toggled(bool)), plotLineWidget, SLOT(setLog(bool)));
+    connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(updateProxy(QModelIndex)));
 
 }
 

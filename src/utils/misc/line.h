@@ -79,8 +79,9 @@ class Line : protected QOpenGLFunctions
 Q_DECLARE_METATYPE(Line);
 
 QDebug operator<<(QDebug dbg, const Line &line);
-
+QDebug operator<<(QDebug dbg, const Line &line);
 QDataStream &operator<<(QDataStream &out, const Line &line);
 QDataStream &operator>>(QDataStream &in, Line &line);
+QTextStream &operator<<(QTextStream &out, const Line &line);
 
 #endif // LINE_H

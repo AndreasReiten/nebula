@@ -24,8 +24,6 @@
 #include <QDateTime>
 
 
-#include <QOpenGLContext>
-
 static const size_t BRICK_POOL_SOFT_MAX_BYTES = 0.7e9; // Effectively limited by the max allocation size for global memory if the pool resides on the GPU during pool construction. 3D image can be used with OpenCL 1.2, allowing you to use the entire VRAM.
 static const size_t MAX_POINTS_PER_CLUSTER = 10000000;
 static const size_t MAX_NODES_PER_CLUSTER = 20000;

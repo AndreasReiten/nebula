@@ -2,7 +2,6 @@
 
 #include <QtGlobal>
 #include <QList>
-//#include <QOpenGLContext>
 #include <QString>
 #include <QDebug>
 #include <QFile>

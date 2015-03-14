@@ -43,6 +43,8 @@ void PlotLineWidget::plot(double xmin, double xmax, double ymin, double ymax, co
 void PlotLineWidget::setLog(bool value)
 {
     isLog = value;
+
+    update();
 }
 
 
@@ -199,4 +201,6 @@ void PlotSurfaceWidget::plot(const Matrix<double> &data)
 void PlotSurfaceWidget::setLog(bool value)
 {
     isLog = value;
+
+    plot(p_raw_data);
 }

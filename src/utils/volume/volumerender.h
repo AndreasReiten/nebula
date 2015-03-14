@@ -89,6 +89,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         int p_line_c_res;
 
         Matrix<float> p_surface_data;
+        Line p_line;
 
 };
 
@@ -112,6 +113,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void dataViewExtentChanged();
 
     public slots:
+        void updateProxy(QModelIndex /*index*/);
         void snapLinePosA();
         void snapLinePosB();
         void setLinePosA();
@@ -210,6 +212,12 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setUB_gamma(double value);
 
     private:
+        Matrix<GLfloat> clip_plane0;
+        Matrix<GLfloat> clip_plane1;
+        Matrix<GLfloat> clip_plane2;
+
+        GLuint view_extent_vbo;
+
         int currentLineIndex;
         GLuint weightpoint_vbo;
         Matrix<double> weightpoint;
@@ -237,38 +245,19 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         GLint std_2d_tex_transform;
         QOpenGLShaderProgram * std_2d_tex_program;
 
-        GLint rect_hl_2d_tex_fragpos;
-        GLint rect_hl_2d_tex_pos;
-        GLint rect_hl_2d_tex_texture;
-        GLint rect_hl_2d_tex_transform;
-        GLint rect_hl_2d_tex_bounds;
-        GLint rect_hl_2d_tex_pixel_size;
-        QOpenGLShaderProgram * rect_hl_2d_tex_program;
-
         GLint std_2d_col_color;
         GLint std_2d_col_transform;
         GLint std_2d_col_fragpos;
         QOpenGLShaderProgram * std_2d_col_program;
 
         GLint std_3d_col_color;
-        GLint std_3d_col_transform;
+        GLint std_3d_col_model_transform;
+        GLint std_3d_col_projection_transform;
         GLint std_3d_col_fragpos;
+        GLint std_3d_col_clip_plane0;
+        GLint std_3d_col_clip_plane1;
+        GLint std_3d_col_clip_plane2;
         QOpenGLShaderProgram * std_3d_col_program;
-
-        GLint unitcell_color;
-        GLint unitcell_transform;
-        GLint unitcell_fragpos;
-        GLint unitcell_lim_low;
-        GLint unitcell_lim_high;
-        GLint unitcell_u;
-        QOpenGLShaderProgram * unitcell_program;
-
-        GLint std_blend_fragpos;
-        GLint std_blend_texpos;
-        GLint std_blend_tex_a;
-        GLint std_blend_tex_b;
-        GLint std_blend_method;
-        QOpenGLShaderProgram * std_blend_program;
 
         OpenCLContext context_cl;
 
@@ -384,6 +373,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         GLuint point_vbo;
 
         // Drawing functions
+        void drawViewExtent(QPainter * painter);
         void drawWeightCenter(QPainter * painter);
         void drawRayTex(QPainter * painter);
         void drawPositionScalebars(QPainter * painter);

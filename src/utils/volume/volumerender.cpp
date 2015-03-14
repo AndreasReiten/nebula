@@ -98,6 +98,7 @@ void VolumeWorker::saveSurfaceAsText(QString path)
         if (file.open(QIODevice::WriteOnly))
         {
             QTextStream stream(&file);
+            stream << p_line;
 
             for (int i = 0; i < p_surface_data.m(); i++)
             {
@@ -123,6 +124,7 @@ void VolumeWorker::saveLineAsText(QString path)
         if (file.open(QIODevice::WriteOnly))
         {
             QTextStream stream(&file);
+            stream << p_line;
 
             for (int i = 0; i < p_line_data_x.size(); i++)
             {
@@ -336,6 +338,8 @@ void VolumeWorker::resolveLineIntegral(Line line)
 {
     //*
 
+    p_line = line;
+
     // Kernel launch parameters
     Matrix<size_t> loc_ws(1, 2);
     loc_ws[0] = 1;
@@ -345,21 +349,21 @@ void VolumeWorker::resolveLineIntegral(Line line)
     Matrix<int> samples(3, 1);
 
     double sample_interdist_ab;
-    double sample_interdist_c = line.length() / (double) p_line_c_res;
+    double sample_interdist_c = p_line.length() / (double) p_line_c_res;
 
-    if (line.prismSideA() >= line.prismSideB())
+    if (p_line.prismSideA() >= p_line.prismSideB())
     {
-        sample_interdist_ab = line.prismSideA() / (double) (p_line_ab_res - 1);
+        sample_interdist_ab = p_line.prismSideA() / (double) (p_line_ab_res - 1);
 
         samples[0] = p_line_ab_res;
-        samples[1] = (line.prismSideB() / sample_interdist_ab) + 1;
+        samples[1] = (p_line.prismSideB() / sample_interdist_ab) + 1;
         samples[2] = p_line_c_res;
     }
     else
     {
-        sample_interdist_ab = line.prismSideB() / (double) (p_line_ab_res - 1);
+        sample_interdist_ab = p_line.prismSideB() / (double) (p_line_ab_res - 1);
 
-        samples[0] = (line.prismSideA() / sample_interdist_ab) + 1;
+        samples[0] = (p_line.prismSideA() / sample_interdist_ab) + 1;
         samples[1] = p_line_ab_res;
         samples[2] = p_line_c_res;
     }
@@ -369,9 +373,9 @@ void VolumeWorker::resolveLineIntegral(Line line)
     glb_ws[0] = samples[2];
     glb_ws[1] = loc_ws[1];
 
-    Matrix<double> aVecSegment = vecNormalize(line.aVec()) * sample_interdist_ab;
-    Matrix<double> bVecSegment = vecNormalize(line.bVec()) * sample_interdist_ab;
-    Matrix<double> cVecSegment = vecNormalize(line.cVec()) * sample_interdist_c;
+    Matrix<double> aVecSegment = vecNormalize(p_line.aVec()) * sample_interdist_ab;
+    Matrix<double> bVecSegment = vecNormalize(p_line.bVec()) * sample_interdist_ab;
+    Matrix<double> cVecSegment = vecNormalize(p_line.cVec()) * sample_interdist_c;
 
     p_line_data_y.set(1, samples[2]);
 
@@ -393,7 +397,7 @@ void VolumeWorker::resolveLineIntegral(Line line)
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 5, sizeof(cl_mem), (void *) p_misc_int);
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 6, sizeof(cl_mem), (void *) &result_cl); // Have here
-    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 7, sizeof(cl_float3), line.basePos().toFloat().data());
+    err |= QOpenCLSetKernelArg(p_line_integral_kernel, 7, sizeof(cl_float3), p_line.basePos().toFloat().data());
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 8, sizeof(cl_float3), aVecSegment.toFloat().data());
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 9, sizeof(cl_float3), bVecSegment.toFloat().data());
     err |= QOpenCLSetKernelArg(p_line_integral_kernel, 10, sizeof(cl_float3), cVecSegment.toFloat().data());
@@ -408,7 +412,7 @@ void VolumeWorker::resolveLineIntegral(Line line)
     //    glb_ws.print(0, "glb_ws");
     //    loc_ws.print(0, "loc_ws");
 
-    //    line.basePos().print(3, "basePos");
+    //    p_line.basePos().print(3, "basePos");
     //    aVecSegment.print(6, "aVecSegment");
     //    bVecSegment.print(6, "bVecSegment");
     //    cVecSegment.print(6, "cVecSegment");
@@ -452,7 +456,7 @@ void VolumeWorker::resolveLineIntegral(Line line)
 
 
     p_line_integral_xmin = 0;
-    p_line_integral_xmax = line.length();
+    p_line_integral_xmax = p_line.length();
     p_line_integral_ymin = 0;
     p_line_integral_ymax = p_line_data_y.max();
 
@@ -471,6 +475,8 @@ void VolumeWorker::resolveLineIntegral(Line line)
 
 void VolumeWorker::resolvePlaneIntegral(Line line)
 {
+    p_line = line;
+
     // Kernel launch parameters
     Matrix<size_t> loc_ws(3, 1);
     loc_ws[0] = 1;
@@ -481,21 +487,21 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     Matrix<int> samples(3, 1);
 
     double sample_interdist_ab;
-    double sample_interdist_c = line.length() / (double) p_surface_c_res;
+    double sample_interdist_c = p_line.length() / (double) p_surface_c_res;
 
-    if (line.prismSideA() >= line.prismSideB())
+    if (p_line.prismSideA() >= p_line.prismSideB())
     {
-        sample_interdist_ab = line.prismSideA() / (double) (p_surface_ab_res - 1);
+        sample_interdist_ab = p_line.prismSideA() / (double) (p_surface_ab_res - 1);
 
         samples[0] = p_surface_ab_res;
-        samples[1] = (line.prismSideB() / sample_interdist_ab) + 1;
+        samples[1] = (p_line.prismSideB() / sample_interdist_ab) + 1;
         samples[2] = p_surface_c_res;
     }
     else
     {
-        sample_interdist_ab = line.prismSideB() / (double) (p_surface_ab_res - 1);
+        sample_interdist_ab = p_line.prismSideB() / (double) (p_surface_ab_res - 1);
 
-        samples[0] = (line.prismSideA() / sample_interdist_ab) + 1;
+        samples[0] = (p_line.prismSideA() / sample_interdist_ab) + 1;
         samples[1] = p_surface_ab_res;
         samples[2] = p_surface_c_res;
     }
@@ -506,9 +512,9 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     glb_ws[1] = samples[1];
     glb_ws[2] = loc_ws[2];
 
-    Matrix<double> aVecSegment = vecNormalize(line.aVec()) * sample_interdist_ab;
-    Matrix<double> bVecSegment = vecNormalize(line.bVec()) * sample_interdist_ab;
-    Matrix<double> cVecSegment = vecNormalize(line.cVec()) * sample_interdist_c;
+    Matrix<double> aVecSegment = vecNormalize(p_line.aVec()) * sample_interdist_ab;
+    Matrix<double> bVecSegment = vecNormalize(p_line.bVec()) * sample_interdist_ab;
+    Matrix<double> cVecSegment = vecNormalize(p_line.cVec()) * sample_interdist_c;
 
     p_surface_data.set(samples[0], samples[1]);
 
@@ -530,7 +536,7 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 4, sizeof(cl_mem), (void *) p_data_extent);
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 5, sizeof(cl_mem), (void *) p_misc_int);
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 6, sizeof(cl_mem), (void *) &result_cl);
-    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 7, sizeof(cl_float3), line.basePos().toFloat().data());
+    err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 7, sizeof(cl_float3), p_line.basePos().toFloat().data());
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 8, sizeof(cl_float3), aVecSegment.toFloat().data());
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 9, sizeof(cl_float3), bVecSegment.toFloat().data());
     err |= QOpenCLSetKernelArg(p_plane_integral_kernel, 10, sizeof(cl_float3), cVecSegment.toFloat().data());
@@ -629,6 +635,11 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     workerThread->start();
 
     weightpoint.set(3, 1), 0;
+
+    // Clip planes
+    clip_plane0.set(4,1,0);
+    clip_plane1.set(4,1,0);
+    clip_plane2.set(4,1,0);
 
     // Marker
     markers_selected_indices.set(100, 1, 0);
@@ -770,6 +781,7 @@ VolumeOpenGLWidget::~VolumeOpenGLWidget()
     glDeleteBuffers(1, &unitcell_vbo);
     glDeleteBuffers(1, &marker_centers_vbo);
     glDeleteBuffers(1, &minicell_vbo);
+    glDeleteBuffers(1, &view_extent_vbo);
 
     glDeleteTextures(1, &ray_tex_gl);
     glDeleteTextures(1, &tsf_tex_gl);
@@ -807,6 +819,8 @@ void VolumeOpenGLWidget::paintGL()
     const qreal retinaScale = this->devicePixelRatio();
     glViewport(0, 0, this->width() * retinaScale, this->height() * retinaScale);
     endRawGLCalls(&painter);
+
+    drawViewExtent(&painter);
 
     if (isScalebarActive)
     {
@@ -918,10 +932,10 @@ void VolumeOpenGLWidget::initializeGL()
     glGenBuffers(1, &marker_centers_vbo);
     glGenBuffers(1, &minicell_vbo);
     glGenBuffers(1, &weightpoint_vbo);
+    glGenBuffers(1, &view_extent_vbo);
     glGenTextures(1, &ray_tex_gl);
     glGenTextures(1, &tsf_tex_gl);
     glGenTextures(1, &tsf_tex_gl_thumb);
-
 
     // Shader for drawing textures in 2D
     std_2d_tex_program = new QOpenGLShaderProgram(this);
@@ -953,36 +967,6 @@ void VolumeOpenGLWidget::initializeGL()
         qFatal("Invalid uniform");
     }
 
-    // Shader for drawing textures in 2D with a highlighted rectangle
-    rect_hl_2d_tex_program = new QOpenGLShaderProgram(this);
-    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/rect_hl_2d_tex.v.glsl");
-    rect_hl_2d_tex_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/rect_hl_2d_tex.f.glsl");
-
-    if (!rect_hl_2d_tex_program->link())
-    {
-        qFatal(rect_hl_2d_tex_program->log().toStdString().c_str());
-    }
-
-    if ((rect_hl_2d_tex_fragpos = rect_hl_2d_tex_program->attributeLocation("fragpos")) == -1)
-    {
-        qFatal("Invalid attribute");
-    }
-
-    if ((rect_hl_2d_tex_pos = rect_hl_2d_tex_program->attributeLocation("texpos")) == -1)
-    {
-        qFatal("Invalid attribute");
-    }
-
-    if ((rect_hl_2d_tex_texture = rect_hl_2d_tex_program->uniformLocation("texture")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    if ((rect_hl_2d_tex_transform = rect_hl_2d_tex_program->uniformLocation("transform")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
     // Shader for drawing lines and similar in 3D
     std_3d_col_program = new QOpenGLShaderProgram(this);
     std_3d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_3d_col.v.glsl");
@@ -1003,7 +987,27 @@ void VolumeOpenGLWidget::initializeGL()
         qFatal("Invalid uniform");
     }
 
-    if ((std_3d_col_transform = std_3d_col_program->uniformLocation("transform")) == -1)
+    if ((std_3d_col_model_transform = std_3d_col_program->uniformLocation("model_transform")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_3d_col_projection_transform = std_3d_col_program->uniformLocation("projection_transform")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_3d_col_clip_plane0 = std_3d_col_program->uniformLocation("clip_plane0")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_3d_col_clip_plane1 = std_3d_col_program->uniformLocation("clip_plane1")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_3d_col_clip_plane2 = std_3d_col_program->uniformLocation("clip_plane2")) == -1)
     {
         qFatal("Invalid uniform");
     }
@@ -1033,83 +1037,6 @@ void VolumeOpenGLWidget::initializeGL()
         qFatal("Invalid uniform");
     }
 
-    // Shader for blending two textures
-    std_blend_program = new QOpenGLShaderProgram(this);
-    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_blend.v.glsl");
-    std_blend_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/std_blend.f.glsl");
-
-    if (!std_blend_program->link())
-    {
-        qFatal(std_blend_program->log().toStdString().c_str());
-    }
-
-    if ((std_blend_fragpos = std_blend_program->attributeLocation("fragpos")) == -1)
-    {
-        qFatal("Invalid attribute");
-    }
-
-    if ((std_blend_texpos = std_blend_program->attributeLocation("texpos")) == -1)
-    {
-        qFatal("Invalid attribute");
-    }
-
-    if ((std_blend_tex_a = std_blend_program->uniformLocation("texture_alpha")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    if ((std_blend_tex_b = std_blend_program->uniformLocation("texture_beta")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    if ((std_blend_method = std_blend_program->uniformLocation("method")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    // Shader for drawing a (reciprocal) unitcell grid
-    unitcell_program = new QOpenGLShaderProgram(this);
-    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/unitcell.v.glsl");
-    unitcell_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/unitcell.f.glsl");
-
-    if (!unitcell_program->link())
-    {
-        qFatal(unitcell_program->log().toStdString().c_str());
-    }
-
-    if ((unitcell_fragpos = unitcell_program->attributeLocation("fragpos")) == -1)
-    {
-        qFatal("Invalid attribute");
-    }
-
-    if ((unitcell_color = unitcell_program->uniformLocation("color")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    if ((unitcell_transform = unitcell_program->uniformLocation("transform")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    if ((unitcell_u = unitcell_program->uniformLocation("u")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    if ((unitcell_lim_low = unitcell_program->uniformLocation("lim_low")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-    if ((unitcell_lim_high = unitcell_program->uniformLocation("lim_high")) == -1)
-    {
-        qFatal("Invalid uniform");
-    }
-
-
-
     // Initialize OpenCL
     initializeCL();
 
@@ -1132,8 +1059,6 @@ void VolumeOpenGLWidget::initializeGL()
     // Initial drawings
     updateUnitCellVertices();
     updateUnitCellText();
-
-
 }
 
 float VolumeOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, size_t work_group_size)
@@ -1302,7 +1227,7 @@ void VolumeOpenGLWidget::mousePressEvent(QMouseEvent * event)
         xyz_clip[1] = 2.0 * (double) (this->height() - event->y()) / (double) this->height() - 1.0;
         xyz_clip[2] = 2.0 * depth - 1.0;
 
-        Matrix<double> xyz = view_matrix.inverse4x4() * xyz_clip;
+        Matrix<double> xyz = (ctc_matrix*view_matrix).inverse4x4() * xyz_clip;
 
         xyz[0] /= xyz[3];
         xyz[1] /= xyz[3];
@@ -1729,20 +1654,17 @@ void VolumeOpenGLWidget::setVbo(GLuint vbo, float * buf, size_t length, GLenum u
 void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
 {
     beginRawGLCalls(painter);
-    //    glDisable(GL_DEPTH_TEST); // Because
 
     glLineWidth(0.7);
-    unitcell_program->bind();
-    glEnableVertexAttribArray(unitcell_fragpos);
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
 
     glBindBuffer(GL_ARRAY_BUFFER, unitcell_vbo);
-    glVertexAttribPointer(unitcell_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniformMatrix4fv(unitcell_transform, 1, GL_FALSE, unitcell_view_matrix.colmajor().toFloat().data());
-
-    glUniformMatrix4fv(unitcell_u, 1, GL_FALSE, U.colmajor().toFloat().data());
-
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, unitcell_view_matrix.colmajor().toFloat().data());
 
     float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1] - data_view_extent[0])) * 5.0, 2);
 
@@ -1755,27 +1677,33 @@ void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
 
     color[3] = alpha;
 
-    glUniform4fv(unitcell_color, 1, color.data());
+    glUniform4fv(std_3d_col_color, 1, color.data());
 
-    Matrix<float> lim_low(1, 3);
-    lim_low[0] = data_view_extent[0];
-    lim_low[1] = data_view_extent[2];
-    lim_low[2] = data_view_extent[4];
+    {
+//        Matrix<double> a_norm(3,1);
+//        a_norm[0] = data_view_extent[1]
 
-    Matrix<float> lim_high(1, 3);
-    lim_high[0] = data_view_extent[1];
-    lim_high[1] = data_view_extent[3];
-    lim_high[2] = data_view_extent[5];
+//        Matrix<double> b_norm(3,1);
+//        Matrix<double> c_norm(3,1);
 
-    glUniform3fv(unitcell_lim_low, 1, lim_low.data());
+//        Matrix<double> a0(3,1);
+//        Matrix<double> b0(3,1);
+//        Matrix<double> c0(3,1);
 
-    glUniform3fv(unitcell_lim_high, 1, lim_high.data());
+//        clip_plane0 = plane(a_norm, a0);
+//        clip_plane1 = plane(b_norm, b0);
+//        clip_plane2 = plane(c_norm, c0);
+
+        glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.data());
+        glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.data());
+        glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.data());
+    }
 
     glDrawArrays(GL_LINES,  0, unitcell_nodes);
 
-    glDisableVertexAttribArray(unitcell_fragpos);
+    glDisableVertexAttribArray(std_3d_col_fragpos);
 
-    unitcell_program->release();
+    std_3d_col_program->release();
 
 
     glLineWidth(1.0);
@@ -1892,7 +1820,10 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
 
     glEnableVertexAttribArray(std_3d_col_fragpos);
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, minicell_view_matrix.colmajor().toFloat().data());
+    ctc_matrix.setWindow(200, 200);
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    ctc_matrix.setWindow(this->width(), this->height());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, minicell_view_matrix.colmajor().toFloat().data());
 
     glBindBuffer(GL_ARRAY_BUFFER, minicell_vbo);
     glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -1974,7 +1905,8 @@ void VolumeOpenGLWidget::drawMarkers(QPainter * painter)
 
     glEnableVertexAttribArray(std_3d_col_fragpos);
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
     for (int i = 0; i < markers.size(); i++)
     {
@@ -2029,11 +1961,13 @@ void VolumeOpenGLWidget::drawHklText(QPainter * painter)
 {
     painter->setFont(*font_mono_9i);
 
+    Matrix<double> transform = (ctc_matrix*view_matrix);
+
     for (size_t i = 0; i < hkl_text_counter; i++)
     {
         Matrix<double> pos2d(1, 2);
 
-        getPosition2D(pos2d.data(), hkl_text.data() + i * 6 + 3, &view_matrix);
+        getPosition2D(pos2d.data(), hkl_text.data() + i * 6 + 3, &transform);
 
         QString text = "(" + QString::number((int) hkl_text[i * 6 + 0]) + "," + QString::number((int) hkl_text[i * 6 + 1]) + "," + QString::number((int) hkl_text[i * 6 + 2]) + ")";
 
@@ -2188,6 +2122,11 @@ void VolumeOpenGLWidget::translateToBox(Matrix<double> box)
     data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
 }
 
+void VolumeOpenGLWidget::updateProxy(QModelIndex /*index*/)
+{
+    update();
+}
+
 void VolumeOpenGLWidget::refreshLineIntegral(QModelIndex index)
 {
     currentLineIndex = index.row();
@@ -2232,7 +2171,8 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
 
     glEnableVertexAttribArray(std_3d_col_fragpos);
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
     for (int i = 0; i < lines->size(); i++)
     {
@@ -2306,7 +2246,8 @@ void VolumeOpenGLWidget::drawCenterLine(QPainter * painter)
     glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
 
     glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
@@ -2350,12 +2291,12 @@ void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm
     RotationMatrix<double> point_on_axis, RyPlus, RxPlus;
     RyPlus.setYRotation(zeta);
     RxPlus.setXRotation(eta);
-    point_on_axis = ctc_matrix * bbox_translation * normalization_scaling * rotation * RyPlus * RxPlus;
+    point_on_axis = bbox_translation * normalization_scaling * rotation * RyPlus * RxPlus;
 
     // Vertices rotating around the axis
     RotationMatrix<double> point_around_axis, axis_rotation;
     axis_rotation.setArbRotation(zeta, eta, gamma);
-    point_around_axis = ctc_matrix * bbox_translation * normalization_scaling * rotation * axis_rotation * RyPlus * RxPlus;
+    point_around_axis = bbox_translation * normalization_scaling * rotation * axis_rotation * RyPlus * RxPlus;
 
 
     glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
@@ -2363,11 +2304,13 @@ void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm
     glPointSize(5);
 
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, point_around_axis.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, point_around_axis.colmajor().toFloat().data());
     glDrawArrays(GL_POINTS,  2, 98);
 
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, point_on_axis.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, point_on_axis.colmajor().toFloat().data());
     glDrawArrays(GL_LINE_STRIP,  0, 2);
 
     glDisableVertexAttribArray(std_3d_col_fragpos);
@@ -2524,7 +2467,7 @@ void VolumeOpenGLWidget::initializeCL()
     // Buffers
     cl_view_matrix_inverse = QOpenCLCreateBuffer(context_cl.context(),
                              CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-                             view_matrix.toFloat().bytes(),
+                             (ctc_matrix*view_matrix).inverse4x4().toFloat().bytes(),
                              NULL, &err);
 
     if ( err != CL_SUCCESS)
@@ -2623,19 +2566,18 @@ void VolumeOpenGLWidget::setViewMatrices()
     normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
     normalization_scaling[10] = bbox_scaling[10] * projection_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
 
-    view_matrix =           ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
-    unitcell_view_matrix =  ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
-    scalebar_view_matrix =  ctc_matrix * bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation;
-    ctc_matrix.setWindow(200, 200);
-    minicell_view_matrix = ctc_matrix * bbox_translation * minicell_scaling * rotation * U;
-    ctc_matrix.setWindow(this->width(), this->height());
+    view_matrix = bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
+    unitcell_view_matrix = bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
+    scalebar_view_matrix = bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation;
+
+    minicell_view_matrix = bbox_translation * minicell_scaling * rotation * U;
 
     err = QOpenCLEnqueueWriteBuffer (context_cl.queue(),
                                      cl_view_matrix_inverse,
                                      CL_TRUE,
                                      0,
                                      view_matrix.bytes() / 2,
-                                     view_matrix.inverse4x4().toFloat().data(),
+                                     (ctc_matrix*view_matrix).inverse4x4().toFloat().data(),
                                      0, 0, 0);
 
     if ( err != CL_SUCCESS)
@@ -3537,6 +3479,9 @@ void VolumeOpenGLWidget::beginRawGLCalls(QPainter * painter)
     glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
+    glEnable(GL_CLIP_PLANE0);
+    glEnable(GL_CLIP_PLANE1);
+    glEnable(GL_CLIP_PLANE2);
 }
 
 void VolumeOpenGLWidget::endRawGLCalls(QPainter * painter)
@@ -3544,6 +3489,9 @@ void VolumeOpenGLWidget::endRawGLCalls(QPainter * painter)
     glDisable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE);
+    glDisable(GL_CLIP_PLANE0);
+    glDisable(GL_CLIP_PLANE1);
+    glDisable(GL_CLIP_PLANE2);
     painter->endNativePainting();
 }
 
@@ -3937,9 +3885,9 @@ void VolumeOpenGLWidget::computePixelSize()
     Matrix<double> xyz_01(4, 1);
     Matrix<double> xyz_10(4, 1);
 
-    xyz_00 = view_matrix.inverse4x4() * ndc00;
-    xyz_01 = view_matrix.inverse4x4() * ndc01;
-    xyz_10 = view_matrix.inverse4x4() * ndc10;
+    xyz_00 = (ctc_matrix*view_matrix).inverse4x4() * ndc00;
+    xyz_01 = (ctc_matrix*view_matrix).inverse4x4() * ndc01;
+    xyz_10 = (ctc_matrix*view_matrix).inverse4x4() * ndc10;
 
     Matrix<double> w_vec = xyz_00 - xyz_10;
     Matrix<double> h_vec = xyz_00 - xyz_01;
@@ -4109,7 +4057,8 @@ void VolumeOpenGLWidget::drawWeightCenter(QPainter * painter)
 
     glUniform4fv(std_3d_col_color, 1, red.data());
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
     glLineWidth(2.0);
 
@@ -4144,7 +4093,8 @@ void VolumeOpenGLWidget::drawPositionScalebars(QPainter * painter)
         glUniform4fv(std_3d_col_color, 1, blue_light.data());
     }
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, scalebar_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, scalebar_view_matrix.colmajor().toFloat().data());
 
     glDrawArrays(GL_LINES,  0, scalebar_coord_count);
 
@@ -4155,6 +4105,72 @@ void VolumeOpenGLWidget::drawPositionScalebars(QPainter * painter)
     endRawGLCalls(painter);
 }
 
+void VolumeOpenGLWidget::drawViewExtent(QPainter * painter)
+{
+    beginRawGLCalls(painter);
+
+    // Generate the vertices
+    Matrix<GLfloat> vertices(8, 3, 0);
+
+    int i = 0;
+
+    vertices[i++] = data_view_extent[0];
+    vertices[i++] = data_view_extent[2];
+    vertices[i++] = data_view_extent[4];
+
+    vertices[i++] = data_view_extent[0];
+    vertices[i++] = data_view_extent[2];
+    vertices[i++] = data_view_extent[5];
+
+    vertices[i++] = data_view_extent[0];
+    vertices[i++] = data_view_extent[3];
+    vertices[i++] = data_view_extent[4];
+
+    vertices[i++] = data_view_extent[0];
+    vertices[i++] = data_view_extent[3];
+    vertices[i++] = data_view_extent[5];
+
+    vertices[i++] = data_view_extent[1];
+    vertices[i++] = data_view_extent[2];
+    vertices[i++] = data_view_extent[4];
+
+    vertices[i++] = data_view_extent[1];
+    vertices[i++] = data_view_extent[2];
+    vertices[i++] = data_view_extent[5];
+
+    vertices[i++] = data_view_extent[1];
+    vertices[i++] = data_view_extent[3];
+    vertices[i++] = data_view_extent[4];
+
+    vertices[i++] = data_view_extent[1];
+    vertices[i++] = data_view_extent[3];
+    vertices[i++] = data_view_extent[5];
+
+    setVbo(view_extent_vbo, vertices.data(), vertices.size(), GL_DYNAMIC_DRAW);
+
+    // Draw the lab reference frame
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
+
+    glBindBuffer(GL_ARRAY_BUFFER, view_extent_vbo);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
+
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+
+    GLuint indices[] = {0, 1, 0, 2, 2, 3, 1, 3,  5,7, 4,5, 4,6, 6,7,  3,7, 2,6 ,1,5, 0,4};
+    glLineWidth(0.5);
+    glDrawElements(GL_LINES,  24, GL_UNSIGNED_INT, indices);
+
+    glDisableVertexAttribArray(std_3d_col_fragpos);
+
+    std_3d_col_program->release();
+
+    endRawGLCalls(painter);
+}
 
 void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
 {
@@ -4186,7 +4202,8 @@ void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
         glUniform4fv(std_3d_col_color, 1, blue_light.data());
     }
 
-    glUniformMatrix4fv(std_3d_col_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
     GLuint indices[] = {0, 1, 0, 2, 0, 3};
     glDrawElements(GL_LINES,  6, GL_UNSIGNED_INT, indices);
@@ -4202,10 +4219,12 @@ void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
     painter->setFont(*font_mono_10b);
     painter->setBrush(*fill_brush);
 
+    Matrix<double> transform = (ctc_matrix*view_matrix);
+
     Matrix<float> x_2d(1, 2, 0), y_2d(1, 2, 0), z_2d(1, 2, 0);
-    getPosition2D(x_2d.data(), vertices.data() + 3, &view_matrix);
-    getPosition2D(y_2d.data(), vertices.data() + 6, &view_matrix);
-    getPosition2D(z_2d.data(), vertices.data() + 9, &view_matrix);
+    getPosition2D(x_2d.data(), vertices.data() + 3, &transform);
+    getPosition2D(y_2d.data(), vertices.data() + 6, &transform);
+    getPosition2D(z_2d.data(), vertices.data() + 9, &transform);
 
     painter->drawText(QPointF((x_2d[0] + 1.0) * 0.5 * this->width(), (1.0 - ( x_2d[1] + 1.0) * 0.5) *this->height()), QString("X (towards source)"));
     painter->drawText(QPointF((y_2d[0] + 1.0) * 0.5 * this->width(), (1.0 - ( y_2d[1] + 1.0) * 0.5) *this->height()), QString("Y (up)"));

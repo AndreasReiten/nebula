@@ -1,5 +1,7 @@
+#version 400
+
 uniform sampler2D texture;
-varying vec2 f_texpos;
+in vec2 f_texpos;
 
 void main(void)
 {

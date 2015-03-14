@@ -96,7 +96,13 @@ class Matrix
         void swap(Matrix &first, Matrix &second);
 };
 
-//Q_DECLARE_METATYPE(Matrix);
+Q_DECLARE_METATYPE(Matrix<double>);
+Q_DECLARE_METATYPE(Matrix<float>);
+Q_DECLARE_METATYPE(Matrix<int>);
+Q_DECLARE_METATYPE(Matrix<size_t>);
+Q_DECLARE_METATYPE(Matrix<char>);
+Q_DECLARE_METATYPE(Matrix<uchar>);
+Q_DECLARE_METATYPE(Matrix<uint>);
 
 template<class T> QDebug operator<<(QDebug dbg, const Matrix<T> &m)
 {

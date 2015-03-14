@@ -1,6 +1,8 @@
-attribute  vec2 fragpos;
-attribute  vec2 texpos;
-varying  vec2 f_texpos;
+#version 400
+
+in  vec2 fragpos;
+in  vec2 texpos;
+out  vec2 f_texpos;
 
 
 void main(void)

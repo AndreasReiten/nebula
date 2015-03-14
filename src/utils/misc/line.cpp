@@ -345,13 +345,20 @@ GLuint * Line::vbo()
 
 QDebug operator<<(QDebug dbg, const Line &line)
 {
-    dbg.nospace() << "(...)";
+    dbg.nospace() << "# " << line.comment() << "\n" << line.prismSideA() << " # sida A\n" << line.prismSideB()<< " # side B\n" << line.length() << " # side C\n";
     return dbg.maybeSpace();
 }
 
 QDataStream &operator<<(QDataStream &out, const Line &line)
 {
     out << line.comment() << line.tagged() << line.positionA() << line.positionB() << line.offsetA() << line.offsetB()  << line.prismSideA() << line.prismSideB();
+
+    return out;
+}
+
+QTextStream &operator<<(QTextStream &out, const Line &line)
+{
+    out << "# " << line.comment() << "\n" << line.prismSideA() << " # sida A\n" << line.prismSideB()<< " # side B\n" << line.length() << " # side C\n";
 
     return out;
 }

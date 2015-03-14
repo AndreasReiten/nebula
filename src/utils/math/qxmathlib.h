@@ -6,5 +6,6 @@
     #include "utils/ccmatrix.h"
     #include "utils/ubmatrix.h"
     #include "utils/colormatrix.h"
+    #include "utils/box.h"
 
 #endif // QXMATHLIB_H

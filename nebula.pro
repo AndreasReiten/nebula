@@ -40,11 +40,7 @@ OTHER_FILES += \
     src/shaders/std_3d_col.f.glsl \
     src/shaders/std_3d_col.v.glsl \
     src/shaders/std_blend.f.glsl \
-    src/shaders/std_blend.v.glsl \
-    src/shaders/unitcell.f.glsl \
-    src/shaders/unitcell.v.glsl \
-    src/shaders/rect_hl_2d_tex.f.glsl \
-    src/shaders/rect_hl_2d_tex.v.glsl
+    src/shaders/std_blend.v.glsl
 
 HEADERS += \
     src/utils/file/utils/fileformat.h \
@@ -74,7 +70,8 @@ HEADERS += \
     src/utils/misc/line.h \
     src/utils/misc/marker.h \
     src/utils/misc/linemodel.h \
-    src/utils/misc/plotwidget.h
+    src/utils/misc/plotwidget.h \
+    src/utils/math/utils/box.h
 #    src/utils/glsl/glslfunctions.h
 
 SOURCES += \
