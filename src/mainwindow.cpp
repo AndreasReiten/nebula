@@ -755,8 +755,8 @@ void MainWindow::initConnects()
     connect(this->rulerAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(toggleRuler()));
     connect(this->markAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(addMarker()));
     connect(this->labFrameAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setLabFrame()));
-    connect(this->toggleHklButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(toggleHkl()));
-    connect(this->toggleCellButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setUnitcell()));
+    connect(this->toggleHklButton, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(toggleHkl(bool)));
+    connect(this->toggleCellButton, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setUnitcell(bool)));
     connect(this->hSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setHCurrent(int)));
     connect(this->kSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setKCurrent(int)));
     connect(this->lSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setLCurrent(int)));
@@ -1638,8 +1638,12 @@ void MainWindow::initGUI()
 
         helpCellOverlayButton = new QPushButton("Help Cell");
         rotateCellButton = new QPushButton("Rotation");
-        toggleHklButton = new QPushButton("Toggle hkl");
-        toggleCellButton = new QPushButton("Toggle Cell");
+        toggleHklButton = new QPushButton("[hkl]");
+        toggleHklButton->setCheckable(true);
+        toggleHklButton->setChecked(true);
+        toggleCellButton = new QPushButton("Display cell");
+        toggleCellButton->setCheckable(true);
+        toggleCellButton->setChecked(true);
 
         rotateCellButton->setCheckable(true);
         rotateCellButton->setChecked(false);

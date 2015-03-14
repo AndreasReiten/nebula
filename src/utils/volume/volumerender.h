@@ -130,7 +130,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void addLine();
         void saveLineIntegralAsImage(QString path);
         void saveLineIntegralAsText(QString path);
-        void toggleHkl();
+        void toggleHkl(bool value);
         void setCountIntegration();
         void addMarker();
         void setQuality(int value);
@@ -147,7 +147,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setDataMax(double Value);
         void setAlpha(double value);
         void setBrightness(double value);
-        void setUnitcell();
+        void setUnitcell(bool value);
         void setModel();
         void setModelParam0(double value);
         void setModelParam1(double value);
@@ -212,9 +212,14 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setUB_gamma(double value);
 
     private:
-        Matrix<GLfloat> clip_plane0;
-        Matrix<GLfloat> clip_plane1;
-        Matrix<GLfloat> clip_plane2;
+        void setViewExtentVbo();
+
+        Matrix<double> clip_plane0;
+        Matrix<double> clip_plane1;
+        Matrix<double> clip_plane2;
+        Matrix<double> clip_plane3;
+        Matrix<double> clip_plane4;
+        Matrix<double> clip_plane5;
 
         GLuint view_extent_vbo;
 
@@ -257,6 +262,9 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         GLint std_3d_col_clip_plane0;
         GLint std_3d_col_clip_plane1;
         GLint std_3d_col_clip_plane2;
+        GLint std_3d_col_clip_plane3;
+        GLint std_3d_col_clip_plane4;
+        GLint std_3d_col_clip_plane5;
         QOpenGLShaderProgram * std_3d_col_program;
 
         OpenCLContext context_cl;
@@ -453,17 +461,17 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         Matrix<double> bbox_scaling;
         Matrix<double> minicell_scaling;
         Matrix<double> bbox_translation;
-        Matrix<double> normalization_scaling;
+//        Matrix<double> normalization_scaling;
         Matrix<double> scalebar_view_matrix;
         Matrix<double> unitcell_view_matrix;
         Matrix<double> minicell_view_matrix;
         RotationMatrix<double> scalebar_rotation;
-        Matrix<double> projection_scaling;
+//        Matrix<double> projection_scaling;
         RotationMatrix<double> U;
 
         // Other matrices
-        Matrix<double> data_extent;
-        Matrix<double> data_view_extent;
+        BoxMatrix<double> data_extent;
+        BoxMatrix<double> data_view_extent;
         Matrix<double> tsf_parameters_model;
         Matrix<double> tsf_parameters_svo;
         Matrix<int> misc_ints;

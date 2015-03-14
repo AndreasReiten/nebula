@@ -666,15 +666,17 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     data_translation.setIdentity(4);
     data_scaling.setIdentity(4);
     bbox_scaling.setIdentity(4);
+    bbox_scaling = bbox_scaling * 0.2;
+    bbox_scaling[15] = 1.0;
     minicell_scaling.setIdentity(4);
     bbox_translation.setIdentity(4);
-    normalization_scaling.setIdentity(4);
+//    normalization_scaling.setIdentity(4);
     scalebar_view_matrix.setIdentity(4);
     scalebar_rotation.setIdentity(4);
-    projection_scaling.setIdentity(4);
-    projection_scaling[0] = 0.7;
-    projection_scaling[5] = 0.7;
-    projection_scaling[10] = 0.7;
+//    projection_scaling.setIdentity(4);
+//    projection_scaling[0] = 0.7;
+//    projection_scaling[5] = 0.7;
+//    projection_scaling[10] = 0.7;
     unitcell_view_matrix.setIdentity(4);
 
     double N = 0.1;
@@ -765,6 +767,49 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     identity.setIdentity(4);
 }
 
+void VolumeOpenGLWidget::setViewExtentVbo()
+{
+    if (!isGLInitialized) return;
+
+    Matrix<GLfloat> vertices(8, 3, 0);
+
+    int i = 0;
+
+    vertices[i++] = data_extent[0];
+    vertices[i++] = data_extent[2];
+    vertices[i++] = data_extent[4];
+
+    vertices[i++] = data_extent[0];
+    vertices[i++] = data_extent[2];
+    vertices[i++] = data_extent[5];
+
+    vertices[i++] = data_extent[0];
+    vertices[i++] = data_extent[3];
+    vertices[i++] = data_extent[4];
+
+    vertices[i++] = data_extent[0];
+    vertices[i++] = data_extent[3];
+    vertices[i++] = data_extent[5];
+
+    vertices[i++] = data_extent[1];
+    vertices[i++] = data_extent[2];
+    vertices[i++] = data_extent[4];
+
+    vertices[i++] = data_extent[1];
+    vertices[i++] = data_extent[2];
+    vertices[i++] = data_extent[5];
+
+    vertices[i++] = data_extent[1];
+    vertices[i++] = data_extent[3];
+    vertices[i++] = data_extent[4];
+
+    vertices[i++] = data_extent[1];
+    vertices[i++] = data_extent[3];
+    vertices[i++] = data_extent[5];
+
+    setVbo(view_extent_vbo, vertices.data(), vertices.size(), GL_DYNAMIC_DRAW);
+}
+
 VolumeOpenGLWidget::~VolumeOpenGLWidget()
 {
     if (!(isCLInitialized && isGLInitialized))
@@ -791,9 +836,9 @@ VolumeOpenGLWidget::~VolumeOpenGLWidget()
     workerThread->wait();
 }
 
-void VolumeOpenGLWidget::toggleHkl()
+void VolumeOpenGLWidget::toggleHkl(bool value)
 {
-    isHklTextActive = !isHklTextActive;
+    isHklTextActive = value;
     update();
 }
 
@@ -1012,6 +1057,21 @@ void VolumeOpenGLWidget::initializeGL()
         qFatal("Invalid uniform");
     }
 
+    if ((std_3d_col_clip_plane3 = std_3d_col_program->uniformLocation("clip_plane3")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_3d_col_clip_plane4 = std_3d_col_program->uniformLocation("clip_plane4")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_3d_col_clip_plane5 = std_3d_col_program->uniformLocation("clip_plane5")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
     // Shader for drawing lines and similar in 2D
     std_2d_col_program = new QOpenGLShaderProgram(this);
     std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_2d_col.v.glsl");
@@ -1055,6 +1115,9 @@ void VolumeOpenGLWidget::initializeGL()
 
     // Pens
     initializePaintTools();
+
+    // Initialize some VBOs
+    setViewExtentVbo();
 
     // Initial drawings
     updateUnitCellVertices();
@@ -1680,23 +1743,19 @@ void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
     glUniform4fv(std_3d_col_color, 1, color.data());
 
     {
-        //        Matrix<double> a_norm(3,1);
-        //        a_norm[0] = data_view_extent[1]
+        clip_plane0 = data_view_extent.planeXY0();
+        clip_plane1 = data_view_extent.planeXY1();
+        clip_plane2 = data_view_extent.planeXZ0();
+        clip_plane3 = data_view_extent.planeXZ1();
+        clip_plane4 = data_view_extent.planeYZ0();
+        clip_plane5 = data_view_extent.planeYZ1();
 
-        //        Matrix<double> b_norm(3,1);
-        //        Matrix<double> c_norm(3,1);
-
-        //        Matrix<double> a0(3,1);
-        //        Matrix<double> b0(3,1);
-        //        Matrix<double> c0(3,1);
-
-        //        clip_plane0 = plane(a_norm, a0);
-        //        clip_plane1 = plane(b_norm, b0);
-        //        clip_plane2 = plane(c_norm, c0);
-
-        glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.data());
-        glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.data());
-        glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.data());
+        glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane3, 1, clip_plane3.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane4, 1, clip_plane4.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane5, 1, clip_plane5.toFloat().data());
     }
 
     glDrawArrays(GL_LINES,  0, unitcell_nodes);
@@ -2291,12 +2350,12 @@ void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm
     RotationMatrix<double> point_on_axis, RyPlus, RxPlus;
     RyPlus.setYRotation(zeta);
     RxPlus.setXRotation(eta);
-    point_on_axis = bbox_translation * normalization_scaling * rotation * RyPlus * RxPlus;
+    point_on_axis = bbox_translation * bbox_scaling * rotation * RyPlus * RxPlus;
 
     // Vertices rotating around the axis
     RotationMatrix<double> point_around_axis, axis_rotation;
     axis_rotation.setArbRotation(zeta, eta, gamma);
-    point_around_axis = bbox_translation * normalization_scaling * rotation * axis_rotation * RyPlus * RxPlus;
+    point_around_axis = bbox_translation * bbox_scaling * rotation * axis_rotation * RyPlus * RxPlus;
 
 
     glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
@@ -2562,15 +2621,10 @@ void VolumeOpenGLWidget::initializeCL()
 
 void VolumeOpenGLWidget::setViewMatrices()
 {
-    normalization_scaling[0] = bbox_scaling[0] * projection_scaling[0] * 2.0 / (data_extent[1] - data_extent[0]);
-    normalization_scaling[5] = bbox_scaling[5] * projection_scaling[5] * 2.0 / (data_extent[3] - data_extent[2]);
-    normalization_scaling[10] = bbox_scaling[10] * projection_scaling[10] * 2.0 / (data_extent[5] - data_extent[4]);
-
-    view_matrix = bbox_translation * normalization_scaling * data_scaling * rotation * data_translation;
-    unitcell_view_matrix = bbox_translation * normalization_scaling * data_scaling * rotation * data_translation * U;
-    scalebar_view_matrix = bbox_translation * normalization_scaling * data_scaling * rotation * scalebar_rotation;
-
-    minicell_view_matrix = bbox_translation * minicell_scaling * rotation * U;
+    view_matrix =           bbox_translation * bbox_scaling * data_scaling * rotation * data_translation;
+    unitcell_view_matrix =  bbox_translation * bbox_scaling * data_scaling * rotation * data_translation * U;
+    scalebar_view_matrix =  bbox_translation * bbox_scaling * data_scaling * rotation * scalebar_rotation;
+    minicell_view_matrix =  bbox_translation * minicell_scaling * rotation * U;
 
     err = QOpenCLEnqueueWriteBuffer (context_cl.queue(),
                                      cl_view_matrix_inverse,
@@ -3482,6 +3536,9 @@ void VolumeOpenGLWidget::beginRawGLCalls(QPainter * painter)
     glEnable(GL_CLIP_PLANE0);
     glEnable(GL_CLIP_PLANE1);
     glEnable(GL_CLIP_PLANE2);
+    glEnable(GL_CLIP_PLANE3);
+    glEnable(GL_CLIP_PLANE4);
+    glEnable(GL_CLIP_PLANE5);
 }
 
 void VolumeOpenGLWidget::endRawGLCalls(QPainter * painter)
@@ -3492,17 +3549,22 @@ void VolumeOpenGLWidget::endRawGLCalls(QPainter * painter)
     glDisable(GL_CLIP_PLANE0);
     glDisable(GL_CLIP_PLANE1);
     glDisable(GL_CLIP_PLANE2);
+    glDisable(GL_CLIP_PLANE3);
+    glDisable(GL_CLIP_PLANE4);
+    glDisable(GL_CLIP_PLANE5);
     painter->endNativePainting();
 }
 
 void VolumeOpenGLWidget::setMiniCell(bool value)
 {
     isMiniCellActive = value;
+    update();
 }
 
 void VolumeOpenGLWidget::setOrthoGrid()
 {
     isOrthoGridActive = !isOrthoGridActive;
+    update();
 }
 
 void VolumeOpenGLWidget::drawRuler(QPainter * painter)
@@ -4108,45 +4170,12 @@ void VolumeOpenGLWidget::drawPositionScalebars(QPainter * painter)
 void VolumeOpenGLWidget::drawViewExtent(QPainter * painter)
 {
     beginRawGLCalls(painter);
-
-    // Generate the vertices
-    Matrix<GLfloat> vertices(8, 3, 0);
-
-    int i = 0;
-
-    vertices[i++] = data_view_extent[0];
-    vertices[i++] = data_view_extent[2];
-    vertices[i++] = data_view_extent[4];
-
-    vertices[i++] = data_view_extent[0];
-    vertices[i++] = data_view_extent[2];
-    vertices[i++] = data_view_extent[5];
-
-    vertices[i++] = data_view_extent[0];
-    vertices[i++] = data_view_extent[3];
-    vertices[i++] = data_view_extent[4];
-
-    vertices[i++] = data_view_extent[0];
-    vertices[i++] = data_view_extent[3];
-    vertices[i++] = data_view_extent[5];
-
-    vertices[i++] = data_view_extent[1];
-    vertices[i++] = data_view_extent[2];
-    vertices[i++] = data_view_extent[4];
-
-    vertices[i++] = data_view_extent[1];
-    vertices[i++] = data_view_extent[2];
-    vertices[i++] = data_view_extent[5];
-
-    vertices[i++] = data_view_extent[1];
-    vertices[i++] = data_view_extent[3];
-    vertices[i++] = data_view_extent[4];
-
-    vertices[i++] = data_view_extent[1];
-    vertices[i++] = data_view_extent[3];
-    vertices[i++] = data_view_extent[5];
-
-    setVbo(view_extent_vbo, vertices.data(), vertices.size(), GL_DYNAMIC_DRAW);
+    glDisable(GL_CLIP_PLANE0);
+    glDisable(GL_CLIP_PLANE1);
+    glDisable(GL_CLIP_PLANE2);
+    glDisable(GL_CLIP_PLANE3);
+    glDisable(GL_CLIP_PLANE4);
+    glDisable(GL_CLIP_PLANE5);
 
     // Draw the lab reference frame
     std_3d_col_program->bind();
@@ -4159,7 +4188,7 @@ void VolumeOpenGLWidget::drawViewExtent(QPainter * painter)
     glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
 
     glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
-    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, (bbox_translation * bbox_scaling * rotation).colmajor().toFloat().data());
 
     GLuint indices[] = {0, 1, 0, 2, 2, 3, 1, 3,  5, 7, 4, 5, 4, 6, 6, 7,  3, 7, 2, 6 , 1, 5, 0, 4};
     glLineWidth(0.5);
@@ -4634,6 +4663,7 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     lines = svo->lines();
 
     data_extent.setDeep(4, 2, svo->extent().data());
+    setViewExtentVbo();
     data_view_extent.setDeep(4, 2, svo->extent().data());
 
     misc_ints[0] = (int) svo->levels();;
@@ -4944,20 +4974,20 @@ void VolumeOpenGLWidget::setProjection()
     isOrthonormal = !isOrthonormal;
     ctc_matrix.setProjection(isOrthonormal);
 
-    float f;
+//    float f;
 
-    if (isOrthonormal)
-    {
-        f = 0.9;
-    }
-    else
-    {
-        f = 0.7;
-    }
+//    if (isOrthonormal)
+//    {
+//        f = 0.9;
+//    }
+//    else
+//    {
+//        f = 0.7;
+//    }
 
-    projection_scaling[0] = f;
-    projection_scaling[5] = f;
-    projection_scaling[10] = f;
+//    projection_scaling[0] = f;
+//    projection_scaling[5] = f;
+//    projection_scaling[10] = f;
 }
 
 void VolumeOpenGLWidget::setLabFrame()
@@ -5001,6 +5031,7 @@ void VolumeOpenGLWidget::setLog(bool value)
 void VolumeOpenGLWidget::setLogarithmic2D()
 {
     isLogarithmic2D = !isLogarithmic2D;
+    update();
 }
 void VolumeOpenGLWidget::setDataStructure()
 {
@@ -5144,9 +5175,9 @@ void VolumeOpenGLWidget::setBrightness(double value)
     setTsfParameters();
 }
 
-void VolumeOpenGLWidget::setUnitcell()
+void VolumeOpenGLWidget::setUnitcell(bool value)
 {
-    isUnitcellActive = !isUnitcellActive;
+    isUnitcellActive = value;
     update();
 }
 
@@ -5154,6 +5185,7 @@ void VolumeOpenGLWidget::setUnitcell()
 void VolumeOpenGLWidget::setModel()
 {
     isModelActive = !isModelActive;
+    update();
 }
 void VolumeOpenGLWidget::setModelParam0(double value)
 {
