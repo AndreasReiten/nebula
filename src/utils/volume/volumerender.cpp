@@ -637,9 +637,9 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     weightpoint.set(3, 1), 0;
 
     // Clip planes
-    clip_plane0.set(4,1,0);
-    clip_plane1.set(4,1,0);
-    clip_plane2.set(4,1,0);
+    clip_plane0.set(4, 1, 0);
+    clip_plane1.set(4, 1, 0);
+    clip_plane2.set(4, 1, 0);
 
     // Marker
     markers_selected_indices.set(100, 1, 0);
@@ -1227,7 +1227,7 @@ void VolumeOpenGLWidget::mousePressEvent(QMouseEvent * event)
         xyz_clip[1] = 2.0 * (double) (this->height() - event->y()) / (double) this->height() - 1.0;
         xyz_clip[2] = 2.0 * depth - 1.0;
 
-        Matrix<double> xyz = (ctc_matrix*view_matrix).inverse4x4() * xyz_clip;
+        Matrix<double> xyz = (ctc_matrix * view_matrix).inverse4x4() * xyz_clip;
 
         xyz[0] /= xyz[3];
         xyz[1] /= xyz[3];
@@ -1680,19 +1680,19 @@ void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
     glUniform4fv(std_3d_col_color, 1, color.data());
 
     {
-//        Matrix<double> a_norm(3,1);
-//        a_norm[0] = data_view_extent[1]
+        //        Matrix<double> a_norm(3,1);
+        //        a_norm[0] = data_view_extent[1]
 
-//        Matrix<double> b_norm(3,1);
-//        Matrix<double> c_norm(3,1);
+        //        Matrix<double> b_norm(3,1);
+        //        Matrix<double> c_norm(3,1);
 
-//        Matrix<double> a0(3,1);
-//        Matrix<double> b0(3,1);
-//        Matrix<double> c0(3,1);
+        //        Matrix<double> a0(3,1);
+        //        Matrix<double> b0(3,1);
+        //        Matrix<double> c0(3,1);
 
-//        clip_plane0 = plane(a_norm, a0);
-//        clip_plane1 = plane(b_norm, b0);
-//        clip_plane2 = plane(c_norm, c0);
+        //        clip_plane0 = plane(a_norm, a0);
+        //        clip_plane1 = plane(b_norm, b0);
+        //        clip_plane2 = plane(c_norm, c0);
 
         glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.data());
         glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.data());
@@ -1961,7 +1961,7 @@ void VolumeOpenGLWidget::drawHklText(QPainter * painter)
 {
     painter->setFont(*font_mono_9i);
 
-    Matrix<double> transform = (ctc_matrix*view_matrix);
+    Matrix<double> transform = (ctc_matrix * view_matrix);
 
     for (size_t i = 0; i < hkl_text_counter; i++)
     {
@@ -2467,7 +2467,7 @@ void VolumeOpenGLWidget::initializeCL()
     // Buffers
     cl_view_matrix_inverse = QOpenCLCreateBuffer(context_cl.context(),
                              CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
-                             (ctc_matrix*view_matrix).inverse4x4().toFloat().bytes(),
+                             (ctc_matrix * view_matrix).inverse4x4().toFloat().bytes(),
                              NULL, &err);
 
     if ( err != CL_SUCCESS)
@@ -2577,7 +2577,7 @@ void VolumeOpenGLWidget::setViewMatrices()
                                      CL_TRUE,
                                      0,
                                      view_matrix.bytes() / 2,
-                                     (ctc_matrix*view_matrix).inverse4x4().toFloat().data(),
+                                     (ctc_matrix * view_matrix).inverse4x4().toFloat().data(),
                                      0, 0, 0);
 
     if ( err != CL_SUCCESS)
@@ -3885,9 +3885,9 @@ void VolumeOpenGLWidget::computePixelSize()
     Matrix<double> xyz_01(4, 1);
     Matrix<double> xyz_10(4, 1);
 
-    xyz_00 = (ctc_matrix*view_matrix).inverse4x4() * ndc00;
-    xyz_01 = (ctc_matrix*view_matrix).inverse4x4() * ndc01;
-    xyz_10 = (ctc_matrix*view_matrix).inverse4x4() * ndc10;
+    xyz_00 = (ctc_matrix * view_matrix).inverse4x4() * ndc00;
+    xyz_01 = (ctc_matrix * view_matrix).inverse4x4() * ndc01;
+    xyz_10 = (ctc_matrix * view_matrix).inverse4x4() * ndc10;
 
     Matrix<double> w_vec = xyz_00 - xyz_10;
     Matrix<double> h_vec = xyz_00 - xyz_01;
@@ -4161,7 +4161,7 @@ void VolumeOpenGLWidget::drawViewExtent(QPainter * painter)
     glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
     glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
 
-    GLuint indices[] = {0, 1, 0, 2, 2, 3, 1, 3,  5,7, 4,5, 4,6, 6,7,  3,7, 2,6 ,1,5, 0,4};
+    GLuint indices[] = {0, 1, 0, 2, 2, 3, 1, 3,  5, 7, 4, 5, 4, 6, 6, 7,  3, 7, 2, 6 , 1, 5, 0, 4};
     glLineWidth(0.5);
     glDrawElements(GL_LINES,  24, GL_UNSIGNED_INT, indices);
 
@@ -4219,7 +4219,7 @@ void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
     painter->setFont(*font_mono_10b);
     painter->setBrush(*fill_brush);
 
-    Matrix<double> transform = (ctc_matrix*view_matrix);
+    Matrix<double> transform = (ctc_matrix * view_matrix);
 
     Matrix<float> x_2d(1, 2, 0), y_2d(1, 2, 0), z_2d(1, 2, 0);
     getPosition2D(x_2d.data(), vertices.data() + 3, &transform);

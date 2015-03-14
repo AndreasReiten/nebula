@@ -24,7 +24,7 @@ class BoxMatrix : public Matrix<T>
 template <class T>
 BoxMatrix<T>::BoxMatrix()
 {
-    this->set(4,2,0);
+    this->set(4, 2, 0);
 }
 
 template <class T>
@@ -32,7 +32,7 @@ BoxMatrix<T>::BoxMatrix(T x0, T x1, T y0, T y1, T z0, T z1)
 {
     T buf[8] = {x0, x1, y0, y1, z0, z1, 1, 1};
 
-    this->setDeep(4,2,buf);
+    this->setDeep(4, 2, buf);
 }
 
 template <class T>

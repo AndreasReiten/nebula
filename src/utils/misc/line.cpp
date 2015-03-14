@@ -345,7 +345,7 @@ GLuint * Line::vbo()
 
 QDebug operator<<(QDebug dbg, const Line &line)
 {
-    dbg.nospace() << "# " << line.comment() << "\n" << line.prismSideA() << " # sida A\n" << line.prismSideB()<< " # side B\n" << line.length() << " # side C\n";
+    dbg.nospace() << "# " << line.comment() << "\n" << line.prismSideA() << " # sida A\n" << line.prismSideB() << " # side B\n" << line.length() << " # side C\n";
     return dbg.maybeSpace();
 }
 
@@ -358,7 +358,7 @@ QDataStream &operator<<(QDataStream &out, const Line &line)
 
 QTextStream &operator<<(QTextStream &out, const Line &line)
 {
-    out << "# " << line.comment() << "\n" << line.prismSideA() << " # sida A\n" << line.prismSideB()<< " # side B\n" << line.length() << " # side C\n";
+    out << "# " << line.comment() << "\n" << line.prismSideA() << " # sida A\n" << line.prismSideB() << " # side B\n" << line.length() << " # side C\n";
 
     return out;
 }
