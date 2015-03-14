@@ -20,7 +20,6 @@ class PlotLineWidget : public QWidget
     public slots:
         void plot(double xmin, double xmax, double ymin, double ymax, const Matrix<double> &x_data, const Matrix<double> &y_data);
         void setLog(bool value);
-        void saveAsText();
         void saveAsImage();
 
     protected:
@@ -49,7 +48,6 @@ class PlotSurfaceWidget : public QScrollArea
         void plot(const Matrix<double> &data);
         void setLog(bool value);
         void fitToWindow();
-        void saveAsText();
         void saveAsImage();
 
     private:

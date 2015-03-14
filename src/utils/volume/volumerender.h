@@ -4,6 +4,7 @@
 #include <QThread>
 #include <QOpenGLShaderProgram>
 #include <QElapsedTimer>
+#include <QFileDialog>
 
 #include "../math/qxmathlib.h"
 #include "../misc/transferfunction.h"
@@ -30,7 +31,8 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
                           cl_mem * data_view_extent,
                           cl_mem * misc_int);
 
-        Matrix<double> getLineIntegralData();
+        Matrix<double> getLineIntegralDataX();
+        Matrix<double> getLineIntegralDataY();
         Matrix<double> getPlaneIntegralData();
 
         double getLineIntegralXmin();
@@ -48,6 +50,8 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         void setSurfaceCRes(int value);
         void setLineABRes(int value);
         void setLineCRes(int value);
+        void saveLineAsText(QString path);
+        void saveSurfaceAsText(QString path);
 
     signals:
         void rayTraceFinished();
@@ -72,7 +76,8 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         cl_mem * p_data_view_extent;
         cl_mem * p_misc_int;
 
-        Matrix<float> p_line_integral_data;
+        Matrix<float> p_line_data_x;
+        Matrix<float> p_line_data_y;
         double p_line_integral_xmin;
         double p_line_integral_xmax;
         double p_line_integral_ymin;
@@ -83,7 +88,8 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         int p_line_ab_res;
         int p_line_c_res;
 
-        Matrix<float> p_plane_integral_data;
+        Matrix<float> p_surface_data;
+
 };
 
 class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions

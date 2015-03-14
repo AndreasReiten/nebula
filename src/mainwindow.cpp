@@ -285,6 +285,9 @@ void MainWindow::setStartConditions()
 
     plotSurfaceABResSpinBox->setValue(128);
     plotSurfaceCResSpinBox->setValue(1024);
+
+    plotLineLogCheckBox->setChecked(true);
+    plotSurfaceLogCheckBox->setChecked(true);
 }
 
 void MainWindow::closeEvent(QCloseEvent * event)
@@ -866,15 +869,33 @@ void MainWindow::initConnects()
 
 
     connect(plotSurfaceSaveAsImageAction, SIGNAL(triggered()), plotSurfaceWidget, SLOT(saveAsImage()));
-    connect(plotSurfaceSaveAsTextAction, SIGNAL(triggered()), plotSurfaceWidget, SLOT(saveAsText()));
+    connect(plotSurfaceSaveAsTextAction, SIGNAL(triggered()), this, SLOT(saveSurfaceAsTextProxy()));
+    connect(this, SIGNAL(saveSurfaceAsText(QString)), volumeOpenGLWidget->worker(), SLOT(saveSurfaceAsText(QString)));
     connect(plotSurfaceABResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setSurfaceABRes(int)));
     connect(plotSurfaceCResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setSurfaceCRes(int)));
+    connect(plotSurfaceLogCheckBox, SIGNAL(toggled(bool)), plotSurfaceWidget, SLOT(setLog(bool)));
 
     connect(plotLineSaveAsImageAction, SIGNAL(triggered()), plotLineWidget, SLOT(saveAsImage()));
-    connect(plotLineSaveAsTextAction, SIGNAL(triggered()), plotLineWidget, SLOT(saveAsText()));
+    connect(plotLineSaveAsTextAction, SIGNAL(triggered()), this, SLOT(saveLineAsTextProxy()));
+    connect(this, SIGNAL(saveLineAsText(QString)), volumeOpenGLWidget->worker(), SLOT(saveLineAsText(QString)));
     connect(plotLineABResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setLineABRes(int)));
     connect(plotLineCResSpinBox, SIGNAL(valueChanged(int)), volumeOpenGLWidget->worker(), SLOT(setLineCRes(int)));
+    connect(plotLineLogCheckBox, SIGNAL(toggled(bool)), plotLineWidget, SLOT(setLog(bool)));
 
+}
+
+void MainWindow::saveSurfaceAsTextProxy()
+{
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as text");
+
+    emit saveSurfaceAsText(file_name);
+}
+
+void MainWindow::saveLineAsTextProxy()
+{
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as text");
+
+    emit saveLineAsText(file_name);
 }
 
 void MainWindow::setGeneralProgressFormat(QString str)
@@ -1476,11 +1497,16 @@ void MainWindow::initGUI()
         plotLineCResSpinBox->setRange(8, 4096);
         plotLineCResSpinBox->setPrefix("z res: ");
 
+        plotLineLogCheckBox = new QCheckBox("Log");
+
         plotLineToolBar = new QToolBar("Line integral options");
         plotLineToolBar->addAction(plotLineSaveAsTextAction);
         plotLineToolBar->addAction(plotLineSaveAsImageAction);
+        plotLineToolBar->addSeparator();
         plotLineToolBar->addWidget(plotLineABResSpinBox);
         plotLineToolBar->addWidget(plotLineCResSpinBox);
+        plotLineToolBar->addSeparator();
+        plotLineToolBar->addWidget(plotLineLogCheckBox);
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1514,11 +1540,16 @@ void MainWindow::initGUI()
         plotSurfaceCResSpinBox->setRange(8, 4096);
         plotSurfaceCResSpinBox->setPrefix("z res: ");
 
+        plotSurfaceLogCheckBox = new QCheckBox("Log");
+
         plotSurfaceToolBar = new QToolBar("Surface integral options");
         plotSurfaceToolBar->addAction(plotSurfaceSaveAsTextAction);
         plotSurfaceToolBar->addAction(plotSurfaceSaveAsImageAction);
+        plotSurfaceToolBar->addSeparator();
         plotSurfaceToolBar->addWidget(plotSurfaceABResSpinBox);
         plotSurfaceToolBar->addWidget(plotSurfaceCResSpinBox);
+        plotSurfaceToolBar->addSeparator();
+        plotSurfaceToolBar->addWidget(plotSurfaceLogCheckBox);
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -2008,20 +2039,12 @@ void MainWindow::setImageRange(int low, int high)
 
 void MainWindow::setLineIntegralPlot()
 {
-    Matrix<double> y_data = volumeOpenGLWidget->worker()->getLineIntegralData();
-
-    Matrix<double> x_data(y_data.m(), y_data.n());
-
-    for (int i = 0; i < x_data.size(); i++)
-    {
-        x_data[i] = volumeOpenGLWidget->worker()->getLineIntegralXmin() +  i * (volumeOpenGLWidget->worker()->getLineIntegralXmax() - volumeOpenGLWidget->worker()->getLineIntegralXmin()) / (x_data.size() - 1);
-    }
-
     plotLineWidget->plot(volumeOpenGLWidget->worker()->getLineIntegralXmin(),
                          volumeOpenGLWidget->worker()->getLineIntegralXmax(),
                          volumeOpenGLWidget->worker()->getLineIntegralYmin(),
                          volumeOpenGLWidget->worker()->getLineIntegralYmax(),
-                         x_data, y_data);
+                         volumeOpenGLWidget->worker()->getLineIntegralDataX(),
+                         volumeOpenGLWidget->worker()->getLineIntegralDataY());
 }
 
 void MainWindow::setPlaneIntegralPlot()

@@ -45,27 +45,7 @@ void PlotLineWidget::setLog(bool value)
     isLog = value;
 }
 
-void PlotLineWidget::saveAsText()
-{
-    QString file_name = QFileDialog::getSaveFileName(this, "Save as text");
 
-    if (file_name != "")
-    {
-        QFile file(file_name);
-
-        if (file.open(QIODevice::WriteOnly))
-        {
-            QTextStream stream(&file);
-
-            for (int i = 0; i < p_x_data.size(); i++)
-            {
-                stream << QString::number(p_x_data[i]) << "\t" << QString::number(p_y_data[i]) << "\n";
-            }
-
-            file.close();
-        }
-    }
-}
 
 void PlotLineWidget::saveAsImage()
 {
@@ -84,9 +64,18 @@ void PlotLineWidget::paintEvent(QPaintEvent * event)
 
     for (size_t i = 0; i < p_y_data.n(); i++)
     {
-        polygon << QPointF(
-                    ((p_x_data[i] - p_x_min) / (p_x_max - p_x_min))* rect.width() + rect.left() ,
-                    (rect.height() - ((p_y_data[i] - p_y_min) / (p_y_max - p_y_min))* rect.height()) + rect.top());
+        if (isLog)
+        {
+            polygon << QPointF(
+                        ((p_x_data[i] - p_x_min) / (p_x_max - p_x_min))* rect.width() + rect.left() ,
+                        (rect.height() - (log10(p_y_data[i] - p_y_min + 1.0) / log10(p_y_max - p_y_min + 1.0))* rect.height()) + rect.top());
+        }
+        else
+        {
+            polygon << QPointF(
+                        ((p_x_data[i] - p_x_min) / (p_x_max - p_x_min))* rect.width() + rect.left() ,
+                        (rect.height() - ((p_y_data[i] - p_y_min) / (p_y_max - p_y_min))* rect.height()) + rect.top());
+        }
     }
 
     polygon << rect.bottomRight();
@@ -165,32 +154,6 @@ void PlotSurfaceWidget::resizeEvent(QResizeEvent * event)
     fitToWindow();
 }
 
-void PlotSurfaceWidget::saveAsText()
-{
-    QString file_name = QFileDialog::getSaveFileName(this, "Save as text");
-
-    if (file_name != "")
-    {
-        QFile file(file_name);
-
-        if (file.open(QIODevice::WriteOnly))
-        {
-            QTextStream stream(&file);
-
-            for (int i = 0; i < p_raw_data.m(); i++)
-            {
-                for (int j = 0; j < p_raw_data.n(); j++)
-                {
-                    stream << QString::number(p_raw_data[i * p_raw_data.n() + j]) << "\t";
-                }
-
-                stream << "\n";
-            }
-
-            file.close();
-        }
-    }
-}
 
 void PlotSurfaceWidget::saveAsImage()
 {

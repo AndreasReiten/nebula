@@ -35,7 +35,6 @@ VolumeWorker::VolumeWorker() :
     p_line_c_res(1024)
 {
     initializeOpenCLFunctions();
-
 }
 
 VolumeWorker::~VolumeWorker()
@@ -90,14 +89,64 @@ void VolumeWorker::initializeOpenCLKernels()
     }
 }
 
-Matrix<double> VolumeWorker::getLineIntegralData()
+void VolumeWorker::saveSurfaceAsText(QString path)
 {
-    return p_line_integral_data.toDouble();
+    if (path != "")
+    {
+        QFile file(path);
+
+        if (file.open(QIODevice::WriteOnly))
+        {
+            QTextStream stream(&file);
+
+            for (int i = 0; i < p_surface_data.m(); i++)
+            {
+                for (int j = 0; j < p_surface_data.n(); j++)
+                {
+                    stream << QString::number(p_surface_data[i * p_surface_data.n() + j]) << "\t";
+                }
+
+                stream << "\n";
+            }
+
+            file.close();
+        }
+    }
+}
+
+void VolumeWorker::saveLineAsText(QString path)
+{
+    if (path != "")
+    {
+        QFile file(path);
+
+        if (file.open(QIODevice::WriteOnly))
+        {
+            QTextStream stream(&file);
+
+            for (int i = 0; i < p_line_data_x.size(); i++)
+            {
+                stream << QString::number(p_line_data_x[i]) << "\t" << QString::number(p_line_data_y[i]) << "\n";
+            }
+
+            file.close();
+        }
+    }
+}
+
+Matrix<double> VolumeWorker::getLineIntegralDataX()
+{
+    return p_line_data_x.toDouble();
+}
+
+Matrix<double> VolumeWorker::getLineIntegralDataY()
+{
+    return p_line_data_y.toDouble();
 }
 
 Matrix<double> VolumeWorker::getPlaneIntegralData()
 {
-    return p_plane_integral_data.toDouble();
+    return p_surface_data.toDouble();
 }
 
 double VolumeWorker::getLineIntegralXmin()
@@ -273,8 +322,6 @@ void VolumeWorker::resolveWeightpoint()
     double y = yi / i;
     double z = zi / i;
 
-    //    qDebug() << x << y << z << i;
-
     if (i <= 0)
     {
         x = 0;
@@ -326,12 +373,12 @@ void VolumeWorker::resolveLineIntegral(Line line)
     Matrix<double> bVecSegment = vecNormalize(line.bVec()) * sample_interdist_ab;
     Matrix<double> cVecSegment = vecNormalize(line.cVec()) * sample_interdist_c;
 
-    p_line_integral_data.set(1, samples[2]);
+    p_line_data_y.set(1, samples[2]);
 
     cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
                                            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-                                           p_line_integral_data.bytes(),
-                                           p_line_integral_data.data(), &err);
+                                           p_line_data_y.bytes(),
+                                           p_line_data_y.data(), &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -387,8 +434,8 @@ void VolumeWorker::resolveLineIntegral(Line line)
                                      result_cl,
                                      CL_TRUE,
                                      0,
-                                     p_line_integral_data.bytes(),
-                                     p_line_integral_data.data(),
+                                     p_line_data_y.bytes(),
+                                     p_line_data_y.data(),
                                      0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
@@ -407,7 +454,16 @@ void VolumeWorker::resolveLineIntegral(Line line)
     p_line_integral_xmin = 0;
     p_line_integral_xmax = line.length();
     p_line_integral_ymin = 0;
-    p_line_integral_ymax = p_line_integral_data.max();
+    p_line_integral_ymax = p_line_data_y.max();
+
+
+    p_line_data_x.resize(p_line_data_y.m(), p_line_data_y.n());
+
+    for (int i = 0; i < p_line_data_x.size(); i++)
+    {
+        p_line_data_x[i] = p_line_integral_xmin +  i * (p_line_integral_xmax - p_line_integral_xmin) / (p_line_data_x.size() - 1);
+    }
+
     emit lineIntegralResolved();
 
     //*/
@@ -454,12 +510,12 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
     Matrix<double> bVecSegment = vecNormalize(line.bVec()) * sample_interdist_ab;
     Matrix<double> cVecSegment = vecNormalize(line.cVec()) * sample_interdist_c;
 
-    p_plane_integral_data.set(samples[0], samples[1]);
+    p_surface_data.set(samples[0], samples[1]);
 
     cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
                                            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
-                                           p_plane_integral_data.bytes(),
-                                           p_plane_integral_data.data(), &err);
+                                           p_surface_data.bytes(),
+                                           p_surface_data.data(), &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -506,8 +562,8 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
                                      result_cl,
                                      CL_TRUE,
                                      0,
-                                     p_plane_integral_data.bytes(),
-                                     p_plane_integral_data.data(),
+                                     p_surface_data.bytes(),
+                                     p_surface_data.data(),
                                      0, NULL, NULL);
 
     if ( err != CL_SUCCESS)

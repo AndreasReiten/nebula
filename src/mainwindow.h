@@ -38,6 +38,9 @@ class MainWindow : public QMainWindow
 
 
     private slots:
+        void saveLineAsTextProxy();
+        void saveSurfaceAsTextProxy();
+
         void displayPopup(QString title, QString text);
         void transferSet();
 
@@ -81,6 +84,8 @@ class MainWindow : public QMainWindow
         void setPlaneIntegralPlot();
 
     signals:
+        void saveLineAsText(QString str);
+        void saveSurfaceAsText(QString str);
         void testToWindow();
 
         void changedDetector(int value);
@@ -112,6 +117,7 @@ class MainWindow : public QMainWindow
 
         QToolBar * plotLineToolBar;
         QWidget * plotLineWidgetContainter;
+        QCheckBox * plotLineLogCheckBox;
 
         QDockWidget * plotSurfaceDockWidget;
         PlotSurfaceWidget * plotSurfaceWidget;
@@ -123,6 +129,7 @@ class MainWindow : public QMainWindow
 
         QToolBar * plotSurfaceToolBar;
         QWidget * plotSurfaceWidgetContainter;
+        QCheckBox * plotSurfaceLogCheckBox;
 
         // Line dock widget
         QDockWidget * lineDockWidget;
