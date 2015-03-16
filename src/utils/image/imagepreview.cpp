@@ -3088,7 +3088,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
 
     Matrix<double> G = sampleRotMat.to3x3() * Q;
 
-    //    qDebug() << atan2(G[0],G[1])*180/pi;
+    qDebug() << atan2(G[0],G[1])*180/pi;
 
     QString tip;
     tip += "<p style=\"font-family: monospace, times, serif; font-size:10pt; font-style:italic; font-weight:normal; color:white\">";
