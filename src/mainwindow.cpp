@@ -765,7 +765,7 @@ void MainWindow::initConnects()
     connect(this->rotateCellButton, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setURotation(bool)));
 
     connect(insertLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(addLine()));
-    connect(removeLinePushButton, SIGNAL(clicked()), lineModel, SLOT(removeMarkedLine()));
+    connect(removeLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(removeMarkedLine()));
     connect(volumeOpenGLWidget, SIGNAL(linesChanged()), lineModel, SLOT(refresh()));
 
     //    /* this <-> this */
@@ -883,6 +883,11 @@ void MainWindow::initConnects()
     connect(plotLineLogCheckBox, SIGNAL(toggled(bool)), plotLineWidget, SLOT(setLog(bool)));
     connect(lineView, SIGNAL(clicked(QModelIndex)), volumeOpenGLWidget, SLOT(updateProxy(QModelIndex)));
 
+    connect(setTranslateLineAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setTranslateLineA()));
+    connect(setTranslateLineBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setTranslateLineB()));
+    connect(copyLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(copyMarkedLine()));
+    //    connect(volumeOpenGLWidget, SIGNAL(lineTranslateVecChanged(Matrix<double>)), lineModel, SLOT(translateMarkedLine(Matrix<double>)));
+    connect(translateLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(translateMarkedLine()));
 }
 
 void MainWindow::saveSurfaceAsTextProxy()
@@ -1910,12 +1915,21 @@ void MainWindow::initGUI()
         lineView = new QTableView;
         lineView->setModel(lineModel);
 
-        insertLinePushButton = new QPushButton("Insert");
-        removeLinePushButton = new QPushButton("Remove");
+
         snapLinePosAPushButton = new QPushButton("Snap A");
         snapLinePosBPushButton = new QPushButton("Snap B");
         setLinePosAPushButton = new QPushButton("Set A");
         setLinePosBPushButton = new QPushButton("Set B");
+        setTranslateLineAPushButton = new QPushButton("Set trans A");
+        setTranslateLineBPushButton = new QPushButton("Set trans B");
+
+        insertLinePushButton = new QPushButton("Insert");
+        copyLinePushButton = new QPushButton("Copy");
+        translateLinePushButton = new QPushButton("Translate");
+        removeLinePushButton = new QPushButton("Remove");
+
+
+
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1923,12 +1937,18 @@ void MainWindow::initGUI()
         gridLayout->setContentsMargins(5, 5, 5, 5);
         gridLayout->setRowStretch(2, 1);
         gridLayout->addWidget(lineView, 0, 0, 1, 8);
-        gridLayout->addWidget(insertLinePushButton, 1, 0, 1, 2);
-        gridLayout->addWidget(snapLinePosAPushButton, 1, 2, 1, 1);
-        gridLayout->addWidget(snapLinePosBPushButton, 1, 3, 1, 1);
-        gridLayout->addWidget(setLinePosAPushButton, 1, 4, 1, 1);
-        gridLayout->addWidget(setLinePosBPushButton, 1, 5, 1, 1);
-        gridLayout->addWidget(removeLinePushButton, 1, 7, 1, 1);
+
+        gridLayout->addWidget(snapLinePosAPushButton, 1, 0, 1, 1);
+        gridLayout->addWidget(snapLinePosBPushButton, 1, 1, 1, 1);
+        gridLayout->addWidget(setLinePosAPushButton, 1, 2, 1, 1);
+        gridLayout->addWidget(setLinePosBPushButton, 1, 3, 1, 1);
+        gridLayout->addWidget(setTranslateLineAPushButton, 1, 4, 1, 1);
+        gridLayout->addWidget(setTranslateLineBPushButton, 1, 5, 1, 1);
+
+        gridLayout->addWidget(insertLinePushButton, 2, 0, 1, 1);
+        gridLayout->addWidget(copyLinePushButton, 2, 1, 1, 1);
+        gridLayout->addWidget(translateLinePushButton, 2, 2, 1, 1);
+        gridLayout->addWidget(removeLinePushButton, 2, 7, 1, 1);
 
         lineWidget = new QWidget;
         lineWidget->setLayout(gridLayout);

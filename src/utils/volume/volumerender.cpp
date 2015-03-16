@@ -634,7 +634,9 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     connect(volumeWorker, SIGNAL(weightpointResolved(double, double, double)), this, SLOT(setWeightpoint(double, double, double)));
     workerThread->start();
 
-    weightpoint.set(3, 1), 0;
+    weightpoint.set(3, 1, 0);
+    p_translate_vecA.set(3, 1, 0);
+    p_translate_vecB.set(3, 1, 0);
 
     // Clip planes
     clip_plane0.set(4, 1, 0);
@@ -830,6 +832,7 @@ VolumeOpenGLWidget::~VolumeOpenGLWidget()
     glDeleteBuffers(1, &marker_centers_vbo);
     glDeleteBuffers(1, &minicell_vbo);
     glDeleteBuffers(1, &view_extent_vbo);
+    glDeleteBuffers(1, &line_translate_vbo);
 
     glDeleteTextures(1, &ray_tex_gl);
     glDeleteTextures(1, &tsf_tex_gl);
@@ -868,6 +871,7 @@ void VolumeOpenGLWidget::paintGL()
     glViewport(0, 0, this->width() * retinaScale, this->height() * retinaScale);
     endRawGLCalls(&painter);
 
+    drawViewExtent(&painter);
     drawViewExtent(&painter);
 
     if (isScalebarActive)
@@ -981,6 +985,8 @@ void VolumeOpenGLWidget::initializeGL()
     glGenBuffers(1, &minicell_vbo);
     glGenBuffers(1, &weightpoint_vbo);
     glGenBuffers(1, &view_extent_vbo);
+    glGenBuffers(1, &line_translate_vbo);
+
     glGenTextures(1, &ray_tex_gl);
     glGenTextures(1, &tsf_tex_gl);
     glGenTextures(1, &tsf_tex_gl_thumb);
@@ -1268,6 +1274,30 @@ void VolumeOpenGLWidget::setHkl(Matrix<int> &hkl)
 
     data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
 
+
+
+    {
+        std_3d_col_program->bind();
+
+        clip_plane0 = data_view_extent.planeXY0();
+        clip_plane1 = data_view_extent.planeXY1();
+        clip_plane2 = data_view_extent.planeXZ0();
+        clip_plane3 = data_view_extent.planeXZ1();
+        clip_plane4 = data_view_extent.planeYZ0();
+        clip_plane5 = data_view_extent.planeYZ1();
+
+        glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane3, 1, clip_plane3.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane4, 1, clip_plane4.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane5, 1, clip_plane5.toFloat().data());
+
+        std_3d_col_program->release();
+    }
+
+
+
     updateUnitCellText();
 }
 
@@ -1458,6 +1488,26 @@ void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
             this->data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
 
+            {
+                std_3d_col_program->bind();
+
+                clip_plane0 = data_view_extent.planeXY0();
+                clip_plane1 = data_view_extent.planeXY1();
+                clip_plane2 = data_view_extent.planeXZ0();
+                clip_plane3 = data_view_extent.planeXZ1();
+                clip_plane4 = data_view_extent.planeYZ0();
+                clip_plane5 = data_view_extent.planeYZ1();
+
+                glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane3, 1, clip_plane3.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane4, 1, clip_plane4.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane5, 1, clip_plane5.toFloat().data());
+
+                std_3d_col_program->release();
+            }
+
             updateUnitCellText();
 
             update();
@@ -1477,6 +1527,26 @@ void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
             data_translation = ( rotation.inverse4x4() * data_translation * rotation) * data_translation_prev;
 
             this->data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
+
+            {
+                std_3d_col_program->bind();
+
+                clip_plane0 = data_view_extent.planeXY0();
+                clip_plane1 = data_view_extent.planeXY1();
+                clip_plane2 = data_view_extent.planeXZ0();
+                clip_plane3 = data_view_extent.planeXZ1();
+                clip_plane4 = data_view_extent.planeYZ0();
+                clip_plane5 = data_view_extent.planeYZ1();
+
+                glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane3, 1, clip_plane3.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane4, 1, clip_plane4.toFloat().data());
+                glUniform4fv(std_3d_col_clip_plane5, 1, clip_plane5.toFloat().data());
+
+                std_3d_col_program->release();
+            }
 
             updateUnitCellText();
 
@@ -1855,6 +1925,12 @@ void VolumeOpenGLWidget::drawHelpCell(QPainter * painter)
     painter->drawRoundedRect(minicell_rect, 5, 5, Qt::AbsoluteSize);
 
     beginRawGLCalls(painter);
+    glDisable(GL_CLIP_PLANE0);
+    glDisable(GL_CLIP_PLANE1);
+    glDisable(GL_CLIP_PLANE2);
+    glDisable(GL_CLIP_PLANE3);
+    glDisable(GL_CLIP_PLANE4);
+    glDisable(GL_CLIP_PLANE5);
 
     setVbo(minicell_vbo, vertices.data(), vertices.size(), GL_DYNAMIC_DRAW);
 
@@ -2076,7 +2152,83 @@ void VolumeOpenGLWidget::addLine()
 
     emit linesChanged();
 
-    emit lineChanged(lines->last());
+    //    emit lineChanged(lines->last());
+
+    update();
+}
+
+void VolumeOpenGLWidget::removeMarkedLine()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    for (int i = 0; i < lines->size(); i++)
+    {
+        if (lines->at(i).tagged() == true)
+        {
+            glDeleteBuffers(1, (*lines)[i].vbo());
+            lines->removeAt(i);
+            i--;
+        }
+    }
+
+    emit linesChanged();
+
+    update();
+}
+
+void VolumeOpenGLWidget::copyMarkedLine()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    for (int i = 0; i < lines->size(); i++)
+    {
+        if (lines->at(i).tagged() == true)
+        {
+            lines->append(lines->at(i));
+
+            lines->last().setTagged(false);
+
+            glGenBuffers(1, lines->last().vbo());
+
+            glBindBuffer(GL_ARRAY_BUFFER, *lines->last().vbo());
+            glBufferData(GL_ARRAY_BUFFER, lines->last().vertices().bytes(), lines->last().vertices().data(), GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+    }
+
+    emit linesChanged();
+
+    update();
+}
+
+
+void VolumeOpenGLWidget::translateMarkedLine()
+{
+    if (!isSvoInitialized)
+    {
+        return;
+    }
+
+    for (int i = 0; i < lines->size(); i++)
+    {
+        if (lines->at(i).tagged() == true)
+        {
+            (*lines)[i].setPositionA(lines->at(i).positionA() + (p_translate_vecB - p_translate_vecA));
+            (*lines)[i].setPositionB(lines->at(i).positionB() + (p_translate_vecB - p_translate_vecA));
+
+            glBindBuffer(GL_ARRAY_BUFFER, *(*lines)[i].vbo());
+            glBufferData(GL_ARRAY_BUFFER, lines->at(i).vertices().bytes(), lines->at(i).vertices().data(), GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+    }
+
+    emit linesChanged();
 
     update();
 }
@@ -2170,6 +2322,26 @@ void VolumeOpenGLWidget::zoomToValue(double value)
 
     // Set the view extent
     data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
+
+    {
+        std_3d_col_program->bind();
+
+        clip_plane0 = data_view_extent.planeXY0();
+        clip_plane1 = data_view_extent.planeXY1();
+        clip_plane2 = data_view_extent.planeXZ0();
+        clip_plane3 = data_view_extent.planeXZ1();
+        clip_plane4 = data_view_extent.planeYZ0();
+        clip_plane5 = data_view_extent.planeYZ1();
+
+        glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane3, 1, clip_plane3.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane4, 1, clip_plane4.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane5, 1, clip_plane5.toFloat().data());
+
+        std_3d_col_program->release();
+    }
 }
 
 void VolumeOpenGLWidget::translateToBox(Matrix<double> box)
@@ -2182,6 +2354,26 @@ void VolumeOpenGLWidget::translateToBox(Matrix<double> box)
 
     // Set the view extent
     data_view_extent = (data_scaling * data_translation).inverse4x4() * data_extent;
+
+    {
+        std_3d_col_program->bind();
+
+        clip_plane0 = data_view_extent.planeXY0();
+        clip_plane1 = data_view_extent.planeXY1();
+        clip_plane2 = data_view_extent.planeXZ0();
+        clip_plane3 = data_view_extent.planeXZ1();
+        clip_plane4 = data_view_extent.planeYZ0();
+        clip_plane5 = data_view_extent.planeYZ1();
+
+        glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane3, 1, clip_plane3.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane4, 1, clip_plane4.toFloat().data());
+        glUniform4fv(std_3d_col_clip_plane5, 1, clip_plane5.toFloat().data());
+
+        std_3d_col_program->release();
+    }
 }
 
 void VolumeOpenGLWidget::updateProxy(QModelIndex /*index*/)
@@ -2285,15 +2477,6 @@ void VolumeOpenGLWidget::drawLineIntegrationVolumeVisualAssist(QPainter * painte
 }
 
 
-void VolumeOpenGLWidget::saveLineIntegralAsImage(QString path)
-{
-
-}
-
-void VolumeOpenGLWidget::saveLineIntegralAsText(QString path)
-{
-
-}
 
 void VolumeOpenGLWidget::drawCenterLine(QPainter * painter)
 {
@@ -2412,6 +2595,26 @@ void VolumeOpenGLWidget::wheelEvent(QWheelEvent * ev)
 
                 data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
 
+                {
+                    std_3d_col_program->bind();
+
+                    clip_plane0 = data_view_extent.planeXY0();
+                    clip_plane1 = data_view_extent.planeXY1();
+                    clip_plane2 = data_view_extent.planeXZ0();
+                    clip_plane3 = data_view_extent.planeXZ1();
+                    clip_plane4 = data_view_extent.planeYZ0();
+                    clip_plane5 = data_view_extent.planeYZ1();
+
+                    glUniform4fv(std_3d_col_clip_plane0, 1, clip_plane0.toFloat().data());
+                    glUniform4fv(std_3d_col_clip_plane1, 1, clip_plane1.toFloat().data());
+                    glUniform4fv(std_3d_col_clip_plane2, 1, clip_plane2.toFloat().data());
+                    glUniform4fv(std_3d_col_clip_plane3, 1, clip_plane3.toFloat().data());
+                    glUniform4fv(std_3d_col_clip_plane4, 1, clip_plane4.toFloat().data());
+                    glUniform4fv(std_3d_col_clip_plane5, 1, clip_plane5.toFloat().data());
+
+                    std_3d_col_program->release();
+                }
+
                 updateUnitCellText();
             }
 
@@ -2428,6 +2631,29 @@ void VolumeOpenGLWidget::wheelEvent(QWheelEvent * ev)
 
         update();
     }
+}
+
+//void VolumeOpenGLWidget::translateLine()
+//{
+//    emit lineTranslateVecChanged(p_translate_vecB - p_translate_vecA);
+//}
+
+void VolumeOpenGLWidget::setTranslateLineA()
+{
+    p_translate_vecA[0] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * 0.5;
+    p_translate_vecA[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * 0.5;
+    p_translate_vecA[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * 0.5;
+
+    update();
+}
+
+void VolumeOpenGLWidget::setTranslateLineB()
+{
+    p_translate_vecB[0] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * 0.5;
+    p_translate_vecB[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * 0.5;
+    p_translate_vecB[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * 0.5;
+
+    update();
 }
 
 void VolumeOpenGLWidget::initializePaintTools()
@@ -4139,6 +4365,12 @@ void VolumeOpenGLWidget::drawWeightCenter(QPainter * painter)
 void VolumeOpenGLWidget::drawPositionScalebars(QPainter * painter)
 {
     beginRawGLCalls(painter);
+    glDisable(GL_CLIP_PLANE0);
+    glDisable(GL_CLIP_PLANE1);
+    glDisable(GL_CLIP_PLANE2);
+    glDisable(GL_CLIP_PLANE3);
+    glDisable(GL_CLIP_PLANE4);
+    glDisable(GL_CLIP_PLANE5);
 
     scalebar_coord_count = setScaleBars();
 
@@ -4149,19 +4381,61 @@ void VolumeOpenGLWidget::drawPositionScalebars(QPainter * painter)
     glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    if (isBackgroundBlack)
-    {
-        glUniform4fv(std_3d_col_color, 1, magenta_light.data());
-    }
-    else
-    {
-        glUniform4fv(std_3d_col_color, 1, blue_light.data());
-    }
+    //    if (isBackgroundBlack)
+    //    {
+    //        glUniform4fv(std_3d_col_color, 1, magenta_light.data());
+    //    }
+    //    else
+    //    {
+    //        glUniform4fv(std_3d_col_color, 1, blue_light.data());
+    //    }
+
+    glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
 
     glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
     glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, scalebar_view_matrix.colmajor().toFloat().data());
 
     glDrawArrays(GL_LINES,  0, scalebar_coord_count);
+
+    glDisableVertexAttribArray(std_3d_col_fragpos);
+
+    std_3d_col_program->release();
+
+    endRawGLCalls(painter);
+}
+
+void VolumeOpenGLWidget::drawLineTranslationVec(QPainter * painter)
+{
+    beginRawGLCalls(painter);
+
+    Matrix<float> vertices(3, 2);
+
+    vertices[0] = p_translate_vecA[0];
+    vertices[1] = p_translate_vecA[1];
+    vertices[2] = p_translate_vecA[2];
+
+    vertices[3] = p_translate_vecB[0];
+    vertices[4] = p_translate_vecB[1];
+    vertices[5] = p_translate_vecB[2];
+
+    setVbo(line_translate_vbo, vertices.data(), vertices.size(), GL_DYNAMIC_DRAW);
+
+    // Draw the lab reference frame
+    std_3d_col_program->bind();
+    glEnableVertexAttribArray(std_3d_col_fragpos);
+
+    glBindBuffer(GL_ARRAY_BUFFER, line_translate_vbo);
+    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
+
+    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, (view_matrix).colmajor().toFloat().data());
+
+    GLuint indices[] = {0, 1};
+    glLineWidth(2.0);
+    glDrawElements(GL_LINES,  2, GL_UNSIGNED_INT, indices);
 
     glDisableVertexAttribArray(std_3d_col_fragpos);
 
@@ -4805,122 +5079,122 @@ size_t VolumeOpenGLWidget::setScaleBars()
     // Draw the scalebars. The coordinates of the ticks are independent of the position in the volume, so it is a relative scalebar.
     double length = data_view_extent[1] - data_view_extent[0];
 
-    double tick_interdistance_min = 0.005 * length; // % of length
+    //    double tick_interdistance_min = 0.005 * length; // % of length
 
-    int tick_levels = 0;
-    int tick_levels_max = 2;
+    //    int tick_levels = 0;
+    //    int tick_levels_max = 2;
 
     size_t coord_counter = 0;
 
-    Matrix<GLfloat> scalebar_coords(20000, 3);
+    Matrix<GLfloat> scalebar_coords(6, 3);
 
-    n_position_scalebar_ticks = 0;
+    //    n_position_scalebar_ticks = 0;
 
-    // Calculate positions of ticks
-    for (int i = 5; i >= -5; i--)
-    {
-        double tick_interdistance = std::pow((double) 10.0, (double) - i);
+    //    // Calculate positions of ticks
+    //    for (int i = 5; i >= -5; i--)
+    //    {
+    //        double tick_interdistance = std::pow((double) 10.0, (double) - i);
 
-        if (( tick_interdistance >= tick_interdistance_min) && (tick_levels < tick_levels_max))
-        {
-            int tick_number = ((length * 0.5) / tick_interdistance);
+    //        if (( tick_interdistance >= tick_interdistance_min) && (tick_levels < tick_levels_max))
+    //        {
+    //            int tick_number = ((length * 0.5) / tick_interdistance);
 
-            double x_start = data_view_extent[0] + length * 0.5;
-            double y_start = data_view_extent[2] + length * 0.5;
-            double z_start = data_view_extent[4] + length * 0.5;
-            double tick_width = tick_interdistance * 0.2;
+    //            double x_start = data_view_extent[0] + length * 0.5;
+    //            double y_start = data_view_extent[2] + length * 0.5;
+    //            double z_start = data_view_extent[4] + length * 0.5;
+    //            double tick_width = tick_interdistance * 0.2;
 
-            // Each tick consists of 4 points to form a cross
-            for (int j = -tick_number; j <= tick_number; j++)
-            {
-                if (j != 0)
-                {
-                    // X-tick cross
-                    scalebar_coords[(coord_counter + 0) * 3 + 0] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 0) * 3 + 1] = tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 0) * 3 + 2] = 0;
+    //            // Each tick consists of 4 points to form a cross
+    //            for (int j = -tick_number; j <= tick_number; j++)
+    //            {
+    //                if (j != 0)
+    //                {
+    //                    // X-tick cross
+    //                    scalebar_coords[(coord_counter + 0) * 3 + 0] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 0) * 3 + 1] = tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 0) * 3 + 2] = 0;
 
-                    scalebar_coords[(coord_counter + 1) * 3 + 0] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 1) * 3 + 1] = - tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 1) * 3 + 2] = 0;
+    //                    scalebar_coords[(coord_counter + 1) * 3 + 0] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 1) * 3 + 1] = - tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 1) * 3 + 2] = 0;
 
-                    scalebar_coords[(coord_counter + 2) * 3 + 0] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 2) * 3 + 1] = 0;
-                    scalebar_coords[(coord_counter + 2) * 3 + 2] = tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 2) * 3 + 0] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 2) * 3 + 1] = 0;
+    //                    scalebar_coords[(coord_counter + 2) * 3 + 2] = tick_width * 0.5;
 
-                    scalebar_coords[(coord_counter + 3) * 3 + 0] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 3) * 3 + 1] = 0;
-                    scalebar_coords[(coord_counter + 3) * 3 + 2] = - tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 3) * 3 + 0] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 3) * 3 + 1] = 0;
+    //                    scalebar_coords[(coord_counter + 3) * 3 + 2] = - tick_width * 0.5;
 
-                    // Y-tick cross
-                    scalebar_coords[(coord_counter + 4) * 3 + 0] = tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 4) * 3 + 1] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 4) * 3 + 2] = 0;
+    //                    // Y-tick cross
+    //                    scalebar_coords[(coord_counter + 4) * 3 + 0] = tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 4) * 3 + 1] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 4) * 3 + 2] = 0;
 
-                    scalebar_coords[(coord_counter + 5) * 3 + 0] = - tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 5) * 3 + 1] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 5) * 3 + 2] = 0;
+    //                    scalebar_coords[(coord_counter + 5) * 3 + 0] = - tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 5) * 3 + 1] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 5) * 3 + 2] = 0;
 
-                    scalebar_coords[(coord_counter + 6) * 3 + 0] = 0;
-                    scalebar_coords[(coord_counter + 6) * 3 + 1] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 6) * 3 + 2] = tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 6) * 3 + 0] = 0;
+    //                    scalebar_coords[(coord_counter + 6) * 3 + 1] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 6) * 3 + 2] = tick_width * 0.5;
 
-                    scalebar_coords[(coord_counter + 7) * 3 + 0] = 0;
-                    scalebar_coords[(coord_counter + 7) * 3 + 1] = j * tick_interdistance;
-                    scalebar_coords[(coord_counter + 7) * 3 + 2] = - tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 7) * 3 + 0] = 0;
+    //                    scalebar_coords[(coord_counter + 7) * 3 + 1] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 7) * 3 + 2] = - tick_width * 0.5;
 
-                    // Z-tick cross
-                    scalebar_coords[(coord_counter + 8) * 3 + 0] = tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 8) * 3 + 1] = 0;
-                    scalebar_coords[(coord_counter + 8) * 3 + 2] = j * tick_interdistance;
+    //                    // Z-tick cross
+    //                    scalebar_coords[(coord_counter + 8) * 3 + 0] = tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 8) * 3 + 1] = 0;
+    //                    scalebar_coords[(coord_counter + 8) * 3 + 2] = j * tick_interdistance;
 
-                    scalebar_coords[(coord_counter + 9) * 3 + 0] = - tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 9) * 3 + 1] = 0;
-                    scalebar_coords[(coord_counter + 9) * 3 + 2] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 9) * 3 + 0] = - tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 9) * 3 + 1] = 0;
+    //                    scalebar_coords[(coord_counter + 9) * 3 + 2] = j * tick_interdistance;
 
-                    scalebar_coords[(coord_counter + 10) * 3 + 0] = 0;
-                    scalebar_coords[(coord_counter + 10) * 3 + 1] = tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 10) * 3 + 2] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 10) * 3 + 0] = 0;
+    //                    scalebar_coords[(coord_counter + 10) * 3 + 1] = tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 10) * 3 + 2] = j * tick_interdistance;
 
-                    scalebar_coords[(coord_counter + 11) * 3 + 0] = 0;
-                    scalebar_coords[(coord_counter + 11) * 3 + 1] = - tick_width * 0.5;
-                    scalebar_coords[(coord_counter + 11) * 3 + 2] = j * tick_interdistance;
+    //                    scalebar_coords[(coord_counter + 11) * 3 + 0] = 0;
+    //                    scalebar_coords[(coord_counter + 11) * 3 + 1] = - tick_width * 0.5;
+    //                    scalebar_coords[(coord_counter + 11) * 3 + 2] = j * tick_interdistance;
 
 
-                    // Get positions for tick text
-                    if (tick_levels == tick_levels_max - 1)
-                    {
-                        scalebar_multiplier = tick_interdistance * 10.0;
+    //                    // Get positions for tick text
+    //                    if (tick_levels == tick_levels_max - 1)
+    //                    {
+    //                        scalebar_multiplier = tick_interdistance * 10.0;
 
-                        if ((size_t) n_position_scalebar_ticks + 3 < position_scalebar_ticks.m())
-                        {
-                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter + 0) * 3, &scalebar_view_matrix);
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 * this->width();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) * this->height();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
-                            n_position_scalebar_ticks++;
+    //                        if ((size_t) n_position_scalebar_ticks + 3 < position_scalebar_ticks.m())
+    //                        {
+    //                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter + 0) * 3, &scalebar_view_matrix);
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 * this->width();
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) * this->height();
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
+    //                            n_position_scalebar_ticks++;
 
-                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter + 4) * 3, &scalebar_view_matrix);
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 * this->width();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) * this->height();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
-                            n_position_scalebar_ticks++;
+    //                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter + 4) * 3, &scalebar_view_matrix);
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 * this->width();
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) * this->height();
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
+    //                            n_position_scalebar_ticks++;
 
-                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter + 8) * 3, &scalebar_view_matrix);
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 * this->width();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) * this->height();
-                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
-                            n_position_scalebar_ticks++;
-                        }
-                    }
+    //                            getPosition2D(position_scalebar_ticks.data() + 3 * n_position_scalebar_ticks, scalebar_coords.data() + (coord_counter + 8) * 3, &scalebar_view_matrix);
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] = (position_scalebar_ticks[3 * n_position_scalebar_ticks + 0] + 1.0) * 0.5 * this->width();
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] = (1.0 - (position_scalebar_ticks[3 * n_position_scalebar_ticks + 1] + 1.0) * 0.5) * this->height();
+    //                            position_scalebar_ticks[3 * n_position_scalebar_ticks + 2] = j * 0.1 * scalebar_multiplier;
+    //                            n_position_scalebar_ticks++;
+    //                        }
+    //                    }
 
-                    coord_counter += 12;
-                }
-            }
+    //                    coord_counter += 12;
+    //                }
+    //            }
 
-            tick_levels++;
-        }
-    }
+    //            tick_levels++;
+    //        }
+    //    }
 
     // Base cross
     // X
@@ -4952,7 +5226,7 @@ size_t VolumeOpenGLWidget::setScaleBars()
 
     coord_counter += 6;
 
-    setVbo(scalebar_vbo, scalebar_coords.data(), coord_counter * 3, GL_STATIC_DRAW);
+    setVbo(scalebar_vbo, scalebar_coords.data(), coord_counter * 3, GL_DYNAMIC_DRAW);
 
     return coord_counter;
 }

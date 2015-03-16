@@ -141,6 +141,12 @@ class MainWindow : public QMainWindow
         QPushButton * snapLinePosBPushButton;
         QPushButton * setLinePosAPushButton;
         QPushButton * setLinePosBPushButton;
+
+        QPushButton * copyLinePushButton;
+        QPushButton * translateLinePushButton;
+        QPushButton * setTranslateLineAPushButton;
+        QPushButton * setTranslateLineBPushButton;
+
         QPushButton * removeLinePushButton;
 
         /* UI elements for UB matrix */

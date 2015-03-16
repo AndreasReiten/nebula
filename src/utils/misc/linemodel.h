@@ -22,7 +22,6 @@ class LineModel : public QAbstractTableModel
 
     public slots:
         void setLines(QList<Line> * list);
-        void removeMarkedLine();
         void refresh();
         void highlight(QModelIndex index);
 

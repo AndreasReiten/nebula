@@ -111,8 +111,12 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void linesChanged();
         void lineChanged(Line line);
         void dataViewExtentChanged();
+        void lineTranslateVecChanged(Matrix<double> mat);
 
     public slots:
+        //        void translateLine();
+        void setTranslateLineA();
+        void setTranslateLineB();
         void updateProxy(QModelIndex /*index*/);
         void snapLinePosA();
         void snapLinePosB();
@@ -128,8 +132,9 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void releaseLines();
         void genLines();
         void addLine();
-        void saveLineIntegralAsImage(QString path);
-        void saveLineIntegralAsText(QString path);
+        void removeMarkedLine();
+        void copyMarkedLine();
+        void translateMarkedLine();
         void toggleHkl(bool value);
         void setCountIntegration();
         void addMarker();
@@ -212,6 +217,9 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setUB_gamma(double value);
 
     private:
+        Matrix<double> p_translate_vecA;
+        Matrix<double> p_translate_vecB;
+
         void setViewExtentVbo();
 
         Matrix<double> clip_plane0;
@@ -381,6 +389,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         GLuint point_vbo;
 
         // Drawing functions
+        void drawLineTranslationVec(QPainter * painter);
         void drawViewExtent(QPainter * painter);
         void drawWeightCenter(QPainter * painter);
         void drawRayTex(QPainter * painter);
@@ -416,6 +425,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         // Scalebars
         size_t setScaleBars();
         size_t scalebar_coord_count;
+        GLuint line_translate_vbo;
         GLuint scalebar_vbo;
         GLuint count_scalebar_vbo;
         double scalebar_multiplier;

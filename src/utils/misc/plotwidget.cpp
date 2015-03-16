@@ -159,7 +159,11 @@ void PlotSurfaceWidget::resizeEvent(QResizeEvent * event)
 
 void PlotSurfaceWidget::saveAsImage()
 {
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as text");
 
+    QImage image(p_data.data(), p_data.m(), p_data.n() / 4, QImage::Format_RGB32);
+
+    image.mirrored(0, 1).save(file_name);
 }
 
 void PlotSurfaceWidget::plot(const Matrix<double> &data)

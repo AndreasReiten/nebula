@@ -329,20 +329,6 @@ Qt::ItemFlags LineModel::flags(const QModelIndex &index) const
     return f;
 }
 
-void LineModel::removeMarkedLine()
-{
-    for (int i = 0; i < p_lines->size(); i++)
-    {
-        if (p_lines->at(i).tagged() == true)
-        {
-            p_lines->removeAt(i);
-            i--;
-        }
-    }
-
-    refresh();
-}
-
 void LineModel::refresh()
 {
     beginResetModel();
