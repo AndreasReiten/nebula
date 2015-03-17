@@ -457,8 +457,7 @@ void VolumeWorker::resolveLineIntegral(Line line)
 
     p_line_integral_xmin = 0;
     p_line_integral_xmax = p_line.length();
-    p_line_integral_ymin = 0;
-    p_line_integral_ymax = p_line_data_y.max();
+    p_line_data_y.toDouble().minmax(&p_line_integral_ymin, &p_line_integral_ymax);
 
 
     p_line_data_x.resize(p_line_data_y.m(), p_line_data_y.n());

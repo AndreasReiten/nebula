@@ -65,6 +65,7 @@ class Matrix
 
         T max() const;
         T min() const;
+        void minmax(T * min, T * max) const;
         T sum() const;
         T sum(size_t first, size_t last) const;
 
@@ -376,6 +377,30 @@ T Matrix<T>::sum(size_t first, size_t last) const
     return sum;
 }
 
+template <class T>
+void Matrix<T>::minmax(T * min, T * max) const
+{
+    *min = p_buffer[0];
+    *max = p_buffer[0];
+
+    for (size_t i = 0; i < p_n; i++)
+    {
+        for (size_t j = 0; j < p_m; j++)
+        {
+            T value  =  p_buffer[i * p_m + j];
+
+            if (value > *max)
+            {
+                *max = value;
+            }
+            else if (value < *min)
+            {
+                *min = value;
+            }
+
+        }
+    }
+}
 
 template <class T>
 T Matrix<T>::min() const

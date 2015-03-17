@@ -64,13 +64,17 @@ void PlotLineWidget::paintEvent(QPaintEvent * event)
     QPolygonF polygon;
     polygon << rect.bottomLeft();
 
+//    qDebug() << p_x_min << p_x_max << p_y_min << p_y_max;
+
     for (size_t i = 0; i < p_y_data.n(); i++)
     {
         if (isLog)
         {
             polygon << QPointF(
                         ((p_x_data[i] - p_x_min) / (p_x_max - p_x_min))* rect.width() + rect.left() ,
-                        (rect.height() - (log10(p_y_data[i] - p_y_min + 1.0) / log10(p_y_max - p_y_min + 1.0))* rect.height()) + rect.top());
+                        (rect.height() - (log10((p_y_data[i] - p_y_min) / (p_y_max - p_y_min)*1e2+1)/log10(1e2))* rect.height()) + rect.top());
+
+//            qDebug() << (log10((p_y_data[i] - p_y_min) / (p_y_max - p_y_min)*1e2+1)/log10(1e2));
         }
         else
         {
@@ -168,26 +172,39 @@ void PlotSurfaceWidget::saveAsImage()
 
 void PlotSurfaceWidget::plot(const Matrix<double> &data)
 {
+    double log_scaling = 1e6;
+    double log_offset = 1e-6;
+
     p_raw_data = data;
 
-    p_data.resize(data.m(), data.n() * 4);
+    p_data.resize(p_raw_data.m(), p_raw_data.n() * 4);
 
-    double max = data.max();
+    double min, max;
 
-    for (int i = 0; i < data.size(); i++)
+    min = std::max(p_raw_data.min(), log_offset);
+    max = p_raw_data.max();
+//    p_raw_data.minmax(&min, &max);
+
+//    qDebug() << min << max;
+
+    for (int i = 0; i < p_raw_data.size(); i++)
     {
         if (isLog)
         {
-            p_data[i * 4 + 0] = 255 * log10(std::max(1.0, (data[i] * 1000000 / max))) / log10(1000000);
-            p_data[i * 4 + 1] = 255 * log10(std::max(1.0, (data[i] * 1000000 / max))) / log10(1000000);
-            p_data[i * 4 + 2] = 255 * log10(std::max(1.0, (data[i] * 1000000 / max))) / log10(1000000);
+
+//             (log10(((p_raw_data[i] - min) / (max - min))*log_scaling+log_offset)/log10(log_scaling));
+//            ((log10(p_raw_data[i]+log_offset) - log10(min)) / (log10(max) - log10(min)))
+
+            p_data[i * 4 + 0] = 255 * std::max(0.0,(log10(((p_raw_data[i] - min) / (max - min))*log_scaling+log_offset)/log10(log_scaling)));
+            p_data[i * 4 + 1] = 255 * std::max(0.0,(log10(((p_raw_data[i] - min) / (max - min))*log_scaling+log_offset)/log10(log_scaling)));
+            p_data[i * 4 + 2] = 255 * std::max(0.0,(log10(((p_raw_data[i] - min) / (max - min))*log_scaling+log_offset)/log10(log_scaling)));
             p_data[i * 4 + 3] = 255;
         }
         else
         {
-            p_data[i * 4 + 0] = 255 * (data[i] / max);
-            p_data[i * 4 + 1] = 255 * (data[i] / max);
-            p_data[i * 4 + 2] = 255 * (data[i] / max);
+            p_data[i * 4 + 0] = 255 * (p_raw_data[i] / max);
+            p_data[i * 4 + 1] = 255 * (p_raw_data[i] / max);
+            p_data[i * 4 + 2] = 255 * (p_raw_data[i] / max);
             p_data[i * 4 + 3] = 255;
         }
 
