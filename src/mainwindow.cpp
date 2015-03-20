@@ -460,6 +460,10 @@ void MainWindow::loadProject()
 void MainWindow::initActions()
 {
     // Actions
+    saveLoadedSvoMetadataAct = new QAction(QIcon(":/art/minisave.png"), "Save SVO metadata", this);
+    loadSvoMetadataAct = new QAction(QIcon(":/art/miniload.png"), "Load SVO metadata", this);
+
+
     exitAct = new QAction("E&xit program", this);
     aboutAct = new QAction("&About Nebula", this);
     aboutQtAct = new QAction("About &Qt", this);
@@ -888,6 +892,13 @@ void MainWindow::initConnects()
     connect(copyLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(copyMarkedLine()));
     //    connect(volumeOpenGLWidget, SIGNAL(lineTranslateVecChanged(Matrix<double>)), lineModel, SLOT(translateMarkedLine(Matrix<double>)));
     connect(translateLinePushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(translateMarkedLine()));
+    connect(setLineCenterPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(setLineCenter()));
+    connect(snapLineCenterPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(snapLineCenter()));
+    connect(alignLineToAPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(alignLineWithA()));
+    connect(alignLineToBPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(alignLineWithB()));
+    connect(alignLineToCPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(alignLineWithC()));
+    connect(saveLoadedSvoMetadataAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvoMetaData()));
+    connect(loadSvoMetadataAct, SIGNAL(triggered()), this, SLOT(loadSvoMetaData()));
 }
 
 void MainWindow::saveSurfaceAsTextProxy()
@@ -1915,21 +1926,25 @@ void MainWindow::initGUI()
         lineView = new QTableView;
         lineView->setModel(lineModel);
 
-
         snapLinePosAPushButton = new QPushButton("Snap A");
         snapLinePosBPushButton = new QPushButton("Snap B");
+        snapLineCenterPushButton = new QPushButton("Snap center");
+
         setLinePosAPushButton = new QPushButton("Set A");
         setLinePosBPushButton = new QPushButton("Set B");
-        setTranslateLineAPushButton = new QPushButton("Set trans A");
-        setTranslateLineBPushButton = new QPushButton("Set trans B");
+        setLineCenterPushBUtton = new QPushButton("Set center");
+
+        setTranslateLineAPushButton = new QPushButton("Translate FROM");
+        setTranslateLineBPushButton = new QPushButton("Translate TO");
+
+        alignLineToAPushButton = new QPushButton("Align a*");
+        alignLineToBPushButton = new QPushButton("Align b*");
+        alignLineToCPushButton = new QPushButton("Align c*");
 
         insertLinePushButton = new QPushButton("Insert");
         copyLinePushButton = new QPushButton("Copy");
         translateLinePushButton = new QPushButton("Translate");
         removeLinePushButton = new QPushButton("Remove");
-
-
-
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1940,15 +1955,21 @@ void MainWindow::initGUI()
 
         gridLayout->addWidget(snapLinePosAPushButton, 1, 0, 1, 1);
         gridLayout->addWidget(snapLinePosBPushButton, 1, 1, 1, 1);
-        gridLayout->addWidget(setLinePosAPushButton, 1, 2, 1, 1);
-        gridLayout->addWidget(setLinePosBPushButton, 1, 3, 1, 1);
-        gridLayout->addWidget(setTranslateLineAPushButton, 1, 4, 1, 1);
-        gridLayout->addWidget(setTranslateLineBPushButton, 1, 5, 1, 1);
+        gridLayout->addWidget(snapLineCenterPushButton, 1, 2, 1, 1);
+        gridLayout->addWidget(setLinePosAPushButton, 1, 3, 1, 1);
+        gridLayout->addWidget(setLinePosBPushButton, 1, 4, 1, 1);
+        gridLayout->addWidget(setLineCenterPushButton, 1, 5, 1, 1);
+        gridLayout->addWidget(setTranslateLineAPushButton, 1, 6, 1, 1);
+        gridLayout->addWidget(setTranslateLineBPushButton, 1, 7, 1, 1);
 
-        gridLayout->addWidget(insertLinePushButton, 2, 0, 1, 1);
-        gridLayout->addWidget(copyLinePushButton, 2, 1, 1, 1);
-        gridLayout->addWidget(translateLinePushButton, 2, 2, 1, 1);
-        gridLayout->addWidget(removeLinePushButton, 2, 7, 1, 1);
+        gridLayout->addWidget(alignLineToAPushButton, 2, 0, 1, 1);
+        gridLayout->addWidget(alignLineToBPushButton, 2, 1, 1, 1);
+        gridLayout->addWidget(alignLineToCPushButton, 2, 2, 1, 1);
+
+        gridLayout->addWidget(insertLinePushButton, 3, 0, 1, 1);
+        gridLayout->addWidget(copyLinePushButton, 3, 1, 1, 1);
+        gridLayout->addWidget(translateLinePushButton, 3, 2, 1, 1);
+        gridLayout->addWidget(removeLinePushButton, 3, 7, 1, 1);
 
         lineWidget = new QWidget;
         lineWidget->setLayout(gridLayout);

@@ -106,6 +106,10 @@ class MainWindow : public QMainWindow
         void setPulled(SeriesSet set);
 
     private:
+        QAction * saveSvoMetadataAct;
+        QAction * saveLoadedSvoMetadataAct;
+
+
         // PlotWidget
         QDockWidget * plotLineDockWidget;
         PlotLineWidget * plotLineWidget;
@@ -139,8 +143,16 @@ class MainWindow : public QMainWindow
         QPushButton * insertLinePushButton;
         QPushButton * snapLinePosAPushButton;
         QPushButton * snapLinePosBPushButton;
+        QPushButton * snapLineCenterPushButton;
         QPushButton * setLinePosAPushButton;
         QPushButton * setLinePosBPushButton;
+        QPushButton * setLineCenterPushButton;
+
+        QPushButton * alignLineToAPushButton;
+        QPushButton * alignLineToBPushButton;
+        QPushButton * alignLineToCPushButton;
+
+
 
         QPushButton * copyLinePushButton;
         QPushButton * translateLinePushButton;

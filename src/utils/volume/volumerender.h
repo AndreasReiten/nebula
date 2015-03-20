@@ -115,6 +115,11 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
 
     public slots:
         //        void translateLine();
+        void snapLineCenter();
+        void setLineCenter();
+        void alignLineWithA();
+        void alignLineWithB();
+        void alignLineWithC();
         void setTranslateLineA();
         void setTranslateLineB();
         void updateProxy(QModelIndex /*index*/);

@@ -3514,14 +3514,14 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1920"
-     inkscape:window-height="1025"
+     inkscape:window-width="1680"
+     inkscape:window-height="995"
      id="namedview4"
      showgrid="false"
-     inkscape:zoom="10.320312"
-     inkscape:cx="-90.658659"
-     inkscape:cy="-245.21232"
-     inkscape:window-x="-2"
+     inkscape:zoom="0.91219533"
+     inkscape:cx="2307.5327"
+     inkscape:cy="-1514.7527"
+     inkscape:window-x="1918"
      inkscape:window-y="-3"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg2"
@@ -15920,4 +15920,85 @@
      inkscape:connector-curvature="0"
      inkscape:export-xdpi="124.22535"
      inkscape:export-ydpi="124.22535" />
+  <g
+     id="g5440"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792">
+    <path
+       sodipodi:nodetypes="cccccccc"
+       inkscape:export-ydpi="40.907673"
+       inkscape:export-xdpi="40.907673"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/open.png"
+       inkscape:connector-curvature="0"
+       id="path3889-9-7"
+       d="m 2137.6781,1692.5344 0,5 140,0 0,-105 -85,0 -15,-25 -40,0 0,59.8073"
+       style="fill:#d9d9d9;fill-opacity:1;stroke:#1e1e1e;stroke-width:10.05816269;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:30.17448807, 10.05816268999999963;stroke-opacity:1;stroke-dashoffset:0" />
+    <path
+       inkscape:export-ydpi="40.907673"
+       inkscape:export-xdpi="40.907673"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/open.png"
+       sodipodi:nodetypes="ccccc"
+       inkscape:connector-curvature="0"
+       id="path4853-2"
+       d="m 2136.0208,1696.0869 -2.4518,-5.1222 -27.8909,-60.4303 145,0 25,65"
+       style="fill:#d9d9d9;fill-opacity:1;stroke:#1e1e1e;stroke-width:7.4000001;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:22.20000029,7.4000001;stroke-opacity:1;stroke-dashoffset:0" />
+  </g>
+  <g
+     transform="translate(163.34225,4.3850081)"
+     id="g5432-8"
+     inkscape:export-xdpi="41.162792"
+     inkscape:export-ydpi="41.162792">
+    <path
+       inkscape:export-ydpi="41.162792"
+       inkscape:export-xdpi="41.162792"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/save.png"
+       inkscape:connector-curvature="0"
+       id="path3889-5-3-1-8"
+       d="m 2040.1373,1317.2589 0,130.6581 120.58,0 0,-95.816 -35.1692,-34.8421 z"
+       style="fill:#d9d9d9;fill-opacity:1;stroke:#1e1e1e;stroke-width:8.42000008;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:25.26000023, 8.42000007999999944;stroke-opacity:1;stroke-dashoffset:0" />
+    <rect
+       inkscape:export-ydpi="41.162792"
+       inkscape:export-xdpi="41.162792"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/save.png"
+       ry="0"
+       y="1387.088"
+       x="2057.6143"
+       height="44.194176"
+       width="85.626213"
+       id="rect4682-8-6-2"
+       style="fill:#4d4d4d;fill-opacity:1;fill-rule:nonzero;stroke:#1e1e1e;stroke-width:6;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <path
+       inkscape:export-ydpi="41.162792"
+       inkscape:export-xdpi="41.162792"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/save.png"
+       sodipodi:nodetypes="cccc"
+       inkscape:connector-curvature="0"
+       id="path4687-8-8-5"
+       d="m 2072.146,1317.9395 0,35 50,0 0,-35"
+       style="fill:none;stroke:#1e1e1e;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       inkscape:export-ydpi="41.162792"
+       inkscape:export-xdpi="41.162792"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/save.png"
+       inkscape:connector-curvature="0"
+       id="path4693-9-3-6"
+       d="m 2067.146,1397.9395 50,0"
+       style="fill:#666666;fill-opacity:1;stroke:#323232;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       inkscape:export-ydpi="41.162792"
+       inkscape:export-xdpi="41.162792"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/save.png"
+       inkscape:connector-curvature="0"
+       id="path4695-7-3-0"
+       d="m 2067.146,1407.9395 35,0"
+       style="fill:#666666;fill-opacity:1;stroke:#323232;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       inkscape:export-ydpi="41.162792"
+       inkscape:export-xdpi="41.162792"
+       inkscape:export-filename="/home/natt/Coding/nebula/art/save.png"
+       inkscape:connector-curvature="0"
+       id="path4697-9-7-2"
+       d="m 2067.146,1417.9395 60,0"
+       style="fill:#666666;fill-opacity:1;stroke:#323232;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+  </g>
 </svg>

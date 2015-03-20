@@ -871,7 +871,7 @@ void VolumeOpenGLWidget::paintGL()
     endRawGLCalls(&painter);
 
     drawViewExtent(&painter);
-    drawViewExtent(&painter);
+    drawLineTranslationVec(&painter);
 
     if (isScalebarActive)
     {
@@ -1245,18 +1245,24 @@ void VolumeOpenGLWidget::setHCurrent(int value)
 {
     hklCurrent[0] = value;
     setHkl(hklCurrent);
+
+    update();
 }
 
 void VolumeOpenGLWidget::setKCurrent(int value)
 {
     hklCurrent[1] = value;
     setHkl(hklCurrent);
+
+    update();
 }
 
 void VolumeOpenGLWidget::setLCurrent(int value)
 {
     hklCurrent[2] = value;
     setHkl(hklCurrent);
+
+    update();
 }
 
 void VolumeOpenGLWidget::setHkl(Matrix<int> &hkl)
@@ -1400,11 +1406,11 @@ void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
     }
 
     {
-        float move_scaling = 0.6;
+        float move_scaling = 0.5;
 
         if ((event->modifiers() & Qt::ControlModifier))
         {
-            move_scaling = 0.1;
+            move_scaling = 0.05;
         }
 
         if ((event->buttons() & Qt::LeftButton) && !(event->buttons() & Qt::RightButton) && !isRulerActive)
@@ -4260,6 +4266,31 @@ void VolumeOpenGLWidget::drawOverlay(QPainter * painter)
 
     painter->drawRoundedRect(multiplier_string_rect, 5, 5, Qt::AbsoluteSize);
     painter->drawText(multiplier_string_rect, Qt::AlignCenter, multiplier_string);*/
+}
+
+void VolumeOpenGLWidget::snapLineCenter()
+{
+
+}
+
+void VolumeOpenGLWidget::setLineCenter()
+{
+
+}
+
+void VolumeOpenGLWidget::alignLineWithA()
+{
+
+}
+
+void VolumeOpenGLWidget::alignLineWithB()
+{
+
+}
+
+void VolumeOpenGLWidget::alignLineWithC()
+{
+
 }
 
 void VolumeOpenGLWidget::setLinePosA()
