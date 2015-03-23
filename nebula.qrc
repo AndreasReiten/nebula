@@ -55,5 +55,7 @@
         <file>art/next_series.png</file>
         <file>art/integration_box.png</file>
         <file>art/goto.png</file>
+        <file>art/miniload.png</file>
+        <file>art/minisave.png</file>
     </qresource>
 </RCC>

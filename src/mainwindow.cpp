@@ -470,7 +470,7 @@ void MainWindow::initActions()
     aboutOpenCLAct = new QAction("About OpenCL", this);
     aboutOpenGLAct = new QAction("About OpenGL", this);
     openSvoAct = new QAction(QIcon(":/art/open.png"), "Open SVO", this);
-    saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), "Save SVO", this);
+//    saveSVOAct = new QAction(QIcon(":/art/saveScript.png"), "Save SVO", this);
     saveLoadedSvoAct = new QAction(QIcon(":/art/save.png"), "Save current SVO", this);
     dataStructureAct = new QAction(QIcon(":/art/datastructure.png"), "Toggle data structure", this);
     dataStructureAct->setCheckable(true);
@@ -781,7 +781,7 @@ void MainWindow::initConnects()
     connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_gamma(double)));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeVolumeScreenshot()));
     connect(openSvoAct, SIGNAL(triggered()), this, SLOT(loadSvo()));
-    connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
+//    connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
     connect(saveLoadedSvoAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvo()));
     connect(saveSvoButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
@@ -899,6 +899,68 @@ void MainWindow::initConnects()
     connect(alignLineToCPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(alignLineWithC()));
     connect(saveLoadedSvoMetadataAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvoMetaData()));
     connect(loadSvoMetadataAct, SIGNAL(triggered()), this, SLOT(loadSvoMetaData()));
+}
+
+void MainWindow::loadSvoMetaData()
+{
+    QString file_name = QFileDialog::getOpenFileName(this, "Open file", working_dir);
+
+    if ((file_name != ""))
+    {
+        QFileInfo info(file_name);
+        working_dir = info.absoluteDir().path();
+
+        svo_loaded.openMetadata(file_name);
+        volumeOpenGLWidget->setSvoMetadata(&svo_loaded);
+        lineModel->setLines(svo_loaded.lines());
+        lineView->resizeColumnToContents(0);
+
+        volumeViewModeComboBox->setCurrentIndex(svo_loaded.viewMode());
+        volumeTsfAlphaComboBox->setCurrentIndex(svo_loaded.viewTsfStyle());
+        volumeTsfTextureComboBox->setCurrentIndex(svo_loaded.viewTsfTexture());
+        volumeAlphaSpinBox->setValue(svo_loaded.viewAlpha());
+        volumeBrightnessSpinBox->setValue(svo_loaded.viewBrightness());
+        volumeDataMinSpinBox->setValue(svo_loaded.viewDataMin());
+        volumeDataMaxSpinBox->setValue(svo_loaded.viewDataMax());
+
+        UBMatrix<double> UB = svo_loaded.UB();
+        volumeOpenGLWidget->setUBMatrix(UB);
+
+        alphaNormSpinBox->setValue(UB.alpha() * 180.0 / pi);
+        betaNormSpinBox->setValue(UB.beta() * 180.0 / pi);
+        gammaNormSpinBox->setValue(UB.gamma() * 180.0 / pi);
+
+        aNormSpinBox->setValue(UB.a());
+        bNormSpinBox->setValue(UB.b());
+        cNormSpinBox->setValue(UB.c());
+    }
+}
+
+void MainWindow::saveLoadedSvoMetaData()
+{
+    if (svo_loaded.brickNumber() > 0)
+    {
+        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir);
+
+        if (file_name != "")
+        {
+            QFileInfo info(file_name);
+            working_dir = info.absoluteDir().path();
+
+            // View settings
+            svo_loaded.setViewMode(volumeViewModeComboBox->currentIndex());
+            svo_loaded.setViewTsfStyle(volumeTsfAlphaComboBox->currentIndex());
+            svo_loaded.setViewTsfTexture(volumeTsfTextureComboBox->currentIndex());
+            svo_loaded.setViewDataMin(volumeDataMinSpinBox->value());
+            svo_loaded.setViewDataMax(volumeDataMaxSpinBox->value());
+            svo_loaded.setViewAlpha(volumeAlphaSpinBox->value());
+            svo_loaded.setViewBrightness(volumeBrightnessSpinBox->value());
+
+            svo_loaded.setUB(volumeOpenGLWidget->getUBMatrix());
+            svo_loaded.saveMetadata(file_name);
+        }
+    }
+
 }
 
 void MainWindow::saveSurfaceAsTextProxy()
@@ -1113,6 +1175,8 @@ void MainWindow::initGUI()
         viewToolBar = new QToolBar("3D view");
         viewToolBar->addAction(openSvoAct);
         viewToolBar->addAction(saveLoadedSvoAct);
+        viewToolBar->addAction(loadSvoMetadataAct);
+        viewToolBar->addAction(saveLoadedSvoMetadataAct);
 
         viewToolBar->addSeparator();
         viewToolBar->addAction(projectionAct);
@@ -1932,7 +1996,7 @@ void MainWindow::initGUI()
 
         setLinePosAPushButton = new QPushButton("Set A");
         setLinePosBPushButton = new QPushButton("Set B");
-        setLineCenterPushBUtton = new QPushButton("Set center");
+        setLineCenterPushButton = new QPushButton("Set center");
 
         setTranslateLineAPushButton = new QPushButton("Translate FROM");
         setTranslateLineBPushButton = new QPushButton("Translate TO");

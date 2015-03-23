@@ -20,8 +20,10 @@ class Line : protected QOpenGLFunctions
 
         GLuint * vbo();
 
+        void alignWithVec(Matrix<double> vec);
         void setPositionA(Matrix<double> pos);
         void setPositionB(Matrix<double> pos);
+        void setCenter(Matrix<double> pos);
         void setTagged(bool value);
         void setComment(QString str);
         void setOffsetA(double value);

@@ -103,6 +103,42 @@ Line::~Line()
 
 }
 
+void Line::setCenter(Matrix<double> pos)
+{
+    Matrix<double> middle(3, 1);
+    middle[0] = p_position_a[0] + 0.5 * (p_position_b[0] - p_position_a[0]);
+    middle[1] = p_position_a[1] + 0.5 * (p_position_b[1] - p_position_a[1]);
+    middle[2] = p_position_a[2] + 0.5 * (p_position_b[2] - p_position_a[2]);
+
+    Matrix<double> translation(3, 1);
+    translation[0] = - middle[0] + pos[0];
+    translation[1] = - middle[1] + pos[1];
+    translation[2] = - middle[2] + pos[2];
+
+    translation.print(4);
+
+    p_position_a += translation;
+    p_position_b += translation;
+
+    computePrism();
+    computeVertices();
+}
+
+void Line::alignWithVec(Matrix<double> vec)
+{
+    Matrix<double> new_vec = vecNormalize(vec)*vecLength(p_position_b-p_position_a);
+
+    Matrix<double> middle(3, 1);
+    middle[0] = p_position_a[0] + 0.5 * (p_position_b[0] - p_position_a[0]);
+    middle[1] = p_position_a[1] + 0.5 * (p_position_b[1] - p_position_a[1]);
+    middle[2] = p_position_a[2] + 0.5 * (p_position_b[2] - p_position_a[2]);
+
+    p_position_a = middle - 0.5*new_vec;
+    p_position_b = middle + 0.5*new_vec;
+
+    computePrism();
+    computeVertices();
+}
 
 void Line::setPrismSideA(double value)
 {

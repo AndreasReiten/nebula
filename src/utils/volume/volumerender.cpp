@@ -4270,27 +4270,97 @@ void VolumeOpenGLWidget::drawOverlay(QPainter * painter)
 
 void VolumeOpenGLWidget::snapLineCenter()
 {
-
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].setCenter(weightpoint);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
 }
 
 void VolumeOpenGLWidget::setLineCenter()
 {
+    if (!isSvoInitialized)
+    {
+        return;
+    }
 
+    Matrix<double> center(3, 1);
+    center[0] = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * 0.5;
+    center[1] = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * 0.5;
+    center[2] = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * 0.5;
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].setCenter(center);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
 }
 
 void VolumeOpenGLWidget::alignLineWithA()
 {
+    if (!isSvoInitialized)
+    {
+        return;
+    }
 
+    Matrix<double> vec(3, 1);
+    vec[0] = UB[0];
+    vec[1] = UB[3];
+    vec[2] = UB[6];
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].alignWithVec(vec);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
 }
 
 void VolumeOpenGLWidget::alignLineWithB()
 {
+    if (!isSvoInitialized)
+    {
+        return;
+    }
 
+    Matrix<double> vec(3, 1);
+    vec[0] = UB[0+1];
+    vec[1] = UB[3+1];
+    vec[2] = UB[6+1];
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].alignWithVec(vec);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
 }
 
 void VolumeOpenGLWidget::alignLineWithC()
 {
+    if (!isSvoInitialized)
+    {
+        return;
+    }
 
+    Matrix<double> vec(3, 1);
+    vec[0] = UB[0+2];
+    vec[1] = UB[3+2];
+    vec[2] = UB[6+2];
+
+    if (currentLineIndex < lines->size())
+    {
+        (*lines)[currentLineIndex].alignWithVec(vec);
+        refreshLine(currentLineIndex);
+        emit linesChanged();
+        update();
+    }
 }
 
 void VolumeOpenGLWidget::setLinePosA()
@@ -5022,6 +5092,13 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
         }
     }
 
+    err =   QOpenCLFinish(context_cl.queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
     cl_svo_index = QOpenCLCreateBuffer(context_cl.context(),
                                        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                        svo->index()->size() * sizeof(cl_uint),
@@ -5093,6 +5170,17 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     genLines();
 
     isSvoInitialized = true;
+
+    update();
+}
+
+void VolumeOpenGLWidget::setSvoMetadata(SparseVoxelOctree * svo)
+{
+    if (!isSvoInitialized) return;
+
+    releaseLines();
+    lines = svo->lines();
+    genLines();
 
     update();
 }

@@ -38,6 +38,9 @@ class MainWindow : public QMainWindow
 
 
     private slots:
+        void loadSvoMetaData();
+        void saveLoadedSvoMetaData();
+
         void saveLineAsTextProxy();
         void saveSurfaceAsTextProxy();
 
@@ -106,7 +109,7 @@ class MainWindow : public QMainWindow
         void setPulled(SeriesSet set);
 
     private:
-        QAction * saveSvoMetadataAct;
+        QAction * loadSvoMetadataAct;
         QAction * saveLoadedSvoMetadataAct;
 
 
@@ -259,7 +262,7 @@ class MainWindow : public QMainWindow
         QAction * logIntegrate2DAct;
         QAction * sliceAct;
         QAction * scalebarAct;
-        QAction * saveSVOAct;
+//        QAction * saveSVOAct;
         QAction * saveLoadedSvoAct;
         QAction * dataStructureAct;
         QAction * backgroundAct;

@@ -96,12 +96,12 @@ void SparseVoxelOctree::set(unsigned int levels, unsigned int brick_inner_dimens
 
 void SparseVoxelOctree::setMetaData(QString text)
 {
-    p_metadata = text;
+    p_note = text;
 }
 
 QString SparseVoxelOctree::metaData()
 {
-    return p_metadata;
+    return p_note;
 }
 
 void SparseVoxelOctree::save(QString path)
@@ -126,7 +126,7 @@ void SparseVoxelOctree::save(QString path)
             out << p_index;
             out << p_brick;
             out << p_ub;
-            out << p_metadata;
+            out << p_note;
 
             // v 0.4
             // Creation settings
@@ -198,7 +198,7 @@ void SparseVoxelOctree::open(QString path)
             in >> p_index;
             in >> p_brick;
             in >> p_ub;
-            in >> p_metadata;
+            in >> p_note;
 
             // v 0.4
             if ((p_version_major >= 0) && (p_version_minor >= 4))
@@ -260,6 +260,67 @@ void SparseVoxelOctree::open(QString path)
 
     this->print();
 }
+
+void SparseVoxelOctree::openMetadata(QString path)
+{
+    if ((path != ""))
+    {
+        QFile file(path);
+
+        if (file.open(QIODevice::ReadOnly))
+        {
+            QDataStream in(&file);
+
+            in >> p_version_major;
+            in >> p_version_minor;
+            in >> p_ub;
+
+            // View settings
+            in >> p_view_mode;
+            in >> p_view_tsf_style;
+            in >> p_view_tsf_texture;
+            in >> p_view_data_min;
+            in >> p_view_data_max;
+            in >> p_view_alpha;
+            in >> p_view_brightness;
+
+            in >> p_lines;
+
+            file.close();
+        }
+    }
+}
+
+void SparseVoxelOctree::saveMetadata(QString path)
+{
+    if (path != "")
+    {
+        QFile file(path);
+
+        if (file.open(QIODevice::WriteOnly))
+        {
+            // v 0.3
+            QDataStream out(&file);
+            out << (quint64) 0;
+            out << (quint64) 5;
+            out << p_ub;
+
+            // View settings
+            out << p_view_mode;
+            out << p_view_tsf_style;
+            out << p_view_tsf_texture;
+            out << p_view_data_min;
+            out << p_view_data_max;
+            out << p_view_alpha;
+            out << p_view_brightness;
+
+            out << p_lines;
+
+            file.close();
+        }
+    }
+}
+
 unsigned int SparseVoxelOctree::levels()
 {
     return p_levels;

@@ -28,6 +28,8 @@ class SparseVoxelOctree
         QString metaData();
         void save(QString path);
         void open(QString path);
+        void saveMetadata(QString path);
+        void openMetadata(QString path);
 
         Matrix<double> extent();
         Matrix<double> minMax();
@@ -98,7 +100,7 @@ class SparseVoxelOctree
         quint64 p_brick_inner_dimension;
         quint64 p_brick_outer_dimension;
 
-        QString p_metadata;
+        QString p_note;
 
         UBMatrix<double> p_ub;
 

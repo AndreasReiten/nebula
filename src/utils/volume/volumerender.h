@@ -101,6 +101,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         ~VolumeOpenGLWidget();
 
         void setSvo(SparseVoxelOctree * svo);
+        void setSvoMetadata(SparseVoxelOctree * svo);
         void setUBMatrix(UBMatrix<double> &mat);
         UBMatrix<double> &getUBMatrix();
 
