@@ -35,6 +35,7 @@ class ImageWorker : public QObject, protected OpenCLFunctions
 
     public slots:
         void traceSeries(SeriesSet set);
+        void reconstructSet(SeriesSet set);
 
     signals:
         void traceFinished();

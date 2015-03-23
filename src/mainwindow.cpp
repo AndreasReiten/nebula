@@ -903,6 +903,8 @@ void MainWindow::initConnects()
 
 void MainWindow::loadSvoMetaData()
 {
+    if (!(svo_loaded.brickNumber() > 0)) return;
+
     QString file_name = QFileDialog::getOpenFileName(this, "Open file", working_dir);
 
     if ((file_name != ""))
@@ -938,27 +940,26 @@ void MainWindow::loadSvoMetaData()
 
 void MainWindow::saveLoadedSvoMetaData()
 {
-    if (svo_loaded.brickNumber() > 0)
+    if (!(svo_loaded.brickNumber() > 0)) return;
+
+    QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir);
+
+    if (file_name != "")
     {
-        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir);
+        QFileInfo info(file_name);
+        working_dir = info.absoluteDir().path();
 
-        if (file_name != "")
-        {
-            QFileInfo info(file_name);
-            working_dir = info.absoluteDir().path();
+        // View settings
+        svo_loaded.setViewMode(volumeViewModeComboBox->currentIndex());
+        svo_loaded.setViewTsfStyle(volumeTsfAlphaComboBox->currentIndex());
+        svo_loaded.setViewTsfTexture(volumeTsfTextureComboBox->currentIndex());
+        svo_loaded.setViewDataMin(volumeDataMinSpinBox->value());
+        svo_loaded.setViewDataMax(volumeDataMaxSpinBox->value());
+        svo_loaded.setViewAlpha(volumeAlphaSpinBox->value());
+        svo_loaded.setViewBrightness(volumeBrightnessSpinBox->value());
 
-            // View settings
-            svo_loaded.setViewMode(volumeViewModeComboBox->currentIndex());
-            svo_loaded.setViewTsfStyle(volumeTsfAlphaComboBox->currentIndex());
-            svo_loaded.setViewTsfTexture(volumeTsfTextureComboBox->currentIndex());
-            svo_loaded.setViewDataMin(volumeDataMinSpinBox->value());
-            svo_loaded.setViewDataMax(volumeDataMaxSpinBox->value());
-            svo_loaded.setViewAlpha(volumeAlphaSpinBox->value());
-            svo_loaded.setViewBrightness(volumeBrightnessSpinBox->value());
-
-            svo_loaded.setUB(volumeOpenGLWidget->getUBMatrix());
-            svo_loaded.saveMetadata(file_name);
-        }
+        svo_loaded.setUB(volumeOpenGLWidget->getUBMatrix());
+        svo_loaded.saveMetadata(file_name);
     }
 
 }
@@ -1015,28 +1016,27 @@ void MainWindow::saveSvo()
 
 void MainWindow::saveLoadedSvo()
 {
-    if (svo_loaded.brickNumber() > 0)
+    if (!(svo_loaded.brickNumber() > 0)) return;
+
+    QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir);
+
+    if (file_name != "")
     {
-        QString file_name = QFileDialog::getSaveFileName(this, "Save file", working_dir);
+        QFileInfo info(file_name);
+        working_dir = info.absoluteDir().path();
 
-        if (file_name != "")
-        {
-            QFileInfo info(file_name);
-            working_dir = info.absoluteDir().path();
+        // View settings
+        svo_loaded.setViewMode(volumeViewModeComboBox->currentIndex());
+        svo_loaded.setViewTsfStyle(volumeTsfAlphaComboBox->currentIndex());
+        svo_loaded.setViewTsfTexture(volumeTsfTextureComboBox->currentIndex());
+        svo_loaded.setViewDataMin(volumeDataMinSpinBox->value());
+        svo_loaded.setViewDataMax(volumeDataMaxSpinBox->value());
+        svo_loaded.setViewAlpha(volumeAlphaSpinBox->value());
+        svo_loaded.setViewBrightness(volumeBrightnessSpinBox->value());
 
-            // View settings
-            svo_loaded.setViewMode(volumeViewModeComboBox->currentIndex());
-            svo_loaded.setViewTsfStyle(volumeTsfAlphaComboBox->currentIndex());
-            svo_loaded.setViewTsfTexture(volumeTsfTextureComboBox->currentIndex());
-            svo_loaded.setViewDataMin(volumeDataMinSpinBox->value());
-            svo_loaded.setViewDataMax(volumeDataMaxSpinBox->value());
-            svo_loaded.setViewAlpha(volumeAlphaSpinBox->value());
-            svo_loaded.setViewBrightness(volumeBrightnessSpinBox->value());
-
-            svo_loaded.setUB(volumeOpenGLWidget->getUBMatrix());
-            svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
-            svo_loaded.save(file_name);
-        }
+        svo_loaded.setUB(volumeOpenGLWidget->getUBMatrix());
+        svo_loaded.setMetaData(svoHeaderEdit->toPlainText());
+        svo_loaded.save(file_name);
     }
 }
 

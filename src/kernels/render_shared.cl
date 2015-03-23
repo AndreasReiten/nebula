@@ -149,15 +149,39 @@ void selectionSort(float * a, int n)
     }
 }
 
-float2 tsfPos(float value, float data_min, float data_max, float tsf_min, float tsf_max, int log, float log_multiplier, float log_offset)
+float2 tsfPos2(float value, float value_min, float value_max, float tsf_min, float tsf_max, int log, float log_multiplier, float log_offset)
 {
     if (log)
     {
-        return (float2)((tsf_min + (tsf_max - tsf_min) * log10(max((value + log_offset - data_min) / (data_max - data_min + log_offset) * log_multiplier, 1.0)) / log10(log_multiplier)), 0.5f);
+        float a = (value - value_min)/(value_max - value_min) * 1000.0;
+        float b;
+
+        if (a < 1.0)
+        {
+            b = a / (1.0 + log10(1000.0));
+        }
+        else if (a >= 1.0)
+        {
+            b = (log10(a) + 1.0) / (1.0 + log10(1000.0));
+        }
+
+        return (float2)(tsf_min + (tsf_max - tsf_min) * b, 0.5f);
     }
     else
     {
-        return (float2)(tsf_min + (tsf_max - tsf_min) * ((value - data_min) / (data_max - data_min)), 0.5f);
+        return (float2)(tsf_min + (tsf_max - tsf_min) * ((value - value_min) / (value_max - value_min)), 0.5f);
+    }
+}
+
+float2 tsfPos(float value, float value_min, float value_max, float tsf_min, float tsf_max, int log, float log_multiplier, float log_offset)
+{
+    if (log)
+    {
+        return (float2)((tsf_min + (tsf_max - tsf_min) * log10(max((value + log_offset - value_min) / (value_max - value_min + log_offset) * log_multiplier, 1.0)) / log10(log_multiplier)), 0.5f);
+    }
+    else
+    {
+        return (float2)(tsf_min + (tsf_max - tsf_min) * ((value - value_min) / (value_max - value_min)), 0.5f);
     }
 }
 

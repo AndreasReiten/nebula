@@ -235,7 +235,7 @@ kernel void modelRayTrace(
 
         if (isIntegration3DActive && !isSlicingActive)
         {
-            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e1, 0.0));
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e1, 0.0));
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }

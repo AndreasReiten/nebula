@@ -56,6 +56,11 @@ void ImageWorker::initializeOpenCLKernels()
     }
 }
 
+void ImageWorker::reconstructSet(SeriesSet set)
+{
+
+}
+
 void ImageWorker::traceSeries(SeriesSet set)
 {
     emit visibilityChanged(false);
@@ -406,8 +411,6 @@ void ImageOpenGLWidget::setBeamYOverride(double value)
 
 void ImageOpenGLWidget::reconstruct()
 {
-    //        emit resultFinished(result);
-
     toggleTraceTexture(false);
 
     int verbose = 0;

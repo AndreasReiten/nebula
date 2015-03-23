@@ -678,7 +678,7 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     //    projection_scaling[0] = 0.7;
     //    projection_scaling[5] = 0.7;
     //    projection_scaling[10] = 0.7;
-    unitcell_view_matrix.setIdentity(4);
+//    unitcell_view_matrix.setIdentity(4);
 
     double N = 0.1;
     double F = 10.0;
@@ -1041,6 +1041,11 @@ void VolumeOpenGLWidget::initializeGL()
     }
 
     if ((std_3d_col_model_transform = std_3d_col_program->uniformLocation("model_transform")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_3d_col_fragpos_transform = std_3d_col_program->uniformLocation("fragpos_transform")) == -1)
     {
         qFatal("Invalid uniform");
     }
@@ -1805,7 +1810,8 @@ void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
-    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, unitcell_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_fragpos_transform, 1, GL_FALSE, U.colmajor().toFloat().data());
 
     float alpha = pow((std::max(std::max(UB.cStar(), UB.bStar()), UB.cStar()) / (data_view_extent[1] - data_view_extent[0])) * 5.0, 2);
 
@@ -1839,6 +1845,8 @@ void VolumeOpenGLWidget::drawUnitCell(QPainter * painter)
     glDrawArrays(GL_LINES,  0, unitcell_nodes);
 
     glDisableVertexAttribArray(std_3d_col_fragpos);
+
+    glUniformMatrix4fv(std_3d_col_fragpos_transform, 1, GL_FALSE, identity.colmajor().toFloat().data());
 
     std_3d_col_program->release();
 
@@ -2856,7 +2864,7 @@ void VolumeOpenGLWidget::initializeCL()
 void VolumeOpenGLWidget::setViewMatrices()
 {
     view_matrix =           bbox_translation * bbox_scaling * data_scaling * rotation * data_translation;
-    unitcell_view_matrix =  bbox_translation * bbox_scaling * data_scaling * rotation * data_translation * U;
+//    unitcell_view_matrix =  bbox_translation * bbox_scaling * data_scaling * rotation * data_translation * U;
     scalebar_view_matrix =  bbox_translation * bbox_scaling * data_scaling * rotation * scalebar_rotation;
     minicell_view_matrix =  bbox_translation * minicell_scaling * rotation * U;
 

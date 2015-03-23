@@ -3,6 +3,7 @@
 in  vec3 fragpos;
 uniform  mat4 model_transform;
 uniform  mat4 projection_transform;
+uniform  mat4 fragpos_transform = mat4(1.0);
 
 uniform vec4 clip_plane0 = vec4(0,-1,0,0);
 uniform vec4 clip_plane1 = vec4(0,-1,0,0);
@@ -13,7 +14,8 @@ uniform vec4 clip_plane5 = vec4(0,-1,0,0);
 
 void main(void)
 {
-    vec4 xyz =  vec4(fragpos, 1.0);
+    // fragpos_transform is used for vertices that do not share the same model transform as the clip planes
+    vec4 xyz = fragpos_transform * vec4(fragpos, 1.0);
     gl_Position = projection_transform * model_transform * xyz;
 
     gl_ClipDistance[0] = dot(clip_plane0, xyz);

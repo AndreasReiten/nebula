@@ -270,6 +270,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         QOpenGLShaderProgram * std_2d_col_program;
 
         GLint std_3d_col_color;
+        GLint std_3d_col_fragpos_transform;
         GLint std_3d_col_model_transform;
         GLint std_3d_col_projection_transform;
         GLint std_3d_col_fragpos;
@@ -479,7 +480,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         Matrix<double> bbox_translation;
         //        Matrix<double> normalization_scaling;
         Matrix<double> scalebar_view_matrix;
-        Matrix<double> unitcell_view_matrix;
+//        Matrix<double> unitcell_view_matrix;
         Matrix<double> minicell_view_matrix;
         RotationMatrix<double> scalebar_rotation;
         //        Matrix<double> projection_scaling;
