@@ -144,7 +144,6 @@ void VoxelizeWorker::initializeCLKernel()
     context_cl.initDevices();
     context_cl.initNormalContext();
     context_cl.initCommandQueue();
-    context_cl.initResources();
 
     QStringList paths;
     paths << "kernels/voxelize.cl";

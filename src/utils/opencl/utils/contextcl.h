@@ -270,15 +270,11 @@ class OpenCLContext : protected OpenCLFunctions
         void initSharedContext();
         void initNormalContext();
         void initCommandQueue();
-        void initResources();
         cl_command_queue queue();
         cl_context context();
 
         cl_program createProgram(QStringList paths, cl_int * err);
         void buildProgram(cl_program * program, const char * options);
-
-        cl_kernel cl_rect_copy_float;
-        cl_kernel cl_parallel_reduction;
 
         QString cl_easy_context_info(cl_context context);
         QString cl_easy_device_info(cl_device_id device);

@@ -40,6 +40,12 @@
  * (Done, but early MSD features are still very flawed) Vincinity check for bricks. Bricks can not be made MSD early if some voxels are filled, but others are zero. Would help smoothen surface features. Basically check for voxels of value zero in each brick. It is also flawed in that it disallows MSD for cases where a brick completely envelops a small feature.
  * (Difficult, and variance should be found from raw data, not interpolated) Proper setting of transparent voxels. There are artefacts.
  * Other interpolation modes than IDW to get rid of blobbyness. IDW great unless sparsely populated.
+ *
+ *
+ *
+ *
+ * In the intermediate tree, when a certain conditions are met, points are merged rather than added. Points can also be added directly into the intermediate octree rather than having them put into a list first.
+ *
  * */
 
 #include <QApplication>
@@ -48,6 +54,7 @@
 #include <QString>
 #include <QDebug>
 #include <QByteArray>
+//#include <QMessageBox>
 
 #include "mainwindow.h"
 
@@ -142,6 +149,28 @@ int main(int argc, char ** argv)
 
     app.setOrganizationName("Norwegian University of Science and Technology");
     app.setApplicationName("Nebula");
+
+    // Check hardware and software compatability
+
+    // Qt version
+//    QString qt_str = QT_VERSION_STR;
+
+//    // OpenGL version
+//    QString opengl_str = "";
+
+//    // OpenCL version
+//    QString opencl_str = "";
+
+//    // Devices
+//    QString device_str = "";
+
+//    QString message = "Compiled with Qt version " + qt_str +
+//                    + "OpenGL version " + opengl_str + opencl_str + device_str;
+
+//    QString title = "System compatability overview";
+
+//    QMessageBox box(QMessageBox::Information, title, message);
+//    box.exec();
 
     MainWindow window;
     window.setAnimated(false);

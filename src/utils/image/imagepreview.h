@@ -231,7 +231,9 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         cl_kernel cl_display_image;
         cl_kernel cl_image_calculus;
         cl_kernel cl_buffer_max;
-        cl_kernel project_kernel;
+        cl_kernel cl_project_kernel;
+        cl_kernel cl_rect_copy_float;
+        cl_kernel cl_parallel_reduction;
         cl_mem image_tex_cl;
         cl_mem source_cl;
         cl_mem tsf_tex_cl;

@@ -32,6 +32,8 @@ OpenCLFunctions::~OpenCLFunctions()
 
 void OpenCLFunctions::initializeOpenCLFunctions()
 {
+    if (QLibrary::isLibrary("OpenCL")) qFatal("OpenCL was not a found as a loadable library. Are OpenCL drivers installed?");
+
     QLibrary myLib("OpenCL");
 
     QOpenCLGetPlatformIDs = (PROTOTYPE_QOpenCLGetPlatformIDs) myLib.resolve("clGetPlatformIDs");
@@ -513,37 +515,6 @@ void OpenCLContext::initCommandQueue()
     }
 }
 
-void OpenCLContext::initResources()
-{
-    // Build program from OpenCL kernel source
-    QStringList paths;
-    paths << "kernels/mem_functions.cl";
-    paths << "kernels/parallel_reduce.cl";
-
-    program = createProgram(paths, &err);
-
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
-
-    buildProgram(&program, "-Werror");
-
-    // Kernel handles
-    cl_rect_copy_float = QOpenCLCreateKernel(program, "rectCopyFloat", &err);
-
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
-
-    cl_parallel_reduction = QOpenCLCreateKernel(program, "psum", &err);
-
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
-}
 
 
 QString OpenCLContext::cl_easy_context_info(cl_context context)

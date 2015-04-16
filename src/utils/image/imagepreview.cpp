@@ -714,22 +714,22 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
 
 
 
-    err = QOpenCLSetKernelArg(project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= QOpenCLSetKernelArg(project_kernel, 1, sizeof(cl_mem), (void *) &image_data_corrected_cl);
-    err |= QOpenCLSetKernelArg(project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
-    err |= QOpenCLSetKernelArg(project_kernel, 3, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
-    err |= QOpenCLSetKernelArg(project_kernel, 4, sizeof(cl_float), &pixel_size_x);
-    err |= QOpenCLSetKernelArg(project_kernel, 5, sizeof(cl_float), &pixel_size_y);
-    err |= QOpenCLSetKernelArg(project_kernel, 6, sizeof(cl_float), &wavelength);
-    err |= QOpenCLSetKernelArg(project_kernel, 7, sizeof(cl_float), &detector_distance);
-    err |= QOpenCLSetKernelArg(project_kernel, 8, sizeof(cl_float), &beam_center_x);
-    err |= QOpenCLSetKernelArg(project_kernel, 9, sizeof(cl_float), &beam_center_y);
-    err |= QOpenCLSetKernelArg(project_kernel, 10, sizeof(cl_float), &start_angle);
-    err |= QOpenCLSetKernelArg(project_kernel, 11, sizeof(cl_float), &angle_increment);
-    err |= QOpenCLSetKernelArg(project_kernel, 12, sizeof(cl_float), &kappa);
-    err |= QOpenCLSetKernelArg(project_kernel, 13, sizeof(cl_float), &phi);
-    err |= QOpenCLSetKernelArg(project_kernel, 14, sizeof(cl_float), &omega);
-    err |= QOpenCLSetKernelArg(project_kernel, 15, sizeof(cl_int4), selection.lrtb().data());
+    err = QOpenCLSetKernelArg(cl_project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 1, sizeof(cl_mem), (void *) &image_data_corrected_cl);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 3, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 4, sizeof(cl_float), &pixel_size_x);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 5, sizeof(cl_float), &pixel_size_y);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 6, sizeof(cl_float), &wavelength);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 7, sizeof(cl_float), &detector_distance);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 8, sizeof(cl_float), &beam_center_x);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 9, sizeof(cl_float), &beam_center_y);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 10, sizeof(cl_float), &start_angle);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 11, sizeof(cl_float), &angle_increment);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 12, sizeof(cl_float), &kappa);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 13, sizeof(cl_float), &phi);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 14, sizeof(cl_float), &omega);
+    err |= QOpenCLSetKernelArg(cl_project_kernel, 15, sizeof(cl_int4), selection.lrtb().data());
 
     if ( err != CL_SUCCESS)
     {
@@ -754,7 +754,7 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
 
             if ( err != CL_SUCCESS)
             {
@@ -996,15 +996,15 @@ void ImageOpenGLWidget::copyBufferRect(cl_mem buffer_cl,
     int copy_row_pitch = copy_size[0];
 
     // Set kernel parameters
-    err =   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float,  0, sizeof(cl_mem), (void *) &buffer_cl);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 1, sizeof(cl_int2), buffer_size.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 2, sizeof(cl_int2), buffer_origin.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 3, sizeof(int), &buffer_row_pitch);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 4, sizeof(cl_mem), (void *) &copy_cl);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 5, sizeof(cl_int2), copy_size.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 6, sizeof(cl_int2), copy_origin.toInt().data());
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 7, sizeof(int), &copy_row_pitch);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_rect_copy_float, 8, sizeof(cl_int2), copy_size.toInt().data());
+    err =   QOpenCLSetKernelArg(cl_rect_copy_float,  0, sizeof(cl_mem), (void *) &buffer_cl);
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 1, sizeof(cl_int2), buffer_size.toInt().data());
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 2, sizeof(cl_int2), buffer_origin.toInt().data());
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 3, sizeof(int), &buffer_row_pitch);
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 4, sizeof(cl_mem), (void *) &copy_cl);
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 5, sizeof(cl_int2), copy_size.toInt().data());
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 6, sizeof(cl_int2), copy_origin.toInt().data());
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 7, sizeof(int), &copy_row_pitch);
+    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 8, sizeof(cl_int2), copy_size.toInt().data());
 
     if ( err != CL_SUCCESS)
     {
@@ -1013,7 +1013,7 @@ void ImageOpenGLWidget::copyBufferRect(cl_mem buffer_cl,
 
 
     // Launch the kernel
-    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), context_cl.cl_rect_copy_float, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_rect_copy_float, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
     {
@@ -1051,11 +1051,11 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
     float sum;
 
     /* Pass arguments to kernel */
-    err =   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 0, sizeof(cl_mem), (void *) &cl_data);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 1, local_ws[0] * sizeof(cl_float), NULL);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
-    err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
+    err =   QOpenCLSetKernelArg(cl_parallel_reduction, 0, sizeof(cl_mem), (void *) &cl_data);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 1, local_ws[0] * sizeof(cl_float), NULL);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
 
     if ( err != CL_SUCCESS)
     {
@@ -1065,7 +1065,7 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
     /* Launch kernel repeatedly until the summing is done */
     while (read_size > 1)
     {
-        err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), context_cl.cl_parallel_reduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+        err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_parallel_reduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 
         if ( err != CL_SUCCESS)
         {
@@ -1131,9 +1131,9 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
             }
         }
 
-        err =   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
-        err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
-        err |=   QOpenCLSetKernelArg(context_cl.cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
+        err =   QOpenCLSetKernelArg(cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
+        err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
+        err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
 
         if ( err != CL_SUCCESS)
         {
@@ -2320,7 +2320,6 @@ void ImageOpenGLWidget::initializeCL()
     context_cl.initDevices();
     context_cl.initSharedContext();
     context_cl.initCommandQueue();
-    context_cl.initResources();
 
     imageWorker->setOpenCLContext(context_cl);
 
@@ -2328,6 +2327,8 @@ void ImageOpenGLWidget::initializeCL()
     QStringList paths;
     paths << "kernels/image_preview.cl";
     paths << "kernels/project.cl";
+    paths << "kernels/mem_functions.cl";
+    paths << "kernels/parallel_reduce.cl";
 
     program = context_cl.createProgram(paths, &err);
 
@@ -2360,7 +2361,21 @@ void ImageOpenGLWidget::initializeCL()
         qFatal(cl_error_cstring(err));
     }
 
-    project_kernel = QOpenCLCreateKernel(program, "FRAME_FILTER", &err);
+    cl_project_kernel = QOpenCLCreateKernel(program, "FRAME_FILTER", &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    cl_rect_copy_float = QOpenCLCreateKernel(program, "rectCopyFloat", &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    cl_parallel_reduction = QOpenCLCreateKernel(program, "psum", &err);
 
     if ( err != CL_SUCCESS)
     {

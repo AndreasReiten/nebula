@@ -2705,7 +2705,6 @@ void VolumeOpenGLWidget::initializeCL()
     context_cl.initDevices();
     context_cl.initSharedContext();
     context_cl.initCommandQueue();
-    context_cl.initResources();
 
     volumeWorker->setOpenCLContext(context_cl);
 
