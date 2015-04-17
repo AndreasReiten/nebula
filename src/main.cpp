@@ -40,12 +40,14 @@
  * (Done, but early MSD features are still very flawed) Vincinity check for bricks. Bricks can not be made MSD early if some voxels are filled, but others are zero. Would help smoothen surface features. Basically check for voxels of value zero in each brick. It is also flawed in that it disallows MSD for cases where a brick completely envelops a small feature.
  * (Difficult, and variance should be found from raw data, not interpolated) Proper setting of transparent voxels. There are artefacts.
  * Other interpolation modes than IDW to get rid of blobbyness. IDW great unless sparsely populated.
- *
+ * UB matrix input
  *
  *
  *
  * In the intermediate tree, when a certain conditions are met, points are merged rather than added. Points can also be added directly into the intermediate octree rather than having them put into a list first.
+ * Conditional rebinning could work. Placing values directly into intermediate octree and either rebin or split octnodes depending on data properties when they exceed a given number of points. If the contained data is smooth, then rebinning to n**3 samples is ok.
  *
+ * Integration boxes. You pick which side or line within the box is to be integrated along (and in which direction). Arrows indicate direction.
  * */
 
 #include <QApplication>
