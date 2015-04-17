@@ -84,7 +84,14 @@ RotationMatrix<T> &RotationMatrix<T>::operator = (RotationMatrix<T> other)
 template <class T>
 void RotationMatrix<T>::setFrom3x3(Matrix<T> mat)
 {
+//    this->print(2,"PRE");
+
     this->setIdentity(4);
+
+//    this->print(2,"POST");
+
+//    mat->print(2,"MAT");
+
     this->data()[0] = mat[0];
     this->data()[1] = mat[1];
     this->data()[2] = mat[2];

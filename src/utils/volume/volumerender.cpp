@@ -5043,6 +5043,30 @@ void VolumeOpenGLWidget::raytrace(cl_kernel kernel)
 
 void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
 {
+    // Load the contents into a CL texture
+    if (isSvoInitialized)
+    {
+        err = QOpenCLReleaseMemObject(cl_svo_brick);
+
+        err |= QOpenCLReleaseMemObject(cl_svo_index);
+
+        err |= QOpenCLReleaseMemObject(cl_svo_pool);
+
+        if ( err != CL_SUCCESS)
+        {
+            qFatal(cl_error_cstring(err));
+        }
+    }
+
+    err =   QOpenCLFinish(context_cl.queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    isSvoInitialized = false;
+
     releaseLines();
     lines = svo->lines();
 
@@ -5068,43 +5092,9 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     pool_dim[1] = (1 << svo->brickPoolPower()) * svo->brickOuterDimension();
     pool_dim[2] = ((n_bricks) / ((1 << svo->brickPoolPower()) * (1 << svo->brickPoolPower())) + 1) * svo->brickOuterDimension();
 
-    // Load the contents into a CL texture
-    if (isSvoInitialized)
-    {
-        err = QOpenCLReleaseMemObject(cl_svo_brick);
 
-        if ( err != CL_SUCCESS)
-        {
-            qFatal(cl_error_cstring(err));
-        }
-    }
 
-    if (isSvoInitialized)
-    {
-        err = QOpenCLReleaseMemObject(cl_svo_index);
 
-        if ( err != CL_SUCCESS)
-        {
-            qFatal(cl_error_cstring(err));
-        }
-    }
-
-    if (isSvoInitialized)
-    {
-        err = QOpenCLReleaseMemObject(cl_svo_pool);
-
-        if ( err != CL_SUCCESS)
-        {
-            qFatal(cl_error_cstring(err));
-        }
-    }
-
-    err =   QOpenCLFinish(context_cl.queue());
-
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
 
     cl_svo_index = QOpenCLCreateBuffer(context_cl.context(),
                                        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
