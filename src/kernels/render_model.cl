@@ -41,7 +41,7 @@ kernel void modelRayTrace(
         float3 ray_delta;
         float cone_diameter_increment;
         float cone_diameter_near;
-        float integrated_intensity = 0.0;
+        float integrated_intensity = 0.0f;
 
         {
             float4 rayNearEdge, rayFarEdge;
@@ -101,7 +101,7 @@ kernel void modelRayTrace(
         {
             // The geometry of the intersecting part of the ray
             float cone_diameter, step_length;
-            float cone_diameter_low = 0.05; // Only acts as a scaling factor
+            float cone_diameter_low = 0.05f; // Only acts as a scaling factor
 
             float3 box_ray_origin = ray_near.xyz + t_near * ray_delta.xyz;
             float3 box_ray_end = ray_near.xyz + t_far * ray_delta.xyz;
@@ -117,9 +117,9 @@ kernel void modelRayTrace(
             {
                 // Ray-plane intersection
                 float4 center = (float4)(
-                                    data_view_extent[0] + 0.5 * (data_view_extent[1] - data_view_extent[0]),
-                                    data_view_extent[2] + 0.5 * (data_view_extent[3] - data_view_extent[2]),
-                                    data_view_extent[4] + 0.5 * (data_view_extent[5] - data_view_extent[4]),
+                                    data_view_extent[0] + 0.5f * (data_view_extent[1] - data_view_extent[0]),
+                                    data_view_extent[2] + 0.5f * (data_view_extent[3] - data_view_extent[2]),
+                                    data_view_extent[4] + 0.5f * (data_view_extent[5] - data_view_extent[4]),
                                     0);
 
                 // Plane normals
@@ -163,7 +163,7 @@ kernel void modelRayTrace(
 
                         intensity = model(box_ray_xyz, parameters);
 
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6, 0.0));
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
 
                         color.xyz += (1.0f - color.w) * sample.xyz * sample.w;
                         color.w += (1.0f - color.w) * sample.w;
@@ -188,7 +188,7 @@ kernel void modelRayTrace(
 
                     if (!isIntegration3DActive)
                     {
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6, 0.0));
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
                         sample.w *= alpha;
 
                         if (isShadowActive)
@@ -235,7 +235,7 @@ kernel void modelRayTrace(
 
         if (isIntegration3DActive && !isSlicingActive)
         {
-            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e1, 0.0));
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e1f, 0.0f));
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }

@@ -16,7 +16,7 @@ kernel void psum(
     }
     else
     {
-        addition_array[get_local_id(0)] = 0.0;
+        addition_array[get_local_id(0)] = 0.0f;
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);

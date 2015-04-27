@@ -13,9 +13,9 @@ kernel void boxSample(
     int4 pool_dim = get_image_dim(pool);
 
     float3 pos;
-    pos.x = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * native_divide((float)get_global_id(0) + 0.5, (float)get_global_size(0));
-    pos.y = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * native_divide((float)get_global_id(1) + 0.5, (float)get_global_size(1));
-    pos.z = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * native_divide((float)get_global_id(2) + 0.5, (float)get_global_size(2));
+    pos.x = data_view_extent[0] + (data_view_extent[1] - data_view_extent[0]) * native_divide((float)get_global_id(0) + 0.5f, (float)get_global_size(0));
+    pos.y = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * native_divide((float)get_global_id(1) + 0.5f, (float)get_global_size(1));
+    pos.z = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * native_divide((float)get_global_id(2) + 0.5f, (float)get_global_size(2));
 
     uint node_brick, node_index, isMsd, isLowEnough, isEmpty;
     float4 lookup_pos;
@@ -52,7 +52,7 @@ kernel void boxSample(
             (pos.y < data_extent[2]) || (pos.y > data_extent[3]) ||
             (pos.z < data_extent[4]) || (pos.z > data_extent[5]))
     {
-        output[get_global_id(0) + get_global_id(1)*get_global_size(0) + get_global_id(2)*get_global_size(0)*get_global_size(1)] = 0.0;
+        output[get_global_id(0) + get_global_id(1)*get_global_size(0) + get_global_id(2)*get_global_size(0)*get_global_size(1)] = 0.0f;
     }
     else
     {

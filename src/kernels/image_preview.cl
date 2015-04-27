@@ -19,12 +19,12 @@ kernel void imageDisplay(
 
         if (log)
         {
-            if (data_limit.x <= 0.00001)
+            if (data_limit.x <= 0.00001f)
             {
-                data_limit.x = 0.00001;
+                data_limit.x = 0.00001f;
             }
 
-            if (intensity <= 0.00001)
+            if (intensity <= 0.00001f)
             {
                 tsf_position = (float2)(0.0f, 0.5f);
                 sample = read_imagef(tsf_image, tsf_sampler, tsf_position);// + (float4)(0.0,0.0,1.0,0.2);
@@ -163,8 +163,8 @@ kernel void imageCalculus(
             float3 k_i = (float3)(-k, 0.0f, 0.0f);
             float3 k_f = k * normalize((float3)(
                                            -det_dist,
-                                           pix_size_x * ((float) (image_size.y - 0.5 - id_glb.y) - beam_x), /* DANGER */
-                                           pix_size_y * ((float) (image_size.x - 0.5 - id_glb.x) - beam_y))); /* DANGER */
+                                           pix_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
+                                           pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y))); /* DANGER */
 
             Q.xyz = k_f - k_i;
             {
@@ -193,7 +193,7 @@ kernel void imageCalculus(
         else if (task == 1)
         {
             // Calculate variance, requires mean to be known
-            out_buf[id_glb.y * image_size.x + id_glb.x] = pow(value - mean, 2.0);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = pow(value - mean, 2.0f);
         }
         else if (task == 2)
         {
@@ -204,17 +204,17 @@ kernel void imageCalculus(
 
 
 
-            out_buf[id_glb.y * image_size.x + id_glb.x] = pow((value - mean) / deviation, 3.0);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = pow((value - mean) / deviation, 3.0f);
         }
         else if (task == 3)
         {
             // Calculate x weightpoint
-            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.x + 0.5);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.x + 0.5f);
         }
         else if (task == 4)
         {
             // Calculate y weightpoint
-            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.y + 0.5);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.y + 0.5f);
         }
         else
         {

@@ -230,9 +230,9 @@ kernel void svoRayTrace(
             {
                 // Ray-plane intersection
                 float4 center = (float4)(
-                                    data_view_extent[0] + 0.5 * (data_view_extent[1] - data_view_extent[0]),
-                                    data_view_extent[2] + 0.5 * (data_view_extent[3] - data_view_extent[2]),
-                                    data_view_extent[4] + 0.5 * (data_view_extent[5] - data_view_extent[4]),
+                                    data_view_extent[0] + 0.5f * (data_view_extent[1] - data_view_extent[0]),
+                                    data_view_extent[2] + 0.5f * (data_view_extent[3] - data_view_extent[2]),
+                                    data_view_extent[4] + 0.5f * (data_view_extent[5] - data_view_extent[4]),
                                     0);
 
                 // Plane normals
@@ -367,7 +367,7 @@ kernel void svoRayTrace(
                                     sample = brickColor(j);
 
                                     float dist = fast_length(norm_pos_this_lvl - (float3)(1.0f));
-                                    sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7);
+                                    sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7f);
 
 
                                     color.xyz = color.xyz + (1.f - color.w) * sample.xyz * sample.w;
@@ -381,7 +381,7 @@ kernel void svoRayTrace(
 
                                 if (isLogActive)
                                 {
-                                    float value = log10(max(intensity + 1.0 - data_offset_low, 1.0)) / log10(data_offset_high - data_offset_low + 1.0);
+                                    float value = log10(max(intensity + 1.0f - data_offset_low, 1.0f)) / log10(data_offset_high - data_offset_low + 1.0f);
 
                                     if (value >= 0.0)
                                     {
@@ -485,7 +485,7 @@ kernel void svoRayTrace(
                                     sample = brickColor(j);
 
                                     float dist = fast_length(norm_pos_this_lvl - (float3)(1.0f));
-                                    sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7);
+                                    sample = mix(sample, (float4)(0.0f, 0.0f, 0.0f, 1.0f), dist * dist - 0.7f);
 
                                     color.xyz = color.xyz + (1.f - color.w) * sample.xyz * sample.w;
                                     color.w = color.w + (1.f - color.w) * sample.w;
@@ -544,9 +544,9 @@ kernel void svoRayTrace(
 
                                 if (isLogActive)
                                 {
-                                    float value = log10(max(intensity + 1.0 - data_offset_low, 1.0)) / log10(data_offset_high - data_offset_low + 1.0);
+                                    float value = log10(max(intensity + 1.0f - data_offset_low, 1.0f)) / log10(data_offset_high - data_offset_low + 1.0f);
 
-                                    if (value >= 0.0)
+                                    if (value >= 0.0f)
                                     {
                                         tsf_position = (float2)((tsf_offset_low + (tsf_offset_high - tsf_offset_low) * value), 0.5f);
                                     }
@@ -631,7 +631,7 @@ kernel void svoRayTrace(
 
         if (isIntegration3DActive  && !isSlicingActive && !isDsActive)
         {
-            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6, 0.0));
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }

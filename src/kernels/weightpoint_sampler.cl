@@ -42,9 +42,9 @@ kernel void weightpointSampler(
     // Sample the octree
     // xyz position
     float3 pos = (float3)(
-                     data_view_extent[0] + (0.5 + (float)id_glb.x) * ((data_view_extent[1] - data_view_extent[0]) / (size_glb.x - 1)),
-                     data_view_extent[2] + (0.5 + (float)id_glb.y) * ((data_view_extent[3] - data_view_extent[2]) / (size_glb.y - 1)),
-                     data_view_extent[4] + (0.5 + (float)id_glb.z) * ((data_view_extent[5] - data_view_extent[4]) / (size_glb.z - 1)));
+                     data_view_extent[0] + (0.5f + (float)id_glb.x) * ((data_view_extent[1] - data_view_extent[0]) / (size_glb.x - 1)),
+                     data_view_extent[2] + (0.5f + (float)id_glb.y) * ((data_view_extent[3] - data_view_extent[2]) / (size_glb.y - 1)),
+                     data_view_extent[4] + (0.5f + (float)id_glb.z) * ((data_view_extent[5] - data_view_extent[4]) / (size_glb.z - 1)));
 
     // Descend into the octree data struget_global_id(0)cture
     // Index trackers for the traversal.

@@ -56,8 +56,8 @@ kernel void FRAME_FILTER(
                 float3 k_i = (float3)(-k, 0, 0);
                 float3 k_f = k * normalize((float3)(
                                                -h_detector_distance,
-                                               h_pixel_size_x * ((float) (target_dim.y - 0.5 - id_glb.y) - h_beam_x), /* DANGER */
-                                               h_pixel_size_y * ((float) (target_dim.x - 0.5 - id_glb.x) - h_beam_y))); /* DANGER */
+                                               h_pixel_size_x * ((float) (target_dim.y - 0.5f - id_glb.y) - h_beam_x), /* DANGER */
+                                               h_pixel_size_y * ((float) (target_dim.x - 0.5f - id_glb.x) - h_beam_y))); /* DANGER */
 
                 Q.xyz = k_f - k_i;
 
