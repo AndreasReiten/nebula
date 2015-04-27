@@ -13,6 +13,7 @@ QT += widgets
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
 RESOURCES  = nebula.qrc
+RC_ICONS = art/app.ico
 
 OBJECTS_DIR = .obj
 MOC_DIR = .moc

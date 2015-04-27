@@ -1,0 +1,5 @@
+Deployment instructions:
+
+Windows 7 or newer: Build normally in release mode and use the windeployqt script file for shared library deployment. The Windows deployment tool can be found in QTDIR/bin/windeployqt. It is designed to automate the process of creating a deployable folder that contains all libraries, QML imports, plugins, translations that are required to run the application from that folder. This is used to create the sandbox for Windows Runtime or an installation tree for Windows desktop applications that can be easily bundled by an installer. 
+
+A quick search for "Qt deployment" on the internet should give more specific details, but generally one only has to make sure all the relevant dll's are included in the same folder as the executable.
