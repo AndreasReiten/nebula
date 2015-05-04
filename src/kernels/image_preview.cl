@@ -63,7 +63,7 @@ kernel void imageCalculus(
     global float * out_buf,
     constant float * parameter,
     int2 image_size,
-    int correction_lorentz,
+    int isCorrectionLorentzActive,
     int task,
     float mean,
     float deviation,
@@ -72,13 +72,8 @@ kernel void imageCalculus(
     int isCorrectionPolarizationActive,
     int isCorrectionFluxActive,
     int isCorrectionExposureActive,
-    float4 plane
-    //    global float * xyzi_buf
-    //    read_only image3d_t background,
-    //    sampler_t bg_sampler,
-    //    int sample_interdist,
-    //    int image_number,
-    //    int correction_background
+    float4 plane,
+    int isCorrectionPixelProjectionActive
 )
 {
     // The frame has its axes like this, looking from the source to
@@ -112,34 +107,16 @@ kernel void imageCalculus(
 
     if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
     {
-        float value = data_buf[id_glb.y * image_size.x + id_glb.x];
+        float4 Q = (float4)(0.0f);
+        Q.w = data_buf[id_glb.y * image_size.x + id_glb.x];
 
-
-
-        //        if (task == -1)
-        //        {
-        //            float4 pos = (float4)(((float)id_glb.x+0.5f)/(float)sample_interdist, ((float)id_glb.y+0.5f)/(float)sample_interdist, (float)image_number+0.5, 0.0f);
-        //            float bg = read_imagef(background, bg_sampler, pos).w;
-
-        //            out_buf[id_glb.y * image_size.x + id_glb.x] = bg;
-        //        }
         if (task == 0)
         {
-            // Background subtraction based on estimate
-            //            if (correction_background)
-            //            {
-            //                float4 pos = (float4)(((float)id_glb.x+0.5f)/(float)sample_interdist, ((float)id_glb.y+0.5f)/(float)sample_interdist, (float)image_number+0.5, 0.0f);
-            //                float bg = read_imagef(background, bg_sampler, pos).w;
-
-            //                value = clamp(value, bg, noise_high); // Set to at least the value of the background
-            //                value -= bg; // Subtract
-            //            }
-
             // Flat background subtraction
             if (isCorrectionNoiseActive)
             {
-                value = clamp(value, noise_low, noise_high); // All readings within thresholds
-                value -= noise_low; // Subtract
+                Q.w = clamp(Q.w, noise_low, noise_high); // All readings within thresholds
+                Q.w -= noise_low; // Subtract
             }
 
             // Planar background subtraction
@@ -152,69 +129,87 @@ kernel void imageCalculus(
                     plane_z = 0;    // Negative values do not make sense
                 }
 
-                value = clamp(value, plane_z, noise_high); // All readings within thresholds
-                value -= plane_z;
+                Q.w = clamp(Q.w, plane_z, noise_high); // All readings within thresholds
+                Q.w -= plane_z;
             }
 
-            // Corrections
-            float4 Q = (float4)(0.0f);
+            // The real space vector OP going from the origo (O) to the pixel (P)
+            float3 OP = (float3)(
+                                            -det_dist,
+                                            pix_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
+                                            pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)); /* DANGER */
+
+            /* Corrections */
+
+            // Correct for pixel tilt relative to OP
+            if (isCorrectionPixelProjectionActive)
+            {
+                // Code not yet fault tested
+
+                // Scale intensity to the size of the projected pixel
+                float3 OP0 = length(OP) * normalize( OP + (float3)(0, pix_size_x * 0.5f, pix_size_y * 0.5f));
+                float3 OP1 = length(OP) * normalize( OP + (float3)(0, -pix_size_x * 0.5f, pix_size_y * 0.5f));
+                float3 OP2 = length(OP) * normalize( OP + (float3)(0, pix_size_x * 0.5f, -pix_size_y * 0.5f));
+                float3 OP3 = length(OP) * normalize( OP + (float3)(0, -pix_size_x * 0.5f, -pix_size_y * 0.5f));
+
+                // The area of the projected pixel is spanned by, for example, the vectors OP3 - OP2 and OP3 - OP1
+                float area = fabs(length(cross((OP3 - OP2), (OP3 - OP1))));
+
+                Q.w = Q.w * pix_size_x * pix_size_y / area;
+            }
+
+            // Correct distance OP. This could be done by projecting the pixel onto the EW sphere above and correct for the projected area.
+            if (isCorrectionPixelProjectionActive)
+            {
+                Q.w = Q.w * (length(OP)*length(OP))/(det_dist*det_dist);
+            }
+
+
             float k = 1.0f / wavelength; // Multiply with 2pi if desired
 
-            float3 k_i = (float3)(-k, 0.0f, 0.0f);
-            float3 k_f = k * normalize((float3)(
-                                           -det_dist,
-                                           pix_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
-                                           pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y))); /* DANGER */
+            float3 k_i = (float3)(-k, 0, 0);
+            float3 k_f = k * normalize(OP);
+
 
             Q.xyz = k_f - k_i;
+
             {
                 float lab_theta = asin(native_divide(fabs(Q.y), k)); // Not to be confused with 2-theta, the scattering angle
 
                 // Lorentz correction: Assuming rotation around the z-axis of the lab frame:
-                if (correction_lorentz)
+                if (isCorrectionLorentzActive)
                 {
-                    value *= sin(lab_theta);
+                    Q.w *= sin(lab_theta);
                 }
 
                 // Polarization correction begs implementation
             }
 
             // Post correction filter
-            value = clamp(value, pct_low, pct_high); // Note: remove this filter at some point. It is bad.
-            value -= pct_low;
+            //Q.w = clamp(Q.w, pct_low, pct_high); // Note: remove this filter at some point. It is bad.
+            //Q.w -= pct_low;
 
-            out_buf[id_glb.y * image_size.x + id_glb.x] = value;
-
-            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+0] = Q.x;
-            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+1] = Q.y;
-            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+2] = Q.z;
-            //            xyzi_buf[(id_glb.y * image_size.x + id_glb.x)*4+3] = value;
+            out_buf[id_glb.y * image_size.x + id_glb.x] = Q.w;
         }
         else if (task == 1)
         {
             // Calculate variance, requires mean to be known
-            out_buf[id_glb.y * image_size.x + id_glb.x] = pow(value - mean, 2.0f);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = pow(Q.w - mean, 2.0f);
         }
         else if (task == 2)
         {
             // Calculate skewness, requires deviation and mean to be known
-            //            float tmp = pow((value - mean) / deviation, 3.0);
-            //            if (tmp <= 0.0001) out_buf[id_glb.y * image_size.x + id_glb.x] = 0;
-            //            else out_buf[id_glb.y * image_size.x + id_glb.x] = 1;
-
-
-
-            out_buf[id_glb.y * image_size.x + id_glb.x] = pow((value - mean) / deviation, 3.0f);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = pow((Q.w - mean) / deviation, 3.0f);
         }
         else if (task == 3)
         {
             // Calculate x weightpoint
-            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.x + 0.5f);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = Q.w * ((float)id_glb.x + 0.5f);
         }
         else if (task == 4)
         {
             // Calculate y weightpoint
-            out_buf[id_glb.y * image_size.x + id_glb.x] = value * ((float)id_glb.y + 0.5f);
+            out_buf[id_glb.y * image_size.x + id_glb.x] = Q.w * ((float)id_glb.y + 0.5f);
         }
         else
         {

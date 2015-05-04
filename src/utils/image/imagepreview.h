@@ -135,6 +135,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void setCorrectionPolarization(bool value);
         void setCorrectionFlux(bool value);
         void setCorrectionExposure(bool value);
+        void setCorrectionPixelProjection(bool value);
         void setLsqSamples(int value);
         void toggleTraceTexture(bool value);
 
@@ -296,6 +297,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         int isCorrectionPolarizationActive; // Happens in calculus function
         int isCorrectionFluxActive; // Happens in calculus function
         int isCorrectionExposureActive; // Happens in calculus function
+        int isCorrectionPixelProjectionActive;
 
         Matrix<double> texture_view_matrix; // Used to draw main texture
         Matrix<double> translation_matrix;

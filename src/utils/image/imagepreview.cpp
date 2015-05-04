@@ -882,6 +882,7 @@ void ImageOpenGLWidget::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Ma
     err |=   QOpenCLSetKernelArg(cl_image_calculus, 11, sizeof(cl_int), &isCorrectionFluxActive);
     err |=   QOpenCLSetKernelArg(cl_image_calculus, 12, sizeof(cl_int), &isCorrectionExposureActive);
     err |=   QOpenCLSetKernelArg(cl_image_calculus, 13, sizeof(cl_float4), getPlane().toFloat().data());
+    err |=   QOpenCLSetKernelArg(cl_image_calculus, 14, sizeof(cl_int), &isCorrectionPixelProjectionActive);
 
     if ( err != CL_SUCCESS)
     {
@@ -1637,24 +1638,99 @@ void ImageOpenGLWidget::setCorrectionPlane(bool value)
 void ImageOpenGLWidget::setCorrectionClutter(bool value)
 {
     isCorrectionClutterActive = (int) value;
+
+    calculus();
+    refreshDisplay();
+
+    if (!p_set.isEmpty())
+    {
+        Selection analysis_area = p_set.current()->current()->selection();
+        refreshSelection(&analysis_area);
+        p_set.current()->current()->setSelection(analysis_area);
+    }
+
+    update();
 }
 void ImageOpenGLWidget::setCorrectionMedian(bool value)
 {
     isCorrectionMedianActive = (int) value;
+
+    calculus();
+    refreshDisplay();
+
+    if (!p_set.isEmpty())
+    {
+        Selection analysis_area = p_set.current()->current()->selection();
+        refreshSelection(&analysis_area);
+        p_set.current()->current()->setSelection(analysis_area);
+    }
+
+    update();
 }
 void ImageOpenGLWidget::setCorrectionPolarization(bool value)
 {
     isCorrectionPolarizationActive = (int) value;
+
+    calculus();
+    refreshDisplay();
+
+    if (!p_set.isEmpty())
+    {
+        Selection analysis_area = p_set.current()->current()->selection();
+        refreshSelection(&analysis_area);
+        p_set.current()->current()->setSelection(analysis_area);
+    }
+
+    update();
 }
 void ImageOpenGLWidget::setCorrectionFlux(bool value)
 {
     isCorrectionFluxActive = (int) value;
+
+    calculus();
+    refreshDisplay();
+
+    if (!p_set.isEmpty())
+    {
+        Selection analysis_area = p_set.current()->current()->selection();
+        refreshSelection(&analysis_area);
+        p_set.current()->current()->setSelection(analysis_area);
+    }
+
+    update();
 }
 void ImageOpenGLWidget::setCorrectionExposure(bool value)
 {
     isCorrectionExposureActive = (int) value;
-}
 
+    calculus();
+    refreshDisplay();
+
+    if (!p_set.isEmpty())
+    {
+        Selection analysis_area = p_set.current()->current()->selection();
+        refreshSelection(&analysis_area);
+        p_set.current()->current()->setSelection(analysis_area);
+    }
+
+    update();
+}
+void ImageOpenGLWidget::setCorrectionPixelProjection(bool value)
+{
+    isCorrectionPixelProjectionActive = (int) value;
+
+    calculus();
+    refreshDisplay();
+
+    if (!p_set.isEmpty())
+    {
+        Selection analysis_area = p_set.current()->current()->selection();
+        refreshSelection(&analysis_area);
+        p_set.current()->current()->setSelection(analysis_area);
+    }
+
+    update();
+}
 void ImageOpenGLWidget::toggleTraceTexture(bool value)
 {
     texture_number = (int) value;
@@ -2316,7 +2392,7 @@ void ImageOpenGLWidget::initializeCL()
 {
     initializeOpenCLFunctions();
 
-    //    // Set the OpenCL context
+    // Set the OpenCL context
     context_cl.initDevices();
     context_cl.initSharedContext();
     context_cl.initCommandQueue();

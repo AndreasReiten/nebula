@@ -444,6 +444,7 @@ void MainWindow::loadProject()
             correctionFluxCheckBox->setChecked(correction_flux_check_box);
             correctionExposureCheckBox->setChecked(correction_exposure_check_box);
 
+
             beamOverrideCheckBox->setChecked(beam_override_check_box);
             beamXOverrideSpinBox->setValue(beamx_override_spin_box);
             beamYOverrideSpinBox->setValue(beamy_override_spin_box);
@@ -834,6 +835,7 @@ void MainWindow::initConnects()
     connect(correctionPolarizationCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionPolarization(bool)));
     connect(correctionFluxCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionFlux(bool)));
     connect(correctionExposureCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionExposure(bool)));
+    connect(correctionPixelProjectionCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionPixelProjection(bool)));
     connect(centerImageAction, SIGNAL(triggered()), imageOpenGLWidget, SLOT(centerImage()));
     connect(showWeightCenterAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(showWeightCenter(bool)));
     connect(integratePushButton, SIGNAL(clicked()), this, SLOT(applyAnalytics()));
@@ -1437,6 +1439,7 @@ void MainWindow::initGUI()
         correctionMedianCheckBox = new QCheckBox("Median filter");
         correctionLorentzCheckBox = new QCheckBox("Lorentz correction");
         correctionPolarizationCheckBox = new QCheckBox("Polarization correction");
+        correctionPixelProjectionCheckBox = new QCheckBox("Pixel projection correction");
         correctionFluxCheckBox = new QCheckBox("Flux normalization");
         correctionExposureCheckBox = new QCheckBox("Exposure time normalization");
 
@@ -1456,9 +1459,10 @@ void MainWindow::initGUI()
         gridLayout->addWidget(correctionMedianCheckBox, 4, 0, 1, 1);
         gridLayout->addWidget(correctionMedianSpinBox, 4, 1, 1, 1);
         gridLayout->addWidget(correctionLorentzCheckBox, 5, 0, 1, 2);
-        gridLayout->addWidget(correctionPolarizationCheckBox, 6, 0, 1, 2);
-        gridLayout->addWidget(correctionFluxCheckBox, 7, 0, 1, 2);
-        gridLayout->addWidget(correctionExposureCheckBox, 8, 0, 1, 2);
+        gridLayout->addWidget(correctionPixelProjectionCheckBox, 6, 0, 1, 2);
+        gridLayout->addWidget(correctionPolarizationCheckBox, 7, 0, 1, 2);
+        gridLayout->addWidget(correctionFluxCheckBox, 8, 0, 1, 2);
+        gridLayout->addWidget(correctionExposureCheckBox, 9, 0, 1, 2);
 
 
         correctionWidget = new QWidget;

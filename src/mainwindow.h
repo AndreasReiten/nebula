@@ -407,6 +407,7 @@ class MainWindow : public QMainWindow
         QCheckBox * correctionPolarizationCheckBox;
         QCheckBox * correctionFluxCheckBox;
         QCheckBox * correctionExposureCheckBox;
+        QCheckBox * correctionPixelProjectionCheckBox;
 
         // Navigation dock widget
         QWidget * navigationWidget;
