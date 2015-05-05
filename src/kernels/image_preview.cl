@@ -139,33 +139,48 @@ kernel void imageCalculus(
                                             pix_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
                                             pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)); /* DANGER */
 
-            /* Corrections */
-
-            // Correct for pixel tilt relative to OP
-            if (isCorrectionPixelProjectionActive)
-            {
-                // Code not yet fault tested
-
-                // Scale intensity to the size of the projected pixel
-                float3 OP0 = length(OP) * normalize( OP + (float3)(0, pix_size_x * 0.5f, pix_size_y * 0.5f));
-                float3 OP1 = length(OP) * normalize( OP + (float3)(0, -pix_size_x * 0.5f, pix_size_y * 0.5f));
-                float3 OP2 = length(OP) * normalize( OP + (float3)(0, pix_size_x * 0.5f, -pix_size_y * 0.5f));
-                float3 OP3 = length(OP) * normalize( OP + (float3)(0, -pix_size_x * 0.5f, -pix_size_y * 0.5f));
-
-                // The area of the projected pixel is spanned by, for example, the vectors OP3 - OP2 and OP3 - OP1
-                float area = fabs(length(cross((OP3 - OP2), (OP3 - OP1))));
-
-                Q.w = Q.w * pix_size_x * pix_size_y / area;
-            }
-
-            // Correct distance OP. This could be done by projecting the pixel onto the EW sphere above and correct for the projected area.
-            if (isCorrectionPixelProjectionActive)
-            {
-                Q.w = Q.w * (length(OP)*length(OP))/(det_dist*det_dist);
-            }
-
-
             float k = 1.0f / wavelength; // Multiply with 2pi if desired
+
+            /* Corrections */
+            // Correct for the area of the projection of the pixel onto the Ewald sphere
+            if (isCorrectionPixelProjectionActive)
+            {
+                // The four vectors that define projected pixel on the Ewald sphere
+                float3 a_vec = k * normalize( OP + (float3)(0, pix_size_x * 0.5f, pix_size_y * 0.5f));
+                float3 b_vec = k * normalize( OP + (float3)(0, -pix_size_x * 0.5f, pix_size_y * 0.5f));
+                float3 c_vec = k * normalize( OP + (float3)(0, -pix_size_x * 0.5f, -pix_size_y * 0.5f));
+                float3 d_vec = k * normalize( OP + (float3)(0, pix_size_x * 0.5f, -pix_size_y * 0.5f));
+
+                // The area of the two spherical triangles spanned by the projected pixel
+                // Search for example Wikipedia for spherical trigonometry for an explanation
+                // Angles between above vectors. O for origin.
+                float aOb_angle = acos(dot(a_vec, b_vec)/(length(a_vec)*length(b_vec)));
+                float bOc_angle = acos(dot(b_vec, c_vec)/(length(b_vec)*length(c_vec)));
+
+                float cOd_angle = acos(dot(c_vec, d_vec)/(length(c_vec)*length(d_vec)));
+                float dOa_angle = acos(dot(d_vec, a_vec)/(length(d_vec)*length(a_vec)));
+
+                float aOc_angle = acos(dot(a_vec, c_vec)/(length(a_vec)*length(c_vec)));
+
+
+                // Angles between "big circles"
+                float BAC_angle = acos((cos(bOc_angle)-cos(aOb_angle)*cos(aOc_angle))/(sin(aOb_angle)*sin(aOc_angle)));
+                float ABC_angle = acos((cos(aOc_angle)-cos(aOb_angle)*cos(bOc_angle))/(sin(aOb_angle)*sin(bOc_angle)));
+                float ACB_angle = acos((cos(aOb_angle)-cos(aOc_angle)*cos(bOc_angle))/(sin(aOc_angle)*sin(bOc_angle)));
+
+                float CAD_angle = acos((cos(cOd_angle)-cos(aOc_angle)*cos(dOa_angle))/(sin(aOc_angle)*sin(dOa_angle)));
+                float ADC_angle = acos((cos(aOc_angle)-cos(cOd_angle)*cos(dOa_angle))/(sin(cOd_angle)*sin(dOa_angle)));
+                float ACD_angle = acos((cos(dOa_angle)-cos(aOc_angle)*cos(cOd_angle))/(sin(aOc_angle)*sin(cOd_angle)));
+
+                float pi = 3.1415926f;
+
+                // Actual area of the two spherical triangles corresponding to the projected pixel in square inverse Angstrom
+                float projected_area = k*k*((BAC_angle + ABC_angle + ACB_angle - pi) + (CAD_angle + ADC_angle + ACD_angle - pi));
+
+                // Correction
+                Q.w = Q.w / projected_area;
+            }
+
 
             float3 k_i = (float3)(-k, 0, 0);
             float3 k_f = k * normalize(OP);
