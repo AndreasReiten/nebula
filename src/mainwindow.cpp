@@ -67,7 +67,7 @@ MainWindow::MainWindow() :
     double pix_size_y = 172e-6;
     double add_y = 4000.0;
 
-    for (int i = -1; i <= 1; i+=2)
+    for (int i = -2; i <= 2; i+=1)
     {
         double add_z = i*2000.0;
 
@@ -99,67 +99,25 @@ MainWindow::MainWindow() :
 
         d_vec = k * vecNormalize(d_vec);
 
-        a_vec.print(6,"a_vec");
-        b_vec.print(6,"b_vec");
-        c_vec.print(6,"c_vec");
-        d_vec.print(6,"d_vec");
+//        a_vec.print(6,"a_vec");
+//        b_vec.print(6,"b_vec");
+//        c_vec.print(6,"c_vec");
+//        d_vec.print(6,"d_vec");
+
+        Matrix<double> ab_vec(1,3);
+        Matrix<double> ac_vec(1,3);
+        Matrix<double> ad_vec(1,3);
+
+        ab_vec = b_vec - a_vec;
+        ac_vec = c_vec - a_vec;
+        ad_vec = d_vec - a_vec;
+
+        double area = 0.5*fabs(vecLength(vecCross(ab_vec,ac_vec))) + 0.5*fabs(vecLength(vecCross(ac_vec,ad_vec)));
 
         // The area of the two spherical triangles spanned by the projected pixel
-        // Search for example Wikipedia for spherical trigonometry for an explanation
-        // Angles between above vectors. O for origin.
-        double aOb_angle = acos(vecDot(a_vec, b_vec)/(vecLength(a_vec)*vecLength(b_vec)));
-        double bOc_angle = acos(vecDot(b_vec, c_vec)/(vecLength(b_vec)*vecLength(c_vec)));
-
-        double cOd_angle = acos(vecDot(c_vec, d_vec)/(vecLength(c_vec)*vecLength(d_vec)));
-        double dOa_angle = acos(vecDot(d_vec, a_vec)/(vecLength(d_vec)*vecLength(a_vec)));
-
-        double aOc_angle = acos(vecDot(a_vec, c_vec)/(vecLength(a_vec)*vecLength(c_vec)));
 
 
-        qDebug() << "aOb_angle" << aOb_angle*180/pi;
-        qDebug() << "bOc_angle" << bOc_angle*180/pi;
-        qDebug() << "cOd_angle" << cOd_angle*180/pi;
-        qDebug() << "dOa_angle" << dOa_angle*180/pi;
-        qDebug() << "aOc_angle" << aOc_angle*180/pi;
-
-
-        // No significant rounding error up until this point
-
-
-        // Angles between "big circles"
-//        double BAC_angle = asin(vecDot(a_vec,vecCross(b_vec,c_vec))/(sin(aOb_angle)*sin(aOc_angle)));
-//        double ABC_angle = asin(vecDot(a_vec,vecCross(b_vec,c_vec))/(sin(aOb_angle)*sin(bOc_angle)));
-//        double ACB_angle = asin(vecDot(a_vec,vecCross(b_vec,c_vec))/(sin(aOc_angle)*sin(bOc_angle)));
-
-//        double CAD_angle = asin(vecDot(a_vec,vecCross(c_vec,d_vec))/(sin(aOc_angle)*sin(dOa_angle)));
-//        double ADC_angle = asin(vecDot(a_vec,vecCross(c_vec,d_vec))/(sin(cOd_angle)*sin(dOa_angle)));
-//        double ACD_angle = asin(vecDot(a_vec,vecCross(c_vec,d_vec))/(sin(aOc_angle)*sin(cOd_angle)));
-
-        double BAC_angle = acos((cos(bOc_angle)-cos(aOb_angle)*cos(aOc_angle))/(sin(aOb_angle)*sin(aOc_angle)));
-        double ABC_angle = acos((cos(aOc_angle)-cos(aOb_angle)*cos(bOc_angle))/(sin(aOb_angle)*sin(bOc_angle)));
-        double ACB_angle = acos((cos(aOb_angle)-cos(aOc_angle)*cos(bOc_angle))/(sin(aOc_angle)*sin(bOc_angle)));
-
-        double CAD_angle = acos((cos(cOd_angle)-cos(aOc_angle)*cos(dOa_angle))/(sin(aOc_angle)*sin(dOa_angle)));
-        double ADC_angle = acos((cos(aOc_angle)-cos(cOd_angle)*cos(dOa_angle))/(sin(cOd_angle)*sin(dOa_angle)));
-        double ACD_angle = acos((cos(dOa_angle)-cos(aOc_angle)*cos(cOd_angle))/(sin(aOc_angle)*sin(cOd_angle)));
-
-        qDebug() << "BAC" << BAC_angle*180.0/pi;
-        qDebug() << "ABC" << ABC_angle*180.0/pi;
-        qDebug() << "ACB" << ACB_angle*180.0/pi;
-
-        qDebug() << "Sum ABC" << (BAC_angle + ABC_angle + ACB_angle - pi)*180.0/pi;
-
-        qDebug() << "CAD" << CAD_angle*180.0/pi;
-        qDebug() << "ADC" << ADC_angle*180.0/pi;
-        qDebug() << "ACD" << ACD_angle*180.0/pi;
-
-        qDebug() << "Sum ACD" << (CAD_angle + ADC_angle + ACD_angle - pi)*180.0/pi;
-        qDebug() << "Sum polygon" << (BAC_angle + ABC_angle + ACB_angle + CAD_angle + ADC_angle + ACD_angle - pi*2)*180.0/pi;
-
-        // Actual area of the two spherical triangles corresponding to the projected pixel in square inverse Angstrom
-        double forward_projected_area = k*k*((BAC_angle + ABC_angle + ACB_angle - pi) + (CAD_angle + ADC_angle + ACD_angle - pi));
-
-        qDebug() << forward_projected_area;
+        qDebug() << area;
     }
 
 }

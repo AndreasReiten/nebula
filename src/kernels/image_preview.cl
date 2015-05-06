@@ -150,67 +150,33 @@ kernel void imageCalculus(
                 double forward_projected_area;
                 {
                     // The four vectors that define projected pixel on the Ewald sphere
-                    double3 a_vec = k * normalize((double3)(-det_dist, (double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
-                    double3 b_vec = k * normalize((double3)(-det_dist, -(double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
-                    double3 c_vec = k * normalize((double3)(-det_dist, -(double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
-                    double3 d_vec = k * normalize((double3)(-det_dist, (double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
+                    double3 a_vec = k * normalize((double3)(-det_dist, (double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
+                    double3 b_vec = k * normalize((double3)(-det_dist, -(double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
+                    double3 c_vec = k * normalize((double3)(-det_dist, -(double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
+                    double3 d_vec = k * normalize((double3)(-det_dist, (double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
 
-                    // The area of the two spherical triangles spanned by the projected pixel
-                    // Search for example Wikipedia for spherical trigonometry for an explanation
-                    // Angles between above vectors. O for origin.
-                    double aOb_angle = acos(dot(a_vec, b_vec)/(length(a_vec)*length(b_vec)));
-                    double bOc_angle = acos(dot(b_vec, c_vec)/(length(b_vec)*length(c_vec)));
+                    // The area of the two spherical triangles spanned by the projected pixel is approximated by their corresponding planar triangles since they are small
+                    double3 ab_vec = b_vec - a_vec;
+                    double3 ac_vec = c_vec - a_vec;
+                    double3 ad_vec = d_vec - a_vec;
 
-                    double cOd_angle = acos(dot(c_vec, d_vec)/(length(c_vec)*length(d_vec)));
-                    double dOa_angle = acos(dot(d_vec, a_vec)/(length(d_vec)*length(a_vec)));
-
-                    double aOc_angle = acos(dot(a_vec, c_vec)/(length(a_vec)*length(c_vec)));
-
-
-                    // Angles between "big circles"
-                    double BAC_angle = acos((cos(bOc_angle)-cos(aOb_angle)*cos(aOc_angle))/(sin(aOb_angle)*sin(aOc_angle)));
-                    double ABC_angle = acos((cos(aOc_angle)-cos(aOb_angle)*cos(bOc_angle))/(sin(aOb_angle)*sin(bOc_angle)));
-                    double ACB_angle = acos((cos(aOb_angle)-cos(aOc_angle)*cos(bOc_angle))/(sin(aOc_angle)*sin(bOc_angle)));
-
-                    double CAD_angle = acos((cos(cOd_angle)-cos(aOc_angle)*cos(dOa_angle))/(sin(aOc_angle)*sin(dOa_angle)));
-                    double ADC_angle = acos((cos(aOc_angle)-cos(cOd_angle)*cos(dOa_angle))/(sin(cOd_angle)*sin(dOa_angle)));
-                    double ACD_angle = acos((cos(dOa_angle)-cos(aOc_angle)*cos(cOd_angle))/(sin(aOc_angle)*sin(cOd_angle)));
-
-                    // Actual area of the two spherical triangles corresponding to the projected pixel in square inverse Angstrom
-                    forward_projected_area = k*k*((BAC_angle + ABC_angle + ACB_angle - M_PI) + (CAD_angle + ADC_angle + ACD_angle - M_PI));
+                    forward_projected_area = 0.5*fabs(length(cross(ab_vec,ac_vec))) + 0.5*fabs(length(cross(ac_vec,ad_vec)));
                 }
 
                 double projected_area;
                 {
                     // The four vectors that define projected pixel on the Ewald sphere
-                    double3 a_vec = k * normalize( convert_double3(OP) + (double3)(0, (double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
-                    double3 b_vec = k * normalize( convert_double3(OP) + (double3)(0, -(double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
-                    double3 c_vec = k * normalize( convert_double3(OP) + (double3)(0, -(double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
-                    double3 d_vec = k * normalize( convert_double3(OP) + (double3)(0, (double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
+                    double3 a_vec = k * normalize( convert_double3(OP) + (double3)(0, (double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
+                    double3 b_vec = k * normalize( convert_double3(OP) + (double3)(0, -(double) pix_size_x * 0.5, -(double) pix_size_y * 0.5));
+                    double3 c_vec = k * normalize( convert_double3(OP) + (double3)(0, -(double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
+                    double3 d_vec = k * normalize( convert_double3(OP) + (double3)(0, (double) pix_size_x * 0.5, (double) pix_size_y * 0.5));
 
-                    // The area of the two spherical triangles spanned by the projected pixel
-                    // Search for example Wikipedia for spherical trigonometry for an explanation
-                    // Angles between above vectors. O for origin.
-                    double aOb_angle = acos(dot(a_vec, b_vec)/(length(a_vec)*length(b_vec)));
-                    double bOc_angle = acos(dot(b_vec, c_vec)/(length(b_vec)*length(c_vec)));
+                    // The area of the two spherical triangles spanned by the projected pixel is approximated by their corresponding planar triangles since they are small
+                    double3 ab_vec = b_vec - a_vec;
+                    double3 ac_vec = c_vec - a_vec;
+                    double3 ad_vec = d_vec - a_vec;
 
-                    double cOd_angle = acos(dot(c_vec, d_vec)/(length(c_vec)*length(d_vec)));
-                    double dOa_angle = acos(dot(d_vec, a_vec)/(length(d_vec)*length(a_vec)));
-
-                    double aOc_angle = acos(dot(a_vec, c_vec)/(length(a_vec)*length(c_vec)));
-
-
-                    // Angles between "big circles"
-                    double BAC_angle = acos((cos(bOc_angle)-cos(aOb_angle)*cos(aOc_angle))/(sin(aOb_angle)*sin(aOc_angle)));
-                    double ABC_angle = acos((cos(aOc_angle)-cos(aOb_angle)*cos(bOc_angle))/(sin(aOb_angle)*sin(bOc_angle)));
-                    double ACB_angle = acos((cos(aOb_angle)-cos(aOc_angle)*cos(bOc_angle))/(sin(aOc_angle)*sin(bOc_angle)));
-
-                    double CAD_angle = acos((cos(cOd_angle)-cos(aOc_angle)*cos(dOa_angle))/(sin(aOc_angle)*sin(dOa_angle)));
-                    double ADC_angle = acos((cos(aOc_angle)-cos(cOd_angle)*cos(dOa_angle))/(sin(cOd_angle)*sin(dOa_angle)));
-                    double ACD_angle = acos((cos(dOa_angle)-cos(aOc_angle)*cos(cOd_angle))/(sin(aOc_angle)*sin(cOd_angle)));
-
-                    // Actual area of the two spherical triangles corresponding to the projected pixel in square inverse Angstrom
-                    projected_area = k*k*((BAC_angle + ABC_angle + ACB_angle - M_PI) + (CAD_angle + ADC_angle + ACD_angle - M_PI));
+                    projected_area = 0.5*fabs(length(cross(ab_vec,ac_vec))) + 0.5*fabs(length(cross(ac_vec,ad_vec)));
                 }
 
                 // Correction
