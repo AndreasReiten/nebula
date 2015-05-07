@@ -1326,7 +1326,7 @@ void ImageOpenGLWidget::setFrame()
     parameter[6] = file.wavelength();
     parameter[7] = file.detectorDist();
     parameter[8] = (isBeamOverrideActive ? beam_x_override : file.beamX());
-    parameter[9] = (isBeamOverrideActive ? beam_x_override : file.beamX());
+    parameter[9] = (isBeamOverrideActive ? beam_y_override : file.beamY());
     parameter[10] = file.pixSizeX();
     parameter[11] = file.pixSizeY();
 

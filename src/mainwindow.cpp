@@ -304,7 +304,7 @@ void MainWindow::setStartConditions()
 
     imageTsfTextureComboBox->setCurrentIndex(1);
     imageTsfAlphaComboBox->setCurrentIndex(2);
-    imageDataMinDoubleSpinBox->setValue(0.01);
+    imageDataMinDoubleSpinBox->setValue(0.0);
     imageDataMaxDoubleSpinBox->setValue(1000);
     imageLogCheckBox->setChecked(true);
     correctionLorentzCheckBox->setChecked(true);
