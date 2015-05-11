@@ -22,8 +22,8 @@ kernel void imageDisplay(
             // If the lower data limit is less than one (but not less than zero), use a proportional part of the color scale for values between this lower limit and one, using instead a linear scale.
             if (data_limit.x < 1.0)
             {
-                float linear_portion = (1.0 - data_limit.x) / (log10(data_limit.y) + (1.0 - data_limit.x));
-                float log10_portion = log10(data_limit.y) / (log10(data_limit.y) + (1.0 - data_limit.x));
+                float linear_fraction = (1.0 - data_limit.x) / (log10(data_limit.y) + (1.0 - data_limit.x));
+                float log10_fraction = log10(data_limit.y) / (log10(data_limit.y) + (1.0 - data_limit.x));
 
                 if (intensity < 0.0f)
                 {
@@ -33,13 +33,13 @@ kernel void imageDisplay(
                 else if (intensity < 1.0)
                 {
                     // Linear regime
-                    tsf_position = (float2)(native_divide(intensity - data_limit.x, 1.0f - data_limit.x)*linear_portion, 0.5f);
+                    tsf_position = (float2)(native_divide(intensity - data_limit.x, 1.0f - data_limit.x)*linear_fraction, 0.5f);
                     sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
                 }
                 else
                 {
                     // Logarithmic regime
-                    tsf_position = (float2)(linear_portion + native_divide(log10(intensity), log10(data_limit.y))*log10_portion, 0.5f);
+                    tsf_position = (float2)(linear_fraction + native_divide(log10(intensity), log10(data_limit.y))*log10_fraction, 0.5f);
                     sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
                 }
             }
