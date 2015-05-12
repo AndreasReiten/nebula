@@ -566,6 +566,8 @@ kernel void svoRayTrace(
 
                                 sample = read_imagef(tsf_tex, tsf_sampler, tsf_position);
 
+//                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPos3(integrated_intensity, data_offset_low, data_offset_high, isLogActive, 1, 0, 1.0e6f));
+
                                 //                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 10, 1.0));
 
 //                                sample = read_imagef(tsf_tex, tsf_sampler, tsfPos3(integrated_intensity, data_offset_low, data_offset_high, isLogActive));
@@ -635,8 +637,8 @@ kernel void svoRayTrace(
 
         if (isIntegration3DActive  && !isSlicingActive && !isDsActive)
         {
-            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
-//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos3(integrated_intensity, data_offset_low, data_offset_high, isLogActive));
+//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos3(integrated_intensity, data_offset_low, data_offset_high, isLogActive, 1, 0, 1.0e6f));
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }
         else

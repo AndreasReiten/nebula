@@ -149,9 +149,15 @@ void selectionSort(float * a, int n)
     }
 }
 
-float2 tsfPos3(float value, float value_min, float value_max, int log)//, float multiplier)
+float2 tsfPos3(float value, float value_min, float value_max, int log, int scale, float scale_min, float scale_max)
 {
 //    value = value * multiplier / value_max;
+
+    // Rescale data to lie within given thresholds
+    if (scale)
+    {
+        value = (value - value_min)/ (value_max - value_min) * (scale_max - scale_min) + scale_min;
+    }
 
     if (log)
     {
