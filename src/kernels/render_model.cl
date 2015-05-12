@@ -80,13 +80,13 @@ kernel void modelRayTrace(
             cone_diameter_near = 2.0f * length(a2Near); // small approximation
         }
 
-        int hit;
+        int hit = 0;
         float t_near, t_far;
         {
             float bbox[6];
 
             // Does the viewable bounding box intersect the extent of the data?
-            if (boxIntersect(bbox, data_extent, data_view_extent))
+            if (boxIntersect(bbox, data_view_extent, data_view_extent))
             {
                 // Does the ray intersect the viewable bounding box?
                 hit = boundingBoxIntersect(ray_near.xyz, ray_delta.xyz, bbox, &t_near, &t_far);
@@ -163,7 +163,8 @@ kernel void modelRayTrace(
 
                         intensity = model(box_ray_xyz, parameters);
 
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos3(intensity, data_offset_low, data_offset_high, isLogActive));
+                        //tsfPos(intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
 
                         color.xyz += (1.0f - color.w) * sample.xyz * sample.w;
                         color.w += (1.0f - color.w) * sample.w;
@@ -188,7 +189,8 @@ kernel void modelRayTrace(
 
                     if (!isIntegration3DActive)
                     {
-                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
+                        sample = read_imagef(tsf_tex, tsf_sampler, tsfPos3(integrated_intensity, data_offset_low, data_offset_high, isLogActive));
+                        //sample = read_imagef(tsf_tex, tsf_sampler, tsfPos(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e6f, 0.0f));
                         sample.w *= alpha;
 
                         if (isShadowActive)
@@ -235,7 +237,8 @@ kernel void modelRayTrace(
 
         if (isIntegration3DActive && !isSlicingActive)
         {
-            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e1f, 0.0f));
+            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos3(integrated_intensity, data_offset_low, data_offset_high, isLogActive));
+//            sample = read_imagef(tsf_tex, tsf_sampler, tsfPos2(integrated_intensity, data_offset_low, data_offset_high, tsf_offset_low, tsf_offset_high, isLogActive, 1.0e1f, 0.0f));
 
             write_imagef(ray_tex, id_glb, clamp(sample, 0.0f, 1.0f)); // Can be multiplied by brightness
         }

@@ -149,6 +149,54 @@ void selectionSort(float * a, int n)
     }
 }
 
+float2 tsfPos3(float value, float value_min, float value_max, int log)//, float multiplier)
+{
+//    value = value * multiplier / value_max;
+
+    if (log)
+    {
+        // If the lower data limit is less than one (but not less than zero), use a proportional part of the color scale for values between this lower limit and one, using instead a linear scale.
+        if (value_min < 1.0)
+        {
+            float linear_fraction = (1.0f - value_min) / (log10(value_max) + (1.0f - value_min));
+            float log10_fraction = log10(value_max) / (log10(value_max) + (1.0f - value_min));
+
+            if (value < 0.0f)
+            {
+                return (float2)(0.0f, 0.5f);
+
+            }
+            else if (value < 1.0)
+            {
+                // Linear regime
+                return (float2)(native_divide(value - value_min, 1.0f - value_min)*linear_fraction, 0.5f);
+            }
+            else
+            {
+                // Logarithmic regime
+                return (float2)(linear_fraction + native_divide(log10(value), log10(value_max))*log10_fraction, 0.5f);
+            }
+        }
+        else
+        {
+            if (value < value_min)
+            {
+                return (float2)(0.0f, 0.5f);
+
+            }
+            else
+            {
+                return (float2)(native_divide(log10(value) - log10(value_min), log10(value_max) - log10(value_min)), 0.5f);
+            }
+        }
+    }
+    else
+    {
+        return (float2)(native_divide(value - value_min, value_max - value_min), 0.5f);
+
+    }
+}
+
 float2 tsfPos2(float value, float value_min, float value_max, float tsf_min, float tsf_max, int log, float log_multiplier, float log_offset)
 {
     if (log)

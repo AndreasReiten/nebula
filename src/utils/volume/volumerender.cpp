@@ -4650,123 +4650,123 @@ void VolumeOpenGLWidget::drawCountScalebar(QPainter * painter)
      * Based on the current display values (min and max), draw ticks on the counts scalebar. There are major and minor ticks. This function shold be redone to better treat the case of logarithmic values
      * */
 
-    double data_min, data_max;
-    double tick_interdist_min = 10; // pixels
-    double exponent;
+//    double data_min, data_max;
+//    double tick_interdist_min = 10; // pixels
+//    double exponent;
 
     // Draw transfer function bounding box (Defines position)
     double height = 0.7 * this->height();
     double width = height * 0.1;
     QRectF tsf_rect(5, (this->height() - height) * 0.5, width, height);
 
-    QBrush brush(QColor(0, 0, 0, 0));
-    QPen pen(QColor(clear_color_inverse.toQColor()));
+//    QBrush brush(QColor(0, 0, 0, 0));
+//    QPen pen(QColor(clear_color_inverse.toQColor()));
 
-    // Painter
-    QFont f("Monospace", 9);
-    QFontMetricsF fm(f);
-    painter->setFont(f);
-    painter->setPen(pen);
-    painter->setBrush(brush);
-    painter->drawRect(tsf_rect);
+//    // Painter
+//    QFont f("Monospace", 9);
+//    QFontMetricsF fm(f);
+//    painter->setFont(f);
+//    painter->setPen(pen);
+//    painter->setBrush(brush);
+//    painter->drawRect(tsf_rect);
 
-    // Rectangle in GL coords
+//    // Rectangle in GL coords
     Matrix<GLfloat> gl_tsf_rect;
     gl_tsf_rect = glRect(tsf_rect);
 
-    // Find appropriate tick positions
-    if (isModelActive)
-    {
-        data_min = tsf_parameters_model[2];
-        data_max = tsf_parameters_model[3];
-    }
-    else
-    {
-        data_min = tsf_parameters_svo[2];
-        data_max = tsf_parameters_svo[3];
-    }
+//    // Find appropriate tick positions
+//    if (isModelActive)
+//    {
+//        data_min = tsf_parameters_model[2];
+//        data_max = tsf_parameters_model[3];
+//    }
+//    else
+//    {
+//        data_min = tsf_parameters_svo[2];
+//        data_max = tsf_parameters_svo[3];
+//    }
 
-    if (isLogarithmic)
-    {
-        if (data_min <= 0)
-        {
-            data_min = 1.0e-3;
-        }
+//    if (isLogarithmic)
+//    {
+//        if (data_min <= 0)
+//        {
+//            data_min = 1.0e-3;
+//        }
 
-        if (data_max <= 0)
-        {
-            data_min = 1.0e-3;
-        }
+//        if (data_max <= 0)
+//        {
+//            data_min = 1.0e-3;
+//        }
 
-        data_min = log10(data_min);
-        data_max = log10(data_max);
-    }
+//        data_min = log10(data_min);
+//        data_max = log10(data_max);
+//    }
 
-    if (data_min < data_max)
-    {
-        double start, current;
-        size_t iter = 0, num_ticks = 0;
-        tickzerize(data_min, data_max, (double) tsf_rect.height(), tick_interdist_min, &exponent, &start, &num_ticks);
-        current = start;
-        n_count_scalebar_ticks = 0, n_count_minor_scalebar_ticks = 0;;
+//    if (data_min < data_max)
+//    {
+//        double start, current;
+//        size_t iter = 0, num_ticks = 0;
+//        tickzerize(data_min, data_max, (double) tsf_rect.height(), tick_interdist_min, &exponent, &start, &num_ticks);
+//        current = start;
+//        n_count_scalebar_ticks = 0, n_count_minor_scalebar_ticks = 0;;
 
-        Matrix<double> ticks(num_ticks + 1, 4);
+//        Matrix<double> ticks(num_ticks + 1, 4);
 
-        while ((current < data_max) && (iter < ticks.size() / 4))
-        {
-            ticks[iter * 4 + 0] = -1.0 + ((tsf_rect.right() - tsf_rect.width() * 0.15) / (double) this->width()) * 2.0;
-            ticks[iter * 4 + 1] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min) / (data_max - data_min) * tsf_rect.height()) / (double) this->height()) * 2.0;
-            ticks[iter * 4 + 2] = -1.0 + ((tsf_rect.right() + tsf_rect.width() * 0.1) / (double) this->width()) * 2.0;
-            ticks[iter * 4 + 3] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min) / (data_max - data_min) * tsf_rect.height()) / (double) this->height()) * 2.0;
+//        while ((current < data_max) && (iter < ticks.size() / 4))
+//        {
+//            ticks[iter * 4 + 0] = -1.0 + ((tsf_rect.right() - tsf_rect.width() * 0.15) / (double) this->width()) * 2.0;
+//            ticks[iter * 4 + 1] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min) / (data_max - data_min) * tsf_rect.height()) / (double) this->height()) * 2.0;
+//            ticks[iter * 4 + 2] = -1.0 + ((tsf_rect.right() + tsf_rect.width() * 0.1) / (double) this->width()) * 2.0;
+//            ticks[iter * 4 + 3] = -1.0 + ((this->height() - tsf_rect.bottom() + (current - data_min) / (data_max - data_min) * tsf_rect.height()) / (double) this->height()) * 2.0;
 
-            if (((int)round(current * pow(10.0, -exponent)) % 10) == 0)
-            {
-                ticks[iter * 4 + 0] = -1.0 + ((tsf_rect.right() - tsf_rect.width() * 0.35) / (double) this->width()) * 2.0;
-                ticks[iter * 4 + 2] = -1.0 + ((tsf_rect.right() + tsf_rect.width() * 0.25) / (double) this->width()) * 2.0;
+//            if (((int)round(current * pow(10.0, -exponent)) % 10) == 0)
+//            {
+//                ticks[iter * 4 + 0] = -1.0 + ((tsf_rect.right() - tsf_rect.width() * 0.35) / (double) this->width()) * 2.0;
+//                ticks[iter * 4 + 2] = -1.0 + ((tsf_rect.right() + tsf_rect.width() * 0.25) / (double) this->width()) * 2.0;
 
-                if (n_count_scalebar_ticks < count_major_scalebar_ticks.size())
-                {
-                    count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 0] = tsf_rect.right() + tsf_rect.width() * 0.40;
-                    count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 1] = tsf_rect.bottom() - (current - data_min) / (data_max - data_min) * tsf_rect.height() + fm.xHeight() * 0.5;
+//                if (n_count_scalebar_ticks < count_major_scalebar_ticks.size())
+//                {
+//                    count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 0] = tsf_rect.right() + tsf_rect.width() * 0.40;
+//                    count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 1] = tsf_rect.bottom() - (current - data_min) / (data_max - data_min) * tsf_rect.height() + fm.xHeight() * 0.5;
 
-                    if (isLogarithmic)
-                    {
-                        count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 2] = pow(10, current);
-                    }
-                    else
-                    {
-                        count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 2] = current;
-                    }
+//                    if (isLogarithmic)
+//                    {
+//                        count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 2] = pow(10, current);
+//                    }
+//                    else
+//                    {
+//                        count_major_scalebar_ticks[n_count_scalebar_ticks * 3 + 2] = current;
+//                    }
 
-                    n_count_scalebar_ticks++;
-                }
-            }
+//                    n_count_scalebar_ticks++;
+//                }
+//            }
 
-            if (n_count_minor_scalebar_ticks < count_minor_scalebar_ticks.size())
-            {
-                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 0] = tsf_rect.right() + tsf_rect.width() * 0.20;
-                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 1] = tsf_rect.bottom() - (current - data_min) / (data_max - data_min) * tsf_rect.height() + fm.xHeight() * 0.5;
+//            if (n_count_minor_scalebar_ticks < count_minor_scalebar_ticks.size())
+//            {
+//                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 0] = tsf_rect.right() + tsf_rect.width() * 0.20;
+//                count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 1] = tsf_rect.bottom() - (current - data_min) / (data_max - data_min) * tsf_rect.height() + fm.xHeight() * 0.5;
 
-                if (isLogarithmic)
-                {
-                    count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 2] = pow(10, current);
-                }
-                else
-                {
-                    count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 2] = current;
-                }
+//                if (isLogarithmic)
+//                {
+//                    count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 2] = pow(10, current);
+//                }
+//                else
+//                {
+//                    count_minor_scalebar_ticks[n_count_minor_scalebar_ticks * 3 + 2] = current;
+//                }
 
-                n_count_minor_scalebar_ticks++;
-            }
+//                n_count_minor_scalebar_ticks++;
+//            }
 
-            current += pow(10.0, exponent);
-            iter++;
-        }
+//            current += pow(10.0, exponent);
+//            iter++;
+//        }
 
         beginRawGLCalls(painter);
         glDisable(GL_DEPTH_TEST);
 
-        setVbo(count_scalebar_vbo, ticks.toFloat().data(), iter * 4, GL_STATIC_DRAW);
+//        setVbo(count_scalebar_vbo, ticks.toFloat().data(), iter * 4, GL_STATIC_DRAW);
 
         // Draw transfer function texture
         std_2d_tex_program->bind();
@@ -4803,45 +4803,45 @@ void VolumeOpenGLWidget::drawCountScalebar(QPainter * painter)
 
 
         // Draw the ticks
-        std_2d_col_program->bind();
-        glEnableVertexAttribArray(std_2d_col_fragpos);
+//        std_2d_col_program->bind();
+//        glEnableVertexAttribArray(std_2d_col_fragpos);
 
-        glBindBuffer(GL_ARRAY_BUFFER, count_scalebar_vbo);
-        glVertexAttribPointer(std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//        glBindBuffer(GL_ARRAY_BUFFER, count_scalebar_vbo);
+//        glVertexAttribPointer(std_2d_col_fragpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, identity.data());
+//        glUniformMatrix4fv(std_2d_col_transform, 1, GL_FALSE, identity.data());
 
-        glUniform4fv(std_2d_col_color, 1, clear_color_inverse.data());
+//        glUniform4fv(std_2d_col_color, 1, clear_color_inverse.data());
 
-        glLineWidth(1.0);
+//        glLineWidth(1.0);
 
-        glDrawArrays(GL_LINES,  0, iter * 2);
+//        glDrawArrays(GL_LINES,  0, iter * 2);
 
-        glDisableVertexAttribArray(std_2d_col_fragpos);
+//        glDisableVertexAttribArray(std_2d_col_fragpos);
 
-        std_2d_col_program->release();
+//        std_2d_col_program->release();
 
         endRawGLCalls(painter);
-    }
+//    }
 
     // Count scalebar tick labels
-    if (n_count_scalebar_ticks >= 2)
-    {
-        for (size_t i = 0; i < n_count_scalebar_ticks; i++)
-        {
-            double value = count_major_scalebar_ticks[i * 3 + 2];
-            painter->drawText(QPointF(count_major_scalebar_ticks[i * 3 + 0], count_major_scalebar_ticks[i * 3 + 1]), QString::number(value, 'g', 4));
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < n_count_minor_scalebar_ticks; i++)
-        {
-            double value = count_minor_scalebar_ticks[i * 3 + 2];
-            painter->drawText(QPointF(count_minor_scalebar_ticks[i * 3 + 0], count_minor_scalebar_ticks[i * 3 + 1]), QString::number(value, 'g', 4));
-        }
-    }
+//    if (n_count_scalebar_ticks >= 2)
+//    {
+//        for (size_t i = 0; i < n_count_scalebar_ticks; i++)
+//        {
+//            double value = count_major_scalebar_ticks[i * 3 + 2];
+//            painter->drawText(QPointF(count_major_scalebar_ticks[i * 3 + 0], count_major_scalebar_ticks[i * 3 + 1]), QString::number(value, 'g', 4));
+//        }
+//    }
+//    else
+//    {
+//        for (size_t i = 0; i < n_count_minor_scalebar_ticks; i++)
+//        {
+//            double value = count_minor_scalebar_ticks[i * 3 + 2];
+//            painter->drawText(QPointF(count_minor_scalebar_ticks[i * 3 + 0], count_minor_scalebar_ticks[i * 3 + 1]), QString::number(value, 'g', 4));
+//        }
+//    }
 
 }
 

@@ -28,19 +28,16 @@ kernel void imageDisplay(
                 if (intensity < 0.0f)
                 {
                     tsf_position = (float2)(0.0f, 0.5f);
-                    sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
                 }
                 else if (intensity < 1.0)
                 {
                     // Linear regime
                     tsf_position = (float2)(native_divide(intensity - data_limit.x, 1.0f - data_limit.x)*linear_fraction, 0.5f);
-                    sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
                 }
                 else
                 {
                     // Logarithmic regime
                     tsf_position = (float2)(linear_fraction + native_divide(log10(intensity), log10(data_limit.y))*log10_fraction, 0.5f);
-                    sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
                 }
             }
             else
@@ -48,21 +45,19 @@ kernel void imageDisplay(
                 if (intensity < data_limit.x)
                 {
                     tsf_position = (float2)(0.0f, 0.5f);
-                    sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
                 }
                 else
                 {
                     tsf_position = (float2)(native_divide(log10(intensity) - log10(data_limit.x), log10(data_limit.y) - log10(data_limit.x)), 0.5f);
-                    sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
                 }
             }
         }
         else
         {
             tsf_position = (float2)(native_divide(intensity - data_limit.x, data_limit.y - data_limit.x), 0.5f);
-            sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
         }
 
+        sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
         write_imagef(frame_image, id_glb, sample);
     }
 }
