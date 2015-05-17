@@ -200,26 +200,22 @@ kernel void imageCalculus(
 
 
             float3 k_i = (float3)(-k, 0, 0);
-            float3 k_f = (float)k * normalize(OP);
+            float3 k_f = k * normalize(OP);
 
 
             Q.xyz = k_f - k_i;
 
             {
-                float lab_theta = asin(native_divide(fabs(Q.y), k)); // Not to be confused with 2-theta, the scattering angle
-
-                // Lorentz correction: Assuming rotation around the z-axis of the lab frame:
+                // Lorentz correction assuming rotation around a given axis (corresponding to the rotation of a single motor in most cases)
+                // The expression is derived from the formula found in the Nebula open access article
                 if (isCorrectionLorentzActive)
                 {
-                    Q.w *= sin(lab_theta);
+                    float3 axis_rot = (float3)(0.0f,0.0f,1.0f); // Omega rotation. Todo: Set as kernel input argument and define in host application
+                    Q.w *= wavelength*fabs((dot(cross(normalize(axis_rot), Q.xyz),normalize(k_f))));
                 }
 
                 // Polarization correction begs implementation
             }
-
-            // Post correction filter
-            //Q.w = clamp(Q.w, pct_low, pct_high); // Note: remove this filter at some point. It is bad.
-            //Q.w -= pct_low;
 
             out_buf[id_glb.y * image_size.x + id_glb.x] = Q.w;
         }
