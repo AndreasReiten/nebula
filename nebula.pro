@@ -72,7 +72,8 @@ HEADERS += \
     src/utils/misc/marker.h \
     src/utils/misc/linemodel.h \
     src/utils/misc/plotwidget.h \
-    src/utils/math/utils/box.h
+    src/utils/math/utils/box.h \
+    src/utils/misc/imagemarker.h
 #    src/utils/glsl/glslfunctions.h
 
 SOURCES += \
@@ -98,10 +99,13 @@ SOURCES += \
     src/utils/misc/line.cpp \
     src/utils/misc/marker.cpp \
     src/utils/misc/linemodel.cpp \
-    src/utils/misc/plotwidget.cpp
+    src/utils/misc/plotwidget.cpp \
+    src/utils/misc/imagemarker.cpp
 #    src/utils/glsl/glslfunctions.cpp
 
 DISTFILES += \
     src/kernels/weightpoint_sampler.cl \
-    src/kernels/plane_integral.cl
+    src/kernels/plane_integral.cl \
+    src/shaders/std_2d_sprite.v.glsl \
+    src/shaders/std_2d_sprite.f.glsl
 

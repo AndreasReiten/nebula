@@ -16,9 +16,12 @@
 #include <QMouseEvent>
 #include <QThread>
 #include <QStaticText>
+#include <QOpenGLTexture>
+#include <QOpenGLBuffer>
 
 
 #include "../../misc/transferfunction.h"
+#include "../../misc/imagemarker.h"
 #include "../../file/qxfilelib.h"
 #include "../../opencl/qxopencllib.h"
 #include "../../math/qxmathlib.h"
@@ -146,6 +149,9 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
 
     private:
+        QOpenGLTexture * texture_image_marker;
+        QList<QList<ImageMarker>> image_markers;
+
         float beam_x_override, beam_y_override;
 
         QStaticText m_staticText;
@@ -167,6 +173,12 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         GLint std_2d_tex_texture;
         GLint std_2d_tex_transform;
         QOpenGLShaderProgram * std_2d_tex_program;
+
+        GLint std_2d_sprite_fragpos;
+        GLint std_2d_sprite_pos;
+        GLint std_2d_sprite_texture;
+        GLint std_2d_sprite_transform;
+        QOpenGLShaderProgram * std_2d_sprite_program;
 
         GLint std_2d_col_color;
         GLint std_2d_col_transform;
@@ -278,6 +290,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void drawPixelToolTip(QPainter * painter);
         void drawPlaneMarkerToolTip(QPainter * painter);
         void drawConeEwaldIntersect(QPainter * painter);
+        void drawImageMarkers(QPainter * painter);
 
         // Boolean checks
         bool isBeamOverrideActive;

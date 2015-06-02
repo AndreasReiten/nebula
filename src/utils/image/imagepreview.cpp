@@ -284,6 +284,7 @@ void ImageOpenGLWidget::paintGL()
             drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
         }
 
+        drawImageMarkers(&painter);
         drawConeEwaldIntersect(&painter);
         drawPixelToolTip(&painter);
     }
@@ -334,6 +335,36 @@ void ImageOpenGLWidget::initializeGL()
         qFatal("Invalid uniform");
     }
 
+    // Shader for drawing sprites in 2D
+    std_2d_sprite_program = new QOpenGLShaderProgram(this);
+    std_2d_sprite_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_2d_sprite.v.glsl");
+    std_2d_sprite_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "shaders/std_2d_sprite.f.glsl");
+
+    if (!std_2d_sprite_program->link())
+    {
+        qFatal(std_2d_sprite_program->log().toStdString().c_str());
+    }
+
+    if ((std_2d_sprite_fragpos = std_2d_sprite_program->attributeLocation("fragpos")) == -1)
+    {
+        qFatal("Invalid attribute");
+    }
+
+    if ((std_2d_sprite_pos = std_2d_sprite_program->attributeLocation("texpos")) == -1)
+    {
+        qFatal("Invalid attribute");
+    }
+
+    if ((std_2d_sprite_texture = std_2d_sprite_program->uniformLocation("texture")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
+    if ((std_2d_sprite_transform = std_2d_sprite_program->uniformLocation("transform")) == -1)
+    {
+        qFatal("Invalid uniform");
+    }
+
     // Shader for drawing lines and similar in 2D
     std_2d_col_program = new QOpenGLShaderProgram(this);
     std_2d_col_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "shaders/std_2d_col.v.glsl");
@@ -359,7 +390,15 @@ void ImageOpenGLWidget::initializeGL()
         qFatal("Invalid uniform");
     }
 
+    // Load sprite textures
+    texture_image_marker = new QOpenGLTexture(QImage(":/art/crosshair_one.png").mirrored());
+    texture_image_marker->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    texture_image_marker->setMagnificationFilter(QOpenGLTexture::Linear);
 
+    qDebug() << QString("%1").arg(texture_image_marker->format() , 0, 16);
+    qDebug() << texture_image_marker->width();
+    qDebug() << texture_image_marker->height();
+    qDebug() << texture_image_marker->textureId();
 
     isGLInitialized = true;
 
@@ -2739,8 +2778,6 @@ void ImageOpenGLWidget::endRawGLCalls(QPainter * painter)
 
 void ImageOpenGLWidget::drawImage(QRectF rect, GLuint texture, QPainter * painter)
 {
-
-
     std_2d_tex_program->bind();
 
     std_2d_tex_program->setUniformValue(std_2d_tex_texture, 0);
@@ -3227,6 +3264,84 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
     // Draw tooltip
     //    painter->drawText(area, Qt::AlignLeft, tip);
     painter->drawStaticText(area.topLeft(), m_staticText);
+}
+
+void ImageOpenGLWidget::drawImageMarkers(QPainter * painter)
+{
+    qsrand(QTime::currentTime().msec());
+
+    QList<ImageMarker> list;
+    for (int i = 0; i < 4; i++)
+    {
+        int x = qrand()%1475;
+        int y = qrand()%1675;
+        int w = 20 + qrand()%280;
+        list << ImageMarker(x,y,w,w);
+    }
+    image_markers << list;
+
+    QVector<GLfloat> fragpos;
+    QVector<GLfloat> texpos;
+
+    for (int i = 0; i < image_markers.size(); i++)
+    {
+        for (int j = 0; j < image_markers[i].size(); j++)
+        {
+            double x = (image_markers[i][j].x() / (double) this->width()) * 2.0 - 1.0;
+            double y = 1.0 - ((image_markers[i][j].y()+image_markers[i][j].h()) / (double) this->height()) * 2.0;
+            double w = (image_markers[i][j].w() / (double) this->width()) * 2.0;
+            double h = (image_markers[i][j].h() / (double) this->height()) * 2.0;
+
+            fragpos << x << y
+                    << x << y + h
+                    << x + w << y
+                    << x << y + h
+                    << x + w << y
+                    << x + w << y + h;
+
+            texpos  << 0 << 0
+                    << 0 << 1
+                    << 1 << 0
+                    << 0 << 1
+                    << 1 << 0
+                    << 1 << 1;
+        }
+    }
+
+    painter->beginNativePainting();
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_MULTISAMPLE);
+
+
+
+    std_2d_sprite_program->bind();
+
+    texture_image_marker->bind();
+    std_2d_sprite_program->setUniformValue(std_2d_sprite_texture, 0);
+
+    texture_view_matrix = zoom_matrix * translation_matrix;
+
+    glUniformMatrix4fv(std_2d_sprite_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
+
+    glEnableVertexAttribArray(std_2d_sprite_fragpos);
+    glEnableVertexAttribArray(std_2d_sprite_pos);
+
+    glVertexAttribPointer(std_2d_sprite_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos.data());
+    glVertexAttribPointer(std_2d_sprite_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos.data());
+
+    // Draw image
+    glDrawArrays(GL_TRIANGLES,  0, fragpos.size()/2);
+
+    glDisableVertexAttribArray(std_2d_sprite_pos);
+    glDisableVertexAttribArray(std_2d_sprite_fragpos);
+
+    texture_image_marker->release();
+    std_2d_sprite_program->release();
+
+    glDisable(GL_BLEND);
+    glDisable(GL_MULTISAMPLE);
+    painter->endNativePainting();
 }
 
 void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)

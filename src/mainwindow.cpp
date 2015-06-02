@@ -61,64 +61,64 @@ MainWindow::MainWindow() :
 
 
     // --------------------------
-    double k = 1.0 / 0.77982;
-    double det_dist = 0.466;
-    double pix_size_x = 172e-6;
-    double pix_size_y = 172e-6;
-    double add_y = 4000.0;
+//    double k = 1.0 / 0.77982;
+//    double det_dist = 0.466;
+//    double pix_size_x = 172e-6;
+//    double pix_size_y = 172e-6;
+//    double add_y = 4000.0;
 
-    for (int i = -2; i <= 2; i+=1)
-    {
-        double add_z = i*2000.0;
+//    for (int i = -2; i <= 2; i+=1)
+//    {
+//        double add_z = i*2000.0;
 
-        Matrix<double> a_vec(1,3);
-        a_vec[0] = -det_dist;
-        a_vec[1] = pix_size_x * (0.5+add_y);
-        a_vec[2] = pix_size_y * (-0.5+add_z);
+//        Matrix<double> a_vec(1,3);
+//        a_vec[0] = -det_dist;
+//        a_vec[1] = pix_size_x * (0.5+add_y);
+//        a_vec[2] = pix_size_y * (-0.5+add_z);
 
-        a_vec = k * vecNormalize(a_vec);
+//        a_vec = k * vecNormalize(a_vec);
 
-        Matrix<double> b_vec(1,3);
-        b_vec[0] = -det_dist;
-        b_vec[1] = pix_size_x * (-0.5+add_y);
-        b_vec[2] = pix_size_y * (-0.5+add_z);
+//        Matrix<double> b_vec(1,3);
+//        b_vec[0] = -det_dist;
+//        b_vec[1] = pix_size_x * (-0.5+add_y);
+//        b_vec[2] = pix_size_y * (-0.5+add_z);
 
-        b_vec = k * vecNormalize(b_vec);
+//        b_vec = k * vecNormalize(b_vec);
 
-        Matrix<double> c_vec(1,3);
-        c_vec[0] = -det_dist;
-        c_vec[1] = pix_size_x * (-0.5+add_y);
-        c_vec[2] = pix_size_y * (0.5+add_z);
+//        Matrix<double> c_vec(1,3);
+//        c_vec[0] = -det_dist;
+//        c_vec[1] = pix_size_x * (-0.5+add_y);
+//        c_vec[2] = pix_size_y * (0.5+add_z);
 
-        c_vec = k * vecNormalize(c_vec);
+//        c_vec = k * vecNormalize(c_vec);
 
-        Matrix<double> d_vec(1,3);
-        d_vec[0] = -det_dist;
-        d_vec[1] = pix_size_x * (0.5+add_y);
-        d_vec[2] = pix_size_y * (0.5+add_z);
+//        Matrix<double> d_vec(1,3);
+//        d_vec[0] = -det_dist;
+//        d_vec[1] = pix_size_x * (0.5+add_y);
+//        d_vec[2] = pix_size_y * (0.5+add_z);
 
-        d_vec = k * vecNormalize(d_vec);
+//        d_vec = k * vecNormalize(d_vec);
 
 //        a_vec.print(6,"a_vec");
 //        b_vec.print(6,"b_vec");
 //        c_vec.print(6,"c_vec");
 //        d_vec.print(6,"d_vec");
 
-        Matrix<double> ab_vec(1,3);
-        Matrix<double> ac_vec(1,3);
-        Matrix<double> ad_vec(1,3);
+//        Matrix<double> ab_vec(1,3);
+//        Matrix<double> ac_vec(1,3);
+//        Matrix<double> ad_vec(1,3);
 
-        ab_vec = b_vec - a_vec;
-        ac_vec = c_vec - a_vec;
-        ad_vec = d_vec - a_vec;
+//        ab_vec = b_vec - a_vec;
+//        ac_vec = c_vec - a_vec;
+//        ad_vec = d_vec - a_vec;
 
-        double area = 0.5*fabs(vecLength(vecCross(ab_vec,ac_vec))) + 0.5*fabs(vecLength(vecCross(ac_vec,ad_vec)));
+//        double area = 0.5*fabs(vecLength(vecCross(ab_vec,ac_vec))) + 0.5*fabs(vecLength(vecCross(ac_vec,ad_vec)));
 
         // The area of the two spherical triangles spanned by the projected pixel
 
 
-        qDebug() << area;
-    }
+//        qDebug() << area;
+//    }
 
 }
 
@@ -1383,7 +1383,7 @@ void MainWindow::initGUI()
         imageSettingsWidget = new QWidget;
         imageSettingsWidget->setLayout(gridLayout);
 
-        imageSettingsDock =  new QDockWidget("Display settings");
+        imageSettingsDock =  new QDockWidget("Display");
         imageSettingsDock->setWidget(imageSettingsWidget);
         reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
 
@@ -1451,7 +1451,7 @@ void MainWindow::initGUI()
     {
         applyPlaneMarkerPushButton  = new QPushButton(QIcon(":/art/lsqplane.png"), "Apply markers");
         applySelectionPushButton  = new QPushButton(QIcon(":/art/select.png"), "Apply selection");
-        integratePushButton = new QPushButton(QIcon(":/art/proceed.png"), "Analyze frames");
+        integratePushButton = new QPushButton(QIcon(":/art/proceed.png"), "Analyze");
 
         selectionModeComboBox = new QComboBox;
         selectionModeComboBox->addItem("Series");
@@ -1470,7 +1470,7 @@ void MainWindow::initGUI()
         selectionWidget = new QWidget;
         selectionWidget->setLayout(gridLayout);
 
-        selectionDock =  new QDockWidget("Frame-by-frame operations");
+        selectionDock =  new QDockWidget("Image operations");
         selectionDock->setWidget(selectionWidget);
         reconstructionMainWindow->addDockWidget(Qt::RightDockWidgetArea, selectionDock);
     }
@@ -1486,10 +1486,12 @@ void MainWindow::initGUI()
         correctionClutterSpinBox = new QSpinBox;
         correctionClutterSpinBox->setRange(0, 100);
         correctionClutterSpinBox->setSuffix(" units");
+        correctionClutterSpinBox->setDisabled(true);
 
         correctionMedianSpinBox = new QSpinBox;
         correctionMedianSpinBox->setRange(0, 100);
         correctionMedianSpinBox->setPrefix("n x n: ");
+        correctionMedianSpinBox->setDisabled(true);
 
         correctionPlaneSpinBox = new QSpinBox;
         correctionPlaneSpinBox->setRange(3, 20);
@@ -1498,12 +1500,17 @@ void MainWindow::initGUI()
         correctionFlatCheckBox = new QCheckBox("Flat b/g subtract");
         correctionPlaneCheckBox = new QCheckBox("Planar b/g subtract");
         correctionClutterCheckBox = new QCheckBox("Clutter removal");
+        correctionClutterCheckBox->setDisabled(true);
         correctionMedianCheckBox = new QCheckBox("Median filter");
+        correctionMedianCheckBox->setDisabled(true);
         correctionLorentzCheckBox = new QCheckBox("Lorentz correction");
         correctionPolarizationCheckBox = new QCheckBox("Polarization correction");
+        correctionPolarizationCheckBox->setDisabled(true);
         correctionPixelProjectionCheckBox = new QCheckBox("Pixel projection correction");
         correctionFluxCheckBox = new QCheckBox("Flux normalization");
+        correctionFluxCheckBox->setDisabled(true);
         correctionExposureCheckBox = new QCheckBox("Exposure time normalization");
+        correctionExposureCheckBox->setDisabled(true);
 
         QGridLayout * gridLayout = new QGridLayout;
         gridLayout->setHorizontalSpacing(5);
@@ -1530,7 +1537,7 @@ void MainWindow::initGUI()
         correctionWidget = new QWidget;
         correctionWidget->setLayout(gridLayout);
 
-        correctionDock =  new QDockWidget("Frame-by-frame corrections");
+        correctionDock =  new QDockWidget("Image corrections");
         correctionDock->setWidget(correctionWidget);
         reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
     }
@@ -1599,7 +1606,7 @@ void MainWindow::initGUI()
         qualitySlider->setToolTip("Set texture resolution");
         qualitySlider->setTickPosition(QSlider::NoTicks);
 
-        graphicsDockWidget = new QDockWidget("Display settings", this);
+        graphicsDockWidget = new QDockWidget("Display", this);
         graphicsWidget = new QWidget;
 
         QGridLayout * gridLayout = new QGridLayout;
@@ -1943,11 +1950,12 @@ void MainWindow::initGUI()
 
         reconstructButton = new QPushButton;
         reconstructButton->setIcon(QIcon(":/art/fast_proceed.png"));
-        reconstructButton->setText("Reconstruct frames");
+        reconstructButton->setText("Reconstruct");
 
         killButton = new QPushButton;
         killButton->setIcon(QIcon(":/art/kill.png"));
         killButton->setText("Kill ");
+        killButton->setEnabled(false);
 
         svoLevelSpinBox = new QSpinBox;
         svoLevelSpinBox->setRange(1, 15);
@@ -1988,7 +1996,7 @@ void MainWindow::initGUI()
         headerHighlighterTwo = new Highlighter(fileHeaderEditTwo->document());
         fileHeaderEditTwo->setReadOnly(true);
 
-        fileHeaderDockTwo = new QDockWidget("Frame header info", this);
+        fileHeaderDockTwo = new QDockWidget("Image header", this);
         fileHeaderDockTwo->setWidget(fileHeaderEditTwo);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
         reconstructionMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockTwo);
