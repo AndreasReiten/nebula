@@ -235,11 +235,6 @@ ImageWorker * ImageOpenGLWidget::worker()
 
 void ImageOpenGLWidget::paintGL()
 {
-//    if (!file.isValid() || !file.isDataRead())
-//    {
-//        return;
-//    }
-
     QOpenGLPaintDevice paint_device_gl(this->size());
 
     QPainter painter(&paint_device_gl);
@@ -265,21 +260,21 @@ void ImageOpenGLWidget::paintGL()
         drawImage(image_rect, image_tex_gl, &painter);
         endRawGLCalls(&painter);
 
-//        ColorMatrix<float> analysis_area_color(0.0, 0, 0, 0.3);
-//        drawSelection(p_set.current()->current()->selection(), &painter, analysis_area_color);
+        ColorMatrix<float> analysis_area_color(0.0, 0, 0, 0.3);
+        drawSelection(p_set.current()->current()->selection(), &painter, analysis_area_color);
 
-//        // Draw pixel tootip
-//        if (isCorrectionPlaneActive)
-//        {
-//            drawPlaneMarkerToolTip(&painter);
-//        }
+        // Draw pixel tootip
+        if (isCorrectionPlaneActive)
+        {
+            drawPlaneMarkerToolTip(&painter);
+        }
 
-//        // Draw weight center
-//        if (isWeightCenterActive)
-//        {
-//            ColorMatrix<float> analysis_wp_color(0.0, 0.0, 0.0, 0.8);
-//            drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
-//        }
+        // Draw weight center
+        if (isWeightCenterActive)
+        {
+            ColorMatrix<float> analysis_wp_color(0.0, 0.0, 0.0, 0.8);
+            drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
+        }
 
         drawImageMarkers(&painter);
         drawConeEwaldIntersect(&painter);
@@ -422,7 +417,7 @@ void ImageOpenGLWidget::initializeGL()
 
     setTsfTexture(1);
     setTsfAlpha(2);
-//    setFrame();
+    setFrame();
 //    centerImage(QSizeF());
 }
 
@@ -3281,17 +3276,19 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
 
 void ImageOpenGLWidget::drawImageMarkers(QPainter * painter)
 {
-    qsrand(QTime::currentTime().msec());
+    // Next shit: Make sidebar tree view for le image_markers
 
-    QList<ImageMarker> list;
-    for (int i = 0; i < 4; i++)
-    {
-        int x = qrand()%1475;
-        int y = qrand()%1675;
-        int w = 20 + qrand()%280;
-        list << ImageMarker(x,y,w,w);
-    }
-    image_markers << list;
+//    qsrand(QTime::currentTime().msec());
+
+//    QList<ImageMarker> list;
+//    for (int i = 0; i < 4; i++)
+//    {
+//        int x = qrand()%1475;
+//        int y = qrand()%1675;
+//        int w = 20 + qrand()%280;
+//        list << ImageMarker(x,y,w,w);
+//    }
+//    image_markers << list;
 
     QVector<GLfloat> fragpos;
     QVector<GLfloat> texpos;

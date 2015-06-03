@@ -1399,21 +1399,25 @@ void MainWindow::initGUI()
     // Navigation dock widget
     {
         nextFramePushButton = new QPushButton(QIcon(":/art/forward.png"), "Next");
+        nextFramePushButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         previousFramePushButton = new QPushButton(QIcon(":/art/back.png"), "Prev");
-        batchForwardPushButton = new QPushButton(QIcon(":/art/fast_forward.png"), "Skip");
-        batchBackwardPushButton = new QPushButton(QIcon(":/art/fast_back.png"), "Skip");
+        previousFramePushButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        batchForwardPushButton = new QPushButton(QIcon(":/art/fast_forward.png"), "");
+        batchForwardPushButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+        batchBackwardPushButton = new QPushButton(QIcon(":/art/fast_back.png"), "");
+        batchBackwardPushButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         nextSeriesPushButton = new QPushButton(QIcon(":/art/next_series.png"), "Next series");
         nextSeriesPushButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
         prevSeriesPushButton = new QPushButton(QIcon(":/art/prev_series.png"), "Prev series");
         prevSeriesPushButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
-        removeCurrentPushButton = new QPushButton(QIcon(":/art/kill.png"), "Remove frame");
+        removeCurrentPushButton = new QPushButton(QIcon(":/art/kill.png"), "Remove");
 
         imageSpinBox = new QSpinBox;
-        imageSpinBox->setPrefix("Frame: ");
+        imageSpinBox->setPrefix("Image: ");
 
         batchSizeSpinBox = new QSpinBox;
-        batchSizeSpinBox->setPrefix("Skip size: ");
+        batchSizeSpinBox->setPrefix("Batch: ");
 
         generalProgressBar = new QProgressBar;
 
@@ -1427,17 +1431,17 @@ void MainWindow::initGUI()
         gridLayout->setVerticalSpacing(2);
         gridLayout->setContentsMargins(5, 5, 5, 5);
         gridLayout->setRowStretch(5, 1);
-        gridLayout->addWidget(batchBackwardPushButton, 0, 0, 1, 1);
-        gridLayout->addWidget(previousFramePushButton, 0, 1, 1, 1);
-        gridLayout->addWidget(imageSpinBox, 0, 2, 1, 2);
-        gridLayout->addWidget(nextFramePushButton, 0, 4, 1, 1);
-        gridLayout->addWidget(batchForwardPushButton, 0, 5, 1, 1);
-        gridLayout->addWidget(prevSeriesPushButton, 1, 0, 2, 2);
-        gridLayout->addWidget(batchSizeSpinBox, 1, 2, 1, 2);
-        gridLayout->addWidget(nextSeriesPushButton, 1, 4, 2, 2);
-        gridLayout->addWidget(removeCurrentPushButton, 2, 2, 1 , 2);
-        gridLayout->addWidget(generalProgressBar, 3, 0, 1 , 6);
-        gridLayout->addWidget(memoryUsageProgressBar, 4, 0, 1 , 6);
+        gridLayout->addWidget(nextFramePushButton, 0, 5, 3, 1);
+        gridLayout->addWidget(previousFramePushButton, 0, 2, 3, 1);
+        gridLayout->addWidget(batchForwardPushButton, 0, 6, 3, 1);
+        gridLayout->addWidget(batchBackwardPushButton, 0, 1, 3, 1);
+        gridLayout->addWidget(nextSeriesPushButton, 0, 7, 3, 1);
+        gridLayout->addWidget(prevSeriesPushButton, 0, 0, 3, 1);
+        gridLayout->addWidget(imageSpinBox, 0, 3, 1, 2);
+        gridLayout->addWidget(batchSizeSpinBox, 1, 3, 1, 2);
+        gridLayout->addWidget(removeCurrentPushButton, 2, 3, 1 , 2);
+        gridLayout->addWidget(generalProgressBar, 3, 0, 1 , 8);
+        gridLayout->addWidget(memoryUsageProgressBar, 4, 0, 1 , 8);
 
         navigationWidget = new QWidget;
         navigationWidget->setLayout(gridLayout);
