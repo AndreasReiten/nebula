@@ -62,7 +62,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 {
         Q_OBJECT
     public:
-        int projectFile(DetectorFile * file, Selection selection, Matrix<float> * samples, size_t * n_samples);
+        int projectFile(DetectorFile * image, Selection selection, Matrix<float> * samples, size_t * n_samples);
         void setReducedPixels(Matrix<float> * reduced_pixels);
 
         explicit ImageOpenGLWidget(QObject * parent = 0);
@@ -121,7 +121,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void takeScreenShot(QString path);
         void saveImage(QString path);
         void setFrame();
-        void centerImage();
+        void centerImage(QSizeF value);
         void analyze(QString str);
         void applyPlaneMarker(QString str);
         void showWeightCenter(bool value);
@@ -149,6 +149,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
 
     private:
+        QOpenGLTexture * texture_noimage;
         QOpenGLTexture * texture_image_marker;
         QList<QList<ImageMarker>> image_markers;
 
@@ -271,7 +272,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         Matrix<size_t> image_buffer_size;
 
         // Eventually merge the following two objects into a single class, or at least name them appropriately
-        DetectorFile file;
+        DetectorFile image;
 
         void initializeCL();
         void setParameter(Matrix<float> &data);

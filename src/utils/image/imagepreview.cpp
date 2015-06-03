@@ -69,7 +69,7 @@ void ImageWorker::traceSeries(SeriesSet set)
 
     frame.setPath(set.current()->begin()->path());
 
-    Matrix<float> zeros_like_frame(frame.slowDimension(), frame.fastDimension(), 0.0f);
+    Matrix<float> zeros_like_frame(frame.height(), frame.width(), 0.0f);
 
     cl_mem trace_image_gpu = QOpenCLCreateBuffer( context_cl.context(),
                              CL_MEM_COPY_HOST_PTR,
@@ -106,12 +106,12 @@ void ImageWorker::traceSeries(SeriesSet set)
         local_ws[0] = 16;
         local_ws[1] = 16;
 
-        global_ws[0] = frame.fastDimension() + local_ws[0] - frame.fastDimension() % local_ws[0];
-        global_ws[1] = frame.slowDimension() + local_ws[1] - frame.slowDimension() % local_ws[1];
+        global_ws[0] = frame.width() + local_ws[0] - frame.width() % local_ws[0];
+        global_ws[1] = frame.height() + local_ws[1] - frame.height() % local_ws[1];
 
         Matrix<int> image_size(1, 2);
-        image_size[0] = frame.fastDimension();
-        image_size[1] = frame.slowDimension();
+        image_size[0] = frame.width();
+        image_size[1] = frame.height();
 
         err =   QOpenCLSetKernelArg(cl_buffer_max,  0, sizeof(cl_mem), (void *) &image_gpu);
         err |=   QOpenCLSetKernelArg(cl_buffer_max, 1, sizeof(cl_mem), (void *) &trace_image_gpu);
@@ -144,7 +144,7 @@ void ImageWorker::traceSeries(SeriesSet set)
     }
 
     // Read back the second VRAM buffer and store in system RAM for later usage
-    Matrix<float> trace_image(frame.slowDimension(), frame.fastDimension());
+    Matrix<float> trace_image(frame.height(), frame.width());
 
     err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
                                        trace_image_gpu,
@@ -235,10 +235,10 @@ ImageWorker * ImageOpenGLWidget::worker()
 
 void ImageOpenGLWidget::paintGL()
 {
-    if (!file.isValid() || !file.isDataRead())
-    {
-        return;
-    }
+//    if (!file.isValid() || !file.isDataRead())
+//    {
+//        return;
+//    }
 
     QOpenGLPaintDevice paint_device_gl(this->size());
 
@@ -258,35 +258,41 @@ void ImageOpenGLWidget::paintGL()
 
     if (!p_set.isEmpty())
     {
-
-
-        QRectF image_rect(QPoint(0, 0), QSizeF(file.fastDimension(), file.slowDimension()));
+        QRectF image_rect(QPoint(0, 0), QSizeF(image.width(), image.height()));
         image_rect.moveTopLeft(QPointF((qreal) this->width() * 0.5, (qreal) this->height() * 0.5));
-
 
         beginRawGLCalls(&painter);
         drawImage(image_rect, image_tex_gl, &painter);
         endRawGLCalls(&painter);
 
-        ColorMatrix<float> analysis_area_color(0.0, 0, 0, 0.3);
-        drawSelection(p_set.current()->current()->selection(), &painter, analysis_area_color);
+//        ColorMatrix<float> analysis_area_color(0.0, 0, 0, 0.3);
+//        drawSelection(p_set.current()->current()->selection(), &painter, analysis_area_color);
 
-        // Draw pixel tootip
-        if (isCorrectionPlaneActive)
-        {
-            drawPlaneMarkerToolTip(&painter);
-        }
+//        // Draw pixel tootip
+//        if (isCorrectionPlaneActive)
+//        {
+//            drawPlaneMarkerToolTip(&painter);
+//        }
 
-        // Draw weight center
-        if (isWeightCenterActive)
-        {
-            ColorMatrix<float> analysis_wp_color(0.0, 0.0, 0.0, 0.8);
-            drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
-        }
+//        // Draw weight center
+//        if (isWeightCenterActive)
+//        {
+//            ColorMatrix<float> analysis_wp_color(0.0, 0.0, 0.0, 0.8);
+//            drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
+//        }
 
         drawImageMarkers(&painter);
         drawConeEwaldIntersect(&painter);
         drawPixelToolTip(&painter);
+    }
+    else
+    {
+        QRectF image_rect(QPoint(0, 0), QSizeF(texture_noimage->width(), texture_noimage->height()));
+        image_rect.moveTopLeft(QPointF((qreal) this->width() * 0.5, (qreal) this->height() * 0.5));
+
+        beginRawGLCalls(&painter);
+        drawImage(image_rect, texture_noimage->textureId(), &painter);
+        endRawGLCalls(&painter);
     }
 }
 
@@ -390,15 +396,22 @@ void ImageOpenGLWidget::initializeGL()
         qFatal("Invalid uniform");
     }
 
-    // Load sprite textures
-    texture_image_marker = new QOpenGLTexture(QImage(":/art/crosshair_one.png").mirrored());
+
+
+    // Load stored textures
+    texture_noimage = new QOpenGLTexture(QImage(":/art/noimage.png"));
+    texture_noimage->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    texture_noimage->setMagnificationFilter(QOpenGLTexture::Linear);
+    centerImage(QSizeF(texture_noimage->width(),texture_noimage->height()));
+
+    texture_image_marker = new QOpenGLTexture(QImage(":/art/crosshair_one.png"));
     texture_image_marker->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     texture_image_marker->setMagnificationFilter(QOpenGLTexture::Linear);
 
-    qDebug() << QString("%1").arg(texture_image_marker->format() , 0, 16);
-    qDebug() << texture_image_marker->width();
-    qDebug() << texture_image_marker->height();
-    qDebug() << texture_image_marker->textureId();
+//    qDebug() << QString("%1").arg(texture_noimage->format() , 0, 16);
+//    qDebug() << texture_noimage->width();
+//    qDebug() << texture_noimage->height();
+//    qDebug() << texture_noimage->textureId();
 
     isGLInitialized = true;
 
@@ -409,8 +422,8 @@ void ImageOpenGLWidget::initializeGL()
 
     setTsfTexture(1);
     setTsfAlpha(2);
-    setFrame();
-    centerImage();
+//    setFrame();
+//    centerImage(QSizeF());
 }
 
 ImageOpenGLWidget::~ImageOpenGLWidget()
@@ -515,43 +528,43 @@ void ImageOpenGLWidget::reconstruct()
             }
 
             // Force a buffer swap
-            size_raw += file.bytes();
+            size_raw += image.bytes();
 
             // Project and correct file and get status
             Selection selection = p_set.current()->current()->selection();
 
-            if (selection.width() > file.fastDimension())
+            if (selection.width() > image.width())
             {
-                selection.setWidth(file.fastDimension());
+                selection.setWidth(image.width());
             }
 
-            if (selection.height() > file.slowDimension())
+            if (selection.height() > image.height())
             {
-                selection.setHeight(file.slowDimension());
+                selection.setHeight(image.height());
             }
 
             p_set.current()->current()->setSelection(selection);
 
             // Project the data
-            int STATUS_OK = projectFile(&file, selection, reduced_pixels, &n_reduced_pixels);
+            int STATUS_OK = projectFile(&image, selection, reduced_pixels, &n_reduced_pixels);
 
             if (STATUS_OK)
             {
                 // Get suggestions on the minimum search radius that can safely be applied during interpolation
-                if (suggested_search_radius_low > file.getSearchRadiusLowSuggestion())
+                if (suggested_search_radius_low > image.getSearchRadiusLowSuggestion())
                 {
-                    suggested_search_radius_low = file.getSearchRadiusLowSuggestion();
+                    suggested_search_radius_low = image.getSearchRadiusLowSuggestion();
                 }
 
-                if (suggested_search_radius_high < file.getSearchRadiusHighSuggestion())
+                if (suggested_search_radius_high < image.getSearchRadiusHighSuggestion())
                 {
-                    suggested_search_radius_high = file.getSearchRadiusHighSuggestion();
+                    suggested_search_radius_high = image.getSearchRadiusHighSuggestion();
                 }
 
                 // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
-                if (suggested_q < file.getQSuggestion())
+                if (suggested_q < image.getQSuggestion())
                 {
-                    suggested_q = file.getQSuggestion();
+                    suggested_q = image.getQSuggestion();
                 }
 
                 n_ok_files++;
@@ -652,8 +665,8 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
     cl_mem xyzi_target_cl = QOpenCLCreateImage2D ( context_cl.context(),
                             CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
                             &target_format,
-                            file->fastDimension(),
-                            file->slowDimension(),
+                            file->width(),
+                            file->height(),
                             0,
                             NULL,
                             &err);
@@ -783,8 +796,8 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
 
     loc_ws[0] = 16;
     loc_ws[1] = 16;
-    glb_ws[0] = file->fastDimension() + loc_ws[0] - (file->fastDimension() % loc_ws[0]);
-    glb_ws[1] = file->slowDimension() + loc_ws[1] - (file->slowDimension() % loc_ws[1]);
+    glb_ws[0] = file->width() + loc_ws[0] - (file->width() % loc_ws[0]);
+    glb_ws[1] = file->height() + loc_ws[1] - (file->height() % loc_ws[1]);
 
     for (size_t glb_x = 0; glb_x < glb_ws[0]; glb_x += area_per_call[0])
     {
@@ -951,7 +964,7 @@ void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, 
      * Display an image buffer object, matching intensity to color
      * */
 
-    if (!file.isValid() || !file.isDataRead())
+    if (!image.isValid() || !image.isDataRead())
     {
         return;
     }
@@ -1190,7 +1203,7 @@ void ImageOpenGLWidget::calculus()
     /*
      * Carry out calculations on an image buffer, such as corrections and calculation of variance and skewness
      * */
-    if (!file.isValid() || !file.isDataRead())
+    if (!image.isValid() || !image.isDataRead())
     {
         return;
     }
@@ -1202,8 +1215,8 @@ void ImageOpenGLWidget::calculus()
     local_ws[1] = 1;
 
     Matrix<size_t> image_size(1, 2);
-    image_size[0] = file.fastDimension();
-    image_size[1] = file.slowDimension();
+    image_size[0] = image.width();
+    image_size[1] = image.height();
 
     if (mode == 0)
     {
@@ -1297,18 +1310,18 @@ void ImageOpenGLWidget::calculus()
 
 void ImageOpenGLWidget::setFrame()
 {
-    if (!isCLInitialized || !isGLInitialized  || !file.isValid())
+    if (!isCLInitialized || !isGLInitialized  || !image.isValid())
     {
         return;
     }
 
     // Set the frame
-    if (!file.setPath(p_set.current()->current()->path()))
+    if (!image.setPath(p_set.current()->current()->path()))
     {
         return;
     }
 
-    if (!file.readData())
+    if (!image.readData())
     {
         return;
     }
@@ -1321,9 +1334,9 @@ void ImageOpenGLWidget::setFrame()
         analysis_area.setLeft(0);
     }
 
-    if (analysis_area.right() >= file.fastDimension())
+    if (analysis_area.right() >= image.width())
     {
-        analysis_area.setRight(file.fastDimension() - 1);
+        analysis_area.setRight(image.width() - 1);
     }
 
     if (analysis_area.top() < 0)
@@ -1331,16 +1344,16 @@ void ImageOpenGLWidget::setFrame()
         analysis_area.setTop(0);
     }
 
-    if (analysis_area.bottom() >= file.slowDimension())
+    if (analysis_area.bottom() >= image.height())
     {
-        analysis_area.setBottom(file.slowDimension() - 1);
+        analysis_area.setBottom(image.height() - 1);
     }
 
     p_set.current()->current()->setSelection(analysis_area);
 
     Matrix<size_t> image_size(1, 2);
-    image_size[0] = file.fastDimension();
-    image_size[1] = file.slowDimension();
+    image_size[0] = image.width();
+    image_size[1] = image.height();
 
     clMaintainImageBuffers(image_size);
 
@@ -1350,8 +1363,8 @@ void ImageOpenGLWidget::setFrame()
                image_data_raw_cl,
                CL_TRUE,
                0,
-               file.data().bytes(),
-               file.data().data(),
+               image.data().bytes(),
+               image.data().data(),
                0, 0, 0);
 
     if ( err != CL_SUCCESS)
@@ -1360,14 +1373,14 @@ void ImageOpenGLWidget::setFrame()
     }
 
     // Parameters essential to the frame
-    parameter[4] = file.flux();
-    parameter[5] = file.expTime();
-    parameter[6] = file.wavelength();
-    parameter[7] = file.detectorDist();
-    parameter[8] = (isBeamOverrideActive ? beam_x_override : file.beamX());
-    parameter[9] = (isBeamOverrideActive ? beam_y_override : file.beamY());
-    parameter[10] = file.pixSizeX();
-    parameter[11] = file.pixSizeY();
+    parameter[4] = image.flux();
+    parameter[5] = image.expTime();
+    parameter[6] = image.wavelength();
+    parameter[7] = image.detectorDist();
+    parameter[8] = (isBeamOverrideActive ? beam_x_override : image.beamX());
+    parameter[9] = (isBeamOverrideActive ? beam_y_override : image.beamY());
+    parameter[10] = image.pixSizeX();
+    parameter[11] = image.pixSizeY();
 
     setParameter(parameter);
 
@@ -1501,8 +1514,8 @@ void ImageOpenGLWidget::refreshSelection(Selection * area)
     local_ws[1] = 1;
 
     Matrix<size_t> image_size(1, 2);
-    image_size[0] = file.fastDimension();
-    image_size[1] = file.slowDimension();
+    image_size[0] = image.width();
+    image_size[1] = image.height();
 
     if (mode == 0)
     {
@@ -1534,7 +1547,7 @@ void ImageOpenGLWidget::refreshDisplay()
      * Refresh the image buffer
      * */
 
-    if (!file.isValid() || !file.isDataRead())
+    if (!image.isValid() || !image.isDataRead())
     {
         return;
     }
@@ -1544,8 +1557,8 @@ void ImageOpenGLWidget::refreshDisplay()
     local_ws[1] = 8;
 
     Matrix<size_t> image_size(1, 2);
-    image_size[0] = file.fastDimension();
-    image_size[1] = file.slowDimension();
+    image_size[0] = image.width();
+    image_size[1] = image.height();
 
     Matrix<float> data_limit(1, 2);
     data_limit[0] = parameter[12];
@@ -1607,7 +1620,7 @@ void ImageOpenGLWidget::maintainImageTexture(Matrix<size_t> &image_size)
         image_tex_size[0] = image_size[0];
         image_tex_size[1] = image_size[1];
 
-        // Share the texture with the OpenCL runtime
+        // Share the texture with the OpenCL runtime so that OpenCL can modify the texture
         image_tex_cl =  QOpenCLCreateFromGLTexture2D(context_cl.context(), CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, image_tex_gl, &err);
 
         if ( err != CL_SUCCESS)
@@ -1825,7 +1838,7 @@ void ImageOpenGLWidget::analyze(QString str)
         result += "#\n";
         result += "# (integral, origin x, origin y, width, height, weight x, weight y, Qx, Qy, Qz, |Q|, 2theta, background, origin x, origin y, width, height, path)\n";
 
-        result += integrationFrameString(file, *p_set.current()->current());
+        result += integrationFrameString(image, *p_set.current()->current());
         emit resultFinished(result);
     }
     else if (str == "Series")
@@ -1856,15 +1869,15 @@ void ImageOpenGLWidget::analyze(QString str)
 
             x_weightpoint += sum * wt_x;
             y_weightpoint += sum * wt_y;
-            angle_weightpoint += sum * (file.startAngle() + file.angleIncrement() * 0.5);
+            angle_weightpoint += sum * (image.startAngle() + image.angleIncrement() * 0.5);
 
-            Matrix<double> Q = getScatteringVector(file, wt_x, wt_y);
+            Matrix<double> Q = getScatteringVector(image, wt_x, wt_y);
 
             q_weightpoint += sum * Q;
 
             integral += sum;
 
-            frames += integrationFrameString(file, *p_set.current()->current());
+            frames += integrationFrameString(image, *p_set.current()->current());
 
             p_set.current()->next();
 
@@ -1938,15 +1951,15 @@ void ImageOpenGLWidget::analyze(QString str)
 
                 x_weightpoint += sum * wt_x;
                 y_weightpoint += sum * wt_y;
-                angle_weightpoint += sum * (file.startAngle() + file.angleIncrement() * 0.5);
+                angle_weightpoint += sum * (image.startAngle() + image.angleIncrement() * 0.5);
 
-                Matrix<double> Q = getScatteringVector(file, wt_x, wt_y);
+                Matrix<double> Q = getScatteringVector(image, wt_x, wt_y);
 
                 q_weightpoint += sum * Q;
 
                 integral += sum;
 
-                str += integrationFrameString(file, *p_set.current()->current());
+                str += integrationFrameString(image, *p_set.current()->current());
 
                 p_set.current()->next();
 
@@ -2172,7 +2185,7 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
         emit imageRangeChanged(0, p_set.current()->size() - 1);
         setFrame();
 
-        centerImage();
+        centerImage(image.size());
 
         set_trace.clear();
 
@@ -2181,9 +2194,9 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
         // Fill trace with empty frames
         for (size_t i = 0; i < p_set.size(); i++)
         {
-            file.setPath(p_set.current()->current()->path());
+            image.setPath(p_set.current()->current()->path());
 
-            Matrix<float> zeros_like_frame(file.slowDimension(), file.fastDimension(), 0.0f);
+            Matrix<float> zeros_like_frame(image.height(), image.width(), 0.0f);
 
             set_trace << zeros_like_frame;
 
@@ -2197,7 +2210,7 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
 
 
     setFrame();
-    centerImage();
+    centerImage(image.size());
     setSeriesTrace();
 }
 
@@ -2312,7 +2325,7 @@ void ImageOpenGLWidget::selectionCalculus(Selection * area, cl_mem image_data_cl
      * on the selected area. The buffers are then summed, effectively doing operations such as integration
      * */
 
-    if (!file.isValid() || !file.isDataRead())
+    if (!image.isValid() || !image.isDataRead())
     {
         return;
     }
@@ -2778,9 +2791,9 @@ void ImageOpenGLWidget::endRawGLCalls(QPainter * painter)
 
 void ImageOpenGLWidget::drawImage(QRectF rect, GLuint texture, QPainter * painter)
 {
-    std_2d_tex_program->bind();
+    std_2d_sprite_program->bind();
 
-    std_2d_tex_program->setUniformValue(std_2d_tex_texture, 0);
+    std_2d_sprite_program->setUniformValue(std_2d_sprite_texture, 0);
 
     GLfloat texpos[] =
     {
@@ -2794,25 +2807,25 @@ void ImageOpenGLWidget::drawImage(QRectF rect, GLuint texture, QPainter * painte
 
     texture_view_matrix = zoom_matrix * translation_matrix;
 
-    glUniformMatrix4fv(std_2d_tex_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_2d_sprite_transform, 1, GL_FALSE, texture_view_matrix.colmajor().toFloat().data());
 
-    glEnableVertexAttribArray(std_2d_tex_fragpos);
-    glEnableVertexAttribArray(std_2d_tex_pos);
+    glEnableVertexAttribArray(std_2d_sprite_fragpos);
+    glEnableVertexAttribArray(std_2d_sprite_pos);
 
     Matrix<GLfloat> fragpos;
 
     // Draw image
     glBindTexture(GL_TEXTURE_2D, texture);
     fragpos = glRect(rect);
-    glVertexAttribPointer(std_2d_tex_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos.data());
-    glVertexAttribPointer(std_2d_tex_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
+    glVertexAttribPointer(std_2d_sprite_fragpos, 2, GL_FLOAT, GL_FALSE, 0, fragpos.data());
+    glVertexAttribPointer(std_2d_sprite_pos, 2, GL_FLOAT, GL_FALSE, 0, texpos);
 
     glDrawElements(GL_TRIANGLES,  6,  GL_UNSIGNED_INT,  indices);
 
-    glDisableVertexAttribArray(std_2d_tex_pos);
-    glDisableVertexAttribArray(std_2d_tex_fragpos);
+    glDisableVertexAttribArray(std_2d_sprite_pos);
+    glDisableVertexAttribArray(std_2d_sprite_fragpos);
 
-    std_2d_tex_program->release();
+    std_2d_sprite_program->release();
 }
 
 Matrix<GLfloat> ImageOpenGLWidget::glRect(QRectF &qt_rect)
@@ -2841,14 +2854,14 @@ Matrix<GLfloat> ImageOpenGLWidget::glRect(QRectF &qt_rect)
     return gl_rect;
 }
 
-void ImageOpenGLWidget::centerImage()
+void ImageOpenGLWidget::centerImage(QSizeF value)
 {
-    translation_matrix[3] = (qreal) - file.fastDimension() / ( (qreal) this->width());
-    translation_matrix[7] = (qreal) file.slowDimension() / ( (qreal) this->height());
+    translation_matrix[3] =  - value.width() / ( (qreal) this->width());
+    translation_matrix[7] =  value.height() / ( (qreal) this->height());
 
-    zoom_matrix[0] = (qreal) this->width() / (qreal) file.fastDimension();
-    zoom_matrix[5] = (qreal) this->width() / (qreal) file.fastDimension();
-    zoom_matrix[10] = (qreal) this->width() / (qreal) file.fastDimension();
+    zoom_matrix[0] = (qreal) this->width() / value.width();
+    zoom_matrix[5] = (qreal) this->width() / value.width();
+    zoom_matrix[10] = (qreal) this->width() / value.width();
 }
 
 
@@ -2865,10 +2878,10 @@ void ImageOpenGLWidget::drawSelection(Selection area, QPainter * painter, Matrix
     float selection_bot = (1.0 - (qreal) (area.y() + area.height() + 0.5 * this->height() + offset.y()) / (qreal) this->height()) * 2.0 - 1.0; // Bottom
 
     float frame_left = (((qreal) - 4 + 0.5 * this->width() + offset.x()) / (qreal) this->width()) * 2.0 - 1.0; // Left
-    float frame_right = (((qreal) file.fastDimension() + 4  + 0.5 * this->width() + offset.x()) / (qreal) this->width()) * 2.0 - 1.0; // Right
+    float frame_right = (((qreal) image.width() + 4  + 0.5 * this->width() + offset.x()) / (qreal) this->width()) * 2.0 - 1.0; // Right
 
     float frame_top = (1.0 - (qreal) (-4 + 0.5 * this->height() + offset.y()) / (qreal) this->height()) * 2.0 - 1.0; // Top
-    float frame_bot = (1.0 - (qreal) (file.slowDimension() + 4 + 0.5 * this->height() + offset.y()) / (qreal) this->height()) * 2.0 - 1.0; // Bottom
+    float frame_bot = (1.0 - (qreal) (image.height() + 4 + 0.5 * this->height() + offset.y()) / (qreal) this->height()) * 2.0 - 1.0; // Bottom
 
     // Points
     Matrix<GLfloat> point(8, 2);
@@ -3059,8 +3072,8 @@ Matrix<double> ImageOpenGLWidget::getScatteringVector(DetectorFile &f, double x,
 
     Matrix<double> k_f(3, 1, 0);
     k_f[0] =    -f.detectorDist();
-    k_f[1] =    f.pixSizeX() * ((double) (f.slowDimension() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
-    k_f[2] =    f.pixSizeY() * ((double) (f.fastDimension() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
+    k_f[1] =    f.pixSizeX() * ((double) (f.height() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
+    k_f[2] =    f.pixSizeY() * ((double) (f.width() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
 
     k_f = k * vecNormalize(k_f);
 
@@ -3080,8 +3093,8 @@ double ImageOpenGLWidget::getScatteringAngle(DetectorFile &f, double x, double y
 
     Matrix<double> k_f(1, 3, 0);
     k_f[0] =    -f.detectorDist();
-    k_f[1] =    f.pixSizeX() * ((double) (f.slowDimension() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
-    k_f[2] =    f.pixSizeY() * ((double) (f.fastDimension() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
+    k_f[1] =    f.pixSizeX() * ((double) (f.height() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
+    k_f[2] =    f.pixSizeY() * ((double) (f.width() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
 
     k_f = k * vecNormalize(k_f);
 
@@ -3117,14 +3130,14 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
         pixel_y_bounded = 0;
     }
 
-    if (pixel_x >= file.fastDimension())
+    if (pixel_x >= image.width())
     {
-        pixel_x_bounded = file.fastDimension() - 1;
+        pixel_x_bounded = image.width() - 1;
     }
 
-    if (pixel_y >= file.slowDimension())
+    if (pixel_y >= image.height())
     {
-        pixel_y_bounded = file.slowDimension() - 1;
+        pixel_y_bounded = image.height() - 1;
     }
 
     // Intensity
@@ -3135,7 +3148,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
         err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
                                            image_data_corrected_cl,
                                            CL_TRUE,
-                                           ((int) pixel_y_bounded * file.fastDimension() + (int) pixel_x_bounded) * sizeof(cl_float),
+                                           ((int) pixel_y_bounded * image.width() + (int) pixel_x_bounded) * sizeof(cl_float),
                                            sizeof(cl_float),
                                            &value,
                                            0, NULL, NULL);
@@ -3150,7 +3163,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
         err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
                                            image_data_variance_cl,
                                            CL_TRUE,
-                                           ((int) pixel_y_bounded * file.fastDimension() + (int) pixel_x_bounded) * sizeof(cl_float),
+                                           ((int) pixel_y_bounded * image.width() + (int) pixel_x_bounded) * sizeof(cl_float),
                                            sizeof(cl_float),
                                            &value,
                                            0, NULL, NULL);
@@ -3165,7 +3178,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
         err =   QOpenCLEnqueueReadBuffer ( context_cl.queue(),
                                            image_data_skewness_cl,
                                            CL_TRUE,
-                                           ((int) pixel_y_bounded * file.fastDimension() + (int) pixel_x_bounded) * sizeof(cl_float),
+                                           ((int) pixel_y_bounded * image.width() + (int) pixel_x_bounded) * sizeof(cl_float),
                                            sizeof(cl_float),
                                            &value,
                                            0, NULL, NULL);
@@ -3177,7 +3190,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
     }
 
     // Q vector
-    Matrix<double> Q = getScatteringVector(file, pixel_x, pixel_y);
+    Matrix<double> Q = getScatteringVector(image, pixel_x, pixel_y);
 
     // G vector, de-rotated
     RotationMatrix<double> PHI;
@@ -3188,21 +3201,21 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
 
         if (active_rotation == "Phi")
         {
-            phi = file.startAngle() + 0.5 * file.angleIncrement();
-            kappa = file.kappa();
-            omega = file.omega();
+            phi = image.startAngle() + 0.5 * image.angleIncrement();
+            kappa = image.kappa();
+            omega = image.omega();
         }
         else if (active_rotation == "Kappa")
         {
-            phi = file.phi();
-            kappa = file.startAngle() + 0.5 * file.angleIncrement();
-            omega = file.omega();
+            phi = image.phi();
+            kappa = image.startAngle() + 0.5 * image.angleIncrement();
+            omega = image.omega();
         }
         else if (active_rotation == "Omega")
         {
-            phi = file.phi();
-            kappa = file.kappa();
-            omega = file.startAngle() + 0.5 * file.angleIncrement();
+            phi = image.phi();
+            kappa = image.kappa();
+            omega = image.startAngle() + 0.5 * image.angleIncrement();
         }
         else
         {
@@ -3228,7 +3241,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
     tip += ", Q[<font color=\"#85DAFF\">" + QString::number(Q[0], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(Q[1], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(Q[2], 'f', 2) + "</font>]";
     tip += ", G<sub>rot</sub>[<font color=\"#85DAFF\">" + QString::number(G[0], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(G[1], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(G[2], 'f', 2) + "</font>]";
     tip += " (<font color=\"#85DAFF\">" + QString::number(vecLength(Q), 'f', 2) + "</font> Å<sup>-1</sup>) (<font color=\"#85DAFF\">" + QString::number(1.0 / vecLength(Q), 'f', 2) + "</font> Å)";
-    tip += ", 2&theta;: <font color=\"#85DAFF\">" + QString::number(180 * getScatteringAngle(file, pixel_x, pixel_y) / pi, 'f', 2) + "</font>&deg;";
+    tip += ", 2&theta;: <font color=\"#85DAFF\">" + QString::number(180 * getScatteringAngle(image, pixel_x, pixel_y) / pi, 'f', 2) + "</font>&deg;";
     tip += ", Sum: <font color=\"#85DAFF\">" + QString::number(p_set.current()->current()->selection().integral(), 'f', 2) + "</font>";
     tip += ", Mass: <font color=\"#85DAFF\">" + QString::number(p_set.current()->current()->selection().weighted_x(), 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(p_set.current()->current()->selection().weighted_y(), 'f', 2) + "</font>";
     tip += "</p>";
@@ -3350,8 +3363,8 @@ void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
     Matrix<double> beam_image_pos(4, 1, 0);
     Matrix<double> beam_screen_pos(4, 1, 0);
 
-    beam_image_pos[0] = 2.0 * (file.fastDimension() - (isBeamOverrideActive ? beam_y_override : file.beamY())) / this->width(); /* DANGER */
-    beam_image_pos[1] = - 2.0 * (file.slowDimension() - (isBeamOverrideActive ? beam_x_override : file.beamX())) / this->height(); /* DANGER */
+    beam_image_pos[0] = 2.0 * (image.width() - (isBeamOverrideActive ? beam_y_override : image.beamY())) / this->width(); /* DANGER */
+    beam_image_pos[1] = - 2.0 * (image.height() - (isBeamOverrideActive ? beam_x_override : image.beamX())) / this->height(); /* DANGER */
     beam_image_pos[2] = 0;
     beam_image_pos[3] = 1.0;
 
@@ -3567,9 +3580,9 @@ QPoint ImageOpenGLWidget::getImagePixel(QPoint pos)
         image_pixel.setX(0);
     }
 
-    if (image_pixel.x() >= file.fastDimension())
+    if (image_pixel.x() >= image.width())
     {
-        image_pixel.setX(file.fastDimension() - 1);
+        image_pixel.setX(image.width() - 1);
     }
 
     if (image_pixel.y() < 0)
@@ -3577,9 +3590,9 @@ QPoint ImageOpenGLWidget::getImagePixel(QPoint pos)
         image_pixel.setY(0);
     }
 
-    if (image_pixel.y() >= file.slowDimension())
+    if (image_pixel.y() >= image.height())
     {
-        image_pixel.setY(file.slowDimension() - 1);
+        image_pixel.setY(image.height() - 1);
     }
 
     return image_pixel;
@@ -3587,18 +3600,12 @@ QPoint ImageOpenGLWidget::getImagePixel(QPoint pos)
 
 void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 {
-    if (!file.isValid() || !file.isDataRead())
-    {
-        return;
-    }
-
     float move_scaling = 1.0;
-
     pos = event->pos();
 
     if ((event->buttons() & Qt::LeftButton))
     {
-        if ((event->modifiers() & Qt::ShiftModifier))
+        if ((event->modifiers() & Qt::ShiftModifier) && (image.isValid() || image.isDataRead()))
         {
             Selection analysis_area = p_set.current()->current()->selection();
 
@@ -3610,7 +3617,7 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
             p_set.current()->current()->setSelection(analysis_area);
         }
-        else if ((event->modifiers() & Qt::ControlModifier))
+        else if ((event->modifiers() & Qt::ControlModifier) && (image.isValid() || image.isDataRead()))
         {
             Selection analysis_area = p_set.current()->current()->selection();
 
@@ -3627,24 +3634,25 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
             // Check for selected objects
             bool isSomethingSelected = false;
 
-            QList<Selection> marker(p_set.current()->current()->planeMarker());
-
-            for (int i = 0; i < n_lsq_samples; i++)
+            if (image.isValid() || image.isDataRead())
             {
-                if (marker[i].selected() == true)
-                {
-                    isSomethingSelected = true;
-                    marker[i].moveTo(marker[i].topLeft() + (getImagePixel(pos) - getImagePixel(prev_pos)));
-                    marker[i].restrictToRect(QRect(0, 0, file.fastDimension(), file.slowDimension()));
-                }
-            }
+                QList<Selection> marker(p_set.current()->current()->planeMarker());
 
-            p_set.current()->current()->setPlaneMarker(marker);
+                for (int i = 0; i < n_lsq_samples; i++)
+                {
+                    if (marker[i].selected() == true)
+                    {
+                        isSomethingSelected = true;
+                        marker[i].moveTo(marker[i].topLeft() + (getImagePixel(pos) - getImagePixel(prev_pos)));
+                        marker[i].restrictToRect(QRect(0, 0, image.width(), image.height()));
+                    }
+                }
+
+                p_set.current()->current()->setPlaneMarker(marker);
+            }
 
             if (!isSomethingSelected)
             {
-
-
                 double dx = (pos.x() - prev_pos.x()) * 2.0 / (this->width() * zoom_matrix[0]);
                 double dy = -(pos.y() - prev_pos.y()) * 2.0 / (this->height() * zoom_matrix[0]);
 
@@ -3653,146 +3661,139 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
             }
         }
     }
-
     prev_pos = pos;
     update();
 }
 
 void ImageOpenGLWidget::mousePressEvent(QMouseEvent * event)
 {
-    if (!file.isValid() || !file.isDataRead())
-    {
-        return;
-    }
-
     pos = event->pos();
 
-    if (!(event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
+    if (image.isValid() || image.isDataRead())
     {
-        //Position
-        Matrix<double> screen_pixel_pos(4, 1, 0); // Uses GL coordinates
-        screen_pixel_pos[0] = 2.0 * (double) pos.x() / (double) this->width() - 1.0;
-        screen_pixel_pos[1] = 2.0 * (1.0 - (double) pos.y() / (double) this->height()) - 1.0;
-        screen_pixel_pos[2] = 0;
-        screen_pixel_pos[3] = 1.0;
-
-        Matrix<double> image_pixel_pos(4, 1); // Uses GL coordinates
-
-        image_pixel_pos = texture_view_matrix.inverse4x4() * screen_pixel_pos;
-
-        double pixel_x = image_pixel_pos[0] * this->width() * 0.5;
-        double pixel_y = - image_pixel_pos[1] * this->height() * 0.5;
-
-        if (pixel_x < 0)
+        if (!(event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
         {
-            pixel_x = 0;
-        }
+            //Position
+            Matrix<double> screen_pixel_pos(4, 1, 0); // Uses GL coordinates
+            screen_pixel_pos[0] = 2.0 * (double) pos.x() / (double) this->width() - 1.0;
+            screen_pixel_pos[1] = 2.0 * (1.0 - (double) pos.y() / (double) this->height()) - 1.0;
+            screen_pixel_pos[2] = 0;
+            screen_pixel_pos[3] = 1.0;
 
-        if (pixel_y < 0)
-        {
-            pixel_y = 0;
-        }
+            Matrix<double> image_pixel_pos(4, 1); // Uses GL coordinates
 
-        if (pixel_x >= file.fastDimension())
-        {
-            pixel_x = file.fastDimension() - 1;
-        }
+            image_pixel_pos = texture_view_matrix.inverse4x4() * screen_pixel_pos;
 
-        if (pixel_y >= file.slowDimension())
-        {
-            pixel_y = file.slowDimension() - 1;
-        }
+            double pixel_x = image_pixel_pos[0] * this->width() * 0.5;
+            double pixel_y = - image_pixel_pos[1] * this->height() * 0.5;
 
-        QList<Selection> marker(p_set.current()->current()->planeMarker());
-
-        for (int i = 0; i < n_lsq_samples; i++)
-        {
-            if (((pixel_x >= marker[i].x()) && (pixel_x <= marker[i].x() + marker[i].width())) && ((pixel_y >= marker[i].y()) && (pixel_y <= marker[i].y() + marker[i].height())))
+            if (pixel_x < 0)
             {
-                marker[i].setSelected(true);
-                break;
+                pixel_x = 0;
             }
+
+            if (pixel_y < 0)
+            {
+                pixel_y = 0;
+            }
+
+            if (pixel_x >= image.width())
+            {
+                pixel_x = image.width() - 1;
+            }
+
+            if (pixel_y >= image.height())
+            {
+                pixel_y = image.height() - 1;
+            }
+
+            QList<Selection> marker(p_set.current()->current()->planeMarker());
+
+            for (int i = 0; i < n_lsq_samples; i++)
+            {
+                if (((pixel_x >= marker[i].x()) && (pixel_x <= marker[i].x() + marker[i].width())) && ((pixel_y >= marker[i].y()) && (pixel_y <= marker[i].y() + marker[i].height())))
+                {
+                    marker[i].setSelected(true);
+                    break;
+                }
+            }
+
+            p_set.current()->current()->setPlaneMarkerTest(marker);
         }
+        else if ((event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
+        {
+            Selection analysis_area = p_set.current()->current()->selection();
 
-        p_set.current()->current()->setPlaneMarkerTest(marker);
+            QPoint pixel = getImagePixel(pos);
+
+            analysis_area.setTopLeft(pixel);
+
+            analysis_area = analysis_area.normalized();
+
+            refreshSelection(&analysis_area);
+
+            p_set.current()->current()->setSelection(analysis_area);
+        }
     }
-    else if ((event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
-
-        QPoint pixel = getImagePixel(pos);
-
-        analysis_area.setTopLeft(pixel);
-
-        analysis_area = analysis_area.normalized();
-
-        refreshSelection(&analysis_area);
-
-        p_set.current()->current()->setSelection(analysis_area);
-    }
-
     update();
 }
 
 void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 {
-    if (!file.isValid() || !file.isDataRead())
-    {
-        return;
-    }
-
     pos =  event->pos();
 
-    // A bit overkill to set [...] on mouse release as well as mouse move and push
-    if ((event->modifiers() & Qt::ShiftModifier) && !(event->buttons() & Qt::LeftButton))
+    if (image.isValid() || image.isDataRead())
     {
-        Selection analysis_area = p_set.current()->current()->selection();
+        // A bit overkill to set [...] on mouse release as well as mouse move and push
+        if ((event->modifiers() & Qt::ShiftModifier) && !(event->buttons() & Qt::LeftButton))
+        {
+            Selection analysis_area = p_set.current()->current()->selection();
 
-        QPoint pixel = getImagePixel(pos);
+            QPoint pixel = getImagePixel(pos);
 
-        analysis_area.setBottomRight(pixel);
+            analysis_area.setBottomRight(pixel);
 
-        analysis_area = analysis_area.normalized();
+            analysis_area = analysis_area.normalized();
 
-        refreshSelection(&analysis_area);
+            refreshSelection(&analysis_area);
 
-        p_set.current()->current()->setSelection(analysis_area);
+            p_set.current()->current()->setSelection(analysis_area);
+        }
+        else if ((event->modifiers() & Qt::ControlModifier) && !(event->buttons() & Qt::LeftButton))
+        {
+            Selection analysis_area = p_set.current()->current()->selection();
+
+            QPoint pixel = getImagePixel(pos);
+
+            analysis_area.moveCenter(pixel);
+
+            analysis_area = analysis_area.normalized();
+
+            refreshSelection(&analysis_area);
+
+            p_set.current()->current()->setSelection(analysis_area);
+        }
+
+
+        // Deselect objects
+        QList<Selection> marker(p_set.current()->current()->planeMarker());
+
+        for (int i = 0; i < marker.size(); i++)
+        {
+            marker[i].setSelected(false);
+        }
+
+        p_set.current()->setPlaneMarker(marker);
+
+        // Recalculate
+        calculus();
+        refreshDisplay();
     }
-    else if ((event->modifiers() & Qt::ControlModifier) && !(event->buttons() & Qt::LeftButton))
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
-
-        QPoint pixel = getImagePixel(pos);
-
-        analysis_area.moveCenter(pixel);
-
-        analysis_area = analysis_area.normalized();
-
-        refreshSelection(&analysis_area);
-
-        p_set.current()->current()->setSelection(analysis_area);
-    }
-
-
-    // Deselect objects
-    QList<Selection> marker(p_set.current()->current()->planeMarker());
-
-    for (int i = 0; i < marker.size(); i++)
-    {
-        marker[i].setSelected(false);
-    }
-
-    p_set.current()->setPlaneMarker(marker);
-
-    // Recalculate
-    calculus();
-    refreshDisplay();
     update();
 }
 
 void ImageOpenGLWidget::wheelEvent(QWheelEvent * event)
 {
-
     float move_scaling = 1.0;
 
     if (event->modifiers() & Qt::ShiftModifier)
@@ -3836,8 +3837,6 @@ void ImageOpenGLWidget::wheelEvent(QWheelEvent * event)
 
         update();
     }
-
-
 }
 
 SeriesSet ImageOpenGLWidget::set()
@@ -3875,7 +3874,7 @@ void ImageOpenGLWidget::saveImage(QString path)
     //    format.setTextureTarget(GL_TEXTURE_2D);
     format.setInternalTextureFormat(GL_RGBA32F);
 
-    QOpenGLFramebufferObject buffy(file.fastDimension(), file.slowDimension(), format);
+    QOpenGLFramebufferObject buffy(image.width(), image.height(), format);
 
     buffy.bind();
 
@@ -3889,7 +3888,7 @@ void ImageOpenGLWidget::saveImage(QString path)
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    glViewport(0, 0, file.fastDimension(), file.slowDimension());
+    glViewport(0, 0, image.width(), image.height());
 
     if (!p_set.isEmpty())
     {

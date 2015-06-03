@@ -58,5 +58,6 @@
         <file>art/miniload.png</file>
         <file>art/minisave.png</file>
         <file>art/crosshair_one.png</file>
+        <file>art/noimage.png</file>
     </qresource>
 </RCC>

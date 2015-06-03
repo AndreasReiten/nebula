@@ -139,9 +139,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="414.98603"
-     inkscape:cy="674.41643"
+     inkscape:zoom="1.4"
+     inkscape:cx="444.77822"
+     inkscape:cy="580.70662"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -180,7 +180,9 @@
      inkscape:groupmode="layer"
      id="layer1">
     <g
-       id="g5020">
+       id="g5020"
+       inkscape:export-xdpi="204.8"
+       inkscape:export-ydpi="204.8">
       <g
          id="g5014">
         <g
@@ -256,7 +258,9 @@
     </g>
     <g
        transform="matrix(-1,0,0,-1,770,1004.7244)"
-       id="g5020-2">
+       id="g5020-2"
+       inkscape:export-xdpi="204.8"
+       inkscape:export-ydpi="204.8">
       <g
          id="g5014-3">
         <g
@@ -332,7 +336,9 @@
     </g>
     <g
        transform="matrix(0,-1,1,0,-117.3622,887.3622)"
-       id="g5020-9">
+       id="g5020-9"
+       inkscape:export-xdpi="204.8"
+       inkscape:export-ydpi="204.8">
       <g
          id="g5014-6">
         <g
@@ -408,7 +414,9 @@
     </g>
     <g
        transform="matrix(0,1,-1,0,887.3622,117.3622)"
-       id="g5020-28">
+       id="g5020-28"
+       inkscape:export-xdpi="204.8"
+       inkscape:export-ydpi="204.8">
       <g
          id="g5014-37">
         <g
@@ -486,11 +494,15 @@
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 370,487.3622 30,30"
        id="path5184"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       inkscape:export-xdpi="204.8"
+       inkscape:export-ydpi="204.8" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 400,487.3622 -30,30"
        id="path5186"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       inkscape:export-xdpi="204.8"
+       inkscape:export-ydpi="204.8" />
   </g>
 </svg>

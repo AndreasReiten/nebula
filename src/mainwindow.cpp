@@ -898,7 +898,7 @@ void MainWindow::initConnects()
     connect(correctionFluxCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionFlux(bool)));
     connect(correctionExposureCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionExposure(bool)));
     connect(correctionPixelProjectionCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionPixelProjection(bool)));
-    connect(centerImageAction, SIGNAL(triggered()), imageOpenGLWidget, SLOT(centerImage()));
+//    connect(centerImageAction, SIGNAL(triggered()), imageOpenGLWidget, SLOT(centerImage()));
     connect(showWeightCenterAction, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(showWeightCenter(bool)));
     connect(integratePushButton, SIGNAL(clicked()), this, SLOT(applyAnalytics()));
     connect(applyPlaneMarkerPushButton, SIGNAL(clicked()), this, SLOT(applyPlaneMarker()));

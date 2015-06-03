@@ -7,6 +7,7 @@
 
 /* QT */
 //class QString;
+#include <QSizeF>
 
 /* User libs */
 //#include "../../opencl/qxopencllib.h"
@@ -44,8 +45,9 @@ class DetectorFile
         float intensity(int x, int y);
 
         const Matrix<float> &data() const;
-        int fastDimension() const;
-        int slowDimension() const;
+        int width() const;
+        int height() const;
+        QSizeF size() const;
         size_t bytes() const;
         float alpha() const;
         float beta() const;

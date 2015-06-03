@@ -88,8 +88,8 @@ DetectorFile::DetectorFile(const DetectorFile &other)
     data_buf = other.data();
 
     p_path = other.path();
-    fast_dimension = other.fastDimension();
-    slow_dimension = other.slowDimension();
+    fast_dimension = other.width();
+    slow_dimension = other.height();
 
     p_isNaive = other.isNaive();
     isFileValid = false;
@@ -282,13 +282,19 @@ float DetectorFile::getQSuggestion()
     return 1.0 / p_wavelength;
 }
 
-int DetectorFile::fastDimension() const
+int DetectorFile::width() const
 {
     return fast_dimension;
 }
-int DetectorFile::slowDimension() const
+int DetectorFile::height() const
 {
     return slow_dimension;
+}
+
+QSizeF DetectorFile::size() const
+{
+    QSizeF value(fast_dimension,slow_dimension);
+    return value;
 }
 
 size_t DetectorFile::bytes() const
