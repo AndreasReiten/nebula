@@ -870,8 +870,10 @@ void VolumeOpenGLWidget::paintGL()
     glViewport(0, 0, this->width() * retinaScale, this->height() * retinaScale);
     endRawGLCalls(&painter);
 
-    drawViewExtent(&painter);
-    drawLineTranslationVec(&painter);
+    if (isLabFrameActive)
+    {
+        drawViewExtent(&painter);
+    }
 
     if (isScalebarActive)
     {
@@ -890,8 +892,12 @@ void VolumeOpenGLWidget::paintGL()
 
     if (isSvoInitialized)
     {
-        drawLineIntegrationVolumeVisualAssist(&painter);
-        drawWeightCenter(&painter);
+        if (isScalebarActive)
+        {
+            drawLineIntegrationVolumeVisualAssist(&painter);
+            drawWeightCenter(&painter);
+            drawLineTranslationVec(&painter);
+        }
     }
 
     isDataExtentReadOnly = false;
@@ -4587,14 +4593,22 @@ void VolumeOpenGLWidget::drawViewExtent(QPainter * painter)
 
 void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
 {
+    Matrix<double> model_transform = bbox_translation * bbox_scaling * rotation;
+
     beginRawGLCalls(painter);
+    glDisable(GL_CLIP_PLANE0);
+    glDisable(GL_CLIP_PLANE1);
+    glDisable(GL_CLIP_PLANE2);
+    glDisable(GL_CLIP_PLANE3);
+    glDisable(GL_CLIP_PLANE4);
+    glDisable(GL_CLIP_PLANE5);
 
     // Generate the vertices
     Matrix<GLfloat> vertices(4, 3, 0);
 
-    vertices[1 * 3 + 0] = (data_view_extent[1] - data_view_extent[0]) * 0.5;
-    vertices[2 * 3 + 1] = (data_view_extent[1] - data_view_extent[0]) * 0.5;
-    vertices[3 * 3 + 2] = (data_view_extent[1] - data_view_extent[0]) * 0.5;
+    vertices[1 * 3 + 0] = (data_extent[1] - data_extent[0]) * 0.5;
+    vertices[2 * 3 + 1] = (data_extent[1] - data_extent[0]) * 0.5;
+    vertices[3 * 3 + 2] = (data_extent[1] - data_extent[0]) * 0.5;
 
     setVbo(lab_frame_vbo, vertices.data(), vertices.size(), GL_STATIC_DRAW);
 
@@ -4616,7 +4630,7 @@ void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
     }
 
     glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
-    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, view_matrix.colmajor().toFloat().data());
+    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, model_transform.colmajor().toFloat().data());
 
     GLuint indices[] = {0, 1, 0, 2, 0, 3};
     glDrawElements(GL_LINES,  6, GL_UNSIGNED_INT, indices);
@@ -4632,7 +4646,7 @@ void VolumeOpenGLWidget::drawLabFrame(QPainter * painter)
     painter->setFont(*font_mono_10b);
     painter->setBrush(*fill_brush);
 
-    Matrix<double> transform = (ctc_matrix * view_matrix);
+    Matrix<double> transform = (ctc_matrix * model_transform);
 
     Matrix<float> x_2d(1, 2, 0), y_2d(1, 2, 0), z_2d(1, 2, 0);
     getPosition2D(x_2d.data(), vertices.data() + 3, &transform);
