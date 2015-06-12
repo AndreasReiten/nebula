@@ -1556,7 +1556,7 @@ void MainWindow::initGUI()
         QLabel * label_mode = new QLabel(QString("View mode: "));
 
         volumeDataMinSpinBox = new QDoubleSpinBox;
-        volumeDataMinSpinBox->setDecimals(2);
+        volumeDataMinSpinBox->setDecimals(4);
         volumeDataMinSpinBox->setRange(0, 1e9);
         volumeDataMinSpinBox->setSingleStep(1);
         volumeDataMinSpinBox->setAccelerated(1);
