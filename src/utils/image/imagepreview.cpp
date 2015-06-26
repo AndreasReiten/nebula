@@ -3360,8 +3360,11 @@ void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
     Matrix<double> beam_image_pos(4, 1, 0);
     Matrix<double> beam_screen_pos(4, 1, 0);
 
-    beam_image_pos[0] = 2.0 * (image.width() - (isBeamOverrideActive ? beam_y_override : image.beamY())) / this->width(); /* DANGER */
-    beam_image_pos[1] = - 2.0 * (image.height() - (isBeamOverrideActive ? beam_x_override : image.beamX())) / this->height(); /* DANGER */
+//    pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)); /* DANGER */
+//    pix_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
+
+    beam_image_pos[0] = 2.0 * (image.width() - 0.5 - (isBeamOverrideActive ? beam_y_override : image.beamY())) / this->width(); /* DANGER */
+    beam_image_pos[1] = - 2.0 * (image.height() - 0.5 - (isBeamOverrideActive ? beam_x_override : image.beamX())) / this->height(); /* DANGER */
     beam_image_pos[2] = 0;
     beam_image_pos[3] = 1.0;
 

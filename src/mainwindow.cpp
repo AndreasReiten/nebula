@@ -1733,23 +1733,29 @@ void MainWindow::initGUI()
 
         // Real space unit cell
         aNormSpinBox = new QDoubleSpinBox;
+        aNormSpinBox->setDecimals(4);
         aNormSpinBox->setPrefix("a: ");
         bNormSpinBox = new QDoubleSpinBox;
         bNormSpinBox->setPrefix("b: ");
+        bNormSpinBox->setDecimals(4);
         cNormSpinBox = new QDoubleSpinBox;
         cNormSpinBox->setPrefix("c: ");
+        cNormSpinBox->setDecimals(4);
 
         alphaNormSpinBox = new QDoubleSpinBox;
         alphaNormSpinBox->setPrefix("α: ");
         alphaNormSpinBox->setRange(0, 180);
+        alphaNormSpinBox->setDecimals(4);
         alphaNormSpinBox->setSuffix(" °");
         betaNormSpinBox = new QDoubleSpinBox;
         betaNormSpinBox->setPrefix("β: ");
         betaNormSpinBox->setRange(0, 180);
+        betaNormSpinBox->setDecimals(4);
         betaNormSpinBox->setSuffix(" °");
         gammaNormSpinBox = new QDoubleSpinBox;
         gammaNormSpinBox->setPrefix("γ: ");
         gammaNormSpinBox->setRange(0, 180);
+        gammaNormSpinBox->setDecimals(4);
         gammaNormSpinBox->setSuffix(" °");
 
         // Reciprocal space unit cell
