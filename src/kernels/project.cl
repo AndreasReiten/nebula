@@ -1,22 +1,24 @@
 kernel void FRAME_FILTER(
-    write_only image2d_t xyzi_target,
+    write_only image2d_t xyzi_target, // TODO: Check if this actually needs to be a pic
     global float * source,
     sampler_t tsf_sampler,
     constant float * sample_rotation_matrix,
-    float h_pixel_size_x,
-    float h_pixel_size_y,
-    float h_wavelength,
-    float h_detector_distance,
-    float h_beam_x,
-    float h_beam_y,
-    float h_start_angle,
-    float h_angle_increment,
-    float h_kappa,
-    float h_phi,
-    float h_omega,
+    float pixel_size_x,
+    float pixel_size_y,
+    float wavelength,
+    float detector_distance,
+    float beam_x,
+    float beam_y,
+    float start_angle,
+    float angle_increment,
+    float kappa,
+    float phi,
+    float omega,
     int4 selection
 )
 {
+    // Project data from the detector plane onto the Ewald sphere
+
     // The frame has its axes like this, looking from the source to
     // the detector in the zero rotation position. We use the
     // cartiesian coordinate system described in
@@ -32,9 +34,6 @@ kernel void FRAME_FILTER(
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
     int2 target_dim = get_image_dim(xyzi_target);
 
-    /*
-     * Background subtraction and lorentz polarization correction. Scaling to a common factor. Finally a flat min/max filter
-     * */
     if ((id_glb.x < target_dim.x) && (id_glb.y < target_dim.y))
     {
         float4 Q = (float4)(0.0f);
@@ -55,11 +54,12 @@ kernel void FRAME_FILTER(
 
                 // The real space vector OP going from the origo (O) to the pixel (P)
                 float3 OP = (float3)(
-                                                -h_detector_distance,
-                                                h_pixel_size_x * ((float) (target_dim.y - 0.5f - id_glb.y) - h_beam_x), /* DANGER */
-                                                h_pixel_size_y * ((float) (target_dim.x - 0.5f - id_glb.x) - h_beam_y)); /* DANGER */
+                                                -detector_distance,
+                                                pixel_size_x * ((float) (target_dim.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
+                                                //pixel_size_y * ((float) (target_dim.x - 0.5f - id_glb.x) - beam_y)
+                                                pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_y))); /* DANGER */
 
-                float k = 1.0f / h_wavelength; // Multiply with 2pi if desired
+                float k = 1.0f / wavelength; // Multiply with 2pi if desired
 
                 float3 k_i = (float3)(-k, 0, 0);
                 float3 k_f = k * normalize(OP);

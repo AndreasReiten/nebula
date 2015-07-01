@@ -751,8 +751,8 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
     float pixel_size_y = file->pixSizeY();
     float wavelength = file->wavelength();
     float detector_distance = file->detectorDist();
-    float beam_center_x = (isBeamOverrideActive ? beam_x_override : file->beamX());
-    float beam_center_y = (isBeamOverrideActive ? beam_y_override : file->beamY());
+    float beam_center_x = (isBeamOverrideActive ? file->beamX() + beam_x_override : file->beamX());
+    float beam_center_y = (isBeamOverrideActive ? file->beamY() + beam_y_override : file->beamY());
     float start_angle = file->startAngle();
     float angle_increment = file->angleIncrement();
     float kappa = file->kappa();
@@ -1372,8 +1372,8 @@ void ImageOpenGLWidget::setFrame()
     parameter[5] = image.expTime();
     parameter[6] = image.wavelength();
     parameter[7] = image.detectorDist();
-    parameter[8] = (isBeamOverrideActive ? beam_x_override : image.beamX());
-    parameter[9] = (isBeamOverrideActive ? beam_y_override : image.beamY());
+    parameter[8] = (isBeamOverrideActive ? image.beamX() + beam_x_override : image.beamX());
+    parameter[9] = (isBeamOverrideActive ? image.beamY() + beam_y_override : image.beamY());
     parameter[10] = image.pixSizeX();
     parameter[11] = image.pixSizeY();
 
@@ -2851,8 +2851,9 @@ Matrix<GLfloat> ImageOpenGLWidget::glRect(QRectF &qt_rect)
 
 void ImageOpenGLWidget::centerImage(QSizeF value)
 {
-    translation_matrix[3] =  - value.width() / ( (qreal) this->width());
-    translation_matrix[7] =  value.height() / ( (qreal) this->height());
+    // Center an image using matrices that operate on the GL space
+    translation_matrix[3] =  - 2.0 * (0.5 * value.width() / ( (qreal) this->width()));
+    translation_matrix[7] =  2.0 * (0.5 * value.height() / ( (qreal) this->height()));
 
     zoom_matrix[0] = (qreal) this->width() / value.width();
     zoom_matrix[5] = (qreal) this->width() / value.width();
@@ -3067,8 +3068,9 @@ Matrix<double> ImageOpenGLWidget::getScatteringVector(DetectorFile &f, double x,
 
     Matrix<double> k_f(3, 1, 0);
     k_f[0] =    -f.detectorDist();
-    k_f[1] =    f.pixSizeX() * ((double) (f.height() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
-    k_f[2] =    f.pixSizeY() * ((double) (f.width() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
+    k_f[1] =    f.pixSizeX() * ((double) (f.height() - y - 0.5) - (isBeamOverrideActive ? f.beamX() + beam_x_override : f.beamX())); /* DANGER */
+//    k_f[2] =    f.pixSizeY() * ((double) (f.width() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
+    k_f[2] =    f.pixSizeY() * -((double) (x + 0.5) - (isBeamOverrideActive ? f.beamY() + beam_y_override : f.beamY())); /* DANGER */
 
     k_f = k * vecNormalize(k_f);
 
@@ -3088,8 +3090,9 @@ double ImageOpenGLWidget::getScatteringAngle(DetectorFile &f, double x, double y
 
     Matrix<double> k_f(1, 3, 0);
     k_f[0] =    -f.detectorDist();
-    k_f[1] =    f.pixSizeX() * ((double) (f.height() - y - 0.5) - (isBeamOverrideActive ? beam_x_override : f.beamX())); /* DANGER */
-    k_f[2] =    f.pixSizeY() * ((double) (f.width() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
+    k_f[1] =    f.pixSizeX() * ((double) (f.height() - y - 0.5) - (isBeamOverrideActive ? f.beamX() + beam_x_override : f.beamX())); /* DANGER */
+//    k_f[2] =    f.pixSizeY() * ((double) (f.width() - x - 0.5) - (isBeamOverrideActive ? beam_y_override : f.beamY())); /* DANGER */
+    k_f[2] =    f.pixSizeY() * -((double) (x + 0.5) - (isBeamOverrideActive ? f.beamY() + beam_y_override : f.beamY())); /* DANGER */
 
     k_f = k * vecNormalize(k_f);
 
@@ -3356,15 +3359,15 @@ void ImageOpenGLWidget::drawImageMarkers(QPainter * painter)
 
 void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
 {
-    // Draw circle corresponding to cone intersection of the Ewald sphere
+    // Draw circle corresponding to cone intersection of the Ewald
+//    QPointF beam_xy(image.beamY() + this->width() * 0.5, image.beamX() + this->height() * 0.5);
+//    QPointF((qreal) this->width() * 0.5, (qreal) this->height() * 0.5)
+
     Matrix<double> beam_image_pos(4, 1, 0);
     Matrix<double> beam_screen_pos(4, 1, 0);
 
-//    pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)); /* DANGER */
-//    pix_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
-
-    beam_image_pos[0] = 2.0 * (image.width() - 0.5 - (isBeamOverrideActive ? beam_y_override : image.beamY())) / this->width(); /* DANGER */
-    beam_image_pos[1] = - 2.0 * (image.height() - 0.5 - (isBeamOverrideActive ? beam_x_override : image.beamX())) / this->height(); /* DANGER */
+    beam_image_pos[0] = 2.0 * (isBeamOverrideActive ? image.beamY() + beam_y_override : image.beamY()) / this->width(); // DANGER
+    beam_image_pos[1] = 2.0 * ((isBeamOverrideActive ? image.beamX() + beam_x_override : image.beamX()) - image.height()) / this->height(); // DANGER
     beam_image_pos[2] = 0;
     beam_image_pos[3] = 1.0;
 
@@ -3385,6 +3388,7 @@ void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
     painter->setPen(pen);
 
     painter->drawLine(QPoint(beam_screen_pos[0], beam_screen_pos[1]), pos);
+
 }
 
 void ImageOpenGLWidget::drawPlaneMarkerToolTip(QPainter * painter)

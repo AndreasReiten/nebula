@@ -680,8 +680,6 @@ int DetectorFile::readData()
 
     delete[] buf;
 
-//    qDebug() << data_buf[0] << data_buf[1] << data_buf[2] << data_buf[3] << data_buf[fast_dimension-1] << data_buf[fast_dimension];
-
     isFileDataRead = true;
     return isFileDataRead;
 }

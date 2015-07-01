@@ -1878,13 +1878,13 @@ void MainWindow::initGUI()
         beamXOverrideSpinBox = new QDoubleSpinBox;
         beamXOverrideSpinBox->setRange(-5000, 5000);
         beamXOverrideSpinBox->setDecimals(2);
-        beamXOverrideSpinBox->setPrefix("x: ");
+        beamXOverrideSpinBox->setPrefix("+Δx: ");
         beamXOverrideSpinBox->setSuffix(" px");
 
         beamYOverrideSpinBox = new QDoubleSpinBox;
         beamYOverrideSpinBox->setRange(-5000, 5000);
         beamYOverrideSpinBox->setDecimals(2);
-        beamYOverrideSpinBox->setPrefix("y: ");
+        beamYOverrideSpinBox->setPrefix("+Δy: ");
         beamYOverrideSpinBox->setSuffix(" px");
 
         QLabel * label = new QLabel(QString("Active angle:"));
@@ -1898,19 +1898,19 @@ void MainWindow::initGUI()
         omegaCorrectionSpinBox = new QDoubleSpinBox;
         omegaCorrectionSpinBox->setRange(-180, 180);
         omegaCorrectionSpinBox->setDecimals(3);
-        omegaCorrectionSpinBox->setPrefix("Δω: ");
+        omegaCorrectionSpinBox->setPrefix("+Δω: ");
         omegaCorrectionSpinBox->setSuffix(" °");
 
         kappaCorrectionSpinBox = new QDoubleSpinBox;
         kappaCorrectionSpinBox->setRange(-180, 180);
         kappaCorrectionSpinBox->setDecimals(3);
-        kappaCorrectionSpinBox->setPrefix("Δκ: ");
+        kappaCorrectionSpinBox->setPrefix("+Δκ: ");
         kappaCorrectionSpinBox->setSuffix(" °");
 
         phiCorrectionSpinBox = new QDoubleSpinBox;
         phiCorrectionSpinBox->setRange(-180, 180);
         phiCorrectionSpinBox->setDecimals(3);
-        phiCorrectionSpinBox->setPrefix("Δφ: ");
+        phiCorrectionSpinBox->setPrefix("+Δφ: ");
         phiCorrectionSpinBox->setSuffix(" °");
 
 

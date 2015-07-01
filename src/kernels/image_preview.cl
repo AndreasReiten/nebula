@@ -153,8 +153,9 @@ kernel void imageCalculus(
             // The real space vector OP going from the origo (O) to the pixel (P)
             float3 OP = (float3)(
                                             -det_dist,
-                                            pix_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
-                                            pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)); /* DANGER */
+                                            pix_size_x * ((float) (image_size.y - id_glb.y - 0.5) - beam_x), /* DANGER */
+                                            //pix_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)
+                                            pix_size_y * ((float) -((id_glb.x + 0.5) - beam_y))); /* DANGER */
 
             float k = 1.0 / wavelength; // Multiply with 2pi if desired
 
