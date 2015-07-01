@@ -51,6 +51,8 @@
  *
  * Option in visualization to "enhance for visibility, at which time the max value in the current frame is read and scaled for to best use colour to show difference.
  * Contour plot
+ *
+ * Remove bloated/unused/poor functionality in a "Nebula Light" branch
  * */
 
 #include <QApplication>
