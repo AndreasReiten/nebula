@@ -1,0 +1,18 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+
+\title{\textbf{Nebula Manifesto}}
+\author{Andreas Lønning Reiten}
+\date{\today}
+\begin{document}
+
+\maketitle
+
+\section{Data files}
+When a detector data file is read to program memory from disk, it is essential that values are assigned the correct real space position before projection onto the Ewald sphere.
+\subsection{PILATUS CBF 1.2}
+Data is stored in an array much in the same way it appears when looking from the source to the (imagined) detector surface,~i.e. left to right, line by line. The beam center is provided in the header file, with respect to the bottom-left (?) corner of the image, and with the two positive directions right and up (values are approximate unless refined).
+
+
+
+\end{document}
