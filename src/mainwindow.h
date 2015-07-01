@@ -21,6 +21,7 @@
 #include "utils/image/imagepreview.h"
 #include "utils/svo/qxsvolib.h"
 #include "utils/misc/texthighlighter.h"
+#include "utils/misc/box.h"
 #include "utils/misc/line.h"
 #include "utils/misc/plotwidget.h"
 #include "utils/misc/linemodel.h"

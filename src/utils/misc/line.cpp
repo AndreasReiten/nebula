@@ -243,10 +243,6 @@ void Line::computePrism()
     p_a = vecNormalize(p_a) * p_prism_side_a;
 
     p_b = vecNormalize(vecCross(p_c, p_a)) * p_prism_side_b; // The arguments of the cross product are not permutable
-
-    //    p_a.print(3,"p_a");
-    //    p_b.print(3,"p_b");
-    //    p_c.print(3,"p_c");
 }
 
 double Line::length() const

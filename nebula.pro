@@ -73,7 +73,8 @@ HEADERS += \
     src/utils/misc/linemodel.h \
     src/utils/misc/plotwidget.h \
     src/utils/math/utils/box.h \
-    src/utils/misc/imagemarker.h
+    src/utils/misc/imagemarker.h \
+    src/utils/misc/box.h
 #    src/utils/glsl/glslfunctions.h
 
 SOURCES += \
@@ -100,7 +101,8 @@ SOURCES += \
     src/utils/misc/marker.cpp \
     src/utils/misc/linemodel.cpp \
     src/utils/misc/plotwidget.cpp \
-    src/utils/misc/imagemarker.cpp
+    src/utils/misc/imagemarker.cpp \
+    src/utils/misc/box.cpp
 #    src/utils/glsl/glslfunctions.cpp
 
 DISTFILES += \

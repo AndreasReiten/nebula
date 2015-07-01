@@ -1030,14 +1030,14 @@ void MainWindow::saveLoadedSvoMetaData()
 
 void MainWindow::saveSurfaceAsTextProxy()
 {
-    QString file_name = QFileDialog::getSaveFileName(this, "Save as text", working_dir,"Text files (*.txt);;All files (*)");
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as text", working_dir,"Data files (*.dat);;All files (*)");
 
     emit saveSurfaceAsText(file_name);
 }
 
 void MainWindow::saveLineAsTextProxy()
 {
-    QString file_name = QFileDialog::getSaveFileName(this, "Save as text", working_dir,"Text files (*.txt);;All files (*)");
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as text", working_dir,"Data files (*.dat);;All files (*)");
 
     emit saveLineAsText(file_name);
 }

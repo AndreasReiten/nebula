@@ -46,8 +46,11 @@
  *
  * In the intermediate tree, when a certain conditions are met, points are merged rather than added. Points can also be added directly into the intermediate octree rather than having them put into a list first.
  * Conditional rebinning could work. Placing values directly into intermediate octree and either rebin or split octnodes depending on data properties when they exceed a given number of points. If the contained data is smooth, then rebinning to n**3 samples is ok.
- *
+ * In lack of an easy-to-implement way of generating a both lossless and moderate intermediate data interpolation structure, it might be that values must simply be added to a "giant" octree, and only let compression ensue when the tree is deeper (more resolved) than the resolution dictated by the intersected data points (strict rebinning), or a size limit is reached  (conditional upwards rebinning, first relaxed then strict).
  * Integration boxes. You pick which side or line within the box is to be integrated along (and in which direction). Arrows indicate direction.
+ *
+ * Option in visualization to "enhance for visibility, at which time the max value in the current frame is read and scaled for to best use colour to show difference.
+ * Contour plot
  * */
 
 #include <QApplication>
@@ -56,6 +59,7 @@
 #include <QString>
 #include <QDebug>
 #include <QByteArray>
+
 //#include <QMessageBox>
 
 #include "mainwindow.h"
@@ -137,6 +141,7 @@ int main(int argc, char ** argv)
     qRegisterMetaType<Selection>();
     qRegisterMetaType<DetectorFile>();
     qRegisterMetaType<Line>();
+//    qRegisterMetaType<Box>();
     qRegisterMetaType<Matrix<double>>();
     qRegisterMetaType<Matrix<double>>();
     qRegisterMetaType<Matrix<float>>();
