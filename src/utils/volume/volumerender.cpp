@@ -53,9 +53,9 @@ void VolumeWorker::initializeOpenCLKernels()
 {
     // Build programs from OpenCL kernel source
     QStringList paths;
-    paths << "kernels/line_integral.cl";
-    paths << "kernels/plane_integral.cl";
-    paths << "kernels/weightpoint_sampler.cl";
+    paths << "kernels/integrate_line.cl";
+    paths << "kernels/integrate_plane.cl";
+    paths << "kernels/weightpoint.cl";
 
     program = context_cl.createProgram(paths, &err);
 
@@ -2717,12 +2717,12 @@ void VolumeOpenGLWidget::initializeCL()
     // Build program from OpenCL kernel source
     QStringList paths;
     paths << "kernels/models.cl";
-    paths << "kernels/render_shared.cl";
-    paths << "kernels/render_svo.cl";
-    paths << "kernels/render_model.cl";
-    paths << "kernels/integrate.cl";
+    paths << "kernels/volume_render_shared.cl";
+    paths << "kernels/volume_render_svo.cl";
+    paths << "kernels/volume_render_model.cl";
+    paths << "kernels/integrate_image.cl";
     paths << "kernels/box_sampler.cl";
-    paths << "kernels/parallel_reduce.cl";
+    paths << "kernels/parallel_reduction.cl";
 
     program = context_cl.createProgram(paths, &err);
 

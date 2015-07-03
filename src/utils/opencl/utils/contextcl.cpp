@@ -301,6 +301,13 @@ void OpenCLFunctions::initializeOpenCLFunctions()
     {
         qFatal(QString("Failed to resolve function:" + myLib.errorString()).toStdString().c_str());
     }
+
+    QOpenCLEnqueueCopyBufferRect  = (PROTOTYPE_QOpenCLEnqueueCopyBufferRect ) myLib.resolve("clEnqueueCopyBufferRect");
+
+    if (!QOpenCLEnqueueCopyBufferRect )
+    {
+        qFatal(QString("Failed to resolve function:" + myLib.errorString()).toStdString().c_str());
+    }
 }
 
 OpenCLContext::OpenCLContext()

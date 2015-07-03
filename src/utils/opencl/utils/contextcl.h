@@ -230,6 +230,20 @@ class OpenCLFunctions
 
         typedef cl_int (*PROTOTYPE_QOpenCLReleaseKernel)  ( 	cl_kernel kernel);
 
+        typedef cl_int (*PROTOTYPE_QOpenCLEnqueueCopyBufferRect) ( 	cl_command_queue command_queue,
+                                                    cl_mem src_buffer,
+                                                    cl_mem dst_buffer,
+                                                    const size_t src_origin[3],
+                                                    const size_t dst_origin[3],
+                                                    const size_t region[3],
+                                                    size_t src_row_pitch,
+                                                    size_t src_slice_pitch,
+                                                    size_t dst_row_pitch,
+                                                    size_t dst_slice_pitch,
+                                                    cl_uint num_events_in_wait_list,
+                                                    const cl_event *event_wait_list,
+                                                    cl_event *event);
+
         PROTOTYPE_QOpenCLGetProgramBuildInfo QOpenCLGetProgramBuildInfo;
         PROTOTYPE_QOpenCLCreateContext QOpenCLCreateContext;
         PROTOTYPE_QOpenCLCreateCommandQueue QOpenCLCreateCommandQueue;
@@ -259,6 +273,7 @@ class OpenCLFunctions
         PROTOTYPE_QOpenCLCreateSampler QOpenCLCreateSampler;
         PROTOTYPE_QOpenCLEnqueueWriteBuffer QOpenCLEnqueueWriteBuffer;
         PROTOTYPE_QOpenCLEnqueueReadBufferRect QOpenCLEnqueueReadBufferRect;
+        PROTOTYPE_QOpenCLEnqueueCopyBufferRect QOpenCLEnqueueCopyBufferRect;
 };
 
 class OpenCLContext : protected OpenCLFunctions

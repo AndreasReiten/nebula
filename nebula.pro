@@ -23,17 +23,9 @@ UI_DIR = .ui
 OTHER_FILES += \
     src/kernels/project.cl \
     src/kernels/voxelize.cl \
-    src/kernels/render_svo.cl \
-    src/kernels/render_shared.cl \
-    src/kernels/render_model.cl \
-    src/kernels/integrate.cl \
     src/kernels/box_sampler.cl \
     src/kernels/models.cl \
-    src/kernels/image_preview.cl \
-    src/kernels/mem_functions.cl \
-    src/kernels/parallel_reduce.cl \
     src/kernels/background_filter.cl \
-    src/kernels/line_integral.cl \
     src/shaders/std_2d_col.f.glsl \
     src/shaders/std_2d_col.v.glsl \
     src/shaders/std_2d_tex.f.glsl \
@@ -106,8 +98,15 @@ SOURCES += \
 #    src/utils/glsl/glslfunctions.cpp
 
 DISTFILES += \
-    src/kernels/weightpoint_sampler.cl \
-    src/kernels/plane_integral.cl \
     src/shaders/std_2d_sprite.v.glsl \
-    src/shaders/std_2d_sprite.f.glsl
+    src/shaders/std_2d_sprite.f.glsl \
+    src/kernels/weightpoint.cl \
+    src/kernels/volume_render_svo.cl \
+    src/kernels/volume_render_shared.cl \
+    src/kernels/volume_render_model.cl \
+    src/kernels/parallel_reduction.cl \
+    src/kernels/integrate_plane.cl \
+    src/kernels/integrate_line.cl \
+    src/kernels/integrate_image.cl \
+    src/kernels/image.cl
 

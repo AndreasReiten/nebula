@@ -24,7 +24,7 @@ void ImageWorker::setOpenCLContext(OpenCLContext context)
 {
     context_cl = context;
 
-    initializeOpenCLKernels();
+//    initializeOpenCLKernels();
 }
 
 void ImageWorker::setTraceContainer(QList<Matrix<float>> * list)
@@ -32,29 +32,23 @@ void ImageWorker::setTraceContainer(QList<Matrix<float>> * list)
     traces = list;
 }
 
-void ImageWorker::initializeOpenCLKernels()
-{
-    // Build programs from OpenCL kernel source
-    QStringList paths;
-    paths << "kernels/image_preview.cl";
+//void ImageWorker::initializeOpenCLKernels()
+//{
+//    // Build programs from OpenCL kernel source
+//    QStringList paths;
+//    paths << "kernels/image.cl";
 
-    program = context_cl.createProgram(paths, &err);
+//    program = context_cl.createProgram(paths, &err);
 
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
 
-    context_cl.buildProgram(&program, "-Werror");
+//    context_cl.buildProgram(&program, "-Werror");
 
-    // Kernel handles
-    cl_buffer_max =  QOpenCLCreateKernel(program, "bufferMax", &err);
 
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
-}
+//}
 
 void ImageWorker::reconstructSet(SeriesSet set)
 {
@@ -1027,54 +1021,54 @@ void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, 
     }
 }
 
-void ImageOpenGLWidget::copyBufferRect(cl_mem buffer_cl,
-                                       cl_mem copy_cl,
-                                       Matrix<size_t> &buffer_size,
-                                       Matrix<size_t> &buffer_origin,
-                                       Matrix<size_t> &copy_size,
-                                       Matrix<size_t> &copy_origin,
-                                       Matrix<size_t> &local_ws)
-{
-    // Prepare kernel parameters
-    Matrix<size_t> global_ws(1, 2);
-    global_ws[0] = copy_size[0] + (local_ws[0] - ((size_t) copy_size[0]) % local_ws[0]);
-    global_ws[1] = copy_size[1] + (local_ws[1] - ((size_t) copy_size[1]) % local_ws[1]);
+//void ImageOpenGLWidget::copyBufferRect(cl_mem buffer_cl,
+//                                       cl_mem copy_cl,
+//                                       Matrix<size_t> &buffer_size,
+//                                       Matrix<size_t> &buffer_origin,
+//                                       Matrix<size_t> &copy_size,
+//                                       Matrix<size_t> &copy_origin,
+//                                       Matrix<size_t> &local_ws)
+//{
+////     Prepare kernel parameters
+//    Matrix<size_t> global_ws(1, 2);
+//    global_ws[0] = copy_size[0] + (local_ws[0] - ((size_t) copy_size[0]) % local_ws[0]);
+//    global_ws[1] = copy_size[1] + (local_ws[1] - ((size_t) copy_size[1]) % local_ws[1]);
 
-    int buffer_row_pitch = buffer_size[0];
-    int copy_row_pitch = copy_size[0];
+//    int buffer_row_pitch = buffer_size[0];
+//    int copy_row_pitch = copy_size[0];
 
-    // Set kernel parameters
-    err =   QOpenCLSetKernelArg(cl_rect_copy_float,  0, sizeof(cl_mem), (void *) &buffer_cl);
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 1, sizeof(cl_int2), buffer_size.toInt().data());
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 2, sizeof(cl_int2), buffer_origin.toInt().data());
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 3, sizeof(int), &buffer_row_pitch);
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 4, sizeof(cl_mem), (void *) &copy_cl);
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 5, sizeof(cl_int2), copy_size.toInt().data());
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 6, sizeof(cl_int2), copy_origin.toInt().data());
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 7, sizeof(int), &copy_row_pitch);
-    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 8, sizeof(cl_int2), copy_size.toInt().data());
+//    // Set kernel parameters
+//    err =   QOpenCLSetKernelArg(cl_rect_copy_float,  0, sizeof(cl_mem), (void *) &buffer_cl);
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 1, sizeof(cl_int2), buffer_size.toInt().data());
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 2, sizeof(cl_int2), buffer_origin.toInt().data());
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 3, sizeof(int), &buffer_row_pitch);
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 4, sizeof(cl_mem), (void *) &copy_cl);
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 5, sizeof(cl_int2), copy_size.toInt().data());
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 6, sizeof(cl_int2), copy_origin.toInt().data());
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 7, sizeof(int), &copy_row_pitch);
+//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 8, sizeof(cl_int2), copy_size.toInt().data());
 
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
 
 
-    // Launch the kernel
-    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_rect_copy_float, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+//    // Launch the kernel
+//    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_rect_copy_float, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
 
-    err =   QOpenCLFinish(context_cl.queue());
+//    err =   QOpenCLFinish(context_cl.queue());
 
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
-}
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
+//}
 
 float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Matrix<size_t> &local_ws)
 {
@@ -1203,15 +1197,21 @@ void ImageOpenGLWidget::calculus()
         return;
     }
 
-    Matrix<size_t> origin(2, 1, 0);
+    Matrix<size_t> origin(3, 1, 0);
 
     Matrix<size_t> local_ws(1, 2);
     local_ws[0] = 64;
     local_ws[1] = 1;
 
-    Matrix<size_t> image_size(1, 2);
+    Matrix<size_t> image_size(1, 3);
     image_size[0] = image.width();
     image_size[1] = image.height();
+    image_size[2] = 0;
+
+    Matrix<size_t> image_region(1, 3);
+    image_region[0] = image.width() * sizeof(cl_float);
+    image_region[1] = image.height();
+    image_region[2] = 1;
 
     if (mode == 0)
     {
@@ -1251,7 +1251,33 @@ void ImageOpenGLWidget::calculus()
             }
 
             // Calculate the variance
-            copyBufferRect(image_data_corrected_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
+            err = QOpenCLEnqueueCopyBufferRect ( 	context_cl.queue(),
+                image_data_corrected_cl,
+                image_data_generic_cl,
+                origin.data(),
+                origin.data(),
+                image_region.data(),
+                image.width() * sizeof(cl_float),
+                0,
+                image.width() * sizeof(cl_float),
+                0,
+                0,
+                NULL,
+                NULL);
+
+            if ( err != CL_SUCCESS)
+            {
+                qFatal(cl_error_cstring(err));
+            }
+
+            err =   QOpenCLFinish(context_cl.queue());
+
+            if ( err != CL_SUCCESS)
+            {
+                qFatal(cl_error_cstring(err));
+            }
+
+//            copyBufferRect(image_data_corrected_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
 
             float mean = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
@@ -1278,14 +1304,64 @@ void ImageOpenGLWidget::calculus()
             }
 
             // Calculate the variance
-            copyBufferRect(image_data_corrected_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
+            err = QOpenCLEnqueueCopyBufferRect ( 	context_cl.queue(),
+                image_data_corrected_cl,
+                image_data_generic_cl,
+                origin.data(),
+                origin.data(),
+                image_region.data(),
+                image.width() * sizeof(cl_float),
+                0,
+                image.width() * sizeof(cl_float),
+                0,
+                0,
+                NULL,
+                NULL);
+
+            if ( err != CL_SUCCESS)
+            {
+                qFatal(cl_error_cstring(err));
+            }
+
+            err =   QOpenCLFinish(context_cl.queue());
+
+            if ( err != CL_SUCCESS)
+            {
+                qFatal(cl_error_cstring(err));
+            }
+//            copyBufferRect(image_data_corrected_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
 
             float mean = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
             imageCalcuclus(image_data_corrected_cl, image_data_variance_cl, parameter, image_size, local_ws, mean, 0, 1);
 
             // Calculate the skewness
-            copyBufferRect(image_data_variance_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
+            err = QOpenCLEnqueueCopyBufferRect ( 	context_cl.queue(),
+                image_data_variance_cl,
+                image_data_skewness_cl,
+                origin.data(),
+                origin.data(),
+                image_region.data(),
+                image.width() * sizeof(cl_float),
+                0,
+                image.width() * sizeof(cl_float),
+                0,
+                0,
+                NULL,
+                NULL);
+
+            if ( err != CL_SUCCESS)
+            {
+                qFatal(cl_error_cstring(err));
+            }
+
+            err =   QOpenCLFinish(context_cl.queue());
+
+            if ( err != CL_SUCCESS)
+            {
+                qFatal(cl_error_cstring(err));
+            }
+//            copyBufferRect(image_data_variance_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
 
             float variance = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
@@ -2349,23 +2425,20 @@ void ImageOpenGLWidget::selectionCalculus(Selection * area, cl_mem image_data_cl
     local_ws[0] = 64;
     local_ws[1] = 1;
 
-    // The memory area to be copied from
-    Matrix<size_t> buffer_size(1, 2);
-    buffer_size[0] = image_size[0];
-    buffer_size[1] = image_size[1];
-
-    Matrix<size_t> buffer_origin(1, 2);
-    buffer_origin[0] = area->left();
+    Matrix<size_t> buffer_origin(1, 3);
+    buffer_origin[0] = area->left() * sizeof(cl_float);
     buffer_origin[1] = area->top();
+    buffer_origin[2] = 0;
 
-    // The memory area to be copied into
-    Matrix<size_t> copy_size(1, 2);
-    copy_size[0] = area->width();
-    copy_size[1] = area->height();
-
-    Matrix<size_t> copy_origin(1, 2);
+    Matrix<size_t> copy_origin(1, 3);
     copy_origin[0] = 0;
     copy_origin[1] = 0;
+    copy_origin[2] = 0;
+
+    Matrix<size_t> region(1, 3);
+    region[0] = area->width() * sizeof(cl_float);
+    region[1] = area->height();
+    region[2] = 1;
 
 
     // Prepare buffers to put data into that coincides with the selected area
@@ -2403,9 +2476,72 @@ void ImageOpenGLWidget::selectionCalculus(Selection * area, cl_mem image_data_cl
     }
 
     // Transfer data to above buffers
-    copyBufferRect(image_data_cl, selection_intensity_cl, buffer_size, buffer_origin, copy_size, copy_origin, local_ws);
-    copyBufferRect(image_pos_weight_x_cl_new, selection_pos_weight_x_cl, buffer_size, buffer_origin, copy_size, copy_origin, local_ws);
-    copyBufferRect(image_pos_weight_y_cl_new, selection_pos_weight_y_cl, buffer_size, buffer_origin, copy_size, copy_origin, local_ws);
+    err = QOpenCLEnqueueCopyBufferRect ( 	context_cl.queue(),
+        image_data_cl,
+        selection_intensity_cl,
+        buffer_origin.data(),
+        copy_origin.data(),
+        region.data(),
+        image_size[0] * sizeof(cl_float),
+        0,
+        area->width() * sizeof(cl_float),
+        0,
+        0,
+        NULL,
+        NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+
+    err = QOpenCLEnqueueCopyBufferRect ( 	context_cl.queue(),
+        image_pos_weight_x_cl_new,
+        selection_pos_weight_x_cl,
+        buffer_origin.data(),
+        copy_origin.data(),
+        region.data(),
+        image_size[0] * sizeof(cl_float),
+        0,
+        area->width() * sizeof(cl_float),
+        0,
+        0,
+        NULL,
+        NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLEnqueueCopyBufferRect ( 	context_cl.queue(),
+        image_pos_weight_y_cl_new,
+        selection_pos_weight_y_cl,
+        buffer_origin.data(),
+        copy_origin.data(),
+        region.data(),
+        image_size[0] * sizeof(cl_float),
+        0,
+        area->width() * sizeof(cl_float),
+        0,
+        0,
+        NULL,
+        NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+
+    err =   QOpenCLFinish(context_cl.queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
 
     local_ws[0] = local_ws[0] * local_ws[1];
     local_ws[1] = 1;
@@ -2448,10 +2584,9 @@ void ImageOpenGLWidget::initializeCL()
 
     // Build programs from OpenCL kernel source
     QStringList paths;
-    paths << "kernels/image_preview.cl";
+    paths << "kernels/image.cl";
     paths << "kernels/project.cl";
-    paths << "kernels/mem_functions.cl";
-    paths << "kernels/parallel_reduce.cl";
+    paths << "kernels/parallel_reduction.cl";
 
     program = context_cl.createProgram(paths, &err);
 
@@ -2491,12 +2626,12 @@ void ImageOpenGLWidget::initializeCL()
         qFatal(cl_error_cstring(err));
     }
 
-    cl_rect_copy_float = QOpenCLCreateKernel(program, "rectCopyFloat", &err);
+//    cl_rect_copy_float = QOpenCLCreateKernel(program, "rectCopyFloat", &err);
 
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
 
     cl_parallel_reduction = QOpenCLCreateKernel(program, "psum", &err);
 

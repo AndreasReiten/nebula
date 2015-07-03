@@ -53,7 +53,7 @@ class ImageWorker : public QObject, protected OpenCLFunctions
         QList<Matrix<float>> * traces;
 
 
-        void initializeOpenCLKernels();
+//        void initializeOpenCLKernels();
         cl_int err;
         cl_program program;
 };
@@ -210,7 +210,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         void imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, cl_sampler tsf_sampler, int log);
 
-        void copyBufferRect(cl_mem cl_buffer, cl_mem cl_copy, Matrix<size_t> &buffer_size, Matrix<size_t> &buffer_origin, Matrix<size_t> &copy_size, Matrix<size_t> &copy_origin, Matrix<size_t> &local_ws);
+//        void copyBufferRect(cl_mem cl_buffer, cl_mem cl_copy, Matrix<size_t> &buffer_size, Matrix<size_t> &buffer_origin, Matrix<size_t> &copy_size, Matrix<size_t> &copy_origin, Matrix<size_t> &local_ws);
 
         float sumGpuArray(cl_mem cl_data, unsigned int read_size, Matrix<size_t> &local_ws);
 
@@ -246,7 +246,6 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         cl_kernel cl_image_calculus;
         cl_kernel cl_buffer_max;
         cl_kernel cl_project_kernel;
-        cl_kernel cl_rect_copy_float;
         cl_kernel cl_parallel_reduction;
         cl_mem image_tex_cl;
         cl_mem source_cl;
