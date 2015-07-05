@@ -44,40 +44,40 @@ kernel void modelRayTrace(
         float integrated_intensity = 0.0f;
 
         {
-            float4 rayNearEdge, rayFarEdge;
+            float4 ray_near_corner, ray_far_corner;
             float3 pixel_radius_near, pixel_radius_far;
 
-            // Normalized device coordinates (ndc) of the pixel and its edge (in screen coordinates)
-            float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f) / convert_float2(ray_tex_dim)) - 1.0f);
-            float2 ndc_edge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f)) / convert_float2(ray_tex_dim)) - 1.0f);
+            // Normalized device coordinates (pixel_gl_screen_pos) of the pixel and its edge (in screen coordinates)
+            float2 pixel_gl_screen_pos = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f) / convert_float2(ray_tex_dim)) - 1.0f);
+            float2 pixel_corner_gl_screen_pos = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f)) / convert_float2(ray_tex_dim)) - 1.0f);
 
             // Ray origin and exit point (screen coordinates)
-            float4 ray_near_ndc = (float4)(ndc, -1.0f, 1.0f);
-            float4 ray_far_ndc = (float4)(ndc, 1.0f, 1.0f);
+            float4 ray_near_ndc = (float4)(pixel_gl_screen_pos, -1.0f, 1.0f);
+            float4 ray_far_ndc = (float4)(pixel_gl_screen_pos, 1.0f, 1.0f);
 
-            float4 ray_near_ndc_edge = (float4)(ndc_edge, -1.0f, 1.0f);
-            float4 ray_far_ndc_edge = (float4)(ndc_edge, 1.0f, 1.0f);
+            float4 ray_near_ndc_corner = (float4)(pixel_corner_gl_screen_pos, -1.0f, 1.0f);
+            float4 ray_far_ndc_corner = (float4)(pixel_corner_gl_screen_pos, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            ray_near = sc2xyz(data_view_matrix, ray_near_ndc);
-            ray_far = sc2xyz(data_view_matrix, ray_far_ndc);
-            rayNearEdge = sc2xyz(data_view_matrix, ray_near_ndc_edge);
-            rayFarEdge = sc2xyz(data_view_matrix, ray_far_ndc_edge);
+            ray_near = glScreenPosToEuclidean(data_view_matrix, ray_near_ndc);
+            ray_far = glScreenPosToEuclidean(data_view_matrix, ray_far_ndc);
+            ray_near_corner = glScreenPosToEuclidean(data_view_matrix, ray_near_ndc_corner);
+            ray_far_corner = glScreenPosToEuclidean(data_view_matrix, ray_far_ndc_corner);
 
             ray_delta = ray_far.xyz - ray_near.xyz;
-            pixel_radius_near = rayNearEdge.xyz - ray_near.xyz;
-            pixel_radius_far = rayFarEdge.xyz - ray_far.xyz;
+            pixel_radius_near = ray_near_corner.xyz - ray_near.xyz;
+            pixel_radius_far = ray_far_corner.xyz - ray_far.xyz;
 
             // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central ray_delta vector
-            float3 a1Near = native_divide(dot(pixel_radius_near, ray_delta), dot(ray_delta, ray_delta)) * ray_delta;
-            float3 a2Near = pixel_radius_near - a1Near;
+            float3 a1_near = dot(pixel_radius_near, normalize(ray_delta)) * normalize(ray_delta);
+            float3 a2_near = pixel_radius_near - a1_near;
 
-            float3 a1Far = native_divide(dot(pixel_radius_far, ray_delta), dot(ray_delta, ray_delta)) * ray_delta;
-            float3 a2Far = pixel_radius_far - a1Far;
+            float3 a1_far = dot(pixel_radius_far, normalize(ray_delta)) * normalize(ray_delta);
+            float3 a2_far = pixel_radius_far - a1_far;
 
             // The geometry of the cone
-            cone_diameter_increment = 2.0f * native_divide( length(a2Far - a2Near), length(ray_delta - a1Near + a1Far) );
-            cone_diameter_near = 2.0f * length(a2Near); // small approximation
+            cone_diameter_increment = 2.0f * ( length(a2_far - a2_near)/ length(ray_delta - a1_near + a1_far) );
+            cone_diameter_near = 2.0f * length(a2_near) - cone_diameter_increment*length(a1_near);
         }
 
         int hit = 0;

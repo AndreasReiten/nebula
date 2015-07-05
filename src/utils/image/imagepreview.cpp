@@ -24,7 +24,7 @@ void ImageWorker::setOpenCLContext(OpenCLContext context)
 {
     context_cl = context;
 
-//    initializeOpenCLKernels();
+    initializeOpenCLKernels();
 }
 
 void ImageWorker::setTraceContainer(QList<Matrix<float>> * list)
@@ -32,23 +32,30 @@ void ImageWorker::setTraceContainer(QList<Matrix<float>> * list)
     traces = list;
 }
 
-//void ImageWorker::initializeOpenCLKernels()
-//{
-//    // Build programs from OpenCL kernel source
-//    QStringList paths;
-//    paths << "kernels/image.cl";
+void ImageWorker::initializeOpenCLKernels()
+{
+    // Build programs from OpenCL kernel source
+    QStringList paths;
+    paths << "kernels/image.cl";
 
-//    program = context_cl.createProgram(paths, &err);
+    program = context_cl.createProgram(paths, &err);
 
-//    if ( err != CL_SUCCESS)
-//    {
-//        qFatal(cl_error_cstring(err));
-//    }
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
 
-//    context_cl.buildProgram(&program, "-Werror");
+    context_cl.buildProgram(&program, "-Werror");
+
+    cl_buffer_max =  QOpenCLCreateKernel(program, "bufferMax", &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
 
 
-//}
+}
 
 void ImageWorker::reconstructSet(SeriesSet set)
 {
@@ -2612,14 +2619,7 @@ void ImageOpenGLWidget::initializeCL()
         qFatal(cl_error_cstring(err));
     }
 
-    cl_buffer_max =  QOpenCLCreateKernel(program, "bufferMax", &err);
-
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
-
-    cl_project_kernel = QOpenCLCreateKernel(program, "FRAME_FILTER", &err);
+    cl_project_kernel = QOpenCLCreateKernel(program, "project_image", &err);
 
     if ( err != CL_SUCCESS)
     {

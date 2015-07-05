@@ -512,6 +512,8 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         cl_mem cl_tsf_parameters_svo;
         cl_mem cl_misc_ints;
         cl_mem cl_model_misc_floats;
+//        cl_mem cl_oct_index_const;
+//        cl_mem cl_oct_brick_const;
 
         void initializeCL();
 

@@ -546,6 +546,7 @@ void VoxelizeWorker::process()
                     int tmp = svo->brickOuterDimension(); // why a separate variable?
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 9, sizeof(cl_int), &tmp);
                     err |= QOpenCLSetKernelArg( voxelize_kernel, 10, sizeof(cl_float), &search_radius);
+                    err |= QOpenCLSetKernelArg( voxelize_kernel, 11, sizeof(cl_float), &suggested_search_radius_high);
 
                     if ( err != CL_SUCCESS)
                     {

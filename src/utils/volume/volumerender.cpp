@@ -2864,6 +2864,26 @@ void VolumeOpenGLWidget::initializeCL()
     {
         qFatal(cl_error_cstring(err));
     }
+
+//    cl_oct_index_const = QOpenCLCreateBuffer(context_cl.context(),
+//                          CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+//                          (1 + 8 + 8*8)* sizeof(cl_uint),
+//                          NULL, &err);
+
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
+
+//    cl_oct_brick_const = QOpenCLCreateBuffer(context_cl.context(),
+//                          CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+//                          (1 + 8 + 8*8)* sizeof(cl_uint),
+//                          NULL, &err);
+
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
 }
 
 void VolumeOpenGLWidget::setViewMatrices()

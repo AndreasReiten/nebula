@@ -65,9 +65,9 @@ kernel void weightpointSampler(
 
         float voxel_size = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << j)));
 
-        bool isLowEnough = (voxel_size < (data_view_extent[1] - data_view_extent[0]) / (float)(size_glb.x - 1));
+        bool is_low_enough = (voxel_size < (data_view_extent[1] - data_view_extent[0]) / (float)(size_glb.x - 1));
 
-        if (isMsd || isLowEnough)
+        if (isMsd || is_low_enough)
         {
             if (isEmpty)
             {

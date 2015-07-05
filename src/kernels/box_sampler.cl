@@ -17,7 +17,7 @@ kernel void boxSample(
     pos.y = data_view_extent[2] + (data_view_extent[3] - data_view_extent[2]) * native_divide((float)get_global_id(1) + 0.5f, (float)get_global_size(1));
     pos.z = data_view_extent[4] + (data_view_extent[5] - data_view_extent[4]) * native_divide((float)get_global_id(2) + 0.5f, (float)get_global_size(2));
 
-    uint node_brick, node_index, isMsd, isLowEnough, isEmpty;
+    uint node_brick, node_index, isMsd, is_low_enough, isEmpty;
     float4 lookup_pos;
     uint4 brick_id;
     int3 norm_index;
@@ -71,10 +71,10 @@ kernel void boxSample(
 
             isMsd = (node_index & mask_msd_flag) >> 31;
             isEmpty = !((node_index & mask_data_flag) >> 30);
-            //            isLowEnough = (sample_interdist > voxel_size_this_lvl);
+            //            is_low_enough = (sample_interdist > voxel_size_this_lvl);
 
-            //// BUG: Seems to me that the quadrilinear interpolation and early termination from isLowEnough results in quite incorrect integration although it is hard to say for sure.
-            if (isMsd  || isEmpty)// || isLowEnough)
+            //// BUG: Seems to me that the quadrilinear interpolation and early termination from is_low_enough results in quite incorrect integration although it is hard to say for sure.
+            if (isMsd  || isEmpty)// || is_low_enough)
             {
                 //                // Sample brick
                 //                if (j >= 1)

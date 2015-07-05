@@ -53,7 +53,7 @@ class ImageWorker : public QObject, protected OpenCLFunctions
         QList<Matrix<float>> * traces;
 
 
-//        void initializeOpenCLKernels();
+        void initializeOpenCLKernels();
         cl_int err;
         cl_program program;
 };

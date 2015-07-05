@@ -1,3 +1,8 @@
+float4 brickColor2(float value)
+{
+    return (float4)(0.0, 1.0f-value, value, 1.0f);
+}
+
 float4 brickColor(int value)
 {
     if (value == 0)
@@ -105,6 +110,9 @@ kernel void svoRayTrace(
     constant int * misc_int,
     constant float * scalebar_rotation,
     write_only image2d_t integration_tex
+//    constant uint * oct_index_const,
+//    constant local uint * oct_brick_const,
+//    int const_size;
 )
 {
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
@@ -140,42 +148,42 @@ kernel void svoRayTrace(
         float cone_diameter_near;
         float integrated_intensity = 0.0f;
         {
-            float4 rayNearEdge, rayFarEdge;
+            float4 ray_near_corner, ray_far_corner;
             float3 pixel_radius_near, pixel_radius_far;
 
-            // Normalized device coordinates (ndc) of the pixel and its edge (in screen coordinates)
-            float2 ndc = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f) / convert_float2(ray_tex_dim)) - 1.0f);
-            float2 ndc_edge = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f)) / convert_float2(ray_tex_dim)) - 1.0f);
+            // Normalized device coordinates (pixel_gl_screen_pos) of the pixel and its edge (in screen coordinates)
+            float2 pixel_gl_screen_pos = (float2)(2.0f * (( convert_float2(id_glb) + 0.5f) / convert_float2(ray_tex_dim)) - 1.0f);
+            float2 pixel_corner_gl_screen_pos = (float2)(2.0f * (( convert_float2(id_glb) + (float2)(1.0f, 1.0f)) / convert_float2(ray_tex_dim)) - 1.0f);
 
             // Ray origin and exit point (screen coordinates)
             // z = 1 corresponds to far plane
             // z = -1 corresponds to near plane
-            float4 ray_near_ndc = (float4)(ndc, -1.0f, 1.0f);
-            float4 ray_far_ndc = (float4)(ndc, 1.0f, 1.0f);
+            float4 ray_near_ndc = (float4)(pixel_gl_screen_pos, -1.0f, 1.0f);
+            float4 ray_far_ndc = (float4)(pixel_gl_screen_pos, 1.0f, 1.0f);
 
-            float4 ray_near_ndc_edge = (float4)(ndc_edge, -1.0f, 1.0f);
-            float4 ray_far_ndc_edge = (float4)(ndc_edge, 1.0f, 1.0f);
+            float4 ray_near_ndc_corner = (float4)(pixel_corner_gl_screen_pos, -1.0f, 1.0f);
+            float4 ray_far_ndc_corner = (float4)(pixel_corner_gl_screen_pos, 1.0f, 1.0f);
 
             // Ray entry point at near and far plane
-            ray_near = sc2xyz(data_view_matrix, ray_near_ndc);
-            ray_far = sc2xyz(data_view_matrix, ray_far_ndc);
-            rayNearEdge = sc2xyz(data_view_matrix, ray_near_ndc_edge);
-            rayFarEdge = sc2xyz(data_view_matrix, ray_far_ndc_edge);
+            ray_near = glScreenPosToEuclidean(data_view_matrix, ray_near_ndc);
+            ray_far = glScreenPosToEuclidean(data_view_matrix, ray_far_ndc);
+            ray_near_corner = glScreenPosToEuclidean(data_view_matrix, ray_near_ndc_corner);
+            ray_far_corner = glScreenPosToEuclidean(data_view_matrix, ray_far_ndc_corner);
 
             ray_delta = ray_far.xyz - ray_near.xyz;
-            pixel_radius_near = rayNearEdge.xyz - ray_near.xyz;
-            pixel_radius_far = rayFarEdge.xyz - ray_far.xyz;
+            pixel_radius_near = ray_near_corner.xyz - ray_near.xyz;
+            pixel_radius_far = ray_far_corner.xyz - ray_far.xyz;
 
             // The ray is treated as a cone of a certain diameter. In a perspective projection, this diameter typically increases along the direction of ray propagation. We calculate the diameter width incrementation per unit length by rejection of the pixel_radius vector onto the central ray_delta vector
-            float3 a1Near = native_divide(dot(pixel_radius_near, ray_delta), dot(ray_delta, ray_delta)) * ray_delta;
-            float3 a2Near = pixel_radius_near - a1Near;
+            float3 a1_near = dot(pixel_radius_near, normalize(ray_delta)) * normalize(ray_delta);
+            float3 a2_near = pixel_radius_near - a1_near;
 
-            float3 a1Far = native_divide(dot(pixel_radius_far, ray_delta), dot(ray_delta, ray_delta)) * ray_delta;
-            float3 a2Far = pixel_radius_far - a1Far;
+            float3 a1_far = dot(pixel_radius_far, normalize(ray_delta)) * normalize(ray_delta);
+            float3 a2_far = pixel_radius_far - a1_far;
 
             // The geometry of the cone
-            cone_diameter_increment = 2.0f * native_divide( length(a2Far - a2Near), length(ray_delta - a1Near + a1Far) );
-            cone_diameter_near = 2.0f * length(a2Near); // small approximation
+            cone_diameter_increment = 2.0f * ( length(a2_far - a2_near)/ length(ray_delta - a1_near + a1_far) );
+            cone_diameter_near = 2.0f * length(a2_near) - cone_diameter_increment*length(a1_near);
         }
 
         // To limit resource spending we limit the ray to the intersection between itself and a bounding box
@@ -210,7 +218,7 @@ kernel void svoRayTrace(
             float cone_diameter;
             float cone_diameter_low = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (n_tree_levels - 1))));
             float cone_diameter_high = (data_extent[1] - data_extent[0]) / ((float)((brick_dim - 1) * (1 << (0))));
-            uint index_this_lvl, index_prev_lvl, brick, is_msd, isLowEnough, is_empty;
+            uint index_this_lvl, index_prev_lvl, brick, is_msd, is_low_enough, is_empty;
             float3 box_ray_xyz, box_ray_xyz_prev, ray_add_box;
             float3 norm_pos_this_lvl, norm_pos_prev_lvl;
             float3 tmp_a, tmp_b;
@@ -306,7 +314,7 @@ kernel void svoRayTrace(
                             brick = oct_index[index_this_lvl];
                             is_msd = isMsd(brick);
                             is_empty = isEmpty(brick);
-                            isLowEnough = (cone_diameter > voxel_size_this_lvl);
+                            is_low_enough = (cone_diameter > voxel_size_this_lvl);
 
                             if (is_empty)
                             {
@@ -329,10 +337,10 @@ kernel void svoRayTrace(
                                     break;
                                 }
                             }
-                            else if (is_msd || isLowEnough)
+                            else if (is_msd || is_low_enough)
                             {
                                 // Sample brick
-                                if (isLowEnough && (j >= 1))
+                                if (is_low_enough && (j >= 1))
                                 {
                                     /* Quadrilinear interpolation between two bricks */
 
@@ -475,9 +483,9 @@ kernel void svoRayTrace(
 
                         is_msd = isMsd(brick);
                         is_empty = isEmpty(brick);
-                        isLowEnough = (cone_diameter > voxel_size_this_lvl);
+                        is_low_enough = (cone_diameter > voxel_size_this_lvl);
 
-                        if (is_msd || isLowEnough || is_empty)
+                        if (is_msd || is_low_enough || is_empty)
                         {
                             // Sample brick
                             if (isDsActive)
@@ -600,13 +608,12 @@ kernel void svoRayTrace(
 
                             break;
                         }
-                        else
+                        else // Descend to the next level
                         {
                             // Save values from this level to enable quadrilinear interpolation between levels
                             index_prev_lvl = index_this_lvl;
                             norm_pos_prev_lvl = norm_pos_this_lvl;
 
-                            // Descend to the next level
                             index_this_lvl = child(oct_index[index_this_lvl]);
                             index_this_lvl += norm_index.x + norm_index.y * 2 + norm_index.z * 4;
 

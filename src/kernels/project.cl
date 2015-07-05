@@ -1,4 +1,4 @@
-kernel void FRAME_FILTER(
+kernel void project_image(
     write_only image2d_t xyzi_target, // TODO: Check if this actually needs to be a pic
     global float * source,
     sampler_t tsf_sampler,

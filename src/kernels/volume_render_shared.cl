@@ -87,7 +87,7 @@ int boundingBoxIntersectNorm(float3 r_origin, float3 r_delta, float * t_near, fl
     return smallest_t_max > largest_t_min;
 }
 
-float4 sc2xyz( constant float * A, float4 x)
+float4 glScreenPosToEuclidean( constant float * A, float4 x)
 {
     // This is an adapted matrix multiplication function
 

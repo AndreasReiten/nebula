@@ -9,7 +9,9 @@ kernel void voxelize(
     global float * variance_check,
     local float * addition_array,
     uint brick_outer_dimension,
-    float search_radius
+    float search_radius,
+    float data_point_radius
+
 )
 {
     // Each Work Group is one brick. Each Work Item is one interpolation point in the brick.
@@ -33,28 +35,60 @@ kernel void voxelize(
     float sum_distance = 0.0f;
     float dst;
 
-    for (int i = 0; i < point_data_count[id_wg]; i++)
+    if (1) // Inverse distance weighting (IDW) interpolation
     {
-        point = point_data[point_data_offset[id_wg] + i];
-        dst = fast_distance(xyzw.xyz, point.xyz);
-
-        if (dst <= 0.0f)
+        for (int i = 0; i < point_data_count[id_wg]; i++)
         {
-            sum_intensity = point.w;
-            sum_distance = 1.0f;
-            break;
+            point = point_data[point_data_offset[id_wg] + i];
+            dst = fast_distance(xyzw.xyz, point.xyz);
+
+            if (dst <= 0.0f)
+            {
+                sum_intensity = point.w;
+                sum_distance = 1.0f;
+                break;
+            }
+
+            if (dst <= search_radius)
+            {
+                sum_intensity += native_divide(point.w, dst);
+                sum_distance += native_divide(1.0f, dst);
+            }
         }
 
-        if (dst <= search_radius)
+        if (sum_distance > 0)
         {
-            sum_intensity += native_divide(point.w, dst);
-            sum_distance += native_divide(1.0f, dst);
+            xyzw.w = sum_intensity / sum_distance;
         }
     }
-
-    if (sum_distance > 0)
+    if (0) // IDW interpolation combined with approximate volume fill ratio linear scaling
     {
-        xyzw.w = sum_intensity / sum_distance;
+        float fill_ratio = min(1.0f, (float) point_data_count[id_wg] *  (4.0f*M_PI_F/3.0f) * pow(0.5f*data_point_radius,3.0f) / pow(sample_interdistance*7,3.0f));
+
+
+        for (int i = 0; i < point_data_count[id_wg]; i++)
+        {
+            point = point_data[point_data_offset[id_wg] + i];
+            dst = fast_distance(xyzw.xyz, point.xyz);
+
+            if (dst <= 0.0f)
+            {
+                sum_intensity = point.w;
+                sum_distance = 1.0f;
+                break;
+            }
+
+            if (dst <= search_radius)
+            {
+                sum_intensity += native_divide(point.w, dst);
+                sum_distance += native_divide(1.0f, dst);
+            }
+        }
+
+        if (sum_distance > 0)
+        {
+            xyzw.w = sum_intensity * fill_ratio / sum_distance;
+        }
     }
 
     // Pass result to output array
