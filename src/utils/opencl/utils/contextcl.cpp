@@ -15,7 +15,10 @@
 #include <CL/cl_gl.h>
 
 #ifdef Q_OS_WIN
+//extern "C" {
     #include <windows.h>
+    #include <wingdi.h>
+//}
 #elif defined Q_OS_LINUX
     #include <GL/glx.h>
 #endif
@@ -32,7 +35,7 @@ OpenCLFunctions::~OpenCLFunctions()
 
 void OpenCLFunctions::initializeOpenCLFunctions()
 {
-    if (QLibrary::isLibrary("OpenCL")) qFatal("OpenCL was not a found as a loadable library. Are OpenCL drivers installed?");
+    if (!QLibrary::isLibrary("OpenCL")) qWarning("OpenCL was not found as a loadable library. Are OpenCL drivers installed?");
 
     QLibrary myLib("OpenCL");
 
@@ -815,4 +818,4 @@ const char * cl_error_cstring(cl_int err)
         default:
             return "Unknown";
     }
-}
+};

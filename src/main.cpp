@@ -61,6 +61,8 @@
 #include <QString>
 #include <QDebug>
 #include <QByteArray>
+#include <QStyleFactory>
+#include <QLocale>
 
 //#include <QMessageBox>
 
@@ -128,6 +130,10 @@ void appOutput(QtMsgType type, const QMessageLogContext &context, const QString 
 /* This is the top level of the GUI application*/
 int main(int argc, char ** argv)
 {
+    // Fusion style
+    QLocale::setDefault(QLocale::C);
+    qApp->setStyle(QStyleFactory::create("Fusion"));
+
     // Initialize the log file
     QDateTime dateTime = dateTime.currentDateTime();
     QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));

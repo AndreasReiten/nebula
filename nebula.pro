@@ -1,6 +1,8 @@
 # QMAKE PROJECT FILE
 win32 {
     INCLUDEPATH = src/utils/opencl/khronos/
+    RC_ICONS = art/app.ico
+    LIBS += -lOpenGL32
 }
 
 unix {
@@ -8,12 +10,13 @@ unix {
     QMAKE_CXXFLAGS += -std=c++0x # C++11
 }
 
-QT += widgets
+QT += core gui
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets network
 
 TARGET = nebula
 QMAKE_MAKEFILE = Makefile
 RESOURCES  = nebula.qrc
-RC_ICONS = art/app.ico
 
 OBJECTS_DIR = .obj
 MOC_DIR = .moc
@@ -67,7 +70,6 @@ HEADERS += \
     src/utils/math/utils/box.h \
     src/utils/misc/imagemarker.h \
     src/utils/misc/box.h
-#    src/utils/glsl/glslfunctions.h
 
 SOURCES += \
     src/utils/file/utils/fileformat.cpp \
@@ -95,7 +97,6 @@ SOURCES += \
     src/utils/misc/plotwidget.cpp \
     src/utils/misc/imagemarker.cpp \
     src/utils/misc/box.cpp
-#    src/utils/glsl/glslfunctions.cpp
 
 DISTFILES += \
     src/shaders/std_2d_sprite.v.glsl \

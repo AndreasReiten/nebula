@@ -2525,62 +2525,62 @@ void VolumeOpenGLWidget::drawCenterLine(QPainter * painter)
     endRawGLCalls(painter);
 }
 
-void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm)
-{
-    Matrix<float> point_coords(1, 3 * 100, 0.0);
-    point_coords[0 * 3 + 2] = -5;
-    point_coords[1 * 3 + 2] = 5;
+//void VolumeOpenGLWidget::drawSenseOfRotation(double zeta, double eta, double rpm)
+//{
+//    Matrix<float> point_coords(1, 3 * 100, 0.0);
+//    point_coords[0 * 3 + 2] = -5;
+//    point_coords[1 * 3 + 2] = 5;
 
-    for (int i = 2; i < 100; i++)
-    {
-        point_coords[i * 3 + 2] = -5.0 + (10.0 / 97.0) * (i - 2);
-        point_coords[i * 3 + 0] = 0.5 * sin(2.0 * point_coords[i * 3 + 2]);
-        point_coords[i * 3 + 1] = 0.5 * cos(2.0 * point_coords[i * 3 + 2]);
-    }
+//    for (int i = 2; i < 100; i++)
+//    {
+//        point_coords[i * 3 + 2] = -5.0 + (10.0 / 97.0) * (i - 2);
+//        point_coords[i * 3 + 0] = 0.5 * sin(2.0 * point_coords[i * 3 + 2]);
+//        point_coords[i * 3 + 1] = 0.5 * cos(2.0 * point_coords[i * 3 + 2]);
+//    }
 
-    setVbo(point_vbo, point_coords.data(), 3 * 100, GL_DYNAMIC_DRAW);
-
-
-    std_3d_col_program->bind();
-    glEnableVertexAttribArray(std_3d_col_fragpos);
-
-    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
-    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    setVbo(point_vbo, point_coords.data(), 3 * 100, GL_DYNAMIC_DRAW);
 
 
-    double gamma = fmod(session_age.elapsed() * (rpm / 60000) * 2 * pi, 2 * pi);
+//    std_3d_col_program->bind();
+//    glEnableVertexAttribArray(std_3d_col_fragpos);
 
-    // Vertices on the axis
-    RotationMatrix<double> point_on_axis, RyPlus, RxPlus;
-    RyPlus.setYRotation(zeta);
-    RxPlus.setXRotation(eta);
-    point_on_axis = bbox_translation * bbox_scaling * rotation * RyPlus * RxPlus;
-
-    // Vertices rotating around the axis
-    RotationMatrix<double> point_around_axis, axis_rotation;
-    axis_rotation.setArbRotation(zeta, eta, gamma);
-    point_around_axis = bbox_translation * bbox_scaling * rotation * axis_rotation * RyPlus * RxPlus;
+//    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
+//    glVertexAttribPointer(std_3d_col_fragpos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
-    glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
+//    double gamma = fmod(session_age.elapsed() * (rpm / 60000) * 2 * pi, 2 * pi);
 
-    glPointSize(5);
+//    // Vertices on the axis
+//    RotationMatrix<double> point_on_axis, RyPlus, RxPlus;
+//    RyPlus.setYRotation(zeta);
+//    RxPlus.setXRotation(eta);
+//    point_on_axis = bbox_translation * bbox_scaling * rotation * RyPlus * RxPlus;
+
+//    // Vertices rotating around the axis
+//    RotationMatrix<double> point_around_axis, axis_rotation;
+//    axis_rotation.setArbRotation(zeta, eta, gamma);
+//    point_around_axis = bbox_translation * bbox_scaling * rotation * axis_rotation * RyPlus * RxPlus;
 
 
-    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
-    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, point_around_axis.colmajor().toFloat().data());
-    glDrawArrays(GL_POINTS,  2, 98);
+//    glUniform4fv(std_3d_col_color, 1, clear_color_inverse.data());
+
+//    glPointSize(5);
 
 
-    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
-    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, point_on_axis.colmajor().toFloat().data());
-    glDrawArrays(GL_LINE_STRIP,  0, 2);
+//    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+//    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, point_around_axis.colmajor().toFloat().data());
+//    glDrawArrays(GL_POINTS,  2, 98);
 
-    glDisableVertexAttribArray(std_3d_col_fragpos);
 
-    std_3d_col_program->release();
-}
+//    glUniformMatrix4fv(std_3d_col_projection_transform, 1, GL_FALSE, ctc_matrix.colmajor().toFloat().data());
+//    glUniformMatrix4fv(std_3d_col_model_transform, 1, GL_FALSE, point_on_axis.colmajor().toFloat().data());
+//    glDrawArrays(GL_LINE_STRIP,  0, 2);
+
+//    glDisableVertexAttribArray(std_3d_col_fragpos);
+
+//    std_3d_col_program->release();
+//}
 
 void VolumeOpenGLWidget::wheelEvent(QWheelEvent * ev)
 {

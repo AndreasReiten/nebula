@@ -59,73 +59,40 @@ MainWindow::MainWindow() :
     // Set start conditions
     setStartConditions();
 
-
-    // --------------------------
-//    double k = 1.0 / 0.77982;
-//    double det_dist = 0.466;
-//    double pix_size_x = 172e-6;
-//    double pix_size_y = 172e-6;
-//    double add_y = 4000.0;
-
-//    for (int i = -2; i <= 2; i+=1)
-//    {
-//        double add_z = i*2000.0;
-
-//        Matrix<double> a_vec(1,3);
-//        a_vec[0] = -det_dist;
-//        a_vec[1] = pix_size_x * (0.5+add_y);
-//        a_vec[2] = pix_size_y * (-0.5+add_z);
-
-//        a_vec = k * vecNormalize(a_vec);
-
-//        Matrix<double> b_vec(1,3);
-//        b_vec[0] = -det_dist;
-//        b_vec[1] = pix_size_x * (-0.5+add_y);
-//        b_vec[2] = pix_size_y * (-0.5+add_z);
-
-//        b_vec = k * vecNormalize(b_vec);
-
-//        Matrix<double> c_vec(1,3);
-//        c_vec[0] = -det_dist;
-//        c_vec[1] = pix_size_x * (-0.5+add_y);
-//        c_vec[2] = pix_size_y * (0.5+add_z);
-
-//        c_vec = k * vecNormalize(c_vec);
-
-//        Matrix<double> d_vec(1,3);
-//        d_vec[0] = -det_dist;
-//        d_vec[1] = pix_size_x * (0.5+add_y);
-//        d_vec[2] = pix_size_y * (0.5+add_z);
-
-//        d_vec = k * vecNormalize(d_vec);
-
-//        a_vec.print(6,"a_vec");
-//        b_vec.print(6,"b_vec");
-//        c_vec.print(6,"c_vec");
-//        d_vec.print(6,"d_vec");
-
-//        Matrix<double> ab_vec(1,3);
-//        Matrix<double> ac_vec(1,3);
-//        Matrix<double> ad_vec(1,3);
-
-//        ab_vec = b_vec - a_vec;
-//        ac_vec = c_vec - a_vec;
-//        ad_vec = d_vec - a_vec;
-
-//        double area = 0.5*fabs(vecLength(vecCross(ab_vec,ac_vec))) + 0.5*fabs(vecLength(vecCross(ac_vec,ad_vec)));
-
-        // The area of the two spherical triangles spanned by the projected pixel
-
-
-//        qDebug() << area;
-//    }
-
+    setDarkTheme();
 }
 
 MainWindow::~MainWindow()
 {
     voxelizeThread->quit();
     voxelizeThread->wait();
+}
+
+void MainWindow::setDarkTheme()
+{
+    QPalette palette;
+    palette.setColor(QPalette::Window, QColor(53,53,53));
+    palette.setColor(QPalette::WindowText, Qt::white);
+    palette.setColor(QPalette::Base, QColor(15,15,15));
+    palette.setColor(QPalette::AlternateBase, QColor(53,53,53));
+    palette.setColor(QPalette::ToolTipBase, Qt::white);
+    palette.setColor(QPalette::ToolTipText, Qt::white);
+    palette.setColor(QPalette::Text, Qt::white);
+    palette.setColor(QPalette::Button, QColor(53,53,53));
+    palette.setColor(QPalette::ButtonText, Qt::white);
+    palette.setColor(QPalette::BrightText, Qt::red);
+    palette.setColor(QPalette::Disabled, QPalette::Text, Qt::darkGray);
+    palette.setColor(QPalette::Disabled, QPalette::ButtonText, Qt::darkGray);
+    palette.setColor(QPalette::Highlight, QColor(142,45,197).lighter());
+    palette.setColor(QPalette::HighlightedText, Qt::black);
+
+    qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+
+
+    this->setPalette(palette);
+    QList<QWidget*> widgets = this->findChildren<QWidget*>();
+    foreach (QWidget* w, widgets)
+        w->setPalette(palette);
 }
 
 void MainWindow::setCurrentSvoLevel(int value)

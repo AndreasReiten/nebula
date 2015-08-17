@@ -308,6 +308,7 @@ class MainWindow : public QMainWindow
         void readSettings();
         void writeSettings();
         bool maybeSave();
+        void setDarkTheme();
 
 
         QString strippedName(const QString &fullFileName);

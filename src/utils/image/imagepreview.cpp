@@ -3517,7 +3517,9 @@ void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
     pen.setWidthF(1.5);
     painter->setPen(pen);
 
-    painter->drawEllipse(QPoint(beam_screen_pos[0], beam_screen_pos[1]), radius, radius);
+    QRectF circle(beam_screen_pos[0] - radius, beam_screen_pos[1] - radius, radius*2, radius*2);
+
+    painter->drawEllipse(circle);
 
     pen.setStyle(Qt::DashDotLine);
     painter->setPen(pen);

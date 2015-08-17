@@ -409,7 +409,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void drawCenterLine(QPainter * painter);
         void beginRawGLCalls(QPainter * painter);
         void endRawGLCalls(QPainter * painter);
-        void drawSenseOfRotation(double zeta, double eta, double rpm);
+//        void drawSenseOfRotation(double zeta, double eta, double rpm);
         void drawHklText(QPainter * painter);
         void drawCountIntegral(QPainter * painter);
         void drawLineIntegrationVolumeVisualAssist(QPainter * painter);
