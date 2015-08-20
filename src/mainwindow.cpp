@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "ui_mainwindow.h"
 
 #include <iostream>
 
@@ -27,15 +28,21 @@
 #include <QList>
 #include <QApplication>
 
-MainWindow::MainWindow() :
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow),
     hasPendingChanges(0),
     batch_size(10)
 {
+    ui->setupUi(this);
+
+    fileBrowserWidget = new FileBrowserWidget;
+
     // Set some default values
     reduced_pixels.set(0, 0);
 
     // Set stylesheet
-    QFile styleFile( ":/src/stylesheets/plain.qss" );
+    QFile styleFile( ":/stylesheets/plain.qss" );
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
     styleFile.close();
@@ -64,6 +71,8 @@ MainWindow::MainWindow() :
 
 MainWindow::~MainWindow()
 {
+    delete ui;
+
     voxelizeThread->quit();
     voxelizeThread->wait();
 }
@@ -1180,10 +1189,9 @@ void MainWindow::initGUI()
         fileHeaderDockOne = new QDockWidget("Frame header info", this);
         fileHeaderDockOne->setWidget(fileHeaderEditOne);
 
-        browserMainWindow = new QMainWindow;
-        browserMainWindow->setAnimated(false);
-        browserMainWindow->setCentralWidget(setFilesWidget);
-        browserMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockOne);
+        fileBrowserWidget->setAnimated(false);
+        fileBrowserWidget->setCentralWidget(setFilesWidget);
+        fileBrowserWidget->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockOne);
     }
 
     /*      3D View widget      */
@@ -2128,7 +2136,7 @@ void MainWindow::initGUI()
     tabWidget = new QTabWidget;
 
     // Add tabs
-    tabWidget->addTab(browserMainWindow, "Browse");
+    tabWidget->addTab(fileBrowserWidget, "Browse");
     tabWidget->addTab(reconstructionMainWindow, "Reconstruct");
     tabWidget->addTab(volumeRenderMainWindow, "Visualize");
     tabWidget->addTab(outputPlainTextEdit, "Text output");

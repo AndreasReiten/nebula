@@ -1,3 +1,0 @@
-#include "qxmathlib.h"
-
-

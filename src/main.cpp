@@ -149,7 +149,6 @@ int main(int argc, char ** argv)
     qRegisterMetaType<Selection>();
     qRegisterMetaType<DetectorFile>();
     qRegisterMetaType<Line>();
-//    qRegisterMetaType<Box>();
     qRegisterMetaType<Matrix<double>>();
     qRegisterMetaType<Matrix<double>>();
     qRegisterMetaType<Matrix<float>>();
@@ -165,31 +164,9 @@ int main(int argc, char ** argv)
     app.setOrganizationName("Norwegian University of Science and Technology");
     app.setApplicationName("Nebula");
 
-    // Check hardware and software compatability
-
-    // Qt version
-//    QString qt_str = QT_VERSION_STR;
-
-//    // OpenGL version
-//    QString opengl_str = "";
-
-//    // OpenCL version
-//    QString opencl_str = "";
-
-//    // Devices
-//    QString device_str = "";
-
-//    QString message = "Compiled with Qt version " + qt_str +
-//                    + "OpenGL version " + opengl_str + opencl_str + device_str;
-
-//    QString title = "System compatability overview";
-
-//    QMessageBox box(QMessageBox::Information, title, message);
-//    box.exec();
-
-    MainWindow window;
-    window.setAnimated(false);
-    window.show();
+    MainWindow main_window;
+    main_window.setAnimated(false);
+    main_window.show();
 
     return app.exec();
 }
