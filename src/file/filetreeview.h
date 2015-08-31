@@ -40,6 +40,7 @@ class FileSelectionModel : public QFileSystemModel
         bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
         int columnCount(const QModelIndex &parent = QModelIndex()) const;
         QMap<QString, QStringList> getPaths();
+        QStringList selected();
 
     private:
         QSet<QPersistentModelIndex> checklist;

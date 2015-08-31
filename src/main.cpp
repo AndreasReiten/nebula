@@ -63,27 +63,26 @@
 #include <QByteArray>
 #include <QStyleFactory>
 #include <QLocale>
-
-//#include <QMessageBox>
+#include <QFile>
 
 #include "mainwindow.h"
 
-void writeToLogAndPrint(QString text, QString file, bool append)
+void write_log(QString text)
 {
     QDateTime dateTime = dateTime.currentDateTime();
     QString dateTimeString = QString("[" + dateTime.toString("hh:mm:ss") + "] ");
 
-    std::ofstream myfile (file.toStdString().c_str(), std::ios::out | ((append == true) ? std::ios::app : std::ios::trunc));
+    QFile file("nebula.log");
+    if (!file.open(QIODevice::Append | QIODevice::Text))
+            return;
 
-    if (myfile.is_open())
-    {
-        myfile << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
-        std::cout << "[Log]" << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << std::endl;
-    }
-    else
-    {
-        std::cout << "Unable to open log file" << std::endl;
-    }
+    QTextStream out(&file);
+
+    out << dateTimeString << text << "\n";
+    std::cout << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << "\n";
+
+
+    file.close();
 }
 
 void appOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
@@ -93,35 +92,35 @@ void appOutput(QtMsgType type, const QMessageLogContext &context, const QString 
     switch (type)
     {
         case QtDebugMsg:
-            writeToLogAndPrint("Debug: " +
+            write_log("Debug: " +
                                QString(localMsg.constData()) + " (" +
                                QString(context.file) + ":" +
                                QString::number(context.line) + ", " +
-                               QString(context.function) + ")", "nebula.log", 1);
+                               QString(context.function) + ")");
             break;
 
         case QtWarningMsg:
-            writeToLogAndPrint("Warning: " +
+            write_log("Warning: " +
                                QString(localMsg.constData()) + " (" +
                                QString(context.file) + ":" +
                                QString::number(context.line) + ", " +
-                               QString(context.function) + ")", "nebula.log", 1);
+                               QString(context.function) + ")");
             break;
 
         case QtCriticalMsg:
-            writeToLogAndPrint("Critical: " +
+            write_log("Critical: " +
                                QString(localMsg.constData()) + " (" +
                                QString(context.file) + ":" +
                                QString::number(context.line) + ", " +
-                               QString(context.function) + ")", "nebula.log", 1);
+                               QString(context.function) + ")");
             break;
 
         case QtFatalMsg:
-            writeToLogAndPrint("Fatal: " +
+            write_log("Fatal: " +
                                QString(localMsg.constData()) + " (" +
                                QString(context.file) + ":" +
                                QString::number(context.line) + ", " +
-                               QString(context.function) + ")", "nebula.log", 1);
+                               QString(context.function) + ")");
             abort();
     }
 }
@@ -133,11 +132,6 @@ int main(int argc, char ** argv)
     // Fusion style
     QLocale::setDefault(QLocale::C);
     qApp->setStyle(QStyleFactory::create("Fusion"));
-
-    // Initialize the log file
-    QDateTime dateTime = dateTime.currentDateTime();
-    QString dateTimeString = QString(dateTime.toString("dd/MM/yyyy hh:mm:ss"));
-    writeToLogAndPrint("### NEBULA LOG " + dateTimeString + " ###", "nebula.log", 0);
 
     // Handle Qt messages
     qInstallMessageHandler(appOutput);
@@ -162,6 +156,7 @@ int main(int argc, char ** argv)
     app.setWindowIcon(QIcon(":/art/app.png"));
 
     app.setOrganizationName("Norwegian University of Science and Technology");
+    app.setOrganizationDomain("www.github.com/Natnux/nebula");
     app.setApplicationName("Nebula");
 
     MainWindow main_window;

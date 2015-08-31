@@ -27,6 +27,7 @@ class DetectorFile
         QString detector() const;
 
         int setPath(QString p_path);
+
         int readData();
         bool isNaive() const;
         bool isValid();
@@ -66,6 +67,7 @@ class DetectorFile
         float pixSizeY() const;
         void print();
         QString getHeaderText();
+
 
 
     private:
@@ -127,9 +129,9 @@ class DetectorFile
         float srchrad_sugg_low, srchrad_sugg_high;
 
         void setSearchRadiusHint();
-        int readHeader();
-        QString regExp(QString * regular_expression, QString * source, size_t offset, size_t i);
+        QString regExp(QString & str, QString & source, size_t offset, size_t i);
 
+        int readHeader();
 };
 
 Q_DECLARE_METATYPE(DetectorFile);

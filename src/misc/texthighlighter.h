@@ -5,7 +5,7 @@
 
 #include <QSyntaxHighlighter>
 #include <QVector>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QTextCharFormat>
 
 class Highlighter : public QSyntaxHighlighter

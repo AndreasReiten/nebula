@@ -314,7 +314,7 @@ private:
 
     void setStartConditions();
 
-    void readSettings();
+    void loadSettings();
     void writeSettings();
     bool maybeSave();
     void setDarkTheme();

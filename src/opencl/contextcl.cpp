@@ -35,7 +35,7 @@ OpenCLFunctions::~OpenCLFunctions()
 
 void OpenCLFunctions::initializeOpenCLFunctions()
 {
-    if (!QLibrary::isLibrary("OpenCL")) qWarning("OpenCL was not found as a loadable library. Are OpenCL drivers installed?");
+//    if (!QLibrary::isLibrary("OpenCL")) qWarning("OpenCL was not found as a loadable library. Are OpenCL drivers installed?");
 
     QLibrary myLib("OpenCL");
 
@@ -493,7 +493,7 @@ void OpenCLContext::initSharedContext()
         qFatal(cl_error_cstring(err));
     }
 
-    qDebug() << cl_easy_context_info(p_context);
+    qDebug() << "Sharing OpenCL context created: " << cl_easy_context_info(p_context);
 }
 
 void OpenCLContext::initNormalContext()
@@ -508,7 +508,7 @@ void OpenCLContext::initNormalContext()
         qFatal(cl_error_cstring(err));
     }
 
-    qDebug() << cl_easy_context_info(p_context);
+    qDebug() << "Non-Sharing OpenCL context created: " << cl_easy_context_info(p_context);
 }
 
 void OpenCLContext::initCommandQueue()
@@ -541,7 +541,7 @@ QString OpenCLContext::cl_easy_context_info(cl_context context)
     cl_context_properties property[64];
     size_t size_properties;
 
-    str = "\n*** OpenCL context info ***\n";
+    str = "";
 
     err = QOpenCLGetContextInfo(context, CL_CONTEXT_REFERENCE_COUNT, sizeof(cl_int), &reference_count, NULL);
 
@@ -550,7 +550,7 @@ QString OpenCLContext::cl_easy_context_info(cl_context context)
         qFatal(cl_error_cstring(err));
     }
 
-    str += "  Reference count: " + QString::number(reference_count) + "\n";
+    str += "Ref. count: " + QString::number(reference_count);
 
     err = QOpenCLGetContextInfo(context, CL_CONTEXT_DEVICES, sizeof(cl_device_id) * 64, device, &size_devices);
 
@@ -559,11 +559,11 @@ QString OpenCLContext::cl_easy_context_info(cl_context context)
         qFatal(cl_error_cstring(err));
     }
 
-    str += "  Devices in this context:\n";
+    str += "  Devices in this context ("+QString::number(size_devices / sizeof(cl_device_id))+" total):";
 
     for (size_t i = 0; i < size_devices / sizeof(cl_device_id); i++)
     {
-        str += "  " + QString::number(i) + ":\t" + cl_easy_device_info(device[i]) + "\n";
+        str += " Device " + QString::number(i) + ": " + cl_easy_device_info(device[i]);
     }
 
     err = QOpenCLGetContextInfo(context, CL_CONTEXT_PROPERTIES, sizeof(cl_context_properties) * 64, property, &size_properties);
@@ -627,13 +627,13 @@ QString OpenCLContext::cl_easy_device_info(cl_device_id device)
         qFatal(cl_error_cstring(err));
     }
 
-    str += "CL_DEVICE_NAME\t" + QString(device_name) + "\n";
-    str += "CL_DEVICE_GLOBAL_MEM_SIZE\t" + QString::number(device_global_mem_size) + "\n";
-    str += "CL_DEVICE_LOCAL_MEM_SIZE\t" + QString::number(device_local_mem_size) + "\n";
-    str += "CL_DEVICE_MAX_COMPUTE_UNITS\t" + QString::number(device_max_compute_units) + "\n";
-    str += "CL_DEVICE_MAX_MEM_ALLOC_SIZE\t" + QString::number(device_max_mem_alloc_size) + "\n";
-    str += "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS\t" + QString::number(device_max_work_item_dimensions) + "\n";
-    str += "CL_DEVICE_MAX_WORK_ITEM_SIZES\t";
+    str += "CL_DEVICE_NAME = " + QString(device_name) + " ";
+    str += "CL_DEVICE_GLOBAL_MEM_SIZE = " + QString::number(device_global_mem_size) + " ";
+    str += "CL_DEVICE_LOCAL_MEM_SIZE = " + QString::number(device_local_mem_size) + " ";
+    str += "CL_DEVICE_MAX_COMPUTE_UNITS = " + QString::number(device_max_compute_units) + " ";
+    str += "CL_DEVICE_MAX_MEM_ALLOC_SIZE = " + QString::number(device_max_mem_alloc_size) + " ";
+    str += "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS = " + QString::number(device_max_work_item_dimensions) + " ";
+    str += "CL_DEVICE_MAX_WORK_ITEM_SIZES = ";
 
     for (size_t i = 0; i < device_max_work_item_sizes.size(); i++)
     {
@@ -642,15 +642,15 @@ QString OpenCLContext::cl_easy_device_info(cl_device_id device)
 
     str += "\n";
 
-    str += "CL_DEVICE_MAX_CLOCK_FREQUENCY\t" + QString::number(device_max_clock_frequency) + "\n";
-    str += "CL_DEVICE_IMAGE_SUPPORT\t" + (device_image_support ? QString("Yes") : QString("No")) + "\n";
-    str += "CL_DEVICE_IMAGE2D_MAX_HEIGHT\t" + QString::number(device_image2d_max_height) + "\n";
-    str += "CL_DEVICE_IMAGE2D_MAX_WIDTH\t" + QString::number(device_image2d_max_width) + "\n";
-    str += "CL_DEVICE_IMAGE3D_MAX_HEIGHT\t" + QString::number(device_image3d_max_width) + "\n";
-    str += "CL_DEVICE_IMAGE3D_MAX_WIDTH\t" + QString::number(device_image3d_max_height) + "\n";
-    str += "CL_DEVICE_IMAGE3D_MAX_DEPTH\t" + QString::number(device_image3d_max_depth) + "\n";
-    str += "CL_DEVICE_VERSION\t" + QString(device_version) + "\n";
-    str += "CL_DRIVER_VERSION\t" + QString(driver_version);
+    str += "CL_DEVICE_MAX_CLOCK_FREQUENCY = " + QString::number(device_max_clock_frequency) + " ";
+    str += "CL_DEVICE_IMAGE_SUPPORT = " + (device_image_support ? QString("Yes") : QString("No")) + " ";
+    str += "CL_DEVICE_IMAGE2D_MAX_HEIGHT = " + QString::number(device_image2d_max_height) + " ";
+    str += "CL_DEVICE_IMAGE2D_MAX_WIDTH = " + QString::number(device_image2d_max_width) + " ";
+    str += "CL_DEVICE_IMAGE3D_MAX_HEIGHT = " + QString::number(device_image3d_max_width) + " ";
+    str += "CL_DEVICE_IMAGE3D_MAX_WIDTH = " + QString::number(device_image3d_max_height) + " ";
+    str += "CL_DEVICE_IMAGE3D_MAX_DEPTH = " + QString::number(device_image3d_max_depth) + " ";
+    str += "CL_DEVICE_VERSION = " + QString(device_version) + " ";
+    str += "CL_DRIVER_VERSION = " + QString(driver_version);
 
     return str;
 }

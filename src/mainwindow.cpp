@@ -27,6 +27,7 @@
 #include <QSlider>
 #include <QList>
 #include <QApplication>
+#include <QDir>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -42,11 +43,11 @@ MainWindow::MainWindow(QWidget *parent) :
     reduced_pixels.set(0, 0);
 
     // Set stylesheet
-    QFile styleFile( ":/stylesheets/plain.qss" );
-    styleFile.open( QFile::ReadOnly );
-    QString style( styleFile.readAll() );
-    styleFile.close();
-    this->setStyleSheet(style);
+//    QFile styleFile( ":/stylesheets/plain.qss" );
+//    styleFile.open( QFile::ReadOnly );
+//    QString style( styleFile.readAll() );
+//    styleFile.close();
+//    this->setStyleSheet(style);
 
     this->initActions();
 
@@ -59,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->initConnects();
 
     setCentralWidget(mainWidget);
-    readSettings();
+    loadSettings();
     print("[Nebula] Welcome to Nebula!");
     setWindowTitle("Nebula[*]");
 
@@ -294,8 +295,6 @@ void MainWindow::setStartConditions()
     funcParamDSpinBox->setValue(0.005);
 
     qualitySlider->setValue(20);
-
-    fileFilter->setText("*.cbf");
 
     activeAngleComboBox->setCurrentIndex(2);
     omegaCorrectionSpinBox->setValue(1.0);
@@ -745,13 +744,13 @@ void MainWindow::loadUnitcellFile()
 void MainWindow::setTab(int tab)
 {
 
-    if (tab >= 2)
+    if (tab == 1)
     {
-        outputDockWidget->hide();
+        outputDockWidget->show();
     }
     else
     {
-        outputDockWidget->show();
+        outputDockWidget->hide();
     }
 }
 
@@ -830,15 +829,12 @@ void MainWindow::initConnects()
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 
     /*this <-> misc*/
-    connect(fileFilter, SIGNAL(textChanged(QString)), fileSelectionModel, SLOT(setStringFilter(QString)));
-    connect(fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
     connect(imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
     connect(imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
     connect(imageOpenGLWidget->worker(), SIGNAL(progressRangeChanged(int, int)), generalProgressBar, SLOT(setRange(int, int)));
     connect(imageOpenGLWidget->worker(), SIGNAL(progressChanged(int)), generalProgressBar, SLOT(setValue(int)));
 
     // KK
-    connect(loadPathsPushButton, SIGNAL(clicked()), this, SLOT(loadBrowserPaths()));
     connect(batchSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setBatchSize(int)));
     connect(correctionLorentzCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setCorrectionLorentz(bool)));
     connect(imageModeComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setMode(int)));
@@ -851,8 +847,6 @@ void MainWindow::initConnects()
     connect(nextSeriesPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(nextSeries()));
     connect(prevSeriesPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(prevSeries()));
     connect(removeCurrentPushButton, SIGNAL(clicked()), imageOpenGLWidget, SLOT(removeCurrentImage()));
-    connect(imageOpenGLWidget, SIGNAL(pathRemoved(QString)), fileSelectionModel, SLOT(removeFile(QString)));
-    connect(this, SIGNAL(setSelection(QString)), imageOpenGLWidget, SLOT(applySelection(QString)));
     connect(this, SIGNAL(setPlaneMarkers(QString)), imageOpenGLWidget, SLOT(applyPlaneMarker(QString)));
     connect(this, SIGNAL(analyze(QString)), imageOpenGLWidget, SLOT(analyze(QString)));
     connect(imageOpenGLWidget, SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
@@ -1153,47 +1147,6 @@ void MainWindow::initMenus()
 
 void MainWindow::initGUI()
 {
-    /*      File Select Widget       */
-    {
-        setFilesWidget = new QWidget;
-
-        // Toolbar
-        fileFilter = new QLineEdit;
-
-        // File browser
-        fileSelectionModel  = new FileSelectionModel;
-        fileSelectionModel->setRootPath(QDir::rootPath());
-
-        fileTreeView = new FileTreeView;
-        fileTreeView->setModel(fileSelectionModel);
-
-        loadPathsPushButton = new QPushButton;//(QIcon(":/art/download.png"),"Load selected files"); //QIcon(":/art/rotate_down.png"),
-        loadPathsPushButton->setIcon(QIcon(":/art/download.png"));
-        loadPathsPushButton->setIconSize(QSize(86, 86));
-
-        // Layout
-        QGridLayout * gridLayout = new QGridLayout;
-        gridLayout->setHorizontalSpacing(5);
-        gridLayout->setVerticalSpacing(2);
-        gridLayout->setContentsMargins(5, 5, 5, 5);
-        gridLayout->addWidget(fileFilter, 0, 0, 1, 2);
-        gridLayout->addWidget(fileTreeView, 2, 0, 1, 2);
-        gridLayout->addWidget(loadPathsPushButton, 3, 0, 1, 2);
-
-        setFilesWidget->setLayout(gridLayout);
-
-        fileHeaderEditOne = new QPlainTextEdit;
-        headerHighlighterOne = new Highlighter(fileHeaderEditOne->document());
-        fileHeaderEditOne->setReadOnly(true);
-
-        fileHeaderDockOne = new QDockWidget("Frame header info", this);
-        fileHeaderDockOne->setWidget(fileHeaderEditOne);
-
-        fileBrowserWidget->setAnimated(false);
-        fileBrowserWidget->setCentralWidget(setFilesWidget);
-        fileBrowserWidget->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockOne);
-    }
-
     /*      3D View widget      */
     {
         QSurfaceFormat format_gl;
@@ -1367,7 +1320,7 @@ void MainWindow::initGUI()
         connect(imageDataMinDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMin(double)));
         connect(imageDataMaxDoubleSpinBox, SIGNAL(valueChanged(double)), imageOpenGLWidget, SLOT(setDataMax(double)));
         connect(imageLogCheckBox, SIGNAL(toggled(bool)), imageOpenGLWidget, SLOT(setLog(bool)));
-        connect(this, SIGNAL(centerImage()), imageOpenGLWidget, SLOT(centerImage()));
+//        connect(this, SIGNAL(centerImage()), imageOpenGLWidget, SLOT(centerImage()));
 
     }
 
@@ -2106,6 +2059,7 @@ void MainWindow::initGUI()
     /* Output Widget */
     {
         outputDockWidget = new QDockWidget("Message log", this);
+        outputDockWidget->hide();
         botWidget = new QWidget;
 
         // Text output
@@ -2282,24 +2236,22 @@ void MainWindow::print(QString str)
 
 
 
-void MainWindow::readSettings()
+void MainWindow::loadSettings()
 {
-    QSettings settings("Norwegian University of Science and Technology", "Nebula");
-    QPoint pos = settings.value("position", QPoint(0, 0)).toPoint();
-    QSize size = settings.value("size", QSize(400, 400)).toSize();
-    working_dir = settings.value("working_dir").toString();
-    screenshot_dir = settings.value("screenshot_dir").toString();
-    resize(size);
-    move(pos);
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    working_dir = settings.value("working_dir", QDir::homePath()).toString();
+    screenshot_dir = settings.value("screenshot_dir", QDir::homePath()).toString();
+    this->restoreGeometry(settings.value("main_window/geometry").toByteArray());
+    this->restoreState(settings.value("main_window/state").toByteArray());
 }
 
 void MainWindow::writeSettings()
 {
-    QSettings settings("Norwegian University of Science and Technology", "Nebula");
-    settings.setValue("position", pos());
-    settings.setValue("size", size());
+    QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setValue("working_dir", working_dir);
     settings.setValue("screenshot_dir", screenshot_dir);
+    settings.setValue("main_window/geometry", this->saveGeometry());
+    settings.setValue("main_window/state", this->saveState());
 }
 
 void MainWindow::takeVolumeScreenshot()

@@ -1,7 +1,8 @@
 #include "fileformat.h"
 
 #include <QFileInfo>
-#include <QRegExp>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 #include <QString>
 #include <QDebug>
 
@@ -38,11 +39,37 @@ DetectorFile::DetectorFile() :
 
 DetectorFile::DetectorFile(const DetectorFile &other)
 {
-    /* Non-optional keywords */
     p_detector = other.detector();
     p_pixel_size_x = other.pixSizeX();
     p_pixel_size_y = other.pixSizeY();
     p_exposure_time = other.expTime();
+    p_wavelength = other.wavelength();
+    p_detector_distance = other.detectorDist();
+    p_beam_x = other.beamX();
+    p_beam_y = other.beamY();
+    p_flux = other.flux();
+    p_start_angle = other.startAngle();
+    p_angle_increment = other.angleIncrement();
+    p_alpha = other.alpha();
+    p_kappa = other.beta();
+    p_phi = other.phi();
+    p_omega = other.omega();
+    p_beta = other.beta();
+
+    //    p_energy_range_low = other.;
+    //    p_energy_range_high = other.;
+    //    p_detector_voffset = other.;
+    //    p_filter_transmission = other.;
+    //    p_detector_2theta = other.;
+    //    p_polarization = other.;
+    //    p_chi = other.ch;
+    //    p_oscillation_axis = other.;
+    //    p_n_oscillations = other.;
+    //    p_start_position = other.st;
+    //    p_position_increment = other.;
+    //    p_shutter_time = other.s;
+    //    p_background_flux = other.;
+    //    p_backgroundExpTime = other.;
     //    p_exposure_period = other.;
     //    p_tau = other.;
     //    p_count_cutoff = other;
@@ -53,34 +80,6 @@ DetectorFile::DetectorFile(const DetectorFile &other)
     //    p_flat_field = other.;
     //    p_time_file = other.;
     //    p_image_path = other.;
-
-    /* Optional keywords */
-    p_wavelength = other.wavelength();
-    //    p_energy_range_low = other.;
-    //    p_energy_range_high = other.;
-    p_detector_distance = other.detectorDist();
-    //    p_detector_voffset = other.;
-    p_beam_x = other.beamX();
-    p_beam_y = other.beamY();
-    p_flux = other.flux();
-    //    p_filter_transmission = other.;
-    p_start_angle = other.startAngle();
-    p_angle_increment = other.angleIncrement();
-    //    p_detector_2theta = other.;
-    //    p_polarization = other.;
-    p_alpha = other.alpha();
-    p_kappa = other.beta();
-    p_phi = other.phi();
-    //    p_chi = other.ch;
-    p_omega = other.omega();
-    //    p_oscillation_axis = other.;
-    //    p_n_oscillations = other.;
-    //    p_start_position = other.st;
-    //    p_position_increment = other.;
-    //    p_shutter_time = other.s;
-    //    p_background_flux = other.;
-    //    p_backgroundExpTime = other.;
-    p_beta = other.beta();
 
     p_max_counts = other.maxCount();
 
@@ -420,53 +419,68 @@ int DetectorFile::readHeader()
     file.close();
 
 
-    // Fetch keywords!
-    /* Non-optional keywords */
-    p_detector = regExp(&reqExpDetector, &header, 0, 1);
-    p_pixel_size_x = regExp(&reqPixSizex, &header, 0, 1).toFloat();
-    p_pixel_size_y = regExp(&reqPixSizey, &header, 0, 1).toFloat();
-    //~ silicon_sensor_thickness = regExp(&, &header, 0, 1).toFloat();
-    p_exposure_time = regExp(&reqExpTime, &header, 0, 1).toFloat();
-    //~ exposure_period = regExp(&, &header, 0, 1).toFloat();
-    //~ tau = regExp(&, &header, 0, 1).toFloat();
-    //~ count_cutoff = regExp(&, &header, 0, 1).toInt();
-    //~ threshold_setting = regExp(&, &header, 0, 1).toInt();
-    //~ gain_setting = regExp(&, &header, 0, 1);
-    //~ n_excluded_pixels = regExp(&, &header, 0, 1).toInt();
-    //~ excluded_pixels = regExp(&, &header, 0, 1);
-    //~ flat_field = regExp(&, &header, 0, 1);
-    //~ time_file = regExp(&, &header, 0, 1);
-    //~ image_path = regExp(&, &header, 0, 1);
+    // Fetch keywords
+    p_detector = regExp(reqExpDetector, header, 0, 1);
+    p_pixel_size_x = regExp(reqPixSizex, header, 0, 1).toFloat();
+    p_pixel_size_y = regExp(reqPixSizey, header, 0, 1).toFloat();
+    p_exposure_time = regExp(reqExpTime, header, 0, 1).toFloat();
+    p_wavelength = regExp(optExpWl, header, 0, 1).toFloat();
+    p_detector_distance = regExp(optExpDd, header, 0, 1).toFloat();
+    p_beam_x = regExp(optExpBeamx, header, 0, 1).toFloat();
+    p_beam_y = regExp(optExpBeamy, header, 0, 1).toFloat();
+    p_flux = regExp(optExpFlux, header, 0, 1).toFloat();
+    p_start_angle = regExp(optExpStAng, header, 0, 1).toFloat() * pi / 180.0;
+    p_angle_increment = regExp(optExpAngInc, header, 0, 1).toFloat() * pi / 180.0;
 
-    /* Optional keywords */
-    p_wavelength = regExp(&optExpWl, &header, 0, 1).toFloat();
-    //~ energy_range_low = regExp(&, &header, 0, 1).toInt();
-    //~ energy_range_high = regExp(&, &header, 0, 1).toInt();
-    p_detector_distance = regExp(&optExpDd, &header, 0, 1).toFloat();
-    //~ detector_voffset = regExp(&, &header, 0, 1).toFloat();
-    p_beam_x = regExp(&optExpBeamx, &header, 0, 1).toFloat();
-    p_beam_y = regExp(&optExpBeamy, &header, 0, 1).toFloat();
-    p_flux = regExp(&optExpFlux, &header, 0, 1).toFloat();
-    //~ filter_transmission = regExp(&, &header, 0, 1).toFloat();
-    p_start_angle = regExp(&optExpStAng, &header, 0, 1).toFloat() * pi / 180.0;
-    p_angle_increment = regExp(&optExpAngInc, &header, 0, 1).toFloat() * pi / 180.0;
-    //~ detector_2theta = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    //~ polarization = regExp(&, &header, 0, 1).toFloat();
-    //    ~ alpha = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    p_kappa = regExp(&optExpKappa, &header, 0, 1).toFloat() * pi / 180.0;
-    p_phi = regExp(&optExpPhi, &header, 0, 1).toFloat() * pi / 180.0;
-    //~ phi_increment = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    //~ chi = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    //~ chi_increment = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    p_omega = regExp(&optExpOmega, &header, 0, 1).toFloat() * pi / 180.0;
-    //~ omega_increment = regExp(&, &header, 0, 1).toFloat()*pi/180.0;
-    //~ oscillation_axis = regExp(&, &header, 0, 1);
-    //~ n_oscillations = regExp(&, &header, 0, 1).toInt();
-    //~ start_position = regExp(&, &header, 0, 1).toFloat();
-    //~ position_increment = regExp(&, &header, 0, 1).toFloat();
-    //~ shutter_time = regExp(&, &header, 0, 1).toFloat();
+    // Check if defined. If two are defined, the third is active. In any other case, omega is active. Unless the active angle is directly specified.
+    QString omega_str = regExp(optExpOmega, header, 0, 1);
+    QString kappa_str = regExp(optExpKappa, header, 0, 1);
+    QString phi_str = regExp(optExpPhi, header, 0, 1);
 
+    p_omega = omega_str.toFloat() * pi / 180.0;
+    p_kappa = kappa_str.toFloat() * pi / 180.0;
+    p_phi = phi_str.toFloat() * pi / 180.0;
 
+    int num_defined_angles = ((omega_str != "")? 1 : 0) + ((kappa_str != "")? 1 : 0) + ((phi_str != "")? 1 : 0);
+
+    if (num_defined_angles == 2)
+    {
+        if (omega_str == "") p_omega = (p_start_angle+0.5*p_angle_increment);
+        else if (kappa_str == "") p_kappa = (p_start_angle+0.5*p_angle_increment);
+        else if (phi_str == "") p_phi = (p_start_angle+0.5*p_angle_increment);
+    }
+    else
+    {
+        p_omega = (p_start_angle+0.5*p_angle_increment);
+    }
+
+    //~ silicon_sensor_thickness = regExp(, header, 0, 1).toFloat();
+    //~ exposure_period = regExp(, header, 0, 1).toFloat();
+    //~ tau = regExp(, header, 0, 1).toFloat();
+    //~ count_cutoff = regExp(, header, 0, 1).toInt();
+    //~ threshold_setting = regExp(, header, 0, 1).toInt();
+    //~ gain_setting = regExp(, header, 0, 1);
+    //~ n_excluded_pixels = regExp(, header, 0, 1).toInt();
+    //~ excluded_pixels = regExp(, header, 0, 1);
+    //~ flat_field = regExp(, header, 0, 1);
+    //~ time_file = regExp(, header, 0, 1);
+    //~ image_path = regExp(, header, 0, 1);
+    //~ energy_range_low = regExp(, header, 0, 1).toInt();
+    //~ energy_range_high = regExp(, header, 0, 1).toInt();
+    //~ detector_voffset = regExp(, header, 0, 1).toFloat();
+    //~ filter_transmission = regExp(, header, 0, 1).toFloat();
+    //~ detector_2theta = regExp(, header, 0, 1).toFloat()*pi/180.0;
+    //~ polarization = regExp(, header, 0, 1).toFloat();
+    //~ alpha = regExp(, header, 0, 1).toFloat()*pi/180.0;
+    //~ phi_increment = regExp(, header, 0, 1).toFloat()*pi/180.0;
+    //~ chi = regExp(, header, 0, 1).toFloat()*pi/180.0;
+    //~ chi_increment = regExp(, header, 0, 1).toFloat()*pi/180.0;
+    //~ omega_increment = regExp(, header, 0, 1).toFloat()*pi/180.0;
+    //~ oscillation_axis = regExp(, header, 0, 1);
+    //~ n_oscillations = regExp(, header, 0, 1).toInt();
+    //~ start_position = regExp(, header, 0, 1).toFloat();
+    //~ position_increment = regExp(, header, 0, 1).toFloat();
+    //~ shutter_time = regExp(, header, 0, 1).toFloat();
 
     isFileHeaderRead = true;
     return isFileHeaderRead;
@@ -477,15 +491,15 @@ QString DetectorFile::path() const
     return p_path;
 }
 
-QString DetectorFile::regExp(QString * regular_expression, QString * source, size_t offset, size_t i)
+QString DetectorFile::regExp(QString &str, QString &source, size_t offset, size_t i)
 {
-    QRegExp tmp(*regular_expression);
-    int pos = tmp.indexIn(*source, offset);
+    QRegularExpression expr(str);
 
-    if (pos > -1)
+    QRegularExpressionMatch match = expr.match(source, offset);
+
+    if (match.hasMatch())
     {
-        QString value = tmp.cap(i);
-        return value;
+        return match.captured(i);
     }
     else
     {

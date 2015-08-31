@@ -66,7 +66,9 @@ HEADERS += \
     misc/box.h \
     filebrowserwidget.h \
     reconstructionwidget.h \
-    visualizationwidget.h
+    visualizationwidget.h \
+    sql/customsqlquerymodel.h \
+    sql/sqlqol.h
 
 SOURCES += \
     file/fileformat.cpp \
@@ -92,7 +94,8 @@ SOURCES += \
     misc/box.cpp \
     filebrowserwidget.cpp \
     reconstructionwidget.cpp \
-    visualizationwidget.cpp
+    visualizationwidget.cpp \
+    sql/customsqlquerymodel.cpp
 
 DISTFILES += \
     shaders/std_2d_sprite.v.glsl \

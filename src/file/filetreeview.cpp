@@ -6,19 +6,10 @@
 FileTreeView::FileTreeView(QWidget * parent) :
     QTreeView(parent)
 {
-    connect(this, SIGNAL(expanded(const QModelIndex &)), this, SLOT(itemChanged(const QModelIndex &)));
-    connect(this, SIGNAL(collapsed(const QModelIndex &)), this, SLOT(itemChanged(const QModelIndex &)));
-    connect(this, SIGNAL(clicked(const QModelIndex &)), this, SLOT(itemChanged(const QModelIndex &)));
-    connect(this, SIGNAL(activated(const QModelIndex &)), this, SLOT(itemChanged(const QModelIndex &)));
 }
 
 void FileTreeView::itemChanged(const QModelIndex &item)
 {
-    if (item.column() == 0)
-    {
-        resizeColumnToContents(item.column());
-    }
-
     QFileSystemModel * mod = qobject_cast<QFileSystemModel *> (this->model());
 
     if ((item.isValid()) &&  mod->fileInfo(item).isFile() && mod->fileInfo(item).isReadable() && mod->fileInfo(item).exists())
@@ -170,3 +161,17 @@ QMap<QString, QStringList>  FileSelectionModel::getPaths()
 }
 
 
+QStringList FileSelectionModel::selected()
+{
+    QStringList paths;
+
+    foreach (const QPersistentModelIndex &value, checklist)
+    {
+        if (value.isValid())
+        {
+            paths << filePath(value);
+        }
+    }
+
+    return paths;
+}
