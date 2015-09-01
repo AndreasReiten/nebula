@@ -14,8 +14,12 @@
 #include <QGridLayout>
 #include <QFileDialog>
 #include <QTableView>
+#include <QSqlDatabase>
+#include <QSqlError>
 
 #include "filebrowserwidget.h"
+#include "reconstructionwidget.h"
+#include "sql/sqlqol.h"
 
 #include "math/matrix.h"
 #include "opencl/contextcl.h"
@@ -115,6 +119,8 @@ signals:
     void setPulled(SeriesSet set);
 
 private:
+    void initSql();
+    QSqlDatabase p_db;
     Ui::MainWindow *ui;
     FileBrowserWidget *fileBrowserWidget;
 //    QMainWindow * fileBrowserWidget;
@@ -263,7 +269,7 @@ private:
 
 
     // Image browser widget
-    QMainWindow * reconstructionMainWindow;
+    ReconstructionWidget * reconstructionMainWindow;
 
     // Actions
     QAction * shadowAct;

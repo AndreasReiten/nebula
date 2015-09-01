@@ -7,12 +7,12 @@
 #include <QSettings>
 #include <QMessageBox>
 
-FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
+FileBrowserWidget::FileBrowserWidget(QSqlDatabase db, QWidget *parent) :
     QMainWindow(parent),
+    p_db(db),
     ui(new Ui::FileBrowserWidget)
 {
     // Prepare column to sql table translation map
-//    section_map["Full path"] = HeaderItem(-1, "FilePath");
     column_map["Path"] = QPair<int,QString>(0, "Path");
     column_map["File"] = QPair<int,QString>(1, "File");
     column_map["*"] = QPair<int,QString>(2, "Active");
@@ -64,6 +64,7 @@ FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
 
     ui->selectionView->horizontalHeader()->setSortIndicatorShown(true);
     ui->selectionView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    ui->selectionView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     connect(ui->addFilesButton, SIGNAL(clicked(bool)), ui->selectionView, SLOT(resizeColumnsToContents()));
 
     ui->selectionView->setModel(selection_model);
@@ -88,7 +89,6 @@ void FileBrowserWidget::querySelectionModel(QString str)
     {
         qDebug() << selection_model->lastError();
         ui->sqlOutputLabel->setText(selection_model->lastError().text());
-//        ui->sqlMsgTextEdit->appendPlainText(selection_model->lastError().text());
     }
 }
 
@@ -108,51 +108,9 @@ void FileBrowserWidget::sortItems(int column,Qt::SortOrder order)
 
 void FileBrowserWidget::initSql()
 {
-    // Database
-    if (p_db.isOpen()) p_db.close();
-    p_db = QSqlDatabase::addDatabase("QSQLITE", "db");
-
-    p_db.setDatabaseName(QDir::currentPath() + "/data.sqlite3");
-
-    if (p_db.open())
-    {
-        QSqlQuery query(p_db);
-        if (!query.exec("CREATE TABLE IF NOT EXISTS cbf ("
-                        "FilePath TEXT PRIMARY KEY NOT NULL, "
-                        "Path TEXT,"
-                        "File TEXT,"
-                        "Active INTEGER, "
-                        "Omega REAL, "
-                        "Kappa REAL, "
-                        "Phi REAL, "
-                        "StartAngle REAL,"
-                        "AngleIncrement REAL,"
-                        "DetectorDistance REAL,"
-                        "BeamX REAL,"
-                        "BeamY REAL,"
-                        "Flux REAL,"
-                        "ExposureTime REAL,"
-                        "Wavelength REAL,"
-                        "Detector TEXT,"
-                        "PixelSizeX REAL,"
-                        "PixelSizeY REAL"
-                        ");"))
-        {
-            qDebug() << sqlQueryError(query);
-        }
-    }
-    else
-    {
-        qDebug() << "Database error" << p_db.lastError();
-    }
-
     // Queries
     upsert_file_query = new QSqlQuery(p_db);
-//    upsert_file_query->prepare("INSERT OR IGNORE INTO cbf (FilePath, Path, File) VALUES (:FilePath, :Path, :File);");
     upsert_file_query->prepare("INSERT OR IGNORE INTO cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) VALUES (:FilePath, :Path, :File, :Active, :Omega, :Kappa, :Phi, :StartAngle, :AngleIncrement, :DetectorDistance, :BeamX, :BeamY, :Flux, :ExposureTime, :Wavelength, :Detector, :PixelSizeX, :PixelSizeY);");
-
-//    upsert_file_query = new QSqlQuery(p_db);
-//    upsert_file_query->prepare("UPDATE cbf SET Active = :Active, Omega = :Omega, Kappa = :Kappa, Phi = :Phi, StartAngle = :StartAngle, AngleIncrement = :AngleIncrement, DetectorDistance = :DetectorDistance, BeamX = :BeamX, BeamY = :BeamY, Flux = :Flux, ExposureTime = :ExposureTime, Wavelength = :Wavelength, Detector = : Detector, PixelSizeX = :PixelSizeX, PixelSizeY = :PixelSizeY WHERE FilePath = :FilePath;");
 
     display_query = "SELECT Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM cbf ORDER BY Path ASC, File ASC";
 }
@@ -248,43 +206,10 @@ void FileBrowserWidget::on_execQueryButton_clicked()
     if (query.lastError().isValid())
     {
         qDebug() << query.lastError();
-//        ui->sqlMsgTextEdit->appendPlainText(query.lastError().text());
         ui->sqlOutputLabel->setText(query.lastError().text());
     }
 }
 
-//void FileBrowserWidget::on_readHeadersButton_clicked()
-//{
-//    QSqlQuery query("SELECT FilePath FROM cbf ORDER BY Path ASC, File ASC", p_db);
-//    if (query.lastError().isValid())
-//    {
-//        qDebug() << query.lastError();
-//        ui->sqlMsgTextEdit->appendPlainText(query.lastError().text());
-//    }
-
-//    p_db.transaction();
-
-//    // For each path in the sql table
-//    while (query.next())
-//    {
-//        // Read header info belonging to path/file and update table. Only update attribs that are provided
-//        QString path(query.value(0).toString());
-
-//        DetectorFile file(path);
-
-//        upsert_file_query->bindValue(":FilePath", path);
-//        upsert_file_query->bindValue(":Active", file.omega());
-//        upsert_file_query->bindValue(":Omega", file.omega());
-//        upsert_file_query->bindValue(":Kappa", file.kappa());
-//        upsert_file_query->bindValue(":Phi", file.phi());
-
-//        if (!upsert_file_query->exec()) qDebug() << sqlQueryError(*upsert_file_query);
-//    }
-
-//    p_db.commit();
-
-//    querySelectionModel(display_query);
-//}
 
 void FileBrowserWidget::on_reconstructButton_clicked()
 {

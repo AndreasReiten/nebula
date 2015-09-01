@@ -17,6 +17,9 @@ public:
 
 private:
     Ui::ReconstructionWidget *ui;
+
+    void loadSettings();
+    void writeSettings();
 };
 
 #endif // RECONSTRUCTIONWIDGET_H

@@ -37,7 +37,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    fileBrowserWidget = new FileBrowserWidget;
+    initSql();
+
+    fileBrowserWidget = new FileBrowserWidget(p_db);
 
     // Set some default values
     reduced_pixels.set(0, 0);
@@ -76,6 +78,47 @@ MainWindow::~MainWindow()
 
     voxelizeThread->quit();
     voxelizeThread->wait();
+}
+
+void MainWindow::initSql()
+{
+    // Database
+    if (p_db.isOpen()) p_db.close();
+    p_db = QSqlDatabase::addDatabase("QSQLITE", "db");
+
+    p_db.setDatabaseName(QDir::currentPath() + "/data.sqlite3");
+
+    if (p_db.open())
+    {
+        QSqlQuery query(p_db);
+        if (!query.exec("CREATE TABLE IF NOT EXISTS cbf ("
+                        "FilePath TEXT PRIMARY KEY NOT NULL, "
+                        "Path TEXT,"
+                        "File TEXT,"
+                        "Active INTEGER, "
+                        "Omega REAL, "
+                        "Kappa REAL, "
+                        "Phi REAL, "
+                        "StartAngle REAL,"
+                        "AngleIncrement REAL,"
+                        "DetectorDistance REAL,"
+                        "BeamX REAL,"
+                        "BeamY REAL,"
+                        "Flux REAL,"
+                        "ExposureTime REAL,"
+                        "Wavelength REAL,"
+                        "Detector TEXT,"
+                        "PixelSizeX REAL,"
+                        "PixelSizeY REAL"
+                        ");"))
+        {
+            qDebug() << sqlQueryError(query);
+        }
+    }
+    else
+    {
+        qDebug() << "Database error" << p_db.lastError();
+    }
 }
 
 void MainWindow::setDarkTheme()
@@ -1225,8 +1268,8 @@ void MainWindow::initGUI()
         imageOpenGLWidget->setFormat(format_gl);
         imageOpenGLWidget->setMouseTracking(true);
 
-        reconstructionMainWindow = new QMainWindow;
-        reconstructionMainWindow->setAnimated(false);
+        reconstructionMainWindow = new ReconstructionWidget;
+//        reconstructionMainWindow->setAnimated(false);
 
         saveProjectAction = new QAction(QIcon(":/art/save.png"), "Save project", this);
         loadProjectAction = new QAction(QIcon(":/art/open.png"), "Load project", this);
@@ -1258,9 +1301,9 @@ void MainWindow::initGUI()
         connect(imageOpenGLWidget, SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
         connect(imageOpenGLWidget, SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
 
-        reconstructionMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
+//        reconstructionMainWindow->addToolBar(Qt::TopToolBarArea, imageToolBar);
 
-        reconstructionMainWindow->setCentralWidget(imageOpenGLWidget);
+//        reconstructionMainWindow->setCentralWidget(imageOpenGLWidget);
     }
 
     /* Image browser display widget */
@@ -1313,7 +1356,7 @@ void MainWindow::initGUI()
 
         imageSettingsDock =  new QDockWidget("Display");
         imageSettingsDock->setWidget(imageSettingsWidget);
-        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
+//        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, imageSettingsDock);
 
         connect(imageTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfTexture(int)), Qt::QueuedConnection);
         connect(imageTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), imageOpenGLWidget, SLOT(setTsfAlpha(int)));
@@ -1376,7 +1419,7 @@ void MainWindow::initGUI()
 
         navigationDock =  new QDockWidget("Navigation");
         navigationDock->setWidget(navigationWidget);
-        reconstructionMainWindow->addDockWidget(Qt::BottomDockWidgetArea, navigationDock);
+//        reconstructionMainWindow->addDockWidget(Qt::BottomDockWidgetArea, navigationDock);
     }
 
     // Operations dock widget
@@ -1471,7 +1514,7 @@ void MainWindow::initGUI()
 
         correctionDock =  new QDockWidget("Image corrections");
         correctionDock->setWidget(correctionWidget);
-        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
+//        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, correctionDock);
     }
 
 
@@ -1864,7 +1907,7 @@ void MainWindow::initGUI()
         fileDockWidget->setWidget(fileControlsWidget);
         fileDockWidget->setMaximumHeight(fileControlsWidget->minimumSizeHint().height() * 1.1);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
-        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, fileDockWidget);
+//        reconstructionMainWindow->addDockWidget(Qt::LeftDockWidgetArea, fileDockWidget);
 
 
 
@@ -1937,7 +1980,7 @@ void MainWindow::initGUI()
         fileHeaderDockTwo = new QDockWidget("Image header", this);
         fileHeaderDockTwo->setWidget(fileHeaderEditTwo);
         viewMenu->addAction(fileDockWidget->toggleViewAction());
-        reconstructionMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockTwo);
+//        reconstructionMainWindow->addDockWidget(Qt::RightDockWidgetArea, fileHeaderDockTwo);
     }
 
 

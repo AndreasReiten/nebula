@@ -1,7 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <author/>
- <comment/>
- <exportmacro/>
  <class>ReconstructionWidget</class>
  <widget class="QMainWindow" name="ReconstructionWidget">
   <property name="geometry">
@@ -15,10 +13,588 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QMenuBar" name="menubar"/>
-  <widget class="QWidget" name="centralwidget"/>
-  <widget class="QStatusBar" name="statusbar"/>
+  <property name="animated">
+   <bool>false</bool>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowTabbedDocks</set>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <widget class="QSplitter" name="splitter_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QSplitter" name="splitter">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <widget class="QOpenGLWidget" name="openGLWidget"/>
+          <widget class="QTableView" name="selectionView">
+           <property name="alternatingRowColors">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="title">
+           <string>Image navigation</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="6">
+              <widget class="QPushButton" name="pushButton">
+               <property name="text">
+                <string>Disable</string>
+               </property>
+               <property name="icon">
+                <iconset resource="nebula.qrc">
+                 <normaloff>:/art/kill.png</normaloff>:/art/kill.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="5">
+              <widget class="QPushButton" name="nextSeriesButton">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="nebula.qrc">
+                 <normaloff>:/art/next_series.png</normaloff>:/art/next_series.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QPushButton" name="nextImageButton">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="nebula.qrc">
+                 <normaloff>:/art/forward.png</normaloff>:/art/forward.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QPushButton" name="prevImageButton">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="nebula.qrc">
+                 <normaloff>:/art/back.png</normaloff>:/art/back.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QPushButton" name="prevSeriesButton">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="nebula.qrc">
+                 <normaloff>:/art/prev_series.png</normaloff>:/art/prev_series.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="4">
+              <widget class="QPushButton" name="nextImageBatchButton">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="nebula.qrc">
+                 <normaloff>:/art/fast_forward.png</normaloff>:/art/fast_forward.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPushButton" name="prevImageBatchButton">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="nebula.qrc">
+                 <normaloff>:/art/fast_back.png</normaloff>:/art/fast_back.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="7">
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QToolBox" name="toolBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="page">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>235</width>
+          <height>477</height>
+         </rect>
+        </property>
+        <attribute name="label">
+         <string>View options, Actions</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="0" colspan="2">
+            <widget class="QComboBox" name="comboBox">
+             <item>
+              <property name="text">
+               <string>Normal</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Variance</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Skewness</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QComboBox" name="comboBox_2">
+             <item>
+              <property name="text">
+               <string>Hot</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Hsv</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Rainbow</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Galaxy</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Binary</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Yranib</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="comboBox_3">
+             <item>
+              <property name="text">
+               <string>Opaque</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Uniform</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Linear</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox">
+             <property name="prefix">
+              <string>Data min: </string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+             <property name="prefix">
+              <string>max:</string>
+             </property>
+             <property name="maximum">
+              <double>9999999.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0" colspan="2">
+            <widget class="QCheckBox" name="checkBox_9">
+             <property name="text">
+              <string>Log</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="page_2">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>225</width>
+          <height>477</height>
+         </rect>
+        </property>
+        <attribute name="label">
+         <string>Corrections</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <layout class="QGridLayout" name="gridLayout_3">
+           <item row="0" column="0">
+            <widget class="QPushButton" name="pushButton_2">
+             <property name="text">
+              <string>Trace</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="3">
+            <widget class="QCheckBox" name="checkBox">
+             <property name="text">
+              <string>Show</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" colspan="3">
+            <widget class="QCheckBox" name="checkBox_2">
+             <property name="text">
+              <string>Planar b/g subtract</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QSpinBox" name="spinBox">
+             <property name="prefix">
+              <string>Samples: </string>
+             </property>
+             <property name="minimum">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <number>30</number>
+             </property>
+             <property name="value">
+              <number>4</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="3">
+            <widget class="QCheckBox" name="checkBox_3">
+             <property name="text">
+              <string>Flat b/g subtract</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_8"/>
+           </item>
+           <item row="3" column="0" colspan="4">
+            <widget class="QCheckBox" name="checkBox_4">
+             <property name="text">
+              <string>Lorentz correction</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" colspan="4">
+            <widget class="QCheckBox" name="checkBox_5">
+             <property name="text">
+              <string>Pixel projection correction</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0" colspan="4">
+            <widget class="QCheckBox" name="checkBox_6">
+             <property name="text">
+              <string>Polarization correction</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0" colspan="4">
+            <widget class="QCheckBox" name="checkBox_7">
+             <property name="text">
+              <string>Flux normalization</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0" colspan="4">
+            <widget class="QCheckBox" name="checkBox_8">
+             <property name="text">
+              <string>Exposure time normalization</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0" colspan="4">
+            <widget class="QCheckBox" name="checkBox_10">
+             <property name="text">
+              <string>Beam center override</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+             <property name="prefix">
+              <string>+Δx: </string>
+             </property>
+             <property name="suffix">
+              <string> px</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="2" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_4">
+             <property name="prefix">
+              <string>+Δy: </string>
+             </property>
+             <property name="suffix">
+              <string> px</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0" colspan="4">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_5">
+             <property name="prefix">
+              <string>+Δω: </string>
+             </property>
+             <property name="suffix">
+              <string> °</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0" colspan="4">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_6">
+             <property name="prefix">
+              <string>+Δκ: </string>
+             </property>
+             <property name="suffix">
+              <string> °</string>
+             </property>
+            </widget>
+           </item>
+           <item row="12" column="0" colspan="4">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_7">
+             <property name="prefix">
+              <string>+Δφ: </string>
+             </property>
+             <property name="suffix">
+              <string> °</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>131</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionSave"/>
+   <addaction name="actionOpen"/>
+   <addaction name="separator"/>
+   <addaction name="actionCenter"/>
+   <addaction name="actionWeightcenter"/>
+   <addaction name="actionImageScreenshot"/>
+   <addaction name="actionFrameScreenshot"/>
+  </widget>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/save.png</normaloff>:/art/save.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="toolTip">
+    <string>Save project (file table, settings, etc.)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/open.png</normaloff>:/art/open.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open</string>
+   </property>
+   <property name="toolTip">
+    <string>Open project (file table, settings, etc.)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
+   </property>
+  </action>
+  <action name="actionCenter">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/center.png</normaloff>:/art/center.png</iconset>
+   </property>
+   <property name="text">
+    <string>Center</string>
+   </property>
+   <property name="toolTip">
+    <string>Center image</string>
+   </property>
+  </action>
+  <action name="actionWeightcenter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/weight_center.png</normaloff>:/art/weight_center.png</iconset>
+   </property>
+   <property name="text">
+    <string>Weightcenter</string>
+   </property>
+   <property name="toolTip">
+    <string>Display the image weight center</string>
+   </property>
+  </action>
+  <action name="actionFrameScreenshot">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/screenshot.png</normaloff>:/art/screenshot.png</iconset>
+   </property>
+   <property name="text">
+    <string>FrameScreenshot</string>
+   </property>
+   <property name="toolTip">
+    <string>Take screenshot of current view</string>
+   </property>
+  </action>
+  <action name="actionImageScreenshot">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/shadow.png</normaloff>:/art/shadow.png</iconset>
+   </property>
+   <property name="text">
+    <string>ImageScreenshot</string>
+   </property>
+   <property name="toolTip">
+    <string>Save entire image</string>
+   </property>
+  </action>
  </widget>
- <pixmapfunction/>
+ <resources>
+  <include location="nebula.qrc"/>
+ </resources>
  <connections/>
 </ui>
