@@ -12,7 +12,7 @@ class TransferFunction
         Matrix<double> * getPreIntegrated();
         Matrix<double> * getThumb();
 
-        void setColorScheme(int color_style, int alpha_style);
+        void setColorScheme(QString rgb, QString alpha);
         void setSpline(size_t resolution);
         void setPreIntegrated();
 

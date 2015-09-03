@@ -416,8 +416,8 @@ void ImageOpenGLWidget::initializeGL()
 
     isCLInitialized = true;
 
-    setTsfTexture(1);
-    setTsfAlpha(2);
+    setRgb("Hot");
+    setAlpha("Opaque");
     setFrame();
 //    centerImage(QSizeF());
 }
@@ -469,12 +469,12 @@ void ImageOpenGLWidget::reconstruct()
     {
         QString str("\n[" + QString(this->metaObject()->className()) + "] Warning: No files have been specified");
 
-        emit changedMessageString(str);
+        emit message(str);
         kill_flag = true;
     }
 
     // Emit to appropriate slots
-    emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Processing: ");
+    emit message("\n[" + QString(this->metaObject()->className()) + "] Processing: ");
     emit visibilityChanged(false);
 
     // Container for relevant scattering data
@@ -508,7 +508,7 @@ void ImageOpenGLWidget::reconstruct()
             // Kill process if requested
             if (kill_flag)
             {
-                emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at set " + QString::number(i + 1) + ", frame " + QString::number(j + 1));
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at set " + QString::number(i + 1) + ", frame " + QString::number(j + 1));
                 reduced_pixels->clear();
 
                 break;
@@ -569,7 +569,7 @@ void ImageOpenGLWidget::reconstruct()
             }
             else
             {
-                emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Warning: Could not process \"" + p_set.current()->current()->path() + "\".\n Too much data was kept during reconstruction.");
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Could not process \"" + p_set.current()->current()->path() + "\".\n Too much data was kept during reconstruction.");
                 kill_flag = true;
             }
 
@@ -592,7 +592,7 @@ void ImageOpenGLWidget::reconstruct()
     {
         reduced_pixels->resize(1, n_reduced_pixels);
 
-        emit changedMessageString(" " + QString::number(n_ok_files) + " files were successfully processed (" + QString::number(size_raw / 1000000.0, 'f', 3) + " MB -> " + QString::number((float)reduced_pixels->bytes() / (float)1000000.0, 'f', 3) + " MB, " + QString::number(t) + " ms, " + QString::number((float)t / (float)n_ok_files, 'g', 3) + " ms/file)");
+        emit message(" " + QString::number(n_ok_files) + " files were successfully processed (" + QString::number(size_raw / 1000000.0, 'f', 3) + " MB -> " + QString::number((float)reduced_pixels->bytes() / (float)1000000.0, 'f', 3) + " MB, " + QString::number(t) + " ms, " + QString::number((float)t / (float)n_ok_files, 'g', 3) + " ms/file)");
 
         // From q and the search radius it is straigthforward to calculate the required resolution and thus octree level
         float resolution_min = 2 * suggested_q / suggested_search_radius_high;
@@ -600,17 +600,17 @@ void ImageOpenGLWidget::reconstruct()
 
         if (verbose)
         {
-            emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Max scattering vector Q: " + QString::number(suggested_q, 'g', 3) + " inverse " + trUtf8("Å"));
+            emit message("\n[" + QString(this->metaObject()->className()) + "] Max scattering vector Q: " + QString::number(suggested_q, 'g', 3) + " inverse " + trUtf8("Å"));
         }
 
         if (verbose)
         {
-            emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Search radius: " + QString::number(suggested_search_radius_low, 'g', 2) + " to " + QString::number(suggested_search_radius_high, 'g', 2) + " inverse " + trUtf8("Å"));
+            emit message("\n[" + QString(this->metaObject()->className()) + "] Search radius: " + QString::number(suggested_search_radius_low, 'g', 2) + " to " + QString::number(suggested_search_radius_high, 'g', 2) + " inverse " + trUtf8("Å"));
         }
 
         if (verbose)
         {
-            emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Suggested minimum resolution: " + QString::number(resolution_min, 'f', 0) + " to " + QString::number(resolution_max, 'f', 0) + " voxels");
+            emit message("\n[" + QString(this->metaObject()->className()) + "] Suggested minimum resolution: " + QString::number(resolution_min, 'f', 0) + " to " + QString::number(resolution_max, 'f', 0) + " voxels");
         }
 
         emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
@@ -2832,9 +2832,9 @@ void ImageOpenGLWidget::setTsf(TransferFunction &tsf)
     }
 }
 
-void ImageOpenGLWidget::setTsfTexture(int value)
+void ImageOpenGLWidget::setRgb(QString str)
 {
-    rgb_style = value;
+    rgb_style = str;
 
     tsf.setColorScheme(rgb_style, alpha_style);
     tsf.setSpline(256);
@@ -2845,9 +2845,9 @@ void ImageOpenGLWidget::setTsfTexture(int value)
 
     update();
 }
-void ImageOpenGLWidget::setTsfAlpha(int value)
+void ImageOpenGLWidget::setAlpha(QString str)
 {
-    alpha_style = value;
+    alpha_style = str;
 
     tsf.setColorScheme(rgb_style, alpha_style);
     tsf.setSpline(256);

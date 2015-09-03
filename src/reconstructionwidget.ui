@@ -20,190 +20,203 @@
    <set>QMainWindow::AllowTabbedDocks</set>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="leftMargin">
+     <number>3</number>
+    </property>
+    <property name="topMargin">
+     <number>3</number>
+    </property>
+    <property name="rightMargin">
+     <number>3</number>
+    </property>
+    <property name="bottomMargin">
+     <number>3</number>
+    </property>
     <item>
-     <widget class="QSplitter" name="splitter_2">
+     <widget class="QSplitter" name="splitter">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QWidget" name="layoutWidget">
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="QSplitter" name="splitter">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <widget class="QOpenGLWidget" name="openGLWidget"/>
-          <widget class="QTableView" name="selectionView">
-           <property name="alternatingRowColors">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Image navigation</string>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout">
-           <item>
-            <layout class="QGridLayout" name="gridLayout">
-             <item row="0" column="6">
-              <widget class="QPushButton" name="pushButton">
-               <property name="text">
-                <string>Disable</string>
-               </property>
-               <property name="icon">
-                <iconset resource="nebula.qrc">
-                 <normaloff>:/art/kill.png</normaloff>:/art/kill.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="5">
-              <widget class="QPushButton" name="nextSeriesButton">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="nebula.qrc">
-                 <normaloff>:/art/next_series.png</normaloff>:/art/next_series.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="3">
-              <widget class="QPushButton" name="nextImageButton">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="nebula.qrc">
-                 <normaloff>:/art/forward.png</normaloff>:/art/forward.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QPushButton" name="prevImageButton">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="nebula.qrc">
-                 <normaloff>:/art/back.png</normaloff>:/art/back.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QPushButton" name="prevSeriesButton">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="nebula.qrc">
-                 <normaloff>:/art/prev_series.png</normaloff>:/art/prev_series.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="4">
-              <widget class="QPushButton" name="nextImageBatchButton">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="nebula.qrc">
-                 <normaloff>:/art/fast_forward.png</normaloff>:/art/fast_forward.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QPushButton" name="prevImageBatchButton">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="nebula.qrc">
-                 <normaloff>:/art/fast_back.png</normaloff>:/art/fast_back.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="7">
-              <spacer name="horizontalSpacer">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
+      <widget class="ImageOpenGLWidget" name="imageOpenGLWidget"/>
+      <widget class="QTableView" name="fileSqlView">
+       <property name="alternatingRowColors">
+        <bool>false</bool>
+       </property>
       </widget>
       <widget class="QToolBox" name="toolBox">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="page">
         <property name="geometry">
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>235</width>
-          <height>477</height>
+          <width>303</width>
+          <height>454</height>
          </rect>
         </property>
         <attribute name="label">
          <string>View options, Actions</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="leftMargin">
+          <number>3</number>
+         </property>
+         <property name="topMargin">
+          <number>3</number>
+         </property>
+         <property name="rightMargin">
+          <number>3</number>
+         </property>
+         <property name="bottomMargin">
+          <number>3</number>
+         </property>
          <item>
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="0" column="0" colspan="2">
-            <widget class="QComboBox" name="comboBox">
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="12" column="0" colspan="2">
+            <widget class="QProgressBar" name="progressBar_2">
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="textVisible">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0" colspan="2">
+            <widget class="QProgressBar" name="progressBar">
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="textVisible">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QPushButton" name="saveTreeButton">
+             <property name="text">
+              <string>Save</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QPushButton" name="generateTreeButton">
+             <property name="text">
+              <string>Generate octree</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0" colspan="2">
+            <widget class="QPushButton" name="applySelectionButton">
+             <property name="text">
+              <string>Apply selection</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" colspan="2">
+            <widget class="QComboBox" name="selectionComboBox">
              <item>
               <property name="text">
-               <string>Normal</string>
+               <string>Series</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>Variance</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Skewness</string>
+               <string>Set</string>
               </property>
              </item>
             </widget>
            </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="dataMaxSpinBox">
+             <property name="prefix">
+              <string>max:</string>
+             </property>
+             <property name="maximum">
+              <double>9999999.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="alphaComboBox">
+             <item>
+              <property name="text">
+               <string>Opaque</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Uniform</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Linear</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="5" column="0" colspan="2">
+            <widget class="QPushButton" name="traceButton">
+             <property name="text">
+              <string>Trace</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0" colspan="2">
+            <widget class="QPushButton" name="analyzeButton">
+             <property name="text">
+              <string>Analyze</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QDoubleSpinBox" name="dataMinSpinBox">
+             <property name="prefix">
+              <string>Data min: </string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QSpinBox" name="treeLevelSpinBox">
+             <property name="prefix">
+              <string>Octree levels: </string>
+             </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="showTraceCheckBox">
+             <property name="text">
+              <string>Show trace</string>
+             </property>
+            </widget>
+           </item>
            <item row="1" column="0">
-            <widget class="QComboBox" name="comboBox_2">
+            <widget class="QComboBox" name="rgbComboBox">
              <item>
               <property name="text">
                <string>Hot</string>
@@ -236,52 +249,57 @@
              </item>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="comboBox_3">
-             <item>
-              <property name="text">
-               <string>Opaque</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Uniform</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Linear</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox">
-             <property name="prefix">
-              <string>Data min: </string>
+           <item row="6" column="0" colspan="2">
+            <widget class="QPushButton" name="applyMarkersButton">
+             <property name="text">
+              <string>Apply markers</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
-             <property name="prefix">
-              <string>max:</string>
-             </property>
-             <property name="maximum">
-              <double>9999999.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>1000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0" colspan="2">
-            <widget class="QCheckBox" name="checkBox_9">
+           <item row="3" column="0">
+            <widget class="QCheckBox" name="logCheckBox">
              <property name="text">
               <string>Log</string>
              </property>
              <property name="checked">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QPushButton" name="reconstructButton">
+             <property name="text">
+              <string>Reconstruct</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0" colspan="2">
+            <widget class="QComboBox" name="viewModeComboBox">
+             <item>
+              <property name="text">
+               <string>Normal</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Variance</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Skewness</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="13" column="0" colspan="2">
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="nebula.qrc">
+               <normaloff>:/art/kill.png</normaloff>:/art/kill.png</iconset>
              </property>
             </widget>
            </item>
@@ -307,39 +325,37 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>225</width>
-          <height>477</height>
+          <width>303</width>
+          <height>454</height>
          </rect>
         </property>
         <attribute name="label">
          <string>Corrections</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <property name="leftMargin">
+          <number>3</number>
+         </property>
+         <property name="topMargin">
+          <number>3</number>
+         </property>
+         <property name="rightMargin">
+          <number>3</number>
+         </property>
+         <property name="bottomMargin">
+          <number>3</number>
+         </property>
          <item>
           <layout class="QGridLayout" name="gridLayout_3">
-           <item row="0" column="0">
-            <widget class="QPushButton" name="pushButton_2">
-             <property name="text">
-              <string>Trace</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1" colspan="3">
-            <widget class="QCheckBox" name="checkBox">
-             <property name="text">
-              <string>Show</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="3">
-            <widget class="QCheckBox" name="checkBox_2">
+           <item row="0" column="0" colspan="3">
+            <widget class="QCheckBox" name="planarBgCheckBox">
              <property name="text">
               <string>Planar b/g subtract</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="3">
-            <widget class="QSpinBox" name="spinBox">
+           <item row="0" column="3">
+            <widget class="QSpinBox" name="bgSampleSpinBox">
              <property name="prefix">
               <string>Samples: </string>
              </property>
@@ -354,18 +370,18 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0" colspan="3">
-            <widget class="QCheckBox" name="checkBox_3">
+           <item row="1" column="0" colspan="3">
+            <widget class="QCheckBox" name="flatBgCheckBox">
              <property name="text">
               <string>Flat b/g subtract</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="3">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_8"/>
+           <item row="1" column="3">
+            <widget class="QDoubleSpinBox" name="flatBgSpinBox"/>
            </item>
-           <item row="3" column="0" colspan="4">
-            <widget class="QCheckBox" name="checkBox_4">
+           <item row="2" column="0" colspan="4">
+            <widget class="QCheckBox" name="lorentzCheckBox">
              <property name="text">
               <string>Lorentz correction</string>
              </property>
@@ -374,8 +390,8 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="0" colspan="4">
-            <widget class="QCheckBox" name="checkBox_5">
+           <item row="3" column="0" colspan="4">
+            <widget class="QCheckBox" name="pixelProjectionCheckBox">
              <property name="text">
               <string>Pixel projection correction</string>
              </property>
@@ -384,8 +400,8 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="0" colspan="4">
-            <widget class="QCheckBox" name="checkBox_6">
+           <item row="4" column="0" colspan="4">
+            <widget class="QCheckBox" name="polarizationCheckBox">
              <property name="text">
               <string>Polarization correction</string>
              </property>
@@ -394,8 +410,8 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0" colspan="4">
-            <widget class="QCheckBox" name="checkBox_7">
+           <item row="5" column="0" colspan="4">
+            <widget class="QCheckBox" name="fluxCheckBox">
              <property name="text">
               <string>Flux normalization</string>
              </property>
@@ -404,8 +420,8 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="0" colspan="4">
-            <widget class="QCheckBox" name="checkBox_8">
+           <item row="6" column="0" colspan="4">
+            <widget class="QCheckBox" name="expTimeCheckBox">
              <property name="text">
               <string>Exposure time normalization</string>
              </property>
@@ -414,15 +430,15 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="0" colspan="4">
-            <widget class="QCheckBox" name="checkBox_10">
+           <item row="7" column="0" colspan="4">
+            <widget class="QCheckBox" name="beamCenterCheckBox">
              <property name="text">
               <string>Beam center override</string>
              </property>
             </widget>
            </item>
-           <item row="9" column="0" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+           <item row="8" column="0" colspan="2">
+            <widget class="QDoubleSpinBox" name="xCenterSpinBox">
              <property name="prefix">
               <string>+Δx: </string>
              </property>
@@ -431,8 +447,8 @@
              </property>
             </widget>
            </item>
-           <item row="9" column="2" colspan="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_4">
+           <item row="8" column="2" colspan="2">
+            <widget class="QDoubleSpinBox" name="yCenterSpinBox">
              <property name="prefix">
               <string>+Δy: </string>
              </property>
@@ -441,8 +457,8 @@
              </property>
             </widget>
            </item>
-           <item row="10" column="0" colspan="4">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_5">
+           <item row="9" column="0" colspan="4">
+            <widget class="QDoubleSpinBox" name="omegaSpinBox">
              <property name="prefix">
               <string>+Δω: </string>
              </property>
@@ -451,8 +467,8 @@
              </property>
             </widget>
            </item>
-           <item row="11" column="0" colspan="4">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_6">
+           <item row="10" column="0" colspan="4">
+            <widget class="QDoubleSpinBox" name="kappaSpinBox">
              <property name="prefix">
               <string>+Δκ: </string>
              </property>
@@ -461,8 +477,8 @@
              </property>
             </widget>
            </item>
-           <item row="12" column="0" colspan="4">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_7">
+           <item row="11" column="0" colspan="4">
+            <widget class="QDoubleSpinBox" name="phiSpinBox">
              <property name="prefix">
               <string>+Δφ: </string>
              </property>
@@ -481,7 +497,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
-             <height>131</height>
+             <height>149</height>
             </size>
            </property>
           </spacer>
@@ -490,6 +506,100 @@
        </widget>
       </widget>
      </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="prevSeriesButton">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/prev_series.png</normaloff>:/art/prev_series.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="prevImageBatchButton">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/fast_back.png</normaloff>:/art/fast_back.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="prevImageButton">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/back.png</normaloff>:/art/back.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="nextImageButton">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/forward.png</normaloff>:/art/forward.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="nextImageBatchButton">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/fast_forward.png</normaloff>:/art/fast_forward.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="nextSeriesButton">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/next_series.png</normaloff>:/art/next_series.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="deactivateFileButton">
+        <property name="text">
+         <string>Disable</string>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/kill.png</normaloff>:/art/kill.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -511,6 +621,7 @@
    <addaction name="actionImageScreenshot"/>
    <addaction name="actionFrameScreenshot"/>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionSave">
    <property name="icon">
     <iconset resource="nebula.qrc">
@@ -593,6 +704,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ImageOpenGLWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>image/imagepreview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="nebula.qrc"/>
  </resources>

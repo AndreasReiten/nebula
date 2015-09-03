@@ -7,9 +7,8 @@
 #include <QSettings>
 #include <QMessageBox>
 
-FileBrowserWidget::FileBrowserWidget(QSqlDatabase db, QWidget *parent) :
+FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
     QMainWindow(parent),
-    p_db(db),
     ui(new Ui::FileBrowserWidget)
 {
     // Prepare column to sql table translation map
@@ -41,7 +40,7 @@ FileBrowserWidget::FileBrowserWidget(QSqlDatabase db, QWidget *parent) :
 
     ui->addFilesButton->setIcon(QIcon(":/art/download.png"));
 
-    headerHighlighter = new Highlighter(ui->headerEdit->document());
+//    headerHighlighter = new Highlighter(ui->headerEdit->document());
 
     this->setAnimated(false);
     connect(ui->filterLineEdit, SIGNAL(textChanged(QString)), fileTreeModel, SLOT(setStringFilter(QString)));
@@ -78,8 +77,8 @@ FileBrowserWidget::FileBrowserWidget(QSqlDatabase db, QWidget *parent) :
 
 void FileBrowserWidget::setHeader(QString path)
 {
-    DetectorFile file(path);
-    ui->headerEdit->setPlainText(file.getHeaderText());
+//    DetectorFile file(path);
+//    ui->headerEdit->setPlainText(file.getHeaderText());
 }
 
 void FileBrowserWidget::querySelectionModel(QString str)
@@ -88,7 +87,7 @@ void FileBrowserWidget::querySelectionModel(QString str)
     if (selection_model->lastError().isValid())
     {
         qDebug() << selection_model->lastError();
-        ui->sqlOutputLabel->setText(selection_model->lastError().text());
+        ui->statusBar->showMessage(selection_model->lastError().text());
     }
 }
 
@@ -108,6 +107,44 @@ void FileBrowserWidget::sortItems(int column,Qt::SortOrder order)
 
 void FileBrowserWidget::initSql()
 {
+    // Database
+    if (p_db.isOpen()) p_db.close();
+    p_db = QSqlDatabase::addDatabase("QSQLITE", "browser_db");
+
+    p_db.setDatabaseName(QDir::currentPath() + "/browser.sqlite3");
+
+    if (p_db.open())
+    {
+        QSqlQuery query(p_db);
+        if (!query.exec("CREATE TABLE IF NOT EXISTS cbf ("
+                        "FilePath TEXT PRIMARY KEY NOT NULL, "
+                        "Path TEXT,"
+                        "File TEXT,"
+                        "Active INTEGER, "
+                        "Omega REAL, "
+                        "Kappa REAL, "
+                        "Phi REAL, "
+                        "StartAngle REAL,"
+                        "AngleIncrement REAL,"
+                        "DetectorDistance REAL,"
+                        "BeamX REAL,"
+                        "BeamY REAL,"
+                        "Flux REAL,"
+                        "ExposureTime REAL,"
+                        "Wavelength REAL,"
+                        "Detector TEXT,"
+                        "PixelSizeX REAL,"
+                        "PixelSizeY REAL"
+                        ");"))
+        {
+            qDebug() << sqlQueryError(query);
+        }
+    }
+    else
+    {
+        qDebug() << "Database error" << p_db.lastError();
+    }
+
     // Queries
     upsert_file_query = new QSqlQuery(p_db);
     upsert_file_query->prepare("INSERT OR IGNORE INTO cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) VALUES (:FilePath, :Path, :File, :Active, :Omega, :Kappa, :Phi, :StartAngle, :AngleIncrement, :DetectorDistance, :BeamX, :BeamY, :Flux, :ExposureTime, :Wavelength, :Detector, :PixelSizeX, :PixelSizeY);");
@@ -188,7 +225,7 @@ void FileBrowserWidget::loadSettings()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     this->restoreState(settings.value("FileBrowserWidget/state").toByteArray());
-    this->ui->splitter_2->restoreState(settings.value("FileBrowserWidget/splitter_2/state").toByteArray());
+//    this->ui->splitter_2->restoreState(settings.value("FileBrowserWidget/splitter_2/state").toByteArray());
     this->ui->splitter->restoreState(settings.value("FileBrowserWidget/splitter/state").toByteArray());
 }
 
@@ -196,7 +233,7 @@ void FileBrowserWidget::writeSettings()
 {
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setValue("FileBrowserWidget/state", this->saveState());
-    settings.setValue("FileBrowserWidget/splitter_2/state", this->ui->splitter_2->saveState());
+//    settings.setValue("FileBrowserWidget/splitter_2/state", this->ui->splitter_2->saveState());
     settings.setValue("FileBrowserWidget/splitter/state", this->ui->splitter->saveState());
 }
 
@@ -206,12 +243,12 @@ void FileBrowserWidget::on_execQueryButton_clicked()
     if (query.lastError().isValid())
     {
         qDebug() << query.lastError();
-        ui->sqlOutputLabel->setText(query.lastError().text());
+        ui->statusBar->showMessage(query.lastError().text());
     }
 }
 
 
 void FileBrowserWidget::on_reconstructButton_clicked()
 {
-    qDebug() << "Set sql table as source for reconstruction";
+    qDebug() << "Set sql table as source for reconstruction. Ask to merge with reconstruction db or just use this.";
 }

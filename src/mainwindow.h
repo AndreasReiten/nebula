@@ -14,12 +14,12 @@
 #include <QGridLayout>
 #include <QFileDialog>
 #include <QTableView>
-#include <QSqlDatabase>
-#include <QSqlError>
+//#include <QSqlDatabase>
+//#include <QSqlError>
 
 #include "filebrowserwidget.h"
 #include "reconstructionwidget.h"
-#include "sql/sqlqol.h"
+//#include "sql/sqlqol.h"
 
 #include "math/matrix.h"
 #include "opencl/contextcl.h"
@@ -54,12 +54,12 @@ private slots:
     void saveLineAsTextProxy();
     void saveSurfaceAsTextProxy();
 
-    void displayPopup(QString title, QString text);
+//    void displayPopup(QString title, QString text);
     void transferSet();
 
     void takeVolumeScreenshot();
     void setCurrentSvoLevel(int value);
-    void setTab(int tab);
+//    void setTab(int tab);
 
     void loadSvo();
     void saveSvo();
@@ -70,29 +70,29 @@ private slots:
     void aboutOpenGL();
 
     void print(QString str);
-    void setGeneralProgressFormat(QString str);
-    void setMemoryUsageFormat(QString str);
+//    void setGeneralProgressFormat(QString str);
+//    void setMemoryUsageFormat(QString str);
     void loadUnitcellFile();
-    void initWorkers();
+//    void initWorkers();
 
     void loadBrowserPaths();
-    void setHeader(QString path);
+//    void setHeader(QString path);
 
-    void saveProject();
-    void loadProject();
+//    void saveProject();
+//    void loadProject();
 
-    void applyAnalytics();
-    void applyPlaneMarker();
-    void applySelection();
-    void nextFrame();
-    void previousFrame();
-    void batchForward();
-    void batchBackward();
-    void takeImageScreenshotFunction();
-    void saveImageFunction();
-    void setApplyMode(QString str);
-    void setBatchSize(int value);
-    void setImageRange(int low, int high);
+//    void applyAnalytics();
+//    void applyPlaneMarker();
+//    void applySelection();
+//    void nextFrame();
+//    void previousFrame();
+//    void batchForward();
+//    void batchBackward();
+//    void takeImageScreenshotFunction();
+//    void saveImageFunction();
+//    void setApplyMode(QString str);
+//    void setBatchSize(int value);
+//    void setImageRange(int low, int high);
     void setLineIntegralPlot();
     void setPlaneIntegralPlot();
 
@@ -119,8 +119,8 @@ signals:
     void setPulled(SeriesSet set);
 
 private:
-    void initSql();
-    QSqlDatabase p_db;
+//    void initSql();
+//    QSqlDatabase p_db;
     Ui::MainWindow *ui;
     FileBrowserWidget *fileBrowserWidget;
 //    QMainWindow * fileBrowserWidget;
@@ -236,31 +236,25 @@ private:
     QLineEdit * fileFilter;
 
     /* Header dock widget */
-    QDockWidget * fileHeaderDockOne;
-    QPlainTextEdit * fileHeaderEditOne;
+//    QDockWidget * fileHeaderDockOne;
+//    QPlainTextEdit * fileHeaderEditOne;
 
-    QDockWidget * fileHeaderDockTwo;
-    QPlainTextEdit * fileHeaderEditTwo;
+//    QDockWidget * fileHeaderDockTwo;
+//    QPlainTextEdit * fileHeaderEditTwo;
 
     // Buttons
-    QPushButton * reconstructButton;
-    QPushButton * setFileButton;
-    QPushButton * readFileButton;
-    QPushButton * projectFileButton;
-    QPushButton * voxelizeButton;
-    QPushButton * saveSvoButton;
-    QPushButton * killButton;
+//    QPushButton * reconstructButton;
+//    QPushButton * setFileButton;
+//    QPushButton * readFileButton;
+//    QPushButton * projectFileButton;
+//    QPushButton * voxelizeButton;
+//    QPushButton * saveSvoButton;
+//    QPushButton * killButton;
     QPushButton * functionToggleButton;
     QPushButton * loadParButton;
     QPushButton * unitcellButton;
     QPushButton * loadPathsPushButton;
-    QPushButton * removeCurrentPushButton;
-
-
-    QThread * voxelizeThread;
-
-    // Workers
-    VoxelizeWorker * voxelizeWorker;
+//    QPushButton * removeCurrentPushButton;
 
     // File browser
     FileSelectionModel * fileSelectionModel;
@@ -352,15 +346,15 @@ private:
     // Volume render widget
     QMainWindow * volumeRenderMainWindow;
 
-    QComboBox * activeAngleComboBox;
+//    QComboBox * activeAngleComboBox;
 
-    QSpinBox * svoLevelSpinBox;
+//    QSpinBox * svoLevelSpinBox;
 
-    QDoubleSpinBox * omegaCorrectionSpinBox;
-    QDoubleSpinBox * kappaCorrectionSpinBox;
-    QDoubleSpinBox * phiCorrectionSpinBox;
-    QDoubleSpinBox * beamXOverrideSpinBox;
-    QDoubleSpinBox * beamYOverrideSpinBox;
+//    QDoubleSpinBox * omegaCorrectionSpinBox;
+//    QDoubleSpinBox * kappaCorrectionSpinBox;
+//    QDoubleSpinBox * phiCorrectionSpinBox;
+//    QDoubleSpinBox * beamXOverrideSpinBox;
+//    QDoubleSpinBox * beamYOverrideSpinBox;
 
 
     QDoubleSpinBox * funcParamASpinBox;
@@ -373,7 +367,7 @@ private:
     QDoubleSpinBox * volumeAlphaSpinBox;
     QDoubleSpinBox * volumeBrightnessSpinBox;
 
-    QCheckBox * beamOverrideCheckBox;
+//    QCheckBox * beamOverrideCheckBox;
 
     QComboBox * volumeTsfTextureComboBox;
     QComboBox * volumeTsfAlphaComboBox;
@@ -384,73 +378,73 @@ private:
     QCheckBox * volumeRenderLogCheckBox;
 
     QElapsedTimer timer;
-    Highlighter * msgLogHighlighter;
+//    Highlighter * msgLogHighlighter;
     Highlighter * textResultHighlighter;
-    Highlighter * headerHighlighterOne;
-    Highlighter * headerHighlighterTwo;
+//    Highlighter * headerHighlighterOne;
+//    Highlighter * headerHighlighterTwo;
 
-    QTabWidget * tabWidget;
+//    QTabWidget * tabWidget;
 
-    QDockWidget * fileDockWidget;
-    QDockWidget * voxelizeDockWidget;
-    QWidget * fileControlsWidget;
-    QWidget * voxelizeWidget;
+//    QDockWidget * fileDockWidget;
+//    QDockWidget * voxelizeDockWidget;
+//    QWidget * fileControlsWidget;
+//    QWidget * voxelizeWidget;
 
-    QWidget * toolChainWidget;
-    QWidget * mainWidget;
-    QWidget * botWidget;
+//    QWidget * toolChainWidget;
+//    QWidget * mainWidget;
+//    QWidget * botWidget;
     QWidget * graphicsWidget;
     QWidget * functionWidget;
     QWidget * unitcellWidget;
     QWidget * setFilesWidget;
 
     // Corrections dock widget
-    QWidget * correctionWidget;
-    QDockWidget * correctionDock;
-    QPushButton * traceSeriesPushButton;
-    QCheckBox * traceTextureCheckBox;
-    QDoubleSpinBox * correctionFlatDoubleSpinBox;
-    QSpinBox * correctionClutterSpinBox;
-    QSpinBox * correctionMedianSpinBox;
-    QSpinBox * correctionPlaneSpinBox;
-    QCheckBox * correctionFlatCheckBox;
-    QCheckBox * correctionPlaneCheckBox;
-    QCheckBox * correctionClutterCheckBox;
-    QCheckBox * correctionMedianCheckBox;
-    QCheckBox * correctionLorentzCheckBox;
-    QCheckBox * correctionPolarizationCheckBox;
-    QCheckBox * correctionFluxCheckBox;
-    QCheckBox * correctionExposureCheckBox;
-    QCheckBox * correctionPixelProjectionCheckBox;
+//    QWidget * correctionWidget;
+//    QDockWidget * correctionDock;
+//    QPushButton * traceSeriesPushButton;
+//    QCheckBox * traceTextureCheckBox;
+//    QDoubleSpinBox * correctionFlatDoubleSpinBox;
+//    QSpinBox * correctionClutterSpinBox;
+//    QSpinBox * correctionMedianSpinBox;
+//    QSpinBox * correctionPlaneSpinBox;
+//    QCheckBox * correctionFlatCheckBox;
+//    QCheckBox * correctionPlaneCheckBox;
+//    QCheckBox * correctionClutterCheckBox;
+//    QCheckBox * correctionMedianCheckBox;
+//    QCheckBox * correctionLorentzCheckBox;
+//    QCheckBox * correctionPolarizationCheckBox;
+//    QCheckBox * correctionFluxCheckBox;
+//    QCheckBox * correctionExposureCheckBox;
+//    QCheckBox * correctionPixelProjectionCheckBox;
 
     // Navigation dock widget
-    QWidget * navigationWidget;
-    QDockWidget * navigationDock;
-    QProgressBar * generalProgressBar;
-    QSpinBox * batchSizeSpinBox;
-    QSpinBox * imageSpinBox;
-    QPushButton * nextFramePushButton;
-    QPushButton * previousFramePushButton;
-    QPushButton * batchForwardPushButton;
-    QPushButton * batchBackwardPushButton;
-    QPushButton * nextSeriesPushButton;
-    QPushButton * prevSeriesPushButton;
+//    QWidget * navigationWidget;
+//    QDockWidget * navigationDock;
+//    QProgressBar * generalProgressBar;
+//    QSpinBox * batchSizeSpinBox;
+//    QSpinBox * imageSpinBox;
+//    QPushButton * nextFramePushButton;
+//    QPushButton * previousFramePushButton;
+//    QPushButton * batchForwardPushButton;
+//    QPushButton * batchBackwardPushButton;
+//    QPushButton * nextSeriesPushButton;
+//    QPushButton * prevSeriesPushButton;
 
     // Operations dock widget
-    QPushButton * applyPlaneMarkerPushButton;
-    QPushButton * applySelectionPushButton;
-    QPushButton * integratePushButton;
-    QComboBox * selectionModeComboBox;
-    QGridLayout * selectionLayout;
-    QWidget * selectionWidget;
-    QDockWidget * selectionDock;
+//    QPushButton * applyPlaneMarkerPushButton;
+//    QPushButton * applySelectionPushButton;
+//    QPushButton * integratePushButton;
+//    QComboBox * selectionModeComboBox;
+//    QGridLayout * selectionLayout;
+//    QWidget * selectionWidget;
+//    QDockWidget * selectionDock;
 
     // Misc
     QString apply_mode;
     QPlainTextEdit * outputPlainTextEdit;
 
 protected:
-    ImageOpenGLWidget * imageOpenGLWidget;
+//    ImageOpenGLWidget * imageOpenGLWidget;
 
     // OpenGL rendering widgets
     VolumeOpenGLWidget * volumeOpenGLWidget;
@@ -467,33 +461,33 @@ protected:
 
 
     /* Image browser view settings widget */
-    QComboBox * imageModeComboBox;
-    QComboBox * imageTsfTextureComboBox;
-    QComboBox * imageTsfAlphaComboBox;
+//    QComboBox * imageModeComboBox;
+//    QComboBox * imageTsfTextureComboBox;
+//    QComboBox * imageTsfAlphaComboBox;
 
-    QDoubleSpinBox * imageDataMinDoubleSpinBox;
-    QDoubleSpinBox * imageDataMaxDoubleSpinBox;
+//    QDoubleSpinBox * imageDataMinDoubleSpinBox;
+//    QDoubleSpinBox * imageDataMaxDoubleSpinBox;
 
-    QCheckBox * imageLogCheckBox;
+//    QCheckBox * imageLogCheckBox;
 
-    QWidget * imageSettingsWidget;
-    QDockWidget * imageSettingsDock;
+//    QWidget * imageSettingsWidget;
+//    QDockWidget * imageSettingsDock;
 
-    QDockWidget * outputDockWidget;
+//    QDockWidget * outputDockWidget;
     QDockWidget * graphicsDockWidget;
     QDockWidget * functionDockWidget;
 
     QString working_dir;
     QString screenshot_dir;
 
-    QPlainTextEdit * errorTextEdit;
-    QProgressBar * memoryUsageProgressBar;
+//    QPlainTextEdit * errorTextEdit;
+//    QProgressBar * memoryUsageProgressBar;
 
-    QMenuBar * mainMenu;
-    QMenu * reduceMenu;
-    QMenu * svoMenu;
-    QMenu * viewMenu;
-    QMenu * helpMenu;
+//    QMenuBar * mainMenu;
+//    QMenu * reduceMenu;
+//    QMenu * svoMenu;
+//    QMenu * viewMenu;
+//    QMenu * helpMenu;
     QToolBar * viewToolBar;
 
     Matrix<float> reduced_pixels;

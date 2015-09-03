@@ -17,7 +17,7 @@ class FileBrowserWidget : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit FileBrowserWidget(QSqlDatabase db, QWidget *parent = 0);
+    explicit FileBrowserWidget(QWidget *parent = 0);
     ~FileBrowserWidget();
 
 public slots:
@@ -35,9 +35,6 @@ private:
     Ui::FileBrowserWidget *ui;
 
     FileSelectionModel * fileTreeModel;
-    CustomSqlQueryModel * selectionModel;
-
-    Highlighter * headerHighlighter;
 
     void initSql();
     QSqlDatabase p_db;

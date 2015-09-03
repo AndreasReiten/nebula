@@ -187,7 +187,7 @@ void VoxelizeWorker::process()
     if (reduced_pixels->size() <= 0)
     {
         QString str("\n[" + QString(this->metaObject()->className()) + "] Warning: No data available!");
-        emit changedMessageString(str);
+        emit message(str);
         kill_flag = true;
     }
 
@@ -203,8 +203,8 @@ void VoxelizeWorker::process()
         emit changedRangeGenericProcess(0, 100);
         emit showProgressBar(true);
 
-        emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Generating Sparse Voxel Octree " + QString::number(svo->levels()) + " levels deep.");
-        emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] The source data is " + QString::number(reduced_pixels->bytes() / 1000000.0, 'g', 3) + " MB");
+        emit message("\n[" + QString(this->metaObject()->className()) + "] Generating Sparse Voxel Octree " + QString::number(svo->levels()) + " levels deep.");
+        emit message("\n[" + QString(this->metaObject()->className()) + "] The source data is " + QString::number(reduced_pixels->bytes() / 1000000.0, 'g', 3) + " MB");
 
         // The number of data points in a single brick
         size_t n_points_brick = svo->brickOuterDimension() * svo->brickOuterDimension() * svo->brickOuterDimension();
@@ -346,7 +346,7 @@ void VoxelizeWorker::process()
         {
             if (kill_flag)
             {
-                emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at iteration " + QString::number(i + 1) + " of " + QString::number(reduced_pixels->size() / 4));
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at iteration " + QString::number(i + 1) + " of " + QString::number(reduced_pixels->size() / 4));
                 break;
             }
 
@@ -383,7 +383,7 @@ void VoxelizeWorker::process()
             // Cycle through the levels
             for (size_t lvl = 0; lvl < svo->levels(); lvl++)
             {
-                emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Constructing Level " + QString::number(lvl + 1) + " (dim: " + QString::number(svo->brickInnerDimension() * (1 <<  lvl)) + ")");
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Constructing Level " + QString::number(lvl + 1) + " (dim: " + QString::number(svo->brickInnerDimension() * (1 <<  lvl)) + ")");
                 emit changedFormatGenericProgress("Constructing Level " + QString::number(lvl + 1) + " (dim: " + QString::number(svo->brickInnerDimension() * (1 <<  lvl)) + "): %p%");
 
                 timer.start();
@@ -406,7 +406,7 @@ void VoxelizeWorker::process()
                     if ((non_empty_node_counter + 1) >= n_max_bricks)
                     {
                         QString str("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed due to memory overflow. The dataset has grown too large! (" + QString::number(non_empty_node_counter * n_points_brick * sizeof(cl_float) / 1e6, 'g', 3) + " MB)");
-                        emit changedMessageString(str);
+                        emit message(str);
                         kill_flag = true;
                     }
 
@@ -761,14 +761,14 @@ void VoxelizeWorker::process()
 
                     QString str("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at iteration " + QString::number(lvl + 1) + " of " + QString::number(svo->levels()) + "!");
 
-                    emit changedMessageString(str);
+                    emit message(str);
                     break;
                 }
 
                 nodes_prev_lvls += nodes[lvl];
 
                 size_t t = timer.restart();
-                emit changedMessageString(" ...done (" + QString::number(t) + " ms, " + QString::number(nodes[lvl]) + " nodes)");
+                emit message(" ...done (" + QString::number(t) + " ms, " + QString::number(nodes[lvl]) + " nodes)");
             }
 
             if (!kill_flag)
@@ -811,7 +811,7 @@ void VoxelizeWorker::process()
 
             if (!kill_flag)
             {
-                emit changedMessageString("\n[" + QString(this->metaObject()->className()) + "] Done (" + QString::number(totaltime.elapsed()) + " ms).\nThe dataset consists of " + QString::number(nodes_prev_lvls) + " bricks and is approx " + QString::number((svo->bytes()) / 1e6, 'g', 3) + " MB\nThe dataset can now be saved");
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Done (" + QString::number(totaltime.elapsed()) + " ms).\nThe dataset consists of " + QString::number(nodes_prev_lvls) + " bricks and is approx " + QString::number((svo->bytes()) / 1e6, 'g', 3) + " MB\nThe dataset can now be saved");
 
             }
         }

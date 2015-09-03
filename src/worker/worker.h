@@ -26,7 +26,8 @@ class BaseWorker : public QObject, protected OpenCLFunctions
     signals:
         void finished();
         void abort();
-        void changedMessageString(QString str);
+        void message(QString);
+        void message(QString, int);
         void changedGenericProgress(int value);
         void changedMemoryUsage(int value);
         void changedFormatGenericProgress(QString str);

@@ -460,8 +460,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         GLuint tsf_tex_gl;
         GLuint tsf_tex_gl_thumb;
         TransferFunction tsf;
-        int tsf_color_scheme;
-        int tsf_alpha_scheme;
+        QString tsf_color_scheme, tsf_alpha_scheme;
 
         // Timing
         QElapsedTimer session_age;

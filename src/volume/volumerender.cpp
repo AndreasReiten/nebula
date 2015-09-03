@@ -712,8 +712,8 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     centerline_coords.set(2, 3, 0.0);
 
     // Transfer texture
-    tsf_color_scheme = 0;
-    tsf_alpha_scheme = 0;
+    tsf_color_scheme = "Hot";
+    tsf_alpha_scheme = "Uniform";
 
     tsf_parameters_model[0] = 0.0; // texture min
     tsf_parameters_model[1] = 1.0; // texture max

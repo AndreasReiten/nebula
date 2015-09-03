@@ -76,7 +76,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
     signals:
         void runTraceWorker(SeriesSet set);
 
-        void changedMessageString(QString str);
+        void message(QString);
+        void message(QString, int);
         void changedMemoryUsage(int value);
         void changedFormatMemoryUsage(QString str);
         void changedRangeMemoryUsage(int min, int max);
@@ -113,8 +114,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         void setMode(int value);
         void setNoise(double value);
-        void setTsfTexture(int value);
-        void setTsfAlpha(int value);
+        void setRgb(QString str);
+        void setAlpha(QString str);
         void setLog(bool value);
         void setCorrectionLorentz(bool value);
         void setCorrectionBackground(bool value);
@@ -262,7 +263,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         cl_sampler image_sampler;
 
         TransferFunction tsf;
-        int rgb_style, alpha_style;
+        QString rgb_style, alpha_style;
         int bg_sample_interdist;
 
         int n_lsq_samples;

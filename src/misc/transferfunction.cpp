@@ -18,7 +18,7 @@ Matrix<double> * TransferFunction::getPreIntegrated()
 }
 
 
-void TransferFunction::setColorScheme(int color_style, int alpha_style)
+void TransferFunction::setColorScheme(QString rgb, QString alpha)
 {
     // The format is [x, r, g, b, a]
     // Todo: make each component independent
@@ -104,81 +104,79 @@ void TransferFunction::setColorScheme(int color_style, int alpha_style)
 
     Matrix<double> choice;
 
-    switch (color_style)
+    if (rgb == "Rainbow")
     {
-        case 0:
-            choice = rainbow.colmajor();
-            break;
-
-        case 1:
-            choice = hot.colmajor();
-            break;
-
-        case 2:
-            choice = hsv.colmajor();
-            break;
-
-        case 3:
-            choice = galaxy.colmajor();
-            break;
-
-        case 4:
-            choice = binary.colmajor();
-            break;
-
-        case 5:
-            choice = yranib.colmajor();
-            break;
-
-        default:
-            choice = rainbow.colmajor();
-            break;
+        choice = rainbow.colmajor();
+    }
+    else if (rgb == "Hot")
+    {
+        choice = hot.colmajor();
+    }
+    else if (rgb == "Hsv")
+    {
+        choice = hsv.colmajor();
+    }
+    else if (rgb == "Galaxy")
+    {
+        choice = galaxy.colmajor();
+    }
+    else if (rgb == "Binary")
+    {
+        choice = binary.colmajor();
+    }
+    else if (rgb == "Yranib")
+    {
+        choice = yranib.colmajor();
+    }
+    else
+    {
+        choice = rainbow.colmajor();
     }
 
     // Compute the alpha
-    switch (alpha_style)
+    if (alpha == "Linear")
     {
-        case 0:
+        // Linearly increasing alpha
+        for (size_t i = 0; i < choice.n(); i++)
+        {
+            choice[i + choice.n() * 4] = choice[i] / choice[choice.n() - 1];
+        }
+    }
+    else if (alpha == "Exponential")
+    {
+        // Exponentially increasing data
+        for (size_t i = 0; i < choice.n(); i++)
+        {
+            choice[i + choice.n() * 4] = std::exp(-(1.0 - choice[i] / choice[choice.n() - 1]) * 3.0);
+        }
 
-            // Linearly increasing alpha
-            for (size_t i = 0; i < choice.n(); i++)
-            {
-                choice[i + choice.n() * 4] = choice[i] / choice[choice.n() - 1];
-            }
+        choice[choice.n() * 4] = 0;
+    }
+    else if (alpha == "Uniform")
+    {
+        // Uniform alpha except for the first vertex
+        for (size_t i = 0; i < choice.n(); i++)
+        {
+            choice[i + choice.n() * 4] = 1.0;
+        }
 
-            break;
-
-        case 1:
-
-            // Exponentially increasing data
-            for (size_t i = 0; i < choice.n(); i++)
-            {
-                choice[i + choice.n() * 4] = std::exp(-(1.0 - choice[i] / choice[choice.n() - 1]) * 3.0);
-            }
-
-            choice[choice.n() * 4] = 0;
-            break;
-
-        case 2:
-
-            // Uniform alpha except for the first vertex
-            for (size_t i = 0; i < choice.n(); i++)
-            {
-                choice[i + choice.n() * 4] = 1.0;
-            }
-
-            choice[choice.n() * 4] = 0;
-            break;
-
-        case 3:
-
-            // Opaque
-            for (size_t i = 0; i < choice.n(); i++)
-            {
-                choice[i + choice.n() * 4] = 1.0;
-            }
-
-            break;
+        choice[choice.n() * 4] = 0;
+    }
+    else if (alpha == "Opaque")
+    {
+        // Opaque
+        for (size_t i = 0; i < choice.n(); i++)
+        {
+            choice[i + choice.n() * 4] = 1.0;
+        }
+    }
+    else
+    {
+        // Opaque
+        for (size_t i = 0; i < choice.n(); i++)
+        {
+            choice[i + choice.n() * 4] = 1.0;
+        }
     }
 
     x_position.setDeep(1, choice.n(), choice.data());

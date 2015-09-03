@@ -13,33 +13,37 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowOpacity">
+   <double>1.000000000000000</double>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowTabbedDocks</set>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="leftMargin">
+     <number>1</number>
+    </property>
+    <property name="topMargin">
+     <number>1</number>
+    </property>
+    <property name="rightMargin">
+     <number>1</number>
+    </property>
+    <property name="bottomMargin">
+     <number>1</number>
+    </property>
     <item>
      <widget class="QTabWidget" name="tabWidget">
-      <property name="currentIndex">
-       <number>0</number>
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
       </property>
-      <widget class="QWidget" name="tab">
-       <attribute name="title">
-        <string>Browse</string>
-       </attribute>
-      </widget>
-      <widget class="QWidget" name="tab_4">
-       <attribute name="title">
-        <string>Reconstruct</string>
-       </attribute>
-      </widget>
-      <widget class="QWidget" name="tab_3">
-       <attribute name="title">
-        <string>View</string>
-       </attribute>
-      </widget>
-      <widget class="QWidget" name="Misc">
-       <attribute name="title">
-        <string>Misc</string>
-       </attribute>
-      </widget>
+      <property name="currentIndex">
+       <number>-1</number>
+      </property>
      </widget>
     </item>
    </layout>
@@ -53,8 +57,37 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionQt"/>
+    <addaction name="actionOpenCL"/>
+    <addaction name="actionOpenGL"/>
+    <addaction name="actionNebula"/>
+   </widget>
+   <addaction name="menuAbout"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionQt">
+   <property name="text">
+    <string>Qt</string>
+   </property>
+  </action>
+  <action name="actionOpenCL">
+   <property name="text">
+    <string>OpenCL</string>
+   </property>
+  </action>
+  <action name="actionOpenGL">
+   <property name="text">
+    <string>OpenGL</string>
+   </property>
+  </action>
+  <action name="actionNebula">
+   <property name="text">
+    <string>Nebula</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
