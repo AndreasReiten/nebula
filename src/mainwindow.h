@@ -48,6 +48,9 @@ public:
 
 
 private slots:
+    void browserDbReplace();
+    void browserDbAppend();
+
     void loadSvoMetaData();
     void saveLoadedSvoMetaData();
 
@@ -117,10 +120,11 @@ signals:
     void saveImage(QString str);
     void setChanged(SeriesSet set);
     void setPulled(SeriesSet set);
+    void sqlDbChanged();
 
 private:
-//    void initSql();
-//    QSqlDatabase p_db;
+    void initSql();
+    QSqlDatabase p_db;
     Ui::MainWindow *ui;
     FileBrowserWidget *fileBrowserWidget;
 //    QMainWindow * fileBrowserWidget;

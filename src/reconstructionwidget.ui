@@ -58,7 +58,7 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="page">
         <property name="geometry">
@@ -587,6 +587,28 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="activateFileButton">
+        <property name="text">
+         <string>Enable</string>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/app.png</normaloff>:/art/app.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="sanityButton">
+        <property name="text">
+         <string>Sanity check</string>
+        </property>
+        <property name="icon">
+         <iconset resource="nebula.qrc">
+          <normaloff>:/art/app.png</normaloff>:/art/app.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -621,7 +643,7 @@
    <addaction name="actionImageScreenshot"/>
    <addaction name="actionFrameScreenshot"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="reconstructionStatusBar"/>
   <action name="actionSave">
    <property name="icon">
     <iconset resource="nebula.qrc">

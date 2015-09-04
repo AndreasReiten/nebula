@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "ui_filebrowserwidget.h"
 
 #include <iostream>
 
@@ -37,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-//    initSql();
+    initSql();
 
     fileBrowserWidget = new FileBrowserWidget;
 
@@ -74,6 +75,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    p_db.close();
     delete ui;
 }
 
@@ -84,6 +86,56 @@ MainWindow::~MainWindow()
 //{
 
 //}
+
+void MainWindow::initSql()
+{
+    // Database
+    if (p_db.isOpen()) p_db.close();
+    p_db = QSqlDatabase::addDatabase("QSQLITE");
+    p_db.setDatabaseName(QDir::currentPath() + "/data.sqlite3");
+    p_db.open();
+}
+
+void MainWindow::browserDbReplace()
+{
+    QMessageBox msgBox;
+    msgBox.setText("Overwrite current reconstruction table?");
+    msgBox.setInformativeText("This action is irreversible.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+    int ret = msgBox.exec();
+
+    if (ret == QMessageBox::Yes)
+    {
+        QSqlQuery query(QSqlDatabase::database());
+        query.prepare("DELETE FROM reconstruction_table_cbf");
+        if (!query.exec()) qDebug() << sqlQueryError(query);
+
+        query.prepare("INSERT INTO reconstruction_table_cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) SELECT FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM browser_table_cbf");
+        if (!query.exec()) qDebug() << sqlQueryError(query);
+
+        emit sqlDbChanged();
+    }
+}
+
+void MainWindow::browserDbAppend()
+{
+    QMessageBox msgBox;
+    msgBox.setText("Add to reconstruction table?");
+    msgBox.setInformativeText("This action is irreversible.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+    int ret = msgBox.exec();
+
+    if (ret == QMessageBox::Yes)
+    {
+        QSqlQuery query(QSqlDatabase::database());
+        query.prepare("INSERT OR IGNORE INTO reconstruction_table_cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) SELECT FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM browser_table_cbf");
+        if (!query.exec()) qDebug() << sqlQueryError(query);
+
+        emit sqlDbChanged();
+    }
+}
 
 void MainWindow::setDarkTheme()
 {
@@ -695,6 +747,10 @@ void MainWindow::initConnects()
     connect(alignLineToCPushButton, SIGNAL(clicked()), volumeOpenGLWidget, SLOT(alignLineWithC()));
     connect(saveLoadedSvoMetadataAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvoMetaData()));
     connect(loadSvoMetadataAct, SIGNAL(triggered()), this, SLOT(loadSvoMetaData()));
+
+    connect(fileBrowserWidget->ui().newButton, SIGNAL(clicked(bool)), this, SLOT(browserDbReplace()));
+    connect(fileBrowserWidget->ui().appendButton, SIGNAL(clicked(bool)), this, SLOT(browserDbAppend()));
+    connect(this, SIGNAL(sqlDbChanged()), reconstructionMainWindow, SLOT(refreshSelectionModel()));
 }
 
 void MainWindow::loadSvoMetaData()

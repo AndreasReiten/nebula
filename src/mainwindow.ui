@@ -72,20 +72,32 @@
    <property name="text">
     <string>Qt</string>
    </property>
+   <property name="toolTip">
+    <string>About Qt</string>
+   </property>
   </action>
   <action name="actionOpenCL">
    <property name="text">
     <string>OpenCL</string>
+   </property>
+   <property name="toolTip">
+    <string>About OpenCL</string>
    </property>
   </action>
   <action name="actionOpenGL">
    <property name="text">
     <string>OpenGL</string>
    </property>
+   <property name="toolTip">
+    <string>About OpenGL</string>
+   </property>
   </action>
   <action name="actionNebula">
    <property name="text">
     <string>Nebula</string>
+   </property>
+   <property name="toolTip">
+    <string>About Nebula</string>
    </property>
   </action>
  </widget>

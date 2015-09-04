@@ -9,51 +9,52 @@
 
 FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::FileBrowserWidget)
+    p_ui(new Ui::FileBrowserWidget)
 {
     // Prepare column to sql table translation map
-    column_map["Path"] = QPair<int,QString>(0, "Path");
-    column_map["File"] = QPair<int,QString>(1, "File");
-    column_map["*"] = QPair<int,QString>(2, "Active");
-    column_map["ω"] = QPair<int,QString>(3, "Omega");
-    column_map["κ"] = QPair<int,QString>(4, "Kappa");
-    column_map["φ"] = QPair<int,QString>(5, "Phi");
-    column_map["Start angle"] = QPair<int,QString>(6, "StartAngle");
-    column_map["Increment"] = QPair<int,QString>(7, "AngleIncrement");
-    column_map["DDist"] = QPair<int,QString>(8, "DetectorDistance");
-    column_map["Beam x"] = QPair<int,QString>(9, "BeamX");
-    column_map["Beam y"] = QPair<int,QString>(10, "BeamY");
-    column_map["Flux"] = QPair<int,QString>(11, "Flux");
-    column_map["T exp"] = QPair<int,QString>(12, "ExposureTime");
-    column_map["λ"] = QPair<int,QString>(13, "Wavelength");
-    column_map["Detector"] = QPair<int,QString>(14, "Detector");
-    column_map["Px size x"] = QPair<int,QString>(15, "PixelSizeX");
-    column_map["Px size y"] = QPair<int,QString>(16, "PixelSizeY");
+    column_map["Path"] = QPair<int,QString>(0, "FilePath");
+    column_map["Path"] = QPair<int,QString>(1, "Path");
+    column_map["File"] = QPair<int,QString>(2, "File");
+    column_map["*"] = QPair<int,QString>(3, "Active");
+    column_map["ω"] = QPair<int,QString>(4, "Omega");
+    column_map["κ"] = QPair<int,QString>(5, "Kappa");
+    column_map["φ"] = QPair<int,QString>(6, "Phi");
+    column_map["Start angle"] = QPair<int,QString>(7, "StartAngle");
+    column_map["Increment"] = QPair<int,QString>(8, "AngleIncrement");
+    column_map["DDist"] = QPair<int,QString>(9, "DetectorDistance");
+    column_map["Beam x"] = QPair<int,QString>(10, "BeamX");
+    column_map["Beam y"] = QPair<int,QString>(11, "BeamY");
+    column_map["Flux"] = QPair<int,QString>(12, "Flux");
+    column_map["T exp"] = QPair<int,QString>(13, "ExposureTime");
+    column_map["λ"] = QPair<int,QString>(14, "Wavelength");
+    column_map["Detector"] = QPair<int,QString>(15, "Detector");
+    column_map["Px size x"] = QPair<int,QString>(16, "PixelSizeX");
+    column_map["Px size y"] = QPair<int,QString>(17, "PixelSizeY");
 
     // Prep UI
-    ui->setupUi(this);
+    p_ui->setupUi(this);
 
     fileTreeModel  = new FileSelectionModel;
     fileTreeModel->setRootPath(QDir::rootPath());
-    ui->fileTreeView->setModel(fileTreeModel);
-    ui->fileTreeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    p_ui->fileTreeView->setModel(fileTreeModel);
+    p_ui->fileTreeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-    ui->addFilesButton->setIcon(QIcon(":/art/download.png"));
+    p_ui->addFilesButton->setIcon(QIcon(":/art/download.png"));
 
 //    headerHighlighter = new Highlighter(ui->headerEdit->document());
 
     this->setAnimated(false);
-    connect(ui->filterLineEdit, SIGNAL(textChanged(QString)), fileTreeModel, SLOT(setStringFilter(QString)));
-    connect(ui->fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
+    connect(p_ui->filterLineEdit, SIGNAL(textChanged(QString)), fileTreeModel, SLOT(setStringFilter(QString)));
+    connect(p_ui->fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
 
-    ui->filterLineEdit->setText("*.cbf");
+    p_ui->filterLineEdit->setText("*.cbf");
 
     // Open database and initialize tables
     initSql();
 
     // Init sql query model/view
-    selection_model = new CustomSqlQueryModel(ui->selectionView);
-    selection_model->setQuery(display_query, p_db);
+    selection_model = new CustomSqlQueryModel(p_ui->selectionView);
+    selection_model->setQuery(display_query, QSqlDatabase::database());
 
     QMapIterator<QString, QPair<int,QString>> i(column_map);
     while (i.hasNext()) {
@@ -61,18 +62,21 @@ FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
         selection_model->setHeaderData(i.value().first, Qt::Horizontal, i.key());
     }
 
-    ui->selectionView->horizontalHeader()->setSortIndicatorShown(true);
-    ui->selectionView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-    ui->selectionView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-    connect(ui->addFilesButton, SIGNAL(clicked(bool)), ui->selectionView, SLOT(resizeColumnsToContents()));
+    p_ui->selectionView->horizontalHeader()->setSortIndicatorShown(true);
+    p_ui->selectionView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    p_ui->selectionView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    connect(p_ui->addFilesButton, SIGNAL(clicked(bool)), p_ui->selectionView, SLOT(resizeColumnsToContents()));
 
-    ui->selectionView->setModel(selection_model);
+    p_ui->selectionView->setModel(selection_model);
 //    ui->selectionView->verticalHeader()->setVisible(false);
-    connect(ui->selectionView->horizontalHeader(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(sortItems(int,Qt::SortOrder)));
+    connect(p_ui->selectionView->horizontalHeader(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(sortItems(int,Qt::SortOrder)));
+
+    p_ui->selectionView->setColumnHidden(0, true);
+    p_ui->selectionView->setColumnHidden(3, true);
 
     loadSettings();
 
-    ui->selectionView->resizeColumnsToContents();
+    p_ui->selectionView->resizeColumnsToContents();
 }
 
 void FileBrowserWidget::setHeader(QString path)
@@ -83,11 +87,11 @@ void FileBrowserWidget::setHeader(QString path)
 
 void FileBrowserWidget::querySelectionModel(QString str)
 {
-    selection_model->setQuery(str, p_db);
+    selection_model->setQuery(str, QSqlDatabase::database());
     if (selection_model->lastError().isValid())
     {
         qDebug() << selection_model->lastError();
-        ui->statusBar->showMessage(selection_model->lastError().text());
+        p_ui->browserStatusBar->showMessage(selection_model->lastError().text());
     }
 }
 
@@ -97,7 +101,7 @@ void FileBrowserWidget::sortItems(int column,Qt::SortOrder order)
     order_map[Qt::AscendingOrder] = "ASC";
     order_map[Qt::DescendingOrder] = "DESC";
 
-    display_query = ("SELECT Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM cbf ORDER BY "+
+    display_query = ("SELECT * FROM browser_table_cbf ORDER BY "+
                         column_map[selection_model->headerData(column, Qt::Horizontal).toString()].second+
                         " "+order_map[order]+
                         ", File ASC");
@@ -108,15 +112,13 @@ void FileBrowserWidget::sortItems(int column,Qt::SortOrder order)
 void FileBrowserWidget::initSql()
 {
     // Database
-    if (p_db.isOpen()) p_db.close();
-    p_db = QSqlDatabase::addDatabase("QSQLITE", "browser_db");
+//    if (p_db.isOpen()) p_db.close();
+//    p_db = QSqlDatabase::addDatabase("QSQLITE");
 
-    p_db.setDatabaseName(QDir::currentPath() + "/browser.sqlite3");
-
-    if (p_db.open())
-    {
-        QSqlQuery query(p_db);
-        if (!query.exec("CREATE TABLE IF NOT EXISTS cbf ("
+//    if (p_db.open())
+//    {
+        QSqlQuery query(QSqlDatabase::database());
+        if (!query.exec("CREATE TABLE IF NOT EXISTS browser_table_cbf ("
                         "FilePath TEXT PRIMARY KEY NOT NULL, "
                         "Path TEXT,"
                         "File TEXT,"
@@ -139,31 +141,31 @@ void FileBrowserWidget::initSql()
         {
             qDebug() << sqlQueryError(query);
         }
-    }
-    else
-    {
-        qDebug() << "Database error" << p_db.lastError();
-    }
+//    }
+//    else
+//    {
+//        qDebug() << "Database error" << QSqlDatabase::database().lastError();
+//    }
 
     // Queries
-    upsert_file_query = new QSqlQuery(p_db);
-    upsert_file_query->prepare("INSERT OR IGNORE INTO cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) VALUES (:FilePath, :Path, :File, :Active, :Omega, :Kappa, :Phi, :StartAngle, :AngleIncrement, :DetectorDistance, :BeamX, :BeamY, :Flux, :ExposureTime, :Wavelength, :Detector, :PixelSizeX, :PixelSizeY);");
+    upsert_file_query = new QSqlQuery(QSqlDatabase::database());
+    upsert_file_query->prepare("INSERT OR IGNORE INTO browser_table_cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) VALUES (:FilePath, :Path, :File, :Active, :Omega, :Kappa, :Phi, :StartAngle, :AngleIncrement, :DetectorDistance, :BeamX, :BeamY, :Flux, :ExposureTime, :Wavelength, :Detector, :PixelSizeX, :PixelSizeY);");
 
-    display_query = "SELECT Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM cbf ORDER BY Path ASC, File ASC";
+    display_query = "SELECT * FROM browser_table_cbf ORDER BY Path ASC, File ASC";
 }
 
 FileBrowserWidget::~FileBrowserWidget()
 {
     writeSettings();
-    p_db.close();
-    delete ui;
+    QSqlDatabase::database().close();
+    delete p_ui;
 }
 
 void FileBrowserWidget::on_addFilesButton_clicked()
 {
     QStringList paths(fileTreeModel->selected());
 
-    p_db.transaction();
+    QSqlDatabase::database().transaction();
 
     foreach (const QString &value, paths)
     {
@@ -199,7 +201,7 @@ void FileBrowserWidget::on_addFilesButton_clicked()
         }
     }
 
-    p_db.commit();
+    QSqlDatabase::database().commit();
 
     querySelectionModel(display_query);
 }
@@ -215,8 +217,8 @@ void FileBrowserWidget::on_clearButton_clicked()
 
     if (ret == QMessageBox::Yes)
     {
-        QSqlQuery query("DELETE FROM cbf", p_db);
-        if (!query.exec()) qDebug() << sqlQueryError(query);
+        QSqlQuery query("DELETE FROM browser_table_cbf", QSqlDatabase::database());
+        if (query.lastError().isValid()) qDebug() << sqlQueryError(query);
         querySelectionModel(display_query);
     }
 }
@@ -226,7 +228,7 @@ void FileBrowserWidget::loadSettings()
     QSettings settings("settings.ini", QSettings::IniFormat);
     this->restoreState(settings.value("FileBrowserWidget/state").toByteArray());
 //    this->ui->splitter_2->restoreState(settings.value("FileBrowserWidget/splitter_2/state").toByteArray());
-    this->ui->splitter->restoreState(settings.value("FileBrowserWidget/splitter/state").toByteArray());
+    this->p_ui->splitter->restoreState(settings.value("FileBrowserWidget/splitter/state").toByteArray());
 }
 
 void FileBrowserWidget::writeSettings()
@@ -234,21 +236,20 @@ void FileBrowserWidget::writeSettings()
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setValue("FileBrowserWidget/state", this->saveState());
 //    settings.setValue("FileBrowserWidget/splitter_2/state", this->ui->splitter_2->saveState());
-    settings.setValue("FileBrowserWidget/splitter/state", this->ui->splitter->saveState());
+    settings.setValue("FileBrowserWidget/splitter/state", this->p_ui->splitter->saveState());
 }
 
 void FileBrowserWidget::on_execQueryButton_clicked()
 {
-    QSqlQuery query(ui->sqlTextEdit->toPlainText(), p_db);
+    QSqlQuery query(p_ui->sqlTextEdit->toPlainText(), QSqlDatabase::database());
     if (query.lastError().isValid())
     {
         qDebug() << query.lastError();
-        ui->statusBar->showMessage(query.lastError().text());
+        p_ui->browserStatusBar->showMessage(query.lastError().text());
     }
 }
 
-
-void FileBrowserWidget::on_reconstructButton_clicked()
+const Ui::FileBrowserWidget & FileBrowserWidget::ui() const
 {
-    qDebug() << "Set sql table as source for reconstruction. Ask to merge with reconstruction db or just use this.";
+    return *p_ui;
 }

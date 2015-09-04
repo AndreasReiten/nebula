@@ -19,6 +19,7 @@ class FileBrowserWidget : public QMainWindow
 public:
     explicit FileBrowserWidget(QWidget *parent = 0);
     ~FileBrowserWidget();
+    const Ui::FileBrowserWidget & ui() const;
 
 public slots:
     void querySelectionModel(QString str);
@@ -29,10 +30,9 @@ private slots:
     void on_addFilesButton_clicked();
     void on_clearButton_clicked();
     void on_execQueryButton_clicked();
-    void on_reconstructButton_clicked();
 
 private:
-    Ui::FileBrowserWidget *ui;
+    Ui::FileBrowserWidget *p_ui;
 
     FileSelectionModel * fileTreeModel;
 

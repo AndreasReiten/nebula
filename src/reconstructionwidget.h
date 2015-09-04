@@ -2,6 +2,7 @@
 #define RECONSTRUCTIONWIDGET_H
 
 #include <QMainWindow>
+#include <QFileInfo>
 
 #include "image/imagepreview.h"
 #include "sql/customsqlquerymodel.h"
@@ -43,16 +44,24 @@ public slots:
     void saveProject();
     void loadProject();
     void sortItems(int column, Qt::SortOrder order);
-    void querySelectionModel(QString str);
+    void refreshSelectionModel();
+    void itemClicked(const QModelIndex & index);
+
+private slots:
+    void on_sanityButton_clicked();
+
+    void on_deactivateFileButton_clicked();
+
+    void on_activateFileButton_clicked();
 
 private:
-    Ui::ReconstructionWidget *ui;
+    Ui::ReconstructionWidget *p_ui;
 
     void loadSettings();
     void writeSettings();
     void initSql();
 
-    QSqlDatabase p_db;
+//    QSqlDatabase p_db;
     QString display_query;
     QMap<QString,QPair<int, QString>> column_map;
     CustomSqlQueryModel * selection_model;
@@ -64,6 +73,7 @@ private:
     QString p_action_apply_mode;
     QString p_working_dir;
     QString p_screenshot_dir;
+    QFileInfo p_current_file;
 };
 
 #endif // RECONSTRUCTIONWIDGET_H
