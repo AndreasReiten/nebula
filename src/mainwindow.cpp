@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "ui_filebrowserwidget.h"
+//#include "ui_filebrowserwidget.h"
 
 #include <iostream>
 
@@ -40,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     initSql();
 
-    fileBrowserWidget = new FileBrowserWidget;
+//    fileBrowserWidget = new FileBrowserWidget;
 
     // Set some default values
     reduced_pixels.set(0, 0);
@@ -96,46 +96,46 @@ void MainWindow::initSql()
     p_db.open();
 }
 
-void MainWindow::browserDbReplace()
-{
-    QMessageBox msgBox;
-    msgBox.setText("Overwrite current reconstruction table?");
-    msgBox.setInformativeText("This action is irreversible.");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
-    msgBox.setDefaultButton(QMessageBox::Cancel);
-    int ret = msgBox.exec();
+//void MainWindow::browserDbReplace()
+//{
+//    QMessageBox msgBox;
+//    msgBox.setText("Overwrite current reconstruction table?");
+//    msgBox.setInformativeText("This action is irreversible.");
+//    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+//    msgBox.setDefaultButton(QMessageBox::Cancel);
+//    int ret = msgBox.exec();
 
-    if (ret == QMessageBox::Yes)
-    {
-        QSqlQuery query(QSqlDatabase::database());
-        query.prepare("DELETE FROM reconstruction_table_cbf");
-        if (!query.exec()) qDebug() << sqlQueryError(query);
+//    if (ret == QMessageBox::Yes)
+//    {
+//        QSqlQuery query(QSqlDatabase::database());
+//        query.prepare("DELETE FROM reconstruction_table_cbf");
+//        if (!query.exec()) qDebug() << sqlQueryError(query);
 
-        query.prepare("INSERT INTO reconstruction_table_cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) SELECT FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM browser_table_cbf");
-        if (!query.exec()) qDebug() << sqlQueryError(query);
+//        query.prepare("INSERT INTO reconstruction_table_cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) SELECT FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM browser_table_cbf");
+//        if (!query.exec()) qDebug() << sqlQueryError(query);
 
-        emit sqlDbChanged();
-    }
-}
+//        emit sqlDbChanged();
+//    }
+//}
 
-void MainWindow::browserDbAppend()
-{
-    QMessageBox msgBox;
-    msgBox.setText("Add to reconstruction table?");
-    msgBox.setInformativeText("This action is irreversible.");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
-    msgBox.setDefaultButton(QMessageBox::Cancel);
-    int ret = msgBox.exec();
+//void MainWindow::browserDbAppend()
+//{
+//    QMessageBox msgBox;
+//    msgBox.setText("Add to reconstruction table?");
+//    msgBox.setInformativeText("This action is irreversible.");
+//    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+//    msgBox.setDefaultButton(QMessageBox::Cancel);
+//    int ret = msgBox.exec();
 
-    if (ret == QMessageBox::Yes)
-    {
-        QSqlQuery query(QSqlDatabase::database());
-        query.prepare("INSERT OR IGNORE INTO reconstruction_table_cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) SELECT FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM browser_table_cbf");
-        if (!query.exec()) qDebug() << sqlQueryError(query);
+//    if (ret == QMessageBox::Yes)
+//    {
+//        QSqlQuery query(QSqlDatabase::database());
+//        query.prepare("INSERT OR IGNORE INTO reconstruction_table_cbf (FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY) SELECT FilePath, Path, File, Active, Omega, Kappa, Phi, StartAngle, AngleIncrement, DetectorDistance, BeamX, BeamY, Flux, ExposureTime, Wavelength, Detector, PixelSizeX, PixelSizeY FROM browser_table_cbf");
+//        if (!query.exec()) qDebug() << sqlQueryError(query);
 
-        emit sqlDbChanged();
-    }
-}
+//        emit sqlDbChanged();
+//    }
+//}
 
 void MainWindow::setDarkTheme()
 {
@@ -203,12 +203,12 @@ void MainWindow::loadBrowserPaths()
         case QMessageBox::Save:
             // Save was clicked
 //            saveProject();
-            setFiles(fileSelectionModel->getPaths());
+//            setFiles(fileSelectionModel->getPaths());
             break;
 
         case QMessageBox::Discard:
             // Discard was clicked
-            setFiles(fileSelectionModel->getPaths());
+//            setFiles(fileSelectionModel->getPaths());
             break;
 
         case QMessageBox::Cancel:
@@ -228,41 +228,41 @@ void MainWindow::loadBrowserPaths()
 //    fileHeaderEditTwo->setPlainText(file.getHeaderText());
 //}
 
-void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
-{
-    SeriesSet set;
+//void MainWindow::setFiles(QMap<QString, QStringList> folder_map)
+//{
+//    SeriesSet set;
 
-    QMap<QString, QStringList>::const_iterator i = folder_map.constBegin();
+//    QMap<QString, QStringList>::const_iterator i = folder_map.constBegin();
 
-    while (i != folder_map.constEnd())
-    {
-        ImageSeries folder;
-        folder.setPath(i.key());
+//    while (i != folder_map.constEnd())
+//    {
+//        ImageSeries folder;
+//        folder.setPath(i.key());
 
-        QStringList image_strings(i.value());
-        QStringList::const_iterator j = image_strings.constBegin();
+//        QStringList image_strings(i.value());
+//        QStringList::const_iterator j = image_strings.constBegin();
 
-        while (j != image_strings.constEnd())
-        {
-            ImageInfo image;
+//        while (j != image_strings.constEnd())
+//        {
+//            ImageInfo image;
 
-            image.setPath(*j);
+//            image.setPath(*j);
 
-            folder << image;
-            ++j;
-        }
+//            folder << image;
+//            ++j;
+//        }
 
-        set << folder;
+//        set << folder;
 
-        ++i;
-    }
+//        ++i;
+//    }
 
-    if (!set.isEmpty())
-    {
-        emit setChanged(set);
-//        imageSpinBox->setRange(0, set.current()->size() - 1);
-    }
-}
+//    if (!set.isEmpty())
+//    {
+//        emit setChanged(set);
+////        imageSpinBox->setRange(0, set.current()->size() - 1);
+//    }
+//}
 
 
 void MainWindow::setStartConditions()
@@ -276,10 +276,10 @@ void MainWindow::setStartConditions()
     volumeDataMaxSpinBox->setValue(10);
     volumeAlphaSpinBox->setValue(1.0);
     volumeBrightnessSpinBox->setValue(2.0);
-    volumeTsfAlphaComboBox->setCurrentIndex(2);
+//    volumeTsfAlphaComboBox->setCurrentIndex(2);
     volumeViewModeComboBox->setCurrentIndex(1);
     volumeViewModeComboBox->setCurrentIndex(0);
-    volumeTsfTextureComboBox->setCurrentIndex(1);
+//    volumeTsfTextureComboBox->setCurrentIndex(1);
     volumeRenderLogCheckBox->setChecked(true);
 
 //    batchSizeSpinBox->setValue(10);
@@ -449,14 +449,20 @@ void MainWindow::about()
 
 void MainWindow::aboutOpenCL()
 {
-    QMessageBox::about(this, "About OpenCL",
-                       "<h1>About OpenCL</h1> <b>OpenCL</b> is the first open, royalty-free standard for cross-platform, parallel programming of modern processors found in personal computers, servers and handheld/embedded devices. OpenCL (Open Computing Language) greatly improves speed and responsiveness for a wide spectrum of applications in numerous market categories from gaming and entertainment to scientific and medical software. <br> <a href=\"https://www.khronos.org/opencl/\">https://www.khronos.org/opencl</a>");
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("About OpenCL");
+    msgBox.setIconPixmap(QPixmap(":/art/opencl.png"));
+    msgBox.setText("<h1>About OpenCL</h1> <b>OpenCL</b> is the first open, royalty-free standard for cross-platform, parallel programming of modern processors found in personal computers, servers and handheld/embedded devices. OpenCL (Open Computing Language) greatly improves speed and responsiveness for a wide spectrum of applications in numerous market categories from gaming and entertainment to scientific and medical software. <br> <a href=\"https://www.khronos.org/opencl/\">https://www.khronos.org/opencl</a>");
+    msgBox.exec();
 }
 
 void MainWindow::aboutOpenGL()
 {
-    QMessageBox::about(this, "About OpenGL",
-                       "<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>");
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("About OpenGL");
+    msgBox.setIconPixmap(QPixmap(":/art/opengl.png"));
+    msgBox.setText("<h1>About OpenGL</h1> <b>OpenGL</b>  is the most widely adopted 2D and 3D graphics API in the industry, bringing thousands of applications to a wide variety of computer platforms. It is window-system and operating-system independent as well as network-transparent. OpenGL enables developers of software for PC, workstation, and supercomputing hardware to create high-performance, visually compelling graphics software applications, in markets such as CAD, content creation, energy, entertainment, game development, manufacturing, medical, and virtual reality. OpenGL exposes all the features of the latest graphics hardware.<br> <a href=\"https://www.khronos.org/opengl\">www.khronos.org/opengl</a>");
+    msgBox.exec();
 }
 
 void MainWindow::loadUnitcellFile()
@@ -635,9 +641,9 @@ void MainWindow::initConnects()
     connect(this->backgroundAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setBackground()));
     connect(this->logIntegrate2DAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setLogarithmic2D()));
     connect(this->dataStructureAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(setDataStructure()));
-    connect(this->volumeTsfTextureComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setTsfColor(int)));
+    connect(this->volumeTsfTextureComboBox, SIGNAL(currentTextChanged(QString)), volumeOpenGLWidget, SLOT(setTsfColor(QString)));
     connect(this->volumeViewModeComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setViewMode(int)));
-    connect(this->volumeTsfAlphaComboBox, SIGNAL(currentIndexChanged(int)), volumeOpenGLWidget, SLOT(setTsfAlpha(int)));
+    connect(this->volumeTsfAlphaComboBox, SIGNAL(currentTextChanged(QString)), volumeOpenGLWidget, SLOT(setTsfAlpha(QString)));
     connect(this->volumeDataMinSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setDataMin(double)));
     connect(this->volumeDataMaxSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setDataMax(double)));
     connect(this->volumeAlphaSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setAlpha(double)));
@@ -688,10 +694,10 @@ void MainWindow::initConnects()
     connect(saveLoadedSvoAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvo()));
 //    connect(saveSvoButton, SIGNAL(clicked()), this, SLOT(saveSvo()));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
-    connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
-    connect(aboutOpenCLAct, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
-    connect(aboutOpenGLAct, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
-    connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+    connect(ui->actionNebula, SIGNAL(triggered()), this, SLOT(about()));
+    connect(ui->actionOpenCL, SIGNAL(triggered()), this, SLOT(aboutOpenCL()));
+    connect(ui->actionOpenGL, SIGNAL(triggered()), this, SLOT(aboutOpenGL()));
+    connect(ui->actionQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 
     // KK
 //    connect(batchSizeSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setBatchSize(int)));
@@ -748,8 +754,8 @@ void MainWindow::initConnects()
     connect(saveLoadedSvoMetadataAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvoMetaData()));
     connect(loadSvoMetadataAct, SIGNAL(triggered()), this, SLOT(loadSvoMetaData()));
 
-    connect(fileBrowserWidget->ui().newButton, SIGNAL(clicked(bool)), this, SLOT(browserDbReplace()));
-    connect(fileBrowserWidget->ui().appendButton, SIGNAL(clicked(bool)), this, SLOT(browserDbAppend()));
+//    connect(fileBrowserWidget->ui().newButton, SIGNAL(clicked(bool)), this, SLOT(browserDbReplace()));
+//    connect(fileBrowserWidget->ui().appendButton, SIGNAL(clicked(bool)), this, SLOT(browserDbAppend()));
     connect(this, SIGNAL(sqlDbChanged()), reconstructionMainWindow, SLOT(refreshSelectionModel()));
 }
 
@@ -1904,10 +1910,10 @@ void MainWindow::initGUI()
 //    tabWidget = new QTabWidget;
 
     // Add tabs
-    ui->tabWidget->insertTab(0, fileBrowserWidget, "Browse");
-    ui->tabWidget->insertTab(1, reconstructionMainWindow, "Reconstruct");
-    ui->tabWidget->insertTab(2, volumeRenderMainWindow, "Visualize");
-    ui->tabWidget->insertTab(3, outputPlainTextEdit, "Misc");
+//    ui->tabWidget->insertTab(0, fileBrowserWidget, "Browse");
+    ui->tabWidget->insertTab(0, reconstructionMainWindow, "Reconstruct");
+    ui->tabWidget->insertTab(1, volumeRenderMainWindow, "Visualize");
+//    ui->tabWidget->insertTab(2, outputPlainTextEdit, "Misc");
 //    tabWidget->addTab(reconstructionMainWindow, "Reconstruct");
 //    tabWidget->addTab(volumeRenderMainWindow, "Visualize");
 //    tabWidget->addTab(outputPlainTextEdit, "Misc");
@@ -2073,7 +2079,7 @@ void MainWindow::writeSettings()
 
 void MainWindow::takeVolumeScreenshot()
 {
-    QString format = "jpg";
+    QString format = "png";
     QDateTime dateTime = dateTime.currentDateTime();
     QString initialPath = screenshot_dir + QString("/screenshot_" + dateTime.toString("yyyy_MM_dd_hh_mm_ss")) + "." + format;
 

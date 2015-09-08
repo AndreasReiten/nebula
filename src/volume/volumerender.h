@@ -158,8 +158,8 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setLog(bool value);
         void setLogarithmic2D();
         void setDataStructure();
-        void setTsfColor(int value);
-        void setTsfAlpha(int value);
+        void setTsfColor(QString style);
+        void setTsfAlpha(QString style);
         void setDataMin(double value);
         void setDataMax(double Value);
         void setAlpha(double value);
@@ -454,13 +454,13 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
 
 
         // Transfer function texture
-        void setTsfTexture();
+        void setTsfTexture(TransferFunction &tsf);
         cl_mem tsf_tex_cl;
         cl_sampler tsf_tex_sampler;
         GLuint tsf_tex_gl;
         GLuint tsf_tex_gl_thumb;
         TransferFunction tsf;
-        QString tsf_color_scheme, tsf_alpha_scheme;
+//        QString tsf_color_scheme, tsf_alpha_scheme;
 
         // Timing
         QElapsedTimer session_age;

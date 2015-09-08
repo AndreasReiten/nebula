@@ -15,6 +15,7 @@ class ImageInfo
 
     public:
         ImageInfo();
+        ImageInfo(QString path);
         ImageInfo(const ImageInfo &other);
         ~ImageInfo();
 

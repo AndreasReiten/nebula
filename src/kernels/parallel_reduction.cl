@@ -1,4 +1,4 @@
-kernel void psum(
+kernel void parallelReduction(
     global float * data,
     local float * addition_array,
     unsigned int read_size,

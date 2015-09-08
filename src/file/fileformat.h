@@ -1,26 +1,18 @@
 #ifndef FILE_FORMATS_H
 #define FILE_FORMATS_H
 
-/*
- * The DetectorFile class.
- * */
-
-/* QT */
 #include <QSizeF>
 
-/* User libs */
 #include "../math/matrix.h"
 
-
-/* This is the file to edit/append if you would like to add your own file formats */
 class DetectorFile
 {
-        /* Refer to PILATUS CBF header specs for details */
     public:
-        ~DetectorFile();
+
         DetectorFile();
         DetectorFile(const DetectorFile &other);
         DetectorFile(QString p_path);
+        ~DetectorFile();
 
         QString path() const;
         QString info();
@@ -28,13 +20,13 @@ class DetectorFile
 
         int setPath(QString p_path);
 
-        int readData();
-        bool isNaive() const;
-        bool isValid();
+        int read();
+//        bool isNaive() const;
+        bool isPathValid();
         bool isDataRead();
         bool isHeaderRead();
 
-        void setNaive();
+//        void setNaive();
         void setAlpha(float value);
         void setBeta(float value);
 
@@ -121,10 +113,10 @@ class DetectorFile
         QString p_path;
         size_t fast_dimension, slow_dimension;
 
-        bool p_isNaive;
-        bool isFileValid;
-        bool isFileHeaderRead;
-        bool isFileDataRead;
+//        bool p_isNaive;
+        bool p_is_valid;
+        bool p_is_header_read;
+        bool p_is_data_read;
 
         float srchrad_sugg_low, srchrad_sugg_high;
 

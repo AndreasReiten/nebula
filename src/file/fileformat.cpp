@@ -27,10 +27,10 @@ DetectorFile::~DetectorFile()
 DetectorFile::DetectorFile() :
     fast_dimension(0),
     slow_dimension(0),
-    isFileValid(false),
-    isFileDataRead(false),
-    isFileHeaderRead(false),
-    p_isNaive(false)
+    p_is_valid(false),
+    p_is_data_read(false),
+    p_is_header_read(false)
+//    p_isNaive(false)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
@@ -90,26 +90,26 @@ DetectorFile::DetectorFile(const DetectorFile &other)
     fast_dimension = other.width();
     slow_dimension = other.height();
 
-    p_isNaive = other.isNaive();
-    isFileValid = false;
-    isFileHeaderRead = false;
-    isFileDataRead = false;
+//    p_isNaive = other.isNaive();
+    p_is_valid = false;
+    p_is_header_read = false;
+    p_is_data_read = false;
 
     srchrad_sugg_low = other.getSearchRadiusLowSuggestion();
     srchrad_sugg_high = other.getSearchRadiusHighSuggestion();
 }
 
 DetectorFile::DetectorFile(QString path):
-    isFileValid(false),
-    isFileDataRead(false),
-    isFileHeaderRead(false),
-    p_isNaive(false)
+    p_is_valid(false),
+    p_is_data_read(false),
+    p_is_header_read(false)
+//    p_isNaive(false)
 {
     srchrad_sugg_low = std::numeric_limits<float>::max();
     srchrad_sugg_high = std::numeric_limits<float>::min();
     p_max_counts = 0;
     this->setPath(path);
-    isValid();
+    isPathValid();
 }
 
 QString DetectorFile::detector() const
@@ -117,29 +117,29 @@ QString DetectorFile::detector() const
     return p_detector;
 }
 
-void DetectorFile::setNaive()
-{
-    fast_dimension = 11;
-    slow_dimension = 6;
+//void DetectorFile::setNaive()
+//{
+//    fast_dimension = 11;
+//    slow_dimension = 6;
 
 
-    float buf[] =
-    {
-        0.1, 0.1, 1.0, 1.0, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
-        0.1, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
-        0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
-        0.1, 1.0, 0.1, 1.0, 1.0, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
-        0.1, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
-        0.1, 0.1, 1.0, 1.0, 0.1, 0.1, 1.0, 1.0, 1.0, 1.0, 0.1,
-    };
+//    float buf[] =
+//    {
+//        0.1, 0.1, 1.0, 1.0, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
+//        0.1, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
+//        0.1, 1.0, 0.1, 0.1, 0.1, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
+//        0.1, 1.0, 0.1, 1.0, 1.0, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
+//        0.1, 1.0, 0.1, 0.1, 1.0, 0.1, 1.0, 0.1, 0.1, 0.1, 0.1,
+//        0.1, 0.1, 1.0, 1.0, 0.1, 0.1, 1.0, 1.0, 1.0, 1.0, 0.1,
+//    };
 
-    data_buf.setDeep(slow_dimension, fast_dimension, buf);
+//    data_buf.setDeep(slow_dimension, fast_dimension, buf);
 
-    p_isNaive = true;
-    isFileValid = true;
-    isFileDataRead = true;
-    isFileHeaderRead = true;
-}
+//    p_isNaive = true;
+//    isFileValid = true;
+//    isFileDataRead = true;
+//    isFileHeaderRead = true;
+//}
 
 float DetectorFile::intensity(int x, int y)
 {
@@ -187,30 +187,30 @@ QString DetectorFile::getHeaderText()
     return text;
 }
 
-bool DetectorFile::isValid()
+bool DetectorFile::isPathValid()
 {
-    if (!isFileValid)
+    if (!p_is_valid)
     {
         QFileInfo file_info(p_path);
-        isFileValid =  (file_info.exists() && file_info.isReadable() && file_info.isFile());
+        p_is_valid =  (file_info.exists() && file_info.isReadable() && file_info.isFile());
     }
 
-    return isFileValid;
+    return p_is_valid;
 }
 
-bool DetectorFile::isNaive() const
-{
-    return p_isNaive;
-}
+//bool DetectorFile::isNaive() const
+//{
+//    return p_isNaive;
+//}
 
 bool DetectorFile::isDataRead()
 {
-    return isFileDataRead;
+    return p_is_data_read;
 }
 
 bool DetectorFile::isHeaderRead()
 {
-    return isFileHeaderRead;
+    return p_is_header_read;
 }
 
 int DetectorFile::setPath(QString path)
@@ -225,11 +225,11 @@ int DetectorFile::setPath(QString path)
         this->p_path = path;
     }
 
-    isFileValid = false;
-    isFileHeaderRead = false;
-    isFileDataRead = false;
+    p_is_valid = false;
+    p_is_header_read = false;
+    p_is_data_read = false;
 
-    if (!isValid())
+    if (!isPathValid())
     {
         return 0;
     }
@@ -257,7 +257,7 @@ int DetectorFile::setPath(QString path)
     }
     else
     {
-        std::cout << "Unknown detector: " << p_detector.toStdString().c_str() << std::endl;
+        qDebug() << "Unknown detector: " << p_detector;
         return 0;
     }
 
@@ -292,8 +292,7 @@ int DetectorFile::height() const
 
 QSizeF DetectorFile::size() const
 {
-    QSizeF value(fast_dimension,slow_dimension);
-    return value;
+    return QSizeF(fast_dimension,slow_dimension);;
 }
 
 size_t DetectorFile::bytes() const
@@ -367,9 +366,9 @@ float DetectorFile::expTime() const
 
 int DetectorFile::readHeader()
 {
-    if (isFileHeaderRead)
+    if (p_is_header_read)
     {
-        return isFileHeaderRead;
+        return p_is_header_read;
     }
 
     const float pi = 4.0 * atan(1.0);
@@ -402,7 +401,7 @@ int DetectorFile::readHeader()
     }
     else if (file_info.size() <= 0)
     {
-        qDebug() << "File does not exist: " << p_path.toStdString().c_str();
+        qDebug() << "File does not exist: " << p_path;
         return 0;
     }
 
@@ -411,7 +410,7 @@ int DetectorFile::readHeader()
 
     if (!file.open(QIODevice::ReadOnly))
     {
-        qDebug() << "Error reading file: " << p_path.toStdString().c_str();
+        qDebug() << "Error reading file: " << p_path;
         return 0;
     }
 
@@ -482,8 +481,8 @@ int DetectorFile::readHeader()
     //~ position_increment = regExp(, header, 0, 1).toFloat();
     //~ shutter_time = regExp(, header, 0, 1).toFloat();
 
-    isFileHeaderRead = true;
-    return isFileHeaderRead;
+    p_is_header_read = true;
+    return p_is_header_read;
 }
 
 QString DetectorFile::path() const
@@ -596,11 +595,11 @@ float DetectorFile::pixSizeY() const
 }
 
 
-int DetectorFile::readData()
+int DetectorFile::read()
 {
-    if (isFileDataRead)
+    if (p_is_data_read)
     {
-        return isFileDataRead;
+        return p_is_data_read;
     }
 
     // Open file
@@ -694,8 +693,8 @@ int DetectorFile::readData()
 
     delete[] buf;
 
-    isFileDataRead = true;
-    return isFileDataRead;
+    p_is_data_read = true;
+    return p_is_data_read;
 }
 
 

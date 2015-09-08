@@ -1,6 +1,11 @@
 #include "transferfunction.h"
 
-TransferFunction::TransferFunction()
+TransferFunction::TransferFunction():
+    p_has_rgb(false),
+    p_has_alpha(false),
+    p_rgb_str("Hot"),
+    p_alpha_str("Opaque")
+//    uuuh("Opaque")
 {
 }
 
@@ -17,90 +22,146 @@ Matrix<double> * TransferFunction::getPreIntegrated()
     return &tsf_preintegrated;
 }
 
-
-void TransferFunction::setColorScheme(QString rgb, QString alpha)
+void TransferFunction::setAlpha(QString alpha)
 {
+    p_alpha_str = alpha;
+    //    uuuh = alpha;
+    // Compute the alpha
+    p_alpha = p_x;
+
+    if (alpha == "Linear")
+    {
+        // Linearly increasing alpha
+        for (size_t i = 0; i < p_rgb.n(); i++)
+        {
+            p_alpha[i] = p_x[i] / p_x[p_x.n()-1];
+        }
+    }
+    else if (alpha == "Exponential")
+    {
+        // Exponentially increasing data
+        for (size_t i = 0; i < p_rgb.n(); i++)
+        {
+            p_alpha[i] = std::exp(-(1.0 - p_x[i] / p_x[p_x.n()-1]) * 3.0);
+        }
+
+        p_alpha[0] = 0;
+    }
+    else if (alpha == "Uniform")
+    {
+        // Uniform alpha except for the first vertex
+        for (size_t i = 0; i < p_rgb.n(); i++)
+        {
+            p_alpha[i] = 1.0;
+        }
+
+        p_alpha[0] = 0;
+    }
+    else if (alpha == "Opaque")
+    {
+        // Opaque
+        for (size_t i = 0; i < p_rgb.n(); i++)
+        {
+            p_alpha[i] = 1.0;
+        }
+    }
+    else
+    {
+        // Opaque
+        for (size_t i = 0; i < p_rgb.n(); i++)
+        {
+            p_alpha[i] = 1.0;
+        }
+        qDebug() << "Could not recognize alpha" << alpha;
+    }
+
+    p_has_alpha = true;
+}
+
+void TransferFunction::setRgb(QString rgb)
+{
+    p_rgb_str = rgb;
     // The format is [x, r, g, b, a]
     // Todo: make each component independent
 
     double buf_hot[] =
     {
-        0.00,  0.00,  0.00,  0.00,  1.00,
-        1.00,  0.70,  0.00,  0.00,  1.00,
-        2.00,  1.00,  0.00,  0.00,  1.00,
-        3.00,  1.00,  0.50,  0.00,  1.00,
-        4.00,  1.00,  1.00,  0.00,  1.00,
-        5.00,  1.00,  1.00,  0.50,  1.00,
-        6.00,  1.00,  1.00,  1.00,  1.00
+        0.00,  0.00,  0.00,  0.00,
+        1.00,  0.70,  0.00,  0.00,
+        2.00,  1.00,  0.00,  0.00,
+        3.00,  1.00,  0.50,  0.00,
+        4.00,  1.00,  1.00,  0.00,
+        5.00,  1.00,  1.00,  0.50,
+        6.00,  1.00,  1.00,  1.00
     };
     Matrix<double> hot;
-    hot.setDeep(7, 5, buf_hot);
+    hot.setDeep(7, 4, buf_hot);
 
     double buf_galaxy[] =
     {
-        0.00,  0.00,  0.00,  1.00,  1.00,
-        1.00,  1.00,  0.00,  1.00,  1.00,
-        2.00,  1.00,  0.00,  0.00,  1.00,
-        3.00,  1.00,  0.50,  0.00,  1.00,
-        4.00,  1.00,  1.00,  0.00,  1.00,
-        5.00,  1.00,  1.00,  0.50,  1.00,
-        6.00,  1.00,  1.00,  1.00,  1.00
+        0.00,  0.00,  0.00,  1.00,
+        1.00,  1.00,  0.00,  1.00,
+        2.00,  1.00,  0.00,  0.00,
+        3.00,  1.00,  0.50,  0.00,
+        4.00,  1.00,  1.00,  0.00,
+        5.00,  1.00,  1.00,  0.50,
+        6.00,  1.00,  1.00,  1.00
     };
     Matrix<double> galaxy;
-    galaxy.setDeep(7, 5, buf_galaxy);
+    galaxy.setDeep(7, 4, buf_galaxy);
 
     double buf_hsv[] =
     {
-        0.00,  1.00,  0.00,  0.00,  1.00,
-        1.00,  1.00,  0.00,  1.00,  1.00,
-        2.00,  0.00,  0.00,  1.00,  1.00,
-        3.00,  0.00,  1.00,  1.00,  1.00,
-        4.00,  0.00,  1.00,  0.00,  1.00,
-        5.00,  1.00,  1.00,  0.00,  1.00,
-        6.00,  1.00,  0.00,  0.00,  1.00
+        0.00,  1.00,  0.00,  0.00,
+        1.00,  1.00,  0.00,  1.00,
+        2.00,  0.00,  0.00,  1.00,
+        3.00,  0.00,  1.00,  1.00,
+        4.00,  0.00,  1.00,  0.00,
+        5.00,  1.00,  1.00,  0.00,
+        6.00,  1.00,  0.00,  0.00
     };
     Matrix<double> hsv;
-    hsv.setDeep(7, 5, buf_hsv);
+    hsv.setDeep(7, 4, buf_hsv);
 
     double buf_binary[] =
     {
-        0.00,  0.00,  0.00,  0.00,  1.00,
-        1.00,  0.14,  0.14,  0.14,  1.00,
-        2.00,  0.29,  0.29,  0.29,  1.00,
-        3.00,  0.43,  0.43,  0.43,  1.00,
-        4.00,  0.57,  0.57,  0.57,  1.00,
-        5.00,  0.71,  0.71,  0.71,  1.00,
-        6.00,  0.86,  0.86,  0.86,  1.00,
-        7.00,  1.00,  1.00,  1.00,  1.00
+        0.00,  0.00,  0.00,  0.00,
+        1.00,  0.14,  0.14,  0.14,
+        2.00,  0.29,  0.29,  0.29,
+        3.00,  0.43,  0.43,  0.43,
+        4.00,  0.57,  0.57,  0.57,
+        5.00,  0.71,  0.71,  0.71,
+        6.00,  0.86,  0.86,  0.86,
+        7.00,  1.00,  1.00,  1.00
     };
     Matrix<double> binary;
-    binary.setDeep(8, 5, buf_binary);
+    binary.setDeep(8, 4, buf_binary);
 
     double buf_yranib[] =
     {
-        0.00,  1.00,  1.00,  1.00,  1.00,
-        1.00,  0.86,  0.86,  0.86,  1.00,
-        2.00,  0.71,  0.71,  0.71,  1.00,
-        3.00,  0.57,  0.57,  0.57,  1.00,
-        4.00,  0.43,  0.43,  0.43,  1.00,
-        5.00,  0.29,  0.29,  0.29,  1.00,
-        6.00,  0.14,  0.14,  0.14,  1.00,
-        7.00,  0.00,  0.00,  0.00,  1.00
+        0.00,  1.00,  1.00,  1.00,
+        1.00,  0.86,  0.86,  0.86,
+        2.00,  0.71,  0.71,  0.71,
+        3.00,  0.57,  0.57,  0.57,
+        4.00,  0.43,  0.43,  0.43,
+        5.00,  0.29,  0.29,  0.29,
+        6.00,  0.14,  0.14,  0.14,
+        7.00,  0.00,  0.00,  0.00
     };
     Matrix<double> yranib;
-    yranib.setDeep(8, 5, buf_yranib);
+    yranib.setDeep(8, 4, buf_yranib);
 
     double buf_rainbow[] =
     {
-        0.00,  1.00,  0.00,  0.00,  1.00,
-        1.00,  1.00,  1.00,  0.00,  1.00,
-        2.00,  0.00,  1.00,  0.00,  1.00,
-        3.00,  0.00,  1.00,  1.00,  1.00,
-        4.00,  0.00,  0.00,  1.00,  1.00,
-        5.00,  1.00,  0.00,  1.00,  1.00
+        0.00,  1.00,  0.00,  0.00,
+        1.00,  1.00,  1.00,  0.00,
+        2.00,  0.00,  1.00,  0.00,
+        3.00,  0.00,  1.00,  1.00,
+        4.00,  0.00,  0.00,  1.00,
+        5.00,  1.00,  0.00,  1.00,
     };
     Matrix<double> rainbow;
-    rainbow.setDeep(6, 5, buf_rainbow);
+    rainbow.setDeep(6, 4, buf_rainbow);
 
     Matrix<double> choice;
 
@@ -131,62 +192,27 @@ void TransferFunction::setColorScheme(QString rgb, QString alpha)
     else
     {
         choice = rainbow.colmajor();
+        qDebug() << "Could not recognize rgb" << rgb;
     }
 
-    // Compute the alpha
-    if (alpha == "Linear")
-    {
-        // Linearly increasing alpha
-        for (size_t i = 0; i < choice.n(); i++)
-        {
-            choice[i + choice.n() * 4] = choice[i] / choice[choice.n() - 1];
-        }
-    }
-    else if (alpha == "Exponential")
-    {
-        // Exponentially increasing data
-        for (size_t i = 0; i < choice.n(); i++)
-        {
-            choice[i + choice.n() * 4] = std::exp(-(1.0 - choice[i] / choice[choice.n() - 1]) * 3.0);
-        }
+    p_x.setDeep(1, choice.n(), choice.data()); // The x position of rgb points
+    p_rgb.setDeep(choice.m() - 1, choice.n(), choice.data() + choice.n()); // The rgb points
 
-        choice[choice.n() * 4] = 0;
-    }
-    else if (alpha == "Uniform")
-    {
-        // Uniform alpha except for the first vertex
-        for (size_t i = 0; i < choice.n(); i++)
-        {
-            choice[i + choice.n() * 4] = 1.0;
-        }
+    p_has_rgb = true;
 
-        choice[choice.n() * 4] = 0;
-    }
-    else if (alpha == "Opaque")
-    {
-        // Opaque
-        for (size_t i = 0; i < choice.n(); i++)
-        {
-            choice[i + choice.n() * 4] = 1.0;
-        }
-    }
-    else
-    {
-        // Opaque
-        for (size_t i = 0; i < choice.n(); i++)
-        {
-            choice[i + choice.n() * 4] = 1.0;
-        }
-    }
+//    qDebug() << p_alpha_str;
+    setAlpha(p_alpha_str);
+}
 
-    x_position.setDeep(1, choice.n(), choice.data());
-    tsf_base.setDeep(choice.m() - 1, choice.n(), choice.data() + choice.n());
-    tsf_thumb.setDeep(choice.m() - 2, choice.n(), choice.data() + choice.n());
+void TransferFunction::setColorScheme(QString rgb, QString alpha)
+{
+    setRgb(rgb);
+    setAlpha(alpha);
 }
 
 Matrix<double> * TransferFunction::getThumb()
 {
-    return &tsf_thumb;
+    return &p_rgb;
 }
 
 void TransferFunction::setSpline(size_t resolution)
@@ -197,72 +223,92 @@ void TransferFunction::setSpline(size_t resolution)
      * the intervals and at the interpolating nodes. */
 
     // Calculate the second derivative for the function in all points
-    Matrix<double> secondDerivatives(tsf_base.m(), tsf_base.n());
+    if (!p_has_rgb) setRgb("Hot");
+    if (!p_has_alpha) setAlpha("Opaque");
 
-    for (size_t i = 0; i < tsf_base.m(); i++)
+//    qDebug() << p_alpha_str;
+//    qDebug() << p_rgb_str;
+
+    Matrix<double> rgba(p_rgb);
+    rgba.resize(4,p_rgb.n());
+
+//    rgba.print();
+//    p_rgb.print();
+//    p_alpha.print();
+
+    for (int i = 0; i < p_rgb.n(); i++)
     {
-        Matrix<double> A(tsf_base.n(), tsf_base.n(), 0.0);
-        Matrix<double> X(tsf_base.n(), 1, 0.0);
-        Matrix<double> B(tsf_base.n(), 1, 0.0);
+       rgba[p_rgb.size()+i] = p_alpha[i];
+    }
+
+//    rgba.print(2);
+
+    Matrix<double> secondDerivatives(rgba.m(), rgba.n());
+
+    for (size_t i = 0; i < rgba.m(); i++)
+    {
+        Matrix<double> A(rgba.n(), rgba.n(), 0.0);
+        Matrix<double> X(rgba.n(), 1, 0.0);
+        Matrix<double> B(rgba.n(), 1, 0.0);
 
         // Set the boundary conditions
         A[0] = 1.0;
-        A[(tsf_base.n()) * (tsf_base.n()) - 1] = 1.0;
+        A[(rgba.n()) * (rgba.n()) - 1] = 1.0;
         B[0] = 0.0;
-        B[tsf_base.n() - 1] = 0.0;
+        B[rgba.n() - 1] = 0.0;
 
-        for (size_t j = 1; j < tsf_base.n() - 1; j++)
+        for (size_t j = 1; j < rgba.n() - 1; j++)
         {
-            double x_prev = x_position[j - 1];
-            double x = x_position[j];
-            double x_next = x_position[j + 1];
+            double x_prev = p_x[j - 1];
+            double x = p_x[j];
+            double x_next = p_x[j + 1];
 
-            double f_prev = tsf_base[i * tsf_base.n() + j - 1];
-            double f = tsf_base[i * tsf_base.n() + j];
-            double f_next = tsf_base[i * tsf_base.n() + j + 1];
+            double f_prev = rgba[i * rgba.n() + j - 1];
+            double f = rgba[i * rgba.n() + j];
+            double f_next = rgba[i * rgba.n() + j + 1];
 
             B[j] = ((f_next - f) / (x_next - x) - (f - f_prev) / (x - x_prev));
 
-            A[j * tsf_base.n() + j - 1] = (x - x_prev) / 6.0;
-            A[j * tsf_base.n() + j] = (x_next - x_prev) / 3.0;
-            A[j * tsf_base.n() + j + 1] = (x_next - x) / 6.0;
+            A[j * rgba.n() + j - 1] = (x - x_prev) / 6.0;
+            A[j * rgba.n() + j] = (x_next - x_prev) / 3.0;
+            A[j * rgba.n() + j + 1] = (x_next - x) / 6.0;
         }
 
         X = A.inverse() * B;
 
-        for (size_t j = 0; j < tsf_base.n(); j++)
+        for (size_t j = 0; j < rgba.n(); j++)
         {
-            secondDerivatives[i * tsf_base.n() + j] = X[j];
+            secondDerivatives[i * rgba.n() + j] = X[j];
         }
 
     }
 
-    tsf_splined.reserve(tsf_base.m(), resolution);
-    double interpolationStepLength = (x_position[x_position.n() - 1] - x_position[0]) / ((double) (resolution - 1));
+    tsf_splined.reserve(rgba.m(), resolution);
+    double interpolationStepLength = (p_x[p_x.n() - 1] - p_x[0]) / ((double) (resolution - 1));
 
     // Calculate the interpolation values given the second derivatives
-    for (size_t i = 0; i < tsf_base.m(); i++)
+    for (size_t i = 0; i < rgba.m(); i++)
     {
         for (size_t j = 0; j < resolution; j++)
         {
             // x is the position of the current interpolation point
-            double x = x_position[0] + j * interpolationStepLength;
+            double x = p_x[0] + j * interpolationStepLength;
 
             // k is the index of the data point succeeding the interpoaltion point in x
             size_t k = 0;
 
-            for (size_t l = 0; l < x_position.n(); l++)
+            for (size_t l = 0; l < p_x.n(); l++)
             {
-                if (x <= x_position[l])
+                if (x <= p_x[l])
                 {
                     k = l;
                     break;
                 }
             }
 
-            if ( k >= tsf_base.n())
+            if ( k >= rgba.n())
             {
-                k = tsf_base.n() - 1;
+                k = rgba.n() - 1;
             }
 
             if (k <= 0)
@@ -270,14 +316,14 @@ void TransferFunction::setSpline(size_t resolution)
                 k = 1;
             }
 
-            double x_k = x_position[k - 1];
-            double x_k_next = x_position[k];
+            double x_k = p_x[k - 1];
+            double x_k_next = p_x[k];
 
-            double f_k = tsf_base[i * tsf_base.n() + k - 1];
-            double f_k_next = tsf_base[i * tsf_base.n() + k];
+            double f_k = rgba[i * rgba.n() + k - 1];
+            double f_k_next = rgba[i * rgba.n() + k];
 
-            double f_dd_k = secondDerivatives[i * tsf_base.n() + k - 1];
-            double f_dd_k_next = secondDerivatives[i * tsf_base.n() + k];
+            double f_dd_k = secondDerivatives[i * rgba.n() + k - 1];
+            double f_dd_k_next = secondDerivatives[i * rgba.n() + k];
 
             double a = (x_k_next - x) / (x_k_next - x_k);
             double b = 1.0 - a;

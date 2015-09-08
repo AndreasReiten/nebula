@@ -201,7 +201,7 @@ void VoxelizeWorker::process()
         // Emit to appropriate slots
         emit changedFormatGenericProgress(QString(" Creating Interpolation Data Structure: %p%"));
         emit changedRangeGenericProcess(0, 100);
-        emit showProgressBar(true);
+        emit progressTaskActive(true);
 
         emit message("\n[" + QString(this->metaObject()->className()) + "] Generating Sparse Voxel Octree " + QString::number(svo->levels()) + " levels deep.");
         emit message("\n[" + QString(this->metaObject()->className()) + "] The source data is " + QString::number(reduced_pixels->bytes() / 1000000.0, 'g', 3) + " MB");
@@ -816,7 +816,7 @@ void VoxelizeWorker::process()
             }
         }
 
-        emit showProgressBar(false);
+        emit progressTaskActive(false);
 
         err = QOpenCLReleaseMemObject(point_data_cl);
         err |= QOpenCLReleaseMemObject(point_data_offset_cl);

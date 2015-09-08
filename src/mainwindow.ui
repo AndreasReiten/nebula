@@ -69,6 +69,10 @@
    <addaction name="menuAbout"/>
   </widget>
   <action name="actionQt">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/Qt-logo-medium.png</normaloff>:/art/Qt-logo-medium.png</iconset>
+   </property>
    <property name="text">
     <string>Qt</string>
    </property>
@@ -77,6 +81,10 @@
    </property>
   </action>
   <action name="actionOpenCL">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/opencl.png</normaloff>:/art/opencl.png</iconset>
+   </property>
    <property name="text">
     <string>OpenCL</string>
    </property>
@@ -85,6 +93,10 @@
    </property>
   </action>
   <action name="actionOpenGL">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/opengl.png</normaloff>:/art/opengl.png</iconset>
+   </property>
    <property name="text">
     <string>OpenGL</string>
    </property>
@@ -93,6 +105,10 @@
    </property>
   </action>
   <action name="actionNebula">
+   <property name="icon">
+    <iconset resource="nebula.qrc">
+     <normaloff>:/art/app.png</normaloff>:/art/app.png</iconset>
+   </property>
    <property name="text">
     <string>Nebula</string>
    </property>
@@ -101,6 +117,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="nebula.qrc"/>
+ </resources>
  <connections/>
 </ui>

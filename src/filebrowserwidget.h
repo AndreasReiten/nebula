@@ -23,7 +23,7 @@ public:
 
 public slots:
     void querySelectionModel(QString str);
-    void setHeader(QString path);
+//    void setHeader(QString path);
     void sortItems(int column, Qt::SortOrder order);
 
 private slots:

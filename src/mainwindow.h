@@ -17,7 +17,7 @@
 //#include <QSqlDatabase>
 //#include <QSqlError>
 
-#include "filebrowserwidget.h"
+//#include "filebrowserwidget.h"
 #include "reconstructionwidget.h"
 //#include "sql/sqlqol.h"
 
@@ -48,8 +48,8 @@ public:
 
 
 private slots:
-    void browserDbReplace();
-    void browserDbAppend();
+//    void browserDbReplace();
+//    void browserDbAppend();
 
     void loadSvoMetaData();
     void saveLoadedSvoMetaData();
@@ -126,7 +126,7 @@ private:
     void initSql();
     QSqlDatabase p_db;
     Ui::MainWindow *ui;
-    FileBrowserWidget *fileBrowserWidget;
+//    FileBrowserWidget *fileBrowserWidget;
 //    QMainWindow * fileBrowserWidget;
 
     QAction * loadSvoMetadataAct;
@@ -261,9 +261,9 @@ private:
 //    QPushButton * removeCurrentPushButton;
 
     // File browser
-    FileSelectionModel * fileSelectionModel;
-    FileTreeView * fileTreeView;
-    void setFiles(QMap<QString, QStringList> folder_map);
+//    FileSelectionModel * fileSelectionModel;
+//    FileTreeView * fileTreeView;
+//    void setFiles(QMap<QString, QStringList> folder_map);
 
 
     // Image browser widget

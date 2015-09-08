@@ -1,4 +1,4 @@
-kernel void weightpointSampler(
+kernel void weightpointVolumetric(
     read_only image3d_t pool, sampler_t pool_sampler,
     global uint * oct_index, global uint * oct_brick,
     constant float * data_extent,

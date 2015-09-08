@@ -6,6 +6,10 @@
 #include <QCoreApplication>
 #include <QFontMetrics>
 #include <QOpenGLFramebufferObject>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QFileInfo>
+#include "sql/sqlqol.h"
 
 
 static const size_t REDUCED_PIXELS_MAX_BYTES = 1000e6;
@@ -36,7 +40,7 @@ void ImageWorker::initializeOpenCLKernels()
 {
     // Build programs from OpenCL kernel source
     QStringList paths;
-    paths << "kernels/image.cl";
+    paths << "kernels/scattering_data_operations.cl";
 
     program = context_cl.createProgram(paths, &err);
 
@@ -64,7 +68,7 @@ void ImageWorker::reconstructSet(SeriesSet set)
 
 void ImageWorker::traceSeries(SeriesSet set)
 {
-    emit visibilityChanged(false);
+//    emit progressTaskActive(false);
 
     DetectorFile frame;
 
@@ -86,7 +90,7 @@ void ImageWorker::traceSeries(SeriesSet set)
     // For each image in the series
     for (int j = 0; j < set.current()->size(); j++)
     {
-        frame.readData();
+        frame.read();
 
         // Read data and send to a VRAM buffer.
         cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
@@ -169,13 +173,14 @@ void ImageWorker::traceSeries(SeriesSet set)
         qFatal(cl_error_cstring(err));
     }
 
-    emit visibilityChanged(true);
+//    emit progressTaskActive(true);
 
     emit traceFinished();
 }
 
 
 ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
+    p_application_mode("All with this path"),
     isBeamOverrideActive(false),
     isImageTexInitialized(false),
     isTsfTexInitialized(false),
@@ -187,9 +192,19 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     isSetTraced(false),
     //    isSwapped(true),
     texture_number(0),
-    rgb_style(1),
-    alpha_style(2),
-    mode(0)
+//    rgb_style(1),
+//    alpha_style(2),
+    mode(0),
+    isLog(1),
+    isCorrectionLorentzActive(0),
+    isCorrectionNoiseActive(0),
+    isCorrectionPlaneActive(0),
+    isCorrectionPolarizationActive(0),
+    isCorrectionFluxActive(0),
+    isCorrectionExposureActive(0),
+    isCorrectionPixelProjectionActive(0),
+    isEwaldCircleActive(false),
+    isImageTooltipActive(true)
 {
     // Worker
     workerThread = new QThread;
@@ -240,7 +255,7 @@ void ImageOpenGLWidget::paintGL()
 
     QPainter painter(&paint_device_gl);
 
-    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
 
     beginRawGLCalls(&painter);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -252,7 +267,7 @@ void ImageOpenGLWidget::paintGL()
 
     endRawGLCalls(&painter);
 
-    if (!p_set.isEmpty())
+    if (image.isPathValid() && image.isDataRead())
     {
         QRectF image_rect(QPoint(0, 0), QSizeF(image.width(), image.height()));
         image_rect.moveTopLeft(QPointF((qreal) this->width() * 0.5, (qreal) this->height() * 0.5));
@@ -262,24 +277,15 @@ void ImageOpenGLWidget::paintGL()
         endRawGLCalls(&painter);
 
         ColorMatrix<float> analysis_area_color(0.0, 0, 0, 0.3);
-        drawSelection(p_set.current()->current()->selection(), &painter, analysis_area_color);
+        drawSelection(p_working_data[p_current_filepath].selection(), &painter, analysis_area_color);
 
-        // Draw pixel tootip
-        if (isCorrectionPlaneActive)
-        {
-            drawPlaneMarkerToolTip(&painter);
-        }
+        if (isCorrectionPlaneActive) drawPlaneMarkerToolTip(&painter);
 
-        // Draw weight center
-        if (isWeightCenterActive)
-        {
-            ColorMatrix<float> analysis_wp_color(0.0, 0.0, 0.0, 0.8);
-            drawWeightpoint(p_set.current()->current()->selection(), &painter, analysis_wp_color);
-        }
+        if (isWeightCenterActive) drawWeightpoint(p_working_data[p_current_filepath].selection(), &painter);
 
-        drawImageMarkers(&painter);
-        drawConeEwaldIntersect(&painter);
-        drawPixelToolTip(&painter);
+        if (isEwaldCircleActive) drawConeEwaldIntersect(&painter);
+
+        if (isImageTooltipActive) drawPixelToolTip(&painter);
     }
     else
     {
@@ -418,7 +424,7 @@ void ImageOpenGLWidget::initializeGL()
 
     setRgb("Hot");
     setAlpha("Opaque");
-    setFrame();
+//    setFrame();
 //    centerImage(QSizeF());
 }
 
@@ -439,7 +445,7 @@ ImageOpenGLWidget::~ImageOpenGLWidget()
 
 void ImageOpenGLWidget::traceSeriesSlot()
 {
-    emit runTraceWorker(p_set);
+//    emit runTraceWorker(p_current_filepath);
 }
 
 void ImageOpenGLWidget::setBeamOverrideActive(bool value)
@@ -459,23 +465,23 @@ void ImageOpenGLWidget::setBeamYOverride(double value)
 
 void ImageOpenGLWidget::reconstruct()
 {
-    toggleTraceTexture(false);
+    showTraceTexture(false);
 
     int verbose = 0;
 
     kill_flag = false;
 
-    if (p_set.size() <= 0)
-    {
-        QString str("\n[" + QString(this->metaObject()->className()) + "] Warning: No files have been specified");
+//    if (p_set.size() <= 0)
+//    {
+//        QString str("\n[" + QString(this->metaObject()->className()) + "] Warning: No files have been specified");
 
-        emit message(str);
-        kill_flag = true;
-    }
+//        emit message(str);
+//        kill_flag = true;
+//    }
 
     // Emit to appropriate slots
     emit message("\n[" + QString(this->metaObject()->className()) + "] Processing: ");
-    emit visibilityChanged(false);
+//    emit progressTaskActive(false);
 
     // Container for relevant scattering data
     reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES / sizeof(float));
@@ -492,29 +498,45 @@ void ImageOpenGLWidget::reconstruct()
     size_t size_raw = 0;
 
     // Set to first series
-    p_set.saveCurrentIndex();
-    p_set.begin();
+//    p_set.saveCurrentIndex();
+//    p_set.begin();
 
-    emit showProgressBar(true);
+    emit progressTaskActive(true);
 
-    for (size_t i = 0; i < (size_t) p_set.size(); i++)
+    // Get the number of files
+    QSqlQuery query(QSqlDatabase::database());
+    query.prepare("SELECT count(FilePath) FROM cbf_table WHERE Active = :Active");
+    query.bindValue(":Active", 1);
+    if (!query.exec())
     {
-        // Set to first frame
-        p_set.current()->saveCurrentIndex();
-        p_set.current()->begin();
+        qDebug() << query.lastError();
+    }
 
-        for (size_t j = 0; j < (size_t) p_set.current()->size(); j++)
-        {
+    int n_files = query.value(0).toInt();
+    int i = 0;
+
+    // Get the files
+    query.prepare("SELECT * FROM cbf_table WHERE Active = :Active");
+    query.bindValue(":Active", 1);
+    if (!query.exec())
+    {
+        qDebug() << query.lastError();
+    }
+
+    while (query.next())
+    {
+        p_current_filepath = query.value(0).toString();
+
             // Kill process if requested
             if (kill_flag)
             {
-                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at set " + QString::number(i + 1) + ", frame " + QString::number(j + 1));
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at iteration " + QString::number(i) + " of " + QString::number(n_files));
                 reduced_pixels->clear();
 
                 break;
             }
 
-            emit progressRangeChanged(0, p_set.current()->size() - 1);
+            emit progressRangeChanged(0, n_files);
 
             // Draw the frame and update the intensity OpenCL buffer prior to further operations.
             // setFrame() calls calculus() which carries out any corrections
@@ -527,7 +549,7 @@ void ImageOpenGLWidget::reconstruct()
             size_raw += image.bytes();
 
             // Project and correct file and get status
-            Selection selection = p_set.current()->current()->selection();
+            Selection selection = p_working_data[p_current_filepath].selection();
 
             if (selection.width() > image.width())
             {
@@ -539,7 +561,7 @@ void ImageOpenGLWidget::reconstruct()
                 selection.setHeight(image.height());
             }
 
-            p_set.current()->current()->setSelection(selection);
+            p_working_data[p_current_filepath].setSelection(selection);
 
             // Project the data
             int STATUS_OK = projectFile(&image, selection, reduced_pixels, &n_reduced_pixels);
@@ -565,25 +587,25 @@ void ImageOpenGLWidget::reconstruct()
 
                 n_ok_files++;
 
-                p_set.current()->next();
+//                p_set.current()->next();
             }
             else
             {
-                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Could not process \"" + p_set.current()->current()->path() + "\".\n Too much data was kept during reconstruction.");
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Could not process \"" + p_working_data[p_current_filepath].path() + "\".\n Too much data was kept during reconstruction.");
                 kill_flag = true;
             }
 
             // Update the progress bar
-            emit progressChanged(j);
+//            emit progressChanged(j);
         }
 
-        p_set.current()->loadSavedIndex();
-        p_set.next();
-    }
+//        p_set.current()->loadSavedIndex();
+//        p_set.next();
+//    }
 
 
-    p_set.loadSavedIndex();
-    p_set.current()->loadSavedIndex();
+//    p_set.loadSavedIndex();
+//    p_set.current()->loadSavedIndex();
     setFrame();
 
     size_t t = stopwatch.restart();
@@ -616,8 +638,8 @@ void ImageOpenGLWidget::reconstruct()
         emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
     }
 
-    emit showProgressBar(false);
-    emit visibilityChanged(true);
+    emit progressTaskActive(false);
+//    emit progressTaskActive(true);
 }
 
 
@@ -635,10 +657,10 @@ void ImageOpenGLWidget::setOffsetPhi(double value)
     offset_phi = value * pi / 180.0;
 }
 
-void ImageOpenGLWidget::setActiveAngle(QString value)
-{
-    active_rotation = value;
-}
+//void ImageOpenGLWidget::setActiveAngle(QString value)
+//{
+//    active_rotation = value;
+//}
 
 void ImageOpenGLWidget::killProcess()
 {
@@ -678,34 +700,38 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
     source_format.image_channel_data_type = CL_FLOAT;
 
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
+    float phi = file->phi();
+    float kappa = file->kappa();
+    float omega = file->omega();
+
     RotationMatrix<double> PHI;
     RotationMatrix<double> KAPPA;
     RotationMatrix<double> OMEGA;
-    {
-        double phi = 0, kappa = 0, omega = 0;
+//    {
+//        double file->phi() = 0, kappa = 0, file->omega() = 0;
 
-        if (active_rotation == "Phi")
-        {
-            phi = file->startAngle() + 0.5 * file->angleIncrement();
-            kappa = file->kappa();
-            omega = file->omega();
-        }
-        else if (active_rotation == "Kappa")
-        {
-            phi = file->phi();
-            kappa = file->startAngle() + 0.5 * file->angleIncrement();
-            omega = file->omega();
-        }
-        else if (active_rotation == "Omega")
-        {
-            phi = file->phi();
-            kappa = file->kappa();
-            omega = file->startAngle() + 0.5 * file->angleIncrement();
-        }
-        else
-        {
-            qDebug() << "No rotation angle set!" << active_rotation;
-        }
+//        if (active_rotation == "Phi")
+//        {
+//            file->phi() = file->startAngle() + 0.5 * file->angleIncrement();
+//            kappa = kappa;
+//            file->omega() = file->omega();
+//        }
+//        else if (active_rotation == "Kappa")
+//        {
+//            file->phi() = file->phi();
+//            kappa = file->startAngle() + 0.5 * file->angleIncrement();
+//            file->omega() = file->omega();
+//        }
+//        else if (active_rotation == "Omega")
+//        {
+//            file->phi() = file->phi();
+//            file->kappa() = file->kappa();
+//            file->omega() = file->startAngle() + 0.5 * file->angleIncrement();
+//        }
+//        else
+//        {
+//            qDebug() << "No rotation angle set!" << active_rotation;
+//        }
 
         file->setAlpha(0.8735582);
         file->setBeta(0.000891863);
@@ -715,7 +741,7 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
         OMEGA.setZRotation(-(omega + offset_omega));
 
         //        qDebug() << "phi, kappa, omega:" << phi << kappa << omega;
-    }
+//    }
 
     // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
 
@@ -756,9 +782,6 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
     float beam_center_y = (isBeamOverrideActive ? file->beamY() + beam_y_override : file->beamY());
     float start_angle = file->startAngle();
     float angle_increment = file->angleIncrement();
-    float kappa = file->kappa();
-    float phi = file->phi();
-    float omega = file->omega();
 
 
 
@@ -960,7 +983,7 @@ void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, 
      * Display an image buffer object, matching intensity to color
      * */
 
-    if (!image.isValid() || !image.isDataRead())
+    if (!image.isPathValid() || !image.isDataRead())
     {
         return;
     }
@@ -1100,11 +1123,11 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
     float sum;
 
     /* Pass arguments to kernel */
-    err =   QOpenCLSetKernelArg(cl_parallel_reduction, 0, sizeof(cl_mem), (void *) &cl_data);
-    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 1, local_ws[0] * sizeof(cl_float), NULL);
-    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
-    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
-    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
+    err =   QOpenCLSetKernelArg(cl_parallelReduction, 0, sizeof(cl_mem), (void *) &cl_data);
+    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 1, local_ws[0] * sizeof(cl_float), NULL);
+    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 2, sizeof(cl_uint), &read_size);
+    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 3, sizeof(cl_uint), &read_offset);
+    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 4, sizeof(cl_uint), &write_offset);
 
     if ( err != CL_SUCCESS)
     {
@@ -1114,7 +1137,7 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
     /* Launch kernel repeatedly until the summing is done */
     while (read_size > 1)
     {
-        err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_parallel_reduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+        err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_parallelReduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 
         if ( err != CL_SUCCESS)
         {
@@ -1180,9 +1203,9 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
             }
         }
 
-        err =   QOpenCLSetKernelArg(cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
-        err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
-        err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
+        err =   QOpenCLSetKernelArg(cl_parallelReduction, 2, sizeof(cl_uint), &read_size);
+        err |=   QOpenCLSetKernelArg(cl_parallelReduction, 3, sizeof(cl_uint), &read_offset);
+        err |=   QOpenCLSetKernelArg(cl_parallelReduction, 4, sizeof(cl_uint), &write_offset);
 
         if ( err != CL_SUCCESS)
         {
@@ -1199,7 +1222,7 @@ void ImageOpenGLWidget::calculus()
     /*
      * Carry out calculations on an image buffer, such as corrections and calculation of variance and skewness
      * */
-    if (!image.isValid() || !image.isDataRead())
+    if (!image.isPathValid() || !image.isDataRead())
     {
         return;
     }
@@ -1388,23 +1411,27 @@ void ImageOpenGLWidget::calculus()
 
 void ImageOpenGLWidget::setFrame()
 {
-    if (!isCLInitialized || !isGLInitialized  || !image.isValid())
-    {
-        return;
-    }
 
     // Set the frame
-    if (!image.setPath(p_set.current()->current()->path()))
+//    qDebug() << "...0" << p_working_data[p_current_filepath].path();
+    if (!image.setPath(p_working_data[p_current_filepath].path()))
     {
         return;
     }
 
-    if (!image.readData())
+//    qDebug() << "...1";
+    if (!isCLInitialized || !isGLInitialized  || !image.isPathValid())
     {
         return;
     }
 
-    Selection analysis_area = p_set.current()->current()->selection();
+//    qDebug() << "...2";
+    if (!image.read())
+    {
+        return;
+    }
+
+    Selection analysis_area = p_working_data[p_current_filepath].selection();
 
     // Restrict selection, this could be moved elsewhere and it would look better
     if (analysis_area.left() < 0)
@@ -1427,7 +1454,9 @@ void ImageOpenGLWidget::setFrame()
         analysis_area.setBottom(image.height() - 1);
     }
 
-    p_set.current()->current()->setSelection(analysis_area);
+    p_working_data[p_current_filepath].setSelection(analysis_area);
+//    qDebug() << "...3";
+//    qDebug() << "Hi liksom" << p_working_data[p_current_filepath].selection();
 
     Matrix<size_t> image_size(1, 2);
     image_size[0] = image.width();
@@ -1467,12 +1496,12 @@ void ImageOpenGLWidget::setFrame()
     refreshDisplay();
     refreshSelection(&analysis_area);
 
-    p_set.current()->current()->setSelection(analysis_area);
+    p_working_data[p_current_filepath].setSelection(analysis_area);
 
     // Emit the image instead of components
-    emit pathChanged(p_set.current()->current()->path());
-    emit progressRangeChanged(0, p_set.current()->size() - 1);
-    emit progressChanged(p_set.current()->i());
+    emit pathChanged(p_working_data[p_current_filepath].path());
+//    emit progressRangeChanged(0, p_set.current()->size() - 1);
+//    emit progressChanged(p_set.current()->i());
 }
 
 
@@ -1625,7 +1654,7 @@ void ImageOpenGLWidget::refreshDisplay()
      * Refresh the image buffer
      * */
 
-    if (!image.isValid() || !image.isDataRead())
+    if (!image.isPathValid() || !image.isDataRead())
     {
         return;
     }
@@ -1682,7 +1711,7 @@ void ImageOpenGLWidget::maintainImageTexture(Matrix<size_t> &image_size)
 
         glBindTexture(GL_TEXTURE_2D, image_tex_gl);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
@@ -1732,6 +1761,33 @@ QString ImageOpenGLWidget::integrationFrameString(DetectorFile &f, ImageInfo &im
     return str;
 }
 
+void ImageOpenGLWidget::showImageTooltip(bool value)
+{
+    isImageTooltipActive = value;
+
+    calculus();
+    refreshDisplay();
+
+    Selection analysis_area = p_working_data[p_current_filepath].selection();
+    refreshSelection(&analysis_area);
+    p_working_data[p_current_filepath].setSelection(analysis_area);
+
+    update();
+}
+
+void ImageOpenGLWidget::showEwaldCircle(bool value)
+{
+    isEwaldCircleActive = value;
+
+    calculus();
+    refreshDisplay();
+
+    Selection analysis_area = p_working_data[p_current_filepath].selection();
+    refreshSelection(&analysis_area);
+    p_working_data[p_current_filepath].setSelection(analysis_area);
+
+    update();
+}
 
 void ImageOpenGLWidget::setCorrectionNoise(bool value)
 {
@@ -1740,12 +1796,12 @@ void ImageOpenGLWidget::setCorrectionNoise(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
@@ -1756,12 +1812,12 @@ void ImageOpenGLWidget::setCorrectionPlane(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
@@ -1772,12 +1828,12 @@ void ImageOpenGLWidget::setCorrectionClutter(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
@@ -1788,12 +1844,12 @@ void ImageOpenGLWidget::setCorrectionMedian(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
@@ -1804,12 +1860,12 @@ void ImageOpenGLWidget::setCorrectionPolarization(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
@@ -1820,12 +1876,12 @@ void ImageOpenGLWidget::setCorrectionFlux(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
@@ -1836,12 +1892,12 @@ void ImageOpenGLWidget::setCorrectionExposure(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
@@ -1852,31 +1908,31 @@ void ImageOpenGLWidget::setCorrectionPixelProjection(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
-void ImageOpenGLWidget::toggleTraceTexture(bool value)
+void ImageOpenGLWidget::showTraceTexture(bool value)
 {
     texture_number = (int) value;
 
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
+        p_working_data[p_current_filepath].setSelection(analysis_area);
 
         setSeriesTrace();
         setFrame();
-    }
+//    }
 
     update();
 }
@@ -1889,21 +1945,21 @@ void ImageOpenGLWidget::setLsqSamples(int value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
-    {
-        Selection analysis_area = p_set.current()->current()->selection();
+//    if (!p_set.isEmpty())
+//    {
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
-    }
+        p_working_data[p_current_filepath].setSelection(analysis_area);
+//    }
 
     update();
 }
 
 void ImageOpenGLWidget::analyze(QString str)
 {
-    emit visibilityChanged(false);
+    /* emit progressTaskActive(false);
 
-    toggleTraceTexture(false);
+    showTraceTexture(false);
 
     if (str == "undef")
     {
@@ -1941,9 +1997,9 @@ void ImageOpenGLWidget::analyze(QString str)
             update();
 
             // Math
-            double wt_x = p_set.current()->current()->selection().weighted_x();
-            double wt_y = p_set.current()->current()->selection().weighted_y();
-            double sum = p_set.current()->current()->selection().integral();
+            double wt_x = p_working_data[p_current_filepath].selection().weighted_x();
+            double wt_y = p_working_data[p_current_filepath].selection().weighted_y();
+            double sum = p_working_data[p_current_filepath].selection().integral();
 
             x_weightpoint += sum * wt_x;
             y_weightpoint += sum * wt_y;
@@ -2023,9 +2079,9 @@ void ImageOpenGLWidget::analyze(QString str)
                 update();
 
                 // Math
-                double wt_x = p_set.current()->current()->selection().weighted_x();
-                double wt_y = p_set.current()->current()->selection().weighted_y();
-                double sum = p_set.current()->current()->selection().integral();
+                double wt_x = p_working_data[p_current_filepath].selection().weighted_x();
+                double wt_y = p_working_data[p_current_filepath].selection().weighted_y();
+                double sum = p_working_data[p_current_filepath].selection().integral();
 
                 x_weightpoint += sum * wt_x;
                 y_weightpoint += sum * wt_y;
@@ -2113,28 +2169,33 @@ void ImageOpenGLWidget::analyze(QString str)
         emit resultFinished(result);
     }
 
-    emit visibilityChanged(true);
+    emit progressTaskActive(true);*/
 }
 
 
 void ImageOpenGLWidget::applyPlaneMarker(QString str)
 {
-    if (!p_set.isEmpty())
+//    if (!p_set.isEmpty())
     {
-        if (str == "Series")
+        if (str == "All with this path")
         {
-            p_set.current()->setPlaneMarker(p_set.current()->current()->planeMarker());
+//            p_set.current()->setPlaneMarker(p_working_data[p_current_filepath].planeMarker());
         }
-        else if (str == "Set")
+        else if (str == "All")
         {
-            p_set.setPlaneMarker(p_set.current()->current()->planeMarker());
+//            p_set.setPlaneMarker(p_working_data[p_current_filepath].planeMarker());
         }
     }
 }
 
 Matrix<double> ImageOpenGLWidget::getPlane()
 {
-    QList<Selection> marker = p_set.current()->current()->planeMarker();
+    if (!isCorrectionPlaneActive)
+    {
+        return Matrix<double>(4,1,0);
+    }
+
+    QList<Selection> marker = p_working_data[p_current_filepath].planeMarker();
 
     // Compute sample values
     for (int i = 0; i < n_lsq_samples; i++)
@@ -2171,7 +2232,7 @@ Matrix<double> ImageOpenGLWidget::getPlane()
         marker[i].setSum(marker_buf.sum());
     }
 
-    p_set.current()->current()->setPlaneMarker(marker);
+    p_working_data[p_current_filepath].setPlaneMarker(marker);
 
 
     // Create LSQ matrix
@@ -2238,26 +2299,41 @@ Matrix<double> ImageOpenGLWidget::getPlane()
     return B;
 }
 
-void ImageOpenGLWidget::applySelection(QString str)
+void ImageOpenGLWidget::applySelection()
 {
-    if (!p_set.isEmpty())
+    QFileInfo info(p_current_filepath);
+    QSqlQuery query(QSqlDatabase::database());
+
+    // Prepare query
+    if (p_application_mode == "All with this path")
     {
-        if (str == "Series")
-        {
-            p_set.current()->setSelection(p_set.current()->current()->selection());
-        }
-        else if (str == "Set")
-        {
-            p_set.setSelection(p_set.current()->current()->selection());
-        }
+        query.prepare("SELECT * FROM cbf_table WHERE Path = :Path ORDER BY FilePath ASC");
+        query.bindValue(":Path", info.path());
+    }
+    else if (p_application_mode == "All")
+    {
+        query.prepare("SELECT * FROM cbf_table");
+    }
+    else
+    {
+        qDebug() << "Unrecognized application mode:" << p_application_mode;
+    }
+
+    if (!query.exec()) qDebug() << sqlQueryError(query);
+
+    // Apply selection
+    while (query.next())
+    {
+        QString path = query.value(0).toString();
+        if (!p_working_data.contains(path)) p_working_data[path] = ImageInfo(path);
+        p_working_data[path].setSelection(p_working_data[p_current_filepath].selection());
     }
 }
 
-void ImageOpenGLWidget::setSet(SeriesSet s)
-{
-
-    if (!s.isEmpty())
-    {
+//void ImageOpenGLWidget::setSet(SeriesSet s)
+//{
+//    if (!s.isEmpty())
+    /*{
         p_set = s;
 
         emit imageRangeChanged(0, p_set.current()->size() - 1);
@@ -2272,7 +2348,7 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
         // Fill trace with empty frames
         for (size_t i = 0; i < p_set.size(); i++)
         {
-            image.setPath(p_set.current()->current()->path());
+            image.setPath(p_working_data[p_current_filepath].path());
 
             Matrix<float> zeros_like_frame(image.height(), image.width(), 0.0f);
 
@@ -2289,82 +2365,100 @@ void ImageOpenGLWidget::setSet(SeriesSet s)
 
     setFrame();
     centerImage(image.size());
-    setSeriesTrace();
+    setSeriesTrace();*/
+//}
+
+//void ImageOpenGLWidget::removeCurrentImage()
+//{
+//    if (!p_set.isEmpty())
+//    {
+//        emit pathRemoved(p_working_data[p_current_filepath].path());
+
+//        p_set.current()->removeCurrent();
+//        p_set.current()->next();
+
+//        setFrame();
+
+//        emit imageRangeChanged(0, p_set.current()->size() - 1);
+//    }
+//}
+
+
+//void ImageOpenGLWidget::setFrameByIndex(int i)
+//{
+//    if (!p_set.isEmpty())
+//    {
+//        p_set.current()->at(i);
+//        setFrame();
+//    }
+
+//    update();
+//}
+
+//void ImageOpenGLWidget::nextSeries()
+//{
+//    if (!p_set.isEmpty())
+//    {
+//        p_set.current()->saveCurrentIndex();
+//        p_set.next();
+//        p_set.current()->loadSavedIndex();
+
+//        emit imageRangeChanged(0, p_set.current()->size() - 1);
+//        emit currentIndexChanged(p_set.current()->i());
+
+//        if (isSetTraced)
+//        {
+//            setSeriesTrace();
+//        }
+
+//        setFrame();
+//    }
+
+//    update();
+//}
+//void ImageOpenGLWidget::prevSeries()
+//{
+//    if (!p_set.isEmpty())
+//    {
+//        p_set.current()->saveCurrentIndex();
+//        p_set.previous();
+//        p_set.current()->loadSavedIndex();
+
+//        emit imageRangeChanged(0, p_set.current()->size() - 1);
+//        emit currentIndexChanged(p_set.current()->i());
+
+//        if (isSetTraced)
+//        {
+//            setSeriesTrace();
+//        }
+
+//        setFrame();
+//    }
+
+//    update();
+//}
+
+void ImageOpenGLWidget::setApplicationMode(QString str)
+{
+    p_application_mode = str;
 }
 
-void ImageOpenGLWidget::removeCurrentImage()
+void ImageOpenGLWidget::setFilePath(QString str)
 {
-    if (!p_set.isEmpty())
-    {
-        emit pathRemoved(p_set.current()->current()->path());
+//    qDebug() << str;
 
-        p_set.current()->removeCurrent();
-        p_set.current()->next();
+    p_current_filepath = str;
 
-        setFrame();
+    if (!p_working_data.contains(str)) p_working_data[str] = ImageInfo(str);
 
-        emit imageRangeChanged(0, p_set.current()->size() - 1);
-    }
-}
-
-
-void ImageOpenGLWidget::setFrameByIndex(int i)
-{
-    if (!p_set.isEmpty())
-    {
-        p_set.current()->at(i);
-        setFrame();
-    }
-
-    update();
-}
-
-void ImageOpenGLWidget::nextSeries()
-{
-    if (!p_set.isEmpty())
-    {
-        p_set.current()->saveCurrentIndex();
-        p_set.next();
-        p_set.current()->loadSavedIndex();
-
-        emit imageRangeChanged(0, p_set.current()->size() - 1);
-        emit currentIndexChanged(p_set.current()->i());
-
-        if (isSetTraced)
-        {
-            setSeriesTrace();
-        }
-
-        setFrame();
-    }
-
-    update();
-}
-void ImageOpenGLWidget::prevSeries()
-{
-    if (!p_set.isEmpty())
-    {
-        p_set.current()->saveCurrentIndex();
-        p_set.previous();
-        p_set.current()->loadSavedIndex();
-
-        emit imageRangeChanged(0, p_set.current()->size() - 1);
-        emit currentIndexChanged(p_set.current()->i());
-
-        if (isSetTraced)
-        {
-            setSeriesTrace();
-        }
-
-        setFrame();
-    }
+    setFrame();
 
     update();
 }
 
 void ImageOpenGLWidget::setSeriesTrace()
 {
-    if (!isCLInitialized || !isGLInitialized)
+    /*if (!isCLInitialized || !isGLInitialized)
     {
         return;
     }
@@ -2387,7 +2481,7 @@ void ImageOpenGLWidget::setSeriesTrace()
         qFatal(cl_error_cstring(err));
     }
 
-    update();
+    update();*/
 }
 
 void ImageOpenGLWidget::showWeightCenter(bool value)
@@ -2403,7 +2497,7 @@ void ImageOpenGLWidget::selectionCalculus(Selection * area, cl_mem image_data_cl
      * on the selected area. The buffers are then summed, effectively doing operations such as integration
      * */
 
-    if (!image.isValid() || !image.isDataRead())
+    if (!image.isPathValid() || !image.isDataRead())
     {
         return;
     }
@@ -2591,8 +2685,7 @@ void ImageOpenGLWidget::initializeCL()
 
     // Build programs from OpenCL kernel source
     QStringList paths;
-    paths << "kernels/image.cl";
-    paths << "kernels/project.cl";
+    paths << "kernels/scattering_data_operations.cl";
     paths << "kernels/parallel_reduction.cl";
 
     program = context_cl.createProgram(paths, &err);
@@ -2605,21 +2698,21 @@ void ImageOpenGLWidget::initializeCL()
     context_cl.buildProgram(&program, "-Werror");
 
     // Kernel handles
-    cl_display_image =  QOpenCLCreateKernel(program, "imageDisplay", &err);
+    cl_display_image =  QOpenCLCreateKernel(program, "scatteringDataToImage", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_image_calculus =  QOpenCLCreateKernel(program, "imageCalculus", &err);
+    cl_image_calculus =  QOpenCLCreateKernel(program, "processScatteringData", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_project_kernel = QOpenCLCreateKernel(program, "project_image", &err);
+    cl_project_kernel = QOpenCLCreateKernel(program, "projectScatteringData", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -2633,7 +2726,7 @@ void ImageOpenGLWidget::initializeCL()
 //        qFatal(cl_error_cstring(err));
 //    }
 
-    cl_parallel_reduction = QOpenCLCreateKernel(program, "psum", &err);
+    cl_parallelReduction = QOpenCLCreateKernel(program, "parallelReduction", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -2832,11 +2925,11 @@ void ImageOpenGLWidget::setTsf(TransferFunction &tsf)
     }
 }
 
-void ImageOpenGLWidget::setRgb(QString str)
+void ImageOpenGLWidget::setRgb(QString style)
 {
-    rgb_style = str;
+//    rgb_style = str;
 
-    tsf.setColorScheme(rgb_style, alpha_style);
+    tsf.setRgb(style);
     tsf.setSpline(256);
 
     setTsf(tsf);
@@ -2845,11 +2938,9 @@ void ImageOpenGLWidget::setRgb(QString str)
 
     update();
 }
-void ImageOpenGLWidget::setAlpha(QString str)
+void ImageOpenGLWidget::setAlpha(QString style)
 {
-    alpha_style = str;
-
-    tsf.setColorScheme(rgb_style, alpha_style);
+    tsf.setAlpha(style);
     tsf.setSpline(256);
 
     setTsf(tsf);
@@ -2894,11 +2985,11 @@ void ImageOpenGLWidget::setNoise(double value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
+//    if (!p_set.isEmpty())
     {
-        Selection analysis_area = p_set.current()->current()->selection();
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
+        p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
     update();
@@ -2984,19 +3075,24 @@ Matrix<GLfloat> ImageOpenGLWidget::glRect(QRectF &qt_rect)
     return gl_rect;
 }
 
-void ImageOpenGLWidget::centerImage(QSizeF value)
+void ImageOpenGLWidget::centerImage(QSizeF size)
 {
     // Center an image using matrices that operate on the GL space
-    translation_matrix[3] =  - 2.0 * (0.5 * value.width() / ( (qreal) this->width()));
-    translation_matrix[7] =  2.0 * (0.5 * value.height() / ( (qreal) this->height()));
+    translation_matrix[3] =  - 2.0 * (0.5 * size.width() / ( (qreal) this->width()));
+    translation_matrix[7] =  2.0 * (0.5 * size.height() / ( (qreal) this->height()));
 
-    zoom_matrix[0] = (qreal) this->width() / value.width();
-    zoom_matrix[5] = (qreal) this->width() / value.width();
-    zoom_matrix[10] = (qreal) this->width() / value.width();
+    zoom_matrix[0] = std::min((qreal) this->width() / size.width(), (qreal) this->height() / size.height());
+    zoom_matrix[5] = zoom_matrix[0];
+    zoom_matrix[10] = zoom_matrix[0];
+
+    update();
 }
 
-
-
+void ImageOpenGLWidget::centerCurrentImage()
+{
+    if (image.isPathValid() && image.isDataRead()) centerImage(image.size());
+    else centerImage(QSizeF(texture_noimage->width(),texture_noimage->height()));
+}
 
 void ImageOpenGLWidget::drawSelection(Selection area, QPainter * painter, Matrix<float> &color, QPointF offset)
 {
@@ -3126,8 +3222,10 @@ void ImageOpenGLWidget::setVbo(GLuint vbo, float * buf, size_t length, GLenum us
 //    endRawGLCalls(painter);
 //}
 
-void ImageOpenGLWidget::drawWeightpoint(Selection area, QPainter * painter, Matrix<float> &color)
+void ImageOpenGLWidget::drawWeightpoint(Selection area, QPainter * painter)
 {
+    ColorMatrix<float> color(1.0, 1.0, 0.0, 0.8);
+
     // Change to draw a faded polygon
     glLineWidth(1.5);
 
@@ -3326,57 +3424,34 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
     Matrix<double> Q = getScatteringVector(image, pixel_x, pixel_y);
 
     // G vector, de-rotated
+    image.setAlpha(0.8735582);
+    image.setBeta(0.000891863);
+
     RotationMatrix<double> PHI;
     RotationMatrix<double> KAPPA;
     RotationMatrix<double> OMEGA;
-    {
-        double phi = 0, kappa = 0, omega = 0;
 
-        if (active_rotation == "Phi")
-        {
-            phi = image.startAngle() + 0.5 * image.angleIncrement();
-            kappa = image.kappa();
-            omega = image.omega();
-        }
-        else if (active_rotation == "Kappa")
-        {
-            phi = image.phi();
-            kappa = image.startAngle() + 0.5 * image.angleIncrement();
-            omega = image.omega();
-        }
-        else if (active_rotation == "Omega")
-        {
-            phi = image.phi();
-            kappa = image.kappa();
-            omega = image.startAngle() + 0.5 * image.angleIncrement();
-        }
-        else
-        {
-            qDebug() << "No rotation angle set!" << active_rotation;
-        }
-
-        PHI.setArbRotation(0.000891863, 0, -(phi + offset_phi));
-        KAPPA.setArbRotation(0.8735582, 0, -(kappa + offset_kappa));
-        OMEGA.setZRotation(-(omega + offset_omega));
-    }
+    PHI.setArbRotation(image.beta(), 0, -(image.phi() + offset_phi));
+    KAPPA.setArbRotation(image.alpha(), 0, -(image.kappa() + offset_kappa));
+    OMEGA.setZRotation(-(image.omega() + offset_omega));
 
     RotationMatrix<double> sampleRotMat;
     sampleRotMat = PHI * KAPPA * OMEGA;
 
     Matrix<double> G = sampleRotMat.to3x3() * Q;
 
-    qDebug() << "Phi" << 90 - atan2(G[0],G[2])*180/pi;
+//    qDebug() << "Phi" << 90 - atan2(G[0],G[2])*180/pi;
 
     QString tip;
-    tip += "<p style=\"font-family: monospace, times, serif; font-size:10pt; font-style:italic; font-weight:normal; color:white\">";
-    tip += "<font color=\"white\">X:</font> <font color=\"#85DAFF\">" + QString::number((int) pixel_x_bounded) + "</font>, Y: <font color=\"#85DAFF\">" + QString::number((int) pixel_y_bounded) + "</font>";
-    tip += ", Value: <font color=\"#85DAFF\">" + QString::number(value, 'e', 4) + "</font>";
-    tip += ", Q[<font color=\"#85DAFF\">" + QString::number(Q[0], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(Q[1], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(Q[2], 'f', 2) + "</font>]";
+    tip += "<p style=\"font-family: monospace, times, serif; font-size:10pt; font-weight:normal; color:white\">";
+    tip += "<font color=\"white\">Value [" + QString::number((int) pixel_x_bounded) + ", " + QString::number((int) pixel_y_bounded) + "</font>";
+    tip += "] <font color=\"#85DAFF\">" + QString::number(value) + "</font><br/>";
+    tip += "Q[<font color=\"#85DAFF\">" + QString::number(Q[0], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(Q[1], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(Q[2], 'f', 2) + "</font>]";
     tip += ", G<sub>rot</sub>[<font color=\"#85DAFF\">" + QString::number(G[0], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(G[1], 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(G[2], 'f', 2) + "</font>]";
-    tip += " (<font color=\"#85DAFF\">" + QString::number(vecLength(Q), 'f', 2) + "</font> Å<sup>-1</sup>) (<font color=\"#85DAFF\">" + QString::number(1.0 / vecLength(Q), 'f', 2) + "</font> Å)";
-    tip += ", 2&theta;: <font color=\"#85DAFF\">" + QString::number(180 * getScatteringAngle(image, pixel_x, pixel_y) / pi, 'f', 2) + "</font>&deg;";
-    tip += ", Sum: <font color=\"#85DAFF\">" + QString::number(p_set.current()->current()->selection().integral(), 'f', 2) + "</font>";
-    tip += ", Mass: <font color=\"#85DAFF\">" + QString::number(p_set.current()->current()->selection().weighted_x(), 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(p_set.current()->current()->selection().weighted_y(), 'f', 2) + "</font>";
+    tip += " (<font color=\"#85DAFF\">" + QString::number(vecLength(Q), 'f', 2) + "</font> Å<sup>-1</sup>) (<font color=\"#85DAFF\">" + QString::number(1.0 / vecLength(Q), 'f', 2) + "</font> Å)<br/>";
+    tip += "2&theta;: <font color=\"#85DAFF\">" + QString::number(180 * getScatteringAngle(image, pixel_x, pixel_y) / pi, 'f', 2) + "</font>&deg;";
+    tip += ", Sum: <font color=\"#85DAFF\">" + QString::number(p_working_data[p_current_filepath].selection().integral(), 'f', 2) + "</font>";
+    tip += ", Center of mass: <font color=\"#85DAFF\">" + QString::number(p_working_data[p_current_filepath].selection().weighted_x(), 'f', 2) + "</font>, <font color=\"#85DAFF\">" + QString::number(p_working_data[p_current_filepath].selection().weighted_y(), 'f', 2) + "</font>";
     tip += "</p>";
 
     // Prepare painter
@@ -3388,6 +3463,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
 
     QPen pen(Qt::white);
     //    painter->setFont(font);
+    pen.setWidthF(0.5);
     painter->setPen(pen);
     painter->setBrush(brush);
 
@@ -3397,7 +3473,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
 
     //    area.moveBottomLeft(QPoint(5,this->height()-5));
 
-    QRect area(QPoint(0, this->height() - fm.height()), QPoint(this->width(), this->height()));
+    QRect area(QPoint(0, this->height() - 3*fm.height()), QPoint(this->width(), this->height()));
 
     area += QMargins(2, 2, 2, 2);
     painter->drawRect(area);
@@ -3409,7 +3485,7 @@ void ImageOpenGLWidget::drawPixelToolTip(QPainter * painter)
 
     // Draw tooltip
     //    painter->drawText(area, Qt::AlignLeft, tip);
-    painter->drawStaticText(area.topLeft(), m_staticText);
+    painter->drawStaticText(area.topLeft()+QPoint(5,0), m_staticText);
 }
 
 void ImageOpenGLWidget::drawImageMarkers(QPainter * painter)
@@ -3494,6 +3570,8 @@ void ImageOpenGLWidget::drawImageMarkers(QPainter * painter)
 
 void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
 {
+    // A bug makes this function draw badly to the screenshot buffer
+
     // Draw circle corresponding to cone intersection of the Ewald
 //    QPointF beam_xy(image.beamY() + this->width() * 0.5, image.beamX() + this->height() * 0.5);
 //    QPointF((qreal) this->width() * 0.5, (qreal) this->height() * 0.5)
@@ -3530,7 +3608,7 @@ void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
 
 void ImageOpenGLWidget::drawPlaneMarkerToolTip(QPainter * painter)
 {
-    QList<Selection> marker = p_set.current()->current()->planeMarker();
+    QList<Selection> marker = p_working_data[p_current_filepath].planeMarker();
 
     for (int i = 0; i < n_lsq_samples; i++)
     {
@@ -3589,7 +3667,7 @@ void ImageOpenGLWidget::drawPlaneMarkerToolTip(QPainter * painter)
 
     }
 
-    p_set.current()->current()->setPlaneMarker(marker);
+    p_working_data[p_current_filepath].setPlaneMarker(marker);
 
 }
 
@@ -3617,11 +3695,11 @@ void ImageOpenGLWidget::setMode(int value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
+//    if (!p_set.isEmpty())
     {
-        Selection analysis_area = p_set.current()->current()->selection();
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
+        p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
     update();
@@ -3634,11 +3712,11 @@ void ImageOpenGLWidget::setCorrectionLorentz(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
+//    if (!p_set.isEmpty())
     {
-        Selection analysis_area = p_set.current()->current()->selection();
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
+        p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
     update();
@@ -3651,11 +3729,11 @@ void ImageOpenGLWidget::setCorrectionBackground(bool value)
     calculus();
     refreshDisplay();
 
-    if (!p_set.isEmpty())
+//    if (!p_set.isEmpty())
     {
-        Selection analysis_area = p_set.current()->current()->selection();
+        Selection analysis_area = p_working_data[p_current_filepath].selection();
         refreshSelection(&analysis_area);
-        p_set.current()->current()->setSelection(analysis_area);
+        p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
     update();
@@ -3746,9 +3824,9 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
     if ((event->buttons() & Qt::LeftButton))
     {
-        if ((event->modifiers() & Qt::ShiftModifier) && (image.isValid() || image.isDataRead()))
+        if ((event->modifiers() & Qt::ShiftModifier) && (image.isPathValid() || image.isDataRead()))
         {
-            Selection analysis_area = p_set.current()->current()->selection();
+            Selection analysis_area = p_working_data[p_current_filepath].selection();
 
             QPoint pixel = getImagePixel(pos);
 
@@ -3756,11 +3834,11 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
             analysis_area = analysis_area.normalized();
 
-            p_set.current()->current()->setSelection(analysis_area);
+            p_working_data[p_current_filepath].setSelection(analysis_area);
         }
-        else if ((event->modifiers() & Qt::ControlModifier) && (image.isValid() || image.isDataRead()))
+        else if ((event->modifiers() & Qt::ControlModifier) && (image.isPathValid() || image.isDataRead()))
         {
-            Selection analysis_area = p_set.current()->current()->selection();
+            Selection analysis_area = p_working_data[p_current_filepath].selection();
 
             QPoint pixel = getImagePixel(pos);
 
@@ -3768,16 +3846,16 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
             analysis_area = analysis_area.normalized();
 
-            p_set.current()->current()->setSelection(analysis_area);
+            p_working_data[p_current_filepath].setSelection(analysis_area);
         }
         else
         {
             // Check for selected objects
             bool isSomethingSelected = false;
 
-            if (image.isValid() || image.isDataRead())
+            if (image.isPathValid() || image.isDataRead())
             {
-                QList<Selection> marker(p_set.current()->current()->planeMarker());
+                QList<Selection> marker(p_working_data[p_current_filepath].planeMarker());
 
                 for (int i = 0; i < n_lsq_samples; i++)
                 {
@@ -3789,7 +3867,7 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
                     }
                 }
 
-                p_set.current()->current()->setPlaneMarker(marker);
+                p_working_data[p_current_filepath].setPlaneMarker(marker);
             }
 
             if (!isSomethingSelected)
@@ -3810,7 +3888,7 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent * event)
 {
     pos = event->pos();
 
-    if (image.isValid() || image.isDataRead())
+    if (image.isPathValid() || image.isDataRead())
     {
         if (!(event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
         {
@@ -3848,7 +3926,7 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent * event)
                 pixel_y = image.height() - 1;
             }
 
-            QList<Selection> marker(p_set.current()->current()->planeMarker());
+            QList<Selection> marker(p_working_data[p_current_filepath].planeMarker());
 
             for (int i = 0; i < n_lsq_samples; i++)
             {
@@ -3859,11 +3937,11 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent * event)
                 }
             }
 
-            p_set.current()->current()->setPlaneMarkerTest(marker);
+            p_working_data[p_current_filepath].setPlaneMarkerTest(marker);
         }
         else if ((event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
         {
-            Selection analysis_area = p_set.current()->current()->selection();
+            Selection analysis_area = p_working_data[p_current_filepath].selection();
 
             QPoint pixel = getImagePixel(pos);
 
@@ -3873,7 +3951,7 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent * event)
 
             refreshSelection(&analysis_area);
 
-            p_set.current()->current()->setSelection(analysis_area);
+            p_working_data[p_current_filepath].setSelection(analysis_area);
         }
     }
     update();
@@ -3883,12 +3961,12 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 {
     pos =  event->pos();
 
-    if (image.isValid() || image.isDataRead())
+    if (image.isPathValid() || image.isDataRead())
     {
         // A bit overkill to set [...] on mouse release as well as mouse move and push
         if ((event->modifiers() & Qt::ShiftModifier) && !(event->buttons() & Qt::LeftButton))
         {
-            Selection analysis_area = p_set.current()->current()->selection();
+            Selection analysis_area = p_working_data[p_current_filepath].selection();
 
             QPoint pixel = getImagePixel(pos);
 
@@ -3898,11 +3976,11 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 
             refreshSelection(&analysis_area);
 
-            p_set.current()->current()->setSelection(analysis_area);
+            p_working_data[p_current_filepath].setSelection(analysis_area);
         }
         else if ((event->modifiers() & Qt::ControlModifier) && !(event->buttons() & Qt::LeftButton))
         {
-            Selection analysis_area = p_set.current()->current()->selection();
+            Selection analysis_area = p_working_data[p_current_filepath].selection();
 
             QPoint pixel = getImagePixel(pos);
 
@@ -3912,19 +3990,19 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 
             refreshSelection(&analysis_area);
 
-            p_set.current()->current()->setSelection(analysis_area);
+            p_working_data[p_current_filepath].setSelection(analysis_area);
         }
 
 
         // Deselect objects
-        QList<Selection> marker(p_set.current()->current()->planeMarker());
+        QList<Selection> marker(p_working_data[p_current_filepath].planeMarker());
 
         for (int i = 0; i < marker.size(); i++)
         {
             marker[i].setSelected(false);
         }
 
-        p_set.current()->setPlaneMarker(marker);
+//        p_set.current()->setPlaneMarker(marker);
 
         // Recalculate
         calculus();
@@ -3935,11 +4013,11 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 
 void ImageOpenGLWidget::wheelEvent(QWheelEvent * event)
 {
-    float move_scaling = 1.0;
+    float move_scaling = 1.5;
 
     if (event->modifiers() & Qt::ShiftModifier)
     {
-        move_scaling = 5.0;
+        move_scaling = 3.0;
     }
     else if (event->modifiers() & Qt::ControlModifier)
     {
@@ -3980,13 +4058,16 @@ void ImageOpenGLWidget::wheelEvent(QWheelEvent * event)
     }
 }
 
-SeriesSet ImageOpenGLWidget::set()
-{
-    return p_set;
-}
+//SeriesSet ImageOpenGLWidget::set()
+//{
+//    return p_set;
+//}
 
 void ImageOpenGLWidget::takeScreenShot(QString path)
 {
+    bool tmp = isEwaldCircleActive;
+    isEwaldCircleActive = false;
+
     QOpenGLFramebufferObjectFormat format;
     format.setSamples(64);
     format.setInternalTextureFormat(GL_RGBA32F);
@@ -4003,6 +4084,8 @@ void ImageOpenGLWidget::takeScreenShot(QString path)
 
     // Save buffer as image
     buffy.toImage().save(path);
+
+    isEwaldCircleActive = tmp;
 }
 
 void ImageOpenGLWidget::saveImage(QString path)
@@ -4031,7 +4114,7 @@ void ImageOpenGLWidget::saveImage(QString path)
 
     glViewport(0, 0, image.width(), image.height());
 
-    if (!p_set.isEmpty())
+//    if (!p_set.isEmpty())
     {
         std_2d_tex_program->bind();
 

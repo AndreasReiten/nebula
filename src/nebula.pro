@@ -1,6 +1,7 @@
 # QMAKE PROJECT FILE
-QT += core gui sql
 
+# Modules and project configuration
+QT += core gui sql
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets network
 
 win32 {
@@ -22,12 +23,8 @@ MOC_DIR = .moc
 RCC_DIR = .rcc
 UI_DIR = .ui
 
+# Files
 OTHER_FILES += \
-    kernels/project.cl \
-    kernels/voxelize.cl \
-    kernels/box_sampler.cl \
-    kernels/models.cl \
-    kernels/background_filter.cl \
     shaders/std_2d_col.f.glsl \
     shaders/std_2d_col.v.glsl \
     shaders/std_2d_tex.f.glsl \
@@ -35,7 +32,23 @@ OTHER_FILES += \
     shaders/std_3d_col.f.glsl \
     shaders/std_3d_col.v.glsl \
     shaders/std_blend.f.glsl \
-    shaders/std_blend.v.glsl
+    shaders/std_blend.v.glsl \
+    shaders/std_2d_sprite.v.glsl \
+    shaders/std_2d_sprite.f.glsl \
+    kernels/project.cl \
+    kernels/voxelize.cl \
+    kernels/models.cl \
+    kernels/weightpoint.cl \
+    kernels/volume_render_svo.cl \
+    kernels/volume_render_shared.cl \
+    kernels/volume_render_model.cl \
+    kernels/parallel_reduction.cl \
+    kernels/integrate_plane.cl \
+    kernels/integrate_line.cl \
+    kernels/integrate_image.cl \
+    kernels/scattering_data_operations.cl \
+    kernels/volume_sampler.cl \
+    kernels/parallel_reduction.cl
 
 HEADERS += \
     file/fileformat.h \
@@ -64,13 +77,13 @@ HEADERS += \
     misc/plotwidget.h \
     misc/imagemarker.h \
     misc/box.h \
-    filebrowserwidget.h \
     reconstructionwidget.h \
     visualizationwidget.h \
     sql/customsqlquerymodel.h \
     sql/sqlqol.h
 
 SOURCES += \
+    main.cpp \
     file/fileformat.cpp \
     file/filetreeview.cpp \
     image/imagepreview.cpp \
@@ -84,7 +97,6 @@ SOURCES += \
     worker/worker.cpp \
     file/framecontainer.cpp \
     file/selection.cpp \
-    main.cpp \
     mainwindow.cpp \
     misc/line.cpp \
     misc/marker.cpp \
@@ -92,27 +104,11 @@ SOURCES += \
     misc/plotwidget.cpp \
     misc/imagemarker.cpp \
     misc/box.cpp \
-    filebrowserwidget.cpp \
     reconstructionwidget.cpp \
     visualizationwidget.cpp \
     sql/customsqlquerymodel.cpp
 
-DISTFILES += \
-    shaders/std_2d_sprite.v.glsl \
-    shaders/std_2d_sprite.f.glsl \
-    kernels/weightpoint.cl \
-    kernels/volume_render_svo.cl \
-    kernels/volume_render_shared.cl \
-    kernels/volume_render_model.cl \
-    kernels/parallel_reduction.cl \
-    kernels/integrate_plane.cl \
-    kernels/integrate_line.cl \
-    kernels/integrate_image.cl \
-    kernels/image.cl
-
 FORMS += \
     mainwindow.ui \
-    filebrowserwidget.ui \
     reconstructionwidget.ui \
     visualizationwidget.ui
-

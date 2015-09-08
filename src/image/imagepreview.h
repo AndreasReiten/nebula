@@ -45,7 +45,7 @@ class ImageWorker : public QObject, protected OpenCLFunctions
 
     signals:
         void traceFinished();
-        void visibilityChanged(bool value);
+//        void progressTaskActive(bool value);
         void pathChanged(QString path);
         void progressRangeChanged(int, int);
         void progressChanged(int);
@@ -70,7 +70,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         explicit ImageOpenGLWidget(QObject * parent = 0);
         ~ImageOpenGLWidget();
-        SeriesSet set();
+//        SeriesSet set();
         ImageWorker * worker();
 
     signals:
@@ -94,10 +94,13 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void currentIndexChanged(int value);
         void progressChanged(int value);
         void progressRangeChanged(int min, int max);
-        void visibilityChanged(bool value);
-        void showProgressBar(bool value);
+//        void progressTaskActive(bool value);
+        void progressTaskActive(bool value);
 
     public slots:
+        void setApplicationMode(QString str);
+        void setFilePath(QString str);
+
         void setSeriesTrace();
         void traceSeriesSlot();
 
@@ -106,7 +109,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void setBeamYOverride(double value);
 
         void killProcess();
-        void setActiveAngle(QString value);
+//        void setActiveAngle(QString value);
         void setOffsetOmega(double value);
         void setOffsetKappa(double value);
         void setOffsetPhi(double value);
@@ -114,8 +117,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         void setMode(int value);
         void setNoise(double value);
-        void setRgb(QString str);
-        void setAlpha(QString str);
+        void setRgb(QString style);
+        void setAlpha(QString style);
         void setLog(bool value);
         void setCorrectionLorentz(bool value);
         void setCorrectionBackground(bool value);
@@ -125,16 +128,19 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void takeScreenShot(QString path);
         void saveImage(QString path);
         void setFrame();
-        void centerImage(QSizeF value);
+        void centerImage(QSizeF size);
+        void centerCurrentImage();
         void analyze(QString str);
         void applyPlaneMarker(QString str);
         void showWeightCenter(bool value);
-        void setSet(SeriesSet s);
-        void setFrameByIndex(int i);
-        void nextSeries();
-        void prevSeries();
-        void removeCurrentImage();
-        void applySelection(QString);
+        void showImageTooltip(bool value);
+        void showEwaldCircle(bool value);
+//        void setSet(SeriesSet s);
+//        void setFrameByIndex(int i);
+//        void nextSeries();
+//        void prevSeries();
+//        void removeCurrentImage();
+        void applySelection();
         void setCorrectionNoise(bool value);
         void setCorrectionPlane(bool value);
         void setCorrectionClutter(bool value);
@@ -144,7 +150,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void setCorrectionExposure(bool value);
         void setCorrectionPixelProjection(bool value);
         void setLsqSamples(int value);
-        void toggleTraceTexture(bool value);
+        void showTraceTexture(bool value);
 
         void mouseMoveEvent(QMouseEvent * event);
         void mousePressEvent(QMouseEvent * event);
@@ -200,12 +206,15 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         double offset_omega;
         double offset_kappa;
         double offset_phi;
-        QString active_rotation;
+//        QString active_rotation;
         bool kill_flag;
 
         // Series
         QList<Matrix<float>> set_trace;
-        SeriesSet p_set;
+//        SeriesSet p_set;
+        QString p_current_filepath;
+        QString p_application_mode;
+        QMap<QString, ImageInfo> p_working_data;
         cl_mem series_interpol_gpu_3Dimg;
 
 
@@ -250,7 +259,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         cl_kernel cl_image_calculus;
         cl_kernel cl_buffer_max;
         cl_kernel cl_project_kernel;
-        cl_kernel cl_parallel_reduction;
+        cl_kernel cl_parallelReduction;
         cl_mem image_tex_cl;
         cl_mem source_cl;
         cl_mem tsf_tex_cl;
@@ -263,7 +272,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         cl_sampler image_sampler;
 
         TransferFunction tsf;
-        QString rgb_style, alpha_style;
+//        QString rgb_style, alpha_style;
         int bg_sample_interdist;
 
         int n_lsq_samples;
@@ -290,7 +299,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         // Draw
         void drawImage(QRectF rect, GLuint texture, QPainter * painter);
         void drawSelection(Selection area, QPainter * painter, Matrix<float> &color, QPointF offset = QPointF(0, 0));
-        void drawWeightpoint(Selection area, QPainter * painter, Matrix<float> &color);
+        void drawWeightpoint(Selection area, QPainter * painter);
         void drawPixelToolTip(QPainter * painter);
         void drawPlaneMarkerToolTip(QPainter * painter);
         void drawConeEwaldIntersect(QPainter * painter);
@@ -304,6 +313,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool isGLInitialized;
         bool isWeightCenterActive;
         bool isSetTraced;
+        bool isEwaldCircleActive;
+        bool isImageTooltipActive;
 
         int texture_number;
 

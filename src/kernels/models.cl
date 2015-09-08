@@ -1,7 +1,5 @@
 float model(float3 k, constant float * param)
 {
-
-
     float pi = 3.14159f;
 
     float a = param[0] * (2.0f - native_cos(k.x * 2 * pi) * (native_cos(k.y * 2 * pi) + native_cos(k.z * 2 * pi))) + (2.0f * param[2] - param[0]) * (1.0f - native_cos(k.y * 2 * pi) * native_cos(k.z * 2 * pi));

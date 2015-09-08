@@ -5,7 +5,7 @@
  * A class supplying matrix functionality and with various subclasses
  * */
 
-#include <cassert>
+//#include <cassert>
 #include <sstream>
 #include <iostream>
 #include <cmath>
@@ -739,7 +739,7 @@ Matrix<T> Matrix<T>::inverse(int verbose)  const
 
             if (L[j * p_n + j] == 0)
             {
-                qWarning("det(L) close to 0!\n Can't divide by 0...");
+                qWarning("Determinant close to zero.");
                 return rescue;
             }
 
@@ -1183,7 +1183,7 @@ T &Matrix<T>::operator[] (const size_t index)
         qDebug() << index << ">=" << p_m << "x" << p_n;
     }
 
-    assert(index < p_m * p_n);
+    Q_ASSERT(index < p_m * p_n);
 
     return p_buffer[index];
 }
@@ -1196,7 +1196,7 @@ const T &Matrix<T>::operator[] (const size_t index) const
         qDebug() << index << ">=" << p_m << "x" << p_n;
     }
 
-    assert(index < p_m * p_n);
+    Q_ASSERT(index < p_m * p_n);
 
     return p_buffer[index];
 }
@@ -1230,7 +1230,7 @@ const T * Matrix<T>::data() const
 template <class T>
 T Matrix<T>::at(size_t index)
 {
-    assert(index < p_m * p_n);
+    Q_ASSERT(index < p_m * p_n);
 
     return p_buffer[index];
 }

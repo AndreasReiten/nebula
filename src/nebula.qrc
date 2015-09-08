@@ -57,5 +57,8 @@
         <file>art/minisave.png</file>
         <file>art/crosshair_one.png</file>
         <file>art/noimage.png</file>
+        <file>art/opencl.png</file>
+        <file>art/opengl.png</file>
+        <file>art/Qt-logo-medium.png</file>
     </qresource>
 </RCC>

@@ -88,7 +88,7 @@ class VoxelizeWorker : public BaseWorker
 
 
     signals:
-        void showProgressBar(bool value);
+        void progressTaskActive(bool value);
 
     protected:
         cl_kernel voxelize_kernel;

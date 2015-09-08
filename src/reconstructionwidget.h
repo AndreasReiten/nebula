@@ -3,7 +3,11 @@
 
 #include <QMainWindow>
 #include <QFileInfo>
+#include <QSqlQuery>
+#include <QDebug>
+#include <QMap>
 
+#include "file/filetreeview.h"
 #include "image/imagepreview.h"
 #include "sql/customsqlquerymodel.h"
 #include "worker/worker.h"
@@ -29,15 +33,12 @@ signals:
     void setSelection(QString);
     void saveImage(QString);
     void takeImageScreenshot(QString);
+    void fileChanged(QString);
 
 
 public slots:
     void setProgressBarFormat(QString str);
     void setProgressBarFormat_2(QString str);
-    void setApplyMode(QString str);
-    void applyAnalytics();
-    void applyPlaneMarker();
-    void applySelection();
     void takeImageScreenshotFunction();
     void saveImageFunction();
     void displayPopup(QString title, QString text);
@@ -45,14 +46,20 @@ public slots:
     void loadProject();
     void sortItems(int column, Qt::SortOrder order);
     void refreshSelectionModel();
-    void itemClicked(const QModelIndex & index);
+    void itemSelected(const QModelIndex & current, const QModelIndex & previous);
+    void next();
+    void previous();
+    void batchNext();
+    void batchPrevious();
 
 private slots:
     void on_sanityButton_clicked();
-
     void on_deactivateFileButton_clicked();
-
     void on_activateFileButton_clicked();
+    void on_clearButton_clicked();
+    void on_execQueryButton_clicked();
+    void on_addFilesButton_clicked();
+    void querySelectionModel(QString str);
 
 private:
     Ui::ReconstructionWidget *p_ui;
@@ -61,7 +68,9 @@ private:
     void writeSettings();
     void initSql();
 
-//    QSqlDatabase p_db;
+    FileSelectionModel * fileTreeModel;
+
+    QSqlQuery * upsert_file_query;
     QString display_query;
     QMap<QString,QPair<int, QString>> column_map;
     CustomSqlQueryModel * selection_model;
@@ -70,10 +79,9 @@ private:
     QThread * voxelizeThread;
     VoxelizeWorker * voxelizeWorker;
 
-    QString p_action_apply_mode;
     QString p_working_dir;
     QString p_screenshot_dir;
-    QFileInfo p_current_file;
+    int p_current_row;
 };
 
 #endif // RECONSTRUCTIONWIDGET_H

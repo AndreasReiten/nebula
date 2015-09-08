@@ -41,11 +41,8 @@ FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
 
     p_ui->addFilesButton->setIcon(QIcon(":/art/download.png"));
 
-//    headerHighlighter = new Highlighter(ui->headerEdit->document());
-
     this->setAnimated(false);
     connect(p_ui->filterLineEdit, SIGNAL(textChanged(QString)), fileTreeModel, SLOT(setStringFilter(QString)));
-    connect(p_ui->fileTreeView, SIGNAL(fileChanged(QString)), this, SLOT(setHeader(QString)));
 
     p_ui->filterLineEdit->setText("*.cbf");
 
@@ -68,7 +65,6 @@ FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
     connect(p_ui->addFilesButton, SIGNAL(clicked(bool)), p_ui->selectionView, SLOT(resizeColumnsToContents()));
 
     p_ui->selectionView->setModel(selection_model);
-//    ui->selectionView->verticalHeader()->setVisible(false);
     connect(p_ui->selectionView->horizontalHeader(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(sortItems(int,Qt::SortOrder)));
 
     p_ui->selectionView->setColumnHidden(0, true);
@@ -77,12 +73,6 @@ FileBrowserWidget::FileBrowserWidget(QWidget *parent) :
     loadSettings();
 
     p_ui->selectionView->resizeColumnsToContents();
-}
-
-void FileBrowserWidget::setHeader(QString path)
-{
-//    DetectorFile file(path);
-//    ui->headerEdit->setPlainText(file.getHeaderText());
 }
 
 void FileBrowserWidget::querySelectionModel(QString str)

@@ -12,17 +12,17 @@
 #include <QFileInfoList>
 #include <QDir>
 
-class FileTreeView : public QTreeView
-{
-        Q_OBJECT
-    public:
-        explicit FileTreeView(QWidget * parent = 0);
+//class FileTreeView : public QTreeView
+//{
+//        Q_OBJECT
+//    public:
+//        explicit FileTreeView(QWidget * parent = 0);
 
-    public slots:
-        void itemChanged(const QModelIndex &item);
-    signals:
-        void fileChanged(QString path);
-};
+//    public slots:
+//        void itemChanged(const QModelIndex &item);
+//    signals:
+//        void fileChanged(QString path);
+//};
 
 
 class FileSelectionModel : public QFileSystemModel

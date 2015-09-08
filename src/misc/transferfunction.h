@@ -3,6 +3,8 @@
 
 #include "../math/matrix.h"
 
+#include <QString>
+
 class TransferFunction
 {
     public:
@@ -13,15 +15,26 @@ class TransferFunction
         Matrix<double> * getThumb();
 
         void setColorScheme(QString rgb, QString alpha);
+        void setRgb(QString rgb);
+        void setAlpha(QString alpha);
         void setSpline(size_t resolution);
         void setPreIntegrated();
 
     private:
-        Matrix<double> x_position;
-        Matrix<double> tsf_base;
+        Matrix<double> p_rgb;
+        Matrix<double> p_alpha;
+        Matrix<double> p_x;
+//        Matrix<double> rgba;
         Matrix<double> tsf_splined;
         Matrix<double> tsf_preintegrated;
-        Matrix<double> tsf_thumb;
+
+        QString p_alpha_str;
+        QString p_rgb_str;
+
+        bool p_has_rgb;
+        bool p_has_alpha;
+//        QString uuuh;
+
 };
 
 #endif // TRANSFERFUNCTION_H

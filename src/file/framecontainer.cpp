@@ -13,6 +13,18 @@ ImageInfo::ImageInfo()
     }
 }
 
+ImageInfo::ImageInfo(QString path)
+{
+    p_selection = Selection(0, 0, 1e5, 1e5);
+
+    for (int i = 0; i < MAX_LSQ_SAMPLES; i++)
+    {
+        plane_sample <<  Selection(40 * (i % 2), (i / 2) * (LSQ_SAMPLE_SIZE + 8), LSQ_SAMPLE_SIZE, LSQ_SAMPLE_SIZE);
+    }
+
+    setPath(path);
+}
+
 ImageInfo::ImageInfo(const ImageInfo &other)
 {
     p_selection = other.selection();

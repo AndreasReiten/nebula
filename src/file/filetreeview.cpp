@@ -3,20 +3,20 @@
 #include <QDebug>
 #include <QMap>
 
-FileTreeView::FileTreeView(QWidget * parent) :
-    QTreeView(parent)
-{
-}
+//FileTreeView::FileTreeView(QWidget * parent) :
+//    QTreeView(parent)
+//{
+//}
 
-void FileTreeView::itemChanged(const QModelIndex &item)
-{
-    QFileSystemModel * mod = qobject_cast<QFileSystemModel *> (this->model());
+//void FileTreeView::itemChanged(const QModelIndex &item)
+//{
+//    QFileSystemModel * mod = qobject_cast<QFileSystemModel *> (this->model());
 
-    if ((item.isValid()) &&  mod->fileInfo(item).isFile() && mod->fileInfo(item).isReadable() && mod->fileInfo(item).exists())
-    {
-        emit fileChanged(mod->filePath(item));
-    }
-}
+//    if ((item.isValid()) &&  mod->fileInfo(item).isFile() && mod->fileInfo(item).isReadable() && mod->fileInfo(item).exists())
+//    {
+//        emit fileChanged(mod->filePath(item));
+//    }
+//}
 
 
 FileSelectionModel::FileSelectionModel(QWidget * parent) :

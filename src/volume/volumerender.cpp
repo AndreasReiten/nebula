@@ -81,7 +81,7 @@ void VolumeWorker::initializeOpenCLKernels()
         qFatal(cl_error_cstring(err));
     }
 
-    p_weightpoint_kernel =  QOpenCLCreateKernel(program, "weightpointSampler", &err);
+    p_weightpoint_kernel =  QOpenCLCreateKernel(program, "weightpointVolumetric", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -712,8 +712,8 @@ VolumeOpenGLWidget::VolumeOpenGLWidget(QObject * parent)
     centerline_coords.set(2, 3, 0.0);
 
     // Transfer texture
-    tsf_color_scheme = "Hot";
-    tsf_alpha_scheme = "Uniform";
+//    tsf_color_scheme = "Hot";
+//    tsf_alpha_scheme = "Uniform";
 
     tsf_parameters_model[0] = 0.0; // texture min
     tsf_parameters_model[1] = 1.0; // texture max
@@ -1124,7 +1124,11 @@ void VolumeOpenGLWidget::initializeGL()
 
     // Textures
     setRayTexture(20);
-    setTsfTexture();
+
+    tsf.setRgb("Hot");
+    tsf.setAlpha("Uniform");
+    tsf.setSpline(256);
+    setTsfTexture(tsf);
 
     // Core set functions
     setDataExtent();
@@ -2721,7 +2725,7 @@ void VolumeOpenGLWidget::initializeCL()
     paths << "kernels/volume_render_svo.cl";
     paths << "kernels/volume_render_model.cl";
     paths << "kernels/integrate_image.cl";
-    paths << "kernels/box_sampler.cl";
+    paths << "kernels/volume_sampler.cl";
     paths << "kernels/parallel_reduction.cl";
 
     program = context_cl.createProgram(paths, &err);
@@ -2756,14 +2760,14 @@ void VolumeOpenGLWidget::initializeCL()
         qFatal(cl_error_cstring(err));
     }
 
-    cl_box_sampler = QOpenCLCreateKernel(program, "boxSample", &err);
+    cl_box_sampler = QOpenCLCreateKernel(program, "sampleScatteringVolume", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_parallel_reduce = QOpenCLCreateKernel(program, "psum", &err);
+    cl_parallel_reduce = QOpenCLCreateKernel(program, "parallelReduction", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -3253,7 +3257,7 @@ void VolumeOpenGLWidget::setRayTexture(int percentage)
     }
 }
 
-void VolumeOpenGLWidget::setTsfTexture()
+void VolumeOpenGLWidget::setTsfTexture(TransferFunction &tsf)
 {
     if (!(isCLInitialized && isGLInitialized))
     {
@@ -3278,8 +3282,8 @@ void VolumeOpenGLWidget::setTsfTexture()
         }
     }
 
-    tsf.setColorScheme(tsf_color_scheme, tsf_alpha_scheme);
-    tsf.setSpline(256);
+//    tsf.setColorScheme("Hot", "Opaque");
+//    tsf.setSpline(256);
 
     // Buffer for tsf_tex_gl
     glBindTexture(GL_TEXTURE_2D, tsf_tex_gl);
@@ -3356,6 +3360,7 @@ void VolumeOpenGLWidget::setTsfTexture()
     {
         qFatal(cl_error_cstring(err));
     }
+
 }
 
 float VolumeOpenGLWidget::sumViewBox()
@@ -5526,24 +5531,30 @@ void VolumeOpenGLWidget::setViewMode(int value)
     setMiscArrays();
 }
 
-void VolumeOpenGLWidget::setTsfColor(int value)
+void VolumeOpenGLWidget::setTsfColor(QString style)
 {
-    tsf_color_scheme = value;
+//    tsf_color_scheme = value;
+
+    tsf.setRgb(style);
+    tsf.setSpline(256);
 
     if (isInitialized)
     {
-        setTsfTexture();
+        setTsfTexture(tsf);
     }
 
     update();
 }
-void VolumeOpenGLWidget::setTsfAlpha(int value)
+void VolumeOpenGLWidget::setTsfAlpha(QString style)
 {
-    tsf_alpha_scheme = value;
+//    tsf_alpha_scheme = value;
+
+    tsf.setAlpha(style);
+    tsf.setSpline(256);
 
     if (isInitialized)
     {
-        setTsfTexture();
+        setTsfTexture(tsf);
     }
 
     update();

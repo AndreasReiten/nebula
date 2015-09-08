@@ -1,4 +1,4 @@
-kernel void boxSample(
+kernel void sampleScatteringVolume(
     read_only image3d_t pool,
     global uint * oct_index,
     global uint * oct_brick,
