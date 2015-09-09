@@ -155,7 +155,7 @@ void VoxelizeWorker::initializeCLKernel()
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(&program, "-Werror");
+    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
 
 
     // Kernel handles

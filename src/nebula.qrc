@@ -60,5 +60,9 @@
         <file>art/opencl.png</file>
         <file>art/opengl.png</file>
         <file>art/Qt-logo-medium.png</file>
+        <file>art/fit_to_view.png</file>
+        <file>art/tooltip.png</file>
+        <file>art/ewald_circle.png</file>
+        <file>art/save_image.png</file>
     </qresource>
 </RCC>

@@ -360,10 +360,10 @@ cl_program OpenCLContext::createProgram(QStringList paths, cl_int * err)
     return QOpenCLCreateProgramWithSource(p_context, paths.size(), sources.data(), lengths.data(), err);
 }
 
-void OpenCLContext::buildProgram(cl_program * program, const char * options)
+void OpenCLContext::buildProgram(cl_program program, QString options)
 {
     // Build source
-    err = QOpenCLBuildProgram(*program, 1, device, options, NULL, NULL);
+    err = QOpenCLBuildProgram(program, 1, device, options.toStdString().c_str(), NULL, NULL);
 
     if (err != CL_SUCCESS)
     {
@@ -374,10 +374,10 @@ void OpenCLContext::buildProgram(cl_program * program, const char * options)
         char * build_log;
         size_t log_size;
 
-        QOpenCLGetProgramBuildInfo(*program, device[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+        QOpenCLGetProgramBuildInfo(program, device[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
         build_log = new char[log_size + 1];
 
-        QOpenCLGetProgramBuildInfo(*program, device[0], CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
+        QOpenCLGetProgramBuildInfo(program, device[0], CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
         build_log[log_size] = '\0';
 
         ss << "___ START KERNEL COMPILE LOG ___" << std::endl;
@@ -493,7 +493,7 @@ void OpenCLContext::initSharedContext()
         qFatal(cl_error_cstring(err));
     }
 
-    qDebug() << "Sharing OpenCL context created: " << cl_easy_context_info(p_context);
+    if (0) qDebug() << "Sharing OpenCL context created: " << cl_easy_context_info(p_context);
 }
 
 void OpenCLContext::initNormalContext()
@@ -508,7 +508,7 @@ void OpenCLContext::initNormalContext()
         qFatal(cl_error_cstring(err));
     }
 
-    qDebug() << "Non-Sharing OpenCL context created: " << cl_easy_context_info(p_context);
+    if (0) qDebug() << "Non-Sharing OpenCL context created: " << cl_easy_context_info(p_context);
 }
 
 void OpenCLContext::initCommandQueue()

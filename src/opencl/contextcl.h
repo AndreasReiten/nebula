@@ -289,7 +289,7 @@ class OpenCLContext : protected OpenCLFunctions
         cl_context context();
 
         cl_program createProgram(QStringList paths, cl_int * err);
-        void buildProgram(cl_program * program, const char * options);
+        void buildProgram(cl_program program, QString options);
 
         QString cl_easy_context_info(cl_context context);
         QString cl_easy_device_info(cl_device_id device);

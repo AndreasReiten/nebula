@@ -26,9 +26,6 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <property name="handleWidth">
-       <number>9</number>
-      </property>
       <widget class="QWidget" name="layoutWidget">
        <layout class="QGridLayout" name="gridLayout_2">
         <property name="spacing">
@@ -64,7 +61,6 @@
         </item>
        </layout>
       </widget>
-      <widget class="ImageOpenGLWidget" name="imageOpenGLWidget"/>
       <widget class="QTableView" name="fileSqlView">
        <property name="mouseTracking">
         <bool>false</bool>
@@ -73,6 +69,7 @@
         <bool>false</bool>
        </property>
       </widget>
+      <widget class="ImageOpenGLWidget" name="imageOpenGLWidget"/>
       <widget class="QToolBox" name="toolBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -88,7 +85,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>251</width>
+          <width>259</width>
           <height>393</height>
          </rect>
         </property>
@@ -372,7 +369,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>268</width>
+          <width>276</width>
           <height>312</height>
          </rect>
         </property>
@@ -568,7 +565,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>268</width>
+          <width>276</width>
           <height>312</height>
          </rect>
         </property>
@@ -744,13 +741,13 @@
   <action name="actionCenter">
    <property name="icon">
     <iconset resource="nebula.qrc">
-     <normaloff>:/art/center.png</normaloff>:/art/center.png</iconset>
+     <normaloff>:/art/fit_to_view.png</normaloff>:/art/fit_to_view.png</iconset>
    </property>
    <property name="text">
     <string>Center</string>
    </property>
    <property name="toolTip">
-    <string>Center image</string>
+    <string>Center image and fit to view</string>
    </property>
   </action>
   <action name="actionWeightcenter">
@@ -783,7 +780,7 @@
   <action name="actionImageScreenshot">
    <property name="icon">
     <iconset resource="nebula.qrc">
-     <normaloff>:/art/shadow.png</normaloff>:/art/shadow.png</iconset>
+     <normaloff>:/art/save_image.png</normaloff>:/art/save_image.png</iconset>
    </property>
    <property name="text">
     <string>ImageScreenshot</string>
@@ -801,7 +798,7 @@
    </property>
    <property name="icon">
     <iconset resource="nebula.qrc">
-     <normaloff>:/art/script.png</normaloff>:/art/script.png</iconset>
+     <normaloff>:/art/tooltip.png</normaloff>:/art/tooltip.png</iconset>
    </property>
    <property name="text">
     <string>Tooltip</string>
@@ -819,13 +816,13 @@
    </property>
    <property name="icon">
     <iconset resource="nebula.qrc">
-     <normaloff>:/art/slice.png</normaloff>:/art/slice.png</iconset>
+     <normaloff>:/art/ewald_circle.png</normaloff>:/art/ewald_circle.png</iconset>
    </property>
    <property name="text">
     <string>EwaldCircle</string>
    </property>
    <property name="toolTip">
-    <string>Show the intersect between the Ewald sphere and the scattering cone</string>
+    <string>Show the intersection of the Ewald sphere and the scattering cone</string>
    </property>
   </action>
  </widget>

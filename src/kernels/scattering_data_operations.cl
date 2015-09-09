@@ -1,6 +1,6 @@
 kernel void scatteringDataToImage(
-    global float * data_buf,
-    write_only image2d_t frame_image,
+    global float * in_buf,
+    write_only image2d_t out_image,
     read_only image2d_t tsf_image,
     sampler_t tsf_sampler,
     float2 data_limit,
@@ -8,11 +8,11 @@ kernel void scatteringDataToImage(
 )
 {
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
-    int2 image_dim = get_image_dim(frame_image);
+    int2 image_dim = get_image_dim(out_image);
 
     if ((id_glb.x < image_dim.x) && (id_glb.y < image_dim.y))
     {
-        float intensity = data_buf[id_glb.y * image_dim.x + id_glb.x];
+        float intensity = in_buf[id_glb.y * image_dim.x + id_glb.x];
 
         float2 tsf_position;
         float4 sample;
@@ -58,25 +58,12 @@ kernel void scatteringDataToImage(
         }
 
         sample = read_imagef(tsf_image, tsf_sampler, tsf_position);
-        write_imagef(frame_image, id_glb, sample);
-    }
-}
-
-kernel void bufferMax(
-    global float * data_buf,
-    global float * out_buf,
-    int2 image_size)
-{
-    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
-
-    if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
-    {
-        out_buf[id_glb.y * image_size.x + id_glb.x] = max(out_buf[id_glb.y * image_size.x + id_glb.x], data_buf[id_glb.y * image_size.x + id_glb.x]);
+        write_imagef(out_image, id_glb, sample);
     }
 }
 
 kernel void processScatteringData(
-    global float * data_buf,
+    global float * in_buf,
     global float * out_buf,
     constant float * parameter,
     int2 image_size,
@@ -125,7 +112,7 @@ kernel void processScatteringData(
     if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
     {
         float4 Q = (float4)(0.0f);
-        Q.w = data_buf[id_glb.y * image_size.x + id_glb.x];
+        Q.w = in_buf[id_glb.y * image_size.x + id_glb.x];
 
         if (task == 0)
         {
@@ -243,14 +230,15 @@ kernel void processScatteringData(
         else
         {
             // Should not happen
+            out_buf[id_glb.y * image_size.x + id_glb.x] = (float) id_glb.y * image_size.x + id_glb.x;
         }
 
     }
 }
 
 kernel void projectScatteringData(
-    write_only image2d_t xyzi_target, // TODO: Check if this actually needs to be a pic
-    global float * source,
+    global float4 * out_buf, // TODO: Check if this actually needs to be a pic
+    global float * in_buf,
     sampler_t tsf_sampler,
     constant float * sample_rotation_matrix,
     float pixel_size_x,
@@ -264,7 +252,8 @@ kernel void projectScatteringData(
     float kappa,
     float phi,
     float omega,
-    int4 selection
+    int4 selection,
+    int2 image_size
 )
 {
     // Project data from the detector plane onto the Ewald sphere
@@ -282,9 +271,8 @@ kernel void projectScatteringData(
     //         |
     //       (slow)
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
-    int2 target_dim = get_image_dim(xyzi_target);
 
-    if ((id_glb.x < target_dim.x) && (id_glb.y < target_dim.y))
+    if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
     {
         float4 Q = (float4)(0.0f);
 
@@ -294,7 +282,7 @@ kernel void projectScatteringData(
                 (id_glb.y >= selection.z) && // Top
                 (id_glb.y < selection.w)) // Bottom
         {
-            Q.w = source[id_glb.y * target_dim.x + id_glb.x];
+            Q.w = in_buf[id_glb.y * image_size.x + id_glb.x];
 
             if (Q.w > 0.0f)
             {
@@ -305,8 +293,8 @@ kernel void projectScatteringData(
                 // The real space vector OP going from the origo (O) to the pixel (P)
                 float3 OP = (float3)(
                                                 -detector_distance,
-                                                pixel_size_x * ((float) (target_dim.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
-                                                //pixel_size_y * ((float) (target_dim.x - 0.5f - id_glb.x) - beam_y)
+                                                pixel_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
+                                                //pixel_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)
                                                 pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_y))); /* DANGER */
 
                 float k = 1.0f / wavelength; // Multiply with 2pi if desired
@@ -330,6 +318,19 @@ kernel void projectScatteringData(
         }
 
         // Write to the Q target (CL texture)
-        write_imagef(xyzi_target, id_glb, Q);
+        out_buf[id_glb.y * image_size.x + id_glb.x] = Q;
+    }
+}
+
+kernel void bufferMax(
+    global float * in_buf,
+    global float * out_buf,
+    int2 image_size)
+{
+    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
+
+    if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
+    {
+        out_buf[id_glb.y * image_size.x + id_glb.x] = max(out_buf[id_glb.y * image_size.x + id_glb.x], in_buf[id_glb.y * image_size.x + id_glb.x]);
     }
 }

@@ -18,6 +18,8 @@
 #include <QStaticText>
 #include <QOpenGLTexture>
 #include <QOpenGLBuffer>
+#include <QObject>
+#include <QRunnable>
 
 
 #include "../misc/transferfunction.h"
@@ -28,6 +30,22 @@
 #include "../math/matrix.h"
 #include "../math/colormatrix.h"
 #include "../math/rotationmatrix.h"
+
+
+
+
+class SetImageTask : public QObject, public QRunnable
+{
+    Q_OBJECT
+public:
+    SetImageTask();
+
+signals:
+    void finished();
+
+protected:
+    void run();
+};
 
 class ImageWorker : public QObject, protected OpenCLFunctions
 {
@@ -46,7 +64,7 @@ class ImageWorker : public QObject, protected OpenCLFunctions
     signals:
         void traceFinished();
 //        void progressTaskActive(bool value);
-        void pathChanged(QString path);
+//        void pathChanged(QString path);
         void progressRangeChanged(int, int);
         void progressChanged(int);
 
@@ -89,7 +107,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void selectionBetaChanged(bool value);
         void noiseLowChanged(double value);
         void pathRemoved(QString path);
-        void pathChanged(QString path);
+//        void pathChanged(QString path);
         void imageRangeChanged(int low, int high);
         void currentIndexChanged(int value);
         void progressChanged(int value);
@@ -124,7 +142,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void setCorrectionBackground(bool value);
         void setDataMin(double value);
         void setDataMax(double value);
-        void calculus();
+        void processScatteringDataProxy();
         void takeScreenShot(QString path);
         void saveImage(QString path);
         void setFrame();
@@ -219,19 +237,19 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
 
         // GPU functions
-        void imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> &param, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, float mean, float deviation, int task);
+        void processScatteringData(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> &param, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, float mean, float deviation, int task);
 
-        void imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, cl_sampler tsf_sampler, int log);
+        void scatteringDataToImage(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, cl_sampler tsf_sampler, int log);
 
 //        void copyBufferRect(cl_mem cl_buffer, cl_mem cl_copy, Matrix<size_t> &buffer_size, Matrix<size_t> &buffer_origin, Matrix<size_t> &copy_size, Matrix<size_t> &copy_origin, Matrix<size_t> &local_ws);
 
         float sumGpuArray(cl_mem cl_data, unsigned int read_size, Matrix<size_t> &local_ws);
 
-        void selectionCalculus(Selection * area, cl_mem image_data_cl, cl_mem image_pos_weight_x_cl_new, cl_mem image_pos_weight_y_cl_new, Matrix<size_t> &image_size, Matrix<size_t> &local_ws);
+        void processSelectionData(Selection * area, cl_mem image_data_cl, cl_mem image_pos_weight_x_cl_new, cl_mem image_pos_weight_y_cl_new, Matrix<size_t> &image_size, Matrix<size_t> &local_ws);
 
         // Convenience
-        void refreshDisplay();
-        void refreshSelection(Selection * area);
+        void updateImageTexture();
+        void processSelectionDataProxy(Selection * area);
 
         // GPU buffer management
         void maintainImageTexture(Matrix<size_t> &image_size);
@@ -255,11 +273,11 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         cl_int err;
         cl_program program;
-        cl_kernel cl_display_image;
-        cl_kernel cl_image_calculus;
+        cl_kernel cl_data_to_image;
+        cl_kernel cl_process_data;
         cl_kernel cl_buffer_max;
-        cl_kernel cl_project_kernel;
-        cl_kernel cl_parallelReduction;
+        cl_kernel cl_project_data;
+        cl_kernel cl_parallel_reduction;
         cl_mem image_tex_cl;
         cl_mem source_cl;
         cl_mem tsf_tex_cl;

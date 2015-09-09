@@ -49,7 +49,7 @@ void ImageWorker::initializeOpenCLKernels()
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(&program, "-Werror");
+    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
 
     cl_buffer_max =  QOpenCLCreateKernel(program, "bufferMax", &err);
 
@@ -57,8 +57,6 @@ void ImageWorker::initializeOpenCLKernels()
     {
         qFatal(cl_error_cstring(err));
     }
-
-
 }
 
 void ImageWorker::reconstructSet(SeriesSet set)
@@ -143,7 +141,7 @@ void ImageWorker::traceSeries(SeriesSet set)
 
         frame.setPath(set.current()->next()->path());
 
-        emit pathChanged(set.current()->current()->path());
+//        emit pathChanged(set.current()->current()->path());
         emit progressRangeChanged(0, set.current()->size() - 1);
         emit progressChanged(set.current()->i());
     }
@@ -675,19 +673,12 @@ void ImageOpenGLWidget::setReducedPixels(Matrix<float> * reduced_pixels)
 int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Matrix<float> * samples, size_t * n_samples)
 {
     // Project and correct the data
-    cl_image_format target_format;
-    target_format.image_channel_order = CL_RGBA;
-    target_format.image_channel_data_type = CL_FLOAT;
-
     // Prepare the target for storage of projected and corrected pixels (intensity but also xyz position)
-    cl_mem xyzi_target_cl = QOpenCLCreateImage2D ( context_cl.context(),
-                            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-                            &target_format,
-                            file->width(),
-                            file->height(),
-                            0,
-                            NULL,
-                            &err);
+    cl_mem buffer_cl = QOpenCLCreateBuffer( context_cl.context(),
+                                                 CL_MEM_ALLOC_HOST_PTR,
+                                                 file->width() * file->height() * sizeof(cl_float),
+                                                 NULL,
+                                                 &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -707,52 +698,17 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
     RotationMatrix<double> PHI;
     RotationMatrix<double> KAPPA;
     RotationMatrix<double> OMEGA;
-//    {
-//        double file->phi() = 0, kappa = 0, file->omega() = 0;
 
-//        if (active_rotation == "Phi")
-//        {
-//            file->phi() = file->startAngle() + 0.5 * file->angleIncrement();
-//            kappa = kappa;
-//            file->omega() = file->omega();
-//        }
-//        else if (active_rotation == "Kappa")
-//        {
-//            file->phi() = file->phi();
-//            kappa = file->startAngle() + 0.5 * file->angleIncrement();
-//            file->omega() = file->omega();
-//        }
-//        else if (active_rotation == "Omega")
-//        {
-//            file->phi() = file->phi();
-//            file->kappa() = file->kappa();
-//            file->omega() = file->startAngle() + 0.5 * file->angleIncrement();
-//        }
-//        else
-//        {
-//            qDebug() << "No rotation angle set!" << active_rotation;
-//        }
+    file->setAlpha(0.8735582);
+    file->setBeta(0.000891863);
 
-        file->setAlpha(0.8735582);
-        file->setBeta(0.000891863);
-
-        PHI.setArbRotation(file->beta(), 0, -(phi + offset_phi));
-        KAPPA.setArbRotation(file->alpha(), 0, -(kappa + offset_kappa));
-        OMEGA.setZRotation(-(omega + offset_omega));
-
-        //        qDebug() << "phi, kappa, omega:" << phi << kappa << omega;
-//    }
+    PHI.setArbRotation(file->beta(), 0, -(phi + offset_phi));
+    KAPPA.setArbRotation(file->alpha(), 0, -(kappa + offset_kappa));
+    OMEGA.setZRotation(-(omega + offset_omega));
 
     // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
-
     RotationMatrix<double> sampleRotMat;
     sampleRotMat = PHI * KAPPA * OMEGA;
-
-    //    PHI.print(3);
-    //    KAPPA.print(3);
-    //    OMEGA.print(3);
-
-    //    sampleRotMat.print(3);
 
     cl_mem sample_rotation_matrix_cl = QOpenCLCreateBuffer(context_cl.context(),
                                        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -783,24 +739,27 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
     float start_angle = file->startAngle();
     float angle_increment = file->angleIncrement();
 
+    Matrix<int> image_size(1, 2);
+    image_size[0] = file->width();
+    image_size[1] = file->height();
 
-
-    err = QOpenCLSetKernelArg(cl_project_kernel, 0, sizeof(cl_mem), (void *) &xyzi_target_cl);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 1, sizeof(cl_mem), (void *) &image_data_corrected_cl);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 2, sizeof(cl_sampler), &tsf_sampler);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 3, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 4, sizeof(cl_float), &pixel_size_x);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 5, sizeof(cl_float), &pixel_size_y);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 6, sizeof(cl_float), &wavelength);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 7, sizeof(cl_float), &detector_distance);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 8, sizeof(cl_float), &beam_center_x);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 9, sizeof(cl_float), &beam_center_y);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 10, sizeof(cl_float), &start_angle);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 11, sizeof(cl_float), &angle_increment);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 12, sizeof(cl_float), &kappa);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 13, sizeof(cl_float), &phi);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 14, sizeof(cl_float), &omega);
-    err |= QOpenCLSetKernelArg(cl_project_kernel, 15, sizeof(cl_int4), selection.lrtb().data());
+    err = QOpenCLSetKernelArg(cl_project_data, 0, sizeof(cl_mem), (void *) &buffer_cl);
+    err |= QOpenCLSetKernelArg(cl_project_data, 1, sizeof(cl_mem), (void *) &image_data_corrected_cl);
+    err |= QOpenCLSetKernelArg(cl_project_data, 2, sizeof(cl_sampler), &tsf_sampler);
+    err |= QOpenCLSetKernelArg(cl_project_data, 3, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    err |= QOpenCLSetKernelArg(cl_project_data, 4, sizeof(cl_float), &pixel_size_x);
+    err |= QOpenCLSetKernelArg(cl_project_data, 5, sizeof(cl_float), &pixel_size_y);
+    err |= QOpenCLSetKernelArg(cl_project_data, 6, sizeof(cl_float), &wavelength);
+    err |= QOpenCLSetKernelArg(cl_project_data, 7, sizeof(cl_float), &detector_distance);
+    err |= QOpenCLSetKernelArg(cl_project_data, 8, sizeof(cl_float), &beam_center_x);
+    err |= QOpenCLSetKernelArg(cl_project_data, 9, sizeof(cl_float), &beam_center_y);
+    err |= QOpenCLSetKernelArg(cl_project_data, 10, sizeof(cl_float), &start_angle);
+    err |= QOpenCLSetKernelArg(cl_project_data, 11, sizeof(cl_float), &angle_increment);
+    err |= QOpenCLSetKernelArg(cl_project_data, 12, sizeof(cl_float), &kappa);
+    err |= QOpenCLSetKernelArg(cl_project_data, 13, sizeof(cl_float), &phi);
+    err |= QOpenCLSetKernelArg(cl_project_data, 14, sizeof(cl_float), &omega);
+    err |= QOpenCLSetKernelArg(cl_project_data, 15, sizeof(cl_int4), selection.lrtb().data());
+    err |= QOpenCLSetKernelArg(cl_project_data, 16, sizeof(cl_int2), image_size.data());
 
     if ( err != CL_SUCCESS)
     {
@@ -825,7 +784,7 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_project_kernel, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_project_data, 2, call_offset, area_per_call, loc_ws, 0, NULL, NULL);
 
             if ( err != CL_SUCCESS)
             {
@@ -842,35 +801,41 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
     }
 
     // Read the data
-    size_t origin[3];
-    origin[0] = selection.left();
-    origin[1] = selection.top();
-    origin[2] = 0;
+    Matrix<size_t> host_origin(1, 3, 0);
 
-    size_t region[3];
+    Matrix<size_t> buffer_origin(1,3);
+    buffer_origin[0] = selection.left();
+    buffer_origin[1] = selection.top();
+    buffer_origin[2] = 0;
+
+    Matrix<size_t> region(1,3);
     region[0] = selection.width();
     region[1] = selection.height();
     region[2] = 1;
 
     Matrix<float> projected_data_buf(selection.height(), selection.width() * 4);
 
-    err = QOpenCLEnqueueReadImage ( context_cl.queue(),
-                                    xyzi_target_cl,
-                                    true,
-                                    origin,
-                                    region,
-                                    0, 0,
-                                    projected_data_buf.data(),
-                                    0, NULL, NULL);
+    err =   QOpenCLEnqueueReadBufferRect ( context_cl.queue(),
+                                           buffer_cl,
+                                           CL_TRUE,
+                                           buffer_origin.data(),
+                                           host_origin.data(),
+                                           region.data(),
+                                           file->width() * sizeof(cl_float4),
+                                           file->width() * file->height() * sizeof(cl_float4),
+                                           selection.width() * sizeof(cl_float4),
+                                           selection.width() * selection.height() * sizeof(cl_float4),
+                                           projected_data_buf.data(),
+                                           0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    if (xyzi_target_cl)
+    if (buffer_cl)
     {
-        err = QOpenCLReleaseMemObject(xyzi_target_cl);
+        err = QOpenCLReleaseMemObject(buffer_cl);
 
         if ( err != CL_SUCCESS)
         {
@@ -930,7 +895,7 @@ int ImageOpenGLWidget::projectFile(DetectorFile * file, Selection selection, Mat
 }
 
 
-void ImageOpenGLWidget::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> &param, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, float mean, float deviation, int task)
+void ImageOpenGLWidget::processScatteringData(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> &param, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, float mean, float deviation, int task)
 {
     // Prepare kernel parameters
     Matrix<size_t> global_ws(1, 2);
@@ -939,21 +904,21 @@ void ImageOpenGLWidget::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Ma
     global_ws[1] = image_size[1] + (local_ws[1] - ((size_t) image_size[1]) % local_ws[1]);
 
     // Set kernel parameters
-    err =   QOpenCLSetKernelArg(cl_image_calculus,  0, sizeof(cl_mem), (void *) &data_buf_cl);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 1, sizeof(cl_mem), (void *) &out_buf_cl);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 2, sizeof(cl_mem), &parameter_cl);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 3, sizeof(cl_int2), image_size.toInt().data());
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 4, sizeof(cl_int), &isCorrectionLorentzActive);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 5, sizeof(cl_int), &task);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 6, sizeof(cl_float), &mean);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 7, sizeof(cl_float), &deviation);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 8, sizeof(cl_int), &isCorrectionNoiseActive);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 9, sizeof(cl_int), &isCorrectionPlaneActive);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 10, sizeof(cl_int), &isCorrectionPolarizationActive);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 11, sizeof(cl_int), &isCorrectionFluxActive);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 12, sizeof(cl_int), &isCorrectionExposureActive);
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 13, sizeof(cl_float4), getPlane().toFloat().data());
-    err |=   QOpenCLSetKernelArg(cl_image_calculus, 14, sizeof(cl_int), &isCorrectionPixelProjectionActive);
+    err =   QOpenCLSetKernelArg(cl_process_data,  0, sizeof(cl_mem), (void *) &data_buf_cl);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 1, sizeof(cl_mem), (void *) &out_buf_cl);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 2, sizeof(cl_mem), &parameter_cl);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 3, sizeof(cl_int2), image_size.toInt().data());
+    err |=   QOpenCLSetKernelArg(cl_process_data, 4, sizeof(cl_int), &isCorrectionLorentzActive);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 5, sizeof(cl_int), &task);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 6, sizeof(cl_float), &mean);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 7, sizeof(cl_float), &deviation);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 8, sizeof(cl_int), &isCorrectionNoiseActive);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 9, sizeof(cl_int), &isCorrectionPlaneActive);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 10, sizeof(cl_int), &isCorrectionPolarizationActive);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 11, sizeof(cl_int), &isCorrectionFluxActive);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 12, sizeof(cl_int), &isCorrectionExposureActive);
+    err |=   QOpenCLSetKernelArg(cl_process_data, 13, sizeof(cl_float4), getPlane().toFloat().data());
+    err |=   QOpenCLSetKernelArg(cl_process_data, 14, sizeof(cl_int), &isCorrectionPixelProjectionActive);
 
     if ( err != CL_SUCCESS)
     {
@@ -962,7 +927,7 @@ void ImageOpenGLWidget::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Ma
 
 
     // Launch the kernel
-    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_image_calculus, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_process_data, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
     {
@@ -977,7 +942,7 @@ void ImageOpenGLWidget::imageCalcuclus(cl_mem data_buf_cl, cl_mem out_buf_cl, Ma
     }
 }
 
-void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, cl_sampler tsf_sampler, int log)
+void ImageOpenGLWidget::scatteringDataToImage(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, cl_sampler tsf_sampler, int log)
 {
     /*
      * Display an image buffer object, matching intensity to color
@@ -1013,12 +978,12 @@ void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, 
     global_ws[1] = image_size[1] + (local_ws[1] - ((size_t) image_size[1]) % local_ws[1]);
 
     // Set kernel parameters
-    err =   QOpenCLSetKernelArg(cl_display_image,  0, sizeof(cl_mem), (void *) &data_buf_cl);
-    err |=   QOpenCLSetKernelArg(cl_display_image, 1, sizeof(cl_mem), (void *) &frame_image_cl);
-    err |=   QOpenCLSetKernelArg(cl_display_image, 2, sizeof(cl_mem), (void *) &tsf_image_cl);
-    err |=   QOpenCLSetKernelArg(cl_display_image, 3, sizeof(cl_sampler), &tsf_sampler);
-    err |=   QOpenCLSetKernelArg(cl_display_image, 4, sizeof(cl_float2), data_limit.data());
-    err |=   QOpenCLSetKernelArg(cl_display_image, 5, sizeof(cl_int), &log);
+    err =   QOpenCLSetKernelArg(cl_data_to_image,  0, sizeof(cl_mem), (void *) &data_buf_cl);
+    err |=   QOpenCLSetKernelArg(cl_data_to_image, 1, sizeof(cl_mem), (void *) &frame_image_cl);
+    err |=   QOpenCLSetKernelArg(cl_data_to_image, 2, sizeof(cl_mem), (void *) &tsf_image_cl);
+    err |=   QOpenCLSetKernelArg(cl_data_to_image, 3, sizeof(cl_sampler), &tsf_sampler);
+    err |=   QOpenCLSetKernelArg(cl_data_to_image, 4, sizeof(cl_float2), data_limit.data());
+    err |=   QOpenCLSetKernelArg(cl_data_to_image, 5, sizeof(cl_int), &log);
 
     if ( err != CL_SUCCESS)
     {
@@ -1027,7 +992,7 @@ void ImageOpenGLWidget::imageCompute(cl_mem data_buf_cl, cl_mem frame_image_cl, 
 
 
     // Launch the kernel
-    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_display_image, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_data_to_image, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
     {
@@ -1123,11 +1088,11 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
     float sum;
 
     /* Pass arguments to kernel */
-    err =   QOpenCLSetKernelArg(cl_parallelReduction, 0, sizeof(cl_mem), (void *) &cl_data);
-    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 1, local_ws[0] * sizeof(cl_float), NULL);
-    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 2, sizeof(cl_uint), &read_size);
-    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 3, sizeof(cl_uint), &read_offset);
-    err |=   QOpenCLSetKernelArg(cl_parallelReduction, 4, sizeof(cl_uint), &write_offset);
+    err =   QOpenCLSetKernelArg(cl_parallel_reduction, 0, sizeof(cl_mem), (void *) &cl_data);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 1, local_ws[0] * sizeof(cl_float), NULL);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
+    err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
 
     if ( err != CL_SUCCESS)
     {
@@ -1137,7 +1102,7 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
     /* Launch kernel repeatedly until the summing is done */
     while (read_size > 1)
     {
-        err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_parallelReduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+        err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_parallel_reduction, 1, 0, global_ws.data(), local_ws.data(), 0, NULL, NULL);
 
         if ( err != CL_SUCCESS)
         {
@@ -1203,9 +1168,9 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
             }
         }
 
-        err =   QOpenCLSetKernelArg(cl_parallelReduction, 2, sizeof(cl_uint), &read_size);
-        err |=   QOpenCLSetKernelArg(cl_parallelReduction, 3, sizeof(cl_uint), &read_offset);
-        err |=   QOpenCLSetKernelArg(cl_parallelReduction, 4, sizeof(cl_uint), &write_offset);
+        err =   QOpenCLSetKernelArg(cl_parallel_reduction, 2, sizeof(cl_uint), &read_size);
+        err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 3, sizeof(cl_uint), &read_offset);
+        err |=   QOpenCLSetKernelArg(cl_parallel_reduction, 4, sizeof(cl_uint), &write_offset);
 
         if ( err != CL_SUCCESS)
         {
@@ -1217,7 +1182,7 @@ float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Mat
     return sum;
 }
 
-void ImageOpenGLWidget::calculus()
+void ImageOpenGLWidget::processScatteringDataProxy()
 {
     /*
      * Carry out calculations on an image buffer, such as corrections and calculation of variance and skewness
@@ -1250,17 +1215,17 @@ void ImageOpenGLWidget::calculus()
             switch (texture_number)
             {
                 case 0:
-                    imageCalcuclus(image_data_raw_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
+                    processScatteringData(image_data_raw_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
                     break;
 
                 case 1:
-                    imageCalcuclus(image_data_trace_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
+                    processScatteringData(image_data_trace_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
                     break;
             }
 
             // Calculate the weighted intensity position
-            imageCalcuclus(image_data_corrected_cl, image_data_weight_x_cl, parameter, image_size, local_ws, 0, 0, 3);
-            imageCalcuclus(image_data_corrected_cl, image_data_weight_y_cl, parameter, image_size, local_ws, 0, 0, 4);
+            processScatteringData(image_data_corrected_cl, image_data_weight_x_cl, parameter, image_size, local_ws, 0, 0, 3);
+            processScatteringData(image_data_corrected_cl, image_data_weight_y_cl, parameter, image_size, local_ws, 0, 0, 4);
         }
 
     }
@@ -1272,11 +1237,11 @@ void ImageOpenGLWidget::calculus()
             switch (texture_number)
             {
                 case 0:
-                    imageCalcuclus(image_data_raw_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
+                    processScatteringData(image_data_raw_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
                     break;
 
                 case 1:
-                    imageCalcuclus(image_data_trace_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
+                    processScatteringData(image_data_trace_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
                     break;
             }
 
@@ -1311,11 +1276,11 @@ void ImageOpenGLWidget::calculus()
 
             float mean = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
-            imageCalcuclus(image_data_corrected_cl, image_data_variance_cl, parameter, image_size, local_ws, mean, 0, 1);
+            processScatteringData(image_data_corrected_cl, image_data_variance_cl, parameter, image_size, local_ws, mean, 0, 1);
 
             // Calculate the weighted intensity position
-            imageCalcuclus(image_data_variance_cl, image_data_weight_x_cl, parameter, image_size, local_ws, 0, 0, 3);
-            imageCalcuclus(image_data_variance_cl, image_data_weight_y_cl, parameter, image_size, local_ws, 0, 0, 4);
+            processScatteringData(image_data_variance_cl, image_data_weight_x_cl, parameter, image_size, local_ws, 0, 0, 3);
+            processScatteringData(image_data_variance_cl, image_data_weight_y_cl, parameter, image_size, local_ws, 0, 0, 4);
         }
     }
     else if (mode == 2)
@@ -1325,11 +1290,11 @@ void ImageOpenGLWidget::calculus()
             switch (texture_number)
             {
                 case 0:
-                    imageCalcuclus(image_data_raw_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
+                    processScatteringData(image_data_raw_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
                     break;
 
                 case 1:
-                    imageCalcuclus(image_data_trace_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
+                    processScatteringData(image_data_trace_cl, image_data_corrected_cl, parameter, image_size, local_ws, 0, 0, 0);
                     break;
             }
 
@@ -1363,7 +1328,7 @@ void ImageOpenGLWidget::calculus()
 
             float mean = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
-            imageCalcuclus(image_data_corrected_cl, image_data_variance_cl, parameter, image_size, local_ws, mean, 0, 1);
+            processScatteringData(image_data_corrected_cl, image_data_variance_cl, parameter, image_size, local_ws, mean, 0, 1);
 
             // Calculate the skewness
             err = QOpenCLEnqueueCopyBufferRect ( 	context_cl.queue(),
@@ -1395,12 +1360,12 @@ void ImageOpenGLWidget::calculus()
 
             float variance = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
-            imageCalcuclus(image_data_variance_cl, image_data_skewness_cl, parameter, image_size, local_ws, mean, sqrt(variance), 2);
+            processScatteringData(image_data_variance_cl, image_data_skewness_cl, parameter, image_size, local_ws, mean, sqrt(variance), 2);
 
 
             // Calculate the weighted intensity position
-            imageCalcuclus(image_data_skewness_cl, image_data_weight_x_cl, parameter, image_size, local_ws, 0, 0, 3);
-            imageCalcuclus(image_data_skewness_cl, image_data_weight_y_cl, parameter, image_size, local_ws, 0, 0, 4);
+            processScatteringData(image_data_skewness_cl, image_data_weight_x_cl, parameter, image_size, local_ws, 0, 0, 3);
+            processScatteringData(image_data_skewness_cl, image_data_weight_y_cl, parameter, image_size, local_ws, 0, 0, 4);
         }
     }
     else
@@ -1409,23 +1374,29 @@ void ImageOpenGLWidget::calculus()
     }
 }
 
+SetImageTask::SetImageTask()
+{
+    ;
+}
+
+void SetImageTask::run()
+{
+    emit finished();
+}
+
 void ImageOpenGLWidget::setFrame()
 {
-
     // Set the frame
-//    qDebug() << "...0" << p_working_data[p_current_filepath].path();
     if (!image.setPath(p_working_data[p_current_filepath].path()))
     {
         return;
     }
 
-//    qDebug() << "...1";
     if (!isCLInitialized || !isGLInitialized  || !image.isPathValid())
     {
         return;
     }
 
-//    qDebug() << "...2";
     if (!image.read())
     {
         return;
@@ -1492,16 +1463,14 @@ void ImageOpenGLWidget::setFrame()
     setParameter(parameter);
 
     // Do relevant calculations and render
-    calculus();
-    refreshDisplay();
-    refreshSelection(&analysis_area);
+    processScatteringDataProxy();
+    updateImageTexture();
+    processSelectionDataProxy(&analysis_area);
 
     p_working_data[p_current_filepath].setSelection(analysis_area);
 
     // Emit the image instead of components
-    emit pathChanged(p_working_data[p_current_filepath].path());
-//    emit progressRangeChanged(0, p_set.current()->size() - 1);
-//    emit progressChanged(p_set.current()->i());
+//    emit pathChanged(p_working_data[p_current_filepath].path());
 }
 
 
@@ -1614,7 +1583,7 @@ void ImageOpenGLWidget::clMaintainImageBuffers(Matrix<size_t> &image_size)
     }
 }
 
-void ImageOpenGLWidget::refreshSelection(Selection * area)
+void ImageOpenGLWidget::processSelectionDataProxy(Selection * area)
 {
     Matrix<size_t> local_ws(1, 2);
     local_ws[0] = 64;
@@ -1627,18 +1596,18 @@ void ImageOpenGLWidget::refreshSelection(Selection * area)
     if (mode == 0)
     {
         // Normal intensity
-        selectionCalculus(area, image_data_corrected_cl, image_data_weight_x_cl, image_data_weight_y_cl, image_size, local_ws);
+        processSelectionData(area, image_data_corrected_cl, image_data_weight_x_cl, image_data_weight_y_cl, image_size, local_ws);
     }
 
     if (mode == 1)
     {
         // Variance
-        selectionCalculus(area, image_data_variance_cl, image_data_weight_x_cl, image_data_weight_y_cl, image_size, local_ws);
+        processSelectionData(area, image_data_variance_cl, image_data_weight_x_cl, image_data_weight_y_cl, image_size, local_ws);
     }
     else if (mode == 2)
     {
         // Skewness
-        selectionCalculus(area, image_data_skewness_cl, image_data_weight_x_cl, image_data_weight_y_cl, image_size, local_ws);
+        processSelectionData(area, image_data_skewness_cl, image_data_weight_x_cl, image_data_weight_y_cl, image_size, local_ws);
     }
     else
     {
@@ -1648,7 +1617,7 @@ void ImageOpenGLWidget::refreshSelection(Selection * area)
 
 }
 
-void ImageOpenGLWidget::refreshDisplay()
+void ImageOpenGLWidget::updateImageTexture()
 {
     /*
      * Refresh the image buffer
@@ -1676,18 +1645,18 @@ void ImageOpenGLWidget::refreshDisplay()
     if (mode == 0)
     {
         // Normal intensity
-        imageCompute(image_data_corrected_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
+        scatteringDataToImage(image_data_corrected_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
     }
 
     if (mode == 1)
     {
         // Variance
-        imageCompute(image_data_variance_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
+        scatteringDataToImage(image_data_variance_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
     }
     else if (mode == 2)
     {
         // Skewness
-        imageCompute(image_data_skewness_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
+        scatteringDataToImage(image_data_skewness_cl, image_tex_cl, tsf_tex_cl, data_limit, image_size, local_ws, tsf_sampler, isLog);
     }
     else
     {
@@ -1765,11 +1734,11 @@ void ImageOpenGLWidget::showImageTooltip(bool value)
 {
     isImageTooltipActive = value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
     Selection analysis_area = p_working_data[p_current_filepath].selection();
-    refreshSelection(&analysis_area);
+    processSelectionDataProxy(&analysis_area);
     p_working_data[p_current_filepath].setSelection(analysis_area);
 
     update();
@@ -1779,11 +1748,11 @@ void ImageOpenGLWidget::showEwaldCircle(bool value)
 {
     isEwaldCircleActive = value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
     Selection analysis_area = p_working_data[p_current_filepath].selection();
-    refreshSelection(&analysis_area);
+    processSelectionDataProxy(&analysis_area);
     p_working_data[p_current_filepath].setSelection(analysis_area);
 
     update();
@@ -1793,13 +1762,13 @@ void ImageOpenGLWidget::setCorrectionNoise(bool value)
 {
     isCorrectionNoiseActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1809,13 +1778,13 @@ void ImageOpenGLWidget::setCorrectionPlane(bool value)
 {
     isCorrectionPlaneActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1825,13 +1794,13 @@ void ImageOpenGLWidget::setCorrectionClutter(bool value)
 {
     isCorrectionClutterActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1841,13 +1810,13 @@ void ImageOpenGLWidget::setCorrectionMedian(bool value)
 {
     isCorrectionMedianActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1857,13 +1826,13 @@ void ImageOpenGLWidget::setCorrectionPolarization(bool value)
 {
     isCorrectionPolarizationActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1873,13 +1842,13 @@ void ImageOpenGLWidget::setCorrectionFlux(bool value)
 {
     isCorrectionFluxActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1889,13 +1858,13 @@ void ImageOpenGLWidget::setCorrectionExposure(bool value)
 {
     isCorrectionExposureActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1905,13 +1874,13 @@ void ImageOpenGLWidget::setCorrectionPixelProjection(bool value)
 {
     isCorrectionPixelProjectionActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -1921,13 +1890,13 @@ void ImageOpenGLWidget::showTraceTexture(bool value)
 {
     texture_number = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 
         setSeriesTrace();
@@ -1942,13 +1911,13 @@ void ImageOpenGLWidget::setLsqSamples(int value)
 {
     n_lsq_samples = value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
 //    {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
 //    }
 
@@ -2489,7 +2458,7 @@ void ImageOpenGLWidget::showWeightCenter(bool value)
     isWeightCenterActive = value;
 }
 
-void ImageOpenGLWidget::selectionCalculus(Selection * area, cl_mem image_data_cl, cl_mem image_pos_weight_x_cl_new, cl_mem image_pos_weight_y_cl_new, Matrix<size_t> &image_size, Matrix<size_t> &local_ws)
+void ImageOpenGLWidget::processSelectionData(Selection * area, cl_mem image_data_cl, cl_mem image_pos_weight_x_cl_new, cl_mem image_pos_weight_y_cl_new, Matrix<size_t> &image_size, Matrix<size_t> &local_ws)
 {
     /*
      * When an image is processed by the imagepreview kernel, it saves data into GPU buffers that can be used
@@ -2695,24 +2664,24 @@ void ImageOpenGLWidget::initializeCL()
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(&program, "-Werror");
+    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
 
     // Kernel handles
-    cl_display_image =  QOpenCLCreateKernel(program, "scatteringDataToImage", &err);
+    cl_data_to_image =  QOpenCLCreateKernel(program, "scatteringDataToImage", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_image_calculus =  QOpenCLCreateKernel(program, "processScatteringData", &err);
+    cl_process_data =  QOpenCLCreateKernel(program, "processScatteringData", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_project_kernel = QOpenCLCreateKernel(program, "projectScatteringData", &err);
+    cl_project_data = QOpenCLCreateKernel(program, "projectScatteringData", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -2726,7 +2695,7 @@ void ImageOpenGLWidget::initializeCL()
 //        qFatal(cl_error_cstring(err));
 //    }
 
-    cl_parallelReduction = QOpenCLCreateKernel(program, "parallelReduction", &err);
+    cl_parallel_reduction = QOpenCLCreateKernel(program, "parallelReduction", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -2934,7 +2903,7 @@ void ImageOpenGLWidget::setRgb(QString style)
 
     setTsf(tsf);
 
-    refreshDisplay();
+    updateImageTexture();
 
     update();
 }
@@ -2945,7 +2914,7 @@ void ImageOpenGLWidget::setAlpha(QString style)
 
     setTsf(tsf);
 
-    refreshDisplay();
+    updateImageTexture();
 
     update();
 }
@@ -2953,7 +2922,7 @@ void ImageOpenGLWidget::setLog(bool value)
 {
     isLog = (int) value;
 
-    refreshDisplay();
+    updateImageTexture();
 
     update();
 }
@@ -2963,7 +2932,7 @@ void ImageOpenGLWidget::setDataMin(double value)
     parameter[12] = value;
     setParameter(parameter);
 
-    refreshDisplay();
+    updateImageTexture();
 
     update();
 }
@@ -2972,7 +2941,7 @@ void ImageOpenGLWidget::setDataMax(double value)
     parameter[13] = value;
     setParameter(parameter);
 
-    refreshDisplay();
+    updateImageTexture();
 
     update();
 }
@@ -2982,13 +2951,13 @@ void ImageOpenGLWidget::setNoise(double value)
     parameter[0] = value;
     setParameter(parameter);
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
     {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
@@ -3591,7 +3560,7 @@ void ImageOpenGLWidget::drawConeEwaldIntersect(QPainter * painter)
 
     double radius = sqrt(pow(beam_screen_pos[0] - pos.x(), 2.0) + pow(beam_screen_pos[1] - pos.y(), 2.0));
 
-    QPen pen(QColor(0.0, 0.0, 0.0, 150));
+    QPen pen(QColor(255.0, 255.0, 0.0, 150));
     pen.setWidthF(1.5);
     painter->setPen(pen);
 
@@ -3692,13 +3661,13 @@ QPointF ImageOpenGLWidget::posQttoGL(QPointF coord)
 void ImageOpenGLWidget::setMode(int value)
 {
     mode = value;
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
     {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
@@ -3709,13 +3678,13 @@ void ImageOpenGLWidget::setCorrectionLorentz(bool value)
 {
     isCorrectionLorentzActive = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
     {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
@@ -3726,13 +3695,13 @@ void ImageOpenGLWidget::setCorrectionBackground(bool value)
 {
     isBackgroundCorrected = (int) value;
 
-    calculus();
-    refreshDisplay();
+    processScatteringDataProxy();
+    updateImageTexture();
 
 //    if (!p_set.isEmpty())
     {
         Selection analysis_area = p_working_data[p_current_filepath].selection();
-        refreshSelection(&analysis_area);
+        processSelectionDataProxy(&analysis_area);
         p_working_data[p_current_filepath].setSelection(analysis_area);
     }
 
@@ -3949,7 +3918,7 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent * event)
 
             analysis_area = analysis_area.normalized();
 
-            refreshSelection(&analysis_area);
+            processSelectionDataProxy(&analysis_area);
 
             p_working_data[p_current_filepath].setSelection(analysis_area);
         }
@@ -3974,7 +3943,7 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 
             analysis_area = analysis_area.normalized();
 
-            refreshSelection(&analysis_area);
+            processSelectionDataProxy(&analysis_area);
 
             p_working_data[p_current_filepath].setSelection(analysis_area);
         }
@@ -3988,7 +3957,7 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 
             analysis_area = analysis_area.normalized();
 
-            refreshSelection(&analysis_area);
+            processSelectionDataProxy(&analysis_area);
 
             p_working_data[p_current_filepath].setSelection(analysis_area);
         }
@@ -4005,8 +3974,8 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 //        p_set.current()->setPlaneMarker(marker);
 
         // Recalculate
-        calculus();
-        refreshDisplay();
+        processScatteringDataProxy();
+        updateImageTexture();
     }
     update();
 }

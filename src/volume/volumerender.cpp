@@ -64,7 +64,7 @@ void VolumeWorker::initializeOpenCLKernels()
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(&program, "-Werror");
+    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
 
     // Kernel handles
     p_line_integral_kernel =  QOpenCLCreateKernel(program, "integrateLine", &err);
@@ -2735,7 +2735,7 @@ void VolumeOpenGLWidget::initializeCL()
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(&program, "-Werror");
+    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
 
 
     // Kernel handles

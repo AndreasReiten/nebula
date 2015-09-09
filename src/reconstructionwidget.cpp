@@ -572,7 +572,8 @@ void ReconstructionWidget::on_clearButton_clicked()
     QMessageBox msgBox;
     msgBox.setText("Remove files?");
 //    msgBox.setInformativeText("This action is irreversible.");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    msgBox.addButton(trUtf8("Yes, remove files"), QMessageBox::YesRole);
+    msgBox.setStandardButtons(QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Cancel);
     int ret = msgBox.exec();
 

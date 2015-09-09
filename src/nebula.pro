@@ -35,7 +35,6 @@ OTHER_FILES += \
     shaders/std_blend.v.glsl \
     shaders/std_2d_sprite.v.glsl \
     shaders/std_2d_sprite.f.glsl \
-    kernels/project.cl \
     kernels/voxelize.cl \
     kernels/models.cl \
     kernels/weightpoint.cl \
@@ -112,3 +111,5 @@ FORMS += \
     mainwindow.ui \
     reconstructionwidget.ui \
     visualizationwidget.ui
+
+DISTFILES +=
