@@ -29,6 +29,7 @@
 #include <QList>
 #include <QApplication>
 #include <QDir>
+#include <QThreadPool>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -37,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
     batch_size(10)
 {
     ui->setupUi(this);
+    loadSettings();
 
     initSql();
 
@@ -63,7 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->initConnects();
 
 //    setCentralWidget(mainWidget);
-    loadSettings();
+
     print("[Nebula] Welcome to Nebula!");
     setWindowTitle("Nebula[*]");
 
@@ -75,6 +77,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    QThreadPool::globalInstance()->clear();
     p_db.close();
     delete ui;
 }
@@ -1035,49 +1038,49 @@ void MainWindow::initGUI()
 
     /* Image browser widget */
     {
-        QSurfaceFormat format_gl;
-        format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-        format_gl.setSwapInterval(1);
-        format_gl.setSamples(16);
-        format_gl.setRedBufferSize(8);
-        format_gl.setGreenBufferSize(8);
-        format_gl.setBlueBufferSize(8);
-        format_gl.setAlphaBufferSize(8);
+//        QSurfaceFormat format_gl;
+//        format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+//        format_gl.setSwapInterval(1);
+//        format_gl.setSamples(16);
+//        format_gl.setRedBufferSize(8);
+//        format_gl.setGreenBufferSize(8);
+//        format_gl.setBlueBufferSize(8);
+//        format_gl.setAlphaBufferSize(8);
 
 //        imageOpenGLWidget = new ImageOpenGLWidget();
 
 //        imageOpenGLWidget->setFormat(format_gl);
 //        imageOpenGLWidget->setMouseTracking(true);
 
-        reconstructionMainWindow = new ReconstructionWidget;
+
 //        reconstructionMainWindow->setAnimated(false);
 
-        saveProjectAction = new QAction(QIcon(":/art/save.png"), "Save project", this);
-        loadProjectAction = new QAction(QIcon(":/art/open.png"), "Load project", this);
+//        saveProjectAction = new QAction(QIcon(":/art/save.png"), "Save project", this);
+//        loadProjectAction = new QAction(QIcon(":/art/open.png"), "Load project", this);
 
-        squareAreaSelectAlphaAction = new QAction(QIcon(":/art/select.png"), "Toggle pixel selection", this);
-        squareAreaSelectAlphaAction->setCheckable(true);
-        squareAreaSelectAlphaAction->setChecked(false);
+//        squareAreaSelectAlphaAction = new QAction(QIcon(":/art/select.png"), "Toggle pixel selection", this);
+//        squareAreaSelectAlphaAction->setCheckable(true);
+//        squareAreaSelectAlphaAction->setChecked(false);
 
-        squareAreaSelectBetaAction = new QAction(QIcon(":/art/select2.png"), "Toggle background selection", this);
-        squareAreaSelectBetaAction->setCheckable(true);
-        squareAreaSelectBetaAction->setChecked(false);
+//        squareAreaSelectBetaAction = new QAction(QIcon(":/art/select2.png"), "Toggle background selection", this);
+//        squareAreaSelectBetaAction->setCheckable(true);
+//        squareAreaSelectBetaAction->setChecked(false);
 
-        centerImageAction = new QAction(QIcon(":/art/center.png"), "Center image", this);
-        centerImageAction->setCheckable(false);
+//        centerImageAction = new QAction(QIcon(":/art/center.png"), "Center image", this);
+//        centerImageAction->setCheckable(false);
 
-        showWeightCenterAction = new QAction(QIcon(":/art/weight_center.png"), "Toggle weight center visual", this);
-        showWeightCenterAction->setCheckable(true);
-        showWeightCenterAction->setChecked(false);
+//        showWeightCenterAction = new QAction(QIcon(":/art/weight_center.png"), "Toggle weight center visual", this);
+//        showWeightCenterAction->setCheckable(true);
+//        showWeightCenterAction->setChecked(false);
 
-        imageToolBar = new QToolBar("Image");
-        imageToolBar->addAction(saveProjectAction);
-        imageToolBar->addAction(loadProjectAction);
-        imageToolBar->addAction(centerImageAction);
-        imageToolBar->addAction(showWeightCenterAction);
-        imageToolBar->addSeparator();
-        imageToolBar->addAction(imageScreenshotAct);
-        imageToolBar->addAction(saveImageAct);
+//        imageToolBar = new QToolBar("Image");
+//        imageToolBar->addAction(saveProjectAction);
+//        imageToolBar->addAction(loadProjectAction);
+//        imageToolBar->addAction(centerImageAction);
+//        imageToolBar->addAction(showWeightCenterAction);
+//        imageToolBar->addSeparator();
+//        imageToolBar->addAction(imageScreenshotAct);
+//        imageToolBar->addAction(saveImageAct);
 
 //        connect(imageOpenGLWidget, SIGNAL(selectionAlphaChanged(bool)), squareAreaSelectAlphaAction, SLOT(setChecked(bool)));
 //        connect(imageOpenGLWidget, SIGNAL(selectionBetaChanged(bool)), squareAreaSelectBetaAction, SLOT(setChecked(bool)));
@@ -1911,9 +1914,10 @@ void MainWindow::initGUI()
 
     // Add tabs
 //    ui->tabWidget->insertTab(0, fileBrowserWidget, "Browse");
+    reconstructionMainWindow = new ReconstructionWidget(this);
     ui->tabWidget->insertTab(0, reconstructionMainWindow, "Reconstruct");
     ui->tabWidget->insertTab(1, volumeRenderMainWindow, "Visualize");
-//    ui->tabWidget->insertTab(2, outputPlainTextEdit, "Misc");
+    ui->tabWidget->insertTab(2, outputPlainTextEdit, "Misc");
 //    tabWidget->addTab(reconstructionMainWindow, "Reconstruct");
 //    tabWidget->addTab(volumeRenderMainWindow, "Visualize");
 //    tabWidget->addTab(outputPlainTextEdit, "Misc");
@@ -1932,6 +1936,8 @@ void MainWindow::initGUI()
     volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, svoHeaderDock);
     volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, plotLineDockWidget);
     volumeRenderMainWindow->tabifyDockWidget(unitCellDockWidget, plotSurfaceDockWidget);
+
+//    emit finishedGUI();
 }
 
 //void MainWindow::applyAnalytics()
@@ -2061,6 +2067,7 @@ void MainWindow::print(QString str)
 
 void MainWindow::loadSettings()
 {
+//    qDebug() << "loadsettings";
     QSettings settings("settings.ini", QSettings::IniFormat);
     working_dir = settings.value("working_dir", QDir::homePath()).toString();
     screenshot_dir = settings.value("screenshot_dir", QDir::homePath()).toString();

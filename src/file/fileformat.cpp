@@ -5,6 +5,9 @@
 #include <QRegularExpressionMatch>
 #include <QString>
 #include <QDebug>
+#include <QFile>
+#include <QByteArray>
+#include <QElapsedTimer>
 
 #include <iostream>
 #include <string>
@@ -240,27 +243,6 @@ int DetectorFile::setPath(QString path)
         return 0;
     }
 
-    if (p_detector == "PILATUS 1M")
-    {
-        fast_dimension = 981;
-        slow_dimension = 1043;
-    }
-    else if (p_detector == "PILATUS 2M")
-    {
-        fast_dimension = 1475;
-        slow_dimension = 1679;
-    }
-    else if (p_detector == "PILATUS 6M")
-    {
-        fast_dimension = 2463;
-        slow_dimension = 2527;
-    }
-    else
-    {
-        qDebug() << "Unknown detector: " << p_detector;
-        return 0;
-    }
-
     this->setSearchRadiusHint();
 
     return 1;
@@ -297,10 +279,10 @@ QSizeF DetectorFile::size() const
 
 size_t DetectorFile::bytes() const
 {
-    return data_buf.bytes();
+    return data_buf.size() * sizeof(float);
 }
 
-const Matrix<float> &DetectorFile::data() const
+const QVector<float> &DetectorFile::data() const
 {
     return data_buf;
 }
@@ -481,6 +463,27 @@ int DetectorFile::readHeader()
     //~ position_increment = regExp(, header, 0, 1).toFloat();
     //~ shutter_time = regExp(, header, 0, 1).toFloat();
 
+    if (p_detector == "PILATUS 1M")
+    {
+        fast_dimension = 981;
+        slow_dimension = 1043;
+    }
+    else if (p_detector == "PILATUS 2M")
+    {
+        fast_dimension = 1475;
+        slow_dimension = 1679;
+    }
+    else if (p_detector == "PILATUS 6M")
+    {
+        fast_dimension = 2463;
+        slow_dimension = 2527;
+    }
+    else
+    {
+        qDebug() << "Unknown detector: " << p_detector;
+        return 0;
+    }
+
     p_is_header_read = true;
     return p_is_header_read;
 }
@@ -597,32 +600,42 @@ float DetectorFile::pixSizeY() const
 
 int DetectorFile::read()
 {
+//    QElapsedTimer tt;
+//    tt.start();
+
     if (p_is_data_read)
     {
         return p_is_data_read;
     }
 
+    QFile file(p_path);
+
+    if (!file.open(QIODevice::ReadOnly)) qDebug() << "Failed to open file" << p_path;
+    QByteArray blob = file.readAll();
+    file.close();
+
     // Open file
-    std::ifstream in(p_path.toStdString().c_str(), std::ios::in | std::ios::binary);
+//    std::ifstream in(p_path.toStdString().c_str(), std::ios::in | std::ios::binary);
 
-    if (!in)
-    {
-        std::cout << "Error reading file: " << p_path.toStdString().c_str() << std::endl;
-        return 0;
-    }
+//    if (!in)
+//    {
+//        std::cout << "Error reading file: " << p_path.toStdString().c_str() << std::endl;
+//        return 0;
+//    }
 
-    in.seekg (0, in.end);
-    int length = in.tellg();
-    in.seekg (0, in.beg);
+//    in.seekg (0, in.end);
+//    int length = in.tellg();
+//    in.seekg (0, in.beg);
     int offset = 0;
     int header_length_max = 2000;
 
-    // Read file
-    char * buf = new char[length];
-    in.read(buf, length);
-    in.close();
+//    // Read file
+    char * buf = blob.data();//new char[length];
+//    in.read(buf, length);
+//    in.close();
 
-    this->data_buf.reserve(1, fast_dimension * slow_dimension);
+
+    this->data_buf.resize(fast_dimension * slow_dimension);
 
     // Find beginning of binary section
     for (int i = 0; i < header_length_max; i++)
@@ -636,7 +649,7 @@ int DetectorFile::read()
 
     // Decompress data and neglect data outside given thresholds
     int prev = 0;
-    size_t id = offset;
+    int id = offset;
     int counts;
     int int16;
     int int32;
@@ -648,7 +661,7 @@ int DetectorFile::read()
         for (j = 0; j < (int) fast_dimension; j++)
         {
             // Get value
-            if (buf[id] == -128)
+            if (buf[id] == (char) -128)
             {
                 id++;
                 int16 =  ((buf[id + 1] << 8 ) | (buf[id] & 0xff));
@@ -682,6 +695,8 @@ int DetectorFile::read()
                 counts = 0;
             }
 
+
+//            qDebug() << i * fast_dimension + j << data_buf.size();
             data_buf[i * fast_dimension + j] = (float) counts;
 
             if (p_max_counts < counts)
@@ -691,10 +706,18 @@ int DetectorFile::read()
         }
     }
 
-    delete[] buf;
+//    delete[] buf;
+
+
+//    qDebug() << tt.elapsed();
 
     p_is_data_read = true;
     return p_is_data_read;
+}
+
+void DetectorFile::test()
+{
+    this->data_buf.resize(10);
 }
 
 

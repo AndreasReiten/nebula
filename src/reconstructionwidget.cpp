@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSqlError>
+#include <QThreadPool>
 
 ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     QMainWindow(parent),
@@ -12,6 +13,7 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     p_current_row(0)
 {
     p_ui->setupUi(this);
+//    p_ui->progressBar->hide();
 
     // Prepare column to sql table translation map
     column_map["Path"] = QPair<int,QString>(0, "FilePath");
@@ -70,11 +72,9 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     p_ui->fileSqlView->setColumnHidden(3, true);
 
 
-    loadSettings();
+//    loadSettings();
 
     p_ui->fileSqlView->resizeColumnsToContents();
-
-    //
 
     QSurfaceFormat format_gl;
     format_gl.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
@@ -87,63 +87,50 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
 
     p_ui->imageOpenGLWidget->setFormat(format_gl);
     p_ui->imageOpenGLWidget->setMouseTracking(true);
+
+//    progressPollTimer = new QTimer;
+//    progressPollTimer->setInterval(100);
+//    connect(progressPollTimer, SIGNAL(timeout()), this, SLOT(pollProgress()));
+
     ////////////////////
     connect(p_ui->rgbComboBox, SIGNAL(currentTextChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setRgb(QString)));
     connect(p_ui->alphaComboBox, SIGNAL(currentIndexChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setAlpha(QString)));
     connect(p_ui->dataMinSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setDataMin(double)));
     connect(p_ui->dataMaxSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setDataMax(double)));
     connect(p_ui->logCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setLog(bool)));
-//    ui->imageOpenGLWidget->setReducedPixels(&reduced_pixels);
     connect(p_ui->omegaSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setOffsetOmega(double)));
     connect(p_ui->kappaSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setOffsetKappa(double)));
     connect(p_ui->phiSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setOffsetPhi(double)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(message(QString, int)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString,int)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(message(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
-    connect(p_ui->imageOpenGLWidget, SIGNAL(changedMemoryUsage(int)), p_ui->progressBar, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setProgressBarFormat(QString)));
-    connect(p_ui->imageOpenGLWidget, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setProgressBarFormat_2(QString)));
-    connect(p_ui->imageOpenGLWidget, SIGNAL(changedRangeMemoryUsage(int, int)), p_ui->progressBar, SLOT(setRange(int, int)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressTaskActive(bool)), p_ui->progressBar, SLOT(setVisible(bool)));
-    connect(p_ui->reconstructButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget, SLOT(reconstruct()));
-//    connect(killButton, SIGNAL(clicked()), ui->imageOpenGLWidget, SLOT(killProcess()), Qt::DirectConnection);
-//    connect(ui->imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
-//    connect(ui->imageOpenGLWidget->worker(), SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
-    connect(p_ui->imageOpenGLWidget->worker(), SIGNAL(progressRangeChanged(int, int)), p_ui->progressBar_2, SLOT(setRange(int, int)));
-    connect(p_ui->imageOpenGLWidget->worker(), SIGNAL(progressChanged(int)), p_ui->progressBar_2, SLOT(setValue(int)));
+    connect(p_ui->imageOpenGLWidget, SIGNAL(progressTaskActive(bool)), p_ui->reconstructButton, SLOT(setDisabled(bool)));
+//    connect(p_ui->imageOpenGLWidget, SIGNAL(progressBarFormatChanged(QString)), this, SLOT(setProgressBarFormat(QString)));
+    connect(p_ui->imageOpenGLWidget, SIGNAL(progressChanged(int)), p_ui->progressBar, SLOT(setValue(int)), Qt::QueuedConnection);
+    connect(p_ui->imageOpenGLWidget, SIGNAL(progressRangeChanged(int, int)), p_ui->progressBar, SLOT(setRange(int, int)));
+//    connect(p_ui->reconstructButton, SIGNAL(clicked()), p_ui->reconstructButton, SLOT(setDisabled(bool)));
+
+    connect(p_ui->reconstructButton, SIGNAL(clicked()), this, SLOT(populateInterpolationTreeProxySlot()));
+    connect(this, SIGNAL(populateInterpolationTreeProxySignal()), p_ui->imageOpenGLWidget, SLOT(populateInterpolationTreeMap()));
+
     connect(p_ui->lorentzCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionLorentz(bool)));
     connect(p_ui->viewModeComboBox, SIGNAL(currentIndexChanged(int)), p_ui->imageOpenGLWidget, SLOT(setMode(int)));
-//    connect(p_ui->nextSeriesButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget, SLOT(nextSeries()));
-//    connect(p_ui->prevSeriesButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget, SLOT(prevSeries()));
-//    connect(p_ui->deactivateFileButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget, SLOT(removeCurrentImage()));
     connect(this, SIGNAL(setPlaneMarkers(QString)), p_ui->imageOpenGLWidget, SLOT(applyPlaneMarker(QString)));
     connect(this, SIGNAL(analyze(QString)), p_ui->imageOpenGLWidget, SLOT(analyze(QString)));
-//    connect(ui->imageOpenGLWidget, SIGNAL(pathChanged(QString)), this, SLOT(setHeader(QString)));
-//    connect(ui->imageOpenGLWidget, SIGNAL(pathChanged(QString)), this, SLOT(setGeneralProgressFormat(QString)));
-//    connect(ui->imageSpinBox, SIGNAL(valueChanged(int)), ui->imageOpenGLWidget, SLOT(setFrameByIndex(int)));
-//    connect(ui->imageOpenGLWidget, SIGNAL(imageRangeChanged(int, int)), this, SLOT(setImageRange(int, int)));
-//    connect(ui->imageOpenGLWidget, SIGNAL(currentIndexChanged(int)), imageSpinBox, SLOT(setValue(int)));
-//    connect(this, SIGNAL(setChanged(SeriesSet)), ui->imageOpenGLWidget, SLOT(setSet(SeriesSet)));
     connect(p_ui->traceButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget, SLOT(traceSeriesSlot()));
     connect(p_ui->bgSampleSpinBox, SIGNAL(valueChanged(int)), p_ui->imageOpenGLWidget, SLOT(setLsqSamples(int)));
     connect(p_ui->showTraceCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(showTraceTexture(bool)));
-    connect(p_ui->imageOpenGLWidget, SIGNAL(progressChanged(int)), p_ui->progressBar_2, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget, SIGNAL(progressRangeChanged(int, int)), p_ui->progressBar_2, SLOT(setRange(int, int)));
     connect(p_ui->flatBgCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionNoise(bool)));
     connect(p_ui->planarBgCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionPlane(bool)));
-//    connect(correctionClutterCheckBox, SIGNAL(toggled(bool)), ui->imageOpenGLWidget, SLOT(setCorrectionClutter(bool)));
-//    connect(correctionMedianCheckBox, SIGNAL(toggled(bool)), ui->imageOpenGLWidget, SLOT(setCorrectionMedian(bool)));
     connect(p_ui->polarizationCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionPolarization(bool)));
     connect(p_ui->fluxCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionFlux(bool)));
     connect(p_ui->expTimeCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionExposure(bool)));
     connect(p_ui->pixelProjectionCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionPixelProjection(bool)));
-//    connect(centerImageAction, SIGNAL(triggered()), ui->imageOpenGLWidget, SLOT(centerImage()));
     connect(p_ui->actionWeightcenter, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(showWeightCenter(bool)));
     connect(p_ui->flatBgSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setNoise(double)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(noiseLowChanged(double)), p_ui->flatBgSpinBox, SLOT(setValue(double)));
     connect(this, SIGNAL(saveImage(QString)), p_ui->imageOpenGLWidget, SLOT(saveImage(QString)));
     connect(this, SIGNAL(takeImageScreenshot(QString)), p_ui->imageOpenGLWidget, SLOT(takeScreenShot(QString)));
-//    connect(ui->imageOpenGLWidget, SIGNAL(resultFinished(QString)), outputPlainTextEdit, SLOT(setPlainText(QString)));
-//    connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(setTab(int)));
     connect(p_ui->beamCenterCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setBeamOverrideActive(bool)));
     connect(p_ui->xCenterSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setBeamXOverride(double)));
     connect(p_ui->yCenterSpinBox, SIGNAL(valueChanged(double)), p_ui->imageOpenGLWidget, SLOT(setBeamYOverride(double)));
@@ -156,8 +143,6 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(this, SIGNAL(message(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
     connect(this, SIGNAL(message(QString, int)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString,int)));
     connect(p_ui->fileSqlView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(itemSelected(QModelIndex,QModelIndex)));
-//    connect(p_ui->fileSqlView, SIGNAL(activated(QModelIndex)), this, SLOT(itemClicked(QModelIndex)));
-//    connect(p_ui->fileSqlView, SIGNAL(entered(QModelIndex)), this, SLOT(itemClicked(QModelIndex)));
     connect(p_ui->nextImageButton, SIGNAL(clicked()), this, SLOT(next()));
     connect(p_ui->nextImageBatchButton, SIGNAL(clicked()), this, SLOT(batchNext()));
     connect(p_ui->prevImageButton, SIGNAL(clicked()), this, SLOT(previous()));
@@ -165,6 +150,17 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->fileSqlView, SIGNAL(clicked(QModelIndex)), selection_model, SLOT(indexChanged(QModelIndex)));
     connect(this, SIGNAL(fileChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setFilePath(QString)));
     connect(p_ui->actionCenter, SIGNAL(triggered()), p_ui->imageOpenGLWidget, SLOT(centerCurrentImage()));
+//    connect(p_ui->stopButton, SIGNAL(clicked(bool)), p_ui->imageOpenGLWidget, SLOT(clearRunnables()));
+
+    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
+    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
+    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->watcher(), SLOT(cancel()));
+    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->watcher(), SLOT(setPaused(bool)));
+    //    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(started()), , SLOT());
+//    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(finished()), this, SLOT());
+
+//    connect(progressPollTimer, SIGNAL(timeout()),
 
     //### voxelizeWorker ###
     voxelizeThread = new QThread;
@@ -194,11 +190,34 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->selectionComboBox, SIGNAL(currentIndexChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setApplicationMode(QString)));
     connect(p_ui->applySelectionButton, SIGNAL(clicked(bool)), p_ui->imageOpenGLWidget, SLOT(applySelection()));
 
+//    connect(this->parent(), SIGNAL(finishedGUI()), p_ui->imageOpenGLWidget, SLOT(centerCurrentImage()));
     /////////////////////////
     loadSettings();
 //    p_ui->imageOpenGLWidget->centerCurrentImage();
 }
 
+void ReconstructionWidget::clearRunnables()
+{
+    QThreadPool::globalInstance()->clear();
+    p_ui->reconstructButton->setEnabled(true);
+    p_ui->progressBar->setValue(0);
+    p_ui->progressBar->hide();
+}
+
+//void ReconstructionWidget::pollProgress()
+//{
+//    p_ui->progressBar->setValue();
+//}
+
+void ReconstructionWidget::populateInterpolationTreeProxySlot()
+{
+//    p_ui->reconstructButton->setDisabled(true);
+
+//    QTimer * t = new QTimer;
+//    QTimer
+
+    emit populateInterpolationTreeProxySignal();
+}
 
 void ReconstructionWidget::next()
 {
@@ -459,6 +478,7 @@ ReconstructionWidget::~ReconstructionWidget()
 
 void ReconstructionWidget::loadSettings()
 {
+//    qDebug() << "loadsettings";
     QSettings settings("settings.ini", QSettings::IniFormat);
     p_working_dir = settings.value("ReconstructionWidget/working_dir", QDir::homePath()).toString();
     p_screenshot_dir = settings.value("ReconstructionWidget/screenshot_dir", QDir::homePath()).toString();

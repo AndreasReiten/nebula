@@ -9,6 +9,13 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QFileInfo>
+#include <QThreadPool>
+#include <QFuture>
+
+
+#include <QTest> // TODO: Remove dep
+
+
 #include "sql/sqlqol.h"
 
 
@@ -93,7 +100,7 @@ void ImageWorker::traceSeries(SeriesSet set)
         // Read data and send to a VRAM buffer.
         cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
                                                 CL_MEM_COPY_HOST_PTR,
-                                                frame.data().bytes(),
+                                                frame.bytes(),
                                                 (void *) frame.data().data(),
                                                 &err);
 
@@ -204,6 +211,11 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     isEwaldCircleActive(false),
     isImageTooltipActive(true)
 {
+    progressPollTimer = new QTimer;
+    progressPollTimer->setInterval(100);
+    connect(progressPollTimer, SIGNAL(timeout()), this, SLOT(pollProgress()));
+//    progressPollTimer->start();
+
     // Worker
     workerThread = new QThread;
     imageWorker = new ImageWorker;
@@ -240,11 +252,19 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     image_buffer_size.set(1, 2, 2);
 
     prev_pixel.set(1, 2, 0);
+
+    p_watcher = new QFutureWatcher<void>(this);
 }
 
 ImageWorker * ImageOpenGLWidget::worker()
 {
     return imageWorker;
+}
+
+
+QFutureWatcher<void> *ImageOpenGLWidget::watcher()
+{
+    return p_watcher;
 }
 
 void ImageOpenGLWidget::paintGL()
@@ -298,7 +318,7 @@ void ImageOpenGLWidget::paintGL()
 
 void ImageOpenGLWidget::resizeGL(int w, int h)
 {
-
+//    qDebug() << w << h;
 }
 
 void ImageOpenGLWidget::initializeGL()
@@ -402,7 +422,8 @@ void ImageOpenGLWidget::initializeGL()
     texture_noimage = new QOpenGLTexture(QImage(":/art/noimage.png"));
     texture_noimage->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     texture_noimage->setMagnificationFilter(QOpenGLTexture::Linear);
-    centerImage(QSizeF(texture_noimage->width(),texture_noimage->height()));
+
+    centerCurrentImage();
 
     texture_image_marker = new QOpenGLTexture(QImage(":/art/crosshair_one.png"));
     texture_image_marker->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
@@ -1362,7 +1383,6 @@ void ImageOpenGLWidget::processScatteringDataProxy()
 
             processScatteringData(image_data_variance_cl, image_data_skewness_cl, parameter, image_size, local_ws, mean, sqrt(variance), 2);
 
-
             // Calculate the weighted intensity position
             processScatteringData(image_data_skewness_cl, image_data_weight_x_cl, parameter, image_size, local_ws, 0, 0, 3);
             processScatteringData(image_data_skewness_cl, image_data_weight_y_cl, parameter, image_size, local_ws, 0, 0, 4);
@@ -1374,15 +1394,163 @@ void ImageOpenGLWidget::processScatteringDataProxy()
     }
 }
 
-SetImageTask::SetImageTask()
+
+void ImageOpenGLWidget::populateInterpolationTree()
 {
-    ;
+    // Note: If the spawned threads consume more than the available memory, either on the host or the gpu, the behaviour is undefined
+//    kill_flag = false;
+    progressPollTimer->start();
+
+    // Get the number of files
+    QSqlQuery query(QSqlDatabase::database());
+    query.prepare("SELECT count(FilePath) FROM cbf_table WHERE Active = :Active");
+    query.bindValue(":Active", 1);
+    if (!query.exec())
+    {
+        qDebug() << query.lastError();
+    }
+    query.first();
+
+    emit progressRangeChanged(0, query.value(0).toInt());
+    emit progressTaskActive(true);
+
+    // Reconstruct scattering data and insert into the interpolation octree
+    // Spawn one thread per file. Writes into tree are mutex locked
+    p_file_checklist.clear();
+    p_n_returned_tasks = 0;
+
+    query.prepare("SELECT * FROM cbf_table WHERE Active = :Active ORDER BY FilePath ASC");
+    query.bindValue(":Active", 1);
+    if (!query.exec()) qDebug() << sqlQueryError(query);
+
+//    qsrand(55);
+    while (query.next())
+    {
+        QString path = query.value(0).toString();
+        PopulateInterpolationTreeTask *task = new PopulateInterpolationTreeTask(path);
+        task->setAutoDelete(true);
+
+        // Set all parameters
+        task->setMutex(&mutex);
+
+        // Spawn
+        p_file_checklist << path;
+//        connect(task, SIGNAL(test(int)), this, SLOT(testSlot(int)));
+        connect(task, SIGNAL(finished(QString)), this, SLOT(on_populateInterpolationTree_finished(QString)));
+        QThreadPool::globalInstance()->start(task);
+    }
+
+//    qDebug() << "BOOM!";
 }
 
-void SetImageTask::run()
+void ImageOpenGLWidget::clearRunnables()
 {
-    emit finished();
+    QThreadPool::globalInstance()->clear();
+//    kill_flag = true;
+    emit progressChanged(0);
+    emit progressTaskActive(false);
+    progressPollTimer->stop();
 }
+
+void ImageOpenGLWidget::populateInterpolationTreeMap()
+{
+//    // Note: If the spawned threads consume more than the available memory, either on the host or the gpu, the behaviour is undefined
+
+//    // Get the number of files
+    QSqlQuery query(QSqlDatabase::database());
+////    query.prepare("SELECT count(FilePath) FROM cbf_table WHERE Active = :Active");
+////    query.bindValue(":Active", 1);
+////    if (!query.exec())
+////    {
+////        qDebug() << query.lastError();
+////    }
+////    query.first();
+
+////    emit progressRangeChanged(0, query.value(0).toInt());
+//    emit progressTaskActive(true);
+
+//    // Reconstruct scattering data and insert into the interpolation octree
+//    // Spawn one thread per file. Writes into tree are mutex locked
+////    p_file_checklist.clear();
+////    p_n_returned_tasks = 0;
+
+    query.prepare("SELECT FilePath FROM cbf_table WHERE Active = :Active ORDER BY FilePath ASC");
+    query.bindValue(":Active", 1);
+    if (!query.exec()) qDebug() << sqlQueryError(query);
+
+//    QList<DetectorFile> p_future_list;
+    QList<QString> paths;
+    while (query.next())// && (files.size() < 10))
+    {
+        p_future_list << DetectorFile(query.value(0).toString());
+        paths << query.value(0).toString();
+    }
+
+//    QFuture p_future = QtConcurrent::map(p_future_list, &DetectorFile::read);
+//    QFuture<void> future = QtConcurrent::map(paths, &QString::squeeze);
+    p_watcher->setFuture(QtConcurrent::map(p_future_list, &DetectorFile::read));
+
+//    p_watcher.waitForFinished();
+
+//    qDebug() << "BOOM!";
+}
+
+void ImageOpenGLWidget::on_populateInterpolationTree_finished(QString file)
+{
+    p_file_checklist.removeAll(file);
+
+    if (p_file_checklist.isEmpty())
+    {
+        emit message("The interpolation octree has been generated.");
+        emit progressChanged(0);
+        emit progressTaskActive(false);
+        progressPollTimer->stop();
+
+    }
+
+    ++p_n_returned_tasks;
+//    if (!kill_flag) emit progressChanged(++p_n_returned_tasks);
+//    if (!kill_flag) emit message(QString::number(++p_n_returned_tasks));
+//    qDebug() << QThreadPool::globalInstance()->activeThreadCount();
+}
+
+PopulateInterpolationTreeTask::PopulateInterpolationTreeTask(QString file) :
+    p_file(file)
+{
+
+}
+
+void PopulateInterpolationTreeTask::setMutex(QMutex * mutexy)
+{
+    this->mutex = mutexy;
+}
+
+void PopulateInterpolationTreeTask::run()
+{
+//    qDebug() << QThreadPool::activeThreadCount();
+    QTest::qSleep(100);
+    mutex->lock();
+    mutex->unlock();
+
+//    emit test(*p_n_returned_tasks);
+
+    emit finished(p_file);
+}
+
+void ImageOpenGLWidget::pollProgress()
+{
+    emit progressChanged(p_n_returned_tasks);
+}
+
+//void ImageOpenGLWidget::testSlot(int value)
+//{
+//    emit progressChanged(value);
+//}
+
+//void ImageOpenGLWidget::populateInterpolationTreeMapFunction(const QString & file)
+//{
+//    QTest::qSleep(100);
+//}
 
 void ImageOpenGLWidget::setFrame()
 {
@@ -1441,7 +1609,7 @@ void ImageOpenGLWidget::setFrame()
                image_data_raw_cl,
                CL_TRUE,
                0,
-               image.data().bytes(),
+               image.bytes(),
                image.data().data(),
                0, 0, 0);
 
@@ -2838,7 +3006,6 @@ void ImageOpenGLWidget::initializeCL()
                                 0,
                                 NULL,
                                 &err);
-
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
@@ -3046,6 +3213,8 @@ Matrix<GLfloat> ImageOpenGLWidget::glRect(QRectF &qt_rect)
 
 void ImageOpenGLWidget::centerImage(QSizeF size)
 {
+//    qDebug() << size << this->size();
+
     // Center an image using matrices that operate on the GL space
     translation_matrix[3] =  - 2.0 * (0.5 * size.width() / ( (qreal) this->width()));
     translation_matrix[7] =  2.0 * (0.5 * size.height() / ( (qreal) this->height()));

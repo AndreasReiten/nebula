@@ -81,7 +81,6 @@ void write_log(QString text)
     out << dateTimeString << text << "\n";
     std::cout << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << "\n";
 
-
     file.close();
 }
 

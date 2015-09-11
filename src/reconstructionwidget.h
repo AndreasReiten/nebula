@@ -6,6 +6,7 @@
 #include <QSqlQuery>
 #include <QDebug>
 #include <QMap>
+#include <QTimer>
 
 #include "file/filetreeview.h"
 #include "image/imagepreview.h"
@@ -35,6 +36,8 @@ signals:
     void takeImageScreenshot(QString);
     void fileChanged(QString);
 
+    void populateInterpolationTreeProxySignal();
+
 
 public slots:
     void setProgressBarFormat(QString str);
@@ -51,6 +54,10 @@ public slots:
     void previous();
     void batchNext();
     void batchPrevious();
+    void clearRunnables();
+//    void pollProgress();
+
+    void populateInterpolationTreeProxySlot();
 
 private slots:
     void on_sanityButton_clicked();
@@ -82,6 +89,8 @@ private:
     QString p_working_dir;
     QString p_screenshot_dir;
     int p_current_row;
+
+//    QTimer * progressPollTimer;
 };
 
 #endif // RECONSTRUCTIONWIDGET_H

@@ -2,6 +2,7 @@
 #define FILE_FORMATS_H
 
 #include <QSizeF>
+#include <QVector>
 
 #include "../math/matrix.h"
 
@@ -20,6 +21,7 @@ class DetectorFile
 
         int setPath(QString p_path);
 
+        void test();
         int read();
 //        bool isNaive() const;
         bool isPathValid();
@@ -32,7 +34,7 @@ class DetectorFile
 
         float intensity(int x, int y);
 
-        const Matrix<float> &data() const;
+        const QVector<float> &data() const;
         int width() const;
         int height() const;
         QSizeF size() const;
@@ -108,7 +110,7 @@ class DetectorFile
         float p_max_counts;
 
         // Misc
-        Matrix<float> data_buf;
+        QVector<float> data_buf;
 
         QString p_path;
         size_t fast_dimension, slow_dimension;

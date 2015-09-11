@@ -1,8 +1,8 @@
 # QMAKE PROJECT FILE
 
 # Modules and project configuration
-QT += core gui sql
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets network
+QT += core gui sql concurrent testlib
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 win32 {
     INCLUDEPATH = khronos/

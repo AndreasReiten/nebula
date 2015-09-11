@@ -20,6 +20,8 @@
 #include <QOpenGLBuffer>
 #include <QObject>
 #include <QRunnable>
+#include <QtConcurrent>
+#include <QFutureWatcher>
 
 
 #include "../misc/transferfunction.h"
@@ -34,17 +36,24 @@
 
 
 
-class SetImageTask : public QObject, public QRunnable
+class PopulateInterpolationTreeTask : public QObject, public QRunnable
 {
     Q_OBJECT
 public:
-    SetImageTask();
+    PopulateInterpolationTreeTask(QString file);
+    void setMutex(QMutex * mutexy);
 
 signals:
-    void finished();
+    void finished(QString);
+//    void test(int);
 
 protected:
     void run();
+
+private:
+    QString p_file;
+//    int * p_n_returned_tasks;
+    QMutex * mutex;
 };
 
 class ImageWorker : public QObject, protected OpenCLFunctions
@@ -91,6 +100,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 //        SeriesSet set();
         ImageWorker * worker();
 
+        QFutureWatcher<void> *watcher();
+
     signals:
         void runTraceWorker(SeriesSet set);
 
@@ -107,15 +118,23 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void selectionBetaChanged(bool value);
         void noiseLowChanged(double value);
         void pathRemoved(QString path);
-//        void pathChanged(QString path);
         void imageRangeChanged(int low, int high);
         void currentIndexChanged(int value);
+//        void progressBarFormatChanged(QString);
         void progressChanged(int value);
         void progressRangeChanged(int min, int max);
-//        void progressTaskActive(bool value);
         void progressTaskActive(bool value);
 
     public slots:
+        void pollProgress();
+
+//        void testSlot(int value);
+        void clearRunnables();
+        void populateInterpolationTree();
+        void populateInterpolationTreeMap();
+//        void populateInterpolationTreeMapFunction(const QString & file); // move to private, non slot
+        void on_populateInterpolationTree_finished(QString file);
+
         void setApplicationMode(QString str);
         void setFilePath(QString str);
 
@@ -177,6 +196,9 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
 
     private:
+        int p_n_returned_tasks;
+        QStringList p_file_checklist;
+
         QOpenGLTexture * texture_noimage;
         QOpenGLTexture * texture_image_marker;
         QList<QList<ImageMarker>> image_markers;
@@ -367,6 +389,14 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         GLuint selections_vbo[5];
         GLuint weightpoints_vbo[5];
         QPoint getImagePixel(QPoint pos);
+
+        QMutex mutex;
+
+        QTimer * progressPollTimer;
+
+        QList<DetectorFile> p_future_list;
+//        QFuture<void> p_future;
+        QFutureWatcher<void> * p_watcher;
 };
 
 #endif // IMAGEPREVIEW_H

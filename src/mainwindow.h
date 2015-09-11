@@ -100,6 +100,7 @@ private slots:
     void setPlaneIntegralPlot();
 
 signals:
+//    void finishedGUI();
     void saveLineAsText(QString str);
     void saveSurfaceAsText(QString str);
     void testToWindow();
@@ -266,7 +267,6 @@ private:
 //    void setFiles(QMap<QString, QStringList> folder_map);
 
 
-    // Image browser widget
     ReconstructionWidget * reconstructionMainWindow;
 
     // Actions
@@ -444,7 +444,7 @@ private:
 //    QDockWidget * selectionDock;
 
     // Misc
-    QString apply_mode;
+//    QString apply_mode;
     QPlainTextEdit * outputPlainTextEdit;
 
 protected:
@@ -454,14 +454,14 @@ protected:
     VolumeOpenGLWidget * volumeOpenGLWidget;
 
     /* Image browser toolbar */
-    QToolBar * imageToolBar;
+//    QToolBar * imageToolBar;
 
-    QAction * saveProjectAction;
-    QAction * loadProjectAction;
-    QAction * squareAreaSelectAlphaAction;
-    QAction * squareAreaSelectBetaAction;
-    QAction * centerImageAction;
-    QAction * showWeightCenterAction;
+//    QAction * saveProjectAction;
+//    QAction * loadProjectAction;
+//    QAction * squareAreaSelectAlphaAction;
+//    QAction * squareAreaSelectBetaAction;
+//    QAction * centerImageAction;
+//    QAction * showWeightCenterAction;
 
 
     /* Image browser view settings widget */

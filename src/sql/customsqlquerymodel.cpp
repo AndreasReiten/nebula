@@ -30,10 +30,11 @@ QVariant CustomSqlQueryModel::data ( const QModelIndex & index, int role ) const
 void CustomSqlQueryModel::indexChanged(const QModelIndex & index)
 {
     const QVariant value(data(index,Qt::DisplayRole));
-    p_match_string = value.toString();
-
-//    emit dataChanged(index(0,0), index(rowCount()-1,columnCount()-1));
-    emit dataChanged(QModelIndex(), QModelIndex());
+    if (p_match_string != value.toString())
+    {
+        p_match_string = value.toString();
+        emit dataChanged(QModelIndex(), QModelIndex());
+    }
 }
 
 
