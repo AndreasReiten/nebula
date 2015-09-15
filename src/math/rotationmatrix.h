@@ -68,29 +68,21 @@ RotationMatrix<T>::~RotationMatrix()
 template <class T>
 RotationMatrix<T> &RotationMatrix<T>::operator = (Matrix<T> other)
 {
-    this->swap(*this, other);
-
+    this->swap(other);
     return * this;
 }
 
 template <class T>
 RotationMatrix<T> &RotationMatrix<T>::operator = (RotationMatrix<T> other)
 {
-    this->swap(*this, other);
-
+    this->swap(other);
     return * this;
 }
 
 template <class T>
 void RotationMatrix<T>::setFrom3x3(Matrix<T> mat)
 {
-//    this->print(2,"PRE");
-
     this->setIdentity(4);
-
-//    this->print(2,"POST");
-
-//    mat->print(2,"MAT");
 
     this->data()[0] = mat[0];
     this->data()[1] = mat[1];
@@ -101,7 +93,6 @@ void RotationMatrix<T>::setFrom3x3(Matrix<T> mat)
     this->data()[8] = mat[6];
     this->data()[9] = mat[7];
     this->data()[10] = mat[8];
-
 }
 
 template <class T>

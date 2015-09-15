@@ -185,7 +185,7 @@ Matrix<T> BoxMatrix<T>::planeYZ1()
 template <class T>
 BoxMatrix<T> &BoxMatrix<T>::operator = (Matrix<T> other)
 {
-    this->swap(*this, other);
+    this->swap(other);
     return * this;
 }
 

@@ -20,7 +20,7 @@ class ImageInfo
         ~ImageInfo();
 
         void setPath(QString str);
-        const QString path() const;
+        const QString filePath() const;
 
         void setSelection(Selection rect);
         void setPlaneMarker(QList<Selection> marker);

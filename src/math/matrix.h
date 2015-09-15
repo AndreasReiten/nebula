@@ -30,6 +30,7 @@ class Matrix
         Matrix(size_t p_m, size_t p_n);
         Matrix(const Matrix &other);
         Matrix(Matrix &&other);
+        Matrix<T> &operator =(Matrix<T> other);
         ~Matrix();
 
         // Operators
@@ -51,8 +52,6 @@ class Matrix
 
         T &operator[] (const size_t index);
         const T &operator[] (const size_t index) const;
-        Matrix<T> &operator =(Matrix<T> other);
-
 
         // Utility
         Matrix<T> inverse(int verbose = false) const;
@@ -94,7 +93,7 @@ class Matrix
         std::vector<T> p_buffer;
 
         /* Swap function as per C++11 idiom */
-        void swap(Matrix &first, Matrix &second);
+        void swap(Matrix &other);
 };
 
 Q_DECLARE_METATYPE(Matrix<double>);
@@ -294,22 +293,19 @@ QVector<T> Matrix<T>::toQVector() const
 }
 
 template <class T>
-Matrix<T>::Matrix(const Matrix &other)
+Matrix<T>::Matrix(const Matrix &other) :
+    p_m(other.p_m),
+    p_n(other.p_n),
+    p_buffer(other.p_buffer)
 {
-    this->p_m = other.m();
-    this->p_n = other.n();
-    this->p_buffer.resize(p_m * p_n);
-
-    for (size_t i = 0; i < p_m * p_n; i++)
-    {
-        this->p_buffer[i] = other[i];
-    }
 }
 
 template <class T>
-Matrix<T>::Matrix(Matrix &&other)
+Matrix<T>::Matrix(Matrix &&other) :
+  p_m(std::move(other.p_m)),
+  p_n(std::move(other.p_n)),
+  p_buffer(std::move(other.p_buffer))
 {
-    swap(*this, other);
 }
 
 
@@ -441,11 +437,11 @@ T Matrix<T>::max() const
 }
 
 template <class T>
-void Matrix<T>::swap(Matrix &first, Matrix &second)
+void Matrix<T>::swap(Matrix &other)
 {
-    std::swap(first.p_m, second.p_m);
-    std::swap(first.p_n, second.p_n);
-    std::swap(first.p_buffer, second.p_buffer);
+    std::swap(this->p_m, other.p_m);
+    std::swap(this->p_n, other.p_n);
+    std::swap(this->p_buffer, other.p_buffer);
 }
 
 template <class T>
@@ -1123,8 +1119,7 @@ void Matrix<T>::print(int precision, const char * id) const
 template <class T>
 Matrix<T> &Matrix<T>::operator = (Matrix<T> other)
 {
-    swap(*this, other);
-
+    swap(other);
     return * this;
 }
 

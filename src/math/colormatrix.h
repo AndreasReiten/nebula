@@ -49,14 +49,14 @@ ColorMatrix<T> &ColorMatrix<T>::operator = (Matrix<T> other)
         qWarning() << "Sizes do not match: " << other.size() << "!=" << this->size();
     }
 
-    this->swap(*this, other);
+    this->swap(other);
     return * this;
 }
 
 template <class T>
 ColorMatrix<T> &ColorMatrix<T>::operator = (ColorMatrix<T> other)
 {
-    this->swap(*this, other);
+    this->swap(other);
     return * this;
 }
 

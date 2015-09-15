@@ -395,8 +395,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         QTimer * progressPollTimer;
 
         QList<DetectorFile> p_future_list;
-//        QFuture<void> p_future;
-        QFutureWatcher<void> * p_watcher;
+        QFutureWatcher<void> * p_future_watcher;
 };
 
 #endif // IMAGEPREVIEW_H

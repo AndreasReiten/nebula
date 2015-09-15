@@ -54,12 +54,15 @@ public slots:
     void previous();
     void batchNext();
     void batchPrevious();
-    void clearRunnables();
+//    void clearRunnables();
 //    void pollProgress();
 
-    void populateInterpolationTreeProxySlot();
+
 
 private slots:
+    void populateInterpolationTree_start();
+    void populateInterpolationTree_finished();
+
     void on_sanityButton_clicked();
     void on_deactivateFileButton_clicked();
     void on_activateFileButton_clicked();
@@ -89,6 +92,9 @@ private:
     QString p_working_dir;
     QString p_screenshot_dir;
     int p_current_row;
+
+//    QList<DetectorFile> p_future_list;
+//    QFutureWatcher<void> * p_future_watcher;
 
 //    QTimer * progressPollTimer;
 };

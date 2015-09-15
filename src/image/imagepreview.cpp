@@ -77,7 +77,7 @@ void ImageWorker::traceSeries(SeriesSet set)
 
     DetectorFile frame;
 
-    frame.setPath(set.current()->begin()->path());
+    frame.setPath(set.current()->begin()->filePath());
 
     Matrix<float> zeros_like_frame(frame.height(), frame.width(), 0.0f);
 
@@ -95,7 +95,8 @@ void ImageWorker::traceSeries(SeriesSet set)
     // For each image in the series
     for (int j = 0; j < set.current()->size(); j++)
     {
-        frame.read();
+        frame.readHeader();
+        frame.readBody();
 
         // Read data and send to a VRAM buffer.
         cl_mem image_gpu = QOpenCLCreateBuffer( context_cl.context(),
@@ -146,7 +147,7 @@ void ImageWorker::traceSeries(SeriesSet set)
             qFatal(cl_error_cstring(err));
         }
 
-        frame.setPath(set.current()->next()->path());
+        frame.setPath(set.current()->next()->filePath());
 
 //        emit pathChanged(set.current()->current()->path());
         emit progressRangeChanged(0, set.current()->size() - 1);
@@ -253,7 +254,7 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
 
     prev_pixel.set(1, 2, 0);
 
-    p_watcher = new QFutureWatcher<void>(this);
+    p_future_watcher = new QFutureWatcher<void>(this);
 }
 
 ImageWorker * ImageOpenGLWidget::worker()
@@ -264,7 +265,7 @@ ImageWorker * ImageOpenGLWidget::worker()
 
 QFutureWatcher<void> *ImageOpenGLWidget::watcher()
 {
-    return p_watcher;
+    return p_future_watcher;
 }
 
 void ImageOpenGLWidget::paintGL()
@@ -285,7 +286,7 @@ void ImageOpenGLWidget::paintGL()
 
     endRawGLCalls(&painter);
 
-    if (image.isPathValid() && image.isDataRead())
+    if (image.isDataRead())
     {
         QRectF image_rect(QPoint(0, 0), QSizeF(image.width(), image.height()));
         image_rect.moveTopLeft(QPointF((qreal) this->width() * 0.5, (qreal) this->height() * 0.5));
@@ -610,7 +611,7 @@ void ImageOpenGLWidget::reconstruct()
             }
             else
             {
-                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Could not process \"" + p_working_data[p_current_filepath].path() + "\".\n Too much data was kept during reconstruction.");
+                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Could not process \"" + p_working_data[p_current_filepath].filePath() + "\".\n Too much data was kept during reconstruction.");
                 kill_flag = true;
             }
 
@@ -969,7 +970,7 @@ void ImageOpenGLWidget::scatteringDataToImage(cl_mem data_buf_cl, cl_mem frame_i
      * Display an image buffer object, matching intensity to color
      * */
 
-    if (!image.isPathValid() || !image.isDataRead())
+    if (!image.isDataRead())
     {
         return;
     }
@@ -1208,7 +1209,7 @@ void ImageOpenGLWidget::processScatteringDataProxy()
     /*
      * Carry out calculations on an image buffer, such as corrections and calculation of variance and skewness
      * */
-    if (!image.isPathValid() || !image.isDataRead())
+    if (!image.isDataRead())
     {
         return;
     }
@@ -1454,45 +1455,20 @@ void ImageOpenGLWidget::clearRunnables()
 
 void ImageOpenGLWidget::populateInterpolationTreeMap()
 {
-//    // Note: If the spawned threads consume more than the available memory, either on the host or the gpu, the behaviour is undefined
-
-//    // Get the number of files
+    // Note: If the spawned threads consume more than the available memory, either on the host or the gpu, the behaviour is undefined
     QSqlQuery query(QSqlDatabase::database());
-////    query.prepare("SELECT count(FilePath) FROM cbf_table WHERE Active = :Active");
-////    query.bindValue(":Active", 1);
-////    if (!query.exec())
-////    {
-////        qDebug() << query.lastError();
-////    }
-////    query.first();
-
-////    emit progressRangeChanged(0, query.value(0).toInt());
-//    emit progressTaskActive(true);
-
-//    // Reconstruct scattering data and insert into the interpolation octree
-//    // Spawn one thread per file. Writes into tree are mutex locked
-////    p_file_checklist.clear();
-////    p_n_returned_tasks = 0;
-
     query.prepare("SELECT FilePath FROM cbf_table WHERE Active = :Active ORDER BY FilePath ASC");
     query.bindValue(":Active", 1);
     if (!query.exec()) qDebug() << sqlQueryError(query);
 
-//    QList<DetectorFile> p_future_list;
-    QList<QString> paths;
+    p_future_list.clear();
+
     while (query.next())// && (files.size() < 10))
     {
         p_future_list << DetectorFile(query.value(0).toString());
-        paths << query.value(0).toString();
     }
 
-//    QFuture p_future = QtConcurrent::map(p_future_list, &DetectorFile::read);
-//    QFuture<void> future = QtConcurrent::map(paths, &QString::squeeze);
-    p_watcher->setFuture(QtConcurrent::map(p_future_list, &DetectorFile::read));
-
-//    p_watcher.waitForFinished();
-
-//    qDebug() << "BOOM!";
+    p_future_watcher->setFuture(QtConcurrent::map(p_future_list, &DetectorFile::readHeader));
 }
 
 void ImageOpenGLWidget::on_populateInterpolationTree_finished(QString file)
@@ -1555,17 +1531,19 @@ void ImageOpenGLWidget::pollProgress()
 void ImageOpenGLWidget::setFrame()
 {
     // Set the frame
-    if (!image.setPath(p_working_data[p_current_filepath].path()))
+    image.setPath(p_working_data[p_current_filepath].filePath());
+
+    if (!isCLInitialized || !isGLInitialized)
     {
         return;
     }
 
-    if (!isCLInitialized || !isGLInitialized  || !image.isPathValid())
+    if (!image.readHeader())
     {
         return;
     }
 
-    if (!image.read())
+    if (!image.readBody())
     {
         return;
     }
@@ -1791,7 +1769,7 @@ void ImageOpenGLWidget::updateImageTexture()
      * Refresh the image buffer
      * */
 
-    if (!image.isPathValid() || !image.isDataRead())
+    if (!image.isDataRead())
     {
         return;
     }
@@ -1894,7 +1872,7 @@ QString ImageOpenGLWidget::integrationFrameString(DetectorFile &f, ImageInfo &im
            + QString::number(Q[2], 'E') + " "
            + QString::number(vecLength(Q), 'E') + " "
            + QString::number(value, 'E') + " "
-           + image.path() + "\n";
+           + image.filePath() + "\n";
     return str;
 }
 
@@ -2634,7 +2612,7 @@ void ImageOpenGLWidget::processSelectionData(Selection * area, cl_mem image_data
      * on the selected area. The buffers are then summed, effectively doing operations such as integration
      * */
 
-    if (!image.isPathValid() || !image.isDataRead())
+    if (!image.isDataRead())
     {
         return;
     }
@@ -3228,7 +3206,7 @@ void ImageOpenGLWidget::centerImage(QSizeF size)
 
 void ImageOpenGLWidget::centerCurrentImage()
 {
-    if (image.isPathValid() && image.isDataRead()) centerImage(image.size());
+    if (image.isDataRead()) centerImage(image.size());
     else centerImage(QSizeF(texture_noimage->width(),texture_noimage->height()));
 }
 
@@ -3962,7 +3940,7 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
     if ((event->buttons() & Qt::LeftButton))
     {
-        if ((event->modifiers() & Qt::ShiftModifier) && (image.isPathValid() || image.isDataRead()))
+        if ((event->modifiers() & Qt::ShiftModifier) && image.isDataRead())
         {
             Selection analysis_area = p_working_data[p_current_filepath].selection();
 
@@ -3974,7 +3952,7 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
 
             p_working_data[p_current_filepath].setSelection(analysis_area);
         }
-        else if ((event->modifiers() & Qt::ControlModifier) && (image.isPathValid() || image.isDataRead()))
+        else if ((event->modifiers() & Qt::ControlModifier) && image.isDataRead())
         {
             Selection analysis_area = p_working_data[p_current_filepath].selection();
 
@@ -3991,7 +3969,7 @@ void ImageOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
             // Check for selected objects
             bool isSomethingSelected = false;
 
-            if (image.isPathValid() || image.isDataRead())
+            if (image.isDataRead())
             {
                 QList<Selection> marker(p_working_data[p_current_filepath].planeMarker());
 
@@ -4026,7 +4004,7 @@ void ImageOpenGLWidget::mousePressEvent(QMouseEvent * event)
 {
     pos = event->pos();
 
-    if (image.isPathValid() || image.isDataRead())
+    if (image.isDataRead())
     {
         if (!(event->modifiers() & Qt::ShiftModifier) && (event->buttons() & Qt::LeftButton))
         {
@@ -4099,7 +4077,7 @@ void ImageOpenGLWidget::mouseReleaseEvent(QMouseEvent * event)
 {
     pos =  event->pos();
 
-    if (image.isPathValid() || image.isDataRead())
+    if (image.isDataRead())
     {
         // A bit overkill to set [...] on mouse release as well as mouse move and push
         if ((event->modifiers() & Qt::ShiftModifier) && !(event->buttons() & Qt::LeftButton))

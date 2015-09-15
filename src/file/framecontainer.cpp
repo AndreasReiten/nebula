@@ -29,7 +29,7 @@ ImageInfo::ImageInfo(const ImageInfo &other)
 {
     p_selection = other.selection();
     plane_sample = other.planeMarker();
-    p_path = other.path();
+    p_path = other.filePath();
 }
 
 ImageInfo::~ImageInfo()
@@ -42,7 +42,7 @@ void ImageInfo::setPath(QString str)
     p_path = str;
 }
 
-const QString ImageInfo::path() const
+const QString ImageInfo::filePath() const
 {
     return p_path;
 }
@@ -74,7 +74,7 @@ Selection * ImageInfo::selectionPtr()
 
 ImageInfo &ImageInfo::operator = (ImageInfo other)
 {
-    p_path = other.path();
+    p_path = other.filePath();
     p_selection = other.selection();
     //    p_background = other.background();
 
@@ -116,13 +116,13 @@ QList<Selection> * ImageInfo::planeMarkerPtr()
 
 QDebug operator<<(QDebug dbg, const ImageInfo &image)
 {
-    dbg.nospace() << "Image()" << image.path() << image.selection();
+    dbg.nospace() << "Image()" << image.filePath() << image.selection();
     return dbg.maybeSpace();
 }
 
 QDataStream &operator<<(QDataStream &out, const ImageInfo &image)
 {
-    out << image.path() << image.selection() << image.planeMarker();
+    out << image.filePath() << image.selection() << image.planeMarker();
 
     return out;
 }
@@ -187,7 +187,7 @@ QStringList ImageSeries::paths()
 
     for (int j = 0; j < p_images.size(); j++)
     {
-        paths << p_images[j].path();
+        paths << p_images[j].filePath();
     }
 
     return paths;
@@ -475,7 +475,7 @@ QStringList SeriesSet::paths()
     {
         for (int j = 0; j < p_series[i].images().size(); j++)
         {
-            paths << p_series[i].images()[j].path();
+            paths << p_series[i].images()[j].filePath();
         }
     }
 

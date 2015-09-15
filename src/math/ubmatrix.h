@@ -80,14 +80,14 @@ UBMatrix<T>::~UBMatrix()
 template <class T>
 UBMatrix<T> &UBMatrix<T>::operator = (Matrix<T> other)
 {
-    this->swap(*this, other);
+    this->swap(other);
     return * this;
 }
 
 template <class T>
 UBMatrix<T> &UBMatrix<T>::operator = (UBMatrix<T> other)
 {
-    this->swap(*this, other);
+    this->swap(other);
     return * this;
 }
 

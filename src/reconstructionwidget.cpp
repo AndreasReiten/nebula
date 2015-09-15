@@ -13,7 +13,7 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     p_current_row(0)
 {
     p_ui->setupUi(this);
-//    p_ui->progressBar->hide();
+    p_ui->progressBar->hide();
 
     // Prepare column to sql table translation map
     column_map["Path"] = QPair<int,QString>(0, "FilePath");
@@ -110,7 +110,7 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressRangeChanged(int, int)), p_ui->progressBar, SLOT(setRange(int, int)));
 //    connect(p_ui->reconstructButton, SIGNAL(clicked()), p_ui->reconstructButton, SLOT(setDisabled(bool)));
 
-    connect(p_ui->reconstructButton, SIGNAL(clicked()), this, SLOT(populateInterpolationTreeProxySlot()));
+    connect(p_ui->reconstructButton, SIGNAL(clicked()), this, SLOT(populateInterpolationTree_start()));
     connect(this, SIGNAL(populateInterpolationTreeProxySignal()), p_ui->imageOpenGLWidget, SLOT(populateInterpolationTreeMap()));
 
     connect(p_ui->lorentzCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionLorentz(bool)));
@@ -155,6 +155,7 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
     connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
     connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(finished()), this, SLOT(populateInterpolationTree_finished()));
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->watcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->watcher(), SLOT(setPaused(bool)));
     //    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(started()), , SLOT());
@@ -196,27 +197,38 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
 //    p_ui->imageOpenGLWidget->centerCurrentImage();
 }
 
-void ReconstructionWidget::clearRunnables()
-{
-    QThreadPool::globalInstance()->clear();
-    p_ui->reconstructButton->setEnabled(true);
-    p_ui->progressBar->setValue(0);
-    p_ui->progressBar->hide();
-}
+//void ReconstructionWidget::clearRunnables()
+//{
+//    QThreadPool::globalInstance()->clear();
+//    p_ui->reconstructButton->setEnabled(true);
+//    p_ui->progressBar->setValue(0);
+//    p_ui->progressBar->hide();
+//}
 
 //void ReconstructionWidget::pollProgress()
 //{
 //    p_ui->progressBar->setValue();
 //}
 
-void ReconstructionWidget::populateInterpolationTreeProxySlot()
+void ReconstructionWidget::populateInterpolationTree_start()
 {
-//    p_ui->reconstructButton->setDisabled(true);
+    p_ui->reconstructButton->setDisabled(true);
+    p_ui->progressBar->show();
 
 //    QTimer * t = new QTimer;
 //    QTimer
 
     emit populateInterpolationTreeProxySignal();
+}
+
+void ReconstructionWidget::populateInterpolationTree_finished()
+{
+    p_ui->reconstructButton->setDisabled(false);
+    p_ui->progressBar->hide();
+    p_ui->progressBar->setValue(0);
+
+//    QTimer * t = new QTimer;
+//    QTimer
 }
 
 void ReconstructionWidget::next()
@@ -592,12 +604,15 @@ void ReconstructionWidget::on_clearButton_clicked()
     QMessageBox msgBox;
     msgBox.setText("Remove files?");
 //    msgBox.setInformativeText("This action is irreversible.");
-    msgBox.addButton(trUtf8("Yes, remove files"), QMessageBox::YesRole);
+    QPushButton * yes_button = msgBox.addButton(trUtf8("Yes, remove files"), QMessageBox::YesRole);
     msgBox.setStandardButtons(QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Cancel);
-    int ret = msgBox.exec();
+    msgBox.exec();
+//    msgBox.result();
 
-    if (ret == QMessageBox::Yes)
+//    qDebug() << ret << QMessageBox::Yes << QMessageBox::No << QMessageBox::YesRole;
+
+    if (msgBox.clickedButton() == yes_button)
     {
         QSqlQuery query(QSqlDatabase::database());
         query.prepare("DELETE FROM cbf_table WHERE FilePath = :FilePath");
@@ -632,40 +647,58 @@ void ReconstructionWidget::on_addFilesButton_clicked()
 {
     QStringList paths(fileTreeModel->selected());
 
+    QList<DetectorFile> files;
+    foreach (const QString &path, paths)
+    {
+        DetectorFile file(path);
+
+        if (file.isValid()) files << file;
+    }
+//    files.clear();
+//    files << DetectorFile("E:/Data/2015_ESRF_LSMO/P10404/-1-14/fine/P10505_0001p_00114.cbf");
+
+//    qDebug() << files.first().isHeaderRead();
+
+//    qDebug() << files.first().info();
+//    files.first().readHeader();
+//    DetectorFile first("E:/Data/2015_ESRF_LSMO/P10404/-1-14/fine/P10505_0001p_00114.cbf");
+//    first.readHeader();
+
+//    DetectorFile test = first;
+
+    QFutureWatcher<void> future_watcher;
+    future_watcher.setFuture(QtConcurrent::map(files, &DetectorFile::readHeader));
+
+    future_watcher.waitForFinished();
+
+//    qDebug() << files.first().info();
+
+
     QSqlDatabase::database().transaction();
 
-    foreach (const QString &value, paths)
+    foreach (const DetectorFile &file, files)
     {
-        // If valid file
-        QFileInfo info(value);
+        // Add to relevant sql database. Guess database based on extension
+        upsert_file_query->bindValue(":FilePath", file.filePath());
+        upsert_file_query->bindValue(":Path", file.dir());
+        upsert_file_query->bindValue(":File", file.fileName());
+        upsert_file_query->bindValue(":Active", 1);
+        upsert_file_query->bindValue(":Omega", file.omega() * 180.0 / pi);
+        upsert_file_query->bindValue(":Kappa", file.kappa() * 180.0 / pi);
+        upsert_file_query->bindValue(":Phi", file.phi() * 180.0 / pi);
+        upsert_file_query->bindValue(":StartAngle", file.startAngle() * 180.0 / pi);
+        upsert_file_query->bindValue(":AngleIncrement", file.angleIncrement() * 180.0 / pi);
+        upsert_file_query->bindValue(":DetectorDistance", file.detectorDist());
+        upsert_file_query->bindValue(":BeamX", file.beamX());
+        upsert_file_query->bindValue(":BeamY", file.beamY());
+        upsert_file_query->bindValue(":Flux", file.flux());
+        upsert_file_query->bindValue(":ExposureTime", file.expTime());
+        upsert_file_query->bindValue(":Wavelength", file.wavelength());
+        upsert_file_query->bindValue(":Detector", file.detector());
+        upsert_file_query->bindValue(":PixelSizeX", file.pixSizeX());
+        upsert_file_query->bindValue(":PixelSizeY", file.pixSizeY());
 
-        if (info.isFile())
-        {
-            // Add to relevant sql database. Guess database based on extension
-            upsert_file_query->bindValue(":FilePath", info.filePath());
-            upsert_file_query->bindValue(":Path", info.path());
-            upsert_file_query->bindValue(":File", info.fileName());
-
-            DetectorFile file(info.filePath());
-
-            upsert_file_query->bindValue(":Active", 1);
-            upsert_file_query->bindValue(":Omega", file.omega() * 180.0 / pi);
-            upsert_file_query->bindValue(":Kappa", file.kappa() * 180.0 / pi);
-            upsert_file_query->bindValue(":Phi", file.phi() * 180.0 / pi);
-            upsert_file_query->bindValue(":StartAngle", file.startAngle() * 180.0 / pi);
-            upsert_file_query->bindValue(":AngleIncrement", file.angleIncrement() * 180.0 / pi);
-            upsert_file_query->bindValue(":DetectorDistance", file.detectorDist());
-            upsert_file_query->bindValue(":BeamX", file.beamX());
-            upsert_file_query->bindValue(":BeamY", file.beamY());
-            upsert_file_query->bindValue(":Flux", file.flux());
-            upsert_file_query->bindValue(":ExposureTime", file.expTime());
-            upsert_file_query->bindValue(":Wavelength", file.wavelength());
-            upsert_file_query->bindValue(":Detector", file.detector());
-            upsert_file_query->bindValue(":PixelSizeX", file.pixSizeX());
-            upsert_file_query->bindValue(":PixelSizeY", file.pixSizeY());
-
-            if (!upsert_file_query->exec()) qDebug() << sqlQueryError(*upsert_file_query);
-        }
+        if (!upsert_file_query->exec()) qDebug() << sqlQueryError(*upsert_file_query);
     }
 
     QSqlDatabase::database().commit();
