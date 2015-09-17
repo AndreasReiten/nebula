@@ -311,30 +311,66 @@ void OpenCLFunctions::initializeOpenCLFunctions()
     {
         qFatal(QString("Failed to resolve function:" + myLib.errorString()).toStdString().c_str());
     }
+
+    QOpenCLReleaseProgram  = (PROTOTYPE_QOpenCLReleaseProgram ) myLib.resolve("clReleaseProgram");
+
+    if (!QOpenCLReleaseProgram )
+    {
+        qFatal(QString("Failed to resolve function:" + myLib.errorString()).toStdString().c_str());
+    }
+
+    QOpenCLReleaseContext  = (PROTOTYPE_QOpenCLReleaseContext ) myLib.resolve("clReleaseContext");
+
+    if (!QOpenCLReleaseContext )
+    {
+        qFatal(QString("Failed to resolve function:" + myLib.errorString()).toStdString().c_str());
+    }
 }
 
-OpenCLContext::OpenCLContext()
+OpenCLContextQueueProgram::OpenCLContextQueueProgram() :
+    is_program_built(false)
 {
     initializeOpenCLFunctions();
 }
 
-OpenCLContext::~OpenCLContext()
+OpenCLContextQueueProgram::~OpenCLContextQueueProgram()
 {
-    // Todo: Release resources bound to object
+
+//    err = QOpenCLReleaseProgram(p_program);
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
+
+//    err = QOpenCLReleaseContext(p_context);
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
 }
 
 
-cl_command_queue OpenCLContext::queue()
+cl_command_queue OpenCLContextQueueProgram::queue()
 {
     return p_queue;
 }
 
-cl_context OpenCLContext::context()
+cl_context OpenCLContextQueueProgram::context()
 {
     return p_context;
 }
 
-cl_program OpenCLContext::createProgram(QStringList paths, cl_int * err)
+cl_program OpenCLContextQueueProgram::program()
+{
+    return p_program;
+}
+
+bool OpenCLContextQueueProgram::isProgramBuilt()
+{
+    return is_program_built;
+}
+
+void OpenCLContextQueueProgram::createProgram(QStringList paths, cl_int * err)
 {
     // Create program object
     Matrix<size_t> lengths(1, paths.size());
@@ -357,13 +393,13 @@ cl_program OpenCLContext::createProgram(QStringList paths, cl_int * err)
         lengths[i] = blobs[i].length();
     }
 
-    return QOpenCLCreateProgramWithSource(p_context, paths.size(), sources.data(), lengths.data(), err);
+    p_program = QOpenCLCreateProgramWithSource(p_context, paths.size(), sources.data(), lengths.data(), err);
 }
 
-void OpenCLContext::buildProgram(cl_program program, QString options)
+void OpenCLContextQueueProgram::buildProgram(QString options)
 {
     // Build source
-    err = QOpenCLBuildProgram(program, 1, device, options.toStdString().c_str(), NULL, NULL);
+    err = QOpenCLBuildProgram(p_program, 1, device, options.toStdString().c_str(), NULL, NULL);
 
     if (err != CL_SUCCESS)
     {
@@ -374,10 +410,10 @@ void OpenCLContext::buildProgram(cl_program program, QString options)
         char * build_log;
         size_t log_size;
 
-        QOpenCLGetProgramBuildInfo(program, device[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+        QOpenCLGetProgramBuildInfo(p_program, device[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
         build_log = new char[log_size + 1];
 
-        QOpenCLGetProgramBuildInfo(program, device[0], CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
+        QOpenCLGetProgramBuildInfo(p_program, device[0], CL_PROGRAM_BUILD_LOG, log_size, build_log, NULL);
         build_log[log_size] = '\0';
 
         ss << "___ START KERNEL COMPILE LOG ___" << std::endl;
@@ -386,11 +422,15 @@ void OpenCLContext::buildProgram(cl_program program, QString options)
         delete[] build_log;
 
         qDebug(ss.str().c_str());
+
+        return;
     }
+
+    is_program_built = true;
 }
 
 
-void OpenCLContext::initDevices()
+void OpenCLContextQueueProgram::initDevices()
 {
     // Get platforms
     cl_uint num_platform_entries = 64;
@@ -462,7 +502,7 @@ void OpenCLContext::initDevices()
 
 }
 
-void OpenCLContext::initSharedContext()
+void OpenCLContextQueueProgram::initSharedContext()
 {
     // Context with GL interopability
 #ifdef Q_OS_LINUX
@@ -496,7 +536,7 @@ void OpenCLContext::initSharedContext()
     if (0) qDebug() << "Sharing OpenCL context created: " << cl_easy_context_info(p_context);
 }
 
-void OpenCLContext::initNormalContext()
+void OpenCLContextQueueProgram::initNormalContext()
 {
     // Context without GL interopability
     cl_uint num = 1;
@@ -511,7 +551,7 @@ void OpenCLContext::initNormalContext()
     if (0) qDebug() << "Non-Sharing OpenCL context created: " << cl_easy_context_info(p_context);
 }
 
-void OpenCLContext::initCommandQueue()
+void OpenCLContextQueueProgram::initCommandQueue()
 {
     // Command queue
     p_queue = QOpenCLCreateCommandQueue(p_context, device[0], 0, &err);
@@ -527,7 +567,7 @@ void OpenCLContext::initCommandQueue()
 
 
 
-QString OpenCLContext::cl_easy_context_info(cl_context context)
+QString OpenCLContextQueueProgram::cl_easy_context_info(cl_context context)
 {
     QString str;
 
@@ -576,7 +616,7 @@ QString OpenCLContext::cl_easy_context_info(cl_context context)
     return str;
 }
 
-QString OpenCLContext::cl_easy_device_info(cl_device_id device)
+QString OpenCLContextQueueProgram::cl_easy_device_info(cl_device_id device)
 {
     QString str;
 
@@ -655,7 +695,7 @@ QString OpenCLContext::cl_easy_device_info(cl_device_id device)
     return str;
 }
 
-QString OpenCLContext::cl_easy_platform_info(cl_platform_id platform)
+QString OpenCLContextQueueProgram::cl_easy_platform_info(cl_platform_id platform)
 {
     QString str;
 

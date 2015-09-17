@@ -62,6 +62,144 @@ kernel void scatteringDataToImage(
     }
 }
 
+kernel void correctScatteringData(
+    global float * in_buf,
+    global float * out_buf,
+    int2 image_size,
+    int isCorrectionLorentzActive,
+    int isCorrectionNoiseActive,
+    int isCorrectionPlaneActive,
+    int isCorrectionPolarizationActive,
+    int isCorrectionFluxActive,
+    int isCorrectionExposureActive,
+    int isCorrectionPixelProjectionActive,
+    float detector_distance,
+    float beam_center_x,
+    float beam_center_y,
+    float pixel_size_x,
+    float pixel_size_y,
+    float wavelength,
+    float flux,
+    float exposure_time,
+    float noise_low,
+    float noise_high
+)
+{
+    // The frame has its axes like this, looking from the source to
+    // the detector in the zero rotation position. We use the
+    // cartiesian coordinate system described in
+    // doi:10.1107/S0021889899007347
+    //         y
+    //         ^
+    //         |
+    //         |
+    // z <-----x------ (fast)
+    //         |
+    //         |
+    //       (slow)
+
+    // Thresholds and other parameters essential to the file
+    int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
+
+    if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
+    {
+        float4 Q = (float4)(0.0f);
+        Q.w = in_buf[id_glb.y * image_size.x + id_glb.x];
+
+        // Flat background subtraction
+        if (isCorrectionNoiseActive)
+        {
+            Q.w = clamp(Q.w, noise_low, noise_high); // All readings within thresholds
+            Q.w -= noise_low; // Subtract
+        }
+
+        // Planar background subtraction
+//        if (isCorrectionPlaneActive)
+//        {
+//            float plane_z = -(plane.x * (float)id_glb.x + plane.y * (float)id_glb.y + plane.w) / plane.z;
+
+//            if (plane_z < 0)
+//            {
+//                plane_z = 0;    // Negative values do not make sense
+//            }
+
+//            Q.w = clamp(Q.w, plane_z, noise_high); // All readings within thresholds
+//            Q.w -= plane_z;
+//        }
+
+        // The real space vector OP going from the origo (O) to the pixel (P)
+        float3 OP = (float3)(
+                                        -detector_distance,
+                                        pixel_size_x * ((float) (image_size.y - id_glb.y - 0.5) - beam_center_x), /* DANGER */
+                                        //pixel_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_center_y)
+                                        pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_center_y))); /* DANGER */
+
+        float k = 1.0 / wavelength; // Multiply with 2pi if desired
+
+        /* Corrections */
+        // Correct for the area of the projection of the pixel onto the Ewald sphere
+        if (isCorrectionPixelProjectionActive)
+        {
+            float forward_projected_area;
+            {
+                // The four vectors that define projected pixel on the Ewald sphere
+                float3 a_vec = k * normalize((float3)(-detector_distance, (float) pixel_size_x * 0.5, -(float) pixel_size_y * 0.5));
+                float3 b_vec = k * normalize((float3)(-detector_distance, -(float) pixel_size_x * 0.5, -(float) pixel_size_y * 0.5));
+                float3 c_vec = k * normalize((float3)(-detector_distance, -(float) pixel_size_x * 0.5, (float) pixel_size_y * 0.5));
+                float3 d_vec = k * normalize((float3)(-detector_distance, (float) pixel_size_x * 0.5, (float) pixel_size_y * 0.5));
+
+                // The area of the two spherical triangles spanned by the projected pixel is approximated by their corresponding planar triangles since they are small
+                float3 ab_vec = b_vec - a_vec;
+                float3 ac_vec = c_vec - a_vec;
+                float3 ad_vec = d_vec - a_vec;
+
+                forward_projected_area = 0.5*fabs(length(cross(ab_vec,ac_vec))) + 0.5*fabs(length(cross(ac_vec,ad_vec)));
+            }
+
+            float projected_area;
+            {
+                // The four vectors that define projected pixel on the Ewald sphere
+                float3 a_vec = k * normalize( convert_float3(OP) + (float3)(0, (float) pixel_size_x * 0.5, -(float) pixel_size_y * 0.5));
+                float3 b_vec = k * normalize( convert_float3(OP) + (float3)(0, -(float) pixel_size_x * 0.5, -(float) pixel_size_y * 0.5));
+                float3 c_vec = k * normalize( convert_float3(OP) + (float3)(0, -(float) pixel_size_x * 0.5, (float) pixel_size_y * 0.5));
+                float3 d_vec = k * normalize( convert_float3(OP) + (float3)(0, (float) pixel_size_x * 0.5, (float) pixel_size_y * 0.5));
+
+                // The area of the two spherical triangles spanned by the projected pixel is approximated by their corresponding planar triangles since they are small
+                float3 ab_vec = b_vec - a_vec;
+                float3 ac_vec = c_vec - a_vec;
+                float3 ad_vec = d_vec - a_vec;
+
+                projected_area = 0.5*fabs(length(cross(ab_vec,ac_vec))) + 0.5*fabs(length(cross(ac_vec,ad_vec)));
+            }
+
+            // Correction
+            Q.w = Q.w * ( forward_projected_area / projected_area);
+        }
+
+
+        float3 k_i = (float3)(-k, 0, 0);
+        float3 k_f = k * normalize(OP);
+
+
+        Q.xyz = k_f - k_i;
+
+        {
+            // Lorentz correction assuming rotation around a given axis (corresponding to the rotation of a single motor in most cases)
+            // The expression is derived from the formula found in the Nebula open access article
+            if (isCorrectionLorentzActive)
+            {
+                float3 axis_rot = (float3)(0.0f,0.0f,1.0f); // Omega rotation. Todo: Set as kernel input argument and define in host application
+                Q.w *= wavelength*fabs((dot(cross(normalize(axis_rot), Q.xyz),normalize(k_f))));
+            }
+
+            // Polarization correction begs implementation
+        }
+
+        out_buf[id_glb.y * image_size.x + id_glb.x] = Q.w;
+    }
+}
+
+
 kernel void processScatteringData(
     global float * in_buf,
     global float * out_buf,
@@ -237,9 +375,8 @@ kernel void processScatteringData(
 }
 
 kernel void projectScatteringData(
-    global float4 * out_buf, // TODO: Check if this actually needs to be a pic
+    global float4 * out_buf,
     global float * in_buf,
-    sampler_t tsf_sampler,
     constant float * sample_rotation_matrix,
     float pixel_size_x,
     float pixel_size_y,

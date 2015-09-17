@@ -24,6 +24,11 @@ static const size_t REDUCED_PIXELS_MAX_BYTES = 1000e6;
 ImageWorker::ImageWorker()
 {
     initializeOpenCLFunctions();
+
+    context_cl.initDevices();
+    context_cl.initNormalContext();
+    context_cl.initCommandQueue();
+    initializeOpenCLKernels();
 }
 
 ImageWorker::~ImageWorker()
@@ -31,12 +36,12 @@ ImageWorker::~ImageWorker()
 
 }
 
-void ImageWorker::setOpenCLContext(OpenCLContext context)
-{
-    context_cl = context;
+//void ImageWorker::setOpenCLContext(OpenCLContextQueueProgram * context)
+//{
+//    context_cl = context;
 
-    initializeOpenCLKernels();
-}
+//    initializeOpenCLKernels();
+//}
 
 void ImageWorker::setTraceContainer(QList<Matrix<float>> * list)
 {
@@ -49,16 +54,16 @@ void ImageWorker::initializeOpenCLKernels()
     QStringList paths;
     paths << "kernels/scattering_data_operations.cl";
 
-    program = context_cl.createProgram(paths, &err);
+    context_cl.createProgram(paths, &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
+    context_cl.buildProgram("-Werror -cl-std=CL1.2");
 
-    cl_buffer_max =  QOpenCLCreateKernel(program, "bufferMax", &err);
+    cl_buffer_max =  QOpenCLCreateKernel(context_cl.program(), "bufferMax", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -1463,12 +1468,51 @@ void ImageOpenGLWidget::populateInterpolationTreeMap()
 
     p_future_list.clear();
 
+    p_test = 0;
+
     while (query.next())// && (files.size() < 10))
     {
-        p_future_list << DetectorFile(query.value(0).toString());
+        // Prepare detector file.
+        QString file_path = query.value(0).toString();
+
+        DetectorFile file(file_path);
+
+        // Set the appropriate selection.
+        if (!p_working_data.contains(file_path)) p_working_data[file_path] = ImageInfo(file_path);
+        file.setSubImage(p_working_data[file_path].selection());
+
+        //  Pass an object containing variable parameters (typically given by the UI).
+        DataCorrectionArgs args;
+        args.lorentz_correction = isCorrectionLorentzActive;
+        args.flat_background_correction = isCorrectionNoiseActive;
+        args.planar_background_correction = isCorrectionPlaneActive;
+        args.polarization_correction = isCorrectionPolarizationActive;
+        args.flux_correction = isCorrectionFluxActive;
+        args.exposure_time_correction = isCorrectionExposureActive;
+        args.pixel_projection_correction = isCorrectionPixelProjectionActive;
+
+        args.noise_low = parameter[0];
+        args.noise_high = parameter[1];
+        file.setCorrectionArgs(args);
+
+        // Give it a CL context, queue, BUT NOT kernel handles. clSetKernelArg is NOT thread safe when used across multiple threads on the same kernel object.
+        file.setCLContext(&context_cl);
+
+        // Pass a pointer to an interpolation octree in which to put treated data points.
+        file.setInterpolationTree(&p_test);
+
+        // Set mutex for reading and writing to shared data
+        file.setMutex(&p_mutex);
+
+        p_future_list << file;
     }
 
-    p_future_watcher->setFuture(QtConcurrent::map(p_future_list, &DetectorFile::readHeader));
+    // Perform the operation
+    p_future_watcher->setFuture(QtConcurrent::map(p_future_list, &DetectorFile::populateInterpolationTree));
+
+//    p_future_watcher->waitForFinished();
+
+//    qDebug() << p_test << 1679 * 1475;
 }
 
 void ImageOpenGLWidget::on_populateInterpolationTree_finished(QString file)
@@ -1485,6 +1529,7 @@ void ImageOpenGLWidget::on_populateInterpolationTree_finished(QString file)
     }
 
     ++p_n_returned_tasks;
+
 //    if (!kill_flag) emit progressChanged(++p_n_returned_tasks);
 //    if (!kill_flag) emit message(QString::number(++p_n_returned_tasks));
 //    qDebug() << QThreadPool::globalInstance()->activeThreadCount();
@@ -1496,17 +1541,17 @@ PopulateInterpolationTreeTask::PopulateInterpolationTreeTask(QString file) :
 
 }
 
-void PopulateInterpolationTreeTask::setMutex(QMutex * mutexy)
+void PopulateInterpolationTreeTask::setMutex(QMutex * mutex)
 {
-    this->mutex = mutexy;
+    this->p_mutex = mutex;
 }
 
 void PopulateInterpolationTreeTask::run()
 {
 //    qDebug() << QThreadPool::activeThreadCount();
     QTest::qSleep(100);
-    mutex->lock();
-    mutex->unlock();
+    p_mutex->lock();
+    p_mutex->unlock();
 
 //    emit test(*p_n_returned_tasks);
 
@@ -2796,52 +2841,52 @@ void ImageOpenGLWidget::initializeCL()
     context_cl.initSharedContext();
     context_cl.initCommandQueue();
 
-    imageWorker->setOpenCLContext(context_cl);
+//    imageWorker->setOpenCLContext(&context_cl);
 
     // Build programs from OpenCL kernel source
     QStringList paths;
     paths << "kernels/scattering_data_operations.cl";
     paths << "kernels/parallel_reduction.cl";
 
-    program = context_cl.createProgram(paths, &err);
+    context_cl.createProgram(paths, &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
+    context_cl.buildProgram("-Werror -cl-std=CL1.2");
 
     // Kernel handles
-    cl_data_to_image =  QOpenCLCreateKernel(program, "scatteringDataToImage", &err);
+    cl_data_to_image =  QOpenCLCreateKernel(context_cl.program(), "scatteringDataToImage", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_process_data =  QOpenCLCreateKernel(program, "processScatteringData", &err);
+    cl_process_data =  QOpenCLCreateKernel(context_cl.program(), "processScatteringData", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_project_data = QOpenCLCreateKernel(program, "projectScatteringData", &err);
+    cl_project_data = QOpenCLCreateKernel(context_cl.program(), "projectScatteringData", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-//    cl_rect_copy_float = QOpenCLCreateKernel(program, "rectCopyFloat", &err);
+//    cl_rect_copy_float = QOpenCLCreateKernel(context_cl.program(), "rectCopyFloat", &err);
 
 //    if ( err != CL_SUCCESS)
 //    {
 //        qFatal(cl_error_cstring(err));
 //    }
 
-    cl_parallel_reduction = QOpenCLCreateKernel(program, "parallelReduction", &err);
+    cl_parallel_reduction = QOpenCLCreateKernel(context_cl.program(), "parallelReduction", &err);
 
     if ( err != CL_SUCCESS)
     {

@@ -26,7 +26,7 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
     public:
         VolumeWorker();
         ~VolumeWorker();
-        void setOpenCLContext(OpenCLContext context);
+        void setOpenCLContext(OpenCLContextQueueProgram * context);
         void setKernel(cl_kernel kernel);
 
         void setCLObjects(cl_mem * pool,
@@ -66,13 +66,13 @@ class VolumeWorker : public QObject, protected OpenCLFunctions
         void weightpointResolved(double x, double y, double z);
 
     private:
-        OpenCLContext context_cl;
+        OpenCLContextQueueProgram * context_cl;
         cl_kernel p_line_integral_kernel, p_plane_integral_kernel, p_raytrace_kernel;
         cl_kernel p_weightpoint_kernel;
 
         void initializeOpenCLKernels();
         cl_int err;
-        cl_program program;
+//        cl_program program;
 
         cl_mem * p_pool;
         cl_sampler * p_pool_sampler;
@@ -288,7 +288,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         GLint std_3d_col_clip_plane5;
         QOpenGLShaderProgram * std_3d_col_program;
 
-        OpenCLContext context_cl;
+        OpenCLContextQueueProgram context_cl;
 
         void paintGL();
         void resizeGL(int w, int h);
@@ -501,7 +501,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
 
         // OpenCL
         cl_int err;
-        cl_program program;
+//        cl_program program;
         cl_kernel cl_svo_raytrace;
         cl_kernel cl_model_raytrace;
         cl_kernel cl_integrate_image;

@@ -8,13 +8,10 @@
 #include <QFile>
 #include <QByteArray>
 #include <QElapsedTimer>
+#include <QMutexLocker>
 
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <cstring>
-#include <fstream>
-#include <cmath>
+#include "math/rotationmatrix.h"
+
 #include <limits>
 
 QDebug operator<<(QDebug dbg, const DetectorFile &file)
@@ -27,6 +24,111 @@ DetectorFile::~DetectorFile()
 {
 
 }
+
+
+
+DetectorFile::DetectorFile() :
+    p_fast_dimension(0),
+    p_slow_dimension(0),
+    p_alpha(0.8735582),
+    p_beta(0.000891863),
+    p_is_data_read(false),
+    p_is_header_read(false),
+    p_max_counts(0)
+{
+
+}
+
+DetectorFile::DetectorFile(const DetectorFile &other) :
+    p_is_header_read(other.p_is_header_read),
+    p_is_data_read(other.p_is_data_read),
+    p_alpha(other.p_alpha),
+    p_beta(other.p_beta),
+    p_detector(other.p_detector),
+    p_pixel_size_x(other.p_pixel_size_x),
+    p_pixel_size_y(other.p_pixel_size_y),
+    p_exposure_time(other.p_exposure_time),
+    p_wavelength(other.p_wavelength),
+    p_detector_distance(other.p_detector_distance),
+    p_beam_center_x(other.p_beam_center_x),
+    p_beam_center_y(other.p_beam_center_y),
+    p_flux(other.p_flux),
+    p_start_angle(other.p_start_angle),
+    p_angle_increment(other.p_angle_increment),
+    p_kappa(other.p_kappa),
+    p_phi(other.p_phi),
+    p_omega(other.p_omega),
+    p_srchrad_sugg_low(other.p_srchrad_sugg_low),
+    p_srchrad_sugg_high(other.p_srchrad_sugg_high),
+    p_file_path(other.p_file_path),
+    p_file_name(other.p_file_name),
+    p_dir(other.p_dir),
+    p_fast_dimension(other.p_fast_dimension),
+    p_slow_dimension(other.p_slow_dimension),
+    p_data_buf(other.p_data_buf),
+    p_context_cl(other.p_context_cl),
+    p_area_selection(other.p_area_selection),
+    p_correction_args(other.p_correction_args),
+    p_test(other.p_test),
+    p_mutex(other.p_mutex)
+{
+}
+
+DetectorFile::DetectorFile(DetectorFile &&other) :
+    p_is_header_read(std::move(other.p_is_header_read)),
+    p_is_data_read(std::move(other.p_is_data_read)),
+    p_alpha(std::move(other.p_alpha)),
+    p_beta(std::move(other.p_beta)),
+    p_detector(std::move(other.p_detector)),
+    p_pixel_size_x(std::move(other.p_pixel_size_x)),
+    p_pixel_size_y(std::move(other.p_pixel_size_y)),
+    p_exposure_time(std::move(other.p_exposure_time)),
+    p_wavelength(std::move(other.p_wavelength)),
+    p_detector_distance(std::move(other.p_detector_distance)),
+    p_beam_center_x(std::move(other.p_beam_center_x)),
+    p_beam_center_y(std::move(other.p_beam_center_y)),
+    p_flux(std::move(other.p_flux)),
+    p_start_angle(std::move(other.p_start_angle)),
+    p_angle_increment(std::move(other.p_angle_increment)),
+    p_kappa(std::move(other.p_kappa)),
+    p_phi(std::move(other.p_phi)),
+    p_omega(std::move(other.p_omega)),
+    p_srchrad_sugg_low(std::move(other.p_srchrad_sugg_low)),
+    p_srchrad_sugg_high(std::move(other.p_srchrad_sugg_high)),
+    p_file_path(std::move(other.p_file_path)),
+    p_file_name(std::move(other.p_file_name)),
+    p_dir(std::move(other.p_dir)),
+    p_fast_dimension(std::move(other.p_fast_dimension)),
+    p_slow_dimension(std::move(other.p_slow_dimension)),
+    p_data_buf(std::move(other.p_data_buf)),
+    p_context_cl(std::move(other.p_context_cl)),
+    p_area_selection(std::move(other.p_area_selection)),
+    p_correction_args(std::move(other.p_correction_args)),
+    p_test(std::move(other.p_test)),
+    p_mutex(std::move(other.p_mutex))
+{
+}
+
+DetectorFile& DetectorFile::operator=(DetectorFile other)
+{
+    this->swap(other);
+    return *this;
+}
+
+
+
+DetectorFile::DetectorFile(QString path):
+    p_fast_dimension(0),
+    p_slow_dimension(0),
+    p_alpha(0.8735582),
+    p_beta(0.000891863),
+    p_is_data_read(false),
+    p_is_header_read(false),
+    p_max_counts(0)
+{
+    this->setPath(path);
+}
+
 
 void DetectorFile::swap(DetectorFile & other)
 {
@@ -55,8 +157,8 @@ void DetectorFile::swap(DetectorFile & other)
     std::swap(this->p_energy_range_high, other.p_energy_range_high);
     std::swap(this->p_detector_distance, other.p_detector_distance);
     std::swap(this->p_detector_voffset, other.p_detector_voffset);
-    std::swap(this->p_beam_x, other.p_beam_x);
-    std::swap(this->p_beam_y, other.p_beam_y);
+    std::swap(this->p_beam_center_x, other.p_beam_center_x);
+    std::swap(this->p_beam_center_y, other.p_beam_center_y);
     std::swap(this->p_flux, other.p_flux);
     std::swap(this->p_filter_transmission, other.p_filter_transmission);
     std::swap(this->p_start_angle, other.p_start_angle);
@@ -85,98 +187,12 @@ void DetectorFile::swap(DetectorFile & other)
     std::swap(this->p_fast_dimension, other.p_fast_dimension);
     std::swap(this->p_slow_dimension, other.p_slow_dimension);
     std::swap(this->p_data_buf, other.p_data_buf);
-}
 
-DetectorFile::DetectorFile() :
-    p_fast_dimension(0),
-    p_slow_dimension(0),
-    p_alpha(0.8735582),
-    p_beta(0.000891863),
-    p_is_data_read(false),
-    p_is_header_read(false),
-    p_max_counts(0)
-{
-
-}
-
-DetectorFile::DetectorFile(const DetectorFile &other) :
-    p_is_header_read(other.p_is_header_read),
-    p_is_data_read(other.p_is_data_read),
-    p_alpha(other.p_alpha),
-    p_beta(other.p_beta),
-    p_detector(other.p_detector),
-    p_pixel_size_x(other.p_pixel_size_x),
-    p_pixel_size_y(other.p_pixel_size_y),
-    p_exposure_time(other.p_exposure_time),
-    p_wavelength(other.p_wavelength),
-    p_detector_distance(other.p_detector_distance),
-    p_beam_x(other.p_beam_x),
-    p_beam_y(other.p_beam_y),
-    p_flux(other.p_flux),
-    p_start_angle(other.p_start_angle),
-    p_angle_increment(other.p_angle_increment),
-    p_kappa(other.p_kappa),
-    p_phi(other.p_phi),
-    p_omega(other.p_omega),
-    p_srchrad_sugg_low(other.p_srchrad_sugg_low),
-    p_srchrad_sugg_high(other.p_srchrad_sugg_high),
-    p_file_path(other.p_file_path),
-    p_file_name(other.p_file_name),
-    p_dir(other.p_dir),
-    p_fast_dimension(other.p_fast_dimension),
-    p_slow_dimension(other.p_slow_dimension),
-    p_data_buf(other.p_data_buf)
-{
-}
-
-DetectorFile::DetectorFile(DetectorFile &&other) :
-    p_is_header_read(std::move(other.p_is_header_read)),
-    p_is_data_read(std::move(other.p_is_data_read)),
-    p_alpha(std::move(other.p_alpha)),
-    p_beta(std::move(other.p_beta)),
-    p_detector(std::move(other.p_detector)),
-    p_pixel_size_x(std::move(other.p_pixel_size_x)),
-    p_pixel_size_y(std::move(other.p_pixel_size_y)),
-    p_exposure_time(std::move(other.p_exposure_time)),
-    p_wavelength(std::move(other.p_wavelength)),
-    p_detector_distance(std::move(other.p_detector_distance)),
-    p_beam_x(std::move(other.p_beam_x)),
-    p_beam_y(std::move(other.p_beam_y)),
-    p_flux(std::move(other.p_flux)),
-    p_start_angle(std::move(other.p_start_angle)),
-    p_angle_increment(std::move(other.p_angle_increment)),
-    p_kappa(std::move(other.p_kappa)),
-    p_phi(std::move(other.p_phi)),
-    p_omega(std::move(other.p_omega)),
-    p_srchrad_sugg_low(std::move(other.p_srchrad_sugg_low)),
-    p_srchrad_sugg_high(std::move(other.p_srchrad_sugg_high)),
-    p_file_path(std::move(other.p_file_path)),
-    p_file_name(std::move(other.p_file_name)),
-    p_dir(std::move(other.p_dir)),
-    p_fast_dimension(std::move(other.p_fast_dimension)),
-    p_slow_dimension(std::move(other.p_slow_dimension)),
-    p_data_buf(std::move(other.p_data_buf))
-{
-}
-
-DetectorFile& DetectorFile::operator=(DetectorFile other)
-{
-    this->swap(other);
-    return *this;
-}
-
-
-
-DetectorFile::DetectorFile(QString path):
-    p_fast_dimension(0),
-    p_slow_dimension(0),
-    p_alpha(0.8735582),
-    p_beta(0.000891863),
-    p_is_data_read(false),
-    p_is_header_read(false),
-    p_max_counts(0)
-{
-    this->setPath(path);
+    std::swap(this->p_context_cl, other.p_context_cl);
+    std::swap(this->p_area_selection, other.p_area_selection);
+    std::swap(this->p_correction_args, other.p_correction_args);
+    std::swap(this->p_test, other.p_test);
+    std::swap(this->p_mutex, other.p_mutex);
 }
 
 QString DetectorFile::detector() const
@@ -218,6 +234,31 @@ void DetectorFile::setPath(QString path)
         p_file_path = info.filePath();
         p_file_name = info.fileName();
     }
+}
+
+void DetectorFile::setSubImage(Selection & area)
+{
+    p_area_selection = area;
+}
+
+void DetectorFile::setCorrectionArgs(DataCorrectionArgs & args)
+{
+    p_correction_args = args;
+}
+
+void DetectorFile::setCLContext(OpenCLContextQueueProgram * context)
+{
+    p_context_cl = context;
+}
+
+void DetectorFile::setInterpolationTree(long * test)
+{
+    p_test = test;
+}
+
+void DetectorFile::setMutex(QMutex * mutex)
+{
+    p_mutex = mutex;
 }
 
 float DetectorFile::getSearchRadiusLowSuggestion() const
@@ -374,8 +415,8 @@ int DetectorFile::readHeader()
     p_exposure_time = regExp(reqExpTime, header, 0, 1).toFloat();
     p_wavelength = regExp(optExpWl, header, 0, 1).toFloat();
     p_detector_distance = regExp(optExpDd, header, 0, 1).toFloat();
-    p_beam_x = regExp(optExpBeamx, header, 0, 1).toFloat();
-    p_beam_y = regExp(optExpBeamy, header, 0, 1).toFloat();
+    p_beam_center_x = regExp(optExpBeamx, header, 0, 1).toFloat();
+    p_beam_center_y = regExp(optExpBeamy, header, 0, 1).toFloat();
     p_flux = regExp(optExpFlux, header, 0, 1).toFloat();
     p_start_angle = regExp(optExpStAng, header, 0, 1).toFloat() * pi / 180.0;
     p_angle_increment = regExp(optExpAngInc, header, 0, 1).toFloat() * pi / 180.0;
@@ -453,6 +494,11 @@ int DetectorFile::readHeader()
 
     this->setSearchRadiusHint();
 
+    if (p_area_selection.width() < 0) p_area_selection.setWidth(0);
+    if (p_area_selection.width() > p_fast_dimension) p_area_selection.setWidth(p_fast_dimension);
+    if (p_area_selection.height() < 0) p_area_selection.setHeight(0);
+    if (p_area_selection.height() > p_slow_dimension) p_area_selection.setHeight(p_slow_dimension);
+
     p_is_header_read = true;
     return p_is_header_read;
 }
@@ -507,7 +553,7 @@ QString DetectorFile::info()
     str +="# Count cutoff: " + QString::number(p_count_cutoff) + "\n";
     str +="# Wavelength: " + QString::number(p_wavelength) + "\n";
     str +="# Detector distance: " + QString::number(p_detector_distance) + "\n";
-    str +="# Beam position: " + QString::number(p_beam_x) + " x " + QString::number(p_beam_y) + "\n";
+    str +="# Beam position: " + QString::number(p_beam_center_x) + " x " + QString::number(p_beam_center_y) + "\n";
     str +="# Flux: " + QString::number(p_flux) + "\n";
     str +="# Start angle: " + QString::number(p_start_angle) + "\n";
     str +="# Angle increment: " + QString::number(p_angle_increment) + "\n";
@@ -529,11 +575,11 @@ float DetectorFile::detectorDist() const
 
 float DetectorFile::beamX() const
 {
-    return p_beam_x;
+    return p_beam_center_x;
 }
 float DetectorFile::beamY() const
 {
-    return p_beam_y;
+    return p_beam_center_y;
 }
 float DetectorFile::pixSizeX() const
 {
@@ -636,6 +682,275 @@ int DetectorFile::readBody()
     return p_is_data_read;
 }
 
+void DetectorFile::populateInterpolationTree()
+{
+    // Read header and body
+    readHeader();
+    readBody();
+
+    // Load OpenCL dynamically
+    initializeOpenCLFunctions();
+
+    cl_kernel cl_correct_data =  QOpenCLCreateKernel(p_context_cl->program(), "correctScatteringData", &err);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    cl_kernel cl_project_data = QOpenCLCreateKernel(p_context_cl->program(), "projectScatteringData", &err);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Data correction from here on
+    cl_mem raw_data_cl =  QOpenCLCreateBuffer( p_context_cl->context(),
+                         CL_MEM_COPY_HOST_PTR,
+                         p_fast_dimension * p_slow_dimension * sizeof(cl_float),
+                         p_data_buf.data(),
+                         &err);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    cl_mem corrected_data_cl =  QOpenCLCreateBuffer( p_context_cl->context(),
+                               CL_MEM_ALLOC_HOST_PTR,
+                               p_fast_dimension * p_slow_dimension * sizeof(cl_float),
+                               NULL,
+                               &err);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Prepare kernel parameters
+    Matrix<int> image_size(1, 2);
+    image_size[0] = p_fast_dimension;
+    image_size[1] = p_slow_dimension;
+
+    Matrix<size_t> local_ws(1, 2);
+    local_ws[0] = 64;
+    local_ws[1] = 1;
+
+    Matrix<size_t> global_ws(1, 2);
+    global_ws[0] = p_fast_dimension + (local_ws[0] - p_fast_dimension % local_ws[0]);
+    global_ws[1] = p_slow_dimension + (local_ws[1] - p_slow_dimension % local_ws[1]);
+
+//    qDebug() << p_correction_args.lorentz_correction << p_correction_args.flat_background_correction << p_correction_args.planar_background_correction << p_correction_args.polarization_correction;
+//    qDebug() << p_correction_args.flux_correction << p_correction_args.exposure_time_correction << p_correction_args.pixel_projection_correction << p_beam_center_x << p_beam_center_y << p_correction_args.noise_low << p_correction_args.noise_high;
+
+    // Set kernel parameters
+    err =   QOpenCLSetKernelArg(cl_correct_data,  0, sizeof(cl_mem), (void *) &raw_data_cl);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 1, sizeof(cl_mem), (void *) &corrected_data_cl);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 2, sizeof(cl_int2), image_size.data());
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 3, sizeof(cl_int), &p_correction_args.lorentz_correction);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 4, sizeof(cl_int), &p_correction_args.flat_background_correction);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 5, sizeof(cl_int), &p_correction_args.planar_background_correction);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 6, sizeof(cl_int), &p_correction_args.polarization_correction);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 7, sizeof(cl_int), &p_correction_args.flux_correction);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 8, sizeof(cl_int), &p_correction_args.exposure_time_correction);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 9, sizeof(cl_int), &p_correction_args.pixel_projection_correction);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 10, sizeof(cl_float), &p_detector_distance);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 11, sizeof(cl_float), &p_beam_center_x);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 12, sizeof(cl_float), &p_beam_center_y);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 13, sizeof(cl_float), &p_pixel_size_x);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 14, sizeof(cl_float), &p_pixel_size_y);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 15, sizeof(cl_float), &p_wavelength);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 16, sizeof(cl_float), &p_flux);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 17, sizeof(cl_float), &p_exposure_time);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 18, sizeof(cl_float), &p_correction_args.noise_low);
+    err |=   QOpenCLSetKernelArg(cl_correct_data, 19, sizeof(cl_float), &p_correction_args.noise_high);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Launch the kernel
+    err =   QOpenCLEnqueueNDRangeKernel(p_context_cl->queue(), cl_correct_data, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err =   QOpenCLFinish(p_context_cl->queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLReleaseKernel(cl_correct_data);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLReleaseMemObject(raw_data_cl);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Ewald projection from here on
+    cl_mem projected_data_cl = QOpenCLCreateBuffer( p_context_cl->context(),
+                                                 CL_MEM_ALLOC_HOST_PTR,
+                                                 p_fast_dimension * p_slow_dimension * sizeof(cl_float4),
+                                                 NULL,
+                                                 &err);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
+    RotationMatrix<double> PHI;
+    RotationMatrix<double> KAPPA;
+    RotationMatrix<double> OMEGA;
+
+    PHI.setArbRotation(p_beta, 0, -(p_phi + p_offset_phi));
+    KAPPA.setArbRotation(p_alpha, 0, -(p_kappa + p_offset_kappa));
+    OMEGA.setZRotation(-(p_omega + p_offset_omega));
+
+    // The sample rotation matrix. Some rotations perturb the other rotation axes, and in the above calculations for phi, kappa, and omega we use fixed axes. It is therefore neccessary to put a rotation axis back into its basic position before the matrix is applied. In our case omega perturbs kappa and phi, and kappa perturbs phi. Thus we must first rotate omega back into the base position to recover the base rotation axis of kappa. Then we recover the base rotation axis for phi in the same manner. The order of matrix operations thus becomes:
+    RotationMatrix<double> sampleRotMat;
+    sampleRotMat = PHI * KAPPA * OMEGA;
+
+    cl_mem sample_rotation_matrix_cl = QOpenCLCreateBuffer(p_context_cl->context(),
+                                       CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                       sampleRotMat.toFloat().bytes(),
+                                       sampleRotMat.toFloat().data(),
+                                       &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+//    qDebug() << p_pixel_size_x << p_pixel_size_y << p_wavelength << p_detector_distance << p_beam_center_x << p_beam_center_y << p_start_angle << p_angle_increment << p_kappa << p_phi << p_omega;
+
+    // Set kernel arguments
+    err  = QOpenCLSetKernelArg(cl_project_data, 0, sizeof(cl_mem), (void *) &projected_data_cl);
+    err |= QOpenCLSetKernelArg(cl_project_data, 1, sizeof(cl_mem), (void *) &corrected_data_cl);
+    err |= QOpenCLSetKernelArg(cl_project_data, 2, sizeof(cl_mem), (void *) &sample_rotation_matrix_cl);
+    err |= QOpenCLSetKernelArg(cl_project_data, 3, sizeof(cl_float), &p_pixel_size_x);
+    err |= QOpenCLSetKernelArg(cl_project_data, 4, sizeof(cl_float), &p_pixel_size_y);
+    err |= QOpenCLSetKernelArg(cl_project_data, 5, sizeof(cl_float), &p_wavelength);
+    err |= QOpenCLSetKernelArg(cl_project_data, 6, sizeof(cl_float), &p_detector_distance);
+    err |= QOpenCLSetKernelArg(cl_project_data, 7, sizeof(cl_float), &p_beam_center_x);
+    err |= QOpenCLSetKernelArg(cl_project_data, 8, sizeof(cl_float), &p_beam_center_y);
+    err |= QOpenCLSetKernelArg(cl_project_data, 9, sizeof(cl_float), &p_start_angle);
+    err |= QOpenCLSetKernelArg(cl_project_data, 10, sizeof(cl_float), &p_angle_increment);
+    err |= QOpenCLSetKernelArg(cl_project_data, 11, sizeof(cl_float), &p_kappa);
+    err |= QOpenCLSetKernelArg(cl_project_data, 12, sizeof(cl_float), &p_phi);
+    err |= QOpenCLSetKernelArg(cl_project_data, 13, sizeof(cl_float), &p_omega);
+    err |= QOpenCLSetKernelArg(cl_project_data, 14, sizeof(cl_int4), p_area_selection.lrtb().data());
+    err |= QOpenCLSetKernelArg(cl_project_data, 15, sizeof(cl_int2), image_size.data());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Launch kernel
+    err = QOpenCLEnqueueNDRangeKernel(p_context_cl->queue(), cl_project_data, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    QOpenCLFinish(p_context_cl->queue());
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Retrieve result
+    Matrix<size_t> host_origin(1, 3, 0);
+
+    Matrix<size_t> buffer_origin(1,3);
+    buffer_origin[0] = p_area_selection.left()*sizeof(cl_float4); // In bytes
+    buffer_origin[1] = p_area_selection.top(); // In elements
+    buffer_origin[2] = 0;
+
+    Matrix<size_t> region(1,3);
+    region[0] = p_area_selection.width()*sizeof(cl_float4);
+    region[1] = p_area_selection.height();
+    region[2] = 1;
+
+    Matrix<float> finalized_data(p_area_selection.height(), p_area_selection.width() * 4);
+//    buffer_origin.print();
+//    host_origin.print();
+//    region.print();
+
+//    qDebug() << p_fast_dimension << p_slow_dimension << p_area_selection.width() << p_area_selection.height();
+//    qDebug() << p_area_selection;
+
+    err =   QOpenCLEnqueueReadBufferRect ( p_context_cl->queue(), // Bytes vs elements
+                                           projected_data_cl,
+                                           CL_TRUE,
+                                           buffer_origin.data(),
+                                           host_origin.data(),
+                                           region.data(),
+                                           p_fast_dimension * sizeof(cl_float4),
+                                           p_fast_dimension * p_slow_dimension * sizeof(cl_float4),
+                                           p_area_selection.width() * sizeof(cl_float4),
+                                           p_area_selection.width() * p_area_selection.height() * sizeof(cl_float4),
+                                           finalized_data.data(),
+                                           0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+//    err =   QOpenCLFinish(p_context_cl->queue()); // Should only be needed for non blocking reads
+
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
+
+    err = QOpenCLReleaseKernel(cl_project_data);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLReleaseMemObject(corrected_data_cl);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLReleaseMemObject(projected_data_cl);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    err = QOpenCLReleaseMemObject(sample_rotation_matrix_cl);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    QMutexLocker locker(p_mutex);
+
+    for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
+    {
+//        if (finalized_data[i * 4 + 3] > 0.0) // Above 0 check
+//        {
+            (*p_test)++;
+//        }
+    }
+
+//    (*p_test)++;
+}
+
+
 //void DetectorFile::test()
 //{
 //    this->data_buf.resize(10);
@@ -660,8 +975,8 @@ void DetectorFile::setSearchRadiusHint()
         float xyz_a[3] =
         {
             (float)(-p_detector_distance),
-            (float)(((y_config[i] - 0.5) - p_beam_x) * p_pixel_size_x),
-            (float)(((z_config[i] - 0.5) - p_beam_y) * p_pixel_size_y)
+            (float)(((y_config[i] - 0.5) - p_beam_center_x) * p_pixel_size_x),
+            (float)(((z_config[i] - 0.5) - p_beam_center_y) * p_pixel_size_y)
         };
 
         float len_xyz_a = sqrt(xyz_a[0] * xyz_a[0] + xyz_a[1] * xyz_a[1] + xyz_a[2] * xyz_a[2]);
@@ -673,8 +988,8 @@ void DetectorFile::setSearchRadiusHint()
         float xyz_b[3] =
         {
             (float)(-p_detector_distance),
-            (float)(((y_config[i] + 0.5) - p_beam_x) * p_pixel_size_y),
-            (float)(((z_config[i] + 0.5) - p_beam_y) * p_pixel_size_x)
+            (float)(((y_config[i] + 0.5) - p_beam_center_x) * p_pixel_size_y),
+            (float)(((z_config[i] + 0.5) - p_beam_center_y) * p_pixel_size_x)
         };
 
         float len_xyz_b = sqrt(xyz_b[0] * xyz_b[0] + xyz_b[1] * xyz_b[1] + xyz_b[2] * xyz_b[2]);

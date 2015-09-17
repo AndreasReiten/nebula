@@ -42,7 +42,7 @@ VolumeWorker::~VolumeWorker()
 
 }
 
-void VolumeWorker::setOpenCLContext(OpenCLContext context)
+void VolumeWorker::setOpenCLContext(OpenCLContextQueueProgram *context)
 {
     context_cl = context;
 
@@ -52,36 +52,34 @@ void VolumeWorker::setOpenCLContext(OpenCLContext context)
 void VolumeWorker::initializeOpenCLKernels()
 {
     // Build programs from OpenCL kernel source
-    QStringList paths;
-    paths << "kernels/integrate_line.cl";
-    paths << "kernels/integrate_plane.cl";
-    paths << "kernels/weightpoint.cl";
+//    QStringList paths;
 
-    program = context_cl.createProgram(paths, &err);
 
-    if ( err != CL_SUCCESS)
-    {
-        qFatal(cl_error_cstring(err));
-    }
+//    context_cl->createProgram(paths, &err);
 
-    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
+//    if ( err != CL_SUCCESS)
+//    {
+//        qFatal(cl_error_cstring(err));
+//    }
+
+//    context_cl->buildProgram("-Werror -cl-std=CL1.2");
 
     // Kernel handles
-    p_line_integral_kernel =  QOpenCLCreateKernel(program, "integrateLine", &err);
+    p_line_integral_kernel =  QOpenCLCreateKernel(context_cl->program(), "integrateLine", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    p_plane_integral_kernel =  QOpenCLCreateKernel(program, "integratePlane", &err);
+    p_plane_integral_kernel =  QOpenCLCreateKernel(context_cl->program(), "integratePlane", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    p_weightpoint_kernel =  QOpenCLCreateKernel(program, "weightpointVolumetric", &err);
+    p_weightpoint_kernel =  QOpenCLCreateKernel(context_cl->program(), "weightpointVolumetric", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -195,7 +193,7 @@ void VolumeWorker::raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws
             call_offset[0] = glb_x;
             call_offset[1] = glb_y;
 
-            err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_raytrace_kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
+            err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), p_raytrace_kernel, 2, call_offset.data(), area_per_call.data(), ray_loc_ws.data(), 0, NULL, NULL);
 
             if ( err != CL_SUCCESS)
             {
@@ -204,7 +202,7 @@ void VolumeWorker::raytrace(Matrix<size_t> ray_glb_ws, Matrix<size_t> ray_loc_ws
         }
     }
 
-    err = QOpenCLFinish(context_cl.queue());
+    err = QOpenCLFinish(context_cl->queue());
 
     if ( err != CL_SUCCESS)
     {
@@ -255,7 +253,7 @@ void VolumeWorker::resolveWeightpoint()
 
     Matrix<float> result(1, 4 * (glb_ws[0] / loc_ws[0]) * (glb_ws[1] / loc_ws[1]) * (glb_ws[2] / loc_ws[2]));
 
-    cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
+    cl_mem result_cl = QOpenCLCreateBuffer(context_cl->context(),
                                            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
                                            result.bytes(),
                                            result.data(), &err);
@@ -281,21 +279,21 @@ void VolumeWorker::resolveWeightpoint()
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_weightpoint_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+    err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), p_weightpoint_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLFinish(context_cl.queue());
+    err = QOpenCLFinish(context_cl->queue());
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLEnqueueReadBuffer ( context_cl.queue(),
+    err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
                                      result_cl,
                                      CL_TRUE,
                                      0,
@@ -379,7 +377,7 @@ void VolumeWorker::resolveLineIntegral(Line line)
 
     p_line_data_y.set(1, samples[2]);
 
-    cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
+    cl_mem result_cl = QOpenCLCreateBuffer(context_cl->context(),
                                            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                                            p_line_data_y.bytes(),
                                            p_line_data_y.data(), &err);
@@ -420,21 +418,21 @@ void VolumeWorker::resolveLineIntegral(Line line)
 
 
 
-    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_line_integral_kernel, 2, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+    err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), p_line_integral_kernel, 2, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLFinish(context_cl.queue());
+    err = QOpenCLFinish(context_cl->queue());
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLEnqueueReadBuffer ( context_cl.queue(),
+    err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
                                      result_cl,
                                      CL_TRUE,
                                      0,
@@ -517,7 +515,7 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
 
     p_surface_data.set(samples[0], samples[1]);
 
-    cl_mem result_cl = QOpenCLCreateBuffer(context_cl.context(),
+    cl_mem result_cl = QOpenCLCreateBuffer(context_cl->context(),
                                            CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
                                            p_surface_data.bytes(),
                                            p_surface_data.data(), &err);
@@ -547,7 +545,7 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLEnqueueNDRangeKernel(context_cl.queue(), p_plane_integral_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
+    err = QOpenCLEnqueueNDRangeKernel(context_cl->queue(), p_plane_integral_kernel, 3, NULL, glb_ws.data(), loc_ws.data(), 0, NULL, NULL);
 
 
 
@@ -556,14 +554,14 @@ void VolumeWorker::resolvePlaneIntegral(Line line)
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLFinish(context_cl.queue());
+    err = QOpenCLFinish(context_cl->queue());
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    err = QOpenCLEnqueueReadBuffer ( context_cl.queue(),
+    err = QOpenCLEnqueueReadBuffer ( context_cl->queue(),
                                      result_cl,
                                      CL_TRUE,
                                      0,
@@ -2716,8 +2714,6 @@ void VolumeOpenGLWidget::initializeCL()
     context_cl.initSharedContext();
     context_cl.initCommandQueue();
 
-    volumeWorker->setOpenCLContext(context_cl);
-
     // Build program from OpenCL kernel source
     QStringList paths;
     paths << "kernels/models.cl";
@@ -2727,47 +2723,50 @@ void VolumeOpenGLWidget::initializeCL()
     paths << "kernels/integrate_image.cl";
     paths << "kernels/volume_sampler.cl";
     paths << "kernels/parallel_reduction.cl";
+    paths << "kernels/integrate_line.cl";
+    paths << "kernels/integrate_plane.cl";
+    paths << "kernels/weightpoint.cl";
 
-    program = context_cl.createProgram(paths, &err);
+    context_cl.createProgram(paths, &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
+    context_cl.buildProgram("-Werror -cl-std=CL1.2");
 
 
     // Kernel handles
-    cl_svo_raytrace = QOpenCLCreateKernel(program, "svoRayTrace", &err);
+    cl_svo_raytrace = QOpenCLCreateKernel(context_cl.program(), "svoRayTrace", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_model_raytrace = QOpenCLCreateKernel(program, "modelRayTrace", &err);
+    cl_model_raytrace = QOpenCLCreateKernel(context_cl.program(), "modelRayTrace", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_integrate_image = QOpenCLCreateKernel(program, "integrateImage", &err);
+    cl_integrate_image = QOpenCLCreateKernel(context_cl.program(), "integrateImage", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_box_sampler = QOpenCLCreateKernel(program, "sampleScatteringVolume", &err);
+    cl_box_sampler = QOpenCLCreateKernel(context_cl.program(), "sampleScatteringVolume", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    cl_parallel_reduce = QOpenCLCreateKernel(program, "parallelReduction", &err);
+    cl_parallel_reduce = QOpenCLCreateKernel(context_cl.program(), "parallelReduction", &err);
 
     if ( err != CL_SUCCESS)
     {
@@ -2869,6 +2868,8 @@ void VolumeOpenGLWidget::initializeCL()
         qFatal(cl_error_cstring(err));
     }
 
+
+    volumeWorker->setOpenCLContext(&context_cl);
 //    cl_oct_index_const = QOpenCLCreateBuffer(context_cl.context(),
 //                          CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
 //                          (1 + 8 + 8*8)* sizeof(cl_uint),

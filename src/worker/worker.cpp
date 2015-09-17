@@ -148,25 +148,25 @@ void VoxelizeWorker::initializeCLKernel()
     QStringList paths;
     paths << "kernels/voxelize.cl";
 
-    program = context_cl.createProgram(paths, &err);
+    context_cl.createProgram(paths, &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    context_cl.buildProgram(program, "-Werror -cl-std=CL1.2");
+    context_cl.buildProgram("-Werror -cl-std=CL1.2");
 
 
     // Kernel handles
-    voxelize_kernel = QOpenCLCreateKernel(program, "voxelize", &err);
+    voxelize_kernel = QOpenCLCreateKernel(context_cl.program(), "voxelize", &err);
 
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
     }
 
-    fill_kernel = QOpenCLCreateKernel(program, "fill", &err);
+    fill_kernel = QOpenCLCreateKernel(context_cl.program(), "fill", &err);
 
     if ( err != CL_SUCCESS)
     {

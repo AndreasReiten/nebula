@@ -244,6 +244,12 @@ class OpenCLFunctions
                                                     const cl_event *event_wait_list,
                                                     cl_event *event);
 
+        typedef cl_int (*PROTOTYPE_QOpenCLReleaseContext) ( cl_context context);
+
+        typedef cl_int (*PROTOTYPE_QOpenCLReleaseProgram) ( cl_program program);
+
+        PROTOTYPE_QOpenCLReleaseContext QOpenCLReleaseContext;
+        PROTOTYPE_QOpenCLReleaseProgram QOpenCLReleaseProgram;
         PROTOTYPE_QOpenCLGetProgramBuildInfo QOpenCLGetProgramBuildInfo;
         PROTOTYPE_QOpenCLCreateContext QOpenCLCreateContext;
         PROTOTYPE_QOpenCLCreateCommandQueue QOpenCLCreateCommandQueue;
@@ -276,20 +282,23 @@ class OpenCLFunctions
         PROTOTYPE_QOpenCLEnqueueCopyBufferRect QOpenCLEnqueueCopyBufferRect;
 };
 
-class OpenCLContext : protected OpenCLFunctions
+class OpenCLContextQueueProgram : protected OpenCLFunctions
 {
     public:
-        OpenCLContext();
-        ~OpenCLContext();
+        OpenCLContextQueueProgram();
+        ~OpenCLContextQueueProgram();
         void initDevices();
         void initSharedContext();
         void initNormalContext();
         void initCommandQueue();
         cl_command_queue queue();
         cl_context context();
+        cl_program program();
 
-        cl_program createProgram(QStringList paths, cl_int * err);
-        void buildProgram(cl_program program, QString options);
+        bool isProgramBuilt();
+
+        void createProgram(QStringList paths, cl_int * err);
+        void buildProgram(QString options);
 
         QString cl_easy_context_info(cl_context context);
         QString cl_easy_device_info(cl_device_id device);
@@ -299,11 +308,13 @@ class OpenCLContext : protected OpenCLFunctions
         cl_platform_id platform[64];
         cl_device_id device[64];
 
-        cl_program program;
+        cl_program p_program;
 
         cl_command_queue p_queue;
         cl_context p_context;
         cl_int err;
+
+        bool is_program_built;
 };
 
 #endif // CONTEXTCL_H

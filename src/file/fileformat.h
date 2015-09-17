@@ -4,10 +4,28 @@
 #include <QSizeF>
 #include <QVector>
 #include <QString>
+#include <QMutex>
+#include <CL/opencl.h>
 
 #include "../math/matrix.h"
+#include "../opencl/contextcl.h"
+#include "../file/selection.h"
 
-class DetectorFile
+struct DataCorrectionArgs
+{
+    int lorentz_correction;
+    int flat_background_correction;
+    int planar_background_correction;
+    int polarization_correction;
+    int flux_correction;
+    int exposure_time_correction;
+    int pixel_projection_correction;
+
+    float noise_low;
+    float noise_high;
+};
+
+class DetectorFile: protected OpenCLFunctions
 {
 public:
     DetectorFile();
@@ -24,9 +42,17 @@ public:
     QString detector() const;
 
     void setPath(QString p_file_path);
+    void setSubImage(Selection & area);
+    void setCorrectionArgs(DataCorrectionArgs & args);
+    void setCLContext(OpenCLContextQueueProgram * context);
+    void setInterpolationTree(long *test);
+    void setMutex(QMutex * mutex);
 
     int readBody();
     int readHeader();
+
+    void populateInterpolationTree();
+
     bool isValid();
     bool isDataRead();
     bool isHeaderRead();
@@ -82,7 +108,7 @@ private:
     int p_energy_range_low, p_energy_range_high;
     float p_detector_distance;
     float p_detector_voffset;
-    float p_beam_x, p_beam_y;
+    float p_beam_center_x, p_beam_center_y;
     float p_flux;
     float p_filter_transmission;
     float p_start_angle;
@@ -102,6 +128,9 @@ private:
     float p_backgroundExpTime;
     float p_beta;
     float p_max_counts;
+    float p_offset_phi;
+    float p_offset_kappa;
+    float p_offset_omega;
     bool p_is_header_read;
     bool p_is_data_read;
     float p_srchrad_sugg_low, p_srchrad_sugg_high;
@@ -111,10 +140,18 @@ private:
     size_t p_fast_dimension, p_slow_dimension;
     QVector<float> p_data_buf;
 
+    OpenCLContextQueueProgram * p_context_cl;
+    Selection p_area_selection;
+    DataCorrectionArgs p_correction_args;
+    QMutex * p_mutex;
+    long * p_test;
+
     // Misc
     void swap(DetectorFile & other);
     void setSearchRadiusHint();
     QString regExp(QString & str, QString & source, size_t offset, size_t i);
+
+    cl_int err;
 };
 
 Q_DECLARE_METATYPE(DetectorFile);

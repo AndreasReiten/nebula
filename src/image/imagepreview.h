@@ -22,6 +22,7 @@
 #include <QRunnable>
 #include <QtConcurrent>
 #include <QFutureWatcher>
+#include <QMutex>
 
 
 #include "../misc/transferfunction.h"
@@ -53,7 +54,7 @@ protected:
 private:
     QString p_file;
 //    int * p_n_returned_tasks;
-    QMutex * mutex;
+    QMutex * p_mutex;
 };
 
 class ImageWorker : public QObject, protected OpenCLFunctions
@@ -63,7 +64,7 @@ class ImageWorker : public QObject, protected OpenCLFunctions
     public:
         ImageWorker();
         ~ImageWorker();
-        void setOpenCLContext(OpenCLContext context);
+//        void setOpenCLContext(OpenCLContextQueueProgram *context);
         void setTraceContainer(QList<Matrix<float>> * list);
 
     public slots:
@@ -78,14 +79,14 @@ class ImageWorker : public QObject, protected OpenCLFunctions
         void progressChanged(int);
 
     private:
-        OpenCLContext context_cl;
+        OpenCLContextQueueProgram context_cl;
         cl_kernel cl_buffer_max;
         QList<Matrix<float>> * traces;
 
 
         void initializeOpenCLKernels();
         cl_int err;
-        cl_program program;
+//        cl_program program;
 };
 
 class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, protected OpenCLFunctions
@@ -236,7 +237,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         GLint std_2d_col_fragpos;
         QOpenGLShaderProgram * std_2d_col_program;
 
-        OpenCLContext context_cl;
+        OpenCLContextQueueProgram context_cl;
 
         void paintGL();
         void resizeGL(int w, int h);
@@ -294,7 +295,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         size_t n_reduced_pixels;
 
         cl_int err;
-        cl_program program;
+//        cl_program program;
         cl_kernel cl_data_to_image;
         cl_kernel cl_process_data;
         cl_kernel cl_buffer_max;
@@ -396,6 +397,10 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         QList<DetectorFile> p_future_list;
         QFutureWatcher<void> * p_future_watcher;
+        QMutex p_mutex;
+
+
+        long p_test;
 };
 
 #endif // IMAGEPREVIEW_H

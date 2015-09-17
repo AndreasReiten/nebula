@@ -50,9 +50,9 @@ class BaseWorker : public QObject, protected OpenCLFunctions
         bool kill_flag;
 
         // OpenCL
-        OpenCLContext context_cl;
+        OpenCLContextQueueProgram context_cl;
         cl_int err;
-        cl_program program;
+//        cl_program program;
         bool isCLInitialized;
 
         // Voxelize
