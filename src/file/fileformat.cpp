@@ -537,6 +537,7 @@ QString DetectorFile::regExp(QString &str, QString &source, size_t offset, size_
 void DetectorFile::clearData()
 {
     p_data_buf.clear();
+    p_is_data_read = false;
 }
 
 QString DetectorFile::info()
@@ -714,6 +715,15 @@ void DetectorFile::populateInterpolationTree()
     {
         qFatal(cl_error_cstring(err));
     }
+
+    err =   QOpenCLFinish(p_context_cl->queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    clearData();
 
     cl_mem corrected_data_cl =  QOpenCLCreateBuffer( p_context_cl->context(),
                                CL_MEM_ALLOC_HOST_PTR,
@@ -942,6 +952,8 @@ void DetectorFile::populateInterpolationTree()
     for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
     {
         xyzw32 data_point = {finalized_data[i * 4 + 0], finalized_data[i * 4 + 1], finalized_data[i * 4 + 2], finalized_data[i * 4 + 3]};
+
+//        qDebug() << data_point.x << data_point.y << data_point.z << data_point.w;
         if (data_point.w > 0.0) // Above 0 check
         {
             p_interpolation_octree->insert(data_point);

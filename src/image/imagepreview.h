@@ -318,6 +318,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool isSetTraced;
         bool isEwaldCircleActive;
         bool isImageTooltipActive;
+        bool is_populateInterpolationTree_canceled;
 
         int texture_number;
 

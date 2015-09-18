@@ -71,6 +71,8 @@ private slots:
     void on_addFilesButton_clicked();
     void querySelectionModel(QString str);
 
+    void on_pushButton_clicked();
+
 private:
     Ui::ReconstructionWidget *p_ui;
 

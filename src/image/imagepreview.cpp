@@ -195,7 +195,8 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     isCorrectionExposureActive(0),
     isCorrectionPixelProjectionActive(0),
     isEwaldCircleActive(false),
-    isImageTooltipActive(true)
+    isImageTooltipActive(true),
+    is_populateInterpolationTree_canceled(false)
 {
     progressPollTimer = new QTimer;
     progressPollTimer->setInterval(100);
@@ -1198,11 +1199,14 @@ void ImageOpenGLWidget::populateInterpolationTreeMap()
 
 void ImageOpenGLWidget::on_populateInterpolationTree_finished()
 {
+    if (is_populateInterpolationTree_canceled) p_interpolation_octree.clear();
     p_future_list.clear();
+    is_populateInterpolationTree_canceled = false;
 }
 
 void ImageOpenGLWidget::on_populateInterpolationTree_canceled()
 {
+    is_populateInterpolationTree_canceled = true;
     emit message("Canceled operation");
 }
 

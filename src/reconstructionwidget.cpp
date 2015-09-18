@@ -595,3 +595,59 @@ void ReconstructionWidget::on_addFilesButton_clicked()
 
     p_ui->fileSqlView->resizeColumnsToContents();
 }
+
+void ReconstructionWidget::on_pushButton_clicked()
+{
+    QElapsedTimer t;
+
+    int ins = 42;
+
+    size_t size = 1000000;
+
+    QVector<int> vec;
+    QList<int> list;
+    QVector<int> vec_res;
+    vec_res.reserve(size);
+    std::vector<int> stdvec;
+    std::vector<int> stdvec_res;
+    stdvec_res.reserve(size);
+
+    t.start();
+
+    for (int i = 0; i < size; i++)
+    {
+        vec << ins;
+    }
+    qDebug() << "Vec" << t.elapsed();
+
+    t.restart();
+    for (int i = 0; i < size; i++)
+    {
+        vec_res << ins;
+    }
+    qDebug() << "Vec reserved" <<  t.elapsed();
+
+    t.restart();
+    for (int i = 0; i < size; i++)
+    {
+        list << ins;
+    }
+    qDebug() << "List" << t.elapsed();
+
+    t.restart();
+
+    for (int i = 0; i < size; i++)
+    {
+        stdvec.push_back( ins);
+    }
+    qDebug() << "Std Vec" << t.elapsed();
+
+    t.restart();
+    for (int i = 0; i < size; i++)
+    {
+        stdvec_res.push_back(ins);
+    }
+    qDebug() << "Std Vec reserved" <<  t.elapsed();
+
+    emit message("Done!");
+}

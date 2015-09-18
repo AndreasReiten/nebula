@@ -8,17 +8,15 @@
 #include <QDebug>
 #include <QElapsedTimer>
 
-static const unsigned int MAX_POINTS = 32;
+static const unsigned int MAX_POINTS = 128;
 static const unsigned int MAX_LEVELS = 16;
-static const unsigned int CL_MAX_ITEMS = 1024 * 2 * 2 * 2 * 2 * 2 * 2 * 2;
-static const unsigned int CL_LEVEL = 2;
 
 SearchNode::SearchNode()
 {
     p_is_msd = true;
     p_is_empty = true;
 //    n_points = 0;
-    p_n_children = 0;
+//    p_n_children = 0;
     p_extent.reserve(1, 6);
 }
 
@@ -28,7 +26,7 @@ SearchNode::SearchNode(SearchNode * parent, double * extent)
     p_is_empty = true;
     p_parent = parent;
 //    n_points = 0;
-    p_n_children = 0;
+//    p_n_children = 0;
     p_extent.reserve(1, 6);
 
     for (int i = 0; i < 6; i++)
@@ -42,7 +40,7 @@ SearchNode::SearchNode(SearchNode * parent, double * extent)
     }
     else
     {
-        p_tree_level = parent->getLevel() + 1;
+        p_tree_level = parent->level() + 1;
     }
 }
 
@@ -53,19 +51,19 @@ SearchNode::~SearchNode()
 
 void SearchNode::clear()
 {
-    if (p_n_children > 0) // This clause really needed?
-    {
-        for (unsigned int i = 0; i < p_n_children; i++)
-        {
-            p_children[i]->clear();
-        }
-    }
+//    if (p_n_children > 0) // This clause really needed?
+//    {
+//        for (unsigned int i = 0; i < p_n_children; i++)
+//        {
+//            p_children[i].clear();
+//        }
+//    }
 
     p_children.clear();
     p_data_points.clear();
     p_is_msd = true;
     p_is_empty = true;
-    p_n_children = 0;
+//    p_n_children = 0;
 }
 
 //void SearchNode::clearPoints()
@@ -89,11 +87,11 @@ void SearchNode::setParent(SearchNode * parent)
     }
     else
     {
-        p_tree_level = parent->getLevel() + 1;
+        p_tree_level = parent->level() + 1;
     }
 }
 
-unsigned int SearchNode::getLevel()
+unsigned int SearchNode::level()
 {
     return p_tree_level;
 }
@@ -106,60 +104,61 @@ void SearchNode::print()
         std::cout << " ";
     }
 
-    std::cout << "L" << p_tree_level << "-> n: " << p_data_points.size() << " c: " << p_n_children << " empt: " << p_is_empty << " msd: = " << p_is_msd << " Ext = [ " << std::setprecision(2) << std::fixed << p_extent[0] << " " << p_extent[1] << " " << p_extent[2] << " " << p_extent[3] << " " << p_extent[4] << " " << p_extent[5] << " ]" << std::endl;
+    std::cout << "L" << p_tree_level << "-> n: " << p_data_points.size() << " c: " << 8 << " empt: " << p_is_empty << " msd: = " << p_is_msd << " Ext = [ " << std::setprecision(2) << std::fixed << p_extent[0] << " " << p_extent[1] << " " << p_extent[2] << " " << p_extent[3] << " " << p_extent[4] << " " << p_extent[5] << " ]" << std::endl;
 
     /* Print children */
-    if (p_n_children > 0)
-    {
-        for (int i = 0; i < 8; i++)
+//    if (p_n_children > 0)
+//    {
+        for (int i = 0; i < p_children.size(); i++)
         {
-            p_children[i]->print();
+            p_children[i].print();
         }
-    }
+//    }
 }
 
 // Functions that rely on recursive action such as this one should not be declared as a member function. Rather make a function external to the node. (?)
 void SearchNode::insert(xyzw32 & point)
 {
+    // If this is not the maximum subdivision, then proceed to the next octree level
     if (!p_is_msd)
     {
         bool isOutofBounds = false;
-
-        unsigned int id = getOctant(point, &isOutofBounds);
+        unsigned int id = octant(point, &isOutofBounds);
 
         if (!isOutofBounds)
         {
-            p_children[id]->insert(point);
+            p_children[id].insert(point);
         }
     }
+    // Else if this is the first data point to be inserted
     else if (p_data_points.isEmpty() && p_is_msd)
     {
+        p_data_points.reserve(MAX_POINTS);
         p_data_points << point;
-//        n_points++;
         p_is_empty = false;
     }
+    // Else if there will be too many points and a split is required, and the split wont result in too deep an octree level
     else if ((p_data_points.size() >= MAX_POINTS - 1) && (p_tree_level < MAX_LEVELS - 1))
     {
         p_data_points << point;
-//        n_points++;
         split();
         p_data_points.clear();
         p_is_msd = false;
     }
-    else if ((p_data_points.size() > MAX_POINTS - 1))
-    {
-        p_data_points << point;
-//        n_points++;
-    }
+    // Else if there will be too many points
+//    else if ((p_data_points.size() > MAX_POINTS - 1))
+//    {
+//        p_data_points << point;
+//    }
+    // Else, just insert the point
     else
     {
         p_data_points << point;
-//        n_points++;
     }
 
 }
 
-void SearchNode::weighSamples(xyzw32 & sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)
+void SearchNode::weighSamples(xyzw32 & sample, Matrix<double> & sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)
 {
     if ((p_is_msd) && (!p_is_empty))
     {
@@ -177,19 +176,19 @@ void SearchNode::weighSamples(xyzw32 & sample, double * sample_extent, float * s
             }
         }
     }
-    else if (p_n_children > 0)
+    else //if (p_n_children > 0)
     {
-        for (unsigned int i = 0; i < 8; i++)
+        for (int i = 0; i < p_children.size(); i++)
         {
-            if (p_children[i]->isIntersected(sample_extent))
+            if (p_children[i].isIntersected(sample_extent))
             {
-                p_children[i]->weighSamples(sample, sample_extent, sum_w, sum_wu, p, search_radius);
+                p_children[i].weighSamples(sample, sample_extent, sum_w, sum_wu, p, search_radius);
             }
         }
     }
 }
 
-bool SearchNode::isIntersected(double * sample_extent)
+bool SearchNode::isIntersected(Matrix<double> & sample_extent)
 {
     // Box box intersection by checking for each dimension if there is an overlap. If there is an overlap for all three dimensions, the node intersects the sampling extent
 
@@ -222,7 +221,7 @@ float SearchNode::getIDW(xyzw32 & sample, float p, float search_radius)
     sample_extent[4] = sample.z - search_radius;
     sample_extent[5] = sample.z + search_radius;
 
-    weighSamples(sample, sample_extent.data(), &sum_w, &sum_wu, p, search_radius);
+    weighSamples(sample, sample_extent, &sum_w, &sum_wu, p, search_radius);
 
     if (sum_w > 0.0)
     {
@@ -234,16 +233,16 @@ float SearchNode::getIDW(xyzw32 & sample, float p, float search_radius)
     }
 }
 
-bool SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data)
+bool SearchNode::intersectedItems(Matrix<double> & effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data)
 {
     if ((p_is_msd) && (!p_is_empty))
     {
         for (unsigned int i = 0; i < p_data_points.size(); i++)
         {
             if (
-                ((p_data_points[i].x >= effective_extent->at(0)) && (p_data_points[i].x <= effective_extent->at(1))) &&
-                ((p_data_points[i].y >= effective_extent->at(2)) && (p_data_points[i].y <= effective_extent->at(3))) &&
-                ((p_data_points[i].z >= effective_extent->at(4)) && (p_data_points[i].z <= effective_extent->at(5))))
+                ((p_data_points[i].x >= effective_extent.at(0)) && (p_data_points[i].x <= effective_extent.at(1))) &&
+                ((p_data_points[i].y >= effective_extent.at(2)) && (p_data_points[i].y <= effective_extent.at(3))) &&
+                ((p_data_points[i].z >= effective_extent.at(4)) && (p_data_points[i].z <= effective_extent.at(5))))
             {
                 *point_data << p_data_points[i];
                 (*accumulated_points)++;
@@ -255,13 +254,13 @@ bool SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
             }
         }
     }
-    else if ((p_n_children > 0))
+    else //if ((p_n_children > 0))
     {
-        for (unsigned int i = 0; i < 8; i++)
+        for (int i = 0; i < p_children.size(); i++)
         {
-            if (p_children[i]->isIntersected(effective_extent->data()))
+            if (p_children[i].isIntersected(effective_extent))
             {
-                if (p_children[i]->getIntersectedItems(effective_extent, accumulated_points, max_points, point_data))
+                if (p_children[i].intersectedItems(effective_extent, accumulated_points, max_points, point_data))
                 {
                     return true;
                 }
@@ -294,7 +293,7 @@ bool SearchNode::getData(
     effective_extent[4] = brick_extent[4] - search_radius;
     effective_extent[5] = brick_extent[5] + search_radius;
 
-    return getIntersectedItems(&effective_extent, accumulated_points, max_points, &point_data);
+    return intersectedItems(effective_extent, accumulated_points, max_points, &point_data);
 }
 
 float SearchNode::distance(xyzw32 & a, xyzw32 & b)
@@ -302,7 +301,7 @@ float SearchNode::distance(xyzw32 & a, xyzw32 & b)
     return std::sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
 }
 
-unsigned int SearchNode::getOctant(xyzw32 & point, bool * isOutofBounds)
+unsigned int SearchNode::octant(xyzw32 & point, bool * isOutofBounds)
 {
     // Find 3D octant id
     int oct_x =  (point.x - p_extent[0]) * 2.0 / (p_extent[1] - p_extent[0]);
@@ -337,7 +336,7 @@ void SearchNode::split()
      * children. Then insert the nodes in the children according to
      * octant */
 
-    p_n_children = 8;
+//    p_n_children = 8;
     p_children.resize(8);
 
     // For each child
@@ -365,16 +364,16 @@ void SearchNode::split()
     {
         bool isOutofBounds = false;
 
-        unsigned int id = getOctant(p_data_points[i], &isOutofBounds);
+        unsigned int id = octant(p_data_points[i], &isOutofBounds);
 
         if (!isOutofBounds)
         {
-            p_children[id]->insert(p_data_points[i]);
+            p_children[id].insert(p_data_points[i]);
         }
     }
 }
 
-double * SearchNode::getExtent()
-{
-    return p_extent.data();
-}
+//double * SearchNode::getExtent()
+//{
+//    return p_extent.data();
+//}

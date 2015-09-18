@@ -152,7 +152,7 @@
               <bool>false</bool>
              </property>
              <property name="text">
-              <string>Generate octree</string>
+              <string>Voxelize</string>
              </property>
             </widget>
            </item>
@@ -226,22 +226,6 @@
             <widget class="QDoubleSpinBox" name="dataMinSpinBox">
              <property name="prefix">
               <string>Data min: </string>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="1">
-            <widget class="QSpinBox" name="treeLevelSpinBox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="prefix">
-              <string>Octree levels: </string>
-             </property>
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <number>10</number>
              </property>
             </widget>
            </item>
@@ -366,6 +350,13 @@
              </property>
             </widget>
            </item>
+           <item row="9" column="1">
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string>Test shit</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
@@ -388,8 +379,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>235</width>
-          <height>302</height>
+          <width>271</width>
+          <height>312</height>
          </rect>
         </property>
         <attribute name="label">
@@ -412,6 +403,9 @@
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="0" column="0" colspan="3">
             <widget class="QCheckBox" name="planarBgCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="text">
               <string>Planar b/g subtract</string>
              </property>
@@ -419,6 +413,9 @@
            </item>
            <item row="0" column="3">
             <widget class="QSpinBox" name="bgSampleSpinBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="prefix">
               <string>Samples: </string>
              </property>
@@ -584,8 +581,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>100</width>
-          <height>120</height>
+          <width>271</width>
+          <height>312</height>
          </rect>
         </property>
         <attribute name="label">
