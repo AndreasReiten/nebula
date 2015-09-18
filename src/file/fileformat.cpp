@@ -11,6 +11,7 @@
 #include <QMutexLocker>
 
 #include "math/rotationmatrix.h"
+#include "misc/smallstuff.h"
 
 #include <limits>
 
@@ -69,7 +70,7 @@ DetectorFile::DetectorFile(const DetectorFile &other) :
     p_context_cl(other.p_context_cl),
     p_area_selection(other.p_area_selection),
     p_correction_args(other.p_correction_args),
-    p_test(other.p_test),
+    p_interpolation_octree(other.p_interpolation_octree),
     p_mutex(other.p_mutex)
 {
 }
@@ -104,7 +105,7 @@ DetectorFile::DetectorFile(DetectorFile &&other) :
     p_context_cl(std::move(other.p_context_cl)),
     p_area_selection(std::move(other.p_area_selection)),
     p_correction_args(std::move(other.p_correction_args)),
-    p_test(std::move(other.p_test)),
+    p_interpolation_octree(std::move(other.p_interpolation_octree)),
     p_mutex(std::move(other.p_mutex))
 {
 }
@@ -191,7 +192,7 @@ void DetectorFile::swap(DetectorFile & other)
     std::swap(this->p_context_cl, other.p_context_cl);
     std::swap(this->p_area_selection, other.p_area_selection);
     std::swap(this->p_correction_args, other.p_correction_args);
-    std::swap(this->p_test, other.p_test);
+    std::swap(this->p_interpolation_octree, other.p_interpolation_octree);
     std::swap(this->p_mutex, other.p_mutex);
 }
 
@@ -251,9 +252,9 @@ void DetectorFile::setCLContext(OpenCLContextQueueProgram * context)
     p_context_cl = context;
 }
 
-void DetectorFile::setInterpolationTree(long * test)
+void DetectorFile::setInterpolationTree(SearchNode * tree)
 {
-    p_test = test;
+    p_interpolation_octree = tree;
 }
 
 void DetectorFile::setMutex(QMutex * mutex)
@@ -760,7 +761,6 @@ void DetectorFile::populateInterpolationTree()
     err |=   QOpenCLSetKernelArg(cl_correct_data, 16, sizeof(cl_float), &p_flux);
     err |=   QOpenCLSetKernelArg(cl_correct_data, 17, sizeof(cl_float), &p_exposure_time);
     err |=   QOpenCLSetKernelArg(cl_correct_data, 18, sizeof(cl_float), &p_correction_args.noise_low);
-    err |=   QOpenCLSetKernelArg(cl_correct_data, 19, sizeof(cl_float), &p_correction_args.noise_high);
     if ( err != CL_SUCCESS)
     {
         qFatal(cl_error_cstring(err));
@@ -941,20 +941,13 @@ void DetectorFile::populateInterpolationTree()
 
     for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
     {
-//        if (finalized_data[i * 4 + 3] > 0.0) // Above 0 check
-//        {
-            (*p_test)++;
-//        }
+        xyzw32 data_point = {finalized_data[i * 4 + 0], finalized_data[i * 4 + 1], finalized_data[i * 4 + 2], finalized_data[i * 4 + 3]};
+        if (data_point.w > 0.0) // Above 0 check
+        {
+            p_interpolation_octree->insert(data_point);
+        }
     }
-
-//    (*p_test)++;
 }
-
-
-//void DetectorFile::test()
-//{
-//    this->data_buf.resize(10);
-//}
 
 
 void DetectorFile::setSearchRadiusHint()

@@ -70,10 +70,6 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
 
     p_ui->fileSqlView->setColumnHidden(0, true);
     p_ui->fileSqlView->setColumnHidden(3, true);
-
-
-//    loadSettings();
-
     p_ui->fileSqlView->resizeColumnsToContents();
 
     QSurfaceFormat format_gl;
@@ -88,10 +84,6 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     p_ui->imageOpenGLWidget->setFormat(format_gl);
     p_ui->imageOpenGLWidget->setMouseTracking(true);
 
-//    progressPollTimer = new QTimer;
-//    progressPollTimer->setInterval(100);
-//    connect(progressPollTimer, SIGNAL(timeout()), this, SLOT(pollProgress()));
-
     ////////////////////
     connect(p_ui->rgbComboBox, SIGNAL(currentTextChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setRgb(QString)));
     connect(p_ui->alphaComboBox, SIGNAL(currentIndexChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setAlpha(QString)));
@@ -105,10 +97,8 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->imageOpenGLWidget, SIGNAL(message(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressTaskActive(bool)), p_ui->progressBar, SLOT(setVisible(bool)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressTaskActive(bool)), p_ui->reconstructButton, SLOT(setDisabled(bool)));
-//    connect(p_ui->imageOpenGLWidget, SIGNAL(progressBarFormatChanged(QString)), this, SLOT(setProgressBarFormat(QString)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressChanged(int)), p_ui->progressBar, SLOT(setValue(int)), Qt::QueuedConnection);
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressRangeChanged(int, int)), p_ui->progressBar, SLOT(setRange(int, int)));
-//    connect(p_ui->reconstructButton, SIGNAL(clicked()), p_ui->reconstructButton, SLOT(setDisabled(bool)));
 
     connect(p_ui->reconstructButton, SIGNAL(clicked()), this, SLOT(populateInterpolationTree_start()));
     connect(this, SIGNAL(populateInterpolationTreeProxySignal()), p_ui->imageOpenGLWidget, SLOT(populateInterpolationTreeMap()));
@@ -150,7 +140,6 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->fileSqlView, SIGNAL(clicked(QModelIndex)), selection_model, SLOT(indexChanged(QModelIndex)));
     connect(this, SIGNAL(fileChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setFilePath(QString)));
     connect(p_ui->actionCenter, SIGNAL(triggered()), p_ui->imageOpenGLWidget, SLOT(centerCurrentImage()));
-//    connect(p_ui->stopButton, SIGNAL(clicked(bool)), p_ui->imageOpenGLWidget, SLOT(clearRunnables()));
 
     connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
     connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
@@ -158,10 +147,6 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(finished()), this, SLOT(populateInterpolationTree_finished()));
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->watcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->watcher(), SLOT(setPaused(bool)));
-    //    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(started()), , SLOT());
-//    connect(p_ui->imageOpenGLWidget->watcher(), SIGNAL(finished()), this, SLOT());
-
-//    connect(progressPollTimer, SIGNAL(timeout()),
 
     //### voxelizeWorker ###
     voxelizeThread = new QThread;
@@ -172,7 +157,6 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     voxelizeWorker->initializeCLKernel();
 
     voxelizeWorker->moveToThread(voxelizeThread);
-//    connect(ui->treeLevelSpinBox, SIGNAL(valueChanged(int)), this, SLOT(setCurrentSvoLevel(int)));
     connect(voxelizeThread, SIGNAL(started()), voxelizeWorker, SLOT(process()));
     connect(voxelizeWorker, SIGNAL(finished()), voxelizeThread, SLOT(quit()));
     connect(voxelizeWorker, SIGNAL(popup(QString, QString)), this, SLOT(displayPopup(QString, QString)));
@@ -187,36 +171,16 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->imageOpenGLWidget, SIGNAL(qSpaceInfoChanged(float, float, float)), voxelizeWorker, SLOT(setQSpaceInfo(float, float, float)));
     connect(p_ui->generateTreeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(voxelizeWorker, SIGNAL(progressTaskActive(bool)), p_ui->progressBar, SLOT(setVisible(bool)));
-//    connect(killButton, SIGNAL(clicked()), voxelizeWorker, SLOT(killProcess()), Qt::DirectConnection);
     connect(p_ui->selectionComboBox, SIGNAL(currentIndexChanged(QString)), p_ui->imageOpenGLWidget, SLOT(setApplicationMode(QString)));
     connect(p_ui->applySelectionButton, SIGNAL(clicked(bool)), p_ui->imageOpenGLWidget, SLOT(applySelection()));
 
-//    connect(this->parent(), SIGNAL(finishedGUI()), p_ui->imageOpenGLWidget, SLOT(centerCurrentImage()));
-    /////////////////////////
     loadSettings();
-//    p_ui->imageOpenGLWidget->centerCurrentImage();
 }
-
-//void ReconstructionWidget::clearRunnables()
-//{
-//    QThreadPool::globalInstance()->clear();
-//    p_ui->reconstructButton->setEnabled(true);
-//    p_ui->progressBar->setValue(0);
-//    p_ui->progressBar->hide();
-//}
-
-//void ReconstructionWidget::pollProgress()
-//{
-//    p_ui->progressBar->setValue();
-//}
 
 void ReconstructionWidget::populateInterpolationTree_start()
 {
     p_ui->reconstructButton->setDisabled(true);
     p_ui->progressBar->show();
-
-//    QTimer * t = new QTimer;
-//    QTimer
 
     emit populateInterpolationTreeProxySignal();
 }
@@ -226,9 +190,6 @@ void ReconstructionWidget::populateInterpolationTree_finished()
     p_ui->reconstructButton->setDisabled(false);
     p_ui->progressBar->hide();
     p_ui->progressBar->setValue(0);
-
-//    QTimer * t = new QTimer;
-//    QTimer
 }
 
 void ReconstructionWidget::next()
@@ -265,33 +226,9 @@ void ReconstructionWidget::batchPrevious()
 
 void ReconstructionWidget::itemSelected(const QModelIndex & current, const QModelIndex & previous)
 {
-//    qDebug() <<
-
-//    if (p_ui->fileSqlView->selectionModel()->selectedIndexes().isEmpty()) return;
-//    QModelIndex index = p_ui->fileSqlView->selectionModel()->selectedIndexes().first();
     QString fpath = current.sibling(current.row(), 0).data().toString();
     p_current_row = current.row();
-//    QStringList paths;
-
-
-
-
-//    qDebug() << a.row() << b.row();
-
-//    emit message(QString::number(selected.indexes().size()) + " " + QString::number(deselected.indexes().size())+ " " + QString::number(p_ui->fileSqlView->selectionModel()->selectedIndexes().size()));
-//    emit message(QString::number(a.row()) +" "+ QString::number(b.row()) +" "+ QString::number(p_ui->fileSqlView->selectionModel()->selectedIndexes().size()));
-
-//    for
-
-
-//    p_current_row = a.row();
-//    QString fpath = a.sibling(a.row(), 0).data(Qt::DisplayRole).toString();
-//    if (p_current_file.filePath() != fpath)
-//    {
-//        p_current_file = QFileInfo(fpath);
-
-        emit fileChanged(fpath);
-//    }
+    emit fileChanged(fpath);
 }
 
 void ReconstructionWidget::displayPopup(QString title, QString text)
@@ -325,40 +262,30 @@ void ReconstructionWidget::refreshSelectionModel()
 void ReconstructionWidget::initSql()
 {
     // Database
-//    if (QSqlDatabase::database().isOpen()) p_db.close();
-//    p_db = QSqlDatabase::addDatabase("QSQLITE");
-
-//    if (p_db.open())
-//    {
-        QSqlQuery query(QSqlDatabase::database());
-        if (!query.exec("CREATE TABLE IF NOT EXISTS cbf_table ("
-                        "FilePath TEXT PRIMARY KEY NOT NULL, "
-                        "Path TEXT,"
-                        "File TEXT,"
-                        "Active INTEGER, "
-                        "Omega REAL, "
-                        "Kappa REAL, "
-                        "Phi REAL, "
-                        "StartAngle REAL,"
-                        "AngleIncrement REAL,"
-                        "DetectorDistance REAL,"
-                        "BeamX REAL,"
-                        "BeamY REAL,"
-                        "Flux REAL,"
-                        "ExposureTime REAL,"
-                        "Wavelength REAL,"
-                        "Detector TEXT,"
-                        "PixelSizeX REAL,"
-                        "PixelSizeY REAL"
-                        ");"))
-        {
-            qDebug() << sqlQueryError(query);
-        }
-//    }
-//    else
-//    {
-//        qDebug() << "Database error" << QSqlDatabase::database().lastError();
-//    }
+    QSqlQuery query(QSqlDatabase::database());
+    if (!query.exec("CREATE TABLE IF NOT EXISTS cbf_table ("
+                    "FilePath TEXT PRIMARY KEY NOT NULL, "
+                    "Path TEXT,"
+                    "File TEXT,"
+                    "Active INTEGER, "
+                    "Omega REAL, "
+                    "Kappa REAL, "
+                    "Phi REAL, "
+                    "StartAngle REAL,"
+                    "AngleIncrement REAL,"
+                    "DetectorDistance REAL,"
+                    "BeamX REAL,"
+                    "BeamY REAL,"
+                    "Flux REAL,"
+                    "ExposureTime REAL,"
+                    "Wavelength REAL,"
+                    "Detector TEXT,"
+                    "PixelSizeX REAL,"
+                    "PixelSizeY REAL"
+                    ");"))
+    {
+        qDebug() << sqlQueryError(query);
+    }
 
     // Queries
     upsert_file_query = new QSqlQuery(QSqlDatabase::database());
@@ -418,28 +345,6 @@ void ReconstructionWidget::setProgressBarFormat_2(QString str)
 {
     p_ui->progressBar_2->setFormat(str);
 }
-
-//void ReconstructionWidget::applyAnalytics()
-//{
-//    emit analyze(p_action_apply_mode);
-//}
-
-//void ReconstructionWidget::applyPlaneMarker()
-//{
-//    emit setPlaneMarkers(p_action_apply_mode);
-//}
-
-//void ReconstructionWidget::applySelection()
-//{
-//    emit setSelection(p_action_apply_mode);
-//}
-
-//void ReconstructionWidget::setApplyMode(QString str)
-//{
-//    p_action_apply_mode = str;
-//}
-
-
 
 void ReconstructionWidget::saveProject()
 {
@@ -603,12 +508,10 @@ void ReconstructionWidget::on_clearButton_clicked()
 {
     QMessageBox msgBox;
     msgBox.setText("Remove files?");
-//    msgBox.setInformativeText("This action is irreversible.");
     QPushButton * yes_button = msgBox.addButton(trUtf8("Yes, remove files"), QMessageBox::YesRole);
     msgBox.setStandardButtons(QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Cancel);
     msgBox.exec();
-//    msgBox.result();
 
 //    qDebug() << ret << QMessageBox::Yes << QMessageBox::No << QMessageBox::YesRole;
 
@@ -654,25 +557,10 @@ void ReconstructionWidget::on_addFilesButton_clicked()
 
         if (file.isValid()) files << file;
     }
-//    files.clear();
-//    files << DetectorFile("E:/Data/2015_ESRF_LSMO/P10404/-1-14/fine/P10505_0001p_00114.cbf");
-
-//    qDebug() << files.first().isHeaderRead();
-
-//    qDebug() << files.first().info();
-//    files.first().readHeader();
-//    DetectorFile first("E:/Data/2015_ESRF_LSMO/P10404/-1-14/fine/P10505_0001p_00114.cbf");
-//    first.readHeader();
-
-//    DetectorFile test = first;
 
     QFutureWatcher<void> future_watcher;
     future_watcher.setFuture(QtConcurrent::map(files, &DetectorFile::readHeader));
-
     future_watcher.waitForFinished();
-
-//    qDebug() << files.first().info();
-
 
     QSqlDatabase::database().transaction();
 

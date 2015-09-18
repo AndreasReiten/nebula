@@ -15,115 +15,113 @@ static const unsigned int CL_LEVEL = 2;
 
 SearchNode::SearchNode()
 {
-    this->isMsd = true;
-    this->isEmpty = true;
-    this->n_points = 0;
-    this->n_children = 0;
-    this->extent.reserve(1, 6);
+    p_is_msd = true;
+    p_is_empty = true;
+//    n_points = 0;
+    p_n_children = 0;
+    p_extent.reserve(1, 6);
 }
 
 SearchNode::SearchNode(SearchNode * parent, double * extent)
 {
-    this->isMsd = true;
-    this->isEmpty = true;
-    this->parent = parent;
-    this->n_points = 0;
-    this->n_children = 0;
-    this->extent.reserve(1, 6);
+    p_is_msd = true;
+    p_is_empty = true;
+    p_parent = parent;
+//    n_points = 0;
+    p_n_children = 0;
+    p_extent.reserve(1, 6);
 
     for (int i = 0; i < 6; i++)
     {
-        this->extent[i] = extent[i];
+        p_extent[i] = extent[i];
     }
 
-    if (this->parent == NULL)
+    if (p_parent == NULL)
     {
-        this->level = 0;
+        p_tree_level = 0;
     }
     else
     {
-        this->level = parent->getLevel() + 1;
+        p_tree_level = parent->getLevel() + 1;
     }
 }
 
 SearchNode::~SearchNode()
 {
-    this->clearChildren();
-    this->clearPoints();
+    clear();
 }
 
-void SearchNode::clearChildren()
+void SearchNode::clear()
 {
-    if (n_children > 0)
+    if (p_n_children > 0) // This clause really needed?
     {
-        for (unsigned int i = 0; i < n_children; i++)
+        for (unsigned int i = 0; i < p_n_children; i++)
         {
-            delete children[i];
+            p_children[i]->clear();
         }
-
-        delete[] children;
-        n_children = 0;
     }
+
+    p_children.clear();
+    p_data_points.clear();
+    p_is_msd = true;
+    p_is_empty = true;
+    p_n_children = 0;
 }
 
-void SearchNode::clearPoints()
+//void SearchNode::clearPoints()
+//{
+//    p_data_points.clear();
+//}
+
+void SearchNode::setExtent(Matrix<double> extent)
 {
-    if (n_points > 0)
-    {
-        delete[] this->points;
-        n_points = 0;
-    }
+    p_extent = extent;
 }
 
 void SearchNode::setParent(SearchNode * parent)
 {
-    parent->print();
-    this->parent = parent;
+//    parent->print();
+    p_parent = parent;
 
-    if (this->parent == NULL)
+    if (p_parent == NULL)
     {
-        this->level = 0;
+        p_tree_level = 0;
     }
     else
     {
-        this->level = parent->getLevel() + 1;
+        p_tree_level = parent->getLevel() + 1;
     }
 }
 
 unsigned int SearchNode::getLevel()
 {
-    return level;
+    return p_tree_level;
 }
 
 void SearchNode::print()
 {
     /* Print self */
-    for (unsigned int i = 0; i < level; i++)
+    for (unsigned int i = 0; i < p_tree_level; i++)
     {
         std::cout << " ";
     }
 
-    std::cout << "L" << level << "-> n: " << n_points << " c: " << n_children << " empt: " << isEmpty << " msd: = " << isMsd << " Ext = [ " << std::setprecision(2) << std::fixed << extent[0] << " " << extent[1] << " " << extent[2] << " " << extent[3] << " " << extent[4] << " " << extent[5] << " ]" << std::endl;
+    std::cout << "L" << p_tree_level << "-> n: " << p_data_points.size() << " c: " << p_n_children << " empt: " << p_is_empty << " msd: = " << p_is_msd << " Ext = [ " << std::setprecision(2) << std::fixed << p_extent[0] << " " << p_extent[1] << " " << p_extent[2] << " " << p_extent[3] << " " << p_extent[4] << " " << p_extent[5] << " ]" << std::endl;
 
     /* Print children */
-    if (n_children > 0)
+    if (p_n_children > 0)
     {
         for (int i = 0; i < 8; i++)
         {
-            children[i]->print();
+            p_children[i]->print();
         }
     }
 }
 
-//void SearchNode::setOpenCLContext(OpenCLContext *context)
-//{
-//    this->context = context;
-//}
-
 // Functions that rely on recursive action such as this one should not be declared as a member function. Rather make a function external to the node. (?)
-void SearchNode::insert(float * point)
+void SearchNode::insert(xyzw32 & point)
 {
-    if (!isMsd)
+    if (!p_is_msd)
     {
         bool isOutofBounds = false;
 
@@ -131,93 +129,61 @@ void SearchNode::insert(float * point)
 
         if (!isOutofBounds)
         {
-            this->children[id]->insert(point);
+            p_children[id]->insert(point);
         }
     }
-    else if ((n_points == 0) && isMsd)
+    else if (p_data_points.isEmpty() && p_is_msd)
     {
-        points = new float[MAX_POINTS * 4];
-        points[n_points * 4 + 0]  = point[0];
-        points[n_points * 4 + 1]  = point[1];
-        points[n_points * 4 + 2]  = point[2];
-        points[n_points * 4 + 3]  = point[3];
-        n_points++;
-        isEmpty = false;
+        p_data_points << point;
+//        n_points++;
+        p_is_empty = false;
     }
-    else if ((n_points >= MAX_POINTS - 1) && (level < MAX_LEVELS - 1))
+    else if ((p_data_points.size() >= MAX_POINTS - 1) && (p_tree_level < MAX_LEVELS - 1))
     {
-        points[n_points * 4 + 0]  = point[0];
-        points[n_points * 4 + 1]  = point[1];
-        points[n_points * 4 + 2]  = point[2];
-        points[n_points * 4 + 3]  = point[3];
-        n_points++;
-        this->split();
-        this->clearPoints();
-        isMsd = false;
+        p_data_points << point;
+//        n_points++;
+        split();
+        p_data_points.clear();
+        p_is_msd = false;
     }
-    else if ((n_points > MAX_POINTS - 1))
+    else if ((p_data_points.size() > MAX_POINTS - 1))
     {
-        // Expand allocated array by 1
-        float * tmp = new float[n_points * 4];
-
-        for (unsigned int i = 0; i < n_points * 4; i++)
-        {
-            tmp[i] = points[i];
-        }
-
-        delete[] points;
-        points = new float[(n_points + 1) * 4];
-
-        for (unsigned int i = 0; i < n_points * 4; i++)
-        {
-            points[i] = tmp[i];
-        }
-
-        delete[] tmp;
-
-        points[n_points * 4 + 0]  = point[0];
-        points[n_points * 4 + 1]  = point[1];
-        points[n_points * 4 + 2]  = point[2];
-        points[n_points * 4 + 3]  = point[3];
-        n_points++;
+        p_data_points << point;
+//        n_points++;
     }
     else
     {
-        points[n_points * 4 + 0]  = point[0];
-        points[n_points * 4 + 1]  = point[1];
-        points[n_points * 4 + 2]  = point[2];
-        points[n_points * 4 + 3]  = point[3];
-        n_points++;
+        p_data_points << point;
+//        n_points++;
     }
 
 }
 
-void SearchNode::weighSamples(float * sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)
+void SearchNode::weighSamples(xyzw32 & sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)
 {
-    if ((this->isMsd) && (!this->isEmpty))
+    if ((p_is_msd) && (!p_is_empty))
     {
         float d, w;
 
-        for (unsigned int i = 0; i < n_points; i++)
+        for (unsigned int i = 0; i < p_data_points.size(); i++)
         {
-            d = distance(points + i * 4, sample);
+            d = distance(p_data_points[i], sample);
 
             if (d <= search_radius)
             {
                 w = 1.0 / d;
                 *sum_w += w;
-                *sum_wu += w * (points[i * 4 + 3]);
+                *sum_wu += w * (p_data_points[i].w);
             }
-
         }
     }
-    else if (n_children > 0)
+    else if (p_n_children > 0)
     {
         for (unsigned int i = 0; i < 8; i++)
         {
-            if (children[i]->isIntersected(sample_extent))
+            if (p_children[i]->isIntersected(sample_extent))
             {
-                children[i]->weighSamples(sample, sample_extent, sum_w, sum_wu, p, search_radius);
+                p_children[i]->weighSamples(sample, sample_extent, sum_w, sum_wu, p, search_radius);
             }
         }
     }
@@ -231,8 +197,8 @@ bool SearchNode::isIntersected(double * sample_extent)
 
     for (int i = 0; i < 3; i++)
     {
-        tmp[i * 2] = std::max(sample_extent[i * 2], this->extent[i * 2]);
-        tmp[i * 2 + 1] = std::min(sample_extent[i * 2 + 1], this->extent[i * 2 + 1]);
+        tmp[i * 2] = std::max(sample_extent[i * 2], p_extent[i * 2]);
+        tmp[i * 2 + 1] = std::min(sample_extent[i * 2 + 1], p_extent[i * 2 + 1]);
 
         if (tmp[i * 2 + 0] >= tmp[i * 2 + 1])
         {
@@ -243,18 +209,18 @@ bool SearchNode::isIntersected(double * sample_extent)
     return true;
 }
 
-float SearchNode::getIDW(float * sample, float p, float search_radius)
+float SearchNode::getIDW(xyzw32 & sample, float p, float search_radius)
 {
     float sum_w = 0;
     float sum_wu = 0;
 
     Matrix<double> sample_extent(1, 6);
-    sample_extent[0] = sample[0] - search_radius;
-    sample_extent[1] = sample[0] + search_radius;
-    sample_extent[2] = sample[1] - search_radius;
-    sample_extent[3] = sample[1] + search_radius;
-    sample_extent[4] = sample[2] - search_radius;
-    sample_extent[5] = sample[2] + search_radius;
+    sample_extent[0] = sample.x - search_radius;
+    sample_extent[1] = sample.x + search_radius;
+    sample_extent[2] = sample.y - search_radius;
+    sample_extent[3] = sample.y + search_radius;
+    sample_extent[4] = sample.z - search_radius;
+    sample_extent[5] = sample.z + search_radius;
 
     weighSamples(sample, sample_extent.data(), &sum_w, &sum_wu, p, search_radius);
 
@@ -268,22 +234,18 @@ float SearchNode::getIDW(float * sample, float p, float search_radius)
     }
 }
 
-bool SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, size_t max_points, float * point_data)
+bool SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data)
 {
-    if ((this->isMsd) && (!this->isEmpty))
+    if ((p_is_msd) && (!p_is_empty))
     {
-        for (unsigned int i = 0; i < n_points; i++)
+        for (unsigned int i = 0; i < p_data_points.size(); i++)
         {
             if (
-                ((points[i * 4 + 0] >= effective_extent->at(0)) && (points[i * 4 + 0] <= effective_extent->at(1))) &&
-                ((points[i * 4 + 1] >= effective_extent->at(2)) && (points[i * 4 + 1] <= effective_extent->at(3))) &&
-                ((points[i * 4 + 2] >= effective_extent->at(4)) && (points[i * 4 + 2] <= effective_extent->at(5))))
+                ((p_data_points[i].x >= effective_extent->at(0)) && (p_data_points[i].x <= effective_extent->at(1))) &&
+                ((p_data_points[i].y >= effective_extent->at(2)) && (p_data_points[i].y <= effective_extent->at(3))) &&
+                ((p_data_points[i].z >= effective_extent->at(4)) && (p_data_points[i].z <= effective_extent->at(5))))
             {
-                point_data[*accumulated_points * 4 + 0] = points[i * 4 + 0];
-                point_data[*accumulated_points * 4 + 1] = points[i * 4 + 1];
-                point_data[*accumulated_points * 4 + 2] = points[i * 4 + 2];
-                point_data[*accumulated_points * 4 + 3] = points[i * 4 + 3];
-
+                *point_data << p_data_points[i];
                 (*accumulated_points)++;
 
                 if (max_points <= *accumulated_points)
@@ -293,13 +255,13 @@ bool SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
             }
         }
     }
-    else if ((n_children > 0))
+    else if ((p_n_children > 0))
     {
         for (unsigned int i = 0; i < 8; i++)
         {
-            if (children[i]->isIntersected(effective_extent->data()))
+            if (p_children[i]->isIntersected(effective_extent->data()))
             {
-                if (children[i]->getIntersectedItems(effective_extent, accumulated_points, max_points, point_data))
+                if (p_children[i]->getIntersectedItems(effective_extent, accumulated_points, max_points, point_data))
                 {
                     return true;
                 }
@@ -314,7 +276,7 @@ bool SearchNode::getIntersectedItems(Matrix<double> * effective_extent, size_t *
 bool SearchNode::getData(
     size_t max_points,
     double * brick_extent,
-    float * point_data,
+    QList<xyzw32> point_data,
     size_t * accumulated_points,
     float search_radius)
 {
@@ -332,20 +294,20 @@ bool SearchNode::getData(
     effective_extent[4] = brick_extent[4] - search_radius;
     effective_extent[5] = brick_extent[5] + search_radius;
 
-    return getIntersectedItems(&effective_extent, accumulated_points, max_points, point_data);
+    return getIntersectedItems(&effective_extent, accumulated_points, max_points, &point_data);
 }
 
-float SearchNode::distance(float * a, float * b)
+float SearchNode::distance(xyzw32 & a, xyzw32 & b)
 {
-    return std::sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+    return std::sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
 }
 
-unsigned int SearchNode::getOctant(float * point, bool * isOutofBounds)
+unsigned int SearchNode::getOctant(xyzw32 & point, bool * isOutofBounds)
 {
     // Find 3D octant id
-    int oct_x =  (point[0] - extent[0]) * 2.0 / (extent[1] - extent[0]);
-    int oct_y =  (point[1] - extent[2]) * 2.0 / (extent[3] - extent[2]);
-    int oct_z =  (point[2] - extent[4]) * 2.0 / (extent[5] - extent[4]);
+    int oct_x =  (point.x - p_extent[0]) * 2.0 / (p_extent[1] - p_extent[0]);
+    int oct_y =  (point.y - p_extent[2]) * 2.0 / (p_extent[3] - p_extent[2]);
+    int oct_z =  (point.z - p_extent[4]) * 2.0 / (p_extent[5] - p_extent[4]);
 
     // Clamp
     if ((oct_x >= 2) || (oct_x < 0))
@@ -363,9 +325,9 @@ unsigned int SearchNode::getOctant(float * point, bool * isOutofBounds)
         *isOutofBounds = true;
     }
 
+    // Find 1D octant id
     unsigned int id = oct_x + 2 * oct_y + 4 * oct_z;
 
-    // Find 1D octant id
     return id;
 }
 
@@ -375,8 +337,8 @@ void SearchNode::split()
      * children. Then insert the nodes in the children according to
      * octant */
 
-    n_children = 8;
-    children = new SearchNode*[8];
+    p_n_children = 8;
+    p_children.resize(8);
 
     // For each child
     for (int i = 0; i < 8; i++)
@@ -385,36 +347,34 @@ void SearchNode::split()
         int id_y = (i % 4) / 2;
         int id_z = i / 4;
 
-        double half_side = (extent[1] - extent[0]) * 0.5;
+        double half_side = (p_extent[1] - p_extent[0]) * 0.5;
 
         double child_extent[6];
-        child_extent[0] = extent[0] + half_side * id_x;
-        child_extent[1] = extent[1] - half_side * (1 - id_x);
-        child_extent[2] = extent[2] + half_side * id_y;
-        child_extent[3] = extent[3] - half_side * (1 - id_y);
-        child_extent[4] = extent[4] + half_side * id_z;
-        child_extent[5] = extent[5] - half_side * (1 - id_z);
+        child_extent[0] = p_extent[0] + half_side * id_x;
+        child_extent[1] = p_extent[1] - half_side * (1 - id_x);
+        child_extent[2] = p_extent[2] + half_side * id_y;
+        child_extent[3] = p_extent[3] - half_side * (1 - id_y);
+        child_extent[4] = p_extent[4] + half_side * id_z;
+        child_extent[5] = p_extent[5] - half_side * (1 - id_z);
 
-        children[i] = new SearchNode(this, child_extent);
-        //        children[i]->setOpenCLContext(context);
+        p_children[i] = SearchNode(this, child_extent);
     }
 
     // For each point
-    for (size_t i = 0; i < n_points; i++)
+    for (size_t i = 0; i < p_data_points.size(); i++)
     {
         bool isOutofBounds = false;
 
-        unsigned int id = getOctant(points + i * 4, &isOutofBounds);
+        unsigned int id = getOctant(p_data_points[i], &isOutofBounds);
 
         if (!isOutofBounds)
         {
-
-            this->children[id]->insert(points + i * 4);
+            p_children[id]->insert(p_data_points[i]);
         }
     }
 }
 
 double * SearchNode::getExtent()
 {
-    return this->extent.data();
+    return p_extent.data();
 }

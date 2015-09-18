@@ -342,17 +342,17 @@ void VoxelizeWorker::process()
         // Place all data points in an octree data structure from which to construct the bricks in the brick pool
         SearchNode root(NULL, svo->extent().data());
 
-        for (size_t i = 0; i < reduced_pixels->size() / 4; i++)
-        {
-            if (kill_flag)
-            {
-                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at iteration " + QString::number(i + 1) + " of " + QString::number(reduced_pixels->size() / 4));
-                break;
-            }
+//        for (size_t i = 0; i < reduced_pixels->size() / 4; i++)
+//        {
+//            if (kill_flag)
+//            {
+//                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at iteration " + QString::number(i + 1) + " of " + QString::number(reduced_pixels->size() / 4));
+//                break;
+//            }
 
-            root.insert(reduced_pixels->data() + i * 4);
-            emit changedGenericProgress((i + 1) * 100 / (reduced_pixels->size() / 4));
-        }
+//            root.insert(reduced_pixels->data() + i * 4);
+//            emit changedGenericProgress((i + 1) * 100 / (reduced_pixels->size() / 4));
+//        }
 
         if (!kill_flag)
         {
@@ -446,17 +446,17 @@ void VoxelizeWorker::process()
                         size_t premature_termination = 0;
 
                         // Get point data needed for this brick
-                        if ( root.getData(
-                                    MAX_POINTS_PER_CLUSTER,
-                                    brick_extent.data() + n_nodes_treated_in_cluster * 6,
-                                    point_data.data(),
-                                    &n_points_harvested,
-                                    search_radius))
-                        {
-                            premature_termination = n_nodes_treated_in_cluster;
+//                        if ( root.getData(
+//                                    MAX_POINTS_PER_CLUSTER,
+//                                    brick_extent.data() + n_nodes_treated_in_cluster * 6,
+//                                    point_data.data(),
+//                                    &n_points_harvested,
+//                                    search_radius))
+//                        {
+//                            premature_termination = n_nodes_treated_in_cluster;
 
-                            qDebug() << lvl + 1 << premature_termination << "of" << MAX_NODES_PER_CLUSTER << "pts:" << n_points_harvested;
-                        }
+//                            qDebug() << lvl + 1 << premature_termination << "of" << MAX_NODES_PER_CLUSTER << "pts:" << n_points_harvested;
+//                        }
 
                         // Number of points for this node
                         point_data_count[n_nodes_treated_in_cluster] = n_points_harvested - point_data_offset[n_nodes_treated_in_cluster];

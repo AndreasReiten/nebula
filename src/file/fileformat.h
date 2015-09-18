@@ -10,6 +10,7 @@
 #include "../math/matrix.h"
 #include "../opencl/contextcl.h"
 #include "../file/selection.h"
+#include "../svo/searchnode.h"
 
 struct DataCorrectionArgs
 {
@@ -22,7 +23,6 @@ struct DataCorrectionArgs
     int pixel_projection_correction;
 
     float noise_low;
-    float noise_high;
 };
 
 class DetectorFile: protected OpenCLFunctions
@@ -45,7 +45,7 @@ public:
     void setSubImage(Selection & area);
     void setCorrectionArgs(DataCorrectionArgs & args);
     void setCLContext(OpenCLContextQueueProgram * context);
-    void setInterpolationTree(long *test);
+    void setInterpolationTree(SearchNode *tree);
     void setMutex(QMutex * mutex);
 
     int readBody();
@@ -59,6 +59,7 @@ public:
 
     void setAlpha(float value);
     void setBeta(float value);
+    void clearData();
 
     const QVector<float> &data() const;
     int width() const;
@@ -76,7 +77,6 @@ public:
     float phi() const;
     float omega() const;
     float kappa() const;
-    void clearData();
     float flux() const;
     float expTime() const;
     float wavelength() const;
@@ -144,7 +144,7 @@ private:
     Selection p_area_selection;
     DataCorrectionArgs p_correction_args;
     QMutex * p_mutex;
-    long * p_test;
+    SearchNode * p_interpolation_octree;
 
     // Misc
     void swap(DetectorFile & other);

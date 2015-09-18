@@ -1,57 +1,52 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <QList>
+
 #include "../math/matrix.h"
+#include "../misc/smallstuff.h"
 
 class SearchNode
 {
         /* This class represents a node in the "search octree" data structure. It is used in order to create bricks for the GPU octree. */
     public:
         SearchNode();
-        SearchNode(SearchNode * parent, double * extent);
+        SearchNode(SearchNode * p_parent, double * extent);
         ~SearchNode();
 
-        //        void setOpenCLContext(OpenCLContext *context);
-        void clearChildren();
-        void clearPoints();
-        void insert(float * point);
+        void clear();
+//        void clearPoints();
+        void insert(xyzw32 &point);
         void split();
         void print();
-        void weighSamples(float * sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius);
+        void weighSamples(xyzw32 & sample, double * sample_extent, float * sum_w, float * sum_wu, float p, float search_radius);
         bool isIntersected(double * sample_extent);
-
-        /* gets and sets */
-        void setParent(SearchNode * parent);
+        void setExtent(Matrix<double> extent);
+        void setParent(SearchNode * p_parent);
 
         bool getData(size_t max_points,
                      double * brick_extent,
-                     float * point_data,
+                     QList<xyzw32> point_data,
                      size_t * accumulated_points,
                      float search_radius);
 
 
-        float getIDW(float * sample, float p, float search_radius);
+        float getIDW(xyzw32 &sample, float p, float search_radius);
         unsigned int getLevel();
-        unsigned int getOctant(float * point, bool * isOutofBounds);
+        unsigned int getOctant(xyzw32 &point, bool * isOutofBounds);
         double * getExtent();
 
     private:
-        bool getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, size_t max_points, float * point_data);
-        SearchNode * parent;
-        SearchNode ** children;
-        float * points;
-        Matrix<double> extent;
+        bool getIntersectedItems(Matrix<double> * effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data);
+        float distance(xyzw32 &a, xyzw32 &b);
 
-        float distance(float * a, float * b);
-
-        unsigned int level;
-        unsigned int n_children;
-        unsigned int n_points;
-
-        bool isEmpty;
-        bool isMsd;
-        //        cl_int err;
-
-        //        OpenCLContext * context;
+        SearchNode * p_parent;
+        QVector<SearchNode> p_children;
+        QList<xyzw32> p_data_points;
+        Matrix<double> p_extent;
+        unsigned int p_tree_level;
+        unsigned int p_n_children;
+        bool p_is_empty;
+        bool p_is_msd;
 };
 #endif

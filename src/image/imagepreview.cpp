@@ -12,10 +12,6 @@
 #include <QThreadPool>
 #include <QFuture>
 
-
-#include <QTest> // TODO: Remove dep
-
-
 #include "sql/sqlqol.h"
 
 
@@ -35,13 +31,6 @@ ImageWorker::~ImageWorker()
 {
 
 }
-
-//void ImageWorker::setOpenCLContext(OpenCLContextQueueProgram * context)
-//{
-//    context_cl = context;
-
-//    initializeOpenCLKernels();
-//}
 
 void ImageWorker::setTraceContainer(QList<Matrix<float>> * list)
 {
@@ -78,8 +67,6 @@ void ImageWorker::reconstructSet(SeriesSet set)
 
 void ImageWorker::traceSeries(SeriesSet set)
 {
-//    emit progressTaskActive(false);
-
     DetectorFile frame;
 
     frame.setPath(set.current()->begin()->filePath());
@@ -184,8 +171,6 @@ void ImageWorker::traceSeries(SeriesSet set)
         qFatal(cl_error_cstring(err));
     }
 
-//    emit progressTaskActive(true);
-
     emit traceFinished();
 }
 
@@ -197,14 +182,9 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     isTsfTexInitialized(false),
     isCLInitialized(false),
     isGLInitialized(false),
-    //    isFrameValid(false),
     isWeightCenterActive(false),
-    //    isInterpolGpuInitialized(false),
     isSetTraced(false),
-    //    isSwapped(true),
     texture_number(0),
-//    rgb_style(1),
-//    alpha_style(2),
     mode(0),
     isLog(1),
     isCorrectionLorentzActive(0),
@@ -220,7 +200,6 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     progressPollTimer = new QTimer;
     progressPollTimer->setInterval(100);
     connect(progressPollTimer, SIGNAL(timeout()), this, SLOT(pollProgress()));
-//    progressPollTimer->start();
 
     // Worker
     workerThread = new QThread;
@@ -231,9 +210,6 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     connect(this, SIGNAL(runTraceWorker(SeriesSet)), imageWorker, SLOT(traceSeries(SeriesSet)));
     connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(setFrame()));
     connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(setSeriesTrace()));
-    //    connect(imageWorker, SIGNAL(traceFinished()), this, SLOT(update()));
-    //    connect(this, &Controller::operate, worker, &Worker::doWork);
-    //    connect(worker, imageWorker::resultReady, this, Controller::handleResults);
     workerThread->start();
 
 
@@ -260,6 +236,9 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     prev_pixel.set(1, 2, 0);
 
     p_future_watcher = new QFutureWatcher<void>(this);
+
+    connect(p_future_watcher, SIGNAL(finished()), this, SLOT(on_populateInterpolationTree_finished()));
+    connect(p_future_watcher, SIGNAL(canceled()), this, SLOT(on_populateInterpolationTree_canceled()));
 }
 
 ImageWorker * ImageOpenGLWidget::worker()
@@ -324,7 +303,6 @@ void ImageOpenGLWidget::paintGL()
 
 void ImageOpenGLWidget::resizeGL(int w, int h)
 {
-//    qDebug() << w << h;
 }
 
 void ImageOpenGLWidget::initializeGL()
@@ -435,11 +413,6 @@ void ImageOpenGLWidget::initializeGL()
     texture_image_marker->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     texture_image_marker->setMagnificationFilter(QOpenGLTexture::Linear);
 
-//    qDebug() << QString("%1").arg(texture_noimage->format() , 0, 16);
-//    qDebug() << texture_noimage->width();
-//    qDebug() << texture_noimage->height();
-//    qDebug() << texture_noimage->textureId();
-
     isGLInitialized = true;
 
     // Initialize OpenCL
@@ -449,8 +422,6 @@ void ImageOpenGLWidget::initializeGL()
 
     setRgb("Hot");
     setAlpha("Opaque");
-//    setFrame();
-//    centerImage(QSizeF());
 }
 
 ImageOpenGLWidget::~ImageOpenGLWidget()
@@ -488,186 +459,6 @@ void ImageOpenGLWidget::setBeamYOverride(double value)
     beam_y_override = value;
 }
 
-void ImageOpenGLWidget::reconstruct()
-{
-    showTraceTexture(false);
-
-    int verbose = 0;
-
-    kill_flag = false;
-
-//    if (p_set.size() <= 0)
-//    {
-//        QString str("\n[" + QString(this->metaObject()->className()) + "] Warning: No files have been specified");
-
-//        emit message(str);
-//        kill_flag = true;
-//    }
-
-    // Emit to appropriate slots
-    emit message("\n[" + QString(this->metaObject()->className()) + "] Processing: ");
-//    emit progressTaskActive(false);
-
-    // Container for relevant scattering data
-    reduced_pixels->reserve(1, REDUCED_PIXELS_MAX_BYTES / sizeof(float));
-
-    // Reset suggested values
-    float suggested_q = std::numeric_limits<float>::min();
-    float suggested_search_radius_low = std::numeric_limits<float>::max();
-    float suggested_search_radius_high = std::numeric_limits<float>::min();
-
-    QElapsedTimer stopwatch;
-    stopwatch.start();
-    size_t n_ok_files = 0;
-    n_reduced_pixels = 0;
-    size_t size_raw = 0;
-
-    // Set to first series
-//    p_set.saveCurrentIndex();
-//    p_set.begin();
-
-    emit progressTaskActive(true);
-
-    // Get the number of files
-    QSqlQuery query(QSqlDatabase::database());
-    query.prepare("SELECT count(FilePath) FROM cbf_table WHERE Active = :Active");
-    query.bindValue(":Active", 1);
-    if (!query.exec())
-    {
-        qDebug() << query.lastError();
-    }
-
-    int n_files = query.value(0).toInt();
-    int i = 0;
-
-    // Get the files
-    query.prepare("SELECT * FROM cbf_table WHERE Active = :Active");
-    query.bindValue(":Active", 1);
-    if (!query.exec())
-    {
-        qDebug() << query.lastError();
-    }
-
-    while (query.next())
-    {
-        p_current_filepath = query.value(0).toString();
-
-            // Kill process if requested
-            if (kill_flag)
-            {
-                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Process killed at iteration " + QString::number(i) + " of " + QString::number(n_files));
-                reduced_pixels->clear();
-
-                break;
-            }
-
-            emit progressRangeChanged(0, n_files);
-
-            // Draw the frame and update the intensity OpenCL buffer prior to further operations.
-            // setFrame() calls calculus() which carries out any corrections
-            setFrame();
-            {
-                this->update();
-            }
-
-            // Force a buffer swap
-            size_raw += image.bytes();
-
-            // Project and correct file and get status
-            Selection selection = p_working_data[p_current_filepath].selection();
-
-            if (selection.width() > image.width())
-            {
-                selection.setWidth(image.width());
-            }
-
-            if (selection.height() > image.height())
-            {
-                selection.setHeight(image.height());
-            }
-
-            p_working_data[p_current_filepath].setSelection(selection);
-
-            // Project the data
-            int STATUS_OK = projectFile(&image, selection, reduced_pixels, &n_reduced_pixels);
-
-            if (STATUS_OK)
-            {
-                // Get suggestions on the minimum search radius that can safely be applied during interpolation
-                if (suggested_search_radius_low > image.getSearchRadiusLowSuggestion())
-                {
-                    suggested_search_radius_low = image.getSearchRadiusLowSuggestion();
-                }
-
-                if (suggested_search_radius_high < image.getSearchRadiusHighSuggestion())
-                {
-                    suggested_search_radius_high = image.getSearchRadiusHighSuggestion();
-                }
-
-                // Get suggestions on the size of the largest reciprocal Q-vector in the data set (physics)
-                if (suggested_q < image.getQSuggestion())
-                {
-                    suggested_q = image.getQSuggestion();
-                }
-
-                n_ok_files++;
-
-//                p_set.current()->next();
-            }
-            else
-            {
-                emit message("\n[" + QString(this->metaObject()->className()) + "] Warning: Could not process \"" + p_working_data[p_current_filepath].filePath() + "\".\n Too much data was kept during reconstruction.");
-                kill_flag = true;
-            }
-
-            // Update the progress bar
-//            emit progressChanged(j);
-        }
-
-//        p_set.current()->loadSavedIndex();
-//        p_set.next();
-//    }
-
-
-//    p_set.loadSavedIndex();
-//    p_set.current()->loadSavedIndex();
-    setFrame();
-
-    size_t t = stopwatch.restart();
-
-    if (!kill_flag)
-    {
-        reduced_pixels->resize(1, n_reduced_pixels);
-
-        emit message(" " + QString::number(n_ok_files) + " files were successfully processed (" + QString::number(size_raw / 1000000.0, 'f', 3) + " MB -> " + QString::number((float)reduced_pixels->bytes() / (float)1000000.0, 'f', 3) + " MB, " + QString::number(t) + " ms, " + QString::number((float)t / (float)n_ok_files, 'g', 3) + " ms/file)");
-
-        // From q and the search radius it is straigthforward to calculate the required resolution and thus octree level
-        float resolution_min = 2 * suggested_q / suggested_search_radius_high;
-        float resolution_max = 2 * suggested_q / suggested_search_radius_low;
-
-        if (verbose)
-        {
-            emit message("\n[" + QString(this->metaObject()->className()) + "] Max scattering vector Q: " + QString::number(suggested_q, 'g', 3) + " inverse " + trUtf8("Å"));
-        }
-
-        if (verbose)
-        {
-            emit message("\n[" + QString(this->metaObject()->className()) + "] Search radius: " + QString::number(suggested_search_radius_low, 'g', 2) + " to " + QString::number(suggested_search_radius_high, 'g', 2) + " inverse " + trUtf8("Å"));
-        }
-
-        if (verbose)
-        {
-            emit message("\n[" + QString(this->metaObject()->className()) + "] Suggested minimum resolution: " + QString::number(resolution_min, 'f', 0) + " to " + QString::number(resolution_max, 'f', 0) + " voxels");
-        }
-
-        emit qSpaceInfoChanged(suggested_search_radius_low, suggested_search_radius_high, suggested_q);
-    }
-
-    emit progressTaskActive(false);
-//    emit progressTaskActive(true);
-}
-
-
 
 void ImageOpenGLWidget::setOffsetOmega(double value)
 {
@@ -681,11 +472,6 @@ void ImageOpenGLWidget::setOffsetPhi(double value)
 {
     offset_phi = value * pi / 180.0;
 }
-
-//void ImageOpenGLWidget::setActiveAngle(QString value)
-//{
-//    active_rotation = value;
-//}
 
 void ImageOpenGLWidget::killProcess()
 {
@@ -1043,55 +829,6 @@ void ImageOpenGLWidget::scatteringDataToImage(cl_mem data_buf_cl, cl_mem frame_i
     }
 }
 
-//void ImageOpenGLWidget::copyBufferRect(cl_mem buffer_cl,
-//                                       cl_mem copy_cl,
-//                                       Matrix<size_t> &buffer_size,
-//                                       Matrix<size_t> &buffer_origin,
-//                                       Matrix<size_t> &copy_size,
-//                                       Matrix<size_t> &copy_origin,
-//                                       Matrix<size_t> &local_ws)
-//{
-////     Prepare kernel parameters
-//    Matrix<size_t> global_ws(1, 2);
-//    global_ws[0] = copy_size[0] + (local_ws[0] - ((size_t) copy_size[0]) % local_ws[0]);
-//    global_ws[1] = copy_size[1] + (local_ws[1] - ((size_t) copy_size[1]) % local_ws[1]);
-
-//    int buffer_row_pitch = buffer_size[0];
-//    int copy_row_pitch = copy_size[0];
-
-//    // Set kernel parameters
-//    err =   QOpenCLSetKernelArg(cl_rect_copy_float,  0, sizeof(cl_mem), (void *) &buffer_cl);
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 1, sizeof(cl_int2), buffer_size.toInt().data());
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 2, sizeof(cl_int2), buffer_origin.toInt().data());
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 3, sizeof(int), &buffer_row_pitch);
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 4, sizeof(cl_mem), (void *) &copy_cl);
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 5, sizeof(cl_int2), copy_size.toInt().data());
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 6, sizeof(cl_int2), copy_origin.toInt().data());
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 7, sizeof(int), &copy_row_pitch);
-//    err |=   QOpenCLSetKernelArg(cl_rect_copy_float, 8, sizeof(cl_int2), copy_size.toInt().data());
-
-//    if ( err != CL_SUCCESS)
-//    {
-//        qFatal(cl_error_cstring(err));
-//    }
-
-
-//    // Launch the kernel
-//    err =   QOpenCLEnqueueNDRangeKernel(context_cl.queue(), cl_rect_copy_float, 2, NULL, global_ws.data(), local_ws.data(), 0, NULL, NULL);
-
-//    if ( err != CL_SUCCESS)
-//    {
-//        qFatal(cl_error_cstring(err));
-//    }
-
-//    err =   QOpenCLFinish(context_cl.queue());
-
-//    if ( err != CL_SUCCESS)
-//    {
-//        qFatal(cl_error_cstring(err));
-//    }
-//}
-
 float ImageOpenGLWidget::sumGpuArray(cl_mem cl_data, unsigned int read_size, Matrix<size_t> &local_ws)
 {
     /*
@@ -1299,8 +1036,6 @@ void ImageOpenGLWidget::processScatteringDataProxy()
                 qFatal(cl_error_cstring(err));
             }
 
-//            copyBufferRect(image_data_corrected_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
-
             float mean = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
             processScatteringData(image_data_corrected_cl, image_data_variance_cl, parameter, image_size, local_ws, mean, 0, 1);
@@ -1351,7 +1086,6 @@ void ImageOpenGLWidget::processScatteringDataProxy()
             {
                 qFatal(cl_error_cstring(err));
             }
-//            copyBufferRect(image_data_corrected_cl, image_data_generic_cl, image_size, origin, image_size, origin, local_ws);
 
             float mean = sumGpuArray(image_data_generic_cl, image_size[0] * image_size[1], local_ws) / (image_size[0] * image_size[1]);
 
@@ -1401,62 +1135,6 @@ void ImageOpenGLWidget::processScatteringDataProxy()
 }
 
 
-void ImageOpenGLWidget::populateInterpolationTree()
-{
-    // Note: If the spawned threads consume more than the available memory, either on the host or the gpu, the behaviour is undefined
-//    kill_flag = false;
-    progressPollTimer->start();
-
-    // Get the number of files
-    QSqlQuery query(QSqlDatabase::database());
-    query.prepare("SELECT count(FilePath) FROM cbf_table WHERE Active = :Active");
-    query.bindValue(":Active", 1);
-    if (!query.exec())
-    {
-        qDebug() << query.lastError();
-    }
-    query.first();
-
-    emit progressRangeChanged(0, query.value(0).toInt());
-    emit progressTaskActive(true);
-
-    // Reconstruct scattering data and insert into the interpolation octree
-    // Spawn one thread per file. Writes into tree are mutex locked
-    p_file_checklist.clear();
-    p_n_returned_tasks = 0;
-
-    query.prepare("SELECT * FROM cbf_table WHERE Active = :Active ORDER BY FilePath ASC");
-    query.bindValue(":Active", 1);
-    if (!query.exec()) qDebug() << sqlQueryError(query);
-
-//    qsrand(55);
-    while (query.next())
-    {
-        QString path = query.value(0).toString();
-        PopulateInterpolationTreeTask *task = new PopulateInterpolationTreeTask(path);
-        task->setAutoDelete(true);
-
-        // Set all parameters
-        task->setMutex(&mutex);
-
-        // Spawn
-        p_file_checklist << path;
-//        connect(task, SIGNAL(test(int)), this, SLOT(testSlot(int)));
-        connect(task, SIGNAL(finished(QString)), this, SLOT(on_populateInterpolationTree_finished(QString)));
-        QThreadPool::globalInstance()->start(task);
-    }
-
-//    qDebug() << "BOOM!";
-}
-
-void ImageOpenGLWidget::clearRunnables()
-{
-    QThreadPool::globalInstance()->clear();
-//    kill_flag = true;
-    emit progressChanged(0);
-    emit progressTaskActive(false);
-    progressPollTimer->stop();
-}
 
 void ImageOpenGLWidget::populateInterpolationTreeMap()
 {
@@ -1467,14 +1145,23 @@ void ImageOpenGLWidget::populateInterpolationTreeMap()
     if (!query.exec()) qDebug() << sqlQueryError(query);
 
     p_future_list.clear();
+    p_interpolation_octree.clear();
+    p_interpolation_octree.setParent(NULL);
 
-    p_test = 0;
+    double Q = 1.0; // This value should be more related to the actual wavelength
+    Matrix<double> extent(1,6);
+    extent[0] = -Q;
+    extent[1] = Q;
+    extent[2] = -Q;
+    extent[3] = Q;
+    extent[4] = -Q;
+    extent[5] = Q;
+    p_interpolation_octree.setExtent(extent);
 
-    while (query.next())// && (files.size() < 10))
+    while (query.next())
     {
         // Prepare detector file.
         QString file_path = query.value(0).toString();
-
         DetectorFile file(file_path);
 
         // Set the appropriate selection.
@@ -1490,16 +1177,14 @@ void ImageOpenGLWidget::populateInterpolationTreeMap()
         args.flux_correction = isCorrectionFluxActive;
         args.exposure_time_correction = isCorrectionExposureActive;
         args.pixel_projection_correction = isCorrectionPixelProjectionActive;
-
         args.noise_low = parameter[0];
-        args.noise_high = parameter[1];
         file.setCorrectionArgs(args);
 
         // Give it a CL context, queue, BUT NOT kernel handles. clSetKernelArg is NOT thread safe when used across multiple threads on the same kernel object.
         file.setCLContext(&context_cl);
 
         // Pass a pointer to an interpolation octree in which to put treated data points.
-        file.setInterpolationTree(&p_test);
+        file.setInterpolationTree(&p_interpolation_octree);
 
         // Set mutex for reading and writing to shared data
         file.setMutex(&p_mutex);
@@ -1509,69 +1194,23 @@ void ImageOpenGLWidget::populateInterpolationTreeMap()
 
     // Perform the operation
     p_future_watcher->setFuture(QtConcurrent::map(p_future_list, &DetectorFile::populateInterpolationTree));
-
-//    p_future_watcher->waitForFinished();
-
-//    qDebug() << p_test << 1679 * 1475;
 }
 
-void ImageOpenGLWidget::on_populateInterpolationTree_finished(QString file)
+void ImageOpenGLWidget::on_populateInterpolationTree_finished()
 {
-    p_file_checklist.removeAll(file);
-
-    if (p_file_checklist.isEmpty())
-    {
-        emit message("The interpolation octree has been generated.");
-        emit progressChanged(0);
-        emit progressTaskActive(false);
-        progressPollTimer->stop();
-
-    }
-
-    ++p_n_returned_tasks;
-
-//    if (!kill_flag) emit progressChanged(++p_n_returned_tasks);
-//    if (!kill_flag) emit message(QString::number(++p_n_returned_tasks));
-//    qDebug() << QThreadPool::globalInstance()->activeThreadCount();
+    p_future_list.clear();
 }
 
-PopulateInterpolationTreeTask::PopulateInterpolationTreeTask(QString file) :
-    p_file(file)
+void ImageOpenGLWidget::on_populateInterpolationTree_canceled()
 {
-
+    emit message("Canceled operation");
 }
 
-void PopulateInterpolationTreeTask::setMutex(QMutex * mutex)
-{
-    this->p_mutex = mutex;
-}
-
-void PopulateInterpolationTreeTask::run()
-{
-//    qDebug() << QThreadPool::activeThreadCount();
-    QTest::qSleep(100);
-    p_mutex->lock();
-    p_mutex->unlock();
-
-//    emit test(*p_n_returned_tasks);
-
-    emit finished(p_file);
-}
 
 void ImageOpenGLWidget::pollProgress()
 {
     emit progressChanged(p_n_returned_tasks);
 }
-
-//void ImageOpenGLWidget::testSlot(int value)
-//{
-//    emit progressChanged(value);
-//}
-
-//void ImageOpenGLWidget::populateInterpolationTreeMapFunction(const QString & file)
-//{
-//    QTest::qSleep(100);
-//}
 
 void ImageOpenGLWidget::setFrame()
 {
@@ -2489,114 +2128,6 @@ void ImageOpenGLWidget::applySelection()
         p_working_data[path].setSelection(p_working_data[p_current_filepath].selection());
     }
 }
-
-//void ImageOpenGLWidget::setSet(SeriesSet s)
-//{
-//    if (!s.isEmpty())
-    /*{
-        p_set = s;
-
-        emit imageRangeChanged(0, p_set.current()->size() - 1);
-        setFrame();
-
-        centerImage(image.size());
-
-        set_trace.clear();
-
-        p_set.begin();
-
-        // Fill trace with empty frames
-        for (size_t i = 0; i < p_set.size(); i++)
-        {
-            image.setPath(p_working_data[p_current_filepath].path());
-
-            Matrix<float> zeros_like_frame(image.height(), image.width(), 0.0f);
-
-            set_trace << zeros_like_frame;
-
-            p_set.next();
-        }
-
-        p_set.begin();
-
-        isSetTraced = true;
-    }
-
-
-    setFrame();
-    centerImage(image.size());
-    setSeriesTrace();*/
-//}
-
-//void ImageOpenGLWidget::removeCurrentImage()
-//{
-//    if (!p_set.isEmpty())
-//    {
-//        emit pathRemoved(p_working_data[p_current_filepath].path());
-
-//        p_set.current()->removeCurrent();
-//        p_set.current()->next();
-
-//        setFrame();
-
-//        emit imageRangeChanged(0, p_set.current()->size() - 1);
-//    }
-//}
-
-
-//void ImageOpenGLWidget::setFrameByIndex(int i)
-//{
-//    if (!p_set.isEmpty())
-//    {
-//        p_set.current()->at(i);
-//        setFrame();
-//    }
-
-//    update();
-//}
-
-//void ImageOpenGLWidget::nextSeries()
-//{
-//    if (!p_set.isEmpty())
-//    {
-//        p_set.current()->saveCurrentIndex();
-//        p_set.next();
-//        p_set.current()->loadSavedIndex();
-
-//        emit imageRangeChanged(0, p_set.current()->size() - 1);
-//        emit currentIndexChanged(p_set.current()->i());
-
-//        if (isSetTraced)
-//        {
-//            setSeriesTrace();
-//        }
-
-//        setFrame();
-//    }
-
-//    update();
-//}
-//void ImageOpenGLWidget::prevSeries()
-//{
-//    if (!p_set.isEmpty())
-//    {
-//        p_set.current()->saveCurrentIndex();
-//        p_set.previous();
-//        p_set.current()->loadSavedIndex();
-
-//        emit imageRangeChanged(0, p_set.current()->size() - 1);
-//        emit currentIndexChanged(p_set.current()->i());
-
-//        if (isSetTraced)
-//        {
-//            setSeriesTrace();
-//        }
-
-//        setFrame();
-//    }
-
-//    update();
-//}
 
 void ImageOpenGLWidget::setApplicationMode(QString str)
 {
@@ -4219,11 +3750,6 @@ void ImageOpenGLWidget::wheelEvent(QWheelEvent * event)
     }
 }
 
-//SeriesSet ImageOpenGLWidget::set()
-//{
-//    return p_set;
-//}
-
 void ImageOpenGLWidget::takeScreenShot(QString path)
 {
     bool tmp = isEwaldCircleActive;
@@ -4268,7 +3794,6 @@ void ImageOpenGLWidget::saveImage(QString path)
 
     QPainter painter(&paint_device_gl);
 
-    /////////////////////////////////
     beginRawGLCalls(&painter);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);

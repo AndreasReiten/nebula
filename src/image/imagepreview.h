@@ -35,28 +35,6 @@
 #include "../math/rotationmatrix.h"
 
 
-
-
-class PopulateInterpolationTreeTask : public QObject, public QRunnable
-{
-    Q_OBJECT
-public:
-    PopulateInterpolationTreeTask(QString file);
-    void setMutex(QMutex * mutexy);
-
-signals:
-    void finished(QString);
-//    void test(int);
-
-protected:
-    void run();
-
-private:
-    QString p_file;
-//    int * p_n_returned_tasks;
-    QMutex * p_mutex;
-};
-
 class ImageWorker : public QObject, protected OpenCLFunctions
 {
         Q_OBJECT
@@ -64,7 +42,6 @@ class ImageWorker : public QObject, protected OpenCLFunctions
     public:
         ImageWorker();
         ~ImageWorker();
-//        void setOpenCLContext(OpenCLContextQueueProgram *context);
         void setTraceContainer(QList<Matrix<float>> * list);
 
     public slots:
@@ -73,8 +50,6 @@ class ImageWorker : public QObject, protected OpenCLFunctions
 
     signals:
         void traceFinished();
-//        void progressTaskActive(bool value);
-//        void pathChanged(QString path);
         void progressRangeChanged(int, int);
         void progressChanged(int);
 
@@ -128,13 +103,9 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
     public slots:
         void pollProgress();
-
-//        void testSlot(int value);
-        void clearRunnables();
-        void populateInterpolationTree();
         void populateInterpolationTreeMap();
-//        void populateInterpolationTreeMapFunction(const QString & file); // move to private, non slot
-        void on_populateInterpolationTree_finished(QString file);
+        void on_populateInterpolationTree_finished();
+        void on_populateInterpolationTree_canceled();
 
         void setApplicationMode(QString str);
         void setFilePath(QString str);
@@ -147,11 +118,9 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void setBeamYOverride(double value);
 
         void killProcess();
-//        void setActiveAngle(QString value);
         void setOffsetOmega(double value);
         void setOffsetKappa(double value);
         void setOffsetPhi(double value);
-        void reconstruct();
 
         void setMode(int value);
         void setNoise(double value);
@@ -173,11 +142,6 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void showWeightCenter(bool value);
         void showImageTooltip(bool value);
         void showEwaldCircle(bool value);
-//        void setSet(SeriesSet s);
-//        void setFrameByIndex(int i);
-//        void nextSeries();
-//        void prevSeries();
-//        void removeCurrentImage();
         void applySelection();
         void setCorrectionNoise(bool value);
         void setCorrectionPlane(bool value);
@@ -263,8 +227,6 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void processScatteringData(cl_mem data_buf_cl, cl_mem out_buf_cl, Matrix<float> &param, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, float mean, float deviation, int task);
 
         void scatteringDataToImage(cl_mem data_buf_cl, cl_mem frame_image_cl, cl_mem tsf_image_cl, Matrix<float> &data_limit, Matrix<size_t> &image_size, Matrix<size_t> &local_ws, cl_sampler tsf_sampler, int log);
-
-//        void copyBufferRect(cl_mem cl_buffer, cl_mem cl_copy, Matrix<size_t> &buffer_size, Matrix<size_t> &buffer_origin, Matrix<size_t> &copy_size, Matrix<size_t> &copy_origin, Matrix<size_t> &local_ws);
 
         float sumGpuArray(cl_mem cl_data, unsigned int read_size, Matrix<size_t> &local_ws);
 
@@ -400,7 +362,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         QMutex p_mutex;
 
 
-        long p_test;
+        SearchNode p_interpolation_octree;
 };
 
 #endif // IMAGEPREVIEW_H

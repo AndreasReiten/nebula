@@ -1,7 +1,7 @@
 # QMAKE PROJECT FILE
 
 # Modules and project configuration
-QT += core gui sql concurrent testlib
+QT += core gui sql concurrent
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 win32 {
@@ -79,7 +79,8 @@ HEADERS += \
     reconstructionwidget.h \
     visualizationwidget.h \
     sql/customsqlquerymodel.h \
-    sql/sqlqol.h
+    sql/sqlqol.h \
+    misc/smallstuff.h
 
 SOURCES += \
     main.cpp \

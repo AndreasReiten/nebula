@@ -81,8 +81,7 @@ kernel void correctScatteringData(
     float wavelength,
     float flux,
     float exposure_time,
-    float noise_low,
-    float noise_high
+    float noise_low
 )
 {
     // The frame has its axes like this, looking from the source to
@@ -109,7 +108,7 @@ kernel void correctScatteringData(
         // Flat background subtraction
         if (isCorrectionNoiseActive)
         {
-            Q.w = clamp(Q.w, noise_low, noise_high); // All readings within thresholds
+            Q.w = clamp(Q.w, noise_low, Q.w); // All readings within thresholds
             Q.w -= noise_low; // Subtract
         }
 
