@@ -17,22 +17,13 @@
  * Some cl and gl resources are not released before program exit
  * Some clSetKernelArg calls are redundant
  * Make container classes for OpenCL objects, possibly in QOpenCLFunctions, that automate destruction and can tell if an object has been initialized. OpenCL functions can be modified to take them as input arguments.
- * (Done) Make QOpenCL class similar to QOpenGLFunctions
- * (Time consuming) Switch to QOpenGLWidget
  * (Somewhat time consuming) Remove hard memory requirements in cases where information about max RAM is known (case for vRAM). Adapt to hardware.
  * (Somewhat time consuming) Implement LP correction with convenient GUI. Polarization corr. based on beam polarization. Lorentz correction based on sample rotation axis (given by two angles)
  * (Somewhat time consuming) Implement clutter removal, median filter, flux and exposure normalization
- * (Quick) Save all parameters in save files and make the program relaxed regarding version. "Use what you can"-approach
- * When generating an octree, allow to save at any level less than or equal to the max chosen one.
  * (Time consuming) Implement a transfer function editor.
  * (Time consuming) Shadows
  * (Time consuming) Pre-integrated transfer functions
- * (Quick) Try opening folder structure in file browser when opening project file. Ability to append more unique files if requested.
  * (Low priority) Radial selectivity. I. e. confining viewable area to a spherical shell
- * (Time consuming) A solid linear texture edit (tsf function)
- * (Done) Area selection prior to reduction to limit data size.
- * (Done) Align slice frame to normal to a*, b* and c*.
- * (Done) Persistent screenshot dir.
  * (Done, quick fixed) Going from slice mode to integrate mode is bugged.
  * (Done on GUI level) Remove PCT threshold altogether. It can no longer be justified if the early box termination based on variance becomes successful. This could also be where the problem with voxelize lies.
  * (Somewhat time consuming) Too much VRAM is being used and without proper warnigns when too much is used
@@ -40,18 +31,13 @@
  * (Done, but early MSD features are still very flawed) Vincinity check for bricks. Bricks can not be made MSD early if some voxels are filled, but others are zero. Would help smoothen surface features. Basically check for voxels of value zero in each brick. It is also flawed in that it disallows MSD for cases where a brick completely envelops a small feature.
  * (Difficult, and variance should be found from raw data, not interpolated) Proper setting of transparent voxels. There are artefacts.
  * Other interpolation modes than IDW to get rid of blobbyness. IDW great unless sparsely populated.
- * UB matrix input
- *
- *
- *
  * In the intermediate tree, when a certain conditions are met, points are merged rather than added. Points can also be added directly into the intermediate octree rather than having them put into a list first.
  * Conditional rebinning could work. Placing values directly into intermediate octree and either rebin or split octnodes depending on data properties when they exceed a given number of points. If the contained data is smooth, then rebinning to n**3 samples is ok.
  * In lack of an easy-to-implement way of generating a both lossless and moderate intermediate data interpolation structure, it might be that values must simply be added to a "giant" octree, and only let compression ensue when the tree is deeper (more resolved) than the resolution dictated by the intersected data points (strict rebinning), or a size limit is reached  (conditional upwards rebinning, first relaxed then strict).
- * Integration boxes. You pick which side or line within the box is to be integrated along (and in which direction). Arrows indicate direction.
- *
  * Option in visualization to "enhance for visibility, at which time the max value in the current frame is read and scaled for to best use colour to show difference.
  * Contour plot
- *
+ * UB matrix input
+ * Integration boxes. You pick which side or line within the box is to be integrated along (and in which direction). Arrows indicate direction.
  * Remove bloated/unused/poor functionality in a "Nebula Light" branch
  * */
 

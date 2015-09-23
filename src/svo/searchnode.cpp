@@ -18,6 +18,7 @@ SearchNode::SearchNode()
 //    n_points = 0;
 //    p_n_children = 0;
     p_extent.reserve(1, 6);
+    p_mutex = new QMutex;
 }
 
 SearchNode::SearchNode(SearchNode * parent, double * extent)
@@ -42,6 +43,8 @@ SearchNode::SearchNode(SearchNode * parent, double * extent)
     {
         p_tree_level = parent->level() + 1;
     }
+
+    p_mutex = new QMutex;
 }
 
 SearchNode::~SearchNode()
@@ -96,6 +99,7 @@ unsigned int SearchNode::level()
     return p_tree_level;
 }
 
+
 void SearchNode::print()
 {
     /* Print self */
@@ -104,7 +108,7 @@ void SearchNode::print()
         std::cout << " ";
     }
 
-    std::cout << "L" << p_tree_level << "-> n: " << p_data_points.size() << " c: " << 8 << " empt: " << p_is_empty << " msd: = " << p_is_msd << " Ext = [ " << std::setprecision(2) << std::fixed << p_extent[0] << " " << p_extent[1] << " " << p_extent[2] << " " << p_extent[3] << " " << p_extent[4] << " " << p_extent[5] << " ]" << std::endl;
+//    std::cout << "L" << p_tree_level << "-> n bins: " << p_linked_points.size() << " c: " << 8 << " empt: " << p_is_empty << " msd: = " << p_is_msd << " Ext = [ " << std::setprecision(2) << std::fixed << p_extent[0] << " " << p_extent[1] << " " << p_extent[2] << " " << p_extent[3] << " " << p_extent[4] << " " << p_extent[5] << " ]" << std::endl;
 
     /* Print children */
 //    if (p_n_children > 0)
@@ -116,8 +120,21 @@ void SearchNode::print()
 //    }
 }
 
-// Functions that rely on recursive action such as this one should not be declared as a member function. Rather make a function external to the node. (?)
 void SearchNode::insert(xyzw32 & point)
+{
+    // If the current node is not msd (max subdivision), then it's private variables will not be changed, and thus it does not need a mutex lock
+    if (p_is_msd)
+    {
+        QMutexLocker lock(p_mutex);
+        p_insert(point);
+    }
+    else
+    {
+        p_insert(point);
+    }
+}
+
+void SearchNode::p_insert(xyzw32 & point)
 {
     // If this is not the maximum subdivision, then proceed to the next octree level
     if (!p_is_msd)
@@ -133,9 +150,16 @@ void SearchNode::insert(xyzw32 & point)
     // Else if this is the first data point to be inserted
     else if (p_data_points.isEmpty() && p_is_msd)
     {
+        //#->
         p_data_points.reserve(MAX_POINTS);
+        //#->
+//        subnode node;
+//        node.data_points << point;
+//        node.index = ...
+        //#->
         p_data_points << point;
         p_is_empty = false;
+        //#->
     }
     // Else if there will be too many points and a split is required, and the split wont result in too deep an octree level
     else if ((p_data_points.size() >= MAX_POINTS - 1) && (p_tree_level < MAX_LEVELS - 1))
@@ -328,6 +352,13 @@ unsigned int SearchNode::octant(xyzw32 & point, bool * isOutofBounds)
     unsigned int id = oct_x + 2 * oct_y + 4 * oct_z;
 
     return id;
+}
+
+void SearchNode::rebin()
+{
+    // Regenerate data points on a grid. For each grid cell, the xyz position of the data point is the average position of the sample sub-set (with possible weighing).
+    // If there are no points, then no data point is generated. In some cases, the points might not be rebinned at all.
+
 }
 
 void SearchNode::split()

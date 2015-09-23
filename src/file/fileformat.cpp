@@ -947,7 +947,10 @@ void DetectorFile::populateInterpolationTree()
         qFatal(cl_error_cstring(err));
     }
 
-    QMutexLocker locker(p_mutex);
+    // There are ways in which to make access to the interpolation octree concurrent and scalable.
+    // Such methods need to make sure that the same data is not being written or accessed concurrently.
+    // For example by letting threads operate on different objects.
+//    QMutexLocker locker(p_mutex);
 
     for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
     {
@@ -956,7 +959,9 @@ void DetectorFile::populateInterpolationTree()
 //        qDebug() << data_point.x << data_point.y << data_point.z << data_point.w;
         if (data_point.w > 0.0) // Above 0 check
         {
+//            p_mutex->lock();
             p_interpolation_octree->insert(data_point);
+//            p_mutex->unlock();
         }
     }
 }
