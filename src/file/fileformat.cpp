@@ -70,8 +70,8 @@ DetectorFile::DetectorFile(const DetectorFile &other) :
     p_context_cl(other.p_context_cl),
     p_area_selection(other.p_area_selection),
     p_correction_args(other.p_correction_args),
-    p_interpolation_octree(other.p_interpolation_octree),
-    p_mutex(other.p_mutex)
+    p_interpolation_octree(other.p_interpolation_octree)
+//    p_mutex(other.p_mutex)
 {
 }
 
@@ -105,8 +105,8 @@ DetectorFile::DetectorFile(DetectorFile &&other) :
     p_context_cl(std::move(other.p_context_cl)),
     p_area_selection(std::move(other.p_area_selection)),
     p_correction_args(std::move(other.p_correction_args)),
-    p_interpolation_octree(std::move(other.p_interpolation_octree)),
-    p_mutex(std::move(other.p_mutex))
+    p_interpolation_octree(std::move(other.p_interpolation_octree))
+//    p_mutex(std::move(other.p_mutex))
 {
 }
 
@@ -193,7 +193,7 @@ void DetectorFile::swap(DetectorFile & other)
     std::swap(this->p_area_selection, other.p_area_selection);
     std::swap(this->p_correction_args, other.p_correction_args);
     std::swap(this->p_interpolation_octree, other.p_interpolation_octree);
-    std::swap(this->p_mutex, other.p_mutex);
+//    std::swap(this->p_mutex, other.p_mutex);
 }
 
 QString DetectorFile::detector() const
@@ -257,10 +257,10 @@ void DetectorFile::setInterpolationTree(SearchNode * tree)
     p_interpolation_octree = tree;
 }
 
-void DetectorFile::setMutex(QMutex * mutex)
-{
-    p_mutex = mutex;
-}
+//void DetectorFile::setMutex(QMutex * mutex)
+//{
+//    p_mutex = mutex;
+//}
 
 float DetectorFile::getSearchRadiusLowSuggestion() const
 {
@@ -948,20 +948,16 @@ void DetectorFile::populateInterpolationTree()
     }
 
     // There are ways in which to make access to the interpolation octree concurrent and scalable.
-    // Such methods need to make sure that the same data is not being written or accessed concurrently.
-    // For example by letting threads operate on different objects.
-//    QMutexLocker locker(p_mutex);
+    // The current implementation employs one QMutex per SearchNode object (the interpolation octree
+    // consisits of many such nodes). Consequently only one thread can edit the same node at any time
 
     for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
     {
         xyzw32 data_point = {finalized_data[i * 4 + 0], finalized_data[i * 4 + 1], finalized_data[i * 4 + 2], finalized_data[i * 4 + 3]};
 
-//        qDebug() << data_point.x << data_point.y << data_point.z << data_point.w;
         if (data_point.w > 0.0) // Above 0 check
         {
-//            p_mutex->lock();
             p_interpolation_octree->insert(data_point);
-//            p_mutex->unlock();
         }
     }
 }

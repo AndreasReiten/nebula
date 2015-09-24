@@ -46,7 +46,7 @@ public:
     void setCorrectionArgs(DataCorrectionArgs & args);
     void setCLContext(OpenCLContextQueueProgram * context);
     void setInterpolationTree(SearchNode *tree);
-    void setMutex(QMutex * mutex);
+//    void setMutex(QMutex * mutex);
 
     int readBody();
     int readHeader();
@@ -143,7 +143,7 @@ private:
     OpenCLContextQueueProgram * p_context_cl;
     Selection p_area_selection;
     DataCorrectionArgs p_correction_args;
-    QMutex * p_mutex;
+//    QMutex * p_mutex;
     SearchNode * p_interpolation_octree;
 
     // Misc

@@ -1148,6 +1148,9 @@ void ImageOpenGLWidget::populateInterpolationTreeMap()
     p_future_list.clear();
     p_interpolation_octree.clear();
     p_interpolation_octree.setParent(NULL);
+    p_interpolation_octree.setBinsPerSide(4);
+    p_interpolation_octree.setMaxPoints(512);
+    p_interpolation_octree.setMinDataInterdistance(0.001);
 
     double Q = 1.0; // This value should be more related to the actual wavelength
     Matrix<double> extent(1,6);
@@ -1186,9 +1189,6 @@ void ImageOpenGLWidget::populateInterpolationTreeMap()
 
         // Pass a pointer to an interpolation octree in which to put treated data points.
         file.setInterpolationTree(&p_interpolation_octree);
-
-        // Set mutex for reading and writing to shared data
-        file.setMutex(&p_mutex);
 
         p_future_list << file;
     }

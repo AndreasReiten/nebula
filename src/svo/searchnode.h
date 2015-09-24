@@ -46,8 +46,11 @@ class SearchNode
         void clear();
         void print();
         void insert(xyzw32 &point);
+        void setBinsPerSide(int value);
         void setExtent(Matrix<double> extent);
         void setParent(SearchNode * p_parent);
+        void setMaxPoints(int value);
+        void setMinDataInterdistance(double value);
         bool isIntersected(Matrix<double> &sample_extent);
         bool getData(size_t max_points,
                      double * brick_extent,
@@ -86,6 +89,9 @@ class SearchNode
         bool p_strict_rebinning_on_msd;
 
         double p_min_data_interdistance;
+
+        int p_bins_per_side;
+        int p_max_points;
 
         QMutex * p_mutex;
 };

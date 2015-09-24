@@ -8,15 +8,12 @@
 #include <QDebug>
 #include <QElapsedTimer>
 
-static const unsigned int MAX_POINTS = 128;
 static const unsigned int MAX_LEVELS = 16;
 
 SearchNode::SearchNode()
 {
     p_is_msd = true;
     p_is_empty = true;
-//    n_points = 0;
-//    p_n_children = 0;
     p_extent.reserve(1, 6);
     p_mutex = new QMutex;
 }
@@ -26,8 +23,6 @@ SearchNode::SearchNode(SearchNode * parent, double * extent)
     p_is_msd = true;
     p_is_empty = true;
     p_parent = parent;
-//    n_points = 0;
-//    p_n_children = 0;
     p_extent.reserve(1, 6);
 
     for (int i = 0; i < 6; i++)
@@ -54,25 +49,27 @@ SearchNode::~SearchNode()
 
 void SearchNode::clear()
 {
-//    if (p_n_children > 0) // This clause really needed?
-//    {
-//        for (unsigned int i = 0; i < p_n_children; i++)
-//        {
-//            p_children[i].clear();
-//        }
-//    }
-
+//    p_linked_points.clear();
     p_children.clear();
     p_data_points.clear();
     p_is_msd = true;
     p_is_empty = true;
-//    p_n_children = 0;
 }
 
-//void SearchNode::clearPoints()
-//{
-//    p_data_points.clear();
-//}
+void SearchNode::setBinsPerSide(int value)
+{
+    p_bins_per_side = value;
+}
+
+void SearchNode::setMaxPoints(int value)
+{
+    p_max_points = value;
+}
+
+void SearchNode::setMinDataInterdistance(double value)
+{
+    p_min_data_interdistance = value;
+}
 
 void SearchNode::setExtent(Matrix<double> extent)
 {
@@ -81,7 +78,6 @@ void SearchNode::setExtent(Matrix<double> extent)
 
 void SearchNode::setParent(SearchNode * parent)
 {
-//    parent->print();
     p_parent = parent;
 
     if (p_parent == NULL)
@@ -111,13 +107,10 @@ void SearchNode::print()
 //    std::cout << "L" << p_tree_level << "-> n bins: " << p_linked_points.size() << " c: " << 8 << " empt: " << p_is_empty << " msd: = " << p_is_msd << " Ext = [ " << std::setprecision(2) << std::fixed << p_extent[0] << " " << p_extent[1] << " " << p_extent[2] << " " << p_extent[3] << " " << p_extent[4] << " " << p_extent[5] << " ]" << std::endl;
 
     /* Print children */
-//    if (p_n_children > 0)
-//    {
-        for (int i = 0; i < p_children.size(); i++)
-        {
-            p_children[i].print();
-        }
-//    }
+    for (int i = 0; i < 8; i++)
+    {
+        p_children[i].print();
+    }
 }
 
 void SearchNode::insert(xyzw32 & point)
@@ -150,19 +143,18 @@ void SearchNode::p_insert(xyzw32 & point)
     // Else if this is the first data point to be inserted
     else if (p_data_points.isEmpty() && p_is_msd)
     {
-        //#->
-        p_data_points.reserve(MAX_POINTS);
-        //#->
+
 //        subnode node;
 //        node.data_points << point;
-//        node.index = ...
-        //#->
+//        node.index =
+//        p_linked_points << point;
+
+        p_data_points.reserve(p_max_points);
         p_data_points << point;
         p_is_empty = false;
-        //#->
     }
     // Else if there will be too many points and a split is required, and the split wont result in too deep an octree level
-    else if ((p_data_points.size() >= MAX_POINTS - 1) && (p_tree_level < MAX_LEVELS - 1))
+    else if ((p_data_points.size() >= p_max_points - 1) && (p_tree_level < MAX_LEVELS - 1))
     {
         p_data_points << point;
         split();
@@ -202,7 +194,7 @@ void SearchNode::weighSamples(xyzw32 & sample, Matrix<double> & sample_extent, f
     }
     else //if (p_n_children > 0)
     {
-        for (int i = 0; i < p_children.size(); i++)
+        for (int i = 0; i < 8; i++)
         {
             if (p_children[i].isIntersected(sample_extent))
             {
@@ -367,7 +359,6 @@ void SearchNode::split()
      * children. Then insert the nodes in the children according to
      * octant */
 
-//    p_n_children = 8;
     p_children.resize(8);
 
     // For each child
@@ -379,7 +370,7 @@ void SearchNode::split()
 
         double half_side = (p_extent[1] - p_extent[0]) * 0.5;
 
-        double child_extent[6];
+        Matrix<double> child_extent(1,6);
         child_extent[0] = p_extent[0] + half_side * id_x;
         child_extent[1] = p_extent[1] - half_side * (1 - id_x);
         child_extent[2] = p_extent[2] + half_side * id_y;
@@ -387,7 +378,11 @@ void SearchNode::split()
         child_extent[4] = p_extent[4] + half_side * id_z;
         child_extent[5] = p_extent[5] - half_side * (1 - id_z);
 
-        p_children[i] = SearchNode(this, child_extent);
+        p_children[i].setParent(this);
+        p_children[i].setExtent(child_extent);
+        p_children[i].setMaxPoints(p_max_points);
+        p_children[i].setBinsPerSide(p_bins_per_side);
+        p_children[i].setMinDataInterdistance(p_min_data_interdistance);
     }
 
     // For each point
