@@ -51,7 +51,7 @@ public:
     int readBody();
     int readHeader();
 
-    void populateInterpolationTree();
+    void growInterpolationTree();
 
     bool isValid();
     bool isDataRead();

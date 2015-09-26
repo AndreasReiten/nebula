@@ -29,66 +29,79 @@
 //   rebinning, first relaxed then strict).
 // - Resolution is governed entirely by point density, but splits cannot occur over a certain resolution.
 
-struct subnode
-{
-    int index;
-    QLinkedList<xyzw32> data_points;
-};
-
 class SearchNode
 {
         /* This class represents a node in the "search octree" data structure. It is used in order to create bricks for the GPU octree. */
     public:
         SearchNode();
-        SearchNode(SearchNode * p_parent, double * extent);
+//        SearchNode(SearchNode * p_parent, float * extent);
         ~SearchNode();
+
+        bool isEmpty();
+
+        bool isRoot();
+
+        bool isMsd();
+
+        QVector<SearchNode> & children();
+
+        void setRoot(bool value);
+
+        void rebin(bool relaxed);
+
+        void estimate();
+
+        void brick();
+
+        QVector<QList<xyzw32>> & bins();
+
+        void hierarchy(QVector<QList<SearchNode *> > &nodes);
 
         void clear();
         void print();
         void insert(xyzw32 &point);
         void setBinsPerSide(int value);
-        void setExtent(Matrix<double> extent);
         void setParent(SearchNode * p_parent);
         void setMaxPoints(int value);
-        void setMinDataInterdistance(double value);
-        bool isIntersected(Matrix<double> &sample_extent);
-        bool getData(size_t max_points,
-                     double * brick_extent,
-                     QList<xyzw32> point_data,
-                     size_t * accumulated_points,
-                     float search_radius);
+        void setMinDataInterdistance(float value);
+        bool isIntersected(Matrix<float> &sample_extent);
+//        bool getData(size_t max_points,
+//                     float * brick_extent,
+//                     QList<xyzw32> point_data,
+//                     size_t * accumulated_points,
+//                     float search_radius);
 
 
-        float getIDW(xyzw32 &sample, float p, float search_radius);
+//        float getIDW(xyzw32 &sample, float p, float search_radius);
+        void setId(int id_x, int id_y, int id_z);
 
 
     private:
+        int p_id_x, p_id_y, p_id_z;
+        int num_points();
         void p_insert(xyzw32 &point);
-        void rebin();
-
-        void weighSamples(xyzw32 & sample, Matrix<double> &sample_extent, float * sum_w, float * sum_wu, float p, float search_radius);
-        bool intersectedItems(Matrix<double> &effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data);
-        float distance(xyzw32 &a, xyzw32 &b);
+//        void weighSamples(xyzw32 & sample, Matrix<float> &sample_extent, float * sum_w, float * sum_wu, float p, float search_radius);
+//        bool intersectedItems(Matrix<float> &effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data);
+//        float distance(xyzw32 &a, xyzw32 &b);
         void split();
-        unsigned int level();
-        unsigned int octant(xyzw32 &point, bool * isOutofBounds);
+        int level();
+        int ntant(xyzw32 &point, int n);
+
 
         SearchNode * p_parent;
         QVector<SearchNode> p_children;
-        QVector<xyzw32> p_data_points;
-
-//        QLinkedList<subnode> p_linked_points;
-        Matrix<double> p_extent;
-        unsigned int p_tree_level;
+        QVector<QList<xyzw32>> p_data_binned; // Binned data
+        int p_level;
         bool p_is_empty;
         bool p_is_msd;
+        bool p_is_root;
 
-        bool p_relaxed_rebinning_on_split;
-        bool p_strict_rebinning_on_split;
-        bool p_relaxed_rebinning_on_msd;
-        bool p_strict_rebinning_on_msd;
+//        bool p_relaxed_rebinning_on_split;
+//        bool p_strict_rebinning_on_split;
+//        bool p_relaxed_rebinning_on_msd;
+//        bool p_strict_rebinning_on_msd;
 
-        double p_min_data_interdistance;
+        float p_min_data_interdistance;
 
         int p_bins_per_side;
         int p_max_points;

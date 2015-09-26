@@ -340,7 +340,7 @@ void VoxelizeWorker::process()
         }
 
         // Place all data points in an octree data structure from which to construct the bricks in the brick pool
-        SearchNode root(NULL, svo->extent().data());
+        SearchNode root();//NULL, svo->extent().data());
 
 //        for (size_t i = 0; i < reduced_pixels->size() / 4; i++)
 //        {
@@ -356,7 +356,8 @@ void VoxelizeWorker::process()
 
         if (!kill_flag)
         {
-            /* Create an octree from brick data. The nodes are maintained in a linear array rather than a tree. This is mainly due to (current) lack of proper support for recursion on GPUs */
+            /* Create an octree from brick data. The nodes are maintained in a linear array rather than a tree.
+             * This is mainly due to (current) lack of proper support for recursion on GPUs */
             Matrix<BrickNode> gpuHelpOctree(1, n_max_bricks * 16);
             gpuHelpOctree[0].setParent(0);
 

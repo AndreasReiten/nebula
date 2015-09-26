@@ -84,7 +84,7 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>-81</y>
+          <y>0</y>
           <width>254</width>
           <height>393</height>
          </rect>
@@ -139,7 +139,7 @@
            <item row="10" column="1">
             <widget class="QPushButton" name="saveTreeButton">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="text">
               <string>Save</string>
@@ -147,9 +147,9 @@
             </widget>
            </item>
            <item row="10" column="0">
-            <widget class="QPushButton" name="generateTreeButton">
+            <widget class="QPushButton" name="voxelizeButton">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="text">
               <string>Voxelize</string>

@@ -420,33 +420,34 @@ kernel void projectScatteringData(
         {
             Q.w = in_buf[id_glb.y * image_size.x + id_glb.x];
 
-//            if (Q.w > 0.0f)
-//            {
-                /*
-                 * Projecting the pixel onto the Ewald sphere
-                 * */
+            /*
+             * Projecting the pixel onto the Ewald sphere
+             * */
 
-                // The real space vector OP going from the origo (O) to the pixel (P)
-                float3 OP = (float3)(
-                                                -detector_distance,
-                                                pixel_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
-                                                //pixel_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)
-                                                pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_y))); /* DANGER */
+            // The real space vector OP going from the origo (O) to the pixel (P)
+            float3 OP = (float3)(
+                                            -detector_distance,
+                                            pixel_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
+                                            //pixel_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)
+                                            pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_y))); /* DANGER */
 
-                float k = 1.0f / wavelength; // Multiply with 2pi if desired
+            float k = 1.0f / wavelength; // Multiply with 2pi if desired
 
-                float3 k_i = (float3)(-k, 0, 0);
-                float3 k_f = k * normalize(OP);
+            float3 k_i = (float3)(-k, 0, 0);
+            float3 k_f = k * normalize(OP);
 
-                Q.xyz = k_f - k_i;
+            Q.xyz = k_f - k_i;
 
-                // Sample rotation
-                float3 temp = Q.xyz;
+            // Sample rotation
+            float3 temp = Q.xyz;
 
-                Q.x = temp.x * sample_rotation_matrix[0] + temp.y * sample_rotation_matrix[1] + temp.z * sample_rotation_matrix[2];
-                Q.y = temp.x * sample_rotation_matrix[4] + temp.y * sample_rotation_matrix[5] + temp.z * sample_rotation_matrix[6];
-                Q.z = temp.x * sample_rotation_matrix[8] + temp.y * sample_rotation_matrix[9] + temp.z * sample_rotation_matrix[10];
-//            }
+            Q.x = temp.x * sample_rotation_matrix[0] + temp.y * sample_rotation_matrix[1] + temp.z * sample_rotation_matrix[2];
+            Q.y = temp.x * sample_rotation_matrix[4] + temp.y * sample_rotation_matrix[5] + temp.z * sample_rotation_matrix[6];
+            Q.z = temp.x * sample_rotation_matrix[8] + temp.y * sample_rotation_matrix[9] + temp.z * sample_rotation_matrix[10];
+
+            // Scale/shift data between twice the maximum Q vector, Qmax = 2/wavelength, to lie between 0 and 1.
+            // This is done because p_interpolation_octree uses a root side length of 1.0
+            Q.xyz = Q.xyz * wavelength * 0.25f + 0.5f;
         }
         else
         {

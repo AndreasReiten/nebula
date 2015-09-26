@@ -684,7 +684,7 @@ int DetectorFile::readBody()
     return p_is_data_read;
 }
 
-void DetectorFile::populateInterpolationTree()
+void DetectorFile::growInterpolationTree()
 {
     // Read header and body
     readHeader();
