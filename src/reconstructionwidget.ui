@@ -84,9 +84,9 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>0</y>
+          <y>-54</y>
           <width>254</width>
-          <height>393</height>
+          <height>366</height>
          </rect>
         </property>
         <attribute name="label">
@@ -107,19 +107,6 @@
          </property>
          <item>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="12" column="0" colspan="2">
-            <widget class="QProgressBar" name="progressBar_2">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="value">
-              <number>0</number>
-             </property>
-             <property name="textVisible">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
            <item row="11" column="0" colspan="2">
             <widget class="QProgressBar" name="progressBar">
              <property name="value">
@@ -329,7 +316,7 @@
              </property>
             </widget>
            </item>
-           <item row="13" column="0">
+           <item row="12" column="0">
             <widget class="QPushButton" name="stopButton">
              <property name="text">
               <string>Cancel</string>
@@ -340,7 +327,7 @@
              </property>
             </widget>
            </item>
-           <item row="13" column="1">
+           <item row="12" column="1">
             <widget class="QPushButton" name="pauseButton">
              <property name="text">
               <string>Pause</string>

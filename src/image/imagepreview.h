@@ -76,7 +76,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 //        SeriesSet set();
         ImageWorker * worker();
 
-        QFutureWatcher<void> *interpolationTreeWatcher();
+        QFutureWatcher<void> *growInterpolationTreeWatcher();
+        QFutureWatcher<void> *fertilizeInterpolationTreeWatcher();
         QFutureWatcher<void> *voxelTreeWatcher();
 
     signals:
@@ -108,6 +109,10 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void growVoxelTree();
         void on_growVoxelTree_finished();
         void on_growVoxelTree_canceled();
+
+        void fertilizeInterpolationTree();
+        void on_fertilizeInterpolationTree_finished();
+        void on_fertilizeInterpolationTree_canceled();
 
         void growInterpolationTree();
         void on_growInterpolationTree_finished();
@@ -325,6 +330,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool isEwaldCircleActive;
         bool isImageTooltipActive;
         bool is_growInterpolationTree_canceled;
+        bool is_fertilizeInterpolationTree_canceled;
         bool is_growVoxelTree_canceled;
 
         int texture_number;
@@ -365,10 +371,11 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         QTimer * progressPollTimer;
 
-        QList<DetectorFile> p_interpolation_tree_future_list;
-        QFutureWatcher<void> * p_interpolation_tree_future_watcher;
+        QList<DetectorFile> p_detectorfile_future_list;
+        QVector<QList<SearchNode*>> p_searchnode_future_list;
+        QFutureWatcher<void> * p_grow_interpolation_tree_future_watcher;
+        QFutureWatcher<void> * p_fertilize_interpolation_tree_future_watcher;
         QFutureWatcher<void> * p_voxel_tree_future_watcher;
-
 
         SearchNode p_interpolation_octree;
 };

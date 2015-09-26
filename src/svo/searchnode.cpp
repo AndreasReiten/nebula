@@ -51,7 +51,6 @@ void SearchNode::rebin(bool relaxed)
     // Regenerate data points within bins. For each grid cell, the xyz position of the data point is the average
     // position of the sample sub-set (with possible weighing).
     // If there are no points, then no data point is generated. In some cases, the points might not be rebinned at all.
-
     if (relaxed)
     {
 
@@ -93,8 +92,11 @@ void SearchNode::estimate()
 
     // Get the relevant data points, and place them in bins
     p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
+
     for (int i = 0; i < 8; i++)
     {
+        if (p_children[i].isEmpty()) continue;
+
         for (int j = 0; j < p_bins_per_side*p_bins_per_side*p_bins_per_side; j++)
         {
             for (int k = 0; k < p_children[i].bins()[j].size(); k++)
@@ -108,7 +110,7 @@ void SearchNode::estimate()
     rebin(0);
 }
 
-QVector<QList<xyzw32>> & SearchNode::bins()
+QVector<QVector<xyzw32> > &SearchNode::bins()
 {
     return p_data_binned;
 }
@@ -134,8 +136,11 @@ QVector<SearchNode> & SearchNode::children()
 }
 
 
-void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes)
+void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes, bool branches_only)
 {
+    // Return if not a branch
+    if(branches_only && (p_is_msd || p_is_empty)) return;
+
     // Add self to hierarchy
     if (nodes.size() <= p_level)
     {
@@ -145,12 +150,13 @@ void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes)
     nodes[p_level] << this;
 
     // Return if there are no children
-    if(p_is_msd || p_is_empty) return;
-
-    // Call for children
-    for (int i = 0; i < 8; i++)
+    if(!p_is_msd && !p_is_empty)
     {
-        p_children[i].hierarchy(nodes);
+        // Call for children
+        for (int i = 0; i < 8; i++)
+        {
+            p_children[i].hierarchy(nodes, branches_only);
+        }
     }
 }
 
@@ -255,6 +261,7 @@ void SearchNode::p_insert(xyzw32 & point)
         if (id >= 0)
         {
             p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
+//            p_data_binned[id].reserve(p_max_points);
             p_data_binned[id] << point;
             p_is_empty = false;
         }

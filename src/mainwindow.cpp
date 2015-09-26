@@ -74,55 +74,55 @@ MainWindow::MainWindow(QWidget *parent) :
 
     setDarkTheme();
 
-    SearchNode r;
-    r.setRoot(true);
-    r.setBinsPerSide(4);
-    r.setMaxPoints(512);
+//    SearchNode r;
+//    r.setRoot(true);
+//    r.setBinsPerSide(4);
+//    r.setMaxPoints(512);
 
 
-    QElapsedTimer t;
-    t.start();
-    qsrand(55);
-    for(int i = 0; i < 5000000 ; i++)
-    {
-        xyzw32 foo;
+//    QElapsedTimer t;
+//    t.start();
+//    qsrand(55);
+//    for(int i = 0; i < 5000000 ; i++)
+//    {
+//        xyzw32 foo;
 
-        foo.x = (float)(qrand() % 10000) * 0.0001;
-        foo.y = (float)(qrand() % 10000) * 0.0001*0.01+0.3;
-        foo.z = (float)(qrand() % 10000) * 0.0001*0.01+0.4;
-        foo.w = 10;
+//        foo.x = (float)(qrand() % 10000) * 0.0001;
+//        foo.y = (float)(qrand() % 10000) * 0.0001*0.01+0.3;
+//        foo.z = (float)(qrand() % 10000) * 0.0001*0.01+0.4;
+//        foo.w = 10;
 
-        r.insert(foo);
-    }
+//        r.insert(foo);
+//    }
 
-    qDebug() << "Assign took" << t.elapsed();
+//    qDebug() << "Assign took" << t.elapsed();
 
-    QVector<QList<SearchNode *>> nodes;
+//    QVector<QList<SearchNode *>> nodes;
 
-    t.restart();
-    r.hierarchy(nodes);
-    qDebug() << t.elapsed();
-    for(int i = 0; i < nodes.size(); i++)
-    {
-        int num_root = 0;
-        int num_msd = 0;
-        int num_empty = 0;
-        int num_has_children = 0;
-        for(int j = 0; j < nodes[i].size(); j++)
-        {
-            if (nodes[i][j]->isEmpty()) num_empty++;
-            if (nodes[i][j]->isMsd()) num_msd++;
-            if (nodes[i][j]->isRoot()) num_root++;
-            if (nodes[i][j]->children().size() > 0) num_has_children++;
-        }
+//    t.restart();
+//    r.hierarchy(nodes);
+//    qDebug() << t.elapsed();
+//    for(int i = 0; i < nodes.size(); i++)
+//    {
+//        int num_root = 0;
+//        int num_msd = 0;
+//        int num_empty = 0;
+//        int num_has_children = 0;
+//        for(int j = 0; j < nodes[i].size(); j++)
+//        {
+//            if (nodes[i][j]->isEmpty()) num_empty++;
+//            if (nodes[i][j]->isMsd()) num_msd++;
+//            if (nodes[i][j]->isRoot()) num_root++;
+//            if (nodes[i][j]->children().size() > 0) num_has_children++;
+//        }
 
-        qDebug() << "Lvl " << i << "has" << nodes[i].size() << "nodes:" << num_root << "roots," << num_has_children << "branches," << num_msd << "leaves," << num_empty << "empty," << num_msd + num_has_children << "branches + leaves";
-    }
-    qDebug() << "Diagnose took" << t.elapsed();
+//        qDebug() << "Lvl " << i << "has" << nodes[i].size() << "nodes:" << num_root << "roots," << num_has_children << "branches," << num_msd << "leaves," << num_empty << "empty," << num_msd + num_has_children << "branches + leaves";
+//    }
+//    qDebug() << "Diagnose took" << t.elapsed();
 
-    t.restart();
-    r.clear();
-    qDebug() << "Clear took" << t.elapsed();
+//    t.restart();
+//    r.clear();
+//    qDebug() << "Clear took" << t.elapsed();
 
 
 }

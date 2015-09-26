@@ -97,7 +97,7 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->imageOpenGLWidget, SIGNAL(message(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressTaskActive(bool)), p_ui->progressBar, SLOT(setVisible(bool)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressTaskActive(bool)), p_ui->reconstructButton, SLOT(setDisabled(bool)));
-    connect(p_ui->imageOpenGLWidget, SIGNAL(progressChanged(int)), p_ui->progressBar, SLOT(setValue(int)), Qt::QueuedConnection);
+    connect(p_ui->imageOpenGLWidget, SIGNAL(progressChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(progressRangeChanged(int, int)), p_ui->progressBar, SLOT(setRange(int, int)));
     connect(p_ui->lorentzCheckBox, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget, SLOT(setCorrectionLorentz(bool)));
     connect(p_ui->viewModeComboBox, SIGNAL(currentIndexChanged(int)), p_ui->imageOpenGLWidget, SLOT(setMode(int)));
@@ -139,12 +139,19 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
 
     connect(p_ui->reconstructButton, SIGNAL(clicked()), this, SLOT(growInterpolationTree_start()));
     connect(this, SIGNAL(growInterpolationTreeProxySignal()), p_ui->imageOpenGLWidget, SLOT(growInterpolationTree()));
-    connect(p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
-    connect(p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
-    connect(p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SIGNAL(finished()), this, SLOT(growInterpolationTree_finished()));
-    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SLOT(cancel()));
-    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SLOT(setPaused(bool)));
+    connect(p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
+    connect(p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
+    connect(p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+//    connect(p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SIGNAL(finished()), this, SLOT(growInterpolationTree_finished()));
+    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SLOT(cancel()));
+    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SLOT(setPaused(bool)));
+
+    connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
+    connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
+    connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+    connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(finished()), this, SLOT(interpolationTree_finished()));
+    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SLOT(cancel()));
+    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SLOT(setPaused(bool)));
 
     connect(p_ui->voxelizeButton, SIGNAL(clicked()), this, SLOT(growVoxelTree_start()));
     connect(this, SIGNAL(growVoxelTreeProxySignal()), p_ui->imageOpenGLWidget, SLOT(growVoxelTree()));
@@ -172,9 +179,9 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(voxelizeWorker, SIGNAL(message(QString, int)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString,int)));
     connect(voxelizeWorker, SIGNAL(changedFormatMemoryUsage(QString)), this, SLOT(setProgressBarFormat(QString)));
     connect(voxelizeWorker, SIGNAL(changedRangeMemoryUsage(int, int)), p_ui->progressBar, SLOT(setRange(int, int)));
-    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), p_ui->progressBar_2, SLOT(setValue(int)));
-    connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setProgressBarFormat_2(QString)));
-    connect(voxelizeWorker, SIGNAL(changedRangeGenericProcess(int, int)), p_ui->progressBar_2, SLOT(setRange(int, int)));
+//    connect(voxelizeWorker, SIGNAL(changedGenericProgress(int)), p_ui->progressBar_2, SLOT(setValue(int)));
+//    connect(voxelizeWorker, SIGNAL(changedFormatGenericProgress(QString)), this, SLOT(setProgressBarFormat_2(QString)));
+//    connect(voxelizeWorker, SIGNAL(changedRangeGenericProcess(int, int)), p_ui->progressBar_2, SLOT(setRange(int, int)));
     connect(p_ui->imageOpenGLWidget, SIGNAL(qSpaceInfoChanged(float, float, float)), voxelizeWorker, SLOT(setQSpaceInfo(float, float, float)));
 //    connect(p_ui->generateTreeButton, SIGNAL(clicked()), voxelizeThread, SLOT(start()));
     connect(voxelizeWorker, SIGNAL(progressTaskActive(bool)), p_ui->progressBar, SLOT(setVisible(bool)));
@@ -193,7 +200,7 @@ void ReconstructionWidget::growInterpolationTree_start()
     emit growInterpolationTreeProxySignal();
 }
 
-void ReconstructionWidget::growInterpolationTree_finished()
+void ReconstructionWidget::interpolationTree_finished()
 {
     p_ui->reconstructButton->setDisabled(false);
     p_ui->voxelizeButton->setDisabled(false);
@@ -367,10 +374,10 @@ void ReconstructionWidget::setProgressBarFormat(QString str)
     p_ui->progressBar->setFormat(str);
 }
 
-void ReconstructionWidget::setProgressBarFormat_2(QString str)
-{
-    p_ui->progressBar_2->setFormat(str);
-}
+//void ReconstructionWidget::setProgressBarFormat_2(QString str)
+//{
+//    p_ui->progressBar_2->setFormat(str);
+//}
 
 void ReconstructionWidget::saveProject()
 {

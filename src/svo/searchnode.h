@@ -53,9 +53,9 @@ class SearchNode
 
         void brick();
 
-        QVector<QList<xyzw32>> & bins();
+        QVector<QVector<xyzw32> > &bins();
 
-        void hierarchy(QVector<QList<SearchNode *> > &nodes);
+        void hierarchy(QVector<QList<SearchNode *> > &nodes, bool branches_only);
 
         void clear();
         void print();
@@ -90,10 +90,10 @@ class SearchNode
 
         SearchNode * p_parent;
         QVector<SearchNode> p_children;
-        QVector<QList<xyzw32>> p_data_binned; // Binned data
+        QVector<QVector<xyzw32>> p_data_binned; // Binned data
         int p_level;
-        bool p_is_empty;
-        bool p_is_msd;
+        bool p_is_empty; // No children, no data in bins
+        bool p_is_leaf;
         bool p_is_root;
 
 //        bool p_relaxed_rebinning_on_split;
