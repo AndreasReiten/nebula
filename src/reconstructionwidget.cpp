@@ -142,14 +142,14 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
     connect(p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
     connect(p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
-//    connect(p_ui->imageOpenGLWidget->interpolationTreeWatcher(), SIGNAL(finished()), this, SLOT(growInterpolationTree_finished()));
+    connect(p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SIGNAL(canceled()), this, SLOT(growInterpolationTree_finished()));
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->growInterpolationTreeWatcher(), SLOT(setPaused(bool)));
 
     connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
     connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
     connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(finished()), this, SLOT(interpolationTree_finished()));
+    connect(p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SIGNAL(finished()), this, SLOT(growInterpolationTree_finished()));
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->fertilizeInterpolationTreeWatcher(), SLOT(setPaused(bool)));
 
@@ -200,7 +200,7 @@ void ReconstructionWidget::growInterpolationTree_start()
     emit growInterpolationTreeProxySignal();
 }
 
-void ReconstructionWidget::interpolationTree_finished()
+void ReconstructionWidget::growInterpolationTree_finished()
 {
     p_ui->reconstructButton->setDisabled(false);
     p_ui->voxelizeButton->setDisabled(false);

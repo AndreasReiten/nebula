@@ -1243,23 +1243,6 @@ void ImageOpenGLWidget::on_growInterpolationTree_finished()
         p_searchnode_future_list.clear();
         p_interpolation_octree.hierarchy(p_searchnode_future_list, true);
 
-        for(int i = 0; i < p_searchnode_future_list.size(); i++)
-        {
-            int num_root = 0;
-            int num_msd = 0;
-            int num_empty = 0;
-            int num_has_children = 0;
-            for(int j = 0; j < p_searchnode_future_list[i].size(); j++)
-            {
-                if (p_searchnode_future_list[i][j]->isEmpty()) num_empty++;
-                if (p_searchnode_future_list[i][j]->isMsd()) num_msd++;
-                if (p_searchnode_future_list[i][j]->isRoot()) num_root++;
-                if (p_searchnode_future_list[i][j]->children().size() > 0) num_has_children++;
-            }
-
-            qDebug() << "Lvl " << i << "has" << p_searchnode_future_list[i].size() << "p_searchnode_future_list:" << num_root << "roots," << num_has_children << "branches," << num_msd << "leaves," << num_empty << "empty," << num_msd + num_has_children << "branches + leaves";
-        }
-
         emit message("Leaves grown...");
         fertilizeInterpolationTree();
     }
@@ -1295,6 +1278,8 @@ void ImageOpenGLWidget::on_fertilizeInterpolationTree_finished()
         {
             p_searchnode_future_list.clear();
             emit message("Tree fertilized...");
+
+            printNodes();
         }
         else
         {
@@ -1305,6 +1290,29 @@ void ImageOpenGLWidget::on_fertilizeInterpolationTree_finished()
     is_fertilizeInterpolationTree_canceled = false;
 }
 
+void ImageOpenGLWidget::printNodes()
+{
+    QVector<QList<SearchNode*>> nodes;
+
+    p_interpolation_octree.hierarchy(nodes, false);
+
+    for(int i = 0; i < nodes.size(); i++)
+    {
+        int num_root = 0;
+        int num_msd = 0;
+        int num_empty = 0;
+        int num_has_children = 0;
+        for(int j = 0; j < nodes[i].size(); j++)
+        {
+            if (nodes[i][j]->isEmpty()) num_empty++;
+            if (nodes[i][j]->isMsd()) num_msd++;
+            if (nodes[i][j]->isRoot()) num_root++;
+            if (nodes[i][j]->children().size() > 0) num_has_children++;
+        }
+
+        qDebug() << "Lvl " << i << "has" << nodes[i].size() << "nodes:" << num_root << "roots," << num_has_children << "branches," << num_msd << "leaves," << num_empty << "empty," << num_msd + num_has_children << "branches + leaves";
+    }
+}
 
 void ImageOpenGLWidget::pollProgress()
 {

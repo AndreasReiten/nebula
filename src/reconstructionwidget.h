@@ -62,7 +62,7 @@ public slots:
 
 private slots:
     void growInterpolationTree_start();
-    void interpolationTree_finished();
+    void growInterpolationTree_finished();
 
     void growVoxelTree_start();
     void growVoxelTree_finished();

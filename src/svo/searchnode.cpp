@@ -13,8 +13,8 @@
 SearchNode::SearchNode()
 {
     p_is_root = false;
-    p_is_msd = true;
-    p_is_empty = true;
+    p_is_leaf = true;
+    p_bins_empty = true;
     p_id_x = 0;
     p_id_y = 0;
     p_id_z = 0;
@@ -88,7 +88,7 @@ void SearchNode::rebin(bool relaxed)
 void SearchNode::estimate()
 {
     // Non-recursively generate a point cloud on an irregular grid based on the child nodes
-    if(p_is_msd || p_is_empty) return;
+    if(p_is_leaf) return;
 
     // Get the relevant data points, and place them in bins
     p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
@@ -108,6 +108,42 @@ void SearchNode::estimate()
     }
 
     rebin(0);
+
+    p_bins_empty = false;
+}
+
+void SearchNode::estimateRecursive()
+{
+    // Recursively generate a point cloud on an irregular grid based on the child nodes
+    if(p_is_leaf) return;
+
+    // For all children
+    for (int i = 0; i < 8; i++)
+    {
+        p_children[i].estimateRecursive();
+    }
+
+
+    // Get the relevant data points, and place them in bins
+    p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (p_children[i].isEmpty()) continue;
+
+        for (int j = 0; j < p_bins_per_side*p_bins_per_side*p_bins_per_side; j++)
+        {
+            for (int k = 0; k < p_children[i].bins()[j].size(); k++)
+            {
+                int id = ntant(p_children[i].bins()[j][k], p_bins_per_side);
+                p_data_binned[id] << p_children[i].bins()[j][k];
+            }
+        }
+    }
+
+    rebin(0);
+
+    p_bins_empty = false;
 }
 
 QVector<QVector<xyzw32> > &SearchNode::bins()
@@ -117,7 +153,7 @@ QVector<QVector<xyzw32> > &SearchNode::bins()
 
 bool SearchNode::isEmpty()
 {
-    return p_is_empty;
+    return p_bins_empty;
 }
 
 bool SearchNode::isRoot()
@@ -127,7 +163,7 @@ bool SearchNode::isRoot()
 
 bool SearchNode::isMsd()
 {
-    return p_is_msd;
+    return p_is_leaf;
 }
 
 QVector<SearchNode> & SearchNode::children()
@@ -139,7 +175,7 @@ QVector<SearchNode> & SearchNode::children()
 void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes, bool branches_only)
 {
     // Return if not a branch
-    if(branches_only && (p_is_msd || p_is_empty)) return;
+    if(branches_only && p_is_leaf) return;
 
     // Add self to hierarchy
     if (nodes.size() <= p_level)
@@ -149,8 +185,8 @@ void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes, bool branches_o
 
     nodes[p_level] << this;
 
-    // Return if there are no children
-    if(!p_is_msd && !p_is_empty)
+    // Add children to hierarchy
+    if(!p_is_leaf)
     {
         // Call for children
         for (int i = 0; i < 8; i++)
@@ -170,8 +206,8 @@ void SearchNode::clear()
 {
     p_children.clear();
     p_data_binned.clear();
-    p_is_msd = true;
-    p_is_empty = true;
+    p_is_leaf = true;
+    p_bins_empty = true;
 }
 
 void SearchNode::setBinsPerSide(int value)
@@ -232,7 +268,7 @@ void SearchNode::print()
 void SearchNode::insert(xyzw32 & point)
 {
     // If the current node is not msd (max subdivision), then it's private variables will not be changed, and thus it does not need a mutex lock
-    if (p_is_msd)
+    if (p_is_leaf)
     {
         QMutexLocker lock(p_mutex);
         p_insert(point);
@@ -246,7 +282,7 @@ void SearchNode::insert(xyzw32 & point)
 void SearchNode::p_insert(xyzw32 & point)
 {
     // If this is a branch node, then proceed to the next octree level
-    if (!p_is_msd)
+    if (!p_is_leaf)
     {
         int id = ntant(point, 2);
         if (id >= 0)
@@ -255,7 +291,7 @@ void SearchNode::p_insert(xyzw32 & point)
         }
     }
     // Else if this is the first data point to be inserted into a leaf node
-    else if (p_is_empty && p_is_msd)
+    else if (p_bins_empty && p_is_leaf)
     {
         int id = ntant(point, p_bins_per_side);
         if (id >= 0)
@@ -263,7 +299,7 @@ void SearchNode::p_insert(xyzw32 & point)
             p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
 //            p_data_binned[id].reserve(p_max_points);
             p_data_binned[id] << point;
-            p_is_empty = false;
+            p_bins_empty = false;
         }
 
     }
@@ -276,7 +312,8 @@ void SearchNode::p_insert(xyzw32 & point)
             p_data_binned[id] << point;
             split();
             p_data_binned.clear();
-            p_is_msd = false;
+            p_is_leaf = false;
+            p_bins_empty = true;
         }
     }
     // Else, just insert the point

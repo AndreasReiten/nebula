@@ -378,6 +378,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         QFutureWatcher<void> * p_voxel_tree_future_watcher;
 
         SearchNode p_interpolation_octree;
+
+        void printNodes();
 };
 
 #endif // IMAGEPREVIEW_H

@@ -51,6 +51,8 @@ class SearchNode
 
         void estimate();
 
+        void estimateRecursive();
+
         void brick();
 
         QVector<QVector<xyzw32> > &bins();
@@ -92,7 +94,7 @@ class SearchNode
         QVector<SearchNode> p_children;
         QVector<QVector<xyzw32>> p_data_binned; // Binned data
         int p_level;
-        bool p_is_empty; // No children, no data in bins
+        bool p_bins_empty; // No children, no data in bins
         bool p_is_leaf;
         bool p_is_root;
 
