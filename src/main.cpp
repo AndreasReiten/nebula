@@ -51,12 +51,14 @@
 #include <QLocale>
 #include <QFile>
 
+#include <iostream>
+
 #include "mainwindow.h"
 
 void write_log(QString text)
 {
     QDateTime dateTime = dateTime.currentDateTime();
-    QString dateTimeString = QString("[" + dateTime.toString("hh:mm:ss") + "] ");
+    QString dateTimeString = QString("[" + dateTime.toString("hh:mm:ss.zzz") + "] ");
 
     QFile file("nebula.log");
     if (!file.open(QIODevice::Append | QIODevice::Text))
@@ -64,7 +66,7 @@ void write_log(QString text)
 
     QTextStream out(&file);
 
-    out << dateTimeString << text << "\n";
+//    out << dateTimeString << text << "\n";
     std::cout << dateTimeString.toStdString().c_str() << text.toStdString().c_str() << "\n";
 
     file.close();
@@ -114,6 +116,9 @@ void appOutput(QtMsgType type, const QMessageLogContext &context, const QString 
 /* This is the top level of the GUI application*/
 int main(int argc, char ** argv)
 {
+    // Random seed
+    qsrand(QTime::currentTime().msec());
+
     // Fusion style
     QLocale::setDefault(QLocale::C);
     qApp->setStyle(QStyleFactory::create("Fusion"));

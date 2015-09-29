@@ -390,6 +390,7 @@ kernel void projectScatteringData(
     float omega,
     int4 selection,
     int2 image_size
+//    global float * in_buf
 )
 {
     // Project data from the detector plane onto the Ewald sphere

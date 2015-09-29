@@ -1192,7 +1192,7 @@ void ImageOpenGLWidget::growInterpolationTree()
     p_interpolation_octree.setRoot(true);
     p_interpolation_octree.setBinsPerSide(4);
     p_interpolation_octree.setMaxPoints(512);
-    p_interpolation_octree.setMinDataInterdistance(0.001);
+    p_interpolation_octree.setMinDataInterdistance(0.000);
 
     while (query.next())
     {
@@ -1243,8 +1243,15 @@ void ImageOpenGLWidget::on_growInterpolationTree_finished()
         p_searchnode_future_list.clear();
         p_interpolation_octree.hierarchy(p_searchnode_future_list, true);
 
-        emit message("Leaves grown...");
-        fertilizeInterpolationTree();
+        if (p_searchnode_future_list.size() <= 1)
+        {
+            emit message("The tree is just a root with no branches or leaves...");
+        }
+        else
+        {
+            emit message("Leaves grown...");
+            fertilizeInterpolationTree();
+        }
     }
 
     is_growInterpolationTree_canceled = false;
@@ -1257,6 +1264,9 @@ void ImageOpenGLWidget::on_growInterpolationTree_canceled()
 
 void ImageOpenGLWidget::fertilizeInterpolationTree()
 {
+    /* The implementation of branch fertilization turned out a bit hackish, as  to my knowledge, it can not be done
+     * efficiently and recursively with QtConcurrent. So the branch nodes were first put in linear arrays based on tree level. */
+
     p_fertilize_interpolation_tree_future_watcher->setFuture(QtConcurrent::map(p_searchnode_future_list.last(), [](SearchNode * ptr){ptr->estimate();}));
 }
 

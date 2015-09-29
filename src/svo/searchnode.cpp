@@ -18,6 +18,7 @@ SearchNode::SearchNode()
     p_id_x = 0;
     p_id_y = 0;
     p_id_z = 0;
+    p_min_data_interdistance = 0;
 
 //    p_extent.reserve(1, 6);
     p_mutex = new QMutex;
@@ -53,7 +54,68 @@ void SearchNode::rebin(bool relaxed)
     // If there are no points, then no data point is generated. In some cases, the points might not be rebinned at all.
     if (relaxed)
     {
+        // For each bin
+        for (int i = 0; i < p_data_binned.size(); i++)
+        {
+            if (p_data_binned[i].size() <= 1) continue;
 
+            // Evaluate if and how the data points can be reduced
+
+            // Average
+            double avg = 0;
+            for (int j = 0; j < p_data_binned[i].size(); j++)
+            {
+                avg += p_data_binned[i][j].w;
+            }
+            avg /= (double) p_data_binned[i].size();
+
+//            qDebug() << "Avg:" << avg;
+
+            // Standard deviation
+            double sigma = 0;
+            for (int j = 0; j < p_data_binned[i].size(); j++)
+            {
+                sigma += (p_data_binned[i][j].w - avg)*(p_data_binned[i][j].w - avg);
+            }
+            sigma /= (double) p_data_binned[i].size();
+            sigma = std::sqrt(sigma);
+
+//            qDebug() << "Std:" << sigma;
+
+            // Recombine values that do not deviate too much
+            xyzw32 avg_point = {0.0,0.0,0.0,0.0};
+            int count = 0;
+
+            for (int j = 0; j < p_data_binned[i].size(); j++) // Recombine (average)
+            {
+                if (std::fabs(p_data_binned[i][j].w - avg) < sigma*0.1)
+                {
+                    avg_point.x += p_data_binned[i][j].x;
+                    avg_point.y += p_data_binned[i][j].y;
+                    avg_point.z += p_data_binned[i][j].z;
+                    avg_point.w += p_data_binned[i][j].w;
+
+                    p_data_binned[i].remove(j);
+                    j--;
+                    count++;
+                }
+                else // Disregard data point
+                {
+//                    qDebug() << "Bin:" << i << "size:" << p_data_binned[i].size() << "Index:" << j << "Avg:" << avg << "Std:" << sigma << "->" << p_data_binned[i][j].w;
+                    continue;
+                }
+            }
+
+            if (count > 0)
+            {
+                avg_point.x /= (float) count;
+                avg_point.y /= (float) count;
+                avg_point.z /= (float) count;
+                avg_point.w /= (float) count;
+
+                p_data_binned[i] << avg_point;
+            }
+        }
     }
     else
     {
@@ -87,6 +149,7 @@ void SearchNode::rebin(bool relaxed)
 
 void SearchNode::estimate()
 {
+    return;
     // Non-recursively generate a point cloud on an irregular grid based on the child nodes
     if(p_is_leaf) return;
 
@@ -107,7 +170,7 @@ void SearchNode::estimate()
         }
     }
 
-    rebin(0);
+    rebin(false);
 
     p_bins_empty = false;
 }
@@ -141,7 +204,7 @@ void SearchNode::estimateRecursive()
         }
     }
 
-    rebin(0);
+    rebin(false);
 
     p_bins_empty = false;
 }
@@ -303,19 +366,7 @@ void SearchNode::p_insert(xyzw32 & point)
         }
 
     }
-    // Else if there will be too many points and a split is required
-    else if ((num_points() >= p_max_points - 1))
-    {
-        int id = ntant(point, p_bins_per_side);
-        if (id >= 0)
-        {
-            p_data_binned[id] << point;
-            split();
-            p_data_binned.clear();
-            p_is_leaf = false;
-            p_bins_empty = true;
-        }
-    }
+    // Else if there will be
     // Else, just insert the point
     else
     {
@@ -323,6 +374,35 @@ void SearchNode::p_insert(xyzw32 & point)
         if (id >= 0)
         {
             p_data_binned[id] << point;
+
+            // If there are too many data points, then rebin (attempting to reduce the amount of self-similar data)
+            if ((num_points() >= p_max_points ))
+            {
+//                bool relaxed;
+//                double bin_extent = 1.0 / (double)(1 << p_level) * p_bins_per_side;
+
+//                // Perform a strict rebinning only if there is no theoretical resolution gain in further subdivisions
+//                if (p_min_data_interdistance > bin_extent)
+//                {
+//                    relaxed = false;
+//                }
+//                // Perform a relaxed rebinning, where only self-similar data is reduced
+//                else
+//                {
+//                    relaxed = true;
+//                }
+
+                rebin(true);
+
+                // If there are still too many data points, the data is redistributed over eight child nodes
+                if ((num_points() >= p_max_points ))
+                {
+                    split();
+                    p_data_binned.clear();
+                    p_is_leaf = false;
+                    p_bins_empty = true;
+                }
+            }
         }
     }
 

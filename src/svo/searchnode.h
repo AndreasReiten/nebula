@@ -98,11 +98,6 @@ class SearchNode
         bool p_is_leaf;
         bool p_is_root;
 
-//        bool p_relaxed_rebinning_on_split;
-//        bool p_strict_rebinning_on_split;
-//        bool p_relaxed_rebinning_on_msd;
-//        bool p_strict_rebinning_on_msd;
-
         float p_min_data_interdistance;
 
         int p_bins_per_side;

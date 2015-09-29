@@ -14,6 +14,7 @@
 #include "misc/smallstuff.h"
 
 #include <limits>
+#include <cstdlib>
 
 QDebug operator<<(QDebug dbg, const DetectorFile &file)
 {
@@ -953,10 +954,13 @@ void DetectorFile::growInterpolationTree()
 
     for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
     {
-        xyzw32 data_point = {finalized_data[i * 4 + 0], finalized_data[i * 4 + 1], finalized_data[i * 4 + 2], finalized_data[i * 4 + 3]};
-
-        if (data_point.w > 0.0) // Above 0 check
+        if (finalized_data[i * 4 + 3] > 0.0) // Above 0 check
         {
+            xyzw32 data_point = {finalized_data[i * 4 + 0], finalized_data[i * 4 + 1], finalized_data[i * 4 + 2], finalized_data[i * 4 + 3]};
+
+            // Subtract a random floating point value between 0 and 1 to smoothen the data distribution
+            if (true) data_point.w -= ((double) qrand() / RAND_MAX);
+
             p_interpolation_octree->insert(data_point);
         }
     }
