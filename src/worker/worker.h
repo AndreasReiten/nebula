@@ -21,7 +21,7 @@ class BaseWorker : public QObject, protected OpenCLFunctions
         ~BaseWorker();
 
         void setReducedPixels(Matrix<float> * reduced_pixels);
-        void setSVOFile(SparseVoxelOctree * svo);
+        void setSVOFile(SparseVoxelOctreeOld * svo);
 
     signals:
         void finished();
@@ -56,7 +56,7 @@ class BaseWorker : public QObject, protected OpenCLFunctions
         bool isCLInitialized;
 
         // Voxelize
-        SparseVoxelOctree * svo;
+        SparseVoxelOctreeOld * svo;
         float  suggested_search_radius_low;
         float  suggested_search_radius_high;
         float  suggested_q;

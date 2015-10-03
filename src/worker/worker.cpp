@@ -49,7 +49,7 @@ BaseWorker::~BaseWorker()
 
 }
 
-void BaseWorker::setSVOFile(SparseVoxelOctree * svo)
+void BaseWorker::setSVOFile(SparseVoxelOctreeOld * svo)
 {
 
     this->svo = svo;

@@ -45,13 +45,13 @@ public:
     void setSubImage(Selection & area);
     void setCorrectionArgs(DataCorrectionArgs & args);
     void setCLContext(OpenCLContextQueueProgram * context);
-    void setInterpolationTree(SearchNode *tree);
+    void setDataTree(SearchNode *tree);
 //    void setMutex(QMutex * mutex);
 
     int readBody();
     int readHeader();
 
-    void growInterpolationTree();
+    void tree_Grow();
 
     bool isValid();
     bool isDataRead();
@@ -68,6 +68,7 @@ public:
     size_t bytes() const;
     float alpha() const;
     float beta() const;
+    double getDataInterdistanceHint();
     float getSearchRadiusLowSuggestion() const;
     float getSearchRadiusHighSuggestion() const;
     float getQSuggestion();

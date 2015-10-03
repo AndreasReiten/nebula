@@ -11,7 +11,109 @@
 #include <QFileInfo>
 #include <QDebug>
 
-SparseVoxelOctree::SparseVoxelOctree()
+SparseVoxelOctree::SparseVoxelOctree() :
+    p_version_major(0),
+    p_version_minor(1),
+    p_levels(0),
+    p_pool_dim_x(0),
+    p_pool_dim_y(0),
+    p_pool_dim_z(0),
+    p_brick_dim(8)
+{
+    p_extent.resize(6);
+}
+
+SparseVoxelOctree::~SparseVoxelOctree()
+{
+
+}
+
+void SparseVoxelOctree::save(QString path)
+{
+
+}
+void SparseVoxelOctree::open(QString path)
+{
+
+}
+
+void SparseVoxelOctree::setLevels(int value)
+{
+    p_levels = value;
+}
+void SparseVoxelOctree::setExtent(float value)
+{
+    p_extent[0] = -value;
+    p_extent[1] = value;
+    p_extent[2] = -value;
+    p_extent[3] = value;
+    p_extent[4] = -value;
+    p_extent[5] = value;
+}
+void SparseVoxelOctree::setUB(UBMatrix<double> mat)
+{
+    p_ub = mat;
+}
+
+void SparseVoxelOctree::setPoolDim(unsigned int x, unsigned int y, unsigned int z)
+{
+    p_pool_dim_x = x;
+    p_pool_dim_y = y;
+    p_pool_dim_z = z;
+}
+
+QVector<double> SparseVoxelOctree::extent()
+{
+    return p_extent;
+}
+
+unsigned int SparseVoxelOctree::levels()
+{
+    return p_levels;
+}
+unsigned int SparseVoxelOctree::poolDimX()
+{
+    return p_pool_dim_x;
+}
+unsigned int SparseVoxelOctree::poolDimY()
+{
+    return p_pool_dim_x;
+}
+unsigned int SparseVoxelOctree::poolDimZ()
+{
+    return p_pool_dim_x;
+}
+unsigned int SparseVoxelOctree::side()
+{
+    return p_brick_dim;
+}
+UBMatrix<double> SparseVoxelOctree::UB()
+{
+    return p_ub;
+}
+
+QVector<unsigned int> & SparseVoxelOctree::index()
+{
+    return p_index;
+}
+QVector<unsigned int> & SparseVoxelOctree::brick()
+{
+    return p_brick;
+}
+QVector<float> & SparseVoxelOctree::pool()
+{
+    return p_pool;
+}
+
+void  SparseVoxelOctree::clear()
+{
+    p_index.clear();
+    p_brick.clear();
+    p_pool.clear();
+}
+
+
+SparseVoxelOctreeOld::SparseVoxelOctreeOld()
 {
     this->p_filesize = 0;
     this->p_levels = 2;
@@ -25,11 +127,11 @@ SparseVoxelOctree::SparseVoxelOctree()
     p_ub.setIdentity(3);
 };
 
-SparseVoxelOctree::~SparseVoxelOctree()
+SparseVoxelOctreeOld::~SparseVoxelOctreeOld()
 {
 }
 
-void SparseVoxelOctree::print()
+void SparseVoxelOctreeOld::print()
 {
     std::stringstream ss;
     ss << std::endl;
@@ -60,7 +162,7 @@ void SparseVoxelOctree::print()
 }
 
 
-void SparseVoxelOctree::setExtent(float Q)
+void SparseVoxelOctreeOld::setExtent(float Q)
 {
     this->p_extent[0] = -Q;
     this->p_extent[1] = Q;
@@ -72,21 +174,21 @@ void SparseVoxelOctree::setExtent(float Q)
     this->p_extent[7] = 1;
 }
 
-Matrix<double> SparseVoxelOctree::extent()
+Matrix<double> SparseVoxelOctreeOld::extent()
 {
     return p_extent;
 }
-Matrix<double> SparseVoxelOctree::minMax()
+Matrix<double> SparseVoxelOctreeOld::minMax()
 {
     return p_minmax;
 }
 
-void SparseVoxelOctree::setLevels(int value)
+void SparseVoxelOctreeOld::setLevels(int value)
 {
     this->p_levels = value;
 }
 
-void SparseVoxelOctree::set(unsigned int levels, unsigned int brick_inner_dimension, unsigned int brick_outer_dimension, unsigned int brick_pool_power)
+void SparseVoxelOctreeOld::set(unsigned int levels, unsigned int brick_inner_dimension, unsigned int brick_outer_dimension, unsigned int brick_pool_power)
 {
     this->p_levels = levels;
     this->p_brick_inner_dimension = brick_inner_dimension;
@@ -94,17 +196,17 @@ void SparseVoxelOctree::set(unsigned int levels, unsigned int brick_inner_dimens
     this->p_brick_pool_power = brick_pool_power;
 }
 
-void SparseVoxelOctree::setMetaData(QString text)
+void SparseVoxelOctreeOld::setMetaData(QString text)
 {
     p_note = text;
 }
 
-QString SparseVoxelOctree::metaData()
+QString SparseVoxelOctreeOld::metaData()
 {
     return p_note;
 }
 
-void SparseVoxelOctree::save(QString path)
+void SparseVoxelOctreeOld::save(QString path)
 {
     if (path != "")
     {
@@ -161,22 +263,22 @@ void SparseVoxelOctree::save(QString path)
     this->print();
 }
 
-void SparseVoxelOctree::setMax(float value)
+void SparseVoxelOctreeOld::setMax(float value)
 {
     p_minmax[1] = value;
 }
 
-void SparseVoxelOctree::setMin(float value)
+void SparseVoxelOctreeOld::setMin(float value)
 {
     p_minmax[0] = value;
 }
 
-void SparseVoxelOctree::setUB(UBMatrix<double> mat)
+void SparseVoxelOctreeOld::setUB(UBMatrix<double> mat)
 {
     p_ub = mat;
 }
 
-void SparseVoxelOctree::open(QString path)
+void SparseVoxelOctreeOld::open(QString path)
 {
     if ((path != ""))
     {
@@ -261,7 +363,7 @@ void SparseVoxelOctree::open(QString path)
     this->print();
 }
 
-void SparseVoxelOctree::openMetadata(QString path)
+void SparseVoxelOctreeOld::openMetadata(QString path)
 {
     if ((path != ""))
     {
@@ -291,7 +393,7 @@ void SparseVoxelOctree::openMetadata(QString path)
     }
 }
 
-void SparseVoxelOctree::saveMetadata(QString path)
+void SparseVoxelOctreeOld::saveMetadata(QString path)
 {
     if (path != "")
     {
@@ -321,109 +423,109 @@ void SparseVoxelOctree::saveMetadata(QString path)
     }
 }
 
-unsigned int SparseVoxelOctree::levels()
+unsigned int SparseVoxelOctreeOld::levels()
 {
     return p_levels;
 }
 
 
-UBMatrix<double> SparseVoxelOctree::UB()
+UBMatrix<double> SparseVoxelOctreeOld::UB()
 {
     return p_ub;
 }
 
-unsigned int SparseVoxelOctree::brickPoolPower()
+unsigned int SparseVoxelOctreeOld::brickPoolPower()
 {
     return p_brick_pool_power;
 }
-unsigned int SparseVoxelOctree::brickInnerDimension()
+unsigned int SparseVoxelOctreeOld::brickInnerDimension()
 {
     return p_brick_inner_dimension;
 }
-unsigned int SparseVoxelOctree::brickOuterDimension()
+unsigned int SparseVoxelOctreeOld::brickOuterDimension()
 {
     return p_brick_outer_dimension;
 }
 
-unsigned int SparseVoxelOctree::brickNumber()
+unsigned int SparseVoxelOctreeOld::brickNumber()
 {
     return p_pool.size() / (p_brick_outer_dimension * p_brick_outer_dimension * p_brick_outer_dimension);
 }
 
-quint64 SparseVoxelOctree::bytes()
+quint64 SparseVoxelOctreeOld::bytes()
 {
     return p_brick.bytes() + p_index.bytes() + p_pool.bytes();
 }
 
-QList<Line> * SparseVoxelOctree::lines()
+QList<Line> * SparseVoxelOctreeOld::lines()
 {
     return &p_lines;
 }
-Matrix<unsigned int> * SparseVoxelOctree::index()
+Matrix<unsigned int> * SparseVoxelOctreeOld::index()
 {
     return &p_index;
 }
-Matrix<unsigned int> * SparseVoxelOctree::brick()
+Matrix<unsigned int> * SparseVoxelOctreeOld::brick()
 {
     return &p_brick;
 }
-Matrix<float> * SparseVoxelOctree::pool()
+Matrix<float> * SparseVoxelOctreeOld::pool()
 {
     return &p_pool;
 }
-qreal SparseVoxelOctree::viewMode()
+qreal SparseVoxelOctreeOld::viewMode()
 {
     return p_view_mode;
 }
-qreal SparseVoxelOctree::viewTsfStyle()
+qreal SparseVoxelOctreeOld::viewTsfStyle()
 {
     return p_view_tsf_style;
 }
-qreal SparseVoxelOctree::viewTsfTexture()
+qreal SparseVoxelOctreeOld::viewTsfTexture()
 {
     return p_view_tsf_texture;
 }
-qreal SparseVoxelOctree::viewDataMin()
+qreal SparseVoxelOctreeOld::viewDataMin()
 {
     return p_view_data_min;
 }
-qreal SparseVoxelOctree::viewDataMax()
+qreal SparseVoxelOctreeOld::viewDataMax()
 {
     return p_view_data_max;
 }
-qreal SparseVoxelOctree::viewAlpha()
+qreal SparseVoxelOctreeOld::viewAlpha()
 {
     return p_view_alpha;
 }
-qreal SparseVoxelOctree::viewBrightness()
+qreal SparseVoxelOctreeOld::viewBrightness()
 {
     return p_view_brightness;
 }
-void SparseVoxelOctree::setViewMode(qreal value)
+void SparseVoxelOctreeOld::setViewMode(qreal value)
 {
     p_view_mode = value;
 }
-void SparseVoxelOctree::setViewTsfStyle(qreal value)
+void SparseVoxelOctreeOld::setViewTsfStyle(qreal value)
 {
     p_view_tsf_style = value;
 }
-void SparseVoxelOctree::setViewTsfTexture(qreal value)
+void SparseVoxelOctreeOld::setViewTsfTexture(qreal value)
 {
     p_view_tsf_texture = value;
 }
-void SparseVoxelOctree::setViewDataMin(qreal value)
+void SparseVoxelOctreeOld::setViewDataMin(qreal value)
 {
     p_view_data_min = value;
 }
-void SparseVoxelOctree::setViewDataMax(qreal value)
+void SparseVoxelOctreeOld::setViewDataMax(qreal value)
 {
     p_view_data_max = value;
 }
-void SparseVoxelOctree::setViewAlpha(qreal value)
+void SparseVoxelOctreeOld::setViewAlpha(qreal value)
 {
     p_view_alpha = value;
 }
-void SparseVoxelOctree::setViewBrightness(qreal value)
+void SparseVoxelOctreeOld::setViewBrightness(qreal value)
 {
     p_view_brightness = value;
 }

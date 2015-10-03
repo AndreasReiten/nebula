@@ -33,6 +33,7 @@
 #include "../math/matrix.h"
 #include "../math/colormatrix.h"
 #include "../math/rotationmatrix.h"
+#include "../svo/sparsevoxeloctree.h"
 
 
 class ImageWorker : public QObject, protected OpenCLFunctions
@@ -76,8 +77,10 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 //        SeriesSet set();
         ImageWorker * worker();
 
-        QFutureWatcher<void> *growInterpolationTreeWatcher();
-        QFutureWatcher<void> *fertilizeInterpolationTreeWatcher();
+        QFutureWatcher<void> *tree_GrowWatcher();
+        QFutureWatcher<void> *tree_RebuildBranchesWatcher();
+        QFutureWatcher<void> *tree_RecombineWatcher();
+        QFutureWatcher<void> *tree_ReorganizeWatcher();
         QFutureWatcher<void> *voxelTreeWatcher();
 
     signals:
@@ -110,13 +113,21 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void on_growVoxelTree_finished();
         void on_growVoxelTree_canceled();
 
-        void fertilizeInterpolationTree();
-        void on_fertilizeInterpolationTree_finished();
-        void on_fertilizeInterpolationTree_canceled();
+        void tree_Recombine();
+        void on_tree_Recombine_finished();
+        void on_tree_Recombine_canceled();
 
-        void growInterpolationTree();
-        void on_growInterpolationTree_finished();
-        void on_growInterpolationTree_canceled();
+        void tree_Reorganize();
+        void on_tree_Reorganize_finished();
+        void on_tree_Reorganize_canceled();
+
+        void tree_RebuildBranches();
+        void on_tree_RebuildBranches_finished();
+        void on_tree_RebuildBranches_canceled();
+
+        void tree_Grow();
+        void on_tree_Grow_finished();
+        void on_tree_Grow_canceled();
 
         void setApplicationMode(QString str);
         void setFilePath(QString str);
@@ -172,6 +183,8 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
 
     private:
+        SparseVoxelOctree p_voxel_tree;
+
         int p_n_returned_tasks;
         QStringList p_file_checklist;
 
@@ -329,9 +342,11 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool isSetTraced;
         bool isEwaldCircleActive;
         bool isImageTooltipActive;
-        bool is_growInterpolationTree_canceled;
-        bool is_fertilizeInterpolationTree_canceled;
+        bool is_tree_Grow_canceled;
+        bool is_tree_Recombine_canceled;
+        bool is_tree_RebuildBranches_canceled;
         bool is_growVoxelTree_canceled;
+        bool is_tree_Reorganize_canceled;
 
         int texture_number;
 
@@ -372,12 +387,15 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         QTimer * progressPollTimer;
 
         QList<DetectorFile> p_detectorfile_future_list;
-        QVector<QList<SearchNode*>> p_searchnode_future_list;
-        QFutureWatcher<void> * p_grow_interpolation_tree_future_watcher;
-        QFutureWatcher<void> * p_fertilize_interpolation_tree_future_watcher;
-        QFutureWatcher<void> * p_voxel_tree_future_watcher;
+        QVector<QList<SearchNode*>> p_searchnode_hierarchy_future_list;
+        QVector<SearchNode*> p_searchnode_all_future_list;
+        QFutureWatcher<void> * p_tree_grow_future_watcher;
+        QFutureWatcher<void> * p_tree_rebuild_branches_future_watcher;
+        QFutureWatcher<void> * p_tree_reorganize_future_watcher;
+        QFutureWatcher<void> * p_tree_recombine_future_watcher;
+        QFutureWatcher<void> * p_tree_voxelize_future_watcher;
 
-        SearchNode p_interpolation_octree;
+        SearchNode p_octree;
 
         void printNodes();
 };

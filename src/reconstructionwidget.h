@@ -36,7 +36,7 @@ signals:
     void takeImageScreenshot(QString);
     void fileChanged(QString);
 
-    void growInterpolationTreeProxySignal();
+    void tree_GrowProxySignal();
     void growVoxelTreeProxySignal();
 
 
@@ -61,8 +61,8 @@ public slots:
 
 
 private slots:
-    void growInterpolationTree_start();
-    void growInterpolationTree_finished();
+    void tree_Grow_start();
+    void tree_finished();
 
     void growVoxelTree_start();
     void growVoxelTree_finished();

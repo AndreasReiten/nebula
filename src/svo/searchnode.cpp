@@ -1,155 +1,267 @@
 #include "searchnode.h"
 
-//#include <iostream>
-//#include <iomanip>
-//#include <cmath>
-
-//#include <QString>
-//#include <QDebug>
-//#include <QElapsedTimer>
-
-//static const int MAX_LEVELS = 16;
-
 SearchNode::SearchNode()
 {
     p_is_root = false;
     p_is_leaf = true;
-    p_bins_empty = true;
+    p_is_empty = true;
     p_id_x = 0;
     p_id_y = 0;
     p_id_z = 0;
-    p_min_data_interdistance = 0;
+//    p_min_data_interdistance = 0;
 
-//    p_extent.reserve(1, 6);
     p_mutex = new QMutex;
 }
 
-//SearchNode::SearchNode(SearchNode * parent, float * extent)
-//{
-//    p_is_root = false;
-//    p_is_msd = true;
-//    p_is_empty = true;
-//    p_parent = parent;
-//    p_extent.reserve(1, 6);
-
-//    for (int i = 0; i < 6; i++)
-//    {
-//        p_extent[i] = extent[i];
-//    }
-
-//    p_level = parent->level() + 1;
-
-//    p_mutex = new QMutex;
-//}
-
 SearchNode::~SearchNode()
 {
-//    clear();
+
 }
 
-void SearchNode::rebin(bool relaxed)
+void SearchNode::recombine()
 {
-    // Regenerate data points within bins. For each grid cell, the xyz position of the data point is the average
-    // position of the sample sub-set (with possible weighing).
-    // If there are no points, then no data point is generated. In some cases, the points might not be rebinned at all.
-    if (relaxed)
+    // Do not recombine anything but a branch with leaves
+    if (!isLeafBranch()) return;
+
+    int expendables = 0;
+
+    for (int i = 0; i < p_children.size(); i++)
     {
-        // For each bin
-        for (int i = 0; i < p_data_binned.size(); i++)
+        expendables += p_children[i].expendable();
+
+//        qDebug() << "Child" << i << "expendables" << expendables;
+
+    }
+
+
+    if (expendables >= p_bins_per_side*p_bins_per_side*p_bins_per_side)
+    {
+        p_children.clear();
+        p_is_leaf = true;
+
+//        qDebug() << "Recombined node in level" << p_level;
+    }
+}
+
+int SearchNode::expendable()
+{
+    /* Dermine if the points in the grid are so self-similar that the node can be discarded in favour of the parent node.
+     * Not to be called directly, but rather from a parent, since if all children can be discarded, then the parent will be the new leaf.
+     * */
+
+    // If empty, with no relevant data
+    if (p_is_empty) return p_bins_per_side*p_bins_per_side*p_bins_per_side/8;
+
+    // Evaluate if and how the data points can be reduced
+    int n_expendable_bins = 0;
+
+//    qDebug() << "The values are";
+
+//    for (int i = 0; i < p_grid.size(); i++)
+//    {
+//        qDebug() << i << p_grid[i];
+//    }
+
+
+    for (int i = 0; i < p_bins_per_side; i+=2)
+    {
+        for (int j = 0; j < p_bins_per_side; j+=2)
         {
-            if (p_data_binned[i].size() <= 1) continue;
+            for (int k = 0; k < p_bins_per_side; k+=2)
+            {
+//                qDebug() << "Index" << i << j << k;
+//                qDebug() << (i+0) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side << p_grid[(i+0) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+//                qDebug() << (i+1) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side << p_grid[(i+1) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+//                qDebug() << (i+0) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side << p_grid[(i+0) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+//                qDebug() << (i+0) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side << p_grid[(i+0) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
+//                qDebug() << (i+1) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side << p_grid[(i+1) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+//                qDebug() << (i+0) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side << p_grid[(i+0) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
+//                qDebug() << (i+1) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side << p_grid[(i+1) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
+//                qDebug() << (i+1) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side << p_grid[(i+1) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
 
-            // Evaluate if and how the data points can be reduced
 
-            // Average
-            double avg = 0;
+                // Note: Method does not discriminate zero
+
+                // Average
+                double avg = 0;
+                avg += p_grid[(i+0) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+                avg += p_grid[(i+1) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+                avg += p_grid[(i+0) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+                avg += p_grid[(i+0) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
+                avg += p_grid[(i+1) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side];
+                avg += p_grid[(i+0) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
+                avg += p_grid[(i+1) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
+                avg += p_grid[(i+1) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side];
+                avg /= 8.0;
+
+                // Standard deviation
+                double sigma = 0;
+                sigma += std::powf(p_grid[(i+0) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::powf(p_grid[(i+1) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::powf(p_grid[(i+0) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::powf(p_grid[(i+0) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::powf(p_grid[(i+1) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::powf(p_grid[(i+0) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::powf(p_grid[(i+1) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::powf(p_grid[(i+1) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma /= 8.0;
+
+                sigma = std::sqrt(sigma);
+
+//                if (std::fabs(w - avg) < sigma*0.1)
+
+                if (sigma < avg*0.1 + 5.0) n_expendable_bins++;
+//                else
+//                {
+//                    qDebug() << "Wow, a node that made it through!";
+//                    qDebug() << "Node lvl" << p_level << "avg" << avg << "sigma" << sigma << "< ?" << avg*0.1 + 5.0;
+
+//                    qDebug() << "The values are";
+
+//                    for (int i = 0; i < p_grid.size(); i++)
+//                    {
+//                        qDebug() << i << p_grid[i];
+//                    }
+//                }
+
+//                qDebug() << "avg" << avg << "sigma" << sigma << "< ?" << avg*0.1 + 5.0;
+            }
+        }
+    }
+
+    return n_expendable_bins;
+}
+
+void SearchNode::reorganize()
+{
+    // If empty, with no relevant data
+    if (p_is_empty) return;
+
+    // Reduce a node from bins with irregular xyzw points to a simple equi-distanced grid with w-values
+    p_grid.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
+
+    // For each bin
+    for (int i = 0; i < p_data_binned.size(); i++)
+    {
+        if (p_data_binned[i].size() <= 0)
+        {
+            p_grid[i] = 0;
+        }
+        else
+        {
+            // Calculate a single average point
+            double tmp = 0;
+
             for (int j = 0; j < p_data_binned[i].size(); j++)
             {
-                avg += p_data_binned[i][j].w;
-            }
-            avg /= (double) p_data_binned[i].size();
-
-//            qDebug() << "Avg:" << avg;
-
-            // Standard deviation
-            double sigma = 0;
-            for (int j = 0; j < p_data_binned[i].size(); j++)
-            {
-                sigma += (p_data_binned[i][j].w - avg)*(p_data_binned[i][j].w - avg);
-            }
-            sigma /= (double) p_data_binned[i].size();
-            sigma = std::sqrt(sigma);
-
-//            qDebug() << "Std:" << sigma;
-
-            // Recombine values that do not deviate too much
-            xyzw32 avg_point = {0.0,0.0,0.0,0.0};
-            int count = 0;
-
-            for (int j = 0; j < p_data_binned[i].size(); j++) // Recombine (average)
-            {
-                if (std::fabs(p_data_binned[i][j].w - avg) < sigma*0.1)
-                {
-                    avg_point.x += p_data_binned[i][j].x;
-                    avg_point.y += p_data_binned[i][j].y;
-                    avg_point.z += p_data_binned[i][j].z;
-                    avg_point.w += p_data_binned[i][j].w;
-
-                    p_data_binned[i].remove(j);
-                    j--;
-                    count++;
-                }
-                else // Disregard data point
-                {
-//                    qDebug() << "Bin:" << i << "size:" << p_data_binned[i].size() << "Index:" << j << "Avg:" << avg << "Std:" << sigma << "->" << p_data_binned[i][j].w;
-                    continue;
-                }
+                tmp += p_data_binned[i][j].w;
             }
 
-            if (count > 0)
-            {
-                avg_point.x /= (float) count;
-                avg_point.y /= (float) count;
-                avg_point.z /= (float) count;
-                avg_point.w /= (float) count;
+            tmp /= (double) p_data_binned[i].size();
 
-                p_data_binned[i] << avg_point;
+            p_grid[i] = tmp;
+        }
+    }
+
+    p_data_binned.clear();
+}
+
+double SearchNode::gridValueAt(double x, double y, double z)
+{
+    if (isLeaf())
+    {
+        if (isEmpty())
+        {
+            return 0.0;
+        }
+        else
+        {
+            int id = ntant(x,y,z, p_bins_per_side);
+            if (id < 0)
+            {
+                return 0.0;
+            }
+            else
+            {
+                return p_grid[id];
             }
         }
     }
     else
     {
-        // For each bin
-        for (int i = 0; i < p_data_binned.size(); i++)
+        int id = ntant(x,y,z, 2);
+        if (id < 0)
         {
-            if (p_data_binned[i].size() <= 1) continue;
-
-            // Calculate a single average point
-            xyzw32 tmp = {0.0,0.0,0.0,0.0};
-
-            for (int j = 0; j < p_data_binned[i].size(); j++)
-            {
-                tmp.x += p_data_binned[i][j].x;
-                tmp.y += p_data_binned[i][j].y;
-                tmp.z += p_data_binned[i][j].z;
-                tmp.w += p_data_binned[i][j].w;
-            }
-
-            tmp.x /= (float) p_data_binned[i].size();
-            tmp.y /= (float) p_data_binned[i].size();
-            tmp.z /= (float) p_data_binned[i].size();
-            tmp.w /= (float) p_data_binned[i].size();
-
-            p_data_binned[i].clear();
-
-            p_data_binned[i] << tmp;
+            return 0.0;
+        }
+        else
+        {
+            return p_children[id].gridValueAt(x, y, z);
         }
     }
 }
 
-void SearchNode::estimate()
+
+double SearchNode::binsum()
 {
-    return;
+    double sum = 0;
+    for (int j = 0; j < p_data_binned.size(); j++)
+    {
+        for (int k = 0; k < p_data_binned[j].size(); k++)
+        {
+            sum += p_data_binned[j][k].w;
+        }
+    }
+
+    return sum;
+}
+
+double SearchNode::gridsum()
+{
+    double sum = 0;
+    for (int j = 0; j < p_grid.size(); j++)
+    {
+        sum += p_grid[j];
+    }
+
+    return sum;
+}
+
+void SearchNode::rebin()
+{
+    // Regenerate data points within bins. For each grid cell, the xyz position of the data point is the average
+    // position of the sample sub-set (with possible weighing).
+    // If there are no points, then no data point is generated. In some cases, the points might not be rebinned at all.
+    // For each bin
+    for (int i = 0; i < p_data_binned.size(); i++)
+    {
+        if (p_data_binned[i].size() <= 1) continue;
+
+        // Calculate a single average point
+        xyzw32 tmp = {0.0,0.0,0.0,0.0};
+
+        for (int j = 0; j < p_data_binned[i].size(); j++)
+        {
+            tmp.x += p_data_binned[i][j].x;
+            tmp.y += p_data_binned[i][j].y;
+            tmp.z += p_data_binned[i][j].z;
+            tmp.w += p_data_binned[i][j].w;
+        }
+
+        tmp.x /= (float) p_data_binned[i].size();
+        tmp.y /= (float) p_data_binned[i].size();
+        tmp.z /= (float) p_data_binned[i].size();
+        tmp.w /= (float) p_data_binned[i].size();
+
+        p_data_binned[i].clear();
+
+        p_data_binned[i] << tmp;
+    }
+}
+
+
+void SearchNode::rebuild()
+{
     // Non-recursively generate a point cloud on an irregular grid based on the child nodes
     if(p_is_leaf) return;
 
@@ -160,7 +272,7 @@ void SearchNode::estimate()
     {
         if (p_children[i].isEmpty()) continue;
 
-        for (int j = 0; j < p_bins_per_side*p_bins_per_side*p_bins_per_side; j++)
+        for (int j = 0; j < p_children[i].bins().size(); j++)
         {
             for (int k = 0; k < p_children[i].bins()[j].size(); k++)
             {
@@ -170,12 +282,12 @@ void SearchNode::estimate()
         }
     }
 
-    rebin(false);
+    rebin();
 
-    p_bins_empty = false;
+    p_is_empty = false;
 }
 
-void SearchNode::estimateRecursive()
+void SearchNode::rebuildRecursive()
 {
     // Recursively generate a point cloud on an irregular grid based on the child nodes
     if(p_is_leaf) return;
@@ -183,7 +295,7 @@ void SearchNode::estimateRecursive()
     // For all children
     for (int i = 0; i < 8; i++)
     {
-        p_children[i].estimateRecursive();
+        p_children[i].rebuildRecursive();
     }
 
 
@@ -204,9 +316,9 @@ void SearchNode::estimateRecursive()
         }
     }
 
-    rebin(false);
+    rebin();
 
-    p_bins_empty = false;
+    p_is_empty = false;
 }
 
 QVector<QVector<xyzw32> > &SearchNode::bins()
@@ -214,9 +326,22 @@ QVector<QVector<xyzw32> > &SearchNode::bins()
     return p_data_binned;
 }
 
+bool SearchNode::isLeafBranch()
+{
+    // Return true if this is a branch with leaves
+    if (p_is_leaf || p_is_empty) return false;
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (!p_children[i].isLeaf()) return false;
+    }
+
+    return true;
+}
+
 bool SearchNode::isEmpty()
 {
-    return p_bins_empty;
+    return p_is_empty;
 }
 
 bool SearchNode::isRoot()
@@ -224,7 +349,7 @@ bool SearchNode::isRoot()
     return p_is_root;
 }
 
-bool SearchNode::isMsd()
+bool SearchNode::isLeaf()
 {
     return p_is_leaf;
 }
@@ -235,33 +360,148 @@ QVector<SearchNode> & SearchNode::children()
 }
 
 
-void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes, bool branches_only)
+void SearchNode::brickcount(int &  count)
 {
-    // Return if not a branch
-    if(branches_only && p_is_leaf) return;
+    if (!p_is_empty) count++;
 
-    // Add self to hierarchy
-    if (nodes.size() <= p_level)
+    for (int i = 0; i < p_children.size(); i++)
     {
-        nodes.resize(p_level+1);
+        p_children[i].brickcount(count);
     }
+}
 
-    nodes[p_level] << this;
+void SearchNode::nodelist(QVector<SearchNode*> &nodes)
+{
+    // Add self to list
+    nodes << this;
 
-    // Add children to hierarchy
+    // Add children to list
     if(!p_is_leaf)
     {
         // Call for children
         for (int i = 0; i < 8; i++)
         {
-            p_children[i].hierarchy(nodes, branches_only);
+            p_children[i].nodelist(nodes);
         }
     }
 }
 
-void SearchNode::brick()
+void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes, int branch_leaf_both, int empty_nonempty_both)
+{
+    // Return a data structure representing the node hierarchy, including branches, leaves, or both, but only if empty, nonempty, or both
+    bool add = false;
+
+    if ((branch_leaf_both == 0) && !p_is_leaf) // Branch
+    {
+        if ((empty_nonempty_both == 0) && p_is_empty) add = true;
+        if ((empty_nonempty_both == 1) && !p_is_empty) add = true;
+        if (empty_nonempty_both == 2) add = true;
+    }
+    else if ((branch_leaf_both == 1) && p_is_leaf) // Leaf
+    {
+        if ((empty_nonempty_both == 0) && p_is_empty) add = true;
+        if ((empty_nonempty_both == 1) && !p_is_empty) add = true;
+        if (empty_nonempty_both == 2) add = true;
+    }
+    else if (branch_leaf_both == 2) // Both
+    {
+        if ((empty_nonempty_both == 0) && p_is_empty) add = true;
+        if ((empty_nonempty_both == 1) && !p_is_empty) add = true;
+        if (empty_nonempty_both == 2) add = true;
+    }
+
+    if (add)
+    {
+        // Add self to hierarchy
+        if (nodes.size() <= p_level)
+        {
+            nodes.resize(p_level+1);
+        }
+
+        nodes[p_level] << this;
+    }
+
+    // Add children to hierarchy
+    for (int i = 0; i < p_children.size(); i++)
+    {
+        p_children[i].hierarchy(nodes, branch_leaf_both, empty_nonempty_both);
+    }
+}
+
+void SearchNode::voxelize(QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks)
+{
+    // Add this node, prepare
+
+    if (!p_is_empty)
+    {
+        p_pool_z = num_bricks / (pool_dim_x * pool_dim_y);
+        p_pool_y = (num_bricks - p_pool_z * (pool_dim_x * pool_dim_y)) / pool_dim_x;
+        p_pool_x = num_bricks - p_pool_z * (pool_dim_x * pool_dim_y) - p_pool_y * pool_dim_x;
+
+        num_bricks++;
+    }
+
+    unsigned int leaf_flag = p_is_leaf;
+    unsigned int nonempty_flag = p_is_empty;
+    unsigned int child_index = 0;
+
+    if (!p_is_leaf)
+    {
+        child_index = level_offsets[p_level+1]+level_progress[p_level];
+    }
+
+    index[level_offsets[p_level]+level_progress[p_level]] = (leaf_flag << 31) | (nonempty_flag << 30) | child_index;
+    brick[level_offsets[p_level]+level_progress[p_level]] = (p_pool_x << 20) | (p_pool_y << 10) | (p_pool_z << 0);
+
+    level_progress[p_level]++;
+
+    // Add children
+    for (int i = 0; i < p_children.size(); i++)
+    {
+        p_children[i].voxelize(index , brick, level_offsets, level_progress,  pool_dim_x, pool_dim_y, pool_dim_z, num_bricks);
+    }
+}
+
+void SearchNode::brickToPool(QVector<float> & pool, int dim_x, int dim_y, int dim_z)
 {
     // Return a brick corresponding to the given extent based on the octree data
+    int side = 1 + p_bins_per_side + 1;
+
+    for (int i = 0; i < side; i++)
+    {
+        for (int j = 0; j < side; j++)
+        {
+            for (int k = 0; k < side; k++)
+            {
+                // The linear id the current value should have in the brick pool
+                int id_pool = (p_pool_x * side + i) + (p_pool_y * side + j) * dim_x + (p_pool_z * side + k) * dim_x * dim_y;
+
+                // If the id is associated with the face of the brick
+                if ((i < 1) || (i >= side - 1) || (j < 1) || (j >= side - 1) || (k < 1) || (k >= side - 1))
+                {
+                    // Do a lookup of the value
+                    double x = (double) (p_id_x + (double)((i-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
+                    double y = (double) (p_id_y + (double)((j-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
+                    double z = (double) (p_id_z + (double)((k-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
+
+                    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
+                    {
+                        pool[id_pool] = 0;
+                    }
+                    else
+                    {
+                        pool[id_pool] = gridValueAt(x, y, z);
+                    }
+                }
+                else
+                {
+                    // Find the data in the grid
+                    int id_grid = (i-1) + (j-1) * p_bins_per_side + (k-1) * p_bins_per_side * p_bins_per_side;
+                    pool[id_pool] = p_grid[id_grid];
+                }
+            }
+        }
+    }
 }
 
 
@@ -269,8 +509,9 @@ void SearchNode::clear()
 {
     p_children.clear();
     p_data_binned.clear();
+    p_grid.clear();
     p_is_leaf = true;
-    p_bins_empty = true;
+    p_is_empty = true;
 }
 
 void SearchNode::setBinsPerSide(int value)
@@ -282,16 +523,6 @@ void SearchNode::setMaxPoints(int value)
 {
     p_max_points = value;
 }
-
-void SearchNode::setMinDataInterdistance(float value)
-{
-    p_min_data_interdistance = value;
-}
-
-//void SearchNode::setExtent(Matrix<float> extent)
-//{
-//    p_extent = extent;
-//}
 
 void SearchNode::setRoot(bool value)
 {
@@ -328,21 +559,21 @@ void SearchNode::print()
     }
 }
 
-void SearchNode::insert(xyzw32 & point)
+void SearchNode::insert(xyzw32 & point, double data_interdist_hint)
 {
     // If the current node is not msd (max subdivision), then it's private variables will not be changed, and thus it does not need a mutex lock
     if (p_is_leaf)
     {
         QMutexLocker lock(p_mutex);
-        p_insert(point);
+        p_insert(point, data_interdist_hint);
     }
     else
     {
-        p_insert(point);
+        p_insert(point, data_interdist_hint);
     }
 }
 
-void SearchNode::p_insert(xyzw32 & point)
+void SearchNode::p_insert(xyzw32 & point, double data_interdist_hint)
 {
     // If this is a branch node, then proceed to the next octree level
     if (!p_is_leaf)
@@ -350,23 +581,21 @@ void SearchNode::p_insert(xyzw32 & point)
         int id = ntant(point, 2);
         if (id >= 0)
         {
-            p_children[id].insert(point);
+            p_children[id].insert(point, data_interdist_hint);
         }
     }
     // Else if this is the first data point to be inserted into a leaf node
-    else if (p_bins_empty && p_is_leaf)
+    else if (p_is_empty && p_is_leaf)
     {
         int id = ntant(point, p_bins_per_side);
         if (id >= 0)
         {
             p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
-//            p_data_binned[id].reserve(p_max_points);
             p_data_binned[id] << point;
-            p_bins_empty = false;
+            p_is_empty = false;
         }
 
     }
-    // Else if there will be
     // Else, just insert the point
     else
     {
@@ -375,37 +604,24 @@ void SearchNode::p_insert(xyzw32 & point)
         {
             p_data_binned[id] << point;
 
-            // If there are too many data points, then rebin (attempting to reduce the amount of self-similar data)
+            // If there are too many data point, split or rebin
             if ((num_points() >= p_max_points ))
             {
-//                bool relaxed;
-//                double bin_extent = 1.0 / (double)(1 << p_level) * p_bins_per_side;
-
-//                // Perform a strict rebinning only if there is no theoretical resolution gain in further subdivisions
-//                if (p_min_data_interdistance > bin_extent)
-//                {
-//                    relaxed = false;
-//                }
-//                // Perform a relaxed rebinning, where only self-similar data is reduced
-//                else
-//                {
-//                    relaxed = true;
-//                }
-
-                rebin(true);
-
-                // If there are still too many data points, the data is redistributed over eight child nodes
-                if ((num_points() >= p_max_points ))
+                if (data_interdist_hint > 1.0/(double)((1 << p_level) * p_bins_per_side))
                 {
-                    split();
+//                    qDebug() << "Rebinning because" << data_interdist_hint << ">" <<  1.0/(double)((1 << p_level) * p_bins_per_side);
+                    rebin();
+                }
+                else
+                {
+                    split(data_interdist_hint);
                     p_data_binned.clear();
                     p_is_leaf = false;
-                    p_bins_empty = true;
+                    p_is_empty = true;
                 }
             }
         }
     }
-
 }
 
 int SearchNode::num_points()
@@ -420,155 +636,12 @@ int SearchNode::num_points()
     return num;
 }
 
-//void SearchNode::weighSamples(xyzw32 & sample, Matrix<float> & sample_extent, float * sum_w, float * sum_wu, float p, float search_radius)
-//{
-//    if ((p_is_msd) && (!p_is_empty))
-//    {
-//        float d, w;
-
-//        for (int i = 0; i < num_points(); i++)
-//        {
-//            d = distance(p_data_points[i], sample);
-
-//            if (d <= search_radius)
-//            {
-//                w = 1.0 / d;
-//                *sum_w += w;
-//                *sum_wu += w * (p_data_points[i].w);
-//            }
-//        }
-//    }
-//    else //if (p_n_children > 0)
-//    {
-//        for (int i = 0; i < 8; i++)
-//        {
-//            if (p_children[i].isIntersected(sample_extent))
-//            {
-//                p_children[i].weighSamples(sample, sample_extent, sum_w, sum_wu, p, search_radius);
-//            }
-//        }
-//    }
-//}
-
-//bool SearchNode::isIntersected(Matrix<float> & sample_extent)
-//{
-    // Box box intersection by checking for each dimension if there is an overlap. If there is an overlap for all three dimensions, the node intersects the sampling extent
-
-//    float tmp[6];
-
-//    for (int i = 0; i < 3; i++)
-//    {
-//        tmp[i * 2] = std::max(sample_extent[i * 2], p_extent[i * 2]);
-//        tmp[i * 2 + 1] = std::min(sample_extent[i * 2 + 1], p_extent[i * 2 + 1]);
-
-//        if (tmp[i * 2 + 0] >= tmp[i * 2 + 1])
-//        {
-//            return false;
-//        }
-//    }
-
-//    return true;
-//}
-
-//float SearchNode::getIDW(xyzw32 & sample, float p, float search_radius)
-//{
-//    float sum_w = 0;
-//    float sum_wu = 0;
-
-//    Matrix<float> sample_extent(1, 6);
-//    sample_extent[0] = sample.x - search_radius;
-//    sample_extent[1] = sample.x + search_radius;
-//    sample_extent[2] = sample.y - search_radius;
-//    sample_extent[3] = sample.y + search_radius;
-//    sample_extent[4] = sample.z - search_radius;
-//    sample_extent[5] = sample.z + search_radius;
-
-//    weighSamples(sample, sample_extent, &sum_w, &sum_wu, p, search_radius);
-
-//    if (sum_w > 0.0)
-//    {
-//        return sum_wu / sum_w;
-//    }
-//    else
-//    {
-//        return 0;
-//    }
-//}
-
-//bool SearchNode::intersectedItems(Matrix<float> & effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data)
-//{
-//    if ((p_is_msd) && (!p_is_empty))
-//    {
-//        for (int i = 0; i < p_data_points.size(); i++)
-//        {
-//            if (
-//                ((p_data_points[i].x >= effective_extent.at(0)) && (p_data_points[i].x <= effective_extent.at(1))) &&
-//                ((p_data_points[i].y >= effective_extent.at(2)) && (p_data_points[i].y <= effective_extent.at(3))) &&
-//                ((p_data_points[i].z >= effective_extent.at(4)) && (p_data_points[i].z <= effective_extent.at(5))))
-//            {
-//                *point_data << p_data_points[i];
-//                (*accumulated_points)++;
-
-//                if (max_points <= *accumulated_points)
-//                {
-//                    return true;
-//                }
-//            }
-//        }
-//    }
-//    else //if ((p_n_children > 0))
-//    {
-//        for (int i = 0; i < p_children.size(); i++)
-//        {
-//            if (p_children[i].isIntersected(effective_extent))
-//            {
-//                if (p_children[i].intersectedItems(effective_extent, accumulated_points, max_points, point_data))
-//                {
-//                    return true;
-//                }
-//            }
-//        }
-//    }
-
-//    return false;
-//}
-
-
-//bool SearchNode::getData(
-//    size_t max_points,
-//    float * brick_extent,
-//    QList<xyzw32> point_data,
-//    size_t * accumulated_points,
-//    float search_radius)
-//{
-//    // First check if max bytes is reached
-//    if (max_points <= *accumulated_points)
-//    {
-//        return true;
-//    }
-
-//    Matrix<float> effective_extent(1, 6);
-//    effective_extent[0] = brick_extent[0] - search_radius;
-//    effective_extent[1] = brick_extent[1] + search_radius;
-//    effective_extent[2] = brick_extent[2] - search_radius;
-//    effective_extent[3] = brick_extent[3] + search_radius;
-//    effective_extent[4] = brick_extent[4] - search_radius;
-//    effective_extent[5] = brick_extent[5] + search_radius;
-
-//    return intersectedItems(effective_extent, accumulated_points, max_points, &point_data);
-//}
-
-//float SearchNode::distance(xyzw32 & a, xyzw32 & b)
-//{
-//    return std::sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
-//}
-
-int SearchNode::ntant(xyzw32 & point, int n)
+int SearchNode::ntant(double x, double y, double z, int n)
 {
     // Find 3D ntant id
-    int id_x = (point.x * (float) (1 << p_level) - (float) p_id_x) * n;
-    int id_y = (point.y * (float) (1 << p_level) - (float) p_id_y) * n;
-    int id_z = (point.z * (float) (1 << p_level) - (float) p_id_z) * n;
+    int id_x = (x * (double) (1 << p_level) - (double) p_id_x) * n;
+    int id_y = (y * (double) (1 << p_level) - (double) p_id_y) * n;
+    int id_z = (z * (double) (1 << p_level) - (double) p_id_z) * n;
 
     // Example n = 2 -> octant:
     // 0 <= relative pos < 1 : Maps to 0
@@ -577,14 +650,20 @@ int SearchNode::ntant(xyzw32 & point, int n)
 
     if ((id_x >= n) || (id_x < 0) || (id_y >= n) || (id_y < 0) || (id_z >= n) || (id_z < 0))
     {
-//        qDebug() << "Point does not fit in level:" << p_level << ", " << point.x << point.y << point.z << point.w;
+        // This should really not happen for a point that with position values between 0 and 1
+        qDebug() << "Point does not fit in level:" << p_level << ", " << x << y << z;
         return -1;
     }
 
-    // Find 1D ntant id
+    // Return 1D ntant id
     int id = id_x + n * id_y + n*n * id_z;
 
     return id;
+}
+
+int SearchNode::ntant(xyzw32 & point, int n)
+{
+    return ntant(point.x, point.y, point.z, n);
 }
 
 void SearchNode::setId(int id_x, int id_y, int id_z)
@@ -594,7 +673,7 @@ void SearchNode::setId(int id_x, int id_y, int id_z)
     p_id_z = id_z;
 }
 
-void SearchNode::split()
+void SearchNode::split(double data_interdist_hint)
 {
     /* The octants are assumed to be cubic. First create eight new
      * children. Then insert the nodes in the children according to
@@ -618,22 +697,21 @@ void SearchNode::split()
                 p_children[linear_id].setParent(this);
                 p_children[linear_id].setMaxPoints(p_max_points);
                 p_children[linear_id].setBinsPerSide(p_bins_per_side);
-                p_children[linear_id].setMinDataInterdistance(p_min_data_interdistance);
                 p_children[linear_id].setId(child_id_x, child_id_y, child_id_z);
             }
         }
     }
 
     // For each point
-    for (size_t i = 0; i < p_data_binned.size(); i++)
+    for (int i = 0; i < p_data_binned.size(); i++)
     {
-        for (size_t j = 0; j < p_data_binned[i].size(); j++)
+        for (int j = 0; j < p_data_binned[i].size(); j++)
         {
             int id = ntant(p_data_binned[i][j], 2);
 
             if (id > 0)
             {
-                p_children[id].insert(p_data_binned[i][j]);
+                p_children[id].insert(p_data_binned[i][j], data_interdist_hint);
             }
         }
     }

@@ -5081,7 +5081,7 @@ void VolumeOpenGLWidget::raytrace(cl_kernel kernel)
     }
 }
 
-void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
+void VolumeOpenGLWidget::setSvo(SparseVoxelOctreeOld * svo)
 {
     // Load the contents into a CL texture
     if (isSvoInitialized)
@@ -5211,7 +5211,7 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctree * svo)
     update();
 }
 
-void VolumeOpenGLWidget::setSvoMetadata(SparseVoxelOctree * svo)
+void VolumeOpenGLWidget::setSvoMetadata(SparseVoxelOctreeOld * svo)
 {
     if (!isSvoInitialized) return;
 

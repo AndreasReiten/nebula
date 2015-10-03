@@ -84,9 +84,9 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>-54</y>
+          <y>0</y>
           <width>254</width>
-          <height>366</height>
+          <height>336</height>
          </rect>
         </property>
         <attribute name="label">
@@ -107,69 +107,6 @@
          </property>
          <item>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="11" column="0" colspan="2">
-            <widget class="QProgressBar" name="progressBar">
-             <property name="value">
-              <number>0</number>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <property name="textVisible">
-              <bool>true</bool>
-             </property>
-             <property name="format">
-              <string>%v of %m (%p%)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="10" column="1">
-            <widget class="QPushButton" name="saveTreeButton">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="text">
-              <string>Save</string>
-             </property>
-            </widget>
-           </item>
-           <item row="10" column="0">
-            <widget class="QPushButton" name="voxelizeButton">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="text">
-              <string>Voxelize</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0" colspan="2">
-            <widget class="QComboBox" name="selectionComboBox">
-             <item>
-              <property name="text">
-               <string>All with this path</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>All</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="dataMaxSpinBox">
-             <property name="prefix">
-              <string>max:</string>
-             </property>
-             <property name="maximum">
-              <double>9999999.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>1000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="1">
             <widget class="QComboBox" name="alphaComboBox">
              <item>
@@ -199,7 +136,7 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="0" colspan="2">
+           <item row="7" column="0" colspan="2">
             <widget class="QPushButton" name="analyzeButton">
              <property name="enabled">
               <bool>false</bool>
@@ -260,16 +197,6 @@
              </item>
             </widget>
            </item>
-           <item row="6" column="0" colspan="2">
-            <widget class="QPushButton" name="applyMarkersButton">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Apply markers</string>
-             </property>
-            </widget>
-           </item>
            <item row="3" column="0">
             <widget class="QCheckBox" name="logCheckBox">
              <property name="text">
@@ -280,7 +207,7 @@
              </property>
             </widget>
            </item>
-           <item row="9" column="0">
+           <item row="8" column="0">
             <widget class="QPushButton" name="reconstructButton">
              <property name="enabled">
               <bool>true</bool>
@@ -309,25 +236,14 @@
              </item>
             </widget>
            </item>
-           <item row="7" column="0" colspan="2">
-            <widget class="QPushButton" name="applySelectionButton">
-             <property name="text">
-              <string>Apply selection</string>
-             </property>
-            </widget>
-           </item>
-           <item row="12" column="0">
+           <item row="11" column="0">
             <widget class="QPushButton" name="stopButton">
              <property name="text">
               <string>Cancel</string>
              </property>
-             <property name="icon">
-              <iconset resource="nebula.qrc">
-               <normaloff>:/art/kill.png</normaloff>:/art/kill.png</iconset>
-             </property>
             </widget>
            </item>
-           <item row="12" column="1">
+           <item row="11" column="1">
             <widget class="QPushButton" name="pauseButton">
              <property name="text">
               <string>Pause</string>
@@ -337,10 +253,83 @@
              </property>
             </widget>
            </item>
-           <item row="9" column="1">
+           <item row="8" column="1">
             <widget class="QPushButton" name="pushButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="text">
               <string>Test shit</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="dataMaxSpinBox">
+             <property name="prefix">
+              <string>max:</string>
+             </property>
+             <property name="maximum">
+              <double>9999999.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0" colspan="2">
+            <widget class="QProgressBar" name="progressBar">
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="textVisible">
+              <bool>true</bool>
+             </property>
+             <property name="format">
+              <string>%v of %m (%p%)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QPushButton" name="saveTreeButton">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>Save</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QPushButton" name="voxelizeButton">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>Voxelize</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" colspan="2">
+            <widget class="QComboBox" name="selectionComboBox">
+             <item>
+              <property name="text">
+               <string>All with this path</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>All</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="6" column="0" colspan="2">
+            <widget class="QPushButton" name="applySelectionButton">
+             <property name="text">
+              <string>Apply selection</string>
              </property>
             </widget>
            </item>
@@ -389,45 +378,16 @@
          <item>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="0" column="0" colspan="3">
-            <widget class="QCheckBox" name="planarBgCheckBox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Planar b/g subtract</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
-            <widget class="QSpinBox" name="bgSampleSpinBox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="prefix">
-              <string>Samples: </string>
-             </property>
-             <property name="minimum">
-              <number>3</number>
-             </property>
-             <property name="maximum">
-              <number>30</number>
-             </property>
-             <property name="value">
-              <number>4</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="3">
             <widget class="QCheckBox" name="flatBgCheckBox">
              <property name="text">
               <string>Flat b/g subtract</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="3">
+           <item row="0" column="3">
             <widget class="QDoubleSpinBox" name="flatBgSpinBox"/>
            </item>
-           <item row="2" column="0" colspan="4">
+           <item row="1" column="0" colspan="4">
             <widget class="QCheckBox" name="lorentzCheckBox">
              <property name="text">
               <string>Lorentz correction</string>
@@ -437,7 +397,7 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0" colspan="4">
+           <item row="2" column="0" colspan="4">
             <widget class="QCheckBox" name="pixelProjectionCheckBox">
              <property name="text">
               <string>Pixel projection correction</string>
@@ -447,7 +407,7 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="0" colspan="4">
+           <item row="3" column="0" colspan="4">
             <widget class="QCheckBox" name="polarizationCheckBox">
              <property name="enabled">
               <bool>false</bool>
@@ -460,7 +420,7 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="0" colspan="4">
+           <item row="4" column="0" colspan="4">
             <widget class="QCheckBox" name="fluxCheckBox">
              <property name="enabled">
               <bool>false</bool>
@@ -473,7 +433,7 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0" colspan="4">
+           <item row="5" column="0" colspan="4">
             <widget class="QCheckBox" name="expTimeCheckBox">
              <property name="enabled">
               <bool>false</bool>
@@ -486,7 +446,7 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="0" colspan="4">
+           <item row="6" column="0" colspan="4">
             <widget class="QCheckBox" name="beamCenterCheckBox">
              <property name="enabled">
               <bool>true</bool>
@@ -496,7 +456,7 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="0" colspan="2">
+           <item row="7" column="0" colspan="2">
             <widget class="QDoubleSpinBox" name="xCenterSpinBox">
              <property name="prefix">
               <string>+Δx: </string>
@@ -506,7 +466,7 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="2" colspan="2">
+           <item row="7" column="2" colspan="2">
             <widget class="QDoubleSpinBox" name="yCenterSpinBox">
              <property name="prefix">
               <string>+Δy: </string>
@@ -516,7 +476,7 @@
              </property>
             </widget>
            </item>
-           <item row="9" column="0" colspan="4">
+           <item row="8" column="0" colspan="4">
             <widget class="QDoubleSpinBox" name="omegaSpinBox">
              <property name="prefix">
               <string>+Δω: </string>
@@ -526,7 +486,7 @@
              </property>
             </widget>
            </item>
-           <item row="10" column="0" colspan="4">
+           <item row="9" column="0" colspan="4">
             <widget class="QDoubleSpinBox" name="kappaSpinBox">
              <property name="prefix">
               <string>+Δκ: </string>
@@ -536,7 +496,7 @@
              </property>
             </widget>
            </item>
-           <item row="11" column="0" colspan="4">
+           <item row="10" column="0" colspan="4">
             <widget class="QDoubleSpinBox" name="phiSpinBox">
              <property name="prefix">
               <string>+Δφ: </string>
@@ -645,10 +605,6 @@
        <widget class="QPushButton" name="deactivateFileButton">
         <property name="text">
          <string>Disable</string>
-        </property>
-        <property name="icon">
-         <iconset resource="nebula.qrc">
-          <normaloff>:/art/kill.png</normaloff>:/art/kill.png</iconset>
         </property>
        </widget>
       </item>

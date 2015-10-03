@@ -119,7 +119,7 @@ kernel void svoRayTrace(
 
     int2 ray_tex_dim = get_image_dim(ray_tex);
     int2 tsf_tex_dim = get_image_dim(tsf_tex);
-    int4 pool_dim = get_image_dim(bricks);
+    int4 pool_dim = get_image_dim(bricks); //This might as well be stored as float
 
     int n_tree_levels = misc_int[0];
     int brick_dim = misc_int[1];

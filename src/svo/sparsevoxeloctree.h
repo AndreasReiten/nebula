@@ -10,13 +10,13 @@
 #include "../math/ubmatrix.h"
 #include "../misc/line.h"
 
-class SparseVoxelOctree
+class SparseVoxelOctreeOld
 {
         /* This class represents Sparse Voxel Matrix. It is the datastructure that is used by the OpenCL raytracer */
 
     public:
-        SparseVoxelOctree();
-        ~SparseVoxelOctree();
+        SparseVoxelOctreeOld();
+        ~SparseVoxelOctreeOld();
 
         void set(unsigned int p_levels = 0, unsigned int p_brick_inner_dimension = 7, unsigned int p_brick_outer_dimension = 8, unsigned int p_brick_pool_power = 7);
         void setLevels(int value);
@@ -107,4 +107,53 @@ class SparseVoxelOctree
 
         QList<Line> p_lines;
 };
+
+class SparseVoxelOctree
+{
+        /* This class represents Sparse Voxel Matrix. It is the datastructure that is used by the OpenCL raytracer */
+
+    public:
+        SparseVoxelOctree();
+        ~SparseVoxelOctree();
+
+        void save(QString path);
+        void open(QString path);
+
+        void setLevels(int value);
+        void setExtent(float value);
+        void setUB(UBMatrix<double> mat);
+        void setPoolDim(unsigned int x, unsigned int y, unsigned int z);
+        void clear();
+
+        QVector<double> extent();
+
+        unsigned int levels();
+        unsigned int poolDimX();
+        unsigned int poolDimY();
+        unsigned int poolDimZ();
+        unsigned int side();
+        UBMatrix<double> UB();
+
+        QVector<unsigned int> & index();
+        QVector<unsigned int> & brick();
+        QVector<float> & pool();
+
+    private:
+        QVector<unsigned int> p_index;
+        QVector<unsigned int> p_brick;
+        QVector<float> p_pool;
+
+        QVector<double> p_extent;
+
+        quint64 p_version_major, p_version_minor;
+
+        quint64 p_levels;
+        quint64 p_pool_dim_x;
+        quint64 p_pool_dim_y;
+        quint64 p_pool_dim_z;
+        quint64 p_brick_dim;
+
+        UBMatrix<double> p_ub;
+};
+
 #endif

@@ -253,7 +253,7 @@ void DetectorFile::setCLContext(OpenCLContextQueueProgram * context)
     p_context_cl = context;
 }
 
-void DetectorFile::setInterpolationTree(SearchNode * tree)
+void DetectorFile::setDataTree(SearchNode * tree)
 {
     p_interpolation_octree = tree;
 }
@@ -262,6 +262,50 @@ void DetectorFile::setInterpolationTree(SearchNode * tree)
 //{
 //    p_mutex = mutex;
 //}
+
+double DetectorFile::getDataInterdistanceHint()
+{
+    double hint = 0;
+
+    // Calculate the projected size of the pixel onto the Ewald sphere. In effect, we find the width along the diagonal of a rectangular pixel
+    double xyz_a[3] =
+    {
+        (double)(-p_detector_distance),
+        (double)(((p_slow_dimension*0.5 - 0.5) - p_beam_center_x) * p_pixel_size_x),
+        (double)(((p_fast_dimension*0.5 - 0.5) - p_beam_center_y) * p_pixel_size_y)
+    };
+
+    double len_xyz_a = sqrt(xyz_a[0] * xyz_a[0] + xyz_a[1] * xyz_a[1] + xyz_a[2] * xyz_a[2]);
+
+    xyz_a[0] /= len_xyz_a;
+    xyz_a[1] /= len_xyz_a;
+    xyz_a[2] /= len_xyz_a;
+
+    double xyz_b[3] =
+    {
+        (double)(-p_detector_distance),
+        (double)(((p_slow_dimension*0.5 + 0.5) - p_beam_center_x) * p_pixel_size_y),
+        (double)(((p_fast_dimension*0.5 + 0.5) - p_beam_center_y) * p_pixel_size_x)
+    };
+
+    double len_xyz_b = sqrt(xyz_b[0] * xyz_b[0] + xyz_b[1] * xyz_b[1] + xyz_b[2] * xyz_b[2]);
+
+    xyz_b[0] /= len_xyz_b;
+    xyz_b[1] /= len_xyz_b;
+    xyz_b[2] /= len_xyz_b;
+
+    double k = 1 / p_wavelength;
+
+    double k_a[3] = {k * xyz_a[0], k * xyz_a[1], k * xyz_a[2]};
+    double k_b[3] = {k * xyz_b[0], k * xyz_b[1], k * xyz_b[2]};
+
+    double k_delta[3] = {k_b[0] - k_a[0], k_b[1] - k_a[1], k_b[2] - k_a[2]};
+    double len_k_delta = sqrt(k_delta[0] * k_delta[0] + k_delta[1] * k_delta[1] + k_delta[2] * k_delta[2]);
+
+    hint = len_k_delta * p_wavelength * 0.5f;
+
+    return hint;
+}
 
 float DetectorFile::getSearchRadiusLowSuggestion() const
 {
@@ -685,7 +729,7 @@ int DetectorFile::readBody()
     return p_is_data_read;
 }
 
-void DetectorFile::growInterpolationTree()
+void DetectorFile::tree_Grow()
 {
     // Read header and body
     readHeader();
@@ -952,6 +996,8 @@ void DetectorFile::growInterpolationTree()
     // The current implementation employs one QMutex per SearchNode object (the interpolation octree
     // consisits of many such nodes). Consequently only one thread can edit the same node at any time
 
+    double data_interdistance_hint = this->getDataInterdistanceHint();
+
     for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
     {
         if (finalized_data[i * 4 + 3] > 0.0) // Above 0 check
@@ -961,7 +1007,7 @@ void DetectorFile::growInterpolationTree()
             // Subtract a random floating point value between 0 and 1 to smoothen the data distribution
             if (true) data_point.w -= ((double) qrand() / RAND_MAX);
 
-            p_interpolation_octree->insert(data_point);
+            p_interpolation_octree->insert(data_point, data_interdistance_hint);
         }
     }
 }

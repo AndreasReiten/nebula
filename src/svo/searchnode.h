@@ -34,74 +34,75 @@ class SearchNode
         /* This class represents a node in the "search octree" data structure. It is used in order to create bricks for the GPU octree. */
     public:
         SearchNode();
-//        SearchNode(SearchNode * p_parent, float * extent);
         ~SearchNode();
 
+        bool isLeafBranch();
         bool isEmpty();
-
         bool isRoot();
-
-        bool isMsd();
+        bool isLeaf();
 
         QVector<SearchNode> & children();
 
-        void setRoot(bool value);
+        // The most essential reconstruction functions
+        void insert(xyzw32 &point, double data_interdist_hint);
+        void rebuild();
+        void reorganize();
+        void recombine();
+        void voxelize(QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks);
+        void brickToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z);
 
-        void rebin(bool relaxed);
+        void rebuildRecursive();
 
-        void estimate();
+        void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both);
+        void nodelist(QVector<SearchNode*> &nodes);
+        void brickcount(int &count);
 
-        void estimateRecursive();
-
-        void brick();
-
-        QVector<QVector<xyzw32> > &bins();
-
-        void hierarchy(QVector<QList<SearchNode *> > &nodes, bool branches_only);
 
         void clear();
         void print();
-        void insert(xyzw32 &point);
+
         void setBinsPerSide(int value);
         void setParent(SearchNode * p_parent);
+        void setRoot(bool value);
         void setMaxPoints(int value);
-        void setMinDataInterdistance(float value);
-        bool isIntersected(Matrix<float> &sample_extent);
-//        bool getData(size_t max_points,
-//                     float * brick_extent,
-//                     QList<xyzw32> point_data,
-//                     size_t * accumulated_points,
-//                     float search_radius);
 
-
-//        float getIDW(xyzw32 &sample, float p, float search_radius);
-        void setId(int id_x, int id_y, int id_z);
-
+        int level();
 
     private:
-        int p_id_x, p_id_y, p_id_z;
+        QVector<QVector<xyzw32>> &bins();
+
+        double gridValueAt(double x, double y, double z);
+
+        double binsum();
+        double gridsum();
+
+        void rebin();
+        void p_insert(xyzw32 &point, double data_interdist_hint);
+        void split(double data_interdist_hint);
+        void setId(int id_x, int id_y, int id_z);
+
+        int expendable();
         int num_points();
-        void p_insert(xyzw32 &point);
-//        void weighSamples(xyzw32 & sample, Matrix<float> &sample_extent, float * sum_w, float * sum_wu, float p, float search_radius);
-//        bool intersectedItems(Matrix<float> &effective_extent, size_t * accumulated_points, size_t max_points, QList<xyzw32> * point_data);
-//        float distance(xyzw32 &a, xyzw32 &b);
-        void split();
-        int level();
         int ntant(xyzw32 &point, int n);
+        int ntant(double x, double y, double z, int n);
 
 
-        SearchNode * p_parent;
-        QVector<SearchNode> p_children;
         QVector<QVector<xyzw32>> p_data_binned; // Binned data
+        QVector<float> p_grid;
+        QVector<SearchNode> p_children;
+        SearchNode * p_parent;
+
+//        float p_min_data_interdistance;
+
+        unsigned int p_pool_x, p_pool_y, p_pool_z;
+        int p_id_x, p_id_y, p_id_z;
         int p_level;
-        bool p_bins_empty; // No children, no data in bins
-        bool p_is_leaf;
-        bool p_is_root;
-
-        float p_min_data_interdistance;
-
         int p_bins_per_side;
         int p_max_points;
+
+        bool p_is_empty; // No data
+        bool p_is_leaf;
+        bool p_is_root;
 
         QMutex * p_mutex;
 };
