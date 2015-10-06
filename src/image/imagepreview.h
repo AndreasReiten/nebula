@@ -395,7 +395,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         QFutureWatcher<void> * p_tree_recombine_future_watcher;
         QFutureWatcher<void> * p_tree_voxelize_future_watcher;
 
-        SearchNode p_octree;
+        SearchNode p_data_tree;
 
         void printNodes();
 };

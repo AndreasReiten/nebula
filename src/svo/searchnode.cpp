@@ -1,13 +1,19 @@
 #include "searchnode.h"
 
-SearchNode::SearchNode()
+SearchNode::SearchNode() :
+    p_pool_x(0),
+    p_pool_y(0),
+    p_pool_z(0),
+    p_id_x(0),
+    p_id_y(0),
+    p_id_z(0),
+    p_is_root(false),
+    p_is_leaf(true),
+    p_is_empty(true)
+
 {
-    p_is_root = false;
-    p_is_leaf = true;
-    p_is_empty = true;
-    p_id_x = 0;
-    p_id_y = 0;
-    p_id_z = 0;
+
+
 //    p_min_data_interdistance = 0;
 
     p_mutex = new QMutex;
@@ -166,8 +172,9 @@ void SearchNode::reorganize()
     p_data_binned.clear();
 }
 
-double SearchNode::gridValueAt(double x, double y, double z)
+double SearchNode::gridValueAt(double x, double y, double z, QList<nodeinfo> & trace)
 {
+    // If leaf, search the grid
     if (isLeaf())
     {
         if (isEmpty())
@@ -176,7 +183,7 @@ double SearchNode::gridValueAt(double x, double y, double z)
         }
         else
         {
-            int id = ntant(x,y,z, p_bins_per_side);
+            int id = ntant(x,y,z, p_bins_per_side, trace);
             if (id < 0)
             {
                 return 0.0;
@@ -187,16 +194,17 @@ double SearchNode::gridValueAt(double x, double y, double z)
             }
         }
     }
+    // Else if branch, descend to the next level
     else
     {
-        int id = ntant(x,y,z, 2);
+        int id = ntant(x,y,z, 2, trace);
         if (id < 0)
         {
             return 0.0;
         }
         else
         {
-            return p_children[id].gridValueAt(x, y, z);
+            return p_children[id].gridValueAt(x, y, z, trace);
         }
     }
 }
@@ -462,8 +470,11 @@ void SearchNode::voxelize(QVector<unsigned int> & index , QVector<unsigned int> 
     }
 }
 
-void SearchNode::brickToPool(QVector<float> & pool, int dim_x, int dim_y, int dim_z)
+
+void SearchNode::brickToPool(QVector<float> & pool, int dim_x, int dim_y, int dim_z, SearchNode & root)
 {
+    if (p_is_empty) return;
+
     // Return a brick corresponding to the given extent based on the octree data
     int side = 1 + p_bins_per_side + 1;
 
@@ -474,28 +485,39 @@ void SearchNode::brickToPool(QVector<float> & pool, int dim_x, int dim_y, int di
             for (int k = 0; k < side; k++)
             {
                 // The linear id the current value should have in the brick pool
-                int id_pool = (p_pool_x * side + i) + (p_pool_y * side + j) * dim_x + (p_pool_z * side + k) * dim_x * dim_y;
+                int id_pool =
+                        (p_pool_x * side + i) +
+                        (p_pool_y * side + j) * (dim_x * side)  +
+                        (p_pool_z * side + k) * (dim_x * side * dim_y * side);
 
                 // If the id is associated with the face of the brick
                 if ((i < 1) || (i >= side - 1) || (j < 1) || (j >= side - 1) || (k < 1) || (k >= side - 1))
                 {
                     // Do a lookup of the value
-                    double x = (double) (p_id_x + (double)((i-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
-                    double y = (double) (p_id_y + (double)((j-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
-                    double z = (double) (p_id_z + (double)((k-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
+//                    double x = (double) (p_id_x + (double)((i-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
+//                    double y = (double) (p_id_y + (double)((j-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
+//                    double z = (double) (p_id_z + (double)((k-1) + 0.5 )/(double) (p_bins_per_side)) / (double) (1 << p_level);
 
+                    double x = (double) (p_id_x * p_bins_per_side + (double)((i-1) + 0.5 )) / (double) ((1 << p_level) * p_bins_per_side);
+                    double y = (double) (p_id_y * p_bins_per_side + (double)((j-1) + 0.5 )) / (double) ((1 << p_level) * p_bins_per_side);
+                    double z = (double) (p_id_z * p_bins_per_side + (double)((k-1) + 0.5 )) / (double) ((1 << p_level) * p_bins_per_side);
+
+                    // If requested value lies outside of octtree, set to zero
                     if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
                     {
                         pool[id_pool] = 0;
+//                        qDebug() << "Requested value lies outside of octtree" << x << y << z;
                     }
+                    // Else use grid value
                     else
                     {
-                        pool[id_pool] = gridValueAt(x, y, z);
+                        QList<nodeinfo> trace;
+                        pool[id_pool] = root.gridValueAt(x, y, z, trace);
                     }
                 }
+                // Else find the data in this grid
                 else
                 {
-                    // Find the data in the grid
                     int id_grid = (i-1) + (j-1) * p_bins_per_side + (k-1) * p_bins_per_side * p_bins_per_side;
                     pool[id_pool] = p_grid[id_grid];
                 }
@@ -636,12 +658,31 @@ int SearchNode::num_points()
     return num;
 }
 
-int SearchNode::ntant(double x, double y, double z, int n)
+int SearchNode::ntant(double x, double y, double z, int n, QList<nodeinfo> & trace)
 {
-    // Find 3D ntant id
-    int id_x = (x * (double) (1 << p_level) - (double) p_id_x) * n;
-    int id_y = (y * (double) (1 << p_level) - (double) p_id_y) * n;
-    int id_z = (z * (double) (1 << p_level) - (double) p_id_z) * n;
+    // Find 3D ntant id for the next subdivision
+    int id_x = (x * (double) (1 << p_level) - (double) p_id_x) * (double) n;
+    int id_y = (y * (double) (1 << p_level) - (double) p_id_y) * (double) n;
+    int id_z = (z * (double) (1 << p_level) - (double) p_id_z) * (double) n;
+
+    nodeinfo ni;
+    ni.level = p_level;
+    ni.id_x = p_id_x;
+    ni.id_y = p_id_y;
+    ni.id_z = p_id_z;
+    ni.side = (1 << p_level);
+    ni.id_nxt_x = (x * (double) (1 << p_level) - (double) p_id_x) * (double) n;
+    ni.id_nxt_y = (y * (double) (1 << p_level) - (double) p_id_y) * (double) n;
+    ni.id_nxt_z = (z * (double) (1 << p_level) - (double) p_id_z) * (double) n;
+    ni.n = n;
+
+    trace << ni;
+
+    // (0.375 * 1 - 0)*2 = 0.75
+    // (0.375 * 2 - 0*2+0.75=0)*2 = 1.5
+    // (0.375 * 4 - 0*2+1=1)*2 = 1.0
+    // (0.375 * 8 - 1*2+1=3)*2 = 0.0
+    // (0.375 * 16 - 3*2+0)*2 = 0.0
 
     // Example n = 2 -> octant:
     // 0 <= relative pos < 1 : Maps to 0
@@ -652,6 +693,8 @@ int SearchNode::ntant(double x, double y, double z, int n)
     {
         // This should really not happen for a point that with position values between 0 and 1
         qDebug() << "Point does not fit in level:" << p_level << ", " << x << y << z;
+
+
         return -1;
     }
 
@@ -660,6 +703,34 @@ int SearchNode::ntant(double x, double y, double z, int n)
 
     return id;
 }
+
+int SearchNode::ntant(double x, double y, double z, int n)
+{
+    // Find 3D ntant id
+    int id_x = (x * (double) (1 << p_level) - (double) p_id_x) * (double) n;
+    int id_y = (y * (double) (1 << p_level) - (double) p_id_y) * (double) n;
+    int id_z = (z * (double) (1 << p_level) - (double) p_id_z) * (double) n;
+
+    // Example n = 2 -> octant:
+    // 0 <= relative pos < 1 : Maps to 0
+    // 1 <= relative pos < 2 : Maps to 1
+    // Values should not map to 2 or greater
+
+    if ((id_x >= n) || (id_x < 0) || (id_y >= n) || (id_y < 0) || (id_z >= n) || (id_z < 0))
+    {
+        // This should really not happen for a point that with position values between 0 and 1
+        qDebug() << "Point does not fit in level:" << p_level << ", " << x << y << z;
+
+
+        return -1;
+    }
+
+    // Return 1D ntant id
+    int id = id_x + n * id_y + n*n * id_z;
+
+    return id;
+}
+
 
 int SearchNode::ntant(xyzw32 & point, int n)
 {

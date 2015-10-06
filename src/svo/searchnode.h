@@ -49,7 +49,7 @@ class SearchNode
         void reorganize();
         void recombine();
         void voxelize(QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks);
-        void brickToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z);
+        void brickToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z, SearchNode &root);
 
         void rebuildRecursive();
 
@@ -71,7 +71,7 @@ class SearchNode
     private:
         QVector<QVector<xyzw32>> &bins();
 
-        double gridValueAt(double x, double y, double z);
+        double gridValueAt(double x, double y, double z, QList<nodeinfo> & trace);
 
         double binsum();
         double gridsum();
@@ -84,6 +84,7 @@ class SearchNode
         int expendable();
         int num_points();
         int ntant(xyzw32 &point, int n);
+        int ntant(double x, double y, double z, int n, QList<nodeinfo> &trace);
         int ntant(double x, double y, double z, int n);
 
 
