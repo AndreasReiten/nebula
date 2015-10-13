@@ -7,35 +7,35 @@ float4 brickColor(int value)
 {
     if (value == 0)
     {
-        return (float4)(0.2f, 0.3f, 3.0f, 1.00f);
+        return (float4)(0.2f, 0.3f, 3.0f, 0.20f);
     }
     else if (value == 1)
     {
-        return (float4)(1.0f, 0.3f, 0.2f, 1.00f);
+        return (float4)(1.0f, 0.3f, 0.2f, 0.30f);
     }
     else if (value == 2)
     {
-        return (float4)(0.2f, 1.0f, 0.3f, 1.00f);
+        return (float4)(0.2f, 1.0f, 0.3f, 0.40f);
     }
     else if (value == 3)
     {
-        return (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+        return (float4)(0.2f, 0.3f, 1.0f, 0.50f);
     }
     else if (value == 4)
     {
-        return (float4)(1.0f, 0.3f, 0.2f, 1.00f);
+        return (float4)(1.0f, 0.3f, 0.2f, 0.60f);
     }
     else if (value == 5)
     {
-        return (float4)(0.2f, 1.0f, 0.3f, 1.00f);
+        return (float4)(0.2f, 1.0f, 0.3f, 0.70f);
     }
     else if (value == 6)
     {
-        return (float4)(0.2f, 0.3f, 1.0f, 1.00f);
+        return (float4)(0.2f, 0.3f, 1.0f, 0.80f);
     }
     else if (value == 7)
     {
-        return (float4)(1.0f, 0.3f, 0.2f, 1.00f);
+        return (float4)(1.0f, 0.3f, 0.2f, 0.90f);
     }
     else if (value == 8)
     {
@@ -115,6 +115,8 @@ kernel void svoRayTrace(
 //    int const_size;
 )
 {
+    int max_level = 100;
+
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
 
     int2 ray_tex_dim = get_image_dim(ray_tex);
@@ -483,7 +485,7 @@ kernel void svoRayTrace(
 
                         is_msd = isMsd(brick);
                         is_empty = isEmpty(brick);
-                        is_low_enough = (cone_diameter > voxel_size_this_lvl);
+                        is_low_enough = (cone_diameter > voxel_size_this_lvl) || (j >= max_level);
 
                         if (is_msd || is_low_enough || is_empty)
                         {

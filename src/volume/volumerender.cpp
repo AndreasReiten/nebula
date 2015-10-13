@@ -892,9 +892,9 @@ void VolumeOpenGLWidget::paintGL()
     {
         if (isScalebarActive)
         {
-            drawLineIntegrationVolumeVisualAssist(&painter);
+//            drawLineIntegrationVolumeVisualAssist(&painter);
             drawWeightCenter(&painter);
-            drawLineTranslationVec(&painter);
+//            drawLineTranslationVec(&painter);
         }
     }
 
@@ -1505,6 +1505,13 @@ void VolumeOpenGLWidget::mouseMoveEvent(QMouseEvent * event)
             data_translation = ( rotation.inverse4x4() * data_translation * rotation) * data_translation_prev;
 
             this->data_view_extent =  (data_scaling * data_translation).inverse4x4() * data_extent;
+
+//            data_view_extent.print(2,"data_view_extent");
+//            data_scaling.print(2,"data_scaling");
+//            data_translation.print(2,"data_translation");
+//            data_extent.print(2,"data_extent");
+//            (data_scaling * data_translation).print(2,"(data_scaling * data_translation)");
+//            (data_scaling * data_translation).inverse4x4().print(2,"(data_scaling * data_translation).inverse4x4()");
 
             {
                 std_3d_col_program->bind();
@@ -5210,6 +5217,141 @@ void VolumeOpenGLWidget::setSvo(SparseVoxelOctreeOld * svo)
 
     update();
 }
+
+
+void VolumeOpenGLWidget::loadSvo()
+{
+    QString file_name = QFileDialog::getOpenFileName(this, "Open file", "","Sparse voxel octree files (*.svo);;All files (*)");
+
+    if (file_name == "") return;
+
+    p_voxel_tree.clear();
+    p_voxel_tree.open(file_name);
+
+    std::cout << p_voxel_tree.info(9).toUtf8().toStdString().c_str();
+
+    // Release CL buffers as required
+    if (isSvoInitialized)
+    {
+        err = QOpenCLReleaseMemObject(cl_svo_brick);
+
+        err |= QOpenCLReleaseMemObject(cl_svo_index);
+
+        err |= QOpenCLReleaseMemObject(cl_svo_pool);
+
+        if ( err != CL_SUCCESS)
+        {
+            qFatal(cl_error_cstring(err));
+        }
+    }
+
+    err =   QOpenCLFinish(context_cl.queue());
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    isSvoInitialized = false;
+
+    data_extent[0] =  p_voxel_tree.extent()[0];
+    data_extent[1] =  p_voxel_tree.extent()[1];
+    data_extent[2] =  p_voxel_tree.extent()[2];
+    data_extent[3] =  p_voxel_tree.extent()[3];
+    data_extent[4] =  p_voxel_tree.extent()[4];
+    data_extent[5] =  p_voxel_tree.extent()[5];
+    data_extent[6] =  1;
+    data_extent[7] =  1;
+    setViewExtentVbo();
+    data_view_extent.setDeep(4, 2, p_voxel_tree.extent().data());
+
+    misc_ints[0] = (int) p_voxel_tree.levels();;
+    misc_ints[1] = (int) p_voxel_tree.side();
+//    tsf_parameters_svo[2] = svo->minMax().at(0);
+//    tsf_parameters_svo[3] = svo->minMax().at(1);
+
+    setDataExtent();
+    resetViewMatrix();
+    setMiscArrays();
+    setTsfParameters();
+    isModelActive = false;
+
+//    size_t n_bricks = svo->pool()->size() / (svo->brickOuterDimension() * svo->brickOuterDimension() * svo->brickOuterDimension());
+
+//    Matrix<size_t> pool_dim(1, 3);
+//    pool_dim[0] = (1 << svo->brickPoolPower()) * svo->brickOuterDimension();
+//    pool_dim[1] = (1 << svo->brickPoolPower()) * svo->brickOuterDimension();
+//    pool_dim[2] = ((n_bricks) / ((1 << svo->brickPoolPower()) * (1 << svo->brickPoolPower())) + 1) * svo->brickOuterDimension();
+
+
+
+
+
+    cl_svo_index = QOpenCLCreateBuffer(context_cl.context(),
+                                       CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                       p_voxel_tree.index().size() * sizeof(cl_uint),
+                                       p_voxel_tree.index().data(),
+                                       &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    cl_svo_brick = QOpenCLCreateBuffer(context_cl.context(),
+                                       CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                       p_voxel_tree.brick().size() * sizeof(cl_uint),
+                                       p_voxel_tree.brick().data(),
+                                       &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    cl_image_format cl_pool_format;
+    cl_pool_format.image_channel_order = CL_INTENSITY;
+    cl_pool_format.image_channel_data_type = CL_FLOAT;
+
+    cl_svo_pool = QOpenCLCreateImage3D ( context_cl.context(),
+                                         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                         &cl_pool_format,
+                                         p_voxel_tree.poolDimX()*p_voxel_tree.side(),
+                                         p_voxel_tree.poolDimY()*p_voxel_tree.side(),
+                                         p_voxel_tree.poolDimZ()*p_voxel_tree.side(),
+                                         0,
+                                         0,
+                                         p_voxel_tree.pool().data(),
+                                         &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    cl_svo_pool_sampler = QOpenCLCreateSampler(context_cl.context(), CL_TRUE, CL_ADDRESS_CLAMP, CL_FILTER_LINEAR, &err);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    // Send stuff to the kernel
+    err = QOpenCLSetKernelArg(cl_svo_raytrace, 2, sizeof(cl_mem), &cl_svo_pool);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 3, sizeof(cl_mem), &cl_svo_index);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 4, sizeof(cl_mem), &cl_svo_brick);
+    err |= QOpenCLSetKernelArg(cl_svo_raytrace, 5, sizeof(cl_sampler), &cl_svo_pool_sampler);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    isSvoInitialized = true;
+
+    update();
+}
+
 
 void VolumeOpenGLWidget::setSvoMetadata(SparseVoxelOctreeOld * svo)
 {

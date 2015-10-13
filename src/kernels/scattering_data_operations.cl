@@ -389,8 +389,8 @@ kernel void projectScatteringData(
     float phi,
     float omega,
     int4 selection,
-    int2 image_size
-//    global float * data_interdistance_buf
+    int2 image_size,
+    global float * data_interdistance_buf
 )
 {
     // Project data from the detector plane onto the Ewald sphere
@@ -412,6 +412,7 @@ kernel void projectScatteringData(
     if ((id_glb.x < image_size.x) && (id_glb.y < image_size.y))
     {
         float4 Q = (float4)(0.0f);
+        float d = 0.0f; // Pixel interdistance
 
         // If the pixel is within the selection
         if ((id_glb.x >= selection.x) && // Left
@@ -425,17 +426,49 @@ kernel void projectScatteringData(
              * Projecting the pixel onto the Ewald sphere
              * */
 
-            // The real space vector OP going from the origo (O) to the pixel (P)
-            float3 OP = (float3)(
+            // The real space vector OP going from the origo (O) to the pixel (P), 0 = middle of pixel, 1-4 = corners
+            float3 OP0 = (float3)(
                                             -detector_distance,
-                                            pixel_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
-                                            //pixel_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y)
-                                            pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_y))); /* DANGER */
+                                            pixel_size_x * ((float) +((image_size.y - (id_glb.y + 0.5)) - beam_x)),/* DANGER */
+                                            pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_y)));/* DANGER */
+                                            //pixel_size_x * ((float) (image_size.y - 0.5f - id_glb.y) - beam_x), /* DANGER */
+                                            //pixel_size_y * ((float) -((id_glb.x + 0.5) - beam_y))); /* DANGER */
+                                            //pixel_size_y * ((float) (image_size.x - 0.5f - id_glb.x) - beam_y) /* OLD */
+
+            float3 OP1 = (float3)(
+                                            -detector_distance,
+                                            pixel_size_x * ((float) +((image_size.y - (id_glb.y + 0.0)) - beam_x)),
+                                            pixel_size_y * ((float) -((id_glb.x + 0.0) - beam_y)));
+
+            float3 OP2 = (float3)(
+                                            -detector_distance,
+                                            pixel_size_x * ((float) +((image_size.y - (id_glb.y + 0.0)) - beam_x)),
+                                            pixel_size_y * ((float) -((id_glb.x + 1.0) - beam_y)));
+
+            float3 OP3 = (float3)(
+                                            -detector_distance,
+                                            pixel_size_x * ((float) +((image_size.y - (id_glb.y + 1.0)) - beam_x)),
+                                            pixel_size_y * ((float) -((id_glb.x + 0.0) - beam_y)));
+
+            float3 OP4 = (float3)(
+                                            -detector_distance,
+                                            pixel_size_x * ((float) +((image_size.y - (id_glb.y + 1.0)) - beam_x)),
+                                            pixel_size_y * ((float) -((id_glb.x + 1.0) - beam_y)));
+
 
             float k = 1.0f / wavelength; // Multiply with 2pi if desired
-
             float3 k_i = (float3)(-k, 0, 0);
-            float3 k_f = k * normalize(OP);
+
+            // Approximate data point interdistance (does currently not consider distance to same pixel in nearby frames)
+            float3 k_f1 = k * normalize(OP1);
+            float3 k_f2 = k * normalize(OP2);
+            float3 k_f3 = k * normalize(OP3);
+            float3 k_f4 = k * normalize(OP4);
+
+            d = max(length(OP1 - OP4), length(OP2 - OP3)); // Approximated by the longest diagonal
+
+            // Calculate center projection
+            float3 k_f = k * normalize(OP0);
 
             Q.xyz = k_f - k_i;
 
@@ -452,11 +485,15 @@ kernel void projectScatteringData(
         }
         else
         {
+            d = 0.0;
             Q.w = 0.0f;
         }
 
-        // Write to the Q target (CL texture)
+        // Write to the Q-point buffer
         out_buf[id_glb.y * image_size.x + id_glb.x] = Q;
+
+        // Write to the data interdistance buffer
+        data_interdistance_buf[id_glb.y * image_size.x + id_glb.x] = d;
     }
 }
 

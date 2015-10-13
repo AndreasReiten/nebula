@@ -77,10 +77,10 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 //        SeriesSet set();
         ImageWorker * worker();
 
-        QFutureWatcher<void> *tree_GrowWatcher();
-        QFutureWatcher<void> *tree_RebuildBranchesWatcher();
-        QFutureWatcher<void> *tree_RecombineWatcher();
-        QFutureWatcher<void> *tree_ReorganizeWatcher();
+        QFutureWatcher<void> *dataTreeGrowWatcher();
+        QFutureWatcher<void> *dataTreeRebuildBranchesWatcher();
+        QFutureWatcher<void> *dataTreeRecombineWatcher();
+        QFutureWatcher<void> *dataTreeReorganizeWatcher();
         QFutureWatcher<void> *voxelTreeWatcher();
 
     signals:
@@ -107,27 +107,29 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void progressTaskActive(bool value);
 
     public slots:
+        void saveVoxelTree();
+
         void pollProgress();
 
-        void growVoxelTree();
-        void on_growVoxelTree_finished();
-        void on_growVoxelTree_canceled();
+        void voxelTreeGrow();
+        void on_voxelTreeGrow_finished();
+        void on_voxelTreeGrow_canceled();
 
-        void tree_Recombine();
-        void on_tree_Recombine_finished();
-        void on_tree_Recombine_canceled();
+        void dataTreeRecombine();
+        void on_dataTreeRecombine_finished();
+        void on_dataTreeRecombine_canceled();
 
-        void tree_Reorganize();
-        void on_tree_Reorganize_finished();
-        void on_tree_Reorganize_canceled();
+        void dataTreeReorganize();
+        void on_dataTreeReorganize_finished();
+        void on_dataTreeReorganize_canceled();
 
-        void tree_RebuildBranches();
-        void on_tree_RebuildBranches_finished();
-        void on_tree_RebuildBranches_canceled();
+        void dataTreeRebuildBranches();
+        void on_dataTreeRebuildBranches_finished();
+        void on_dataTreeRebuildBranches_canceled();
 
-        void tree_Grow();
-        void on_tree_Grow_finished();
-        void on_tree_Grow_canceled();
+        void dataTreeGrow();
+        void on_dataTreeGrow_finished();
+        void on_dataTreeGrow_canceled();
 
         void setApplicationMode(QString str);
         void setFilePath(QString str);
@@ -235,12 +237,10 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         double offset_omega;
         double offset_kappa;
         double offset_phi;
-//        QString active_rotation;
         bool kill_flag;
 
         // Series
         QList<Matrix<float>> set_trace;
-//        SeriesSet p_set;
         QString p_current_filepath;
         QString p_application_mode;
         QMap<QString, ImageInfo> p_working_data;
@@ -299,7 +299,6 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         cl_sampler image_sampler;
 
         TransferFunction tsf;
-//        QString rgb_style, alpha_style;
         int bg_sample_interdist;
 
         int n_lsq_samples;
@@ -342,11 +341,11 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool isSetTraced;
         bool isEwaldCircleActive;
         bool isImageTooltipActive;
-        bool is_tree_Grow_canceled;
-        bool is_tree_Recombine_canceled;
-        bool is_tree_RebuildBranches_canceled;
-        bool is_growVoxelTree_canceled;
-        bool is_tree_Reorganize_canceled;
+        bool is_dataTreeGrow_canceled;
+        bool is_dataTreeRecombine_canceled;
+        bool is_dataTreeRebuildBranches_canceled;
+        bool is_voxelTreeGrow_canceled;
+        bool is_dataTreeReorganize_canceled;
 
         int texture_number;
 

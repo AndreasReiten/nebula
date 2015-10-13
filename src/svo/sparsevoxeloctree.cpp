@@ -12,8 +12,8 @@
 #include <QDebug>
 
 SparseVoxelOctree::SparseVoxelOctree() :
-    p_version_major(0),
-    p_version_minor(1),
+//    p_version_major(0),
+//    p_version_minor(1),
     p_levels(0),
     p_pool_dim_x(0),
     p_pool_dim_y(0),
@@ -28,13 +28,97 @@ SparseVoxelOctree::~SparseVoxelOctree()
 
 }
 
+QString SparseVoxelOctree::info(unsigned int n)
+{
+    QString str;
+    str += "p_levels: "+QString::number(p_levels)+"\n";
+    str += "p_pool_dim_x: "+QString::number(p_pool_dim_x)+"\n";
+    str += "p_pool_dim_y: "+QString::number(p_pool_dim_y)+"\n";
+    str += "p_pool_dim_z: "+QString::number(p_pool_dim_z)+"\n";
+    str += "p_brick_dim: "+QString::number(p_brick_dim)+"\n";
+    str += "UB size: "+QString::number(p_ub.size())+"\n";
+    str += "Extent: "+QString::number(p_extent[0])+" "+QString::number(p_extent[1])+" "+QString::number(p_extent[2])+" "+QString::number(p_extent[3])+" "+QString::number(p_extent[4])+" "+QString::number(p_extent[5])+"\n";
+
+    str += "p_index, p_brick ("+QString::number(p_index.size())+" items)\n";
+    for (int i = 0; i < std::min((long int) n, (long int) p_index.size()); i++)
+    {
+        uint mask_brick_id_x = ((1 << 10) - 1) << 20;
+        uint mask_brick_id_y = ((1 << 10) - 1) << 10;
+        uint mask_brick_id_z = ((1 << 10) - 1) << 0;
+
+        uint mask_leaf_flag   = ((1u << 1u) - 1u) << 31u;
+        uint mask_data_flag   = ((1 << 1) - 1) << 30;
+        uint mask_child_index = ((1 << 30) - 1) << 0;
+
+        str += QString::number(i)+" -> Leaf: "+QString::number((p_index[i] & mask_leaf_flag) >> 31)+" Data: "+QString::number((p_index[i] & mask_data_flag) >> 30)+(((p_index[i] & mask_leaf_flag) >> 31) == 0 ? " [Child: "+QString::number((p_index[i] & mask_child_index))+"]" : "")+"\n";
+        if (((p_index[i] & mask_data_flag) >> 30) == 1) str += " -- Brick x: "+QString::number((p_brick[i] & mask_brick_id_x) >> 20)+" y: "+QString::number((p_brick[i] & mask_brick_id_y) >> 10)+" z: "+QString::number((p_brick[i] & mask_brick_id_z))+"\n";
+    }
+
+    return str;
+}
+
 void SparseVoxelOctree::save(QString path)
 {
+    QFile file(path);
 
+    if (file.open(QIODevice::WriteOnly))
+    {
+        QDataStream out(&file);
+
+        out << (qint64) 0;
+        out << (qint64) 1;
+        out << p_index;
+        out << p_brick;
+        out << p_pool;
+        out << p_extent;
+        out << p_levels;
+        out << p_pool_dim_x;
+        out << p_pool_dim_y;
+        out << p_pool_dim_z;
+        out << p_brick_dim;
+        out << p_ub;
+
+
+        file.close();
+    }
 }
 void SparseVoxelOctree::open(QString path)
 {
+    QFile file(path);
 
+    if (file.open(QIODevice::ReadOnly))
+    {
+        QDataStream in(&file);
+
+        quint64 version_major, version_minor;
+
+        in >> version_minor;
+        in >> version_major;
+
+        in >> p_index;
+        in >> p_brick;
+        in >> p_pool;
+        in >> p_extent;
+        in >> p_levels;
+        in >> p_pool_dim_x;
+        in >> p_pool_dim_y;
+        in >> p_pool_dim_z;
+        in >> p_brick_dim;
+        in >> p_ub;
+
+
+        file.close();
+    }
+}
+
+void SparseVoxelOctree::clear()
+{
+    p_index.clear();
+    p_brick.clear();
+    p_pool.clear();
+
+    p_extent.clear();
+    p_ub.clear();
 }
 
 void SparseVoxelOctree::setLevels(int value)
@@ -49,6 +133,7 @@ void SparseVoxelOctree::setExtent(float value)
     p_extent[3] = value;
     p_extent[4] = -value;
     p_extent[5] = value;
+
 }
 void SparseVoxelOctree::setUB(UBMatrix<double> mat)
 {
@@ -77,11 +162,11 @@ unsigned int SparseVoxelOctree::poolDimX()
 }
 unsigned int SparseVoxelOctree::poolDimY()
 {
-    return p_pool_dim_x;
+    return p_pool_dim_y;
 }
 unsigned int SparseVoxelOctree::poolDimZ()
 {
-    return p_pool_dim_x;
+    return p_pool_dim_z;
 }
 unsigned int SparseVoxelOctree::side()
 {
@@ -104,14 +189,6 @@ QVector<float> & SparseVoxelOctree::pool()
 {
     return p_pool;
 }
-
-void  SparseVoxelOctree::clear()
-{
-    p_index.clear();
-    p_brick.clear();
-    p_pool.clear();
-}
-
 
 SparseVoxelOctreeOld::SparseVoxelOctreeOld()
 {

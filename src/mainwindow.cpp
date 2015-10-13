@@ -744,7 +744,7 @@ void MainWindow::initConnects()
     connect(this->betaNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_beta(double)));
     connect(this->gammaNormSpinBox, SIGNAL(valueChanged(double)), volumeOpenGLWidget, SLOT(setUB_gamma(double)));
     connect(this->screenshotAct, SIGNAL(triggered()), this, SLOT(takeVolumeScreenshot()));
-    connect(openSvoAct, SIGNAL(triggered()), this, SLOT(loadSvo()));
+    connect(openSvoAct, SIGNAL(triggered()), volumeOpenGLWidget, SLOT(loadSvo()));
 //    connect(saveSVOAct, SIGNAL(triggered()), this, SLOT(saveSvo()));
     connect(saveLoadedSvoAct, SIGNAL(triggered()), this, SLOT(saveLoadedSvo()));
 //    connect(saveSvoButton, SIGNAL(clicked()), this, SLOT(saveSvo()));

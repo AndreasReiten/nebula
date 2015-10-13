@@ -35,14 +35,11 @@ signals:
     void saveImage(QString);
     void takeImageScreenshot(QString);
     void fileChanged(QString);
-
-    void tree_GrowProxySignal();
-    void growVoxelTreeProxySignal();
-
+    void dataTreeGrowProxySignal();
+    void voxelTreeGrowProxySignal();
 
 public slots:
     void setProgressBarFormat(QString str);
-//    void setProgressBarFormat_2(QString str);
     void takeImageScreenshotFunction();
     void saveImageFunction();
     void displayPopup(QString title, QString text);
@@ -55,18 +52,12 @@ public slots:
     void previous();
     void batchNext();
     void batchPrevious();
-//    void clearRunnables();
-//    void pollProgress();
-
-
 
 private slots:
-    void tree_Grow_start();
-    void tree_finished();
-
-    void growVoxelTree_start();
-    void growVoxelTree_finished();
-
+    void data_tree_grow_start();
+    void data_tree_finished();
+    void voxel_tree_grow_start();
+    void voxel_tree_finished();
     void on_sanityButton_clicked();
     void on_deactivateFileButton_clicked();
     void on_activateFileButton_clicked();
@@ -98,11 +89,6 @@ private:
     QString p_working_dir;
     QString p_screenshot_dir;
     int p_current_row;
-
-//    QList<DetectorFile> p_future_list;
-//    QFutureWatcher<void> * p_future_watcher;
-
-//    QTimer * progressPollTimer;
 };
 
 #endif // RECONSTRUCTIONWIDGET_H

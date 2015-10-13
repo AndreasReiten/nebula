@@ -118,12 +118,12 @@ class SparseVoxelOctree
 
         void save(QString path);
         void open(QString path);
+        void clear();
 
         void setLevels(int value);
         void setExtent(float value);
         void setUB(UBMatrix<double> mat);
         void setPoolDim(unsigned int x, unsigned int y, unsigned int z);
-        void clear();
 
         QVector<double> extent();
 
@@ -138,22 +138,23 @@ class SparseVoxelOctree
         QVector<unsigned int> & brick();
         QVector<float> & pool();
 
+        QString info(unsigned int n);
+
     private:
         QVector<unsigned int> p_index;
         QVector<unsigned int> p_brick;
         QVector<float> p_pool;
 
         QVector<double> p_extent;
+        UBMatrix<double> p_ub;
 
-        quint64 p_version_major, p_version_minor;
+//        quint64 p_version_major, p_version_minor;
 
         quint64 p_levels;
         quint64 p_pool_dim_x;
         quint64 p_pool_dim_y;
         quint64 p_pool_dim_z;
         quint64 p_brick_dim;
-
-        UBMatrix<double> p_ub;
 };
 
 #endif

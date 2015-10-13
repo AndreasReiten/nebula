@@ -729,7 +729,7 @@ int DetectorFile::readBody()
     return p_is_data_read;
 }
 
-void DetectorFile::tree_Grow()
+void DetectorFile::grow()
 {
     // Read header and body
     readHeader();
@@ -859,6 +859,16 @@ void DetectorFile::tree_Grow()
         qFatal(cl_error_cstring(err));
     }
 
+    cl_mem data_interdistance_cl = QOpenCLCreateBuffer( p_context_cl->context(),
+                                                 CL_MEM_ALLOC_HOST_PTR,
+                                                 p_fast_dimension * p_slow_dimension * sizeof(cl_float),
+                                                 NULL,
+                                                 &err);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
     // Sample rotation matrix to be applied to each projected pixel to account for rotations. First set the active angle. Ideally this would be given by the header file, but for some reason it is not stated in there. Maybe it is just so normal to rotate around the omega angle to keep the resolution function consistent
     RotationMatrix<double> PHI;
     RotationMatrix<double> KAPPA;
@@ -902,6 +912,7 @@ void DetectorFile::tree_Grow()
     err |= QOpenCLSetKernelArg(cl_project_data, 13, sizeof(cl_float), &p_omega);
     err |= QOpenCLSetKernelArg(cl_project_data, 14, sizeof(cl_int4), p_area_selection.lrtb().data());
     err |= QOpenCLSetKernelArg(cl_project_data, 15, sizeof(cl_int2), image_size.data());
+    err |= QOpenCLSetKernelArg(cl_project_data, 16, sizeof(cl_mem), (void *) &data_interdistance_cl);
 
     if ( err != CL_SUCCESS)
     {
@@ -922,7 +933,7 @@ void DetectorFile::tree_Grow()
         qFatal(cl_error_cstring(err));
     }
 
-    // Retrieve result
+    // Retrieve results
     Matrix<size_t> host_origin(1, 3, 0);
 
     Matrix<size_t> buffer_origin(1,3);
@@ -935,15 +946,8 @@ void DetectorFile::tree_Grow()
     region[1] = p_area_selection.height();
     region[2] = 1;
 
-    Matrix<float> finalized_data(p_area_selection.height(), p_area_selection.width() * 4);
-//    buffer_origin.print();
-//    host_origin.print();
-//    region.print();
-
-//    qDebug() << p_fast_dimension << p_slow_dimension << p_area_selection.width() << p_area_selection.height();
-//    qDebug() << p_area_selection;
-
-    err =   QOpenCLEnqueueReadBufferRect ( p_context_cl->queue(), // Bytes vs elements
+    Matrix<float> projected_data(p_area_selection.height(), p_area_selection.width() * 4);
+    err =   QOpenCLEnqueueReadBufferRect ( p_context_cl->queue(),
                                            projected_data_cl,
                                            CL_TRUE,
                                            buffer_origin.data(),
@@ -953,7 +957,34 @@ void DetectorFile::tree_Grow()
                                            p_fast_dimension * p_slow_dimension * sizeof(cl_float4),
                                            p_area_selection.width() * sizeof(cl_float4),
                                            p_area_selection.width() * p_area_selection.height() * sizeof(cl_float4),
-                                           finalized_data.data(),
+                                           projected_data.data(),
+                                           0, NULL, NULL);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    buffer_origin[0] = p_area_selection.left()*sizeof(cl_float); // In bytes
+    buffer_origin[1] = p_area_selection.top(); // In elements
+    buffer_origin[2] = 0;
+
+    region[0] = p_area_selection.width()*sizeof(cl_float);
+    region[1] = p_area_selection.height();
+    region[2] = 1;
+
+    Matrix<float> data_interdistance(p_area_selection.height(), p_area_selection.width());
+    err =   QOpenCLEnqueueReadBufferRect ( p_context_cl->queue(),
+                                           data_interdistance_cl,
+                                           CL_TRUE,
+                                           buffer_origin.data(),
+                                           host_origin.data(),
+                                           region.data(),
+                                           p_fast_dimension * sizeof(cl_float),
+                                           p_fast_dimension * p_slow_dimension * sizeof(cl_float),
+                                           p_area_selection.width() * sizeof(cl_float),
+                                           p_area_selection.width() * p_area_selection.height() * sizeof(cl_float),
+                                           data_interdistance.data(),
                                            0, NULL, NULL);
 
     if ( err != CL_SUCCESS)
@@ -986,6 +1017,12 @@ void DetectorFile::tree_Grow()
         qFatal(cl_error_cstring(err));
     }
 
+    err = QOpenCLReleaseMemObject(data_interdistance_cl);
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
     err = QOpenCLReleaseMemObject(sample_rotation_matrix_cl);
     if ( err != CL_SUCCESS)
     {
@@ -1000,14 +1037,14 @@ void DetectorFile::tree_Grow()
 
     for (int i = 0; i < p_area_selection.width()*p_area_selection.height(); i++)
     {
-        if (finalized_data[i * 4 + 3] > 0.0) // Above 0 check
+        if (projected_data[i * 4 + 3] > 0.0) // Above 0 check
         {
-            xyzw32 data_point = {finalized_data[i * 4 + 0], finalized_data[i * 4 + 1], finalized_data[i * 4 + 2], finalized_data[i * 4 + 3]};
+            xyzwd32 data_point = {projected_data[i * 4 + 0], projected_data[i * 4 + 1], projected_data[i * 4 + 2], projected_data[i * 4 + 3], data_interdistance[i]};
 
             // Subtract a random floating point value between 0 and 1 to smoothen the data distribution
             if (true) data_point.w -= ((double) qrand() / RAND_MAX);
 
-            p_interpolation_octree->insert(data_point, data_interdistance_hint);
+            p_interpolation_octree->insert(data_point);
         }
     }
 }

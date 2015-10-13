@@ -44,18 +44,19 @@ class SearchNode
         QVector<SearchNode> & children();
 
         // The most essential reconstruction functions
-        void insert(xyzw32 &point, double data_interdist_hint);
+        void insert(xyzwd32 &point);
+        void squeeze();
         void rebuild();
         void reorganize();
         void recombine();
-        void voxelize(QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks);
+        void voxelize(int octant, QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks);
         void brickToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z, SearchNode &root);
 
         void rebuildRecursive();
 
         void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both);
         void nodelist(QVector<SearchNode*> &nodes);
-        void brickcount(int &count);
+        void countbricks(int &count);
 
 
         void clear();
@@ -69,34 +70,38 @@ class SearchNode
         int level();
 
     private:
-        QVector<QVector<xyzw32>> &bins();
+        QVector<QVector<xyzwd32>> &bins();
 
-        double gridValueAt(double x, double y, double z, QList<nodeinfo> & trace);
+        void interdistMetrics(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg);
+        double gridValueAt_Nearest(double x, double y, double z);
+        double gridValueAt_Linear(double x, double y, double z);
+        void gridMetrics(QVector<double> & averages, QVector<double> & sigmas);
 
         double binsum();
         double gridsum();
 
         void rebin();
-        void p_insert(xyzw32 &point, double data_interdist_hint);
-        void split(double data_interdist_hint);
+        void makeGridFromBins();
+        void p_insert(xyzwd32 &point);
+        void split();
         void setId(int id_x, int id_y, int id_z);
 
         int expendable();
         int num_points();
-        int ntant(xyzw32 &point, int n);
-        int ntant(double x, double y, double z, int n, QList<nodeinfo> &trace);
+        int ntant(xyzwd32 &point, int n);
+//        int ntant(double x, double y, double z, int n, QList<nodeinfo> &trace);
         int ntant(double x, double y, double z, int n);
 
 
-        QVector<QVector<xyzw32>> p_data_binned; // Binned data
+        QVector<QVector<xyzwd32>> p_data_binned; // Binned data
         QVector<float> p_grid;
         QVector<SearchNode> p_children;
         SearchNode * p_parent;
 
 //        float p_min_data_interdistance;
 
-        unsigned int p_pool_x, p_pool_y, p_pool_z;
-        int p_id_x, p_id_y, p_id_z;
+        unsigned int p_id_pool_x, p_id_pool_y, p_id_pool_z;
+        int p_id_node_x, p_id_node_y, p_id_node_z;
         int p_level;
         int p_bins_per_side;
         int p_max_points;

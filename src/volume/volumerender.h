@@ -121,6 +121,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void lineTranslateVecChanged(Matrix<double> mat);
 
     public slots:
+        void loadSvo();
         //        void translateLine();
         void snapLineCenter();
         void setLineCenter();
@@ -229,6 +230,10 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void setUB_gamma(double value);
 
     private:
+
+
+        SparseVoxelOctree p_voxel_tree;
+
         Matrix<double> p_translate_vecA;
         Matrix<double> p_translate_vecB;
 
