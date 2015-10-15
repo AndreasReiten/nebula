@@ -50,12 +50,12 @@ class SearchNode
         void reorganize();
         void recombine();
         void voxelize(int octant, QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks);
-        void brickToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z, SearchNode &root);
+        void nodeToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z, SearchNode &root);
 
         void rebuildRecursive();
 
         void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both);
-        void nodelist(QVector<SearchNode*> &nodes);
+        void nodelist(QVector<SearchNode*> &nodes, bool unresolved_leaves_only);
         void countbricks(int &count);
 
 
@@ -70,12 +70,20 @@ class SearchNode
         int level();
 
     private:
+        int nodesPerSide();
+        double side();
+        double binside();
+        void center(double & x, double & y, double & z);
+//        void gridcenter(float &x, float &y, float &z, float &w);
+
         QVector<QVector<xyzwd32>> &bins();
 
         void interdistMetrics(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg);
-        double gridValueAt_Nearest(double x, double y, double z);
-        double gridValueAt_Linear(double x, double y, double z);
-        void gridMetrics(QVector<double> & averages, QVector<double> & sigmas);
+//        double gridValueAt_Nearest(double x, double y, double z);
+        double gridValueAt_Nearest(double x, double y, double z, int max_level = 1000);
+        double gridValueAt_Linear(double x, double y, double z, int max_level, SearchNode &root);
+        void gridRecombineMetrics(QVector<double> & averages, QVector<double> & sigmas);
+        void gridMetrics(double & average, double & sigma);
 
         double binsum();
         double gridsum();
@@ -109,6 +117,7 @@ class SearchNode
         bool p_is_empty; // No data
         bool p_is_leaf;
         bool p_is_root;
+        bool p_is_max_resolved;
 
         QMutex * p_mutex;
 };

@@ -78,6 +78,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         ImageWorker * worker();
 
         QFutureWatcher<void> *dataTreeGrowWatcher();
+        QFutureWatcher<void> *dataTreeSqueezeWatcher();
         QFutureWatcher<void> *dataTreeRebuildBranchesWatcher();
         QFutureWatcher<void> *dataTreeRecombineWatcher();
         QFutureWatcher<void> *dataTreeReorganizeWatcher();
@@ -126,6 +127,10 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void dataTreeRebuildBranches();
         void on_dataTreeRebuildBranches_finished();
         void on_dataTreeRebuildBranches_canceled();
+
+        void dataTreeSqueeze();
+        void on_dataTreeSqueeze_finished();
+        void on_dataTreeSqueeze_canceled();
 
         void dataTreeGrow();
         void on_dataTreeGrow_finished();
@@ -342,6 +347,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool isEwaldCircleActive;
         bool isImageTooltipActive;
         bool is_dataTreeGrow_canceled;
+        bool is_dataTreeSqueeze_canceled;
         bool is_dataTreeRecombine_canceled;
         bool is_dataTreeRebuildBranches_canceled;
         bool is_voxelTreeGrow_canceled;
@@ -387,8 +393,9 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         QList<DetectorFile> p_detectorfile_future_list;
         QVector<QList<SearchNode*>> p_searchnode_hierarchy_future_list;
-        QVector<SearchNode*> p_searchnode_all_future_list;
+        QVector<SearchNode*> p_searchnode_flat_future_list;
         QFutureWatcher<void> * p_tree_grow_future_watcher;
+        QFutureWatcher<void> * p_tree_squeeze_future_watcher;
         QFutureWatcher<void> * p_tree_rebuild_branches_future_watcher;
         QFutureWatcher<void> * p_tree_reorganize_future_watcher;
         QFutureWatcher<void> * p_tree_recombine_future_watcher;

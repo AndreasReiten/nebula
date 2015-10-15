@@ -147,6 +147,14 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeGrowWatcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeGrowWatcher(), SLOT(setPaused(bool)));
 
+    // Squeeze
+    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
+    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
+    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SLOT(cancel()));
+    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SLOT(setPaused(bool)));
+
     // Rebuild
     connect(p_ui->imageOpenGLWidget->dataTreeRebuildBranchesWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
     connect(p_ui->imageOpenGLWidget->dataTreeRebuildBranchesWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));

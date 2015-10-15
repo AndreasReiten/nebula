@@ -328,14 +328,16 @@ void MainWindow::setStartConditions()
 
     volumeDataMinSpinBox->setValue(1.0);
     volumeDataMinSpinBox->setValue(0.0);
-    volumeDataMaxSpinBox->setValue(10);
+    volumeDataMaxSpinBox->setValue(110);
+    volumeDataMaxSpinBox->setValue(111);
     volumeAlphaSpinBox->setValue(1.0);
     volumeBrightnessSpinBox->setValue(2.0);
 //    volumeTsfAlphaComboBox->setCurrentIndex(2);
-    volumeViewModeComboBox->setCurrentIndex(1);
     volumeViewModeComboBox->setCurrentIndex(0);
+    volumeViewModeComboBox->setCurrentIndex(1);
 //    volumeTsfTextureComboBox->setCurrentIndex(1);
     volumeRenderLogCheckBox->setChecked(true);
+    volumeRenderLogCheckBox->setChecked(false);
 
 //    batchSizeSpinBox->setValue(10);
 
@@ -393,6 +395,9 @@ void MainWindow::setStartConditions()
 
     plotSurfaceABResSpinBox->setValue(128);
     plotSurfaceCResSpinBox->setValue(1024);
+
+    toggleHklButton->setChecked(true);
+    toggleHklButton->setChecked(false);
 
     plotLineLogCheckBox->setChecked(true);
     plotSurfaceLogCheckBox->setChecked(true);

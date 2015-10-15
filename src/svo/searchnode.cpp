@@ -9,8 +9,8 @@ SearchNode::SearchNode() :
     p_id_node_z(0),
     p_is_root(false),
     p_is_leaf(true),
-    p_is_empty(true)
-
+    p_is_empty(true),
+    p_is_max_resolved(false)
 {
 
 
@@ -26,18 +26,78 @@ SearchNode::~SearchNode()
 
 void SearchNode::squeeze()
 {
+    if (!isLeaf() || p_is_max_resolved) return;
+
+    if (isEmpty())
+    {
+        p_is_max_resolved = true;
+        return;
+    }
+
     // Perform a conditional split of a leaf node in an attempt to increase resolution
-//    binMetrics(); // Metrics for the point bins
+    // Is the resolution of the node comparable to the theoretical resolution limit of the data (point interdistance)?
+    double data_interdist_min;
+    double data_interdist_max;
+    double data_interdist_avg;
 
+    interdistMetrics(data_interdist_min, data_interdist_max, data_interdist_avg);
 
-//    bool is_max_resolved = ;
-//    bool is_self_similar = ;
+    bool is_deep_enough = (binside() <= data_interdist_min);
+    if (is_deep_enough)
+    {
+        p_is_max_resolved = true;
+        return;
+    }
 
-//    if (!is_max_resolved && !is_self_similar) split();
+    // Is the data in this node self-similar (low variance)?
+    double average;
+    double sigma;
+
+    makeGridFromBins();
+    gridMetrics(average, sigma);
+    p_grid.clear();
+
+    bool is_self_similar = sigma < average*0.0 + 0.0; /* TODO: How to determine parameters */
+    if (is_self_similar)
+    {
+        p_is_max_resolved = true;
+        return;
+    }
+
+    if (!is_deep_enough && !is_self_similar)
+    {
+        split();
+        p_data_binned.clear();
+        p_is_leaf = false;
+        p_is_empty = true;
+    }
+}
+
+void SearchNode::gridMetrics(double & average, double & sigma)
+{
+    average = 0;
+    sigma = 0;
+    for (int i = 0; i < p_grid.size(); i++)
+    {
+        average += p_grid[i];
+    }
+
+    average /= (double) p_grid.size();
+
+    for (int i = 0; i < p_grid.size(); i++)
+    {
+        sigma += std::powf(p_grid[i] - average, 2.0);
+    }
+
+    sigma  /= (double) p_grid.size();
+
+    sigma = std::sqrt(sigma);
 }
 
 void SearchNode::recombine()
 {
+    return;
+
     // Do not recombine anything but a branch with leaves
     if (!isLeafBranch()) return;
 
@@ -76,21 +136,20 @@ int SearchNode::expendable()
     QVector<double> averages(p_bins_per_side*p_bins_per_side*p_bins_per_side/8);
     QVector<double> sigmas(p_bins_per_side*p_bins_per_side*p_bins_per_side/8);
 
-    gridMetrics(averages, sigmas);
+    gridRecombineMetrics(averages, sigmas);
 
     for (int i = 0; i < p_bins_per_side*p_bins_per_side*p_bins_per_side/8; i+=2)
     {
-        if (sigmas[i] < averages[i]*0.1 + 5.0) n_expendable_bins++;
+        if (sigmas[i] < averages[i]*0.1 + 5.0) n_expendable_bins++; /* TODO: How to determine parameters */
     }
 
     return n_expendable_bins;
 }
 
-void SearchNode::gridMetrics(QVector<double> & averages, QVector<double> & sigmas)
+void SearchNode::gridRecombineMetrics(QVector<double> & averages, QVector<double> & sigmas)
 {
     // Metrics for each 2x2x2 point cube, used primarily to assess if the node is exceedingly self-similar
     int counter = 0;
-
 
     for (int i = 0; i < p_bins_per_side; i+=2)
     {
@@ -173,11 +232,15 @@ void SearchNode::makeGridFromBins()
     }
 }
 
-
-double SearchNode::gridValueAt_Nearest(double x, double y, double z)
+double SearchNode::gridValueAt_Nearest(double x, double y, double z, int max_level)
 {
-    // If leaf, search the grid
-    if (isLeaf())
+    // If outside of octree, return zero
+    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
+    {
+        return 0.0;
+    }
+    // Else if leaf, or if the maximum allowed level of detail is reached, search the grid
+    else if (isLeaf() || (p_level >= max_level))
     {
         if (isEmpty())
         {
@@ -202,54 +265,103 @@ double SearchNode::gridValueAt_Nearest(double x, double y, double z)
         int id = ntant(x,y,z, 2);
         if (id < 0)
         {
-            return 0.0;
+            return 0;
         }
         else
         {
-            return p_children[id].gridValueAt_Nearest(x, y, z);
+            return p_children[id].gridValueAt_Nearest(x, y, z, max_level);
         }
     }
 }
 
-double SearchNode::gridValueAt_Linear(double x, double y, double z)
+double SearchNode::side()
+{
+    return 1.0 / (double) nodesPerSide();
+}
+
+double SearchNode::binside()
+{
+    return 1.0 / (double) (nodesPerSide() *  p_bins_per_side);
+}
+
+void SearchNode::center(double & x, double & y, double & z)
+{
+    x = (double) (p_id_node_x + 0.5 ) * side();
+    y = (double) (p_id_node_y + 0.5 ) * side();
+    z = (double) (p_id_node_z + 0.5 ) * side();
+}
+
+double SearchNode::gridValueAt_Linear(double x, double y, double z, int max_level, SearchNode & root)
 {
     // If leaf, search the grid
-    if (isLeaf())
+    if (isLeaf() || (p_level >= max_level))
     {
-        if (isEmpty())
+        // Find the xyz values for the surrounding eight interpolation points, positions of which are given by the bin structure
+        QVector<xyzwd32> points(8);
+
+        double sample_spacing = binside();
+
+        for (int i = 0; i < 2; i++)
         {
-            return 0.0;
-        }
-        else
-        {
-            int id = ntant(x,y,z, p_bins_per_side);
-            if (id < 0)
+            for (int j = 0; j < 2; j++)
             {
-                return 0.0;
-            }
-            else
-            {
-                return p_grid[id];
+                for (int k = 0; k < 2; k++)
+                {
+                    // The position used to retrieve the interpolation value at this position
+                    double x_interpol = x + (double)(i*2-1)*sample_spacing*0.5;
+                    double y_interpol = y + (double)(j*2-1)*sample_spacing*0.5;
+                    double z_interpol = z + (double)(k*2-1)*sample_spacing*0.5;
+
+                    // The center position of the bin from which the interpolation will be read
+                    // Note that this bin can be in a different node, and could be empty or at another level
+                    // The possible change in level of detail is not currently allowed to interfere with said position
+                    // The situation might be remedied by weighing shallow nodes more lightly
+                    points[i + j*2 + k*4].x = ((double) std::floor(x_interpol * (double) (nodesPerSide() * p_bins_per_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].y = ((double) std::floor(y_interpol * (double) (nodesPerSide() * p_bins_per_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].z = ((double) std::floor(z_interpol * (double) (nodesPerSide() * p_bins_per_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].w = root.gridValueAt_Nearest(x_interpol, y_interpol, z_interpol, p_level);
+                }
             }
         }
+
+        // Carry out trilinear interpolation
+        double xd = (x - points[0].x)/(points[7].x - points[0].x);
+        double yd = (y - points[0].y)/(points[7].y - points[0].y);
+        double zd = (z - points[0].z)/(points[7].z - points[0].z);
+
+        // Interpolate along x
+        double c00 = points[0].w * (1.0-xd) + points[1].w * xd;
+        double c10 = points[2].w * (1.0-xd) + points[3].w * xd;
+        double c01 = points[4].w * (1.0-xd) + points[5].w * xd;
+        double c11 = points[6].w * (1.0-xd) + points[7].w * xd;
+
+        // Interpolate along y
+        double c0 = c00 * (1.0 - yd) + c10 * yd;
+        double c1 = c01 * (1.0 - yd) + c11 * yd;
+
+        // Interpolate along z
+        double c = c0 * (1.0 - zd) + c1 * zd;
+
+//        if (p_is_leaf && (p_id_node_x != 0) && (p_id_node_y != 0) && (p_id_node_z != 0))
+//        {
+//            qDebug() << "hi";
+//        }
+
+        return c;
     }
     // Else if branch, descend to the next level
     else
     {
         int id = ntant(x,y,z, 2);
-        if (id < 0)
-        {
-            return 0.0;
-        }
-        else
-        {
-            return p_children[id].gridValueAt_Nearest(x, y, z);
-        }
+        return p_children[id].gridValueAt_Linear(x, y, z, max_level, root);
     }
 }
 
 
-
+int SearchNode::nodesPerSide()
+{
+    return (1 << p_level);
+}
 
 double SearchNode::binsum()
 {
@@ -421,10 +533,17 @@ void SearchNode::countbricks(int &  count)
     }
 }
 
-void SearchNode::nodelist(QVector<SearchNode*> &nodes)
+void SearchNode::nodelist(QVector<SearchNode*> &nodes, bool unresolved_leaves_only)
 {
     // Add self to list
-    nodes << this;
+    if (unresolved_leaves_only)
+    {
+        if (p_is_leaf && !p_is_max_resolved && !p_is_empty) nodes << this;
+    }
+    else
+    {
+        nodes << this;
+    }
 
     // Add children to list
     if(!p_is_leaf)
@@ -432,7 +551,7 @@ void SearchNode::nodelist(QVector<SearchNode*> &nodes)
         // Call for children
         for (int i = 0; i < 8; i++)
         {
-            p_children[i].nodelist(nodes);
+            p_children[i].nodelist(nodes, unresolved_leaves_only);
         }
     }
 }
@@ -524,66 +643,62 @@ void SearchNode::voxelize(int octant, QVector<unsigned int> & index , QVector<un
 }
 
 
-void SearchNode::brickToPool(QVector<float> & pool, int dim_x, int dim_y, int dim_z, SearchNode & root)
+void SearchNode::nodeToPool(QVector<float> & pool, int dim_x, int dim_y, int dim_z, SearchNode & root)
 {
     if (p_is_empty) return;
 
-    // Return a brick corresponding to the given extent based on the octree data
-    int side = 1 + p_bins_per_side + 1;
+    // Return a brick corresponding to the extent of the node
+    int brick_side = 8;
 
-    QVector<float> tmp(side*side*side);
+//    QVector<float> tmp(brick_side*brick_side*brick_side);
 
-    for (int i = 0; i < side; i++)
+    for (int i = 0; i < brick_side; i++)
     {
-        for (int j = 0; j < side; j++)
+        for (int j = 0; j < brick_side; j++)
         {
-            for (int k = 0; k < side; k++)
+            for (int k = 0; k < brick_side; k++)
             {
-                int id_tmp =
-                        (i) +
-                        (j) * ( side)  +
-                        (k) * ( side * side);
+//                int id_tmp =
+//                        (i) +
+//                        (j) * ( brick_side)  +
+//                        (k) * ( brick_side * brick_side);
 
                 // The linear id the current value should have in the brick pool
                 int id_pool =
-                        (p_id_pool_x * side + i) +
-                        (p_id_pool_y * side + j) * (dim_x * side)  +
-                        (p_id_pool_z * side + k) * (dim_x * side * dim_y * side);
+                    (p_id_pool_x * brick_side + i) +
+                    (p_id_pool_y * brick_side + j) * (dim_x * brick_side)  +
+                    (p_id_pool_z * brick_side + k) * (dim_x * brick_side * dim_y * brick_side);
 
-                // If the id is associated with the face of the brick
-                if ((i < 1) || (i >= side - 1) || (j < 1) || (j >= side - 1) || (k < 1) || (k >= side - 1))
+                // Do a lookup of the value
+                double x = (double) (p_id_node_x + ((double)i/(double)(brick_side-1))) * side();// / (double) (nodesPerSide() * p_bins_per_side);
+                double y = (double) (p_id_node_y + ((double)j/(double)(brick_side-1))) * side();// / (double) (nodesPerSide() * p_bins_per_side);
+                double z = (double) (p_id_node_z + ((double)k/(double)(brick_side-1))) * side();// / (double) (nodesPerSide() * p_bins_per_side);
+
+                // If requested value lies outside of octtree, set to zero
+                if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
                 {
-                    // Do a lookup of the value
-                    double x = (double) (p_id_node_x * p_bins_per_side + (double)((i-1) + 0.5 )) / (double) ((1 << p_level) * p_bins_per_side);
-                    double y = (double) (p_id_node_y * p_bins_per_side + (double)((j-1) + 0.5 )) / (double) ((1 << p_level) * p_bins_per_side);
-                    double z = (double) (p_id_node_z * p_bins_per_side + (double)((k-1) + 0.5 )) / (double) ((1 << p_level) * p_bins_per_side);
-
-                    // If requested value lies outside of octtree, set to zero
-                    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
-                    {
-                        pool[id_pool] = 0;
-                        tmp[id_tmp] = 0;
+                    pool[id_pool] = 0;
+//                    tmp[id_tmp] = 0;
 //                        qDebug() << "Requested value lies outside of octtree" << x << y << z;
-                    }
-                    // Else use grid value
-                    else
-                    {
-                        tmp[id_tmp] = root.gridValueAt_Nearest(x, y, z);
-                        pool[id_pool] = root.gridValueAt_Nearest(x, y, z);
-                    }
                 }
-                // Else find the data in this grid
+                // Else use grid value
                 else
                 {
-                    int id_grid = (i-1) + (j-1) * p_bins_per_side + (k-1) * p_bins_per_side * p_bins_per_side;
-                    pool[id_pool] = p_grid[id_grid];
-                    tmp[id_tmp] = p_grid[id_grid];
+//                    tmp[id_tmp] = root.gridValueAt_Linear(x, y, z, p_level, root);
+
+//                    double intetrpol_w = tmp[id_tmp];
+//                    double interpol_x = x;
+
+//                    if ((intetrpol_w > 1.1*interpol_x) || (intetrpol_w < 0.9*interpol_x))
+//                    {
+//                        qDebug() << "le fail";
+//                    }
+
+                    pool[id_pool] = root.gridValueAt_Linear(x, y, z, p_level, root);
                 }
             }
         }
     }
-
-
 }
 
 
@@ -643,6 +758,7 @@ void SearchNode::print()
 
 void SearchNode::insert(xyzwd32 & point)
 {
+    // Place a data point into this node, or a deeper node if required
     // If the current node is not a leaf (but a branch), then it's private variables will not be changed on further insertion, and thus it does not need a mutex lock
     if (p_is_leaf)
     {
@@ -695,9 +811,9 @@ void SearchNode::p_insert(xyzwd32 & point)
                 double data_interdist_avg;
                 interdistMetrics(data_interdist_min, data_interdist_max, data_interdist_avg);
 
-                if (data_interdist_min > 1.0/(double)((1 << p_level) * p_bins_per_side))
+                if (data_interdist_min > 1.0 * binside())// /(double)(nodesPerSide() * p_bins_per_side))
                 {
-//                    qDebug() << "Rebinning because" << data_interdist_hint << ">" <<  1.0/(double)((1 << p_level) * p_bins_per_side);
+//                    qDebug() << "Rebinning because" << data_interdist_hint << ">" <<  1.0/(double)(nodesPerSide() * p_bins_per_side);
                     rebin();
                 }
                 else
@@ -749,19 +865,19 @@ int SearchNode::num_points()
 //int SearchNode::ntant(double x, double y, double z, int n, QList<nodeinfo> & trace)
 //{
 //    // Find 3D ntant id for the next subdivision
-//    int id_x = (x * (double) (1 << p_level) - (double) p_id_x) * (double) n;
-//    int id_y = (y * (double) (1 << p_level) - (double) p_id_y) * (double) n;
-//    int id_z = (z * (double) (1 << p_level) - (double) p_id_z) * (double) n;
+//    int id_x = (x * (double) nodesPerSide() - (double) p_id_x) * (double) n;
+//    int id_y = (y * (double) nodesPerSide() - (double) p_id_y) * (double) n;
+//    int id_z = (z * (double) nodesPerSide() - (double) p_id_z) * (double) n;
 
 //    nodeinfo ni;
 //    ni.level = p_level;
 //    ni.id_x = p_id_x;
 //    ni.id_y = p_id_y;
 //    ni.id_z = p_id_z;
-//    ni.side = (1 << p_level);
-//    ni.id_nxt_x = (x * (double) (1 << p_level) - (double) p_id_x) * (double) n;
-//    ni.id_nxt_y = (y * (double) (1 << p_level) - (double) p_id_y) * (double) n;
-//    ni.id_nxt_z = (z * (double) (1 << p_level) - (double) p_id_z) * (double) n;
+//    ni.side = nodesPerSide();
+//    ni.id_nxt_x = (x * (double) nodesPerSide() - (double) p_id_x) * (double) n;
+//    ni.id_nxt_y = (y * (double) nodesPerSide() - (double) p_id_y) * (double) n;
+//    ni.id_nxt_z = (z * (double) nodesPerSide() - (double) p_id_z) * (double) n;
 //    ni.n = n;
 
 //    trace << ni;
@@ -795,9 +911,9 @@ int SearchNode::num_points()
 int SearchNode::ntant(double x, double y, double z, int n)
 {
     // Find 3D ntant id
-    int id_ntant_x = (x * (double) (1 << p_level) - (double) p_id_node_x) * (double) n;
-    int id_ntant_y = (y * (double) (1 << p_level) - (double) p_id_node_y) * (double) n;
-    int id_ntant_z = (z * (double) (1 << p_level) - (double) p_id_node_z) * (double) n;
+    int id_ntant_x = (x * (double) nodesPerSide() - (double) p_id_node_x) * (double) n;
+    int id_ntant_y = (y * (double) nodesPerSide() - (double) p_id_node_y) * (double) n;
+    int id_ntant_z = (z * (double) nodesPerSide() - (double) p_id_node_z) * (double) n;
 
     // Example n = 2 -> octant:
     // 0 <= relative pos < 1 : Maps to 0
@@ -867,7 +983,7 @@ void SearchNode::split()
         {
             int id = ntant(p_data_binned[i][j], 2);
 
-            if (id > 0)
+            if (id >= 0)
             {
                 p_children[id].insert(p_data_binned[i][j]);
             }
