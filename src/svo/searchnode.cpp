@@ -10,7 +10,9 @@ SearchNode::SearchNode() :
     p_is_root(false),
     p_is_leaf(true),
     p_is_empty(true),
-    p_is_max_resolved(false)
+    p_is_max_resolved(false),
+    p_is_interpolation_node(false),
+    p_voxels_per_side(7)
 {
 
 
@@ -42,7 +44,7 @@ void SearchNode::squeeze()
 
     interdistMetrics(data_interdist_min, data_interdist_max, data_interdist_avg);
 
-    bool is_deep_enough = (binside() <= data_interdist_min);
+    bool is_deep_enough = (voxelside() <= data_interdist_min);
     if (is_deep_enough)
     {
         p_is_max_resolved = true;
@@ -53,11 +55,11 @@ void SearchNode::squeeze()
     double average;
     double sigma;
 
-    makeGridFromBins();
+    makeGridFromBins_Nearest();
     gridMetrics(average, sigma);
     p_grid.clear();
 
-    bool is_self_similar = sigma < average*0.0 + 0.0; /* TODO: How to determine parameters */
+    bool is_self_similar = sigma < average*0.1 + 0.0; /* TODO: How to determine parameters */
     if (is_self_similar)
     {
         p_is_max_resolved = true;
@@ -96,7 +98,7 @@ void SearchNode::gridMetrics(double & average, double & sigma)
 
 void SearchNode::recombine()
 {
-    return;
+//    return;
 
     // Do not recombine anything but a branch with leaves
     if (!isLeafBranch()) return;
@@ -195,15 +197,10 @@ void SearchNode::gridRecombineMetrics(QVector<double> & averages, QVector<double
 
 void SearchNode::reorganize()
 {
-    // If empty, with no relevant data
-    if (p_is_empty) return;
 
-    makeGridFromBins();
-
-    p_data_binned.clear();
 }
 
-void SearchNode::makeGridFromBins()
+void SearchNode::makeGridFromBins_Nearest()
 {
     // Reduce a node from bins with irregular xyzw points to a simple equi-distanced grid with w-values
     p_grid.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
@@ -230,6 +227,93 @@ void SearchNode::makeGridFromBins()
             p_grid[i] = tmp;
         }
     }
+}
+
+SearchNode * SearchNode::nodeAt(double x, double y, double z, int max_level)
+{
+    if (!p_is_leaf || p_level >= max_level)
+    {
+        return this;
+    }
+    else
+    {
+        int id = ntant(x, y, z, 2);
+        if (id >= 0)
+        {
+            return p_children[id].nodeAt(x, y, z, max_level);
+        }
+    }
+}
+
+void SearchNode::makeGridFromBins_Linear()
+{
+    // Reduce a node from bins with irregular xyzw points to a simple equi-distanced grid with w-values
+    // This requires the usage of nearby points from other nodes
+    p_grid.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
+
+    // Fetch data from up to 3x3x3 - 1 surrounding bins as well (can be fewer). Start by finding their pointers
+    // Use a QSet to ensure zero duplicate pointers
+    QSet<SearchNode *> nodes;
+
+    double x_center, y_center, z_center;
+    center(x_center, y_center, z_center);
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                double x = x_center + (double)(i-1)*side();
+                double y = y_center + (double)(j-1)*side();
+                double z = z_center + (double)(k-1)*side();
+                nodes << nodeAt(x, y, z, p_level);
+            }
+        }
+    }
+
+    // Determine the extent of the sampling volume.
+    // The extent beyond that of the node is at least the the average sample interdistance + the bin size
+    double data_interdist_min;
+    double data_interdist_max;
+    double data_interdist_avg;
+    interdistMetrics(data_interdist_min, data_interdist_max, data_interdist_avg);
+
+    double extra_extent = binside()*0.5 + data_interdist_avg;
+
+    QVector<double> extent(6);
+    extent[0] = x_center - (side() * 0.5 + extra_extent);
+    extent[1] = x_center + (side() * 0.5 + extra_extent);
+    extent[2] = y_center - (side() * 0.5 + extra_extent);
+    extent[3] = y_center + (side() * 0.5 + extra_extent);
+    extent[4] = z_center - (side() * 0.5 + extra_extent);
+    extent[5] = z_center + (side() * 0.5 + extra_extent);
+
+    // Iterate through the data, keeping only data that lies within the sampling volume
+    QVector<xyzwd32> data;
+
+    QSetIterator<SearchNode *> k(nodes);
+    while (k.hasNext())
+    {
+        SearchNode * node = k.next();
+
+        for (int i = 0; i < node->bins().size(); i++)
+        {
+            for (int j = 0; j < node->bins()[i].size(); j++)
+            {
+                xyzwd32 point = node->bins()[i][j];
+                if (
+                        (point.x > extent[0]) && (point.x < extent[1]) &&
+                        (point.y > extent[2]) && (point.y < extent[3]) &&
+                        (point.z > extent[4]) && (point.z < extent[5]))
+                {
+                    data << point;
+                }
+            }
+        }
+    }
+
+
 }
 
 double SearchNode::gridValueAt_Nearest(double x, double y, double z, int max_level)
@@ -284,6 +368,11 @@ double SearchNode::binside()
     return 1.0 / (double) (nodesPerSide() *  p_bins_per_side);
 }
 
+double SearchNode::voxelside()
+{
+    return 1.0 / (double) (nodesPerSide() *  p_voxels_per_side);
+}
+
 void SearchNode::center(double & x, double & y, double & z)
 {
     x = (double) (p_id_node_x + 0.5 ) * side();
@@ -299,7 +388,7 @@ double SearchNode::gridValueAt_Linear(double x, double y, double z, int max_leve
         // Find the xyz values for the surrounding eight interpolation points, positions of which are given by the bin structure
         QVector<xyzwd32> points(8);
 
-        double sample_spacing = binside();
+        double sample_spacing = voxelside();
 
         for (int i = 0; i < 2; i++)
         {
@@ -425,27 +514,50 @@ void SearchNode::rebin()
 
 void SearchNode::rebuild()
 {
-    // Non-recursively generate a point cloud on an irregular grid based on the child nodes
-    if(p_is_leaf) return;
-
-    // Get the relevant data points, and place them in bins
-    p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
-
-    for (int i = 0; i < 8; i++)
+    // If empty, with no relevant data
+    // If leaf, use linear interpolation of points in bins to make grid
+    if (p_is_leaf)
     {
-        if (p_children[i].isEmpty()) continue;
-
-        for (int j = 0; j < p_children[i].bins().size(); j++)
-        {
-            for (int k = 0; k < p_children[i].bins()[j].size(); k++)
-            {
-                int id = ntant(p_children[i].bins()[j][k], p_bins_per_side);
-                p_data_binned[id] << p_children[i].bins()[j][k];
-            }
-        }
+        // Optionally try empty leaves as well, marking them as nonempty if the linear interpolation results in a nonzero grid
+        makeGridFromBins_Linear();
     }
+    // Else (if branch), reconstruct from children
+    else
+    {
+        // Clear bins of children, as the data will not be used any further
+        for (int i = 0; i < p_children.size(); i++)
+        {
+            p_children[i].bins().clear();
+        }
 
-    rebin();
+        // Construct a grid based on child nodes
+        makeGridFromChildren();
+    }
+    p_is_empty = false;
+
+
+
+//    // Non-recursively generate a point cloud on an irregular grid based on the child nodes
+//    if(p_is_leaf) return;
+
+//    // Get the relevant data points, and place them in bins
+//    p_data_binned.resize(p_bins_per_side*p_bins_per_side*p_bins_per_side);
+
+//    for (int i = 0; i < 8; i++)
+//    {
+//        if (p_children[i].isEmpty()) continue;
+
+//        for (int j = 0; j < p_children[i].bins().size(); j++)
+//        {
+//            for (int k = 0; k < p_children[i].bins()[j].size(); k++)
+//            {
+//                int id = ntant(p_children[i].bins()[j][k], p_bins_per_side);
+//                p_data_binned[id] << p_children[i].bins()[j][k];
+//            }
+//        }
+//    }
+
+//    rebin();
 
     p_is_empty = false;
 }
@@ -603,7 +715,7 @@ void SearchNode::voxelize(int octant, QVector<unsigned int> & index , QVector<un
     // Add this node to a voxel octree
 
     // Generate a 3D pool ID unless the node is empty
-    if (!p_is_empty)
+    if (!p_is_empty || p_is_interpolation_node)
     {
         p_id_pool_z = num_bricks / (pool_dim_x * pool_dim_y);
         p_id_pool_y = (num_bricks - p_id_pool_z * (pool_dim_x * pool_dim_y)) / pool_dim_x;
@@ -811,7 +923,7 @@ void SearchNode::p_insert(xyzwd32 & point)
                 double data_interdist_avg;
                 interdistMetrics(data_interdist_min, data_interdist_max, data_interdist_avg);
 
-                if (data_interdist_min > 1.0 * binside())// /(double)(nodesPerSide() * p_bins_per_side))
+                if (data_interdist_min > 1.0 * voxelside())// /(double)(nodesPerSide() * p_bins_per_side))
                 {
 //                    qDebug() << "Rebinning because" << data_interdist_hint << ">" <<  1.0/(double)(nodesPerSide() * p_bins_per_side);
                     rebin();

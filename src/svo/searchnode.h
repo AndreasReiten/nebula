@@ -73,6 +73,7 @@ class SearchNode
         int nodesPerSide();
         double side();
         double binside();
+        double voxelside();
         void center(double & x, double & y, double & z);
 //        void gridcenter(float &x, float &y, float &z, float &w);
 
@@ -88,8 +89,10 @@ class SearchNode
         double binsum();
         double gridsum();
 
+        SearchNode * nodeAt(double x, double y, double z, int max_level);
         void rebin();
-        void makeGridFromBins();
+        void makeGridFromBins_Nearest();
+        void makeGridFromBins_Linear();
         void p_insert(xyzwd32 &point);
         void split();
         void setId(int id_x, int id_y, int id_z);
@@ -112,9 +115,11 @@ class SearchNode
         int p_id_node_x, p_id_node_y, p_id_node_z;
         int p_level;
         int p_bins_per_side;
+        int p_voxels_per_side;
         int p_max_points;
 
         bool p_is_empty; // No data
+        bool p_is_interpolation_node;
         bool p_is_leaf;
         bool p_is_root;
         bool p_is_max_resolved;
