@@ -199,7 +199,7 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     isImageTooltipActive(true),
     is_dataTreeGrow_canceled(false),
     is_dataTreeSqueeze_canceled(false),
-    is_dataTreeRebuildBranches_canceled(false),
+    is_dataTreeFinalize_canceled(false),
     is_dataTreeRecombine_canceled(false),
     is_dataTreeReorganize_canceled(false),
     is_voxelTreeGrow_canceled(false)
@@ -255,8 +255,8 @@ ImageOpenGLWidget::ImageOpenGLWidget(QObject * parent) :
     connect(p_tree_squeeze_future_watcher, SIGNAL(finished()), this, SLOT(on_dataTreeSqueeze_finished()));
     connect(p_tree_squeeze_future_watcher, SIGNAL(canceled()), this, SLOT(on_dataTreeSqueeze_canceled()));
 
-    connect(p_tree_rebuild_branches_future_watcher, SIGNAL(finished()), this, SLOT(on_dataTreeRebuildBranches_finished()));
-    connect(p_tree_rebuild_branches_future_watcher, SIGNAL(canceled()), this, SLOT(on_dataTreeRebuildBranches_canceled()));
+    connect(p_tree_rebuild_branches_future_watcher, SIGNAL(finished()), this, SLOT(on_dataTreeFinalize_finished()));
+    connect(p_tree_rebuild_branches_future_watcher, SIGNAL(canceled()), this, SLOT(on_dataTreeFinalize_canceled()));
 
     connect(p_tree_reorganize_future_watcher, SIGNAL(finished()), this, SLOT(on_dataTreeReorganize_finished()));
     connect(p_tree_reorganize_future_watcher, SIGNAL(canceled()), this, SLOT(on_dataTreeReorganize_canceled()));
@@ -293,7 +293,7 @@ QFutureWatcher<void> *ImageOpenGLWidget::dataTreeRecombineWatcher()
     return p_tree_recombine_future_watcher;
 }
 
-QFutureWatcher<void> *ImageOpenGLWidget::dataTreeRebuildBranchesWatcher()
+QFutureWatcher<void> *ImageOpenGLWidget::dataTreeFinalizeWatcher()
 {
     return p_tree_rebuild_branches_future_watcher;
 }
@@ -1238,9 +1238,9 @@ void ImageOpenGLWidget::dataTreeGrow()
     p_tree_grow_future_watcher->setFuture(QtConcurrent::map(p_detectorfile_future_list, &DetectorFile::grow));*/
 
     p_data_tree.clear();
-    p_data_tree.setRoot(true);
-    p_data_tree.setBinsPerSide(6);
-    p_data_tree.setMaxPoints(1024);
+//    p_data_tree.setRoot(true);
+//    p_data_tree.setBinsPerSide(6);
+//    p_data_tree.setMaxPoints(1024);
 
     double r = 0.40;
     double x0 = 0.5;
@@ -1269,7 +1269,7 @@ void ImageOpenGLWidget::dataTreeGrow()
                     {
                         continue;
                     }
-                    p_data_tree.insert(data_point);
+                    p_data_tree.insert2(data_point);
                 }
             }
         }
@@ -1293,16 +1293,18 @@ void ImageOpenGLWidget::dataTreeGrow()
                 {
                     continue;
                 }
-                p_data_tree.insert(data_point);
+                p_data_tree.insert2(data_point);
             }
         }
     }
     qDebug() << "Tree gown";
     printNodes();
 
-    p_searchnode_flat_future_list.clear();
-    p_data_tree.nodelist(p_searchnode_flat_future_list, true);
-    dataTreeSqueeze();
+    p_searchnode_hierarchy_future_list.clear();
+    // branch_leaf_both, nonempty_empty_both, unfinished_finished_both
+    p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2, 2);
+
+    dataTreeRecombine();
 }
 
 
@@ -1318,9 +1320,6 @@ void ImageOpenGLWidget::on_dataTreeGrow_finished()
     }
     else
     {
-        p_searchnode_flat_future_list.clear();
-        p_data_tree.nodelist(p_searchnode_flat_future_list, true);
-
         if (p_searchnode_hierarchy_future_list.size() <= 1)
         {
             emit message("The tree is just a root with no branches or leaves...");
@@ -1332,7 +1331,11 @@ void ImageOpenGLWidget::on_dataTreeGrow_finished()
             qDebug() << "Tree gown";
             printNodes();
 
-            dataTreeSqueeze();
+            p_searchnode_hierarchy_future_list.clear();
+            // branch_leaf_both, nonempty_empty_both, unfinished_finished_both
+            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2, 2);
+
+            dataTreeRecombine();
         }
     }
 
@@ -1347,7 +1350,7 @@ void ImageOpenGLWidget::on_dataTreeGrow_canceled()
 void ImageOpenGLWidget::dataTreeSqueeze()
 {
     emit message("Maximizing level of detail...");
-    p_tree_squeeze_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [](SearchNode * ptr){ptr->squeeze();}));
+//    p_tree_squeeze_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [](SearchNode * ptr){ptr->squeeze();}));
 }
 
 void ImageOpenGLWidget::on_dataTreeSqueeze_finished()
@@ -1355,18 +1358,21 @@ void ImageOpenGLWidget::on_dataTreeSqueeze_finished()
     if (is_dataTreeGrow_canceled)
     {
         p_data_tree.clear();
+        p_searchnode_hierarchy_future_list.clear();
+        p_searchnode_flat_future_list.clear();
         emit message("Canceled operation");
     }
     else
     {
         p_searchnode_flat_future_list.clear();
-        p_data_tree.nodelist(p_searchnode_flat_future_list, true);
-        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 2);
+        p_data_tree.nodelist(p_searchnode_flat_future_list);
+        // branch_leaf_both, nonempty_empty_both, unfinished_finished_both
+//        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 2, false);
 
         if (p_searchnode_flat_future_list.size() <= 0)
         {
             p_searchnode_hierarchy_future_list.clear();
-            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2);
+            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2, false);
 
             if (p_searchnode_hierarchy_future_list.size() <= 1)
             {
@@ -1379,7 +1385,7 @@ void ImageOpenGLWidget::on_dataTreeSqueeze_finished()
                 qDebug() << "Nodes squeezed";
                 printNodes();
 
-                dataTreeRebuildBranches();
+                dataTreeFinalize();
             }
         }
         else
@@ -1397,23 +1403,23 @@ void ImageOpenGLWidget::on_dataTreeSqueeze_canceled()
 }
 
 
-void ImageOpenGLWidget::dataTreeRebuildBranches()
+void ImageOpenGLWidget::dataTreeFinalize()
 {
     /* The implementation of branch fertilization turned out a bit hackish, as  to my knowledge, it can not be done
      * efficiently and recursively with QtConcurrent. So the branch nodes were first put in linear arrays based on tree level. */
 
     emit message("Rebuilding data tree branches... ("+QString::number(p_searchnode_hierarchy_future_list.size())+")");
-    p_tree_rebuild_branches_future_watcher->setFuture(QtConcurrent::map(p_searchnode_hierarchy_future_list.last(), [](SearchNode * ptr){ptr->rebuild();}));
+    p_tree_rebuild_branches_future_watcher->setFuture(QtConcurrent::map(p_searchnode_hierarchy_future_list.last(), [&](SearchNode * ptr){ptr->interpolate2(&p_data_tree);}));
 }
 
-void ImageOpenGLWidget::on_dataTreeRebuildBranches_canceled()
+void ImageOpenGLWidget::on_dataTreeFinalize_canceled()
 {
-    is_dataTreeRebuildBranches_canceled = true;
+    is_dataTreeFinalize_canceled = true;
 }
 
-void ImageOpenGLWidget::on_dataTreeRebuildBranches_finished()
+void ImageOpenGLWidget::on_dataTreeFinalize_finished()
 {
-    if (is_dataTreeRebuildBranches_canceled)
+    if (is_dataTreeFinalize_canceled)
     {
         p_data_tree.clear();
         p_searchnode_hierarchy_future_list.clear();
@@ -1424,31 +1430,21 @@ void ImageOpenGLWidget::on_dataTreeRebuildBranches_finished()
         if (p_searchnode_hierarchy_future_list.size() <= 1)
         {
             p_searchnode_hierarchy_future_list.clear();
-            emit message("Branches rebuilt...");
+            emit message("Finalized...");
 
-            qDebug() << "Branches rebuilt";
+            qDebug() << "Finalized...";
             printNodes();
-
-            // Proceed to the next step, going from unstructured bin data to structured grid data
-            p_data_tree.nodelist(p_searchnode_flat_future_list, false);
-
-            if (p_searchnode_flat_future_list.size() <= 1)
-            {
-                emit message("The tree is just a root with no branches or leaves...");
-            }
-            else
-            {
-                dataTreeReorganize();
-            }
         }
         // Else if there are remaining brnaches and levels
         else
         {
-            p_searchnode_hierarchy_future_list.removeLast();
-            dataTreeRebuildBranches();
+            p_searchnode_hierarchy_future_list.clear();
+            // branch_leaf_both, nonempty_empty_both, unfinished_finished_both
+            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 0, 0);
+            dataTreeFinalize();
         }
     }
-    is_dataTreeRebuildBranches_canceled = false;
+    is_dataTreeFinalize_canceled = false;
 }
 
 void ImageOpenGLWidget::dataTreeReorganize()
@@ -1456,7 +1452,7 @@ void ImageOpenGLWidget::dataTreeReorganize()
     /* The implementation of branch fertilization turned out a bit hackish, as  to my knowledge, it can not be done
      * efficiently and recursively with QtConcurrent. So the branch nodes were first put in linear arrays based on tree level. */
     emit message("Reorganizing tree...");
-    p_tree_reorganize_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [](SearchNode * ptr){ptr->reorganize();}));
+//    p_tree_reorganize_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [](SearchNode * ptr){ptr->reorganize();}));
 }
 
 void ImageOpenGLWidget::on_dataTreeReorganize_canceled()
@@ -1480,7 +1476,7 @@ void ImageOpenGLWidget::on_dataTreeReorganize_finished()
         qDebug() << "Leaf and branch data reorganized on grids";
 //        printNodes();
 
-        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2);
+//        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2);
 
         dataTreeRecombine();
     }
@@ -1492,7 +1488,7 @@ void ImageOpenGLWidget::dataTreeRecombine()
     /* The implementation of branch fertilization turned out a bit hackish, as  to my knowledge, it can not be done
      * efficiently and recursively with QtConcurrent. So the branch nodes were first put in linear arrays based on tree level. */
     emit message("Recombine data tree... ("+QString::number(p_searchnode_hierarchy_future_list.size())+")");
-    p_tree_recombine_future_watcher->setFuture(QtConcurrent::map(p_searchnode_hierarchy_future_list.last(), [](SearchNode * ptr){ptr->recombine();}));
+    p_tree_recombine_future_watcher->setFuture(QtConcurrent::map(p_searchnode_hierarchy_future_list.last(), [](SearchNode * ptr){ptr->recombine2();}));
 }
 
 void ImageOpenGLWidget::on_dataTreeRecombine_canceled()
@@ -1506,17 +1502,23 @@ void ImageOpenGLWidget::on_dataTreeRecombine_finished()
     {
         p_data_tree.clear();
         p_searchnode_hierarchy_future_list.clear();
+        p_searchnode_flat_future_list.clear();
+        emit message("Canceled operation");
     }
     else
     {
         // If all leaves in all levels have been recombined
         if (p_searchnode_hierarchy_future_list.size() <= 1)
         {
-            p_searchnode_hierarchy_future_list.clear();
             emit message("Leaves recombined...");
 
             qDebug() << "Leaves recombined";
             printNodes();
+
+            p_searchnode_hierarchy_future_list.clear();
+            // branch_leaf_both, nonempty_empty_both, unfinished_finished_both
+            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 0, 0);
+            dataTreeFinalize();
         }
         // Else if there are remaining branches and levels
         else
@@ -1537,7 +1539,7 @@ void ImageOpenGLWidget::voxelTreeGrow()
 
     // Make an assesment of the ideal brick pool dimensions
     int num_bricks = 0;
-    p_data_tree.countbricks(num_bricks);
+//    p_data_tree.countbricks(num_bricks);
 
     if (num_bricks <= 1)
     {
@@ -1570,7 +1572,7 @@ void ImageOpenGLWidget::voxelTreeGrow()
     // Create linear voxel arrays for the GPU
     // Find the total number of nodes, and the linear offset of each level
     QVector<QList<SearchNode *>> nodes;
-    p_data_tree.hierarchy(nodes, 2, 2);
+//    p_data_tree.hierarchy(nodes, 2, 2);
     p_voxel_tree.setLevels(nodes.size());
 
     int num_nodes = 0;
@@ -1591,13 +1593,13 @@ void ImageOpenGLWidget::voxelTreeGrow()
 
     // Populate the arrays
     num_bricks = 0;
-    p_data_tree.voxelize(0, p_voxel_tree.index(), p_voxel_tree.brick(), level_offsets, level_progress, pool_dim_x, pool_dim_y, pool_dim_z, num_bricks);
+//    p_data_tree.voxelize(0, p_voxel_tree.index(), p_voxel_tree.brick(), level_offsets, level_progress, pool_dim_x, pool_dim_y, pool_dim_z, num_bricks);
 
     //Populate the brick pool
     p_voxel_tree.pool().resize(pool_dim_x*pool_dim_y*pool_dim_z*std::pow(p_voxel_tree.side(),3));
 
-    p_data_tree.nodelist(p_searchnode_flat_future_list, false);
-    p_tree_voxelize_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [&](SearchNode * ptr){ptr->nodeToPool(p_voxel_tree.pool(), p_voxel_tree.poolDimX(), p_voxel_tree.poolDimY(), p_voxel_tree.poolDimZ(), p_data_tree);}));
+//    p_data_tree.nodelist(p_searchnode_flat_future_list, false);
+//    p_tree_voxelize_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [&](SearchNode * ptr){ptr->nodeToPool(p_voxel_tree.pool(), p_voxel_tree.poolDimX(), p_voxel_tree.poolDimY(), p_voxel_tree.poolDimZ(), p_data_tree);}));
 }
 
 void ImageOpenGLWidget::on_voxelTreeGrow_finished()
@@ -1634,11 +1636,10 @@ void ImageOpenGLWidget::printNodes()
 {
     QVector<QList<SearchNode*>> nodes;
 
-    p_data_tree.hierarchy(nodes, 2, 2);
+    p_data_tree.hierarchy(nodes, 2, 2, 2);
 
     for(int i = 0; i < nodes.size(); i++)
     {
-        int num_root = 0;
         int num_msd = 0;
         int num_empty = 0;
         int num_has_children = 0;
@@ -1646,11 +1647,10 @@ void ImageOpenGLWidget::printNodes()
         {
             if (nodes[i][j]->isEmpty()) num_empty++;
             if (nodes[i][j]->isLeaf()) num_msd++;
-            if (nodes[i][j]->isRoot()) num_root++;
             if (nodes[i][j]->children().size() > 0) num_has_children++;
         }
 
-        qDebug() << "Lvl " << i << "has" << nodes[i].size() << "nodes:" << num_root << "roots," << num_has_children << "branches," << num_msd << "leaves," << num_empty << "empty," << num_msd + num_has_children << "branches + leaves";
+        qDebug() << "Lvl " << i << "has" << nodes[i].size() << "nodes:" << num_has_children << "branches," << num_msd << "leaves," << num_empty << "empty," << num_msd + num_has_children << "branches + leaves";
     }
 }
 

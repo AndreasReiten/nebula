@@ -67,7 +67,7 @@ public:
     size_t bytes() const;
     float alpha() const;
     float beta() const;
-    double getDataInterdistanceHint();
+//    double getDataInterdistanceHint();
     float getSearchRadiusLowSuggestion() const;
     float getSearchRadiusHighSuggestion() const;
     float getQSuggestion();

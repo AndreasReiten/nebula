@@ -79,7 +79,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         QFutureWatcher<void> *dataTreeGrowWatcher();
         QFutureWatcher<void> *dataTreeSqueezeWatcher();
-        QFutureWatcher<void> *dataTreeRebuildBranchesWatcher();
+        QFutureWatcher<void> *dataTreeFinalizeWatcher();
         QFutureWatcher<void> *dataTreeRecombineWatcher();
         QFutureWatcher<void> *dataTreeReorganizeWatcher();
         QFutureWatcher<void> *voxelTreeWatcher();
@@ -124,9 +124,9 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void on_dataTreeReorganize_finished();
         void on_dataTreeReorganize_canceled();
 
-        void dataTreeRebuildBranches();
-        void on_dataTreeRebuildBranches_finished();
-        void on_dataTreeRebuildBranches_canceled();
+        void dataTreeFinalize();
+        void on_dataTreeFinalize_finished();
+        void on_dataTreeFinalize_canceled();
 
         void dataTreeSqueeze();
         void on_dataTreeSqueeze_finished();
@@ -349,7 +349,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool is_dataTreeGrow_canceled;
         bool is_dataTreeSqueeze_canceled;
         bool is_dataTreeRecombine_canceled;
-        bool is_dataTreeRebuildBranches_canceled;
+        bool is_dataTreeFinalize_canceled;
         bool is_voxelTreeGrow_canceled;
         bool is_dataTreeReorganize_canceled;
 

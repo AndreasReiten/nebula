@@ -35,98 +35,108 @@ class SearchNode
 public:
 
 
-    bool isLeafBranch();
-    bool isEmpty();
-    bool isRoot();
-    bool isLeaf();
-
-    QVector<SearchNode> & children();
-
-    // The most essential reconstruction functions
-    void insert(xyzwd32 &point);
-    void squeeze();
-    void rebuild();
-    void reorganize();
-    void recombine();
-    void voxelize(int octant, QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks);
-    void nodeToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z, SearchNode &root);
-
-    void rebuildRecursive();
-
-    void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both);
-    void nodelist(QVector<SearchNode*> &nodes, bool unresolved_leaves_only);
-    void countbricks(int &count);
 
 
-
-    void print();
-
-    void setBinsPerSide(int value);
-    void setParent(SearchNode * p_parent);
-    void setRoot(bool value);
+//    bool isRoot();
 
 
-    int level();
+//
+
+//    // The most essential reconstruction functions
+//    void insert(xyzwd32 &point);
+//    void squeeze();
+//    void rebuild();
+//    void reorganize();
+//    void recombine();
+//    void voxelize(int octant, QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & level_offsets, QVector<int> & level_progress,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks);
+//    void nodeToPool(QVector<float> &pool, int dim_x, int dim_y, int dim_z, SearchNode &root);
+
+//    void rebuildRecursive();
+
+//
+//    void countbricks(int &count);
+
+
+
+//    void print();
+
+//    void setBinsPerSide(int value);
+//    void setParent(SearchNode * p_parent);
+//    void setRoot(bool value);
+
+
+//    int level();
 
     // Public funcs still used in new meta
+
     SearchNode();
     ~SearchNode();
 
+    bool isEmpty();
+    bool isLeaf();
+    bool isLeafBranch();
+    QVector<SearchNode> & children();
     void insert2(xyzwd32 &point);
     void recombine2();
-    void interpolate2(SearchNode *root, bool check_neighbours);
+    void interpolate2(SearchNode *root, bool check_neighbours = true);
     void voxelize2();
+    void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both, int finished_unfinished_both);
+    void nodelist(QVector<SearchNode*> &nodes);
 
-    void setMaxPoints(int value);
+//    void setMaxPoints(int value);
     void clear();
     QVector<xyzwd32> & cloud();
     QVector<float> & nodegrid();
 
 private:
-    int nodesPerSide();
-    double binside();
+//
+//    double binside();
 
-    void center(double & x, double & y, double & z);
-//        void gridcenter(float &x, float &y, float &z, float &w);
 
-    QVector<QVector<xyzwd32>> &bins();
+////        void gridcenter(float &x, float &y, float &z, float &w);
 
-    void interdistMetrics(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg);
-//        double gridValueAt_Nearest(double x, double y, double z);
-    double gridValueAt_Nearest(double x, double y, double z, int max_level = 1000);
-    double gridValueAt_Linear(double x, double y, double z, int max_level, SearchNode &root);
-    void gridRecombineMetrics(QVector<double> & averages, QVector<double> & sigmas);
-    void gridMetrics(double & average, double & sigma);
+//    QVector<QVector<xyzwd32>> &bins();
 
-    double binsum();
-    double gridsum();
+//    void interdistMetrics(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg);
+////        double gridValueAt_Nearest(double x, double y, double z);
+//    double gridValueAt_Nearest(double x, double y, double z, int max_level = 1000);
+//    double gridValueAt_Linear(double x, double y, double z, int max_level, SearchNode &root);
+//    void gridRecombineMetrics(QVector<double> & averages, QVector<double> & sigmas);
+//    void gridMetrics(double & average, double & sigma);
 
-    SearchNode * nodeAt(double x, double y, double z, int max_level);
-    void rebin();
-    void makeGridFromBins_Nearest();
-    void makeGridFromBins_Linear();
-    void p_insert(xyzwd32 &point);
-    void split();
-    void setId(int id_x, int id_y, int id_z);
+//    double binsum();
+//    double gridsum();
 
-    int expendable();
-    int num_points();
+//
+//    void rebin();
+//    void makeGridFromBins_Nearest();
+//    void makeGridFromBins_Linear();
+//    void p_insert(xyzwd32 &point);
+//    void split();
+//
 
-    QVector<QVector<xyzwd32>> p_data_binned; // Binned data
-    QVector<float> p_grid;
+//    int expendable();
+//    int num_points();
 
-    SearchNode * p_parent;
+//    QVector<QVector<xyzwd32>> p_data_binned; // Binned data
+//    QVector<float> p_grid;
 
-    unsigned int p_id_pool_x, p_id_pool_y, p_id_pool_z;
-    int p_bins_per_side;
-    int p_voxels_per_side;
+//    SearchNode * p_parent;
 
-    bool p_is_interpolation_node;
-    bool p_is_root;
-    bool p_is_max_resolved;
+//    unsigned int p_id_pool_x, p_id_pool_y, p_id_pool_z;
+//    int p_bins_per_side;
+//    int p_voxels_per_side;
+
+//    bool p_is_interpolation_node;
+//    bool p_is_root;
+//    bool p_is_max_resolved;
 
 
     // Private funcs still used in new meta
+    int nodesPerSide();
+    SearchNode * nodeAt(double x, double y, double z, int max_level);
+    void setId(int id_x, int id_y, int id_z);
+    void center(double & x, double & y, double & z);
     double nodeValueAt_Linear(double x, double y, double z, int max_level, SearchNode *root);
     double nodeValueAt(double x, double y, double z, int level);
     void ensureNodeAt(double x, double y, double z, int level, SearchNode *root);
@@ -159,6 +169,7 @@ private:
 
     bool p_is_leaf;
     bool p_is_empty; // No data, at least until interpolation checks, lulz
+    bool p_is_finished;
 
     QMutex * p_mutex;
 };
