@@ -482,6 +482,7 @@ kernel void projectScatteringData(
             // Scale/shift data between twice the maximum Q vector, Qmax = 2/wavelength, to lie between 0 and 1.
             // This is done because p_interpolation_octree uses a root side length of 1.0
             Q.xyz = Q.xyz * wavelength * 0.25f + 0.5f;
+            d = d * wavelength * 0.50f;
         }
         else
         {

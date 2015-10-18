@@ -12,7 +12,10 @@ SearchNode::SearchNode() :
     p_is_empty(true),
     p_is_max_resolved(false),
     p_is_interpolation_node(false),
-    p_voxels_per_side(7)
+    p_voxels_per_side(7),
+    p_node_grid_side(6),
+    p_voxel_grid_side(8),
+    p_max_points(1024)
 {
 
 
@@ -22,6 +25,581 @@ SearchNode::SearchNode() :
 }
 
 SearchNode::~SearchNode()
+{
+
+}
+
+
+void SearchNode::insert2(xyzwd32 &point)
+{
+    // Place a data point into this node, or a deeper node if required
+    // If the current node is not a leaf (but a branch), then it's private variables will not be changed on further insertion, and thus it does not need a mutex lock
+    if (p_is_leaf)
+    {
+        QMutexLocker lock(p_mutex);
+        p_insert2(point);
+    }
+    else
+    {
+        p_insert2(point);
+    }
+}
+
+void SearchNode::p_insert2(xyzwd32 & point)
+{
+    // Descend if branch node (even if the data interdistance does not require it. A shortcut...)
+    if (!p_is_leaf)
+    {
+        int id = ntant(point, 2);
+        if (id >= 0)
+        {
+            p_children[id].insert(point);
+        }
+    }
+    // Split or add if leaf node
+    else
+    {
+        // Split if the data interdistance, d, is smaller than the voxel size of the node
+        if (point.d < voxelside())
+        {
+            split2();
+            p_cloud.clear();
+
+            int id = ntant(point, 2);
+
+            if (id >= 0)
+            {
+                p_children[id].insert(point);
+            }
+
+            p_is_empty = true;
+            p_is_leaf = false;
+        }
+        else
+        {
+            // Add point to cloud or rebin
+            if (p_cloud.size() <= p_max_points)
+            {
+                p_cloud << point;
+                p_is_empty = false;
+            }
+            else
+            {
+                rebin2();
+            }
+        }
+    }
+}
+
+void SearchNode::rebin2()
+{
+    // Place points in a resampling grid
+    QVector<QVector<xyzwd32>> grid = cloudbins();
+
+    p_cloud.clear();
+
+    for (int i = 0; i < grid.size(); i++)
+    {
+        if (grid[i].size() <= 0) continue;
+
+        // Calculate a single average point
+        xyzwd32 agglomerate = {0.0,0.0,0.0,0.0,0.0};
+
+        for (int j = 0; j < grid[i].size(); j++)
+        {
+            agglomerate.x += grid[i][j].x;
+            agglomerate.y += grid[i][j].y;
+            agglomerate.z += grid[i][j].z;
+            agglomerate.w += grid[i][j].w;
+            agglomerate.d += grid[i][j].d;
+        }
+
+        agglomerate.x /= (float) grid[i].size();
+        agglomerate.y /= (float) grid[i].size();
+        agglomerate.z /= (float) grid[i].size();
+        agglomerate.w /= (float) grid[i].size();
+        agglomerate.d /= (float) grid[i].size();
+
+
+        p_cloud << agglomerate;
+    }
+}
+
+QVector<QVector<xyzwd32>> SearchNode::cloudbins()
+{
+    QVector<QVector<xyzwd32>> grid(p_node_grid_side*p_node_grid_side*p_node_grid_side);
+
+    for (int i = 0; i < p_cloud.size(); i++)
+    {
+        int id = ntant(p_cloud[i], p_node_grid_side);
+
+        if (id >= 0)
+        {
+            grid[i] << p_cloud[i];
+        }
+    }
+
+    return grid;
+}
+
+QVector<xyzwd32> SearchNode::cloudgrid(QVector<QVector<xyzwd32>> & bins)
+{
+    QVector<xyzwd32> grid;
+
+    for (int i = 0; i < bins.size(); i++)
+    {
+        // Calculate a single average point
+        xyzwd32 agglomerate = {0.0,0.0,0.0,0.0,0.0};
+
+        if (bins[i].size() > 0)
+        {
+            for (int j = 0; j < bins[i].size(); j++)
+            {
+                agglomerate.x += bins[i][j].x;
+                agglomerate.y += bins[i][j].y;
+                agglomerate.z += bins[i][j].z;
+                agglomerate.w += bins[i][j].w;
+                agglomerate.d += bins[i][j].d;
+            }
+
+            agglomerate.x /= (float) bins[i].size();
+            agglomerate.y /= (float) bins[i].size();
+            agglomerate.z /= (float) bins[i].size();
+            agglomerate.w /= (float) bins[i].size();
+            agglomerate.d /= (float) bins[i].size();
+        }
+
+        grid[i] = agglomerate;
+    }
+
+    return grid;
+}
+
+void SearchNode::split2()
+{
+    // Return if there are in fact children
+    if (!p_children.isEmpty()) return;
+
+    /* The octants are assumed to be cubic. First create eight new
+     * children. Then insert the nodes in the children according to
+     * octant */
+
+    p_children.resize(8);
+
+    // For each child
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            for (int k = 0; k < 2; k++)
+            {
+                int child_id_x = p_id_node_x*2+i;
+                int child_id_y = p_id_node_y*2+j;
+                int child_id_z = p_id_node_z*2+k;
+
+                int linear_id = i + 2*j + 4*k;
+
+                p_children[linear_id].setMaxPoints(p_max_points);
+                p_children[linear_id].setBinsPerSide(p_node_grid_side);
+                p_children[linear_id].setId(child_id_x, child_id_y, child_id_z);
+            }
+        }
+    }
+
+    // If this node has data points, flush them down. Ideally let them be and use them together with node grid interpolation later
+    for (int i = 0; i < p_cloud.size(); i++)
+    {
+        int id = ntant(p_cloud[i], 2);
+
+        if (id >= 0)
+        {
+            p_children[id].insert2(p_cloud[i]);
+        }
+    }
+}
+
+void SearchNode::recombine2()
+{
+    // Return if leaf
+    if (p_is_leaf) return;
+
+    // Count the number of recombinable 2x2x2 bins
+    int n_recombinable = 0;
+
+    for (int i = 0; i < p_children.size(); i++)
+    {
+        n_recombinable += p_children[i].cloudRecombinable(0.1, 0.0); // IMPORTANT INPUT PARAMS
+    }
+
+    // Recombine if children are recombinable enough
+    if ((double) n_recombinable / (double)(p_node_grid_side*p_node_grid_side*p_node_grid_side*8) <= 0) // IMPORTANT INPUT PARAMS
+    {
+        if (p_cloud.size() > 0) qFatal("oh shit");
+
+        for (int i = 0; i < p_children.size(); i++)
+        {
+            p_cloud << p_children[i].cloud();
+        }
+
+        p_children.clear();
+        p_is_leaf = true;
+        p_is_empty = false;
+
+        // Rebin if needed
+        if (p_cloud.size() <= p_max_points)
+        {
+            rebin2();
+        }
+    }
+}
+
+int SearchNode::cloudRecombinable(double req_avg_prct, double noise)
+{
+    // There is plenty of room for optimization here if needed
+    // Place points in a resampling grid
+    QVector<QVector<xyzwd32>> bins = cloudbins();
+    QVector<xyzwd32> grid = cloudgrid(bins);
+
+    // Metrics for each 2x2x2 point cube, used primarily to assess if the node is exceedingly self-similar
+    int n_self_similar = 0;
+
+    for (int i = 0; i < p_node_grid_side; i+=2)
+    {
+        for (int j = 0; j < p_node_grid_side; j+=2)
+        {
+            for (int k = 0; k < p_node_grid_side; k+=2)
+            {
+                // Average
+                double avg = 0;
+                avg += grid[(i+0) + (j+0) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w;
+                avg += grid[(i+1) + (j+0) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w;
+                avg += grid[(i+0) + (j+1) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w;
+                avg += grid[(i+0) + (j+0) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w;
+                avg += grid[(i+1) + (j+1) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w;
+                avg += grid[(i+0) + (j+1) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w;
+                avg += grid[(i+1) + (j+0) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w;
+                avg += grid[(i+1) + (j+1) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w;
+                avg /= 8.0;
+
+                // Standard deviation
+                double sigma = 0;
+                sigma += std::pow(grid[(i+0) + (j+0) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma += std::pow(grid[(i+1) + (j+0) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma += std::pow(grid[(i+0) + (j+1) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma += std::pow(grid[(i+0) + (j+0) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma += std::pow(grid[(i+1) + (j+1) * p_node_grid_side + (k+0) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma += std::pow(grid[(i+0) + (j+1) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma += std::pow(grid[(i+1) + (j+0) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma += std::pow(grid[(i+1) + (j+1) * p_node_grid_side + (k+1) * p_node_grid_side * p_node_grid_side].w - avg,2.0);
+                sigma /= 8.0;
+                sigma = std::sqrt(sigma);
+
+                if (sigma < avg*req_avg_prct + noise) n_self_similar++;
+            }
+        }
+    }
+
+    return n_self_similar;
+}
+
+QVector<xyzwd32> & SearchNode::cloud()
+{
+    return p_cloud;
+}
+
+void SearchNode::interpolate2(SearchNode * root)
+{
+    // Return if already interpolated
+    if (!p_voxel_grid.isEmpty()) return;
+
+    // This is needed later
+    double x_center, y_center, z_center;
+    center(x_center, y_center, z_center);
+
+    // If leaf
+    if (p_is_leaf)
+    {
+        // Use the statistics of the cloud to approximate the sample interdistance
+        double data_interdist_min = 0;
+        double data_interdist_max = 0;
+        double data_interdist_avg = 0;
+
+        interdistMetrics2(data_interdist_min, data_interdist_max, data_interdist_avg);
+
+        double extra_extent = std::max(binside(), voxelside())*0.5 + data_interdist_avg;
+
+        QVector<double> extent(6);
+        extent[0] = x_center - (side() * 0.5 + extra_extent);
+        extent[1] = x_center + (side() * 0.5 + extra_extent);
+        extent[2] = y_center - (side() * 0.5 + extra_extent);
+        extent[3] = y_center + (side() * 0.5 + extra_extent);
+        extent[4] = z_center - (side() * 0.5 + extra_extent);
+        extent[5] = z_center + (side() * 0.5 + extra_extent);
+
+        // Get all relevant data
+        // Fetch data from up to 3x3x3 - 1 surrounding bins (can be fewer). Start by finding their pointers
+        // Use a QSet to ensure zero duplicate nodes
+        QSet<SearchNode *> nodes;
+
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    double x = x_center + (double)(i-1)*side();
+                    double y = y_center + (double)(j-1)*side();
+                    double z = z_center + (double)(k-1)*side();
+
+                    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
+                    {
+                        nodes << nodeAt(x, y, z, p_level);
+                    }
+                }
+            }
+        }
+
+        // Iterate through the data, keeping only data that lies within the sampling volume
+        QVector<xyzwd32> data; // It might be beneficial to use a k-d tree for this, or using GPGPU and local memory
+
+        QSetIterator<SearchNode *> k(nodes);
+        while (k.hasNext())
+        {
+            SearchNode * node = k.next();
+
+            for (int i = 0; i < node->cloud().size(); i++)
+            {
+                if (
+                        (node->cloud()[i].x > extent[0]) && (node->cloud()[i].x < extent[1]) &&
+                        (node->cloud()[i].y > extent[2]) && (node->cloud()[i].y < extent[3]) &&
+                        (node->cloud()[i].z > extent[4]) && (node->cloud()[i].z < extent[5]))
+                {
+                    data << node->cloud()[i];
+                }
+            }
+        }
+
+        // Return if there is no relevant data
+        if (data.isEmpty())
+        {
+            p_is_empty = true;
+            return;
+        }
+
+        // Interpolate voxel grid from cloud
+        p_voxel_grid.resize(p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side);
+
+        for (int i = 0; i < p_voxel_grid_side; i++)
+        {
+            for (int j = 0; j < p_voxel_grid_side; j++)
+            {
+                for (int k = 0; k < p_voxel_grid_side; k++)
+                {
+                    int id =
+                            i +
+                            j * p_voxel_grid_side +
+                            k * p_voxel_grid_side * p_voxel_grid_side;
+
+
+                    // Do a lookup of the value
+                    double x = (double) (p_id_node_x + ((double)i/(double)(p_voxel_grid_side-1))) * side();
+                    double y = (double) (p_id_node_y + ((double)j/(double)(p_voxel_grid_side-1))) * side();
+                    double z = (double) (p_id_node_z + ((double)k/(double)(p_voxel_grid_side-1))) * side();
+
+                    // If requested value lies outside of octtree, set to zero
+                    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
+                    {
+                        p_voxel_grid[id] = 0;
+                    }
+                    // Else use grid value
+                    else
+                    {
+                        // Multivariate interpolation, IDW with Gaussian value scaling
+
+
+                        double p = 1.0; // IMPORTANT INPUT PARAMS
+                        double nominator = 0;
+                        double denominator = 0;
+
+                        for (int l = 0; l < data.size(); l++)
+                        {
+                            double d = distance(x, y, z, data[l].x, data[l].y, data[l].z);
+                            double w = 1.0/std::pow(d, p);
+                            double r = std::max((double)voxelside()*0.5, (double)data[l].d);
+
+
+                            nominator += data[l].w*std::exp(-(d * d / (2.0 * r))) * w;
+                            denominator += w;
+
+                        }
+
+                        p_voxel_grid[id] = nominator /  denominator;
+                    }
+                }
+            }
+        }
+
+        // Interpolate rebuild grid from cloud
+        p_node_grid.resize(p_node_grid_side*p_node_grid_side*p_node_grid_side);
+
+        for (int i = 0; i < p_node_grid_side; i++)
+        {
+            for (int j = 0; j < p_node_grid_side; j++)
+            {
+                for (int k = 0; k < p_node_grid_side; k++)
+                {
+                    int id =
+                            i +
+                            j * p_node_grid_side +
+                            k * p_node_grid_side * p_node_grid_side;
+
+
+                    // Do a lookup of the value
+                    double x = (double) (p_id_node_x + (((double)i+0.5)/(double)(p_node_grid_side))) * side();
+                    double y = (double) (p_id_node_y + (((double)j+0.5)/(double)(p_node_grid_side))) * side();
+                    double z = (double) (p_id_node_z + (((double)k+0.5)/(double)(p_node_grid_side))) * side();
+
+                    // If requested value lies outside of octtree, set to zero
+                    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
+                    {
+                        p_node_grid[id] = 0;
+                    }
+                    // Else use grid value
+                    else
+                    {
+                        // Multivariate interpolation, IDW with Gaussian value scaling
+                        double p = 1.0; // IMPORTANT INPUT PARAMS
+                        double nominator = 0;
+                        double denominator = 0;
+
+                        for (int l = 0; l < data.size(); l++)
+                        {
+                            double d = distance(x, y, z, data[l].x, data[l].y, data[l].z);
+                            double w = 1.0/std::pow(d, p);
+                            double r = std::max((double)binside2()*0.5, (double)data[l].d);
+
+
+                            nominator += data[l].w*std::exp(-(d * d / (2.0 * r))) * w;
+                            denominator += w;
+
+                        }
+
+                        p_node_grid[id] = nominator /  denominator;
+                    }
+                }
+            }
+        }
+    }
+    // If branch
+    else
+    {
+        Here
+
+        // Clear point clouds of cildren
+
+        // Interpolate voxel grid from rebuild grid of last or this level
+
+        // Interpolate node grid from node grid of last level
+    }
+
+    /* If the outer layer of the voxel grid has nonzero values, ensure that there are neighbour nodes
+     * of appreciable LOD so that there will be no visual artefacts due to interpolation. In some
+     * cases this will mean a new nodes must be created, and that these nodes also must be
+     * interpolated, possibly in the same function call
+     * */
+
+    QVector<bool> neighbours(3*3*3, false);
+
+    for (int i = 0; i < p_voxel_grid_side; i++)
+    {
+        for (int j = 0; j < p_voxel_grid_side; j++)
+        {
+            for (int k = 0; k < p_voxel_grid_side; k++)
+            {
+                // If voxel is on face
+                if (    (i <= 0) || (i >= p_voxel_grid_side-1) ||
+                        (j <= 0) || (j >= p_voxel_grid_side-1) ||
+                        (k <= 0) || (k >= p_voxel_grid_side-1))
+                {
+                    int id_voxel =
+                            i +
+                            j * p_voxel_grid_side +
+                            k * p_voxel_grid_side * p_voxel_grid_side;
+
+                    // If voxel value is greater than zero, tag the neighbouring nodes
+                    if (p_voxel_grid[id_voxel] > 0)
+                    {
+                        int id_neighbour_x = (i <= 0 ? 0 : (i < p_voxel_grid_side - 1 ? 1 : 2));
+                        int id_neighbour_y = (j <= 0 ? 0 : (j < p_voxel_grid_side - 1 ? 1 : 2));
+                        int id_neighbour_z = (k <= 0 ? 0 : (k < p_voxel_grid_side - 1 ? 1 : 2));
+
+                        int id_neighbour =
+                                id_neighbour_x +
+                                id_neighbour_y * 3 +
+                                id_neighbour_z * 3 * 3;
+
+                        neighbours[id_neighbour] = true;
+                    }
+                }
+            }
+        }
+    }
+
+
+    // For each tagged neighbour, check if said neighbour exists. If not, create it (mutex lock)
+    for (int i = 0; i < neighbours.size(); i++)
+    {
+        if (neighbours[i])
+        {
+            int id_neighbour_z = i / (3 * 3);
+            int id_neighbour_y = (i - 3 * 3 * id_neighbour_z) / 3;
+            int id_neighbour_x = i - 3 * 3 * id_neighbour_z - 3 * id_neighbour_y;
+
+            double x = x_center + (double)(id_neighbour_x - 1) * side();
+            double y = y_center + (double)(id_neighbour_y - 1) * side();
+            double z = z_center + (double)(id_neighbour_z - 1) * side();
+
+            root->ensureNodeAt(x, y, z, p_level, root);
+        }
+    }
+}
+
+double SearchNode::distance(double x0, double y0, double z0, double x1, double y1, double z1)
+{
+    return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
+}
+
+void SearchNode::ensureNodeAt(double x, double y, double z, int level, SearchNode *root)
+{
+    if (p_level < level)
+    {
+        if (p_is_leaf)
+        {
+            QMutexLocker lock(p_mutex);
+
+            split2();
+            p_cloud.clear();
+
+            p_is_empty = true;
+            p_is_leaf = false;
+        }
+
+        int id = ntant(x, y, z, 2);
+        if (id >= 0)
+        {
+            p_children[id].ensureNodeAt(x, y, z, level, root);
+        }
+
+    }
+    else
+    {
+        QMutexLocker lock(p_mutex);
+
+        this->interpolate2(root);
+    }
+}
+
+void SearchNode::voxelize2()
 {
 
 }
@@ -88,7 +666,7 @@ void SearchNode::gridMetrics(double & average, double & sigma)
 
     for (int i = 0; i < p_grid.size(); i++)
     {
-        sigma += std::powf(p_grid[i] - average, 2.0);
+        sigma += std::pow(p_grid[i] - average, 2.0);
     }
 
     sigma  /= (double) p_grid.size();
@@ -173,14 +751,14 @@ void SearchNode::gridRecombineMetrics(QVector<double> & averages, QVector<double
 
                 // Standard deviation
                 double sigma = 0;
-                sigma += std::powf(p_grid[(i+0) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
-                sigma += std::powf(p_grid[(i+1) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
-                sigma += std::powf(p_grid[(i+0) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
-                sigma += std::powf(p_grid[(i+0) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
-                sigma += std::powf(p_grid[(i+1) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
-                sigma += std::powf(p_grid[(i+0) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
-                sigma += std::powf(p_grid[(i+1) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
-                sigma += std::powf(p_grid[(i+1) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+0) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+1) + (j+0) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+0) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+0) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+1) + (j+1) * p_bins_per_side + (k+0) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+0) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+1) + (j+0) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
+                sigma += std::pow(p_grid[(i+1) + (j+1) * p_bins_per_side + (k+1) * p_bins_per_side * p_bins_per_side] - avg,2.0);
                 sigma /= 8.0;
                 sigma = std::sqrt(sigma);
 
@@ -368,9 +946,15 @@ double SearchNode::binside()
     return 1.0 / (double) (nodesPerSide() *  p_bins_per_side);
 }
 
+double SearchNode::binside2()
+{
+    return 1.0 / (double) (nodesPerSide() *  p_node_grid_side);
+}
+
+
 double SearchNode::voxelside()
 {
-    return 1.0 / (double) (nodesPerSide() *  p_voxels_per_side);
+    return 1.0 / (double) (nodesPerSide() *  (p_voxel_grid_side-1));
 }
 
 void SearchNode::center(double & x, double & y, double & z)
@@ -531,7 +1115,7 @@ void SearchNode::rebuild()
         }
 
         // Construct a grid based on child nodes
-        makeGridFromChildren();
+//        makeGridFromChildren();
     }
     p_is_empty = false;
 
@@ -960,6 +1544,26 @@ void SearchNode::interdistMetrics(double & data_interdist_min, double & data_int
     }
 
     data_interdist_avg /= (double) counter;
+}
+
+
+void SearchNode::interdistMetrics2(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg)
+{
+    data_interdist_min = 1e9;
+    data_interdist_max = 0;
+    data_interdist_avg = 0;
+
+    int counter = 0;
+
+    for (int i = 0; i < p_cloud.size(); i++)
+    {
+        if (p_cloud[i].d > data_interdist_max) data_interdist_max = p_cloud[i].d;
+        if (p_cloud[i].d < data_interdist_min) data_interdist_min = p_cloud[i].d;
+        data_interdist_avg += p_cloud[i].d;
+        counter++;
+    }
+
+    if (counter > 0) data_interdist_avg /= (double) counter;
 }
 
 int SearchNode::num_points()

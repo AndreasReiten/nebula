@@ -1544,7 +1544,7 @@ void ImageOpenGLWidget::voxelTreeGrow()
         emit message("The tree is just a root with no branches or leaves...");
     }
 
-    int side = std::floor(std::powf((double) num_bricks, 1.0/3.0));
+    int side = std::floor(std::pow((double) num_bricks, 1.0/3.0));
 
     int pool_dim_x = side;
     int pool_dim_y = side;
