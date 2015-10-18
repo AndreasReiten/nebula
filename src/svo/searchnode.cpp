@@ -307,7 +307,12 @@ QVector<xyzwd32> & SearchNode::cloud()
     return p_cloud;
 }
 
-void SearchNode::interpolate2(SearchNode * root)
+QVector<float> & SearchNode::nodegrid()
+{
+    return p_node_grid;
+}
+
+void SearchNode::interpolate2(SearchNode * root, bool check_neighbours)
 {
     // Return if already interpolated
     if (!p_voxel_grid.isEmpty()) return;
@@ -493,13 +498,57 @@ void SearchNode::interpolate2(SearchNode * root)
     // If branch
     else
     {
-        Here
-
-        // Clear point clouds of cildren
-
-        // Interpolate voxel grid from rebuild grid of last or this level
+        // Clear point clouds of children
+        for (int i = 0; i < p_children.size(); i++)
+        {
+            p_children[i].cloud().clear();
+        }
 
         // Interpolate node grid from node grid of last level
+        p_node_grid.resize(p_node_grid_side*p_node_grid_side*p_node_grid_side);
+
+        for (int i = 0; i < p_node_grid_side*2; i++)
+        {
+            for (int j = 0; j < p_node_grid_side*2; j++)
+            {
+                for (int k = 0; k < p_node_grid_side*2; k++)
+                {
+                    double x = (double) (p_id_node_x + (((double)i+0.5)/(double)(p_node_grid_side*2))) * side();
+                    double y = (double) (p_id_node_y + (((double)j+0.5)/(double)(p_node_grid_side*2))) * side();
+                    double z = (double) (p_id_node_z + (((double)k+0.5)/(double)(p_node_grid_side*2))) * side();
+
+                    p_node_grid[i/2 + j/2*p_node_grid_side + k/2*p_node_grid_side*p_node_grid_side] += this->nodeValueAt(x,y,z, p_level+1);
+                }
+            }
+        }
+
+        for (int i = 0; i < p_node_grid.size(); i++)
+        {
+            p_node_grid[i] /= 2*2*2;
+        }
+
+        // Interpolate voxel grid from node grid of this level
+        // Use trilinear interpolation
+        for (int i = 0; i < p_voxel_grid_side; i++)
+        {
+            for (int j = 0; j < p_voxel_grid_side; j++)
+            {
+                for (int k = 0; k < p_voxel_grid_side; k++)
+                {
+                    double x = (double) (p_id_node_x + ((double)i/(double)(p_voxel_grid_side-1))) * side();
+                    double y = (double) (p_id_node_y + ((double)j/(double)(p_voxel_grid_side-1))) * side();
+                    double z = (double) (p_id_node_z + ((double)k/(double)(p_voxel_grid_side-1))) * side();
+
+                    p_voxel_grid[i + j*p_voxel_grid_side + k*p_voxel_grid_side*p_voxel_grid_side] += root->nodeValueAt_Linear(x,y,z, p_level, root);
+                }
+            }
+        }
+
+        // Clear node grids of children
+        for (int i = 0; i < p_children.size(); i++)
+        {
+            p_children[i].nodegrid().clear();
+        }
     }
 
     /* If the outer layer of the voxel grid has nonzero values, ensure that there are neighbour nodes
@@ -507,59 +556,61 @@ void SearchNode::interpolate2(SearchNode * root)
      * cases this will mean a new nodes must be created, and that these nodes also must be
      * interpolated, possibly in the same function call
      * */
-
-    QVector<bool> neighbours(3*3*3, false);
-
-    for (int i = 0; i < p_voxel_grid_side; i++)
+    if (check_neighbours)
     {
-        for (int j = 0; j < p_voxel_grid_side; j++)
+        QVector<bool> neighbours(3*3*3, false);
+
+        for (int i = 0; i < p_voxel_grid_side; i++)
         {
-            for (int k = 0; k < p_voxel_grid_side; k++)
+            for (int j = 0; j < p_voxel_grid_side; j++)
             {
-                // If voxel is on face
-                if (    (i <= 0) || (i >= p_voxel_grid_side-1) ||
-                        (j <= 0) || (j >= p_voxel_grid_side-1) ||
-                        (k <= 0) || (k >= p_voxel_grid_side-1))
+                for (int k = 0; k < p_voxel_grid_side; k++)
                 {
-                    int id_voxel =
-                            i +
-                            j * p_voxel_grid_side +
-                            k * p_voxel_grid_side * p_voxel_grid_side;
-
-                    // If voxel value is greater than zero, tag the neighbouring nodes
-                    if (p_voxel_grid[id_voxel] > 0)
+                    // If voxel is on face
+                    if (    (i <= 0) || (i >= p_voxel_grid_side-1) ||
+                            (j <= 0) || (j >= p_voxel_grid_side-1) ||
+                            (k <= 0) || (k >= p_voxel_grid_side-1))
                     {
-                        int id_neighbour_x = (i <= 0 ? 0 : (i < p_voxel_grid_side - 1 ? 1 : 2));
-                        int id_neighbour_y = (j <= 0 ? 0 : (j < p_voxel_grid_side - 1 ? 1 : 2));
-                        int id_neighbour_z = (k <= 0 ? 0 : (k < p_voxel_grid_side - 1 ? 1 : 2));
+                        int id_voxel =
+                                i +
+                                j * p_voxel_grid_side +
+                                k * p_voxel_grid_side * p_voxel_grid_side;
 
-                        int id_neighbour =
-                                id_neighbour_x +
-                                id_neighbour_y * 3 +
-                                id_neighbour_z * 3 * 3;
+                        // If voxel value is greater than zero, tag the neighbouring nodes
+                        if (p_voxel_grid[id_voxel] > 0)
+                        {
+                            int id_neighbour_x = (i <= 0 ? 0 : (i < p_voxel_grid_side - 1 ? 1 : 2));
+                            int id_neighbour_y = (j <= 0 ? 0 : (j < p_voxel_grid_side - 1 ? 1 : 2));
+                            int id_neighbour_z = (k <= 0 ? 0 : (k < p_voxel_grid_side - 1 ? 1 : 2));
 
-                        neighbours[id_neighbour] = true;
+                            int id_neighbour =
+                                    id_neighbour_x +
+                                    id_neighbour_y * 3 +
+                                    id_neighbour_z * 3 * 3;
+
+                            neighbours[id_neighbour] = true;
+                        }
                     }
                 }
             }
         }
-    }
 
 
-    // For each tagged neighbour, check if said neighbour exists. If not, create it (mutex lock)
-    for (int i = 0; i < neighbours.size(); i++)
-    {
-        if (neighbours[i])
+        // For each tagged neighbour, check if said neighbour exists. If not, create it (mutex lock)
+        for (int i = 0; i < neighbours.size(); i++)
         {
-            int id_neighbour_z = i / (3 * 3);
-            int id_neighbour_y = (i - 3 * 3 * id_neighbour_z) / 3;
-            int id_neighbour_x = i - 3 * 3 * id_neighbour_z - 3 * id_neighbour_y;
+            if (neighbours[i])
+            {
+                int id_neighbour_z = i / (3 * 3);
+                int id_neighbour_y = (i - 3 * 3 * id_neighbour_z) / 3;
+                int id_neighbour_x = i - 3 * 3 * id_neighbour_z - 3 * id_neighbour_y;
 
-            double x = x_center + (double)(id_neighbour_x - 1) * side();
-            double y = y_center + (double)(id_neighbour_y - 1) * side();
-            double z = z_center + (double)(id_neighbour_z - 1) * side();
+                double x = x_center + (double)(id_neighbour_x - 1) * side();
+                double y = y_center + (double)(id_neighbour_y - 1) * side();
+                double z = z_center + (double)(id_neighbour_z - 1) * side();
 
-            root->ensureNodeAt(x, y, z, p_level, root);
+                root->ensureNodeAt(x, y, z, p_level, root);
+            }
         }
     }
 }
@@ -595,7 +646,88 @@ void SearchNode::ensureNodeAt(double x, double y, double z, int level, SearchNod
     {
         QMutexLocker lock(p_mutex);
 
-        this->interpolate2(root);
+        this->interpolate2(root, false);
+    }
+}
+
+double SearchNode::nodeValueAt(double x, double y, double z, int level)
+{
+    if (p_is_leaf || (p_level >= level))
+    {
+        int id = ntant(x, y, z, p_node_grid_side);
+        if (id >= 0)
+        {
+            return p_node_grid[id];
+        }
+    }
+    else
+    {
+        int id = ntant(x, y, z, 2);
+        if (id >= 0)
+        {
+            return p_children[id].nodeValueAt(x, y, z, level);
+        }
+    }
+}
+
+double SearchNode::nodeValueAt_Linear(double x, double y, double z, int max_level, SearchNode * root)
+{
+    // If leaf, search the grid
+    if (p_is_leaf || (p_level >= max_level))
+    {
+        // Find the xyz values for the surrounding eight interpolation points, positions of which are given by the bin structure
+        QVector<xyzwd32> points(8);
+
+        double sample_spacing = voxelside();
+
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    // The position used to retrieve the interpolation value at this position
+                    double x_interpol = x + (double)(i*2-1)*sample_spacing*0.5;
+                    double y_interpol = y + (double)(j*2-1)*sample_spacing*0.5;
+                    double z_interpol = z + (double)(k*2-1)*sample_spacing*0.5;
+
+                    // The center position of the bin from which the interpolation will be read
+                    // Note that this bin can be in a different node, and could be empty or at another level
+                    // The possible change in level of detail is not currently allowed to interfere with said position
+                    // The situation might be remedied by weighing shallow nodes more lightly
+                    points[i + j*2 + k*4].x = ((double) std::floor(x_interpol * (double) (nodesPerSide() * p_bins_per_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].y = ((double) std::floor(y_interpol * (double) (nodesPerSide() * p_bins_per_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].z = ((double) std::floor(z_interpol * (double) (nodesPerSide() * p_bins_per_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].w = root->nodeValueAt(x_interpol, y_interpol, z_interpol, p_level);
+                }
+            }
+        }
+
+        // Carry out trilinear interpolation
+        double xd = (x - points[0].x)/(points[7].x - points[0].x);
+        double yd = (y - points[0].y)/(points[7].y - points[0].y);
+        double zd = (z - points[0].z)/(points[7].z - points[0].z);
+
+        // Interpolate along x
+        double c00 = points[0].w * (1.0-xd) + points[1].w * xd;
+        double c10 = points[2].w * (1.0-xd) + points[3].w * xd;
+        double c01 = points[4].w * (1.0-xd) + points[5].w * xd;
+        double c11 = points[6].w * (1.0-xd) + points[7].w * xd;
+
+        // Interpolate along y
+        double c0 = c00 * (1.0 - yd) + c10 * yd;
+        double c1 = c01 * (1.0 - yd) + c11 * yd;
+
+        // Interpolate along z
+        double c = c0 * (1.0 - zd) + c1 * zd;
+
+        return c;
+    }
+    // Else if branch, descend to the next level
+    else
+    {
+        int id = ntant(x,y,z, 2);
+        return p_children[id].nodeValueAt_Linear(x, y, z, max_level, root);
     }
 }
 
@@ -603,6 +735,39 @@ void SearchNode::voxelize2()
 {
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void SearchNode::squeeze()
 {

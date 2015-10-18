@@ -74,12 +74,13 @@ public:
 
     void insert2(xyzwd32 &point);
     void recombine2();
-    void interpolate2(SearchNode *root);
+    void interpolate2(SearchNode *root, bool check_neighbours);
     void voxelize2();
 
     void setMaxPoints(int value);
     void clear();
     QVector<xyzwd32> & cloud();
+    QVector<float> & nodegrid();
 
 private:
     int nodesPerSide();
@@ -126,6 +127,8 @@ private:
 
 
     // Private funcs still used in new meta
+    double nodeValueAt_Linear(double x, double y, double z, int max_level, SearchNode *root);
+    double nodeValueAt(double x, double y, double z, int level);
     void ensureNodeAt(double x, double y, double z, int level, SearchNode *root);
     double distance(double x0, double y0, double z0, double x1, double y1, double z1);
     double side();
