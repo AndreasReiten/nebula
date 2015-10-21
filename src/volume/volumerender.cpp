@@ -5266,7 +5266,7 @@ void VolumeOpenGLWidget::loadSvo()
     data_view_extent.setDeep(4, 2, p_voxel_tree.extent().data());
 
     misc_ints[0] = (int) p_voxel_tree.levels();;
-    misc_ints[1] = (int) p_voxel_tree.side();
+    misc_ints[1] = (int) p_voxel_tree.voxelGridSide();
 //    tsf_parameters_svo[2] = svo->minMax().at(0);
 //    tsf_parameters_svo[3] = svo->minMax().at(1);
 
@@ -5316,9 +5316,9 @@ void VolumeOpenGLWidget::loadSvo()
     cl_svo_pool = QOpenCLCreateImage3D ( context_cl.context(),
                                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                          &cl_pool_format,
-                                         p_voxel_tree.poolDimX()*p_voxel_tree.side(),
-                                         p_voxel_tree.poolDimY()*p_voxel_tree.side(),
-                                         p_voxel_tree.poolDimZ()*p_voxel_tree.side(),
+                                         p_voxel_tree.poolDimX()*p_voxel_tree.voxelGridSide(),
+                                         p_voxel_tree.poolDimY()*p_voxel_tree.voxelGridSide(),
+                                         p_voxel_tree.poolDimZ()*p_voxel_tree.voxelGridSide(),
                                          0,
                                          0,
                                          p_voxel_tree.pool().data(),

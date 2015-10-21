@@ -147,35 +147,35 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeGrowWatcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeGrowWatcher(), SLOT(setPaused(bool)));
 
-    // Squeeze
-    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
-    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
-    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
-    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SLOT(cancel()));
-    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeSqueezeWatcher(), SLOT(setPaused(bool)));
+    // VoxelizePassTwo
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassTwoWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassTwoWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassTwoWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassTwoWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
+    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeVoxelizePassTwoWatcher(), SLOT(cancel()));
+    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeVoxelizePassTwoWatcher(), SLOT(setPaused(bool)));
 
     // Rebuild
-    connect(p_ui->imageOpenGLWidget->dataTreeFinalizeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
-    connect(p_ui->imageOpenGLWidget->dataTreeFinalizeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
-    connect(p_ui->imageOpenGLWidget->dataTreeFinalizeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget->dataTreeFinalizeWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
-    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeFinalizeWatcher(), SLOT(cancel()));
-    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeFinalizeWatcher(), SLOT(setPaused(bool)));
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassOneWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassOneWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassOneWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeVoxelizePassOneWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
+    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeVoxelizePassOneWatcher(), SLOT(cancel()));
+    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeVoxelizePassOneWatcher(), SLOT(setPaused(bool)));
 
-    // Reorganize
-    connect(p_ui->imageOpenGLWidget->dataTreeReorganizeWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
-    connect(p_ui->imageOpenGLWidget->dataTreeReorganizeWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
-    connect(p_ui->imageOpenGLWidget->dataTreeReorganizeWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget->dataTreeReorganizeWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
-    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeReorganizeWatcher(), SLOT(cancel()));
-    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeReorganizeWatcher(), SLOT(setPaused(bool)));
+    // Rebin rebinned
+    connect(p_ui->imageOpenGLWidget->dataTreeRebinWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeRebinWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
+    connect(p_ui->imageOpenGLWidget->dataTreeRebinWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
+    connect(p_ui->imageOpenGLWidget->dataTreeRebinWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
+    connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeRebinWatcher(), SLOT(cancel()));
+    connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeRebinWatcher(), SLOT(setPaused(bool)));
 
     // Recombine
     connect(p_ui->imageOpenGLWidget->dataTreeRecombineWatcher(), SIGNAL(progressRangeChanged(int,int)), p_ui->progressBar, SLOT(setRange(int,int)));
     connect(p_ui->imageOpenGLWidget->dataTreeRecombineWatcher(), SIGNAL(progressTextChanged(QString)), p_ui->reconstructionStatusBar, SLOT(showMessage(QString)));
     connect(p_ui->imageOpenGLWidget->dataTreeRecombineWatcher(), SIGNAL(progressValueChanged(int)), p_ui->progressBar, SLOT(setValue(int)));
-    connect(p_ui->imageOpenGLWidget->dataTreeRecombineWatcher(), SIGNAL(finished()), this, SLOT(data_tree_finished()));
+    connect(p_ui->imageOpenGLWidget->dataTreeRecombineWatcher(), SIGNAL(canceled()), this, SLOT(data_tree_finished()));
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->dataTreeRecombineWatcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->dataTreeRecombineWatcher(), SLOT(setPaused(bool)));
 
@@ -189,6 +189,8 @@ ReconstructionWidget::ReconstructionWidget(QWidget *parent) :
     connect(p_ui->stopButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget->voxelTreeWatcher(), SLOT(cancel()));
     connect(p_ui->pauseButton, SIGNAL(toggled(bool)), p_ui->imageOpenGLWidget->voxelTreeWatcher(), SLOT(setPaused(bool)));
     connect(p_ui->saveTreeButton, SIGNAL(clicked()), p_ui->imageOpenGLWidget, SLOT(saveVoxelTree()));
+
+    connect(p_ui->imageOpenGLWidget, SIGNAL(dataTreeFinished()), this, SLOT(data_tree_finished()));
 
     //### voxelizeWorker ###
     voxelizeThread = new QThread;

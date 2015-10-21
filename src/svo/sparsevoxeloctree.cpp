@@ -14,11 +14,11 @@
 SparseVoxelOctree::SparseVoxelOctree() :
 //    p_version_major(0),
 //    p_version_minor(1),
-    p_levels(0),
+    p_num_levels(0),
     p_pool_dim_x(0),
     p_pool_dim_y(0),
     p_pool_dim_z(0),
-    p_brick_dim(8)
+    p_voxel_grid_side(8)
 {
     p_extent.resize(6);
 }
@@ -31,11 +31,11 @@ SparseVoxelOctree::~SparseVoxelOctree()
 QString SparseVoxelOctree::info(unsigned int n)
 {
     QString str;
-    str += "p_levels: "+QString::number(p_levels)+"\n";
+    str += "p_levels: "+QString::number(p_num_levels)+"\n";
     str += "p_pool_dim_x: "+QString::number(p_pool_dim_x)+"\n";
     str += "p_pool_dim_y: "+QString::number(p_pool_dim_y)+"\n";
     str += "p_pool_dim_z: "+QString::number(p_pool_dim_z)+"\n";
-    str += "p_brick_dim: "+QString::number(p_brick_dim)+"\n";
+    str += "p_brick_dim: "+QString::number(p_voxel_grid_side)+"\n";
     str += "UB size: "+QString::number(p_ub.size())+"\n";
     str += "Extent: "+QString::number(p_extent[0])+" "+QString::number(p_extent[1])+" "+QString::number(p_extent[2])+" "+QString::number(p_extent[3])+" "+QString::number(p_extent[4])+" "+QString::number(p_extent[5])+"\n";
 
@@ -71,11 +71,11 @@ void SparseVoxelOctree::save(QString path)
         out << p_brick;
         out << p_pool;
         out << p_extent;
-        out << p_levels;
+        out << p_num_levels;
         out << p_pool_dim_x;
         out << p_pool_dim_y;
         out << p_pool_dim_z;
-        out << p_brick_dim;
+        out << p_voxel_grid_side;
         out << p_ub;
 
 
@@ -99,11 +99,11 @@ void SparseVoxelOctree::open(QString path)
         in >> p_brick;
         in >> p_pool;
         in >> p_extent;
-        in >> p_levels;
+        in >> p_num_levels;
         in >> p_pool_dim_x;
         in >> p_pool_dim_y;
         in >> p_pool_dim_z;
-        in >> p_brick_dim;
+        in >> p_voxel_grid_side;
         in >> p_ub;
 
 
@@ -111,19 +111,22 @@ void SparseVoxelOctree::open(QString path)
     }
 }
 
+size_t SparseVoxelOctree::bytes()
+{
+    // Approximate size of object in bytes
+    return ((p_pool_dim_x * p_pool_dim_y* p_pool_dim_z * p_voxel_grid_side* p_voxel_grid_side* p_voxel_grid_side)* sizeof(float) +  (p_index.size() + p_brick.size())* sizeof(unsigned int));
+}
+
 void SparseVoxelOctree::clear()
 {
     p_index.clear();
     p_brick.clear();
     p_pool.clear();
-
-    p_extent.clear();
-    p_ub.clear();
 }
 
 void SparseVoxelOctree::setLevels(int value)
 {
-    p_levels = value;
+    p_num_levels = value;
 }
 void SparseVoxelOctree::setExtent(float value)
 {
@@ -154,7 +157,7 @@ QVector<double> SparseVoxelOctree::extent()
 
 unsigned int SparseVoxelOctree::levels()
 {
-    return p_levels;
+    return p_num_levels;
 }
 unsigned int SparseVoxelOctree::poolDimX()
 {
@@ -168,13 +171,18 @@ unsigned int SparseVoxelOctree::poolDimZ()
 {
     return p_pool_dim_z;
 }
-unsigned int SparseVoxelOctree::side()
+unsigned int SparseVoxelOctree::voxelGridSide()
 {
-    return p_brick_dim;
+    return p_voxel_grid_side;
 }
 UBMatrix<double> SparseVoxelOctree::UB()
 {
     return p_ub;
+}
+
+void SparseVoxelOctree::setVoxelGridSide(unsigned int value)
+{
+    p_voxel_grid_side = value;
 }
 
 QVector<unsigned int> & SparseVoxelOctree::index()

@@ -78,10 +78,11 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         ImageWorker * worker();
 
         QFutureWatcher<void> *dataTreeGrowWatcher();
-        QFutureWatcher<void> *dataTreeSqueezeWatcher();
-        QFutureWatcher<void> *dataTreeFinalizeWatcher();
+        QFutureWatcher<void> *dataTreeVoxelizePassThreeWatcher();
+        QFutureWatcher<void> *dataTreeVoxelizePassTwoWatcher();
+        QFutureWatcher<void> *dataTreeVoxelizePassOneWatcher();
         QFutureWatcher<void> *dataTreeRecombineWatcher();
-        QFutureWatcher<void> *dataTreeReorganizeWatcher();
+        QFutureWatcher<void> *dataTreeRebinWatcher();
         QFutureWatcher<void> *voxelTreeWatcher();
 
     signals:
@@ -106,6 +107,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void progressChanged(int value);
         void progressRangeChanged(int min, int max);
         void progressTaskActive(bool value);
+        void dataTreeFinished();
 
     public slots:
         void saveVoxelTree();
@@ -120,17 +122,21 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         void on_dataTreeRecombine_finished();
         void on_dataTreeRecombine_canceled();
 
-        void dataTreeReorganize();
-        void on_dataTreeReorganize_finished();
-        void on_dataTreeReorganize_canceled();
+        void dataTreeRebin();
+        void on_dataTreeRebin_finished();
+        void on_dataTreeRebin_canceled();
 
-        void dataTreeFinalize();
-        void on_dataTreeFinalize_finished();
-        void on_dataTreeFinalize_canceled();
+        void dataTreeVoxelizePassOne(QList<SearchNode *> &p_future_list);
+        void on_dataTreeVoxelizePassOne_finished();
+        void on_dataTreeVoxelizePassOne_canceled();
 
-        void dataTreeSqueeze();
-        void on_dataTreeSqueeze_finished();
-        void on_dataTreeSqueeze_canceled();
+        void dataTreeVoxelizePassTwo(QList<SearchNode *> &p_future_list);
+        void on_dataTreeVoxelizePassTwo_finished();
+        void on_dataTreeVoxelizePassTwo_canceled();
+
+        void dataTreeVoxelizePassThree(QList<SearchNode *> &p_future_list);
+        void on_dataTreeVoxelizePassThree_finished();
+        void on_dataTreeVoxelizePassThree_canceled();
 
         void dataTreeGrow();
         void on_dataTreeGrow_finished();
@@ -347,11 +353,12 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         bool isEwaldCircleActive;
         bool isImageTooltipActive;
         bool is_dataTreeGrow_canceled;
-        bool is_dataTreeSqueeze_canceled;
+        bool is_dataTreeVoxelizePassTwo_canceled;
+        bool is_dataTreeVoxelizePassThree_canceled;
         bool is_dataTreeRecombine_canceled;
-        bool is_dataTreeFinalize_canceled;
+        bool is_dataTreeVoxelizePassOne_canceled;
         bool is_voxelTreeGrow_canceled;
-        bool is_dataTreeReorganize_canceled;
+        bool is_dataTreeRebin_canceled;
 
         int texture_number;
 
@@ -393,13 +400,16 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
 
         QList<DetectorFile> p_detectorfile_future_list;
         QVector<QList<SearchNode*>> p_searchnode_hierarchy_future_list;
-        QVector<SearchNode*> p_searchnode_flat_future_list;
+        QList<SearchNode*> p_searchnode_flat_future_list;
         QFutureWatcher<void> * p_tree_grow_future_watcher;
-        QFutureWatcher<void> * p_tree_squeeze_future_watcher;
-        QFutureWatcher<void> * p_tree_rebuild_branches_future_watcher;
-        QFutureWatcher<void> * p_tree_reorganize_future_watcher;
+        QFutureWatcher<void> * p_tree_voxelize_pass_three_future_watcher;
+        QFutureWatcher<void> * p_tree_voxelize_pass_two_future_watcher;
+        QFutureWatcher<void> * p_tree_voxelize_pass_one_future_watcher;
+        QFutureWatcher<void> * p_tree_rebin_future_watcher;
         QFutureWatcher<void> * p_tree_recombine_future_watcher;
         QFutureWatcher<void> * p_tree_voxelize_future_watcher;
+
+        QList<SearchNode *> selectNodes(QList<SearchNode *> & nodes, int branch_leaf_both, int nonempty_empty_both, int nonvoxelized_voxelized_both);
 
         SearchNode p_data_tree;
 

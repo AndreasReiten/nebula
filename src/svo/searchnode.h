@@ -54,34 +54,47 @@ public:
 //    void rebuildRecursive();
 
 //
-//    void countbricks(int &count);
+//
 
 
 
 //    void print();
 
 //    void setBinsPerSide(int value);
-//    void setParent(SearchNode * p_parent);
+//
 //    void setRoot(bool value);
 
 
-//    int level();
+//
 
     // Public funcs still used in new meta
 
     SearchNode();
     ~SearchNode();
 
+    void rebin2();
+    void countbricks(int &count);
+    void setLevel(int value);
+//    int level();
+    bool isVoxelized();
     bool isEmpty();
     bool isLeaf();
     bool isLeafBranch();
     QVector<SearchNode> & children();
     void insert2(xyzwd32 &point);
     void recombine2();
+
+    void voxelizePassOne();
+    void voxelizePassTwo(SearchNode &root);
+    void voxelizePassThree(SearchNode & root);
+
     void interpolate2(SearchNode *root, bool check_neighbours = true);
-    void voxelize2();
-    void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both, int finished_unfinished_both);
-    void nodelist(QVector<SearchNode*> &nodes);
+    void interpolate3(SearchNode *root);
+
+
+    void gpuVoxels(int octant, QVector<float> &pool, QVector<unsigned int> &index, QVector<unsigned int> &brick, QVector<int> &array_level_offsets, QVector<int> &array_child_offsets, int &pool_dim_x, int &pool_dim_y, int &pool_dim_z, int &num_bricks);
+    void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both, int finished_unfinished_both, bool exclude_empty_leaves = false);
+    void nodelist(QList<SearchNode *> &nodes, bool rebinned_only = false);
 
 //    void setMaxPoints(int value);
     void clear();
@@ -133,6 +146,8 @@ private:
 
 
     // Private funcs still used in new meta
+    void interpolateElusiveNeighbours(SearchNode * root);
+    double cloudValue(QVector<xyzwd32> & data, double x, double y, double z);
     int nodesPerSide();
     SearchNode * nodeAt(double x, double y, double z, int max_level);
     void setId(int id_x, int id_y, int id_z);
@@ -144,10 +159,9 @@ private:
     double side();
     double binside2();
     void interdistMetrics2(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg);
-    QVector<QVector<xyzwd32>> cloudbins();
+    QVector<QVector<xyzwd32>> cloudbins(int grid_side);
     QVector<xyzwd32> cloudgrid(QVector<QVector<xyzwd32>> & bins);
     int cloudRecombinable(double req_avg_prct, double noise);
-    void rebin2();
     int ntant(xyzwd32 &point, int n);
     int ntant(double x, double y, double z, int n);
     double voxelside();
@@ -169,7 +183,8 @@ private:
 
     bool p_is_leaf;
     bool p_is_empty; // No data, at least until interpolation checks, lulz
-    bool p_is_finished;
+    bool p_is_voxelized;
+    bool p_is_rebinned;
 
     QMutex * p_mutex;
 };
