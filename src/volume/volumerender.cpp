@@ -3091,6 +3091,26 @@ void VolumeOpenGLWidget::setMiscArrays()
     update();
 }
 
+void VolumeOpenGLWidget::setMaxVoxelLevel(int value)
+{
+    if (!(isCLInitialized && isGLInitialized))
+    {
+        return;
+    }
+
+    p_max_voxel_level = value;
+
+    err = QOpenCLSetKernelArg(cl_svo_raytrace, 14, sizeof(cl_int), &p_max_voxel_level);
+
+    if ( err != CL_SUCCESS)
+    {
+        qFatal(cl_error_cstring(err));
+    }
+
+    update();
+}
+
+
 void VolumeOpenGLWidget::setRayTexture(int percentage)
 {
     if (!isCLInitialized || !isGLInitialized)
@@ -5228,7 +5248,7 @@ void VolumeOpenGLWidget::loadSvo()
     p_voxel_tree.clear();
     p_voxel_tree.open(file_name);
 
-    std::cout << p_voxel_tree.info(9).toUtf8().toStdString().c_str();
+    std::cout << p_voxel_tree.info(100).toUtf8().toStdString().c_str();
 
     // Release CL buffers as required
     if (isSvoInitialized)
@@ -5274,6 +5294,7 @@ void VolumeOpenGLWidget::loadSvo()
     resetViewMatrix();
     setMiscArrays();
     setTsfParameters();
+    setMaxVoxelLevel(100);
     isModelActive = false;
 
 //    size_t n_bricks = svo->pool()->size() / (svo->brickOuterDimension() * svo->brickOuterDimension() * svo->brickOuterDimension());

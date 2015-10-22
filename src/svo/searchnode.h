@@ -72,28 +72,32 @@ public:
     SearchNode();
     ~SearchNode();
 
-    void rebin2();
+    void setOriginal(bool value);
+    void setElusive(bool value);
+    void rebin();
     void countbricks(int &count);
     void setLevel(int value);
 //    int level();
+    bool isElusive();
     bool isVoxelized();
+    bool isOriginal();
     bool isEmpty();
     bool isLeaf();
     bool isLeafBranch();
     QVector<SearchNode> & children();
-    void insert2(xyzwd32 &point);
-    void recombine2();
+    void insert(xyzwd32 &point);
+    void recombine();
 
-    void voxelizePassOne();
+    void voxelizePassOne(SearchNode &root);
     void voxelizePassTwo(SearchNode &root);
     void voxelizePassThree(SearchNode & root);
 
-    void interpolate2(SearchNode *root, bool check_neighbours = true);
-    void interpolate3(SearchNode *root);
+//    void interpolate(SearchNode *root, bool check_neighbours = true);
+//    void interpolate3(SearchNode *root);
 
 
     void gpuVoxels(int octant, QVector<float> &pool, QVector<unsigned int> &index, QVector<unsigned int> &brick, QVector<int> &array_level_offsets, QVector<int> &array_child_offsets, int &pool_dim_x, int &pool_dim_y, int &pool_dim_z, int &num_bricks);
-    void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both, int finished_unfinished_both, bool exclude_empty_leaves = false);
+    void hierarchy(QVector<QList<SearchNode *> > &nodes, int branch_leaf_both, int empty_nonempty_both, int finished_unfinished_both, int nonelusive_elusive_both, bool exclude_empty_leaves);
     void nodelist(QList<SearchNode *> &nodes, bool rebinned_only = false);
 
 //    void setMaxPoints(int value);
@@ -146,27 +150,28 @@ private:
 
 
     // Private funcs still used in new meta
-    void interpolateElusiveNeighbours(SearchNode * root);
+    void getSurroundingClouds(QVector<xyzwd32> & data, SearchNode &root);
+    void interpolateElusiveNeighbours(SearchNode &root);
     double cloudValue(QVector<xyzwd32> & data, double x, double y, double z);
     int nodesPerSide();
     SearchNode * nodeAt(double x, double y, double z, int max_level);
     void setId(int id_x, int id_y, int id_z);
     void center(double & x, double & y, double & z);
-    double nodeValueAt_Linear(double x, double y, double z, int max_level, SearchNode *root);
+    double nodeValueAt_Linear(double x, double y, double z, SearchNode &root);
     double nodeValueAt(double x, double y, double z, int level);
-    void ensureNodeAt(double x, double y, double z, int level, SearchNode *root);
+    void ensureNodeAt(double x, double y, double z, int level, SearchNode &root);
     double distance(double x0, double y0, double z0, double x1, double y1, double z1);
     double side();
-    double binside2();
-    void interdistMetrics2(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg);
+    double binside();
+    void interdistMetrics(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg);
     QVector<QVector<xyzwd32>> cloudbins(int grid_side);
     QVector<xyzwd32> cloudgrid(QVector<QVector<xyzwd32>> & bins);
     int cloudRecombinable(double req_avg_prct, double noise);
     int ntant(xyzwd32 &point, int n);
     int ntant(double x, double y, double z, int n);
     double voxelside();
-    void p_insert2(xyzwd32 &point);
-    void split2();
+    void p_insert(xyzwd32 &point);
+    void split();
 
     // Data still used in new meta
     int p_max_points;
@@ -182,9 +187,11 @@ private:
     int p_voxel_grid_side;
 
     bool p_is_leaf;
-    bool p_is_empty; // No data, at least until interpolation checks, lulz
-    bool p_is_voxelized;
-    bool p_is_rebinned;
+    bool p_is_empty; // No node-grid or cloud data, the node is a zero-field
+    bool p_is_voxelized; // The node has a voxel grid
+    bool p_is_rebinned; // The node has been rebinned at some point
+    bool p_is_elusive; // The node was constructed at a later stage when it was discovered that it potentially needs to be voxelized to avoid interpolation artefacts
+    bool p_is_original; // The node was constructed during data insertion into the tree
 
     QMutex * p_mutex;
 };

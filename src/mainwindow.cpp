@@ -399,6 +399,9 @@ void MainWindow::setStartConditions()
     toggleHklButton->setChecked(true);
     toggleHklButton->setChecked(false);
 
+    toggleCellButton->setChecked(true);
+    toggleCellButton->setChecked(false);
+
     plotLineLogCheckBox->setChecked(true);
     plotSurfaceLogCheckBox->setChecked(true);
 }
@@ -1412,6 +1415,11 @@ void MainWindow::initGUI()
         volumeRenderLogCheckBox = new QCheckBox("Log");
         connect(volumeRenderLogCheckBox, SIGNAL(toggled(bool)), volumeOpenGLWidget, SLOT(setLog(bool)));
 
+        maxVoxelLevelSlider = new QSlider(Qt::Horizontal);
+        maxVoxelLevelSlider->setRange(0, 20);
+        maxVoxelLevelSlider->setValue(0);
+        connect(maxVoxelLevelSlider, SIGNAL(valueChanged(int)), volumeOpenGLWidget, SLOT(setMaxVoxelLevel(int)));
+
 
         qualitySlider = new QSlider(Qt::Horizontal);
         qualitySlider->setRange(1, 100);
@@ -1438,6 +1446,7 @@ void MainWindow::initGUI()
         gridLayout->addWidget(label_quality, 6, 0, 1, 2);
         gridLayout->addWidget(qualitySlider, 6, 2, 1, 2);
         gridLayout->addWidget(volumeRenderLogCheckBox, 7, 0, 1, 2);
+        gridLayout->addWidget(maxVoxelLevelSlider, 8, 0, 1, 4);
 
         graphicsWidget->setLayout(gridLayout);
         //        graphicsDockWidget->setFixedHeight(graphicsWidget->minimumSizeHint().height()*1.1);

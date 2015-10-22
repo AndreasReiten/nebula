@@ -51,7 +51,7 @@ QString SparseVoxelOctree::info(unsigned int n)
         uint mask_child_index = ((1 << 30) - 1) << 0;
 
         str += QString::number(i)+" -> Leaf: "+QString::number((p_index[i] & mask_leaf_flag) >> 31)+" Data: "+QString::number((p_index[i] & mask_data_flag) >> 30)+(((p_index[i] & mask_leaf_flag) >> 31) == 0 ? " [Child: "+QString::number((p_index[i] & mask_child_index))+"]" : "")+"\n";
-        if (((p_index[i] & mask_data_flag) >> 30) == 1) str += " -- Brick x: "+QString::number((p_brick[i] & mask_brick_id_x) >> 20)+" y: "+QString::number((p_brick[i] & mask_brick_id_y) >> 10)+" z: "+QString::number((p_brick[i] & mask_brick_id_z))+"\n";
+        if (((p_index[i] & mask_data_flag) >> 30) == 1) str += " -- Brick xyz: "+QString::number((p_brick[i] & mask_brick_id_x) >> 20)+" "+QString::number((p_brick[i] & mask_brick_id_y) >> 10)+" "+QString::number((p_brick[i] & mask_brick_id_z))+"\n";
     }
 
     return str;
@@ -105,7 +105,6 @@ void SparseVoxelOctree::open(QString path)
         in >> p_pool_dim_z;
         in >> p_voxel_grid_side;
         in >> p_ub;
-
 
         file.close();
     }

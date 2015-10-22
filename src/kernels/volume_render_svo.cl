@@ -109,14 +109,13 @@ kernel void svoRayTrace(
     constant float * tsf_var,
     constant int * misc_int,
     constant float * scalebar_rotation,
-    write_only image2d_t integration_tex
+    write_only image2d_t integration_tex,
+    int max_level
 //    constant uint * oct_index_const,
 //    constant local uint * oct_brick_const,
 //    int const_size;
 )
 {
-    int max_level = 100;
-
     int2 id_glb = (int2)(get_global_id(0), get_global_id(1));
 
     int2 ray_tex_dim = get_image_dim(ray_tex);

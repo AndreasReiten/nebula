@@ -378,6 +378,7 @@ private:
     QComboBox * volumeViewModeComboBox;
 
     QSlider * qualitySlider;
+    QSlider * maxVoxelLevelSlider;
 
     QCheckBox * volumeRenderLogCheckBox;
 

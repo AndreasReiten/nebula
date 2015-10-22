@@ -121,6 +121,7 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
         void lineTranslateVecChanged(Matrix<double> mat);
 
     public slots:
+        void setMaxVoxelLevel(int value);
         void loadSvo();
         //        void translateLine();
         void snapLineCenter();
@@ -567,6 +568,8 @@ class VolumeOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, pro
 
 
         Matrix<float> identity;
+
+        int p_max_voxel_level;
 };
 
 #endif

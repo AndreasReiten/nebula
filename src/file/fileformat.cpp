@@ -1042,7 +1042,7 @@ void DetectorFile::grow()
             // Subtract a random floating point value between 0 and 1 to smoothen the data distribution
             if (true) data_point.w -= ((double) qrand() / RAND_MAX);
 
-            p_interpolation_octree->insert2(data_point);
+            p_interpolation_octree->insert(data_point);
         }
     }
 }

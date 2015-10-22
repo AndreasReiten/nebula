@@ -409,7 +409,7 @@ class ImageOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions, prot
         QFutureWatcher<void> * p_tree_recombine_future_watcher;
         QFutureWatcher<void> * p_tree_voxelize_future_watcher;
 
-        QList<SearchNode *> selectNodes(QList<SearchNode *> & nodes, int branch_leaf_both, int nonempty_empty_both, int nonvoxelized_voxelized_both);
+        QList<SearchNode *> selectNodes(QList<SearchNode *> & nodes, int branch_leaf_both, int nonempty_empty_both, int nonvoxelized_voxelized_both, int nonelusive_elusive_both);
 
         SearchNode p_data_tree;
 

@@ -1195,7 +1195,7 @@ void ImageOpenGLWidget::processScatteringDataProxy()
     }
 }
 
-QList<SearchNode *> ImageOpenGLWidget::selectNodes(QList<SearchNode *> & nodes, int branch_leaf_both, int nonempty_empty_both, int nonvoxelized_voxelized_both)
+QList<SearchNode *> ImageOpenGLWidget::selectNodes(QList<SearchNode *> & nodes, int branch_leaf_both, int nonempty_empty_both, int nonvoxelized_voxelized_both, int nonelusive_elusive_both)
 {
     QList<SearchNode *> result;
 
@@ -1214,6 +1214,10 @@ QList<SearchNode *> ImageOpenGLWidget::selectNodes(QList<SearchNode *> & nodes, 
         if (nonvoxelized_voxelized_both != 2)
         {
             if (nodes[i]->isVoxelized() != (bool) nonvoxelized_voxelized_both) add = false;
+        }
+        if (nonelusive_elusive_both != 2)
+        {
+            if (nodes[i]->isElusive() != (bool) nonelusive_elusive_both) add = false;
         }
 
         if (add) result << nodes[i];
@@ -1279,13 +1283,13 @@ void ImageOpenGLWidget::dataTreeGrow()
 //    p_data_tree.setBinsPerSide(6);
 //    p_data_tree.setMaxPoints(1024);
 
-    double r = 0.50;
+    double r = 0.30;
     double x0 = 0.5;
     double y0 = 0.5;
     double z0 = 0.5;
 
     // Box
-    if (true)
+    if (false)
     {
         int elements = 50;
 
@@ -1299,14 +1303,14 @@ void ImageOpenGLWidget::dataTreeGrow()
                     double y = y0 + r * ((double)j-(elements-1.0)*0.5)/((elements-1.0)*0.5);
                     double z = z0 + r * ((double)k-(elements-1.0)*0.5)/((elements-1.0)*0.5);
 //                    xyzwd32 data_point = {x, y, z, (double)(std::floor(i/22.5) + std::floor(j/22.5) * 2 + std::floor(k/22.5) *2*2)+1.0, 0.03};
-                    xyzwd32 data_point = {x, y, z, 10, 0.03};//1.0/((double)elements-1.0);
+                    xyzwd32 data_point = {x, y, z, x, 0.03};//1.0/((double)elements-1.0);
 
                     // Return if the point lies outside of the bounds of the node
                     if ((data_point.x < 0) || (data_point.x >= 1) || (data_point.y < 0) || (data_point.y >= 1) || (data_point.z < 0) || (data_point.z >= 1))
                     {
                         continue;
                     }
-                    p_data_tree.insert2(data_point);
+                    p_data_tree.insert(data_point);
                 }
             }
         }
@@ -1325,12 +1329,12 @@ void ImageOpenGLWidget::dataTreeGrow()
                 double y = y0 + r * std::sin(theta) * std::sin(phi);
                 double z = z0 + r * std::cos(phi);
 
-                xyzwd32 data_point = {x, y, z, 50, 0.03};
+                xyzwd32 data_point = {x, y, z, 10, 0.03};
                 if ((data_point.x < 0) || (data_point.x >= 1) || (data_point.y < 0) || (data_point.y >= 1) || (data_point.z < 0) || (data_point.z >= 1))
                 {
                     continue;
                 }
-                p_data_tree.insert2(data_point);
+                p_data_tree.insert(data_point);
             }
         }
     }
@@ -1391,7 +1395,7 @@ void ImageOpenGLWidget::dataTreeRebin()
     emit message("Rebinning troublesome nodes...");
     if (!p_searchnode_flat_future_list.isEmpty())
     {
-        p_tree_rebin_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [](SearchNode * ptr){ptr->rebin2();}));
+        p_tree_rebin_future_watcher->setFuture(QtConcurrent::map(p_searchnode_flat_future_list, [](SearchNode * ptr){ptr->rebin();}));
     }
     else
     {
@@ -1421,7 +1425,7 @@ void ImageOpenGLWidget::on_dataTreeRebin_finished()
 
         p_searchnode_hierarchy_future_list.clear();
         // branch_leaf_both, nonempty_empty_both, nonvoxelized_voxelized_both
-        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2, 2);
+        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 0, 2, 2, 0, false);
 
         dataTreeRecombine();
     }
@@ -1436,7 +1440,7 @@ void ImageOpenGLWidget::dataTreeRecombine()
 
     if (!p_searchnode_hierarchy_future_list.isEmpty())
     {
-        p_tree_recombine_future_watcher->setFuture(QtConcurrent::map(p_searchnode_hierarchy_future_list.last(), [](SearchNode * ptr){ptr->recombine2();}));
+        p_tree_recombine_future_watcher->setFuture(QtConcurrent::map(p_searchnode_hierarchy_future_list.last(), [](SearchNode * ptr){ptr->recombine();}));
     }
     else
     {
@@ -1470,8 +1474,8 @@ void ImageOpenGLWidget::on_dataTreeRecombine_finished()
 
             p_searchnode_hierarchy_future_list.clear();
             // branch_leaf_both, nonempty_empty_both, nonvoxelized_voxelized_both
-            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 2, 0, true);
-            p_searchnode_flat_future_list = selectNodes(p_searchnode_hierarchy_future_list.last(), 0, 2, 0);
+            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 2, 0, 0, true);
+            p_searchnode_flat_future_list = selectNodes(p_searchnode_hierarchy_future_list.last(), 2, 2, 0, 0);
             dataTreeVoxelizePassOne(p_searchnode_flat_future_list);
         }
         // Else if there are remaining branches and levels
@@ -1490,7 +1494,7 @@ void ImageOpenGLWidget::dataTreeVoxelizePassOne(QList<SearchNode *> & p_future_l
 
     if (!p_future_list.isEmpty())
     {
-        p_tree_voxelize_pass_one_future_watcher->setFuture(QtConcurrent::map(p_future_list, [](SearchNode * ptr){ptr->voxelizePassOne();}));
+        p_tree_voxelize_pass_one_future_watcher->setFuture(QtConcurrent::map(p_future_list, [&](SearchNode * ptr){ptr->voxelizePassOne(p_data_tree);}));
     }
     else
     {
@@ -1514,7 +1518,7 @@ void ImageOpenGLWidget::on_dataTreeVoxelizePassOne_finished()
     }
     else
     {
-        p_searchnode_flat_future_list = selectNodes(p_searchnode_hierarchy_future_list.last(), 1, 0, 0);
+        p_searchnode_flat_future_list = selectNodes(p_searchnode_hierarchy_future_list.last(), 2, 2, 0, 0);
         dataTreeVoxelizePassTwo(p_searchnode_flat_future_list);
     }
     is_dataTreeVoxelizePassOne_canceled = false;
@@ -1537,7 +1541,18 @@ void ImageOpenGLWidget::on_dataTreeVoxelizePassTwo_finished()
     }
     else
     {
-        p_searchnode_flat_future_list = selectNodes(p_searchnode_hierarchy_future_list.last(), 0, 2, 0);
+        // The node structure can change in the second pass, and so the node hierarchy must be refreshed
+        int current_level = p_searchnode_hierarchy_future_list.size() - 1;
+        p_searchnode_hierarchy_future_list.clear();
+        p_searchnode_flat_future_list.clear();
+        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 2, 0, 2, false);
+
+        // If the tree level is the same, it means additional nodes have been formed
+        if (current_level == p_searchnode_hierarchy_future_list.size() - 1)
+        {
+            p_searchnode_flat_future_list = selectNodes(p_searchnode_hierarchy_future_list.last(), 2, 2, 0, 1);
+        }
+
         dataTreeVoxelizePassThree(p_searchnode_flat_future_list);
     }
 
@@ -1552,7 +1567,14 @@ void ImageOpenGLWidget::on_dataTreeVoxelizePassTwo_canceled()
 void ImageOpenGLWidget::dataTreeVoxelizePassThree(QList<SearchNode *> &p_future_list)
 {
     emit message("Voxelizing level "+QString::number(p_searchnode_hierarchy_future_list.size()-1)+" (pass three)");
-    p_tree_voxelize_pass_three_future_watcher->setFuture(QtConcurrent::map(p_future_list, [&](SearchNode * ptr){ptr->voxelizePassThree(p_data_tree);}));
+    if (!p_future_list.isEmpty())
+    {
+        p_tree_voxelize_pass_three_future_watcher->setFuture(QtConcurrent::map(p_future_list, [&](SearchNode * ptr){ptr->voxelizePassThree(p_data_tree);}));
+    }
+    else
+    {
+        on_dataTreeVoxelizePassThree_finished();
+    }
 }
 
 void ImageOpenGLWidget::on_dataTreeVoxelizePassThree_finished()
@@ -1566,27 +1588,21 @@ void ImageOpenGLWidget::on_dataTreeVoxelizePassThree_finished()
     }
     else
     {
-        if (p_searchnode_flat_future_list.size() <= 0)
-        {
-            if (p_searchnode_hierarchy_future_list.size() <= 1)
-            {
-                emit message("The tree is just a root with no branches or leaves...");
-            }
-            else
-            {
-                emit message("Tree voxelized...");
-                emit dataTreeFinished();
+        p_searchnode_hierarchy_future_list.clear();
+        p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 2, 0, 0, true);
 
-                qDebug() << "Tree voxelized";
-                printNodes();
-            }
+        if (p_searchnode_hierarchy_future_list.size() <= 0)
+        {
+            emit message("Tree voxelized...");
+            emit dataTreeFinished();
+
+            qDebug() << "Tree voxelized";
+            printNodes();
         }
         else
         {
-            p_searchnode_hierarchy_future_list.clear();
-            p_data_tree.hierarchy(p_searchnode_hierarchy_future_list, 2, 2, 0, true);
-
-            dataTreeVoxelizePassOne(p_searchnode_hierarchy_future_list.last());
+            p_searchnode_flat_future_list = selectNodes(p_searchnode_hierarchy_future_list.last(), 2, 2, 0, 0);
+            dataTreeVoxelizePassOne(p_searchnode_flat_future_list);
         }
     }
 
@@ -1641,7 +1657,7 @@ void ImageOpenGLWidget::voxelTreeGrow()
     // Create linear voxel arrays for the GPU
     // Find the total number of nodes, and the linear offset of each level
     QVector<QList<SearchNode *>> nodes;
-    p_data_tree.hierarchy(nodes, 2, 2, 2);
+    p_data_tree.hierarchy(nodes, 2, 2, 2, 2, false);
     p_voxel_tree.setLevels(nodes.size());
 
     int num_nodes = 0;
@@ -1707,21 +1723,27 @@ void ImageOpenGLWidget::printNodes()
 {
     QVector<QList<SearchNode*>> nodes;
 
-    p_data_tree.hierarchy(nodes, 2, 2, 2);
+    p_data_tree.hierarchy(nodes, 2, 2, 2, 2, false);
 
     for(int i = 0; i < nodes.size(); i++)
     {
-        int num_msd = 0;
+        int num_leaf = 0;
         int num_empty = 0;
-        int num_has_children = 0;
+        int num_branch = 0;
+        int num_original = 0;
+        int num_voxelized = 0;
+        int num_elusive = 0;
         for(int j = 0; j < nodes[i].size(); j++)
         {
             if (nodes[i][j]->isEmpty()) num_empty++;
-            if (nodes[i][j]->isLeaf()) num_msd++;
-            if (nodes[i][j]->children().size() > 0) num_has_children++;
+            if (nodes[i][j]->isLeaf()) num_leaf++;
+            if (nodes[i][j]->isElusive()) num_elusive++;
+            if (nodes[i][j]->isVoxelized()) num_voxelized++;
+            if (nodes[i][j]->isOriginal()) num_original++;
+            if (!nodes[i][j]->isLeaf()) num_branch++;
         }
 
-        qDebug() << "Lvl " << i << "has" << nodes[i].size() << "nodes:" << num_has_children << "branches," << num_msd << "leaves," << num_empty << "empty," << num_msd + num_has_children << "branches + leaves";
+        qDebug() << "Lvl " << i << "has" << nodes[i].size() << "nodes:" << num_branch << "branches," << num_leaf << "leaves," << num_empty << "empty," << num_original << "original," << num_elusive << "elusive,"<< num_voxelized << "voxelized";
     }
 }
 

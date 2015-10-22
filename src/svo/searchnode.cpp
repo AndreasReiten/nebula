@@ -9,6 +9,8 @@ SearchNode::SearchNode() :
     p_id_node_y(0),
     p_id_node_z(0),
 //    p_is_root(false),
+    p_is_original(false),
+    p_is_elusive(false),
     p_is_leaf(true),
     p_is_empty(true),
     p_is_voxelized(false),
@@ -16,7 +18,7 @@ SearchNode::SearchNode() :
 //    p_is_max_resolved(false),
 //    p_is_interpolation_node(false),
 //    p_voxels_per_side(7),
-    p_node_grid_side(6),
+    p_node_grid_side(8),
     p_voxel_grid_side(8)
 {
     p_max_points = p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side*2;
@@ -32,46 +34,53 @@ SearchNode::~SearchNode()
 }
 
 
-void SearchNode::insert2(xyzwd32 &point)
+void SearchNode::insert(xyzwd32 &point)
 {
     // Place a data point into this node, or a deeper node if required
     // If the current node is not a leaf (but a branch), then it's private variables will not be changed on further insertion, and thus it does not need a mutex lock
     if (p_is_leaf)
     {
         QMutexLocker lock(p_mutex);
-        p_insert2(point);
+        p_insert(point);
     }
     else
     {
-        p_insert2(point);
+        p_insert(point);
     }
 }
 
-void SearchNode::p_insert2(xyzwd32 & point)
+void SearchNode::p_insert(xyzwd32 & point)
 {
+    p_is_original = true;
+
     // Descend if branch node (even if the data interdistance does not require it. A shortcut...)
     if (!p_is_leaf)
     {
         int id = ntant(point, 2);
         if (id >= 0)
         {
-            p_children[id].insert2(point);
+            p_children[id].insert(point);
         }
     }
     // Split or add if leaf node
     else
     {
         // Split if the data interdistance, d, is smaller than the voxel size of the node
-        if ((point.d < voxelside()) && (p_level < 1))
+        if ((point.d < voxelside()))// && (p_level < 1))
         {
-            split2();
+            split();
             p_cloud.clear();
 
-            int id = ntant(point, 2);
+            // Mark children as original, empty and non-empty
+            for (int i = 0; i < p_children.size(); i++)
+            {
+                p_children[i].setOriginal(true);
+            }
 
+            int id = ntant(point, 2);
             if (id >= 0)
             {
-                p_children[id].insert2(point); // Child placement redundant, can place in this
+                p_children[id].insert(point); // Child placement redundant, can place in this
             }
 
             p_is_empty = true;
@@ -87,7 +96,7 @@ void SearchNode::p_insert2(xyzwd32 & point)
             }
             else
             {
-                rebin2();
+                rebin();
 
                 p_cloud << point;
             }
@@ -95,7 +104,7 @@ void SearchNode::p_insert2(xyzwd32 & point)
     }
 }
 
-void SearchNode::rebin2()
+void SearchNode::rebin()
 {
     // Place points in a resampling grid
     QVector<QVector<xyzwd32>> grid = cloudbins(p_voxel_grid_side);
@@ -232,7 +241,7 @@ QVector<xyzwd32> SearchNode::cloudgrid(QVector<QVector<xyzwd32>> & bins)
     return grid;
 }
 
-void SearchNode::split2()
+void SearchNode::split()
 {
     // Return if there are in fact children
     if (!p_children.isEmpty()) return;
@@ -271,12 +280,12 @@ void SearchNode::split2()
 
         if (id >= 0)
         {
-            p_children[id].insert2(p_cloud[i]);
+            p_children[id].insert(p_cloud[i]);
         }
     }
 }
 
-void SearchNode::recombine2()
+void SearchNode::recombine()
 {
     // Return if leaf
     if (p_is_leaf || !isLeafBranch()) return;
@@ -306,7 +315,7 @@ void SearchNode::recombine2()
         // Rebin if needed
         if (p_cloud.size() <= p_max_points)
         {
-            rebin2();
+            rebin();
         }
     }
 }
@@ -390,13 +399,10 @@ double SearchNode::cloudValue(QVector<xyzwd32> & data, double x, double y, doubl
         if (d < 3 * r) // IMPORTANT INPUT PARAMS
         {
             double weight = 1.0/std::pow(d, p);
-            nominator += data[l].w * weight * std::exp(-(d * d / (2.0 * r))); // TODO: Activate Gaussian
+            nominator += data[l].w * weight * std::exp(-(d * d / (2.0 * r * r))); // TODO: Activate Gaussian
             denominator += weight;
         }
     }
-
-//    double value_expected = x;
-//    double value_actual = nominator /  denominator;
 
     if (denominator > 0)
     {
@@ -409,7 +415,854 @@ double SearchNode::cloudValue(QVector<xyzwd32> & data, double x, double y, doubl
 
 }
 
-void SearchNode::interpolate2(SearchNode * root, bool check_neighbours)
+void SearchNode::interpolateElusiveNeighbours(SearchNode & root)
+{
+    /* If the outer layer of the voxel grid has nonzero values, ensure that there are neighbour nodes
+     * of appreciable LOD so that there will be no visual artefacts due to interpolation. In some
+     * cases this will mean a new nodes must be created, and that these nodes also must be
+     * interpolated, possibly in the same function call
+     * */
+
+
+    // Find neighbours with relevant data
+    QVector<bool> neighbours(3*3*3, false);
+
+    for (int i = 0; i < p_voxel_grid_side; i++)
+    {
+        for (int j = 0; j < p_voxel_grid_side; j++)
+        {
+            for (int k = 0; k < p_voxel_grid_side; k++)
+            {
+                // If voxel is on face
+                if (    (i <= 0) || (i >= p_voxel_grid_side-1) ||
+                        (j <= 0) || (j >= p_voxel_grid_side-1) ||
+                        (k <= 0) || (k >= p_voxel_grid_side-1))
+                {
+                    int id_voxel =
+                            i +
+                            j * p_voxel_grid_side +
+                            k * p_voxel_grid_side * p_voxel_grid_side;
+
+                    // If voxel value is greater than zero, tag the neighbouring nodes
+                    if (p_voxel_grid[id_voxel] > 0)
+                    {
+                        int id_neighbour_x = (i <= 0 ? 0 : (i < p_voxel_grid_side - 1 ? 1 : 2));
+                        int id_neighbour_y = (j <= 0 ? 0 : (j < p_voxel_grid_side - 1 ? 1 : 2));
+                        int id_neighbour_z = (k <= 0 ? 0 : (k < p_voxel_grid_side - 1 ? 1 : 2));
+
+                        int id_neighbour =
+                                id_neighbour_x +
+                                id_neighbour_y * 3 +
+                                id_neighbour_z * 3 * 3;
+
+                        neighbours[id_neighbour] = true;
+                    }
+                }
+            }
+        }
+    }
+
+
+//    if (p_level < 3)
+//    {
+//        qDebug() << "omg";
+//    }
+
+    /*
+     * For each tagged neighbour, check if said neighbour exists.  If not, create it and voxelize it.
+     * */
+
+    double x_center, y_center, z_center;
+    center(x_center, y_center, z_center);
+
+    for (int i = 0; i < neighbours.size(); i++)
+    {
+        if (neighbours[i])
+        {
+            int id_neighbour_z = i / (3 * 3);
+            int id_neighbour_y = (i - 3 * 3 * id_neighbour_z) / 3;
+            int id_neighbour_x = i - 3 * 3 * id_neighbour_z - 3 * id_neighbour_y;
+
+            double x = x_center + (double)(id_neighbour_x - 1) * side();
+            double y = y_center + (double)(id_neighbour_y - 1) * side();
+            double z = z_center + (double)(id_neighbour_z - 1) * side();
+
+            root.ensureNodeAt(x, y, z, p_level, root);
+        }
+    }
+}
+
+
+double SearchNode::distance(double x0, double y0, double z0, double x1, double y1, double z1)
+{
+    return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
+}
+
+void SearchNode::setElusive(bool value)
+{
+    p_is_elusive = value;
+}
+
+void SearchNode::setOriginal(bool value)
+{
+    p_is_original = value;
+}
+
+void SearchNode::ensureNodeAt(double x, double y, double z, int level, SearchNode &root)
+{
+    // If the LOD is insufficient (level of detail)
+    if (p_level < level)
+    {
+        int id = ntant(x, y, z, 2);
+        if (id >= 0)
+        {
+            {
+                QMutexLocker lock(p_mutex); // Mutex lock so two threads do not split the node concurrently
+
+                if (p_is_leaf)
+                {
+                    // The leaf could potentially have cloud data, and we could end up with non-empty children that also need to be voxelized at this iteration.
+                    // Therefore mark them for treatment in pass 3.
+                    split();
+                    p_cloud.clear();
+
+                    p_is_empty = true;
+                    p_is_leaf = false;
+
+                    for (int i = 0; i < p_children.size(); i++)
+                    {
+                        p_children[i].setElusive(true);
+                    }
+                }
+            }
+            p_children[id].ensureNodeAt(x, y, z, level, root);
+        }
+    }
+    // Else
+    else
+    {
+        // If the node is not original or it is an original empty leaf, mark it as elusive
+        if ((!p_is_original) || (p_is_leaf && p_is_empty))
+        {
+            p_is_elusive = true;
+        }
+    }
+}
+
+double SearchNode::nodeValueAt(double x, double y, double z, int level)
+{
+    // If outside of octree, return zero
+   if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
+   {
+       return 0.0;
+   }
+
+    if (p_is_leaf || (p_level >= level))
+    {
+        if (p_is_empty || p_is_elusive) return 0.0;
+
+        int id = ntant(x, y, z, p_node_grid_side);
+        if (id >= 0)
+        {
+            return p_node_grid[id];
+        }
+    }
+    else
+    {
+        int id = ntant(x, y, z, 2);
+        if (id >= 0)
+        {
+            return p_children[id].nodeValueAt(x, y, z, level);
+        }
+    }
+}
+
+double SearchNode::nodeValueAt_Linear(double x, double y, double z, SearchNode & root)
+{
+//    // If outside of octree, return zero
+//    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
+//    {
+//        return 0.0;
+//    }
+
+    // If leaf, search the grid
+//    if (p_is_leaf || (p_level >= max_level))
+//    {
+        // Find the xyz values for the surrounding eight interpolation points, positions of which are given by the bin structure
+        QVector<xyzwd32> points(8);
+
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    // The position used to retrieve the interpolation value at this position
+                    double x_interpol = x + (double)(i*2-1)*binside()*0.5;
+                    double y_interpol = y + (double)(j*2-1)*binside()*0.5;
+                    double z_interpol = z + (double)(k*2-1)*binside()*0.5;
+
+                    // The center position of the bin from which the interpolation will be read
+                    // Note that this bin can be in a different node, and could be empty or at another level
+                    // The possible change in level of detail is not currently allowed to interfere with said position
+                    // The situation might be remedied by weighing shallow nodes more lightly
+                    points[i + j*2 + k*4].x = ((double) std::floor(x_interpol * (double) (nodesPerSide() * p_node_grid_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].y = ((double) std::floor(y_interpol * (double) (nodesPerSide() * p_node_grid_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].z = ((double) std::floor(z_interpol * (double) (nodesPerSide() * p_node_grid_side)) + 0.5 ) * binside();
+                    points[i + j*2 + k*4].w = root.nodeValueAt(x_interpol, y_interpol, z_interpol, p_level);
+                }
+            }
+        }
+
+        // Carry out trilinear interpolation
+        double xd = (x - points[0].x)/(points[7].x - points[0].x);
+        double yd = (y - points[0].y)/(points[7].y - points[0].y);
+        double zd = (z - points[0].z)/(points[7].z - points[0].z);
+
+        // Interpolate along x
+        double c00 = points[0].w * (1.0-xd) + points[1].w * xd;
+        double c10 = points[2].w * (1.0-xd) + points[3].w * xd;
+        double c01 = points[4].w * (1.0-xd) + points[5].w * xd;
+        double c11 = points[6].w * (1.0-xd) + points[7].w * xd;
+
+        // Interpolate along y
+        double c0 = c00 * (1.0 - yd) + c10 * yd;
+        double c1 = c01 * (1.0 - yd) + c11 * yd;
+
+        // Interpolate along z
+        double c = c0 * (1.0 - zd) + c1 * zd;
+
+        return c;
+//    }
+//    // Else if branch, descend to the next level
+//    else
+//    {
+//        int id = ntant(x,y,z, 2);
+//        return p_children[id].nodeValueAt_Linear(x, y, z, max_level, root);
+//    }
+}
+
+void SearchNode::setId(int id_x, int id_y, int id_z)
+{
+    p_id_node_x = id_x;
+    p_id_node_y = id_y;
+    p_id_node_z = id_z;
+}
+
+void SearchNode::gpuVoxels(int octant, QVector<float> & pool, QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & array_level_offsets, QVector<int> & array_child_offsets,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks)
+{
+    unsigned int p_id_pool_x = 0;
+    unsigned int p_id_pool_y = 0;
+    unsigned int p_id_pool_z = 0;
+
+    // Generate a 3D pool ID unless the node is empty
+    if (!p_is_empty)
+    {
+        p_id_pool_z = num_bricks / (pool_dim_x * pool_dim_y);
+        p_id_pool_y = (num_bricks - p_id_pool_z * (pool_dim_x * pool_dim_y)) / pool_dim_x;
+        p_id_pool_x = num_bricks - p_id_pool_z * (pool_dim_x * pool_dim_y) - p_id_pool_y * pool_dim_x;
+
+        for (int i = 0; i < p_voxel_grid_side; i++)
+        {
+            for (int j = 0; j < p_voxel_grid_side; j++)
+            {
+                for (int k = 0; k < p_voxel_grid_side; k++)
+                {
+                    int id_pool =
+                            (p_id_pool_x * p_voxel_grid_side + i) +
+                            (p_id_pool_y * p_voxel_grid_side + j) * (pool_dim_x * p_voxel_grid_side)  +
+                            (p_id_pool_z * p_voxel_grid_side + k) * (pool_dim_x * pool_dim_y * p_voxel_grid_side * p_voxel_grid_side);
+
+                    pool[id_pool] = p_voxel_grid[i + j*p_voxel_grid_side + k*p_voxel_grid_side*p_voxel_grid_side];
+                }
+            }
+        }
+        num_bricks++;
+    }
+
+    // Prepare the voxel metadata for this node
+    unsigned int leaf_flag = p_is_leaf;
+    unsigned int populated_flag = !p_is_empty;
+    unsigned int child_index = 0;
+
+    if (!p_is_leaf)
+    {
+        child_index = array_level_offsets[p_level+1] + array_child_offsets[p_level+1];
+    }
+
+//        int arr_id = array_level_offsets[p_level]+array_child_offsets[p_level];
+//        unsigned int arr_index = (leaf_flag << 31) | (populated_flag << 30) | child_index;
+//        unsigned int arr_brick = (p_pool_x << 20) | (p_pool_y << 10) | (p_pool_z << 0);
+
+    // Assign the metadata, making sure it is stored at the appropriate index
+    index[array_level_offsets[p_level] + array_child_offsets[p_level] + octant] = (leaf_flag << 31) | (populated_flag << 30) | child_index;
+    brick[array_level_offsets[p_level] + array_child_offsets[p_level] + octant] = (p_id_pool_x << 20) | (p_id_pool_y << 10) | (p_id_pool_z << 0);
+
+    if (!p_is_leaf)
+    {
+        // Add children
+        for (int i = 0; i < 8; i++)
+        {
+            p_children[i].gpuVoxels(/*Specify index at which to place new node?*/i, pool, index , brick, array_level_offsets, array_child_offsets,  pool_dim_x, pool_dim_y, pool_dim_z, num_bricks);
+        }
+
+        array_child_offsets[p_level+1] += 8;
+    }
+}
+
+SearchNode * SearchNode::nodeAt(double x, double y, double z, int max_level)
+{
+    if (p_is_leaf || (p_level >= max_level))
+    {
+        return this;
+    }
+    else
+    {
+        int id = ntant(x, y, z, 2);
+        if (id >= 0)
+        {
+            return p_children[id].nodeAt(x, y, z, max_level);
+        }
+    }
+}
+
+double SearchNode::side()
+{
+    return 1.0 / (double) nodesPerSide();
+}
+
+void SearchNode::nodelist(QList<SearchNode*> &nodes, bool rebinned_only)
+{
+    // Add self to list
+    if (rebinned_only)
+    {
+        if(p_is_rebinned) nodes << this;
+    }
+    else
+    {
+        nodes << this;
+    }
+
+
+    // Add children to list
+    if(!p_is_leaf)
+    {
+        // Call for children
+        for (int i = 0; i < 8; i++)
+        {
+            p_children[i].nodelist(nodes);
+        }
+    }
+}
+
+void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes, int branch_leaf_both, int nonempty_empty_both, int nonvoxelized_voxelized_both, int nonelusive_elusive_both, bool exclude_empty_leaves)
+{
+    // Return a data structure representing the node hierarchy, including branches, leaves, or both, but only if empty, nonempty, or both
+    bool add = true;
+
+    if (branch_leaf_both != 2)
+    {
+        if (p_is_leaf != (bool) branch_leaf_both) add = false;
+    }
+    if (nonempty_empty_both != 2)
+    {
+        if (p_is_empty != (bool) nonempty_empty_both) add = false;
+    }
+    if (nonvoxelized_voxelized_both != 2)
+    {
+        if (p_is_voxelized != (bool) nonvoxelized_voxelized_both) add = false;
+    }
+    if (nonelusive_elusive_both != 2)
+    {
+        if (p_is_elusive != (bool) nonelusive_elusive_both) add = false;
+    }
+
+    if (exclude_empty_leaves && p_is_leaf && p_is_empty)
+    {
+        add = false;
+    }
+
+    if (add)
+    {
+        // Add self to hierarchy
+        if (nodes.size() <= p_level)
+        {
+            nodes.resize(p_level+1);
+        }
+
+        nodes[p_level] << this;
+    }
+
+    // Add children to hierarchy
+    for (int i = 0; i < p_children.size(); i++)
+    {
+        p_children[i].hierarchy(nodes,  branch_leaf_both, nonempty_empty_both, nonvoxelized_voxelized_both, nonelusive_elusive_both, exclude_empty_leaves);
+    }
+}
+
+
+bool SearchNode::isLeafBranch()
+{
+    // Return true if this is a branch with leaves
+    if (p_is_leaf || p_is_empty) return false;
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (!p_children[i].isLeaf()) return false;
+    }
+
+    return true;
+}
+
+bool SearchNode::isLeaf()
+{
+    return p_is_leaf;
+}
+
+bool SearchNode::isVoxelized()
+{
+    return p_is_voxelized;
+}
+
+bool SearchNode::isOriginal()
+{
+    return p_is_original;
+}
+
+bool SearchNode::isElusive()
+{
+    return p_is_elusive;
+}
+
+bool SearchNode::isEmpty()
+{
+    return p_is_empty;
+}
+
+QVector<SearchNode> & SearchNode::children()
+{
+    return p_children;
+}
+
+int SearchNode::nodesPerSide()
+{
+    return (1 << p_level);
+}
+
+double SearchNode::binside()
+{
+    return 1.0 / (double) (nodesPerSide() *  p_node_grid_side);
+}
+
+
+double SearchNode::voxelside()
+{
+    return 1.0 / (double) (nodesPerSide() *  (p_voxel_grid_side-1));
+}
+
+void SearchNode::center(double & x, double & y, double & z)
+{
+    x = (double) (p_id_node_x + 0.5 ) * side();
+    y = (double) (p_id_node_y + 0.5 ) * side();
+    z = (double) (p_id_node_z + 0.5 ) * side();
+}
+
+int SearchNode::ntant(double x, double y, double z, int n)
+{
+    // Find 3D ntant id
+    int id_ntant_x = (x * (double) nodesPerSide() - (double) p_id_node_x) * (double) n;
+    int id_ntant_y = (y * (double) nodesPerSide() - (double) p_id_node_y) * (double) n;
+    int id_ntant_z = (z * (double) nodesPerSide() - (double) p_id_node_z) * (double) n;
+
+    // Example n = 2 -> octant:
+    // 0 <= relative pos < 1 : Maps to 0
+    // 1 <= relative pos < 2 : Maps to 1
+    // Values should not map to 2 or greater
+
+    if ((id_ntant_x >= n) || (id_ntant_x < 0) || (id_ntant_y >= n) || (id_ntant_y < 0) || (id_ntant_z >= n) || (id_ntant_z < 0))
+    {
+        // This should really not happen for a point that with position values between 0 and 1
+        qDebug() << "Point does not fit in level:" << p_level << ", xyz =" << x << y << z << "ntant id =" << id_ntant_x << id_ntant_y << id_ntant_z << "node id =" << p_id_node_x << p_id_node_y << p_id_node_z;
+
+        return -1;
+    }
+
+    // Return 1D ntant id
+    int id = id_ntant_x + id_ntant_y * n + id_ntant_z * n * n;
+
+    return id;
+}
+
+
+int SearchNode::ntant(xyzwd32 & point, int n)
+{
+    return ntant(point.x, point.y, point.z, n);
+}
+
+void SearchNode::interdistMetrics(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg)
+{
+    data_interdist_min = 1e9;
+    data_interdist_max = 0;
+    data_interdist_avg = 0;
+
+    int counter = 0;
+
+    for (int i = 0; i < p_cloud.size(); i++)
+    {
+        if (p_cloud[i].d > data_interdist_max) data_interdist_max = p_cloud[i].d;
+        if (p_cloud[i].d < data_interdist_min) data_interdist_min = p_cloud[i].d;
+        data_interdist_avg += p_cloud[i].d;
+        counter++;
+    }
+
+    if (counter > 0) data_interdist_avg /= (double) counter;
+}
+
+
+void SearchNode::clear()
+{
+    p_children.clear();
+    p_cloud.clear();
+    p_voxel_grid.clear();
+    p_node_grid.clear();
+    p_is_leaf = true;
+    p_is_empty = true;
+    p_is_voxelized = false;
+}
+
+void SearchNode::setLevel(int value)
+{
+    p_level = value;
+}
+
+void SearchNode::countbricks(int &  count)
+{
+    if (!p_is_empty) count++;
+
+    for (int i = 0; i < p_children.size(); i++)
+    {
+        p_children[i].countbricks(count);
+    }
+}
+
+void SearchNode::getSurroundingClouds(QVector<xyzwd32> & data, SearchNode & root)
+{
+    double x_center, y_center, z_center;
+    center(x_center, y_center, z_center);
+
+    // Use the statistics of the cloud to approximate the sample interdistance
+    double data_interdist_min = 0;
+    double data_interdist_max = 0;
+    double data_interdist_avg = 0;
+
+    interdistMetrics(data_interdist_min, data_interdist_max, data_interdist_avg);
+
+    double extra_extent = std::max(binside(), std::max(voxelside()*1.5, data_interdist_avg * 3)); // IMPORTANT INPUT PARAMS, must agree with search radius in cloudValue()
+
+    QVector<double> extent(6);
+    extent[0] = x_center - (side() * 0.5 + extra_extent);
+    extent[1] = x_center + (side() * 0.5 + extra_extent);
+    extent[2] = y_center - (side() * 0.5 + extra_extent);
+    extent[3] = y_center + (side() * 0.5 + extra_extent);
+    extent[4] = z_center - (side() * 0.5 + extra_extent);
+    extent[5] = z_center + (side() * 0.5 + extra_extent);
+
+    // Get all relevant data
+    // Fetch data from up to 3x3x3 - 1 surrounding nodes (can be fewer). Start by finding their pointers
+    // Use a QSet to ensure zero duplicate nodes
+    QSet<SearchNode *> nodes;
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                double x = x_center + (double)(i-1)*side();
+                double y = y_center + (double)(j-1)*side();
+                double z = z_center + (double)(k-1)*side();
+
+                if ((x >= 0) && (x < 1) && (y >= 0) && (y < 1) && (z >= 0) && (z < 1))
+                {
+                    nodes << root.nodeAt(x, y, z, p_level);
+                }
+            }
+        }
+    }
+
+    // Iterate through the data, keeping only data that lies within the sampling volume
+    // It might be beneficial to use a k-d tree for this, or using GPU and local memory
+
+    QSetIterator<SearchNode *> k(nodes);
+    while (k.hasNext())
+    {
+        SearchNode * node = k.next();
+
+        for (int i = 0; i < node->cloud().size(); i++)
+        {
+            if (
+                    (node->cloud()[i].x > extent[0]) && (node->cloud()[i].x < extent[1]) &&
+                    (node->cloud()[i].y > extent[2]) && (node->cloud()[i].y < extent[3]) &&
+                    (node->cloud()[i].z > extent[4]) && (node->cloud()[i].z < extent[5]))
+            {
+                data << node->cloud()[i];
+            }
+        }
+    }
+}
+
+
+void SearchNode::voxelizePassOne(SearchNode &root)
+{
+    // This pass constructs the node grid for the current node, and depends on working the tree inward towards the root
+
+    // If leaf, interpolate the node grid directly from the point cloud
+    if (p_is_leaf)
+    {
+        QVector<xyzwd32> data;
+        getSurroundingClouds(data, root);
+
+        // Return if there is no relevant data
+        if (data.isEmpty())
+        {
+            p_is_empty = true;
+            return;
+        }
+
+        // Interpolate node grid from cloud
+        p_node_grid.resize(p_node_grid_side*p_node_grid_side*p_node_grid_side);
+
+        for (int i = 0; i < p_node_grid_side; i++)
+        {
+            for (int j = 0; j < p_node_grid_side; j++)
+            {
+                for (int k = 0; k < p_node_grid_side; k++)
+                {
+                    int id =
+                            i +
+                            j * p_node_grid_side +
+                            k * p_node_grid_side * p_node_grid_side;
+
+
+                    // Do a lookup of the value
+                    double x = (double) (p_id_node_x + (((double)i+0.5)/(double)(p_node_grid_side))) * side();
+                    double y = (double) (p_id_node_y + (((double)j+0.5)/(double)(p_node_grid_side))) * side();
+                    double z = (double) (p_id_node_z + (((double)k+0.5)/(double)(p_node_grid_side))) * side();
+
+                    p_node_grid[id] = cloudValue(data, x, y, z);
+                }
+            }
+        }
+    }
+    // If branch, build the node grid by recombining the node grids of the children
+    else
+    {
+        // Interpolate node grid from node grid of last level
+        p_node_grid.resize(p_node_grid_side*p_node_grid_side*p_node_grid_side);
+
+        for (int i = 0; i < p_node_grid_side*2; i++)
+        {
+            for (int j = 0; j < p_node_grid_side*2; j++)
+            {
+                for (int k = 0; k < p_node_grid_side*2; k++)
+                {
+                    double x = (double) (p_id_node_x + (((double)i+0.5)/(double)(p_node_grid_side*2))) * side();
+                    double y = (double) (p_id_node_y + (((double)j+0.5)/(double)(p_node_grid_side*2))) * side();
+                    double z = (double) (p_id_node_z + (((double)k+0.5)/(double)(p_node_grid_side*2))) * side();
+
+                    p_node_grid[i/2 + j/2*p_node_grid_side + k/2*p_node_grid_side*p_node_grid_side] += this->nodeValueAt(x,y,z, p_level+1);
+                }
+            }
+        }
+
+        for (int i = 0; i < p_node_grid.size(); i++)
+        {
+            p_node_grid[i] /= 2*2*2;
+        }
+
+        // Clear children of data what will no longer be used
+        for (int i = 0; i < p_children.size(); i++)
+        {
+            p_children[i].nodegrid().clear();
+            p_children[i].cloud().clear();
+        }
+    }
+
+    p_is_empty = false;
+}
+
+void SearchNode::voxelizePassTwo(SearchNode & root)
+{
+    // This pass constructs the voxel grid for the current node, and depends on working the tree inward towards the root
+
+     // If leaf, build the voxel grid by interpolating from the point cloud
+    if (p_is_leaf)
+    {
+        QVector<xyzwd32> data;
+        getSurroundingClouds(data, root);
+
+        // Return if there is no relevant data
+        if (data.isEmpty())
+        {
+            p_is_empty = true;
+            return;
+        }
+
+
+        // Interpolate voxel grid from cloud
+        p_voxel_grid.resize(p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side);
+
+        for (int i = 0; i < p_voxel_grid_side; i++)
+        {
+            for (int j = 0; j < p_voxel_grid_side; j++)
+            {
+                for (int k = 0; k < p_voxel_grid_side; k++)
+                {
+                    int id =
+                            i +
+                            j * p_voxel_grid_side +
+                            k * p_voxel_grid_side * p_voxel_grid_side;
+
+                    // Do a lookup of the value
+                    double x = (double) (p_id_node_x + ((double)i/(double)(p_voxel_grid_side-1))) * side();
+                    double y = (double) (p_id_node_y + ((double)j/(double)(p_voxel_grid_side-1))) * side();
+                    double z = (double) (p_id_node_z + ((double)k/(double)(p_voxel_grid_side-1))) * side();
+
+                    p_voxel_grid[id] = cloudValue(data, x, y, z);
+                }
+            }
+        }
+    }
+    // If branch, build the voxel grid by interpolating from node grids
+    else
+    {
+        p_voxel_grid.resize(p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side);
+
+        for (int i = 0; i < p_voxel_grid_side; i++)
+        {
+            for (int j = 0; j < p_voxel_grid_side; j++)
+            {
+                for (int k = 0; k < p_voxel_grid_side; k++)
+                {
+                    double x = (double) (p_id_node_x + ((double)i/(double)(p_voxel_grid_side-1))) * side();
+                    double y = (double) (p_id_node_y + ((double)j/(double)(p_voxel_grid_side-1))) * side();
+                    double z = (double) (p_id_node_z + ((double)k/(double)(p_voxel_grid_side-1))) * side();
+
+                    int id =
+                            i +
+                            j * p_voxel_grid_side +
+                            k * p_voxel_grid_side * p_voxel_grid_side;
+
+                    p_voxel_grid[id] = nodeValueAt_Linear(x,y,z, root);
+                }
+            }
+        }
+
+
+    }
+
+    p_is_empty = false;
+    p_is_voxelized = true;
+
+    interpolateElusiveNeighbours(root);
+}
+
+void SearchNode::voxelizePassThree(SearchNode &root)
+{
+    // Construct the voxel grid based on the node grid or using the surrounding point clouds.
+    p_voxel_grid.resize(p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side);
+
+    QVector<xyzwd32> data;
+    getSurroundingClouds(data, root);
+
+    {
+        // Interpolate voxel grid from cloud
+        p_voxel_grid.resize(p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side);
+
+        for (int i = 0; i < p_voxel_grid_side; i++)
+        {
+            for (int j = 0; j < p_voxel_grid_side; j++)
+            {
+                for (int k = 0; k < p_voxel_grid_side; k++)
+                {
+                    int id =
+                            i +
+                            j * p_voxel_grid_side +
+                            k * p_voxel_grid_side * p_voxel_grid_side;
+
+                    // Do a lookup of the value
+                    double x = (double) (p_id_node_x + ((double)i/(double)(p_voxel_grid_side-1))) * side();
+                    double y = (double) (p_id_node_y + ((double)j/(double)(p_voxel_grid_side-1))) * side();
+                    double z = (double) (p_id_node_z + ((double)k/(double)(p_voxel_grid_side-1))) * side();
+
+                    if (!data.isEmpty())
+                    {
+                        p_voxel_grid[id] = cloudValue(data, x, y, z);
+                    }
+                    else
+                    {
+                        p_voxel_grid[id] = nodeValueAt_Linear(x,y,z, root);
+                    }
+
+                    if (p_voxel_grid[id] > 0)
+                    {
+                        p_is_empty = false;
+                    }
+                }
+            }
+        }
+    }
+
+    if (p_is_empty)
+    {
+        p_is_elusive = false;
+        p_voxel_grid.clear();
+    }
+
+    p_is_voxelized = true;
+}
+
+/*void SearchNode::interpolate3(SearchNode * root)
+{
+    // Interpolate voxel grid from node grid of this level
+    // Use trilinear interpolation
+    p_voxel_grid.resize(p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side);
+
+    for (int i = 0; i < p_voxel_grid_side; i++)
+    {
+        for (int j = 0; j < p_voxel_grid_side; j++)
+        {
+            for (int k = 0; k < p_voxel_grid_side; k++)
+            {
+                double x = (double) (p_id_node_x + ((double)i/(double)(p_voxel_grid_side-1))) * side();
+                double y = (double) (p_id_node_y + ((double)j/(double)(p_voxel_grid_side-1))) * side();
+                double z = (double) (p_id_node_z + ((double)k/(double)(p_voxel_grid_side-1))) * side();
+
+                int id =
+                        i +
+                        j * p_voxel_grid_side +
+                        k * p_voxel_grid_side * p_voxel_grid_side;
+
+                p_voxel_grid[id] = nodeValueAt_Linear(x,y,z, p_level, root);
+
+    //                    p_voxel_grid[id] = (double) p_id_node_x / (double) nodesPerSide() + (double) p_id_node_y / (double) nodesPerSide() + (double) p_id_node_z / (double) nodesPerSide();//
+            }
+        }
+    }
+
+    // Clear children of node grids
+    for (int i = 0; i < p_children.size(); i++)
+    {
+        p_children[i].nodegrid().clear();
+    }
+
+    if (0)//(check_neighbours)
+    {
+        interpolateElusiveNeighbours(root);
+    }
+}*/
+
+/*void SearchNode::interpolate(SearchNode * root, bool check_neighbours)
 {
     // Return if already interpolated
     if (p_is_voxelized) return;
@@ -433,9 +1286,9 @@ void SearchNode::interpolate2(SearchNode * root, bool check_neighbours)
         double data_interdist_max = 0;
         double data_interdist_avg = 0;
 
-        interdistMetrics2(data_interdist_min, data_interdist_max, data_interdist_avg);
+        interdistMetrics(data_interdist_min, data_interdist_max, data_interdist_avg);
 
-        double extra_extent = std::max(binside2(), voxelside())*1.5 + data_interdist_avg; // IMPORTANT INPUT PARAMS
+        double extra_extent = std::max(binside(), voxelside())*1.5 + data_interdist_avg; // IMPORTANT INPUT PARAMS
 
         QVector<double> extent(6);
         extent[0] = x_center - (side() * 0.5 + extra_extent);
@@ -595,552 +1448,7 @@ void SearchNode::interpolate2(SearchNode * root, bool check_neighbours)
 
         p_is_empty = false;
     }
-}
-
-void SearchNode::interpolateElusiveNeighbours(SearchNode * root)
-{
-    /* If the outer layer of the voxel grid has nonzero values, ensure that there are neighbour nodes
-     * of appreciable LOD so that there will be no visual artefacts due to interpolation. In some
-     * cases this will mean a new nodes must be created, and that these nodes also must be
-     * interpolated, possibly in the same function call
-     * */
-
-    QVector<bool> neighbours(3*3*3, false);
-
-    for (int i = 0; i < p_voxel_grid_side; i++)
-    {
-        for (int j = 0; j < p_voxel_grid_side; j++)
-        {
-            for (int k = 0; k < p_voxel_grid_side; k++)
-            {
-                // If voxel is on face
-                if (    (i <= 0) || (i >= p_voxel_grid_side-1) ||
-                        (j <= 0) || (j >= p_voxel_grid_side-1) ||
-                        (k <= 0) || (k >= p_voxel_grid_side-1))
-                {
-                    int id_voxel =
-                            i +
-                            j * p_voxel_grid_side +
-                            k * p_voxel_grid_side * p_voxel_grid_side;
-
-                    // If voxel value is greater than zero, tag the neighbouring nodes
-                    if (p_voxel_grid[id_voxel] > 0)
-                    {
-                        int id_neighbour_x = (i <= 0 ? 0 : (i < p_voxel_grid_side - 1 ? 1 : 2));
-                        int id_neighbour_y = (j <= 0 ? 0 : (j < p_voxel_grid_side - 1 ? 1 : 2));
-                        int id_neighbour_z = (k <= 0 ? 0 : (k < p_voxel_grid_side - 1 ? 1 : 2));
-
-                        int id_neighbour =
-                                id_neighbour_x +
-                                id_neighbour_y * 3 +
-                                id_neighbour_z * 3 * 3;
-
-                        neighbours[id_neighbour] = true;
-                    }
-                }
-            }
-        }
-    }
-
-    double x_center, y_center, z_center;
-    center(x_center, y_center, z_center);
-
-    // For each tagged neighbour, check if said neighbour exists. If not, create it (mutex lock)
-    for (int i = 0; i < neighbours.size(); i++)
-    {
-        if (neighbours[i])
-        {
-            int id_neighbour_z = i / (3 * 3);
-            int id_neighbour_y = (i - 3 * 3 * id_neighbour_z) / 3;
-            int id_neighbour_x = i - 3 * 3 * id_neighbour_z - 3 * id_neighbour_y;
-
-            double x = x_center + (double)(id_neighbour_x - 1) * side();
-            double y = y_center + (double)(id_neighbour_y - 1) * side();
-            double z = z_center + (double)(id_neighbour_z - 1) * side();
-
-            root->ensureNodeAt(x, y, z, p_level, root);
-        }
-    }
-}
-
-
-void SearchNode::interpolate3(SearchNode * root)
-{
-    // Interpolate voxel grid from node grid of this level
-    // Use trilinear interpolation
-    p_voxel_grid.resize(p_voxel_grid_side*p_voxel_grid_side*p_voxel_grid_side);
-
-    for (int i = 0; i < p_voxel_grid_side; i++)
-    {
-        for (int j = 0; j < p_voxel_grid_side; j++)
-        {
-            for (int k = 0; k < p_voxel_grid_side; k++)
-            {
-                double x = (double) (p_id_node_x + ((double)i/(double)(p_voxel_grid_side-1))) * side();
-                double y = (double) (p_id_node_y + ((double)j/(double)(p_voxel_grid_side-1))) * side();
-                double z = (double) (p_id_node_z + ((double)k/(double)(p_voxel_grid_side-1))) * side();
-
-                int id =
-                        i +
-                        j * p_voxel_grid_side +
-                        k * p_voxel_grid_side * p_voxel_grid_side;
-
-                p_voxel_grid[id] = nodeValueAt_Linear(x,y,z, p_level, root);
-
-    //                    p_voxel_grid[id] = (double) p_id_node_x / (double) nodesPerSide() + (double) p_id_node_y / (double) nodesPerSide() + (double) p_id_node_z / (double) nodesPerSide();//
-            }
-        }
-    }
-
-    // Clear children of node grids
-    for (int i = 0; i < p_children.size(); i++)
-    {
-        p_children[i].nodegrid().clear();
-    }
-
-    if (0)//(check_neighbours)
-    {
-        interpolateElusiveNeighbours(root);
-    }
-}
-
-
-double SearchNode::distance(double x0, double y0, double z0, double x1, double y1, double z1)
-{
-    return std::sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0) + (z1-z0)*(z1-z0));
-}
-
-void SearchNode::ensureNodeAt(double x, double y, double z, int level, SearchNode *root)
-{
-    if (p_level < level)
-    {
-        {
-            QMutexLocker lock(p_mutex); // So two threads do not split the node concurrently
-
-            if (p_is_leaf)
-            {
-                split2();
-                p_cloud.clear();
-
-                p_is_empty = true;
-                p_is_leaf = false;
-            }
-        }
-        int id = ntant(x, y, z, 2);
-        if (id >= 0)
-        {
-            p_children[id].ensureNodeAt(x, y, z, level, root);
-        }
-
-    }
-    else
-    {
-//        QMutexLocker lock(p_mutex);
-
-        if (!this->p_is_voxelized)
-        {
-            this->interpolate2(root, false);
-        }
-    }
-}
-
-double SearchNode::nodeValueAt(double x, double y, double z, int level)
-{
-    // If outside of octree, return zero
-   if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
-   {
-       return 0.0;
-   }
-
-    if (p_is_leaf || (p_level >= level))
-    {
-        if (p_is_empty) return 0.0;
-
-        int id = ntant(x, y, z, p_node_grid_side);
-        if (id >= 0)
-        {
-            return p_node_grid[id];
-        }
-    }
-    else
-    {
-        int id = ntant(x, y, z, 2);
-        if (id >= 0)
-        {
-            return p_children[id].nodeValueAt(x, y, z, level);
-        }
-    }
-}
-
-double SearchNode::nodeValueAt_Linear(double x, double y, double z, int max_level, SearchNode * root)
-{
-//    // If outside of octree, return zero
-//    if ((x < 0) || (x >= 1) || (y < 0) || (y >= 1) || (z < 0) || (z >= 1))
-//    {
-//        return 0.0;
-//    }
-
-    // If leaf, search the grid
-//    if (p_is_leaf || (p_level >= max_level))
-//    {
-        // Find the xyz values for the surrounding eight interpolation points, positions of which are given by the bin structure
-        QVector<xyzwd32> points(8);
-
-        for (int i = 0; i < 2; i++)
-        {
-            for (int j = 0; j < 2; j++)
-            {
-                for (int k = 0; k < 2; k++)
-                {
-                    // The position used to retrieve the interpolation value at this position
-                    double x_interpol = x + (double)(i*2-1)*binside2()*0.5;
-                    double y_interpol = y + (double)(j*2-1)*binside2()*0.5;
-                    double z_interpol = z + (double)(k*2-1)*binside2()*0.5;
-
-                    // The center position of the bin from which the interpolation will be read
-                    // Note that this bin can be in a different node, and could be empty or at another level
-                    // The possible change in level of detail is not currently allowed to interfere with said position
-                    // The situation might be remedied by weighing shallow nodes more lightly
-                    points[i + j*2 + k*4].x = ((double) std::floor(x_interpol * (double) (nodesPerSide() * p_node_grid_side)) + 0.5 ) * binside2();
-                    points[i + j*2 + k*4].y = ((double) std::floor(y_interpol * (double) (nodesPerSide() * p_node_grid_side)) + 0.5 ) * binside2();
-                    points[i + j*2 + k*4].z = ((double) std::floor(z_interpol * (double) (nodesPerSide() * p_node_grid_side)) + 0.5 ) * binside2();
-                    points[i + j*2 + k*4].w = root->nodeValueAt(x_interpol, y_interpol, z_interpol, p_level);
-                }
-            }
-        }
-
-        // Carry out trilinear interpolation
-        double xd = (x - points[0].x)/(points[7].x - points[0].x);
-        double yd = (y - points[0].y)/(points[7].y - points[0].y);
-        double zd = (z - points[0].z)/(points[7].z - points[0].z);
-
-        // Interpolate along x
-        double c00 = points[0].w * (1.0-xd) + points[1].w * xd;
-        double c10 = points[2].w * (1.0-xd) + points[3].w * xd;
-        double c01 = points[4].w * (1.0-xd) + points[5].w * xd;
-        double c11 = points[6].w * (1.0-xd) + points[7].w * xd;
-
-        // Interpolate along y
-        double c0 = c00 * (1.0 - yd) + c10 * yd;
-        double c1 = c01 * (1.0 - yd) + c11 * yd;
-
-        // Interpolate along z
-        double c = c0 * (1.0 - zd) + c1 * zd;
-
-        return c;
-//    }
-//    // Else if branch, descend to the next level
-//    else
-//    {
-//        int id = ntant(x,y,z, 2);
-//        return p_children[id].nodeValueAt_Linear(x, y, z, max_level, root);
-//    }
-}
-
-void SearchNode::setId(int id_x, int id_y, int id_z)
-{
-    p_id_node_x = id_x;
-    p_id_node_y = id_y;
-    p_id_node_z = id_z;
-}
-
-void SearchNode::gpuVoxels(int octant, QVector<float> & pool, QVector<unsigned int> & index , QVector<unsigned int> & brick, QVector<int> & array_level_offsets, QVector<int> & array_child_offsets,  int & pool_dim_x, int & pool_dim_y, int & pool_dim_z, int & num_bricks)
-{
-    unsigned int p_id_pool_x = 0;
-    unsigned int p_id_pool_y = 0;
-    unsigned int p_id_pool_z = 0;
-
-    // Generate a 3D pool ID unless the node is empty
-    if (!p_is_empty)
-    {
-        p_id_pool_z = num_bricks / (pool_dim_x * pool_dim_y);
-        p_id_pool_y = (num_bricks - p_id_pool_z * (pool_dim_x * pool_dim_y)) / pool_dim_x;
-        p_id_pool_x = num_bricks - p_id_pool_z * (pool_dim_x * pool_dim_y) - p_id_pool_y * pool_dim_x;
-
-        for (int i = 0; i < p_voxel_grid_side; i++)
-        {
-            for (int j = 0; j < p_voxel_grid_side; j++)
-            {
-                for (int k = 0; k < p_voxel_grid_side; k++)
-                {
-                    int id_pool =
-                            (p_id_pool_x * p_voxel_grid_side + i) +
-                            (p_id_pool_y * p_voxel_grid_side + j) * (pool_dim_x * p_voxel_grid_side)  +
-                            (p_id_pool_z * p_voxel_grid_side + k) * (pool_dim_x * pool_dim_y * p_voxel_grid_side * p_voxel_grid_side);
-
-                    pool[id_pool] = p_voxel_grid[i + j*p_voxel_grid_side + k*p_voxel_grid_side*p_voxel_grid_side];
-                }
-            }
-        }
-        num_bricks++;
-    }
-
-    // Prepare the voxel metadata for this node
-    unsigned int leaf_flag = p_is_leaf;
-    unsigned int populated_flag = !p_is_empty;
-    unsigned int child_index = 0;
-
-    if (!p_is_leaf)
-    {
-        child_index = array_level_offsets[p_level+1] + array_child_offsets[p_level+1];
-    }
-
-//        int arr_id = array_level_offsets[p_level]+array_child_offsets[p_level];
-//        unsigned int arr_index = (leaf_flag << 31) | (populated_flag << 30) | child_index;
-//        unsigned int arr_brick = (p_pool_x << 20) | (p_pool_y << 10) | (p_pool_z << 0);
-
-    // Assign the metadata, making sure it is stored at the appropriate index
-    index[array_level_offsets[p_level] + array_child_offsets[p_level] + octant] = (leaf_flag << 31) | (populated_flag << 30) | child_index;
-    brick[array_level_offsets[p_level] + array_child_offsets[p_level] + octant] = (p_id_pool_x << 20) | (p_id_pool_y << 10) | (p_id_pool_z << 0);
-
-    if (!p_is_leaf)
-    {
-        // Add children
-        for (int i = 0; i < 8; i++)
-        {
-            p_children[i].gpuVoxels(/*Specify index at which to place new node?*/i, pool, index , brick, array_level_offsets, array_child_offsets,  pool_dim_x, pool_dim_y, pool_dim_z, num_bricks);
-        }
-
-        array_child_offsets[p_level+1] += 8;
-    }
-}
-
-SearchNode * SearchNode::nodeAt(double x, double y, double z, int max_level)
-{
-    if (p_is_leaf || (p_level >= max_level))
-    {
-        return this;
-    }
-    else
-    {
-        int id = ntant(x, y, z, 2);
-        if (id >= 0)
-        {
-            return p_children[id].nodeAt(x, y, z, max_level);
-        }
-    }
-}
-
-double SearchNode::side()
-{
-    return 1.0 / (double) nodesPerSide();
-}
-
-void SearchNode::nodelist(QList<SearchNode*> &nodes, bool rebinned_only)
-{
-    // Add self to list
-    if (rebinned_only)
-    {
-        if(p_is_rebinned) nodes << this;
-    }
-    else
-    {
-        nodes << this;
-    }
-
-
-    // Add children to list
-    if(!p_is_leaf)
-    {
-        // Call for children
-        for (int i = 0; i < 8; i++)
-        {
-            p_children[i].nodelist(nodes);
-        }
-    }
-}
-
-void SearchNode::hierarchy(QVector<QList<SearchNode *>> & nodes, int branch_leaf_both, int nonempty_empty_both, int nonvoxelized_voxelized_both, bool exclude_empty_leaves)
-{
-    // Return a data structure representing the node hierarchy, including branches, leaves, or both, but only if empty, nonempty, or both
-    bool add = true;
-
-    if (branch_leaf_both != 2)
-    {
-        if (p_is_leaf != (bool) branch_leaf_both) add = false;
-    }
-    if (nonempty_empty_both != 2)
-    {
-        if (p_is_empty != (bool) nonempty_empty_both) add = false;
-    }
-    if (nonvoxelized_voxelized_both != 2)
-    {
-        if (p_is_voxelized != (bool) nonvoxelized_voxelized_both) add = false;
-    }
-
-    if (exclude_empty_leaves && p_is_leaf && p_is_empty)
-    {
-        add = false;
-    }
-
-    if (add)
-    {
-        // Add self to hierarchy
-        if (nodes.size() <= p_level)
-        {
-            nodes.resize(p_level+1);
-        }
-
-        nodes[p_level] << this;
-    }
-
-    // Add children to hierarchy
-    for (int i = 0; i < p_children.size(); i++)
-    {
-        p_children[i].hierarchy(nodes,  branch_leaf_both, nonempty_empty_both, nonvoxelized_voxelized_both, exclude_empty_leaves);
-    }
-}
-
-
-bool SearchNode::isLeafBranch()
-{
-    // Return true if this is a branch with leaves
-    if (p_is_leaf || p_is_empty) return false;
-
-    for (int i = 0; i < 8; i++)
-    {
-        if (!p_children[i].isLeaf()) return false;
-    }
-
-    return true;
-}
-
-bool SearchNode::isLeaf()
-{
-    return p_is_leaf;
-}
-
-bool SearchNode::isVoxelized()
-{
-    return p_is_voxelized;
-}
-
-bool SearchNode::isEmpty()
-{
-    return p_is_empty;
-}
-
-QVector<SearchNode> & SearchNode::children()
-{
-    return p_children;
-}
-
-int SearchNode::nodesPerSide()
-{
-    return (1 << p_level);
-}
-
-double SearchNode::binside2()
-{
-    return 1.0 / (double) (nodesPerSide() *  p_node_grid_side);
-}
-
-
-double SearchNode::voxelside()
-{
-    return 1.0 / (double) (nodesPerSide() *  (p_voxel_grid_side-1));
-}
-
-void SearchNode::center(double & x, double & y, double & z)
-{
-    x = (double) (p_id_node_x + 0.5 ) * side();
-    y = (double) (p_id_node_y + 0.5 ) * side();
-    z = (double) (p_id_node_z + 0.5 ) * side();
-}
-
-int SearchNode::ntant(double x, double y, double z, int n)
-{
-    // Find 3D ntant id
-    int id_ntant_x = (x * (double) nodesPerSide() - (double) p_id_node_x) * (double) n;
-    int id_ntant_y = (y * (double) nodesPerSide() - (double) p_id_node_y) * (double) n;
-    int id_ntant_z = (z * (double) nodesPerSide() - (double) p_id_node_z) * (double) n;
-
-    // Example n = 2 -> octant:
-    // 0 <= relative pos < 1 : Maps to 0
-    // 1 <= relative pos < 2 : Maps to 1
-    // Values should not map to 2 or greater
-
-    if ((id_ntant_x >= n) || (id_ntant_x < 0) || (id_ntant_y >= n) || (id_ntant_y < 0) || (id_ntant_z >= n) || (id_ntant_z < 0))
-    {
-        // This should really not happen for a point that with position values between 0 and 1
-        qDebug() << "Point does not fit in level:" << p_level << ", xyz =" << x << y << z << "ntant id =" << id_ntant_x << id_ntant_y << id_ntant_z << "node id =" << p_id_node_x << p_id_node_y << p_id_node_z;
-
-        return -1;
-    }
-
-    // Return 1D ntant id
-    int id = id_ntant_x + id_ntant_y * n + id_ntant_z * n * n;
-
-    return id;
-}
-
-
-int SearchNode::ntant(xyzwd32 & point, int n)
-{
-    return ntant(point.x, point.y, point.z, n);
-}
-
-void SearchNode::interdistMetrics2(double & data_interdist_min, double & data_interdist_max, double & data_interdist_avg)
-{
-    data_interdist_min = 1e9;
-    data_interdist_max = 0;
-    data_interdist_avg = 0;
-
-    int counter = 0;
-
-    for (int i = 0; i < p_cloud.size(); i++)
-    {
-        if (p_cloud[i].d > data_interdist_max) data_interdist_max = p_cloud[i].d;
-        if (p_cloud[i].d < data_interdist_min) data_interdist_min = p_cloud[i].d;
-        data_interdist_avg += p_cloud[i].d;
-        counter++;
-    }
-
-    if (counter > 0) data_interdist_avg /= (double) counter;
-}
-
-
-void SearchNode::clear()
-{
-    p_children.clear();
-    p_cloud.clear();
-    p_voxel_grid.clear();
-    p_node_grid.clear();
-    p_is_leaf = true;
-    p_is_empty = true;
-    p_is_voxelized = false;
-}
-
-void SearchNode::setLevel(int value)
-{
-    p_level = value;
-}
-
-void SearchNode::countbricks(int &  count)
-{
-    if (!p_is_empty) count++;
-
-    for (int i = 0; i < p_children.size(); i++)
-    {
-        p_children[i].countbricks(count);
-    }
-}
-
-void SearchNode::voxelizePassOne()
-{
-
-}
-
-void SearchNode::voxelizePassTwo(SearchNode & root)
-{
-
-}
-
-void SearchNode::voxelizePassThree(SearchNode &root)
-{
-    p_is_voxelized = true;
-}
-
+}*/
 
 //void SearchNode::nodeToPool(QVector<float> & pool, int dim_x, int dim_y, int dim_z, SearchNode & root)
 //{
